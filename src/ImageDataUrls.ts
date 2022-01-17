@@ -1,4 +1,4 @@
-import { urlToImageElement, dataUrlToBlob, dataUrlToBuffer, downloadBlob } from "./base/image-common";
+import { urlToImageElement, urlToBlob, urlToBuffer, downloadBlob } from "./base/image-common";
 
 const PATTERN = /^data:((.*?)(;charset=.*?)?)(;base64)?,/;
 
@@ -15,15 +15,15 @@ const PATTERN = /^data:((.*?)(;charset=.*?)?)(;base64)?,/;
 
 export class ImageDataUrls {
     static toBuffer = async (dataUrl: string): Promise<Uint8Array> => {
-        return dataUrlToBuffer(dataUrl);
+        return urlToBuffer(dataUrl);
     };
 
     static toBlob = (dataUrl: string): Promise<Blob> => {
-        return dataUrlToBlob(dataUrl);
+        return urlToBlob(dataUrl);
     };
 
     static toFile = (dataUrl: string, fileName: string): Promise<File> => {
-        return dataUrlToBlob(dataUrl).then((blob) => {
+        return urlToBlob(dataUrl).then((blob) => {
             // console.log("dataUrlToBlob = ", blob.type, blob);
             if (blob.type.indexOf("image/svg+xml") >= 0) {
                 return new File([blob], fileName, { type: "svg" });
@@ -44,6 +44,6 @@ export class ImageDataUrls {
     };
 
     static download = (dataUrl: string, fileName: string) => {
-        dataUrlToBlob(dataUrl).then((blob) => downloadBlob(blob, fileName));
+        urlToBlob(dataUrl).then((blob) => downloadBlob(blob, fileName));
     };
 }

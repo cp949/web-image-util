@@ -1,7 +1,7 @@
 import { urlToImageElement, downloadBlob, svgToDataUrl } from "./base/image-common";
 
 export class ImageSvgs {
-    static toDataURL = (svgXml: string): Promise<string> => {
+    static toDataUrl = (svgXml: string): Promise<string> => {
         return svgToDataUrl(svgXml);
     };
 

@@ -1,5 +1,5 @@
 import { CenterCropOptions, CenterInsideOptions, DataUrlWithSize, FillOptions, FitOptions, ImageScaleType } from ".";
-import { blobToDataUrl, blobToFile, dataUrlToBlob, svgToDataUrl, urlToImageElement } from "./base/image-common";
+import { blobToDataUrl, blobToFile, urlToBlob, svgToDataUrl, urlToImageElement } from "./base/image-common";
 import { toDataUrlCenterCrop, toDataUrlCenterInside, toDataUrlFill, toDataUrlFit } from "./base/image-resizes";
 
 const EMPTY_SCALE = {
@@ -74,14 +74,14 @@ export class ImageResizer {
 
     toFile = (format: ResizeFormatType, fileName: string) => {
         return this.toDataUrl(format)
-            .then(dataUrlToBlob)
+            .then(urlToBlob)
             .then((blob) => {
                 return blobToFile(blob, fileName);
             });
     };
 
     toBlob = (format: ResizeFormatType): Promise<Blob> => {
-        return this.toDataUrl(format).then(dataUrlToBlob);
+        return this.toDataUrl(format).then(urlToBlob);
     };
 
     toElement = (format: ResizeFormatType): Promise<HTMLImageElement> => {

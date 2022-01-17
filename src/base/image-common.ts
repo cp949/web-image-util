@@ -144,13 +144,13 @@ export function base64ToBuffer(base64: string): Promise<Uint8Array> {
         .then((buffer) => new Uint8Array(buffer));
 }
 
-export function dataUrlToBuffer(dataUrl: string): Promise<Uint8Array> {
+export function urlToBuffer(dataUrl: string): Promise<Uint8Array> {
     return fetch(dataUrl)
         .then((res) => res.arrayBuffer())
         .then((buffer) => new Uint8Array(buffer));
 }
 
-export function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+export function urlToBlob(dataUrl: string): Promise<Blob> {
     return fetch(dataUrl).then((res) => res.blob());
 }
 

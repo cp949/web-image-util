@@ -1,5 +1,18 @@
-import { ImageSource } from ".";
-import { downloadBlob, downloadLink, fixBlobFileExt, urlToImageElement } from "./base/image-common";
+import { ImageSource } from "./base/common-types";
+import {
+    base64ToBuffer,
+    blobToDataUrl,
+    blobToFile,
+    downloadBlob,
+    downloadLink,
+    fixBlobFileExt,
+    isSvgDataUrl,
+    svgToDataUrl,
+    urlToBlob,
+    urlToBuffer,
+    urlToDataUrl,
+    urlToImageElement,
+} from "./base/image-common";
 import { ImageBlobs } from "./ImageBlobs";
 import { ImageBuffers } from "./ImageBuffers";
 import { ImageDataUrls } from "./ImageDataUrls";
@@ -36,12 +49,28 @@ async function convertImageSourceToElement(
     // throw new Error('unknown source')
 }
 
+const imageUtil = {
+    base64ToBuffer,
+    blobToDataUrl,
+    blobToFile,
+    downloadBlob,
+    downloadLink,
+    fixBlobFileExt,
+    isSvgDataUrl,
+    svgToDataUrl,
+    urlToBlob,
+    urlToBuffer,
+    urlToDataUrl,
+    urlToImageElement,
+};
+
 export class ImageMain {
     svg = ImageSvgs;
     element = ImageElements;
     dataUrl = ImageDataUrls;
     buffer = ImageBuffers;
     blob = ImageBlobs;
+    util = imageUtil;
 
     toImageElement = (
         source: ImageSource,
