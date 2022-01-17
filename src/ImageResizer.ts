@@ -24,15 +24,20 @@ function getScale(scale?: ImageScaleType): {
 type ResizeSourceType = HTMLImageElement | string | Blob;
 type ResizeFormatType = "png" | "jpeg";
 
-const sourceToElement = async (source: ResizeSourceType): Promise<HTMLImageElement> => {
+const sourceToElement = async (
+    source: ResizeSourceType,
+    opts: {
+        crossOrigin?: string;
+    }
+): Promise<HTMLImageElement> => {
     if (typeof source === "string") {
         if (source.includes("<svg ")) {
-            return svgToDataUrl(source).then(urlToImageElement);
+            return svgToDataUrl(source).then((dataUrl) => urlToImageElement(dataUrl, opts));
         } else {
-            return urlToImageElement(source);
+            return urlToImageElement(source, opts);
         }
     } else if (source instanceof Blob) {
-        return blobToDataUrl(source).then(urlToImageElement);
+        return blobToDataUrl(source).then((dataUrl) => urlToImageElement(dataUrl, opts));
     }
 
     return source;
@@ -89,7 +94,9 @@ export class ImageResizer {
     };
 
     toDataUrl = async (format: ResizeFormatType): Promise<string> => {
-        let img = await sourceToElement(this.source);
+        let img = await sourceToElement(this.source, {
+            crossOrigin: "Anonymous",
+        });
         const { dataUrl } = await this._toDataUrl(img, format);
         return dataUrl;
     };

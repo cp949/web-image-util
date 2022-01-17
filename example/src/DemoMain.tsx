@@ -48,13 +48,16 @@ const rootSx: SxProps = {
     },
 };
 
+const SAMPLE_URL = "https://aicodingblock.kt.co.kr/aimk-server/p/file/download/oi_i_v01_1031114_76x86_svg.svg";
 export default function DemoMain() {
     const rootRef = useRef<HTMLDivElement>();
     const [sourceElement, setSourceElement] = useState<HTMLImageElement>();
     const [editingText, setEditingText] = useState<string>(SAMPLE_SVG);
+    const [editingUrl, setEditingUrl] = useState<string>(SAMPLE_URL);
     const [svgXml, setSvgXml] = useState<string>();
     const [selectedFile, setSelectedFile] = useState<File>();
-    const [sourceType, setSourceType] = useState<"file" | "svg">("file");
+    const [selectedUrl, setSelectedUrl] = useState<string>(SAMPLE_URL);
+    const [sourceType, setSourceType] = useState<"file" | "svg" | "url">("url");
 
     const handleFileChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target?.files?.[0];
@@ -70,10 +73,16 @@ export default function DemoMain() {
             }).then((img) => {
                 setSourceElement(img);
             });
+        } else if (sourceType === "url" && selectedUrl && selectedUrl.length > 0) {
+            Images.toImageElement(selectedUrl, {
+                crossOrigin: "Anonymous",
+            }).then((img) => {
+                setSourceElement(img);
+            });
         } else {
             setSourceElement(undefined);
         }
-    }, [sourceType, selectedFile, svgXml]);
+    }, [sourceType, selectedFile, selectedUrl, svgXml]);
 
     return (
         <Box ref={rootRef} sx={rootSx}>
@@ -90,11 +99,12 @@ export default function DemoMain() {
                                         row
                                         aria-label="source type"
                                         value={sourceType}
-                                        onChange={(e) => setSourceType(e.target.value as "file" | "svg")}
+                                        onChange={(e) => setSourceType(e.target.value as "file" | "svg" | "url")}
                                         name="image-source-type-group"
                                     >
                                         <FormControlLabel value="file" control={<Radio />} label="File" />
                                         <FormControlLabel value="svg" control={<Radio />} label="SVG XML" />
+                                        <FormControlLabel value="url" control={<Radio />} label="URL" />
                                     </RadioGroup>
                                 </FormControl>
                             </Box>
@@ -145,6 +155,28 @@ export default function DemoMain() {
                                     />
                                     <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                                         <Button variant="outlined" size="small" onClick={() => setSvgXml(editingText)}>
+                                            적용
+                                        </Button>
+                                    </Box>
+                                </>
+                            )}
+
+                            {sourceType === "url" && (
+                                <>
+                                    <Box
+                                        component="textarea"
+                                        sx={{ width: "100%", height: 250, mt: 1 }}
+                                        value={selectedUrl ?? ""}
+                                        onChange={(e: any) => {
+                                            setEditingUrl((e as ChangeEvent<HTMLTextAreaElement>).target.value);
+                                        }}
+                                    />
+                                    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => setSelectedUrl(editingUrl)}
+                                        >
                                             적용
                                         </Button>
                                     </Box>
