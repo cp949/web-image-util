@@ -313,7 +313,7 @@ const fixedFileName = Images.util.fixBlobFileExt(blob, "test.png");
 
 const isSvg = Images.util.isSvgDataUrl("data:image/svg+xml...");
 
-const dataUrl = await Images.util.svgToDataUrl("<svg ...>...");
+const dataUrl = Images.util.svgToDataUrl("<svg ...>...");
 ```
 
 ## TODO
