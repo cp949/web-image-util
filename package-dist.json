@@ -1,6 +1,6 @@
 {
     "name": "@cp949/web-image-util",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "simple web image utils",
     "main": "cjs/index.js",
     "module": "es/index.js",

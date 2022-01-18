@@ -1,5 +1,5 @@
 import { CenterCropOptions, CenterInsideOptions, DataUrlWithSize, FillOptions, FitOptions, ImageScaleType } from ".";
-import { blobToDataUrl, blobToFile, urlToBlob, svgToDataUrl, urlToElement } from "./base/image-common";
+import { blobToDataUrl, blobToFile, svgToDataUrl, urlToBlob, urlToElement } from "./base/image-common";
 import { toDataUrlCenterCrop, toDataUrlCenterInside, toDataUrlFill, toDataUrlFit } from "./base/image-resizes";
 
 type ResizeSourceType = HTMLImageElement | string | Blob;
@@ -13,7 +13,7 @@ const sourceToElement = async (
 ): Promise<HTMLImageElement> => {
     if (typeof source === "string") {
         if (source.includes("<svg ")) {
-            return svgToDataUrl(source).then((dataUrl) => urlToElement(dataUrl, opts));
+            return urlToElement(svgToDataUrl(source), opts);
         } else {
             return urlToElement(source, opts);
         }
@@ -82,7 +82,11 @@ export class ImageResizer {
         return dataUrl;
     };
 
-    private _setupCanvas = (step: "pre" | "post", ctx: CanvasRenderingContext2D, scale: ImageScaleType) => {
+    private _setupCanvas = (
+        step: "preSetup" | "preDraw" | "postDraw",
+        ctx: CanvasRenderingContext2D,
+        scale: ImageScaleType
+    ) => {
         // if (typeof scale === "undefined" || scale === null) return;
         // const { scaleX, scaleY } = getScale(scale);
         // ctx.scale(scaleX, scaleY);

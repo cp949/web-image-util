@@ -1,3 +1,4 @@
+import { ImagePaddingType, Images } from "@cp949/web-image-util";
 import {
     Box,
     Button,
@@ -15,7 +16,6 @@ import {
 } from "@mui/material";
 import clsx from "clsx";
 import { useCallback, useEffect, useState } from "react";
-import { Images, ImagePaddingType } from "@cp949/web-image-util";
 
 const COLOR_RED = "#f00";
 const COLOR_WHITE = "#fff";

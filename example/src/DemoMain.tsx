@@ -11,7 +11,12 @@ import {
     Typography,
 } from "@mui/material";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import DemoCenterCrop from "./DemoCenterCrop";
+import DemoCenterInside from "./DemoCenterInside";
+import DemoFill from "./DemoFill";
+import DemoFit from "./DemoFit";
 import DemoResizer from "./DemoResizer";
+import DemoSvgResize from "./DemoSvgResize";
 import { SAMPLE_SVG } from "./sample-svg";
 
 const rootSx: SxProps = {
@@ -86,6 +91,11 @@ export default function DemoMain() {
 
     return (
         <Box ref={rootRef} sx={rootSx}>
+            <DemoCenterCrop />
+            <DemoCenterInside />
+            <DemoFit />
+            <DemoFill />
+            <DemoSvgResize />
             <Grid container sx={{ mb: 4 }} columnSpacing={2}>
                 <Grid item xs={12} md={6}>
                     <Box className="DemoMain-section" sx={{ minHeight: 400 }}>
@@ -166,7 +176,7 @@ export default function DemoMain() {
                                     <Box
                                         component="textarea"
                                         sx={{ width: "100%", height: 250, mt: 1 }}
-                                        value={selectedUrl ?? ""}
+                                        value={editingUrl ?? ""}
                                         onChange={(e: any) => {
                                             setEditingUrl((e as ChangeEvent<HTMLTextAreaElement>).target.value);
                                         }}

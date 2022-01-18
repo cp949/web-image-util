@@ -112,7 +112,7 @@ centerCrop({
   size: { width: 400, height: 300 }, // or size : 400,
   crossOrigin: "Anonymous",
   quality: 0.5, // canvas.toDataURL()에서 사용합니다
-  backgroundColor: "#fff",
+  backgroundColor: "#fff", // default: 'transparent'
   padding: 8, // or {top:8, bottom:8, left:8, right:8 }
 });
 ```
@@ -123,7 +123,7 @@ centerCrop({
 
 ```javascript
 centerCrop({
-  scale: 1.5,
+  scale: 1.5, // or scale : {scaleX: 1.5, scaleY: 1.5}
   crossOrigin: "Anonymous",
   quality: 0.5,
   backgroundColor: "#fff",
@@ -314,4 +314,25 @@ const fixedFileName = Images.util.fixBlobFileExt(blob, "test.png");
 const isSvg = Images.util.isSvgDataUrl("data:image/svg+xml...");
 
 const dataUrl = await Images.util.svgToDataUrl("<svg ...>...");
+```
+
+## TODO
+
+- resize에 canvasHookFn 추가
+
+```javascript
+const element = await Images.resizeFrom(imgSrc)
+  .centerCrop({
+    size: 300,
+    canvasHookFn: (step, canvas, ctx) => {
+      if (step === "preSetup") {
+        ctx.imageSmoothingEnabled = true;
+      } else if (step === "preDraw") {
+        ctx.drawImage(bg, 0, 0);
+      } else if (step === "postDraw") {
+        ctx.drawImage(overlay, 0, 0);
+      }
+    },
+  })
+  .toElement("png"); // HTMLImageElement
 ```

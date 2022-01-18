@@ -2,7 +2,7 @@ import { urlToElement, downloadBlob, svgToDataUrl } from "./base/image-common";
 
 export class ImageSvgs {
     static toDataUrl = (svgXml: string): Promise<string> => {
-        return svgToDataUrl(svgXml);
+        return new Promise((resolve) => resolve(svgToDataUrl(svgXml)));
     };
 
     static toElement(
@@ -12,7 +12,7 @@ export class ImageSvgs {
             elementSize?: { width: number; height: number };
         }
     ): Promise<HTMLImageElement> {
-        return svgToDataUrl(svgXml).then((dataUrl) => urlToElement(dataUrl, opts));
+        return urlToElement(svgToDataUrl(svgXml), opts);
     }
 
     static download = (svgXml: string, fileName: string) => {

@@ -1,3 +1,13 @@
+// https://stackoverflow.com/questions/21797299/convert-base64-string-to-arraybuffer/62364519#62364519
+// 데이터가 클때 이게 더 유리하다고
+export function base64ToBuffer(base64: string): Promise<Uint8Array> {
+    const dataUrl = "data:application/octet-binary;base64," + base64;
+
+    return fetch(dataUrl)
+        .then((res) => res.arrayBuffer())
+        .then((buffer) => new Uint8Array(buffer));
+}
+
 export function downloadBlob(blob: Blob, fileName: string) {
     if ("download" in HTMLAnchorElement.prototype) {
         const downloadLink = document.createElement("a");
@@ -136,16 +146,6 @@ export function urlToElement(
     });
 }
 
-// https://stackoverflow.com/questions/21797299/convert-base64-string-to-arraybuffer/62364519#62364519
-// 데이터가 클때 이게 더 유리하다고
-export function base64ToBuffer(base64: string): Promise<Uint8Array> {
-    const dataUrl = "data:application/octet-binary;base64," + base64;
-
-    return fetch(dataUrl)
-        .then((res) => res.arrayBuffer())
-        .then((buffer) => new Uint8Array(buffer));
-}
-
 export function urlToBuffer(dataUrl: string): Promise<Uint8Array> {
     return fetch(dataUrl)
         .then((res) => res.arrayBuffer())
@@ -173,9 +173,7 @@ export function isSvgDataUrl(dataUrl: string): boolean {
     return dataUrl.startsWith("data:image/svg+xml");
 }
 
-export function svgToDataUrl(svgXml: string): Promise<string> {
-    return new Promise((resolve) => {
-        svgXml = svgXml.replace(/&nbsp/g, "&#160");
-        resolve("data:image/svg+xml;ascii," + encodeURIComponent(svgXml));
-    });
+export function svgToDataUrl(svgXml: string): string {
+    let svg = svgXml.replace(/&nbsp/g, "&#160");
+    return "data:image/svg+xml," + encodeURIComponent(svg);
 }

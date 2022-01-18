@@ -88,9 +88,13 @@ export class ImageMain {
         return ImageResizer.from(source);
     }
 
-    async download(source: ImageSource, fileName: string): Promise<void> {
+    async download(source: HTMLImageElement | Blob | string, fileName: string): Promise<void> {
         if (source instanceof Blob) {
             downloadBlob(source, fileName);
+            return;
+        }
+        if (source instanceof HTMLImageElement) {
+            urlToBlob(source.src).then((blob) => downloadBlob(blob, fixBlobFileExt(blob, fileName)));
             return;
         }
 

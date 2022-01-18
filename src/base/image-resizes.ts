@@ -1,7 +1,11 @@
 import { ImageSizeType } from "..";
 import { DataUrlWithSize, ImageScaleType, ImagePaddingType } from "./common-types";
 
-type CanvasHookFn = (step: "pre" | "post", canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => void;
+type CanvasHookFn = (
+    step: "preSetup" | "preDraw" | "postDraw",
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D
+) => void;
 
 const EMPTY_SCALE = {
     scaleX: 1,
@@ -118,9 +122,10 @@ function fitBox(boxWidth: number, boxHeight: number, intrinsicWidth: number, int
     const x = Math.floor(fixFloat((boxWidth - scaledWidth) / 2));
     const y = Math.floor(fixFloat((boxHeight - scaledHeight) / 2));
 
+    // TODO remove ScaledX,Y , 항상 0이다
     return {
-        scaledX: x,
-        scaledY: y,
+        scaledX: x, //0
+        scaledY: y, //0
         scaledW: scaledWidth,
         scaledH: scaledHeight,
         scale,
@@ -171,7 +176,7 @@ export function imageToCanvasCenterCrop(
         throw new Error("cannot create canvas context-2d");
     }
 
-    canvasHookFn?.("pre", canvas, ctx);
+    canvasHookFn?.("preSetup", canvas, ctx);
     // canvas size
     const p = getPadding(padding);
     let canvasSize: { width: number; height: number };
@@ -198,9 +203,9 @@ export function imageToCanvasCenterCrop(
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-
+    canvasHookFn?.("preDraw", canvas, ctx);
     ctx.drawImage(img, orgX, orgY, orgW, orgH, p.left, p.top, canvasSize.width, canvasSize.height);
-    canvasHookFn?.("post", canvas, ctx);
+    canvasHookFn?.("postDraw", canvas, ctx);
     return [canvas, ctx];
 }
 
@@ -223,7 +228,7 @@ export function imageToCanvasCenterInside(
         throw new Error("cannot create canvas context-2d");
     }
 
-    canvasHookFn?.("pre", canvas, ctx);
+    canvasHookFn?.("preSetup", canvas, ctx);
 
     // canvas size
     const p = getPadding(padding);
@@ -255,6 +260,7 @@ export function imageToCanvasCenterInside(
             ctx.fillStyle = backgroundColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
+        canvasHookFn?.("preDraw", canvas, ctx);
         ctx.drawImage(img, 0, 0, img.width, img.height, p.left, p.top, scaledW, scaledH);
     } else {
         canvas.width = canvasSize.width + p.left + p.right;
@@ -263,10 +269,12 @@ export function imageToCanvasCenterInside(
             ctx.fillStyle = backgroundColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
+
+        canvasHookFn?.("preDraw", canvas, ctx);
         ctx.drawImage(img, 0, 0, img.width, img.height, scaledX + p.left, scaledY + p.top, scaledW, scaledH);
     }
-    canvasHookFn?.("post", canvas, ctx);
-    ctx.scale(2, 2);
+
+    canvasHookFn?.("postDraw", canvas, ctx);
     return [canvas, ctx];
 }
 
@@ -290,7 +298,7 @@ export function imageToCanvasFit(
         throw new Error("cannot create canvas context-2d");
     }
 
-    canvasHookFn?.("pre", canvas, ctx);
+    canvasHookFn?.("preSetup", canvas, ctx);
 
     // canvas size
     const p = getPadding(padding);
@@ -310,27 +318,19 @@ export function imageToCanvasFit(
         };
     }
 
-    const { scaledX, scaledY, scaledW, scaledH } = fitBox(canvasSize.width, canvasSize.height, img.width, img.height);
+    const { scaledW, scaledH } = fitBox(canvasSize.width, canvasSize.height, img.width, img.height);
 
-    if (trim) {
-        canvas.width = scaledW + p.left + p.right;
-        canvas.height = scaledH + p.top + p.bottom;
-        if (backgroundColor && backgroundColor !== "transparent") {
-            ctx.fillStyle = backgroundColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        ctx.drawImage(img, 0, 0, img.width, img.height, p.left, p.top, scaledW, scaledH);
-    } else {
-        canvas.width = canvasSize.width + p.left + p.right;
-        canvas.height = canvasSize.height + p.top + p.bottom;
-        if (backgroundColor && backgroundColor !== "transparent") {
-            ctx.fillStyle = backgroundColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        ctx.drawImage(img, 0, 0, img.width, img.height, scaledX + p.left, scaledY + p.top, scaledW, scaledH);
+    canvas.width = scaledW + p.left + p.right;
+    canvas.height = scaledH + p.top + p.bottom;
+    if (backgroundColor && backgroundColor !== "transparent") {
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-    canvasHookFn?.("post", canvas, ctx);
-    ctx.scale(2, 2);
+
+    canvasHookFn?.("preDraw", canvas, ctx);
+    ctx.drawImage(img, 0, 0, img.width, img.height, p.left, p.top, scaledW, scaledH);
+    canvasHookFn?.("postDraw", canvas, ctx);
+
     return [canvas, ctx];
 }
 
@@ -353,7 +353,7 @@ export function imageToCanvasFill(
         throw new Error("cannot create canvas context-2d");
     }
 
-    canvasHookFn?.("pre", canvas, ctx);
+    canvasHookFn?.("preSetup", canvas, ctx);
 
     // canvas size
     const p = getPadding(padding);
@@ -378,8 +378,10 @@ export function imageToCanvasFill(
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+
+    canvasHookFn?.("preDraw", canvas, ctx);
     ctx.drawImage(img, 0, 0, img.width, img.height, p.left, p.top, canvasSize.width, canvasSize.height);
-    canvasHookFn?.("post", canvas, ctx);
+    canvasHookFn?.("postDraw", canvas, ctx);
     return [canvas, ctx];
 }
 
