@@ -81,6 +81,8 @@ export function fixBlobFileExt(blob: Blob, fileName: string) {
         return fixFileExt(fileName, "jpg");
     } else if (type.includes("svg")) {
         return fixFileExt(fileName, "svg");
+    } else if (type.includes("webp")) {
+        return fixFileExt(fileName, "webp");
     }
     return fileName;
 }
@@ -103,7 +105,7 @@ export async function urlToDataUrl(url: string): Promise<string> {
 }
 
 // support http and data url
-export function urlToImageElement(
+export function urlToElement(
     url: string,
     opts?: {
         crossOrigin?: string;
@@ -150,8 +152,20 @@ export function urlToBuffer(dataUrl: string): Promise<Uint8Array> {
         .then((buffer) => new Uint8Array(buffer));
 }
 
-export function urlToBlob(dataUrl: string): Promise<Blob> {
-    return fetch(dataUrl).then((res) => res.blob());
+export function urlToBlob(url: string): Promise<Blob> {
+    return fetch(url).then((res) => res.blob());
+}
+
+export function urlToFile(url: string, fileName: string): Promise<File> {
+    return fetch(url)
+        .then((res) => res.blob())
+        .then((blob) => {
+            if (blob.type.indexOf("image/svg+xml") >= 0) {
+                return new File([blob], fixBlobFileExt(blob, fileName), { type: "svg" });
+            } else {
+                return new File([blob], fixBlobFileExt(blob, fileName), { type: blob.type });
+            }
+        });
 }
 
 export function isSvgDataUrl(dataUrl: string): boolean {

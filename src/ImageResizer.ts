@@ -1,25 +1,6 @@
 import { CenterCropOptions, CenterInsideOptions, DataUrlWithSize, FillOptions, FitOptions, ImageScaleType } from ".";
-import { blobToDataUrl, blobToFile, urlToBlob, svgToDataUrl, urlToImageElement } from "./base/image-common";
+import { blobToDataUrl, blobToFile, urlToBlob, svgToDataUrl, urlToElement } from "./base/image-common";
 import { toDataUrlCenterCrop, toDataUrlCenterInside, toDataUrlFill, toDataUrlFit } from "./base/image-resizes";
-
-const EMPTY_SCALE = {
-    scaleX: 1,
-    scaleY: 1,
-};
-
-function getScale(scale?: ImageScaleType): {
-    scaleX: number;
-    scaleY: number;
-} {
-    if (typeof scale === "undefined") return EMPTY_SCALE;
-    if (typeof scale === "number") {
-        return {
-            scaleX: scale,
-            scaleY: scale,
-        };
-    }
-    return scale;
-}
 
 type ResizeSourceType = HTMLImageElement | string | Blob;
 type ResizeFormatType = "png" | "jpeg";
@@ -32,12 +13,12 @@ const sourceToElement = async (
 ): Promise<HTMLImageElement> => {
     if (typeof source === "string") {
         if (source.includes("<svg ")) {
-            return svgToDataUrl(source).then((dataUrl) => urlToImageElement(dataUrl, opts));
+            return svgToDataUrl(source).then((dataUrl) => urlToElement(dataUrl, opts));
         } else {
-            return urlToImageElement(source, opts);
+            return urlToElement(source, opts);
         }
     } else if (source instanceof Blob) {
-        return blobToDataUrl(source).then((dataUrl) => urlToImageElement(dataUrl, opts));
+        return blobToDataUrl(source).then((dataUrl) => urlToElement(dataUrl, opts));
     }
 
     return source;
@@ -57,23 +38,23 @@ export class ImageResizer {
         return new ImageResizer(source);
     }
 
-    centerInside = (opts: CenterInsideOptions) => {
-        this.centerInsideOptions = opts;
-        return this;
-    };
-
     centerCrop = (opts: CenterCropOptions) => {
         this.centerCropOptions = opts;
         return this;
     };
 
-    fill = (opts: FillOptions) => {
-        this.fitOptions = opts;
+    centerInside = (opts: CenterInsideOptions) => {
+        this.centerInsideOptions = opts;
         return this;
     };
 
     fit = (opts: FitOptions) => {
         this.fitOptions = opts;
+        return this;
+    };
+
+    fill = (opts: FillOptions) => {
+        this.fillOptions = opts;
         return this;
     };
 
@@ -90,7 +71,7 @@ export class ImageResizer {
     };
 
     toElement = (format: ResizeFormatType): Promise<HTMLImageElement> => {
-        return this.toDataUrl(format).then(urlToImageElement);
+        return this.toDataUrl(format).then(urlToElement);
     };
 
     toDataUrl = async (format: ResizeFormatType): Promise<string> => {

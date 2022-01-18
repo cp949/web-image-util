@@ -1,4 +1,4 @@
-import { urlToImageElement, urlToBlob, urlToBuffer, downloadBlob } from "./base/image-common";
+import { urlToElement, urlToBlob, urlToFile, urlToBuffer, downloadBlob } from "./base/image-common";
 
 const PATTERN = /^data:((.*?)(;charset=.*?)?)(;base64)?,/;
 
@@ -23,24 +23,17 @@ export class ImageDataUrls {
     };
 
     static toFile = (dataUrl: string, fileName: string): Promise<File> => {
-        return urlToBlob(dataUrl).then((blob) => {
-            // console.log("dataUrlToBlob = ", blob.type, blob);
-            if (blob.type.indexOf("image/svg+xml") >= 0) {
-                return new File([blob], fileName, { type: "svg" });
-            } else {
-                return new File([blob], fileName, { type: blob.type });
-            }
-        });
+        return urlToFile(dataUrl, fileName);
     };
 
-    static toImageElement = (
+    static toElement = (
         dataUrl: string,
         opts?: {
             crossOrigin?: string;
             elementSize?: { width: number; height: number };
         }
     ): Promise<HTMLImageElement> => {
-        return urlToImageElement(dataUrl, opts);
+        return urlToElement(dataUrl, opts);
     };
 
     static download = (dataUrl: string, fileName: string) => {

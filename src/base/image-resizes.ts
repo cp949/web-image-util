@@ -1,3 +1,4 @@
+import { ImageSizeType } from "..";
 import { DataUrlWithSize, ImageScaleType, ImagePaddingType } from "./common-types";
 
 type CanvasHookFn = (step: "pre" | "post", canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => void;
@@ -19,6 +20,29 @@ function getScale(scale?: ImageScaleType): {
         };
     }
     return scale;
+}
+
+function getSize(size?: ImageSizeType): {
+    width: number;
+    height: number;
+} | null {
+    if (typeof size === "undefined" || size === null) return null;
+    if (typeof size === "number") {
+        return {
+            width: size,
+            height: size,
+        };
+    }
+    return size;
+}
+
+function canvasToDataUrl(canvas: HTMLCanvasElement, isPng: boolean, quality: number): DataUrlWithSize {
+    const dataUrl = canvas.toDataURL(isPng ? "image/png" : "image/jpeg", quality);
+    return {
+        dataUrl,
+        width: canvas.width,
+        height: canvas.height,
+    };
 }
 
 function fixFloat(v: number) {
@@ -109,6 +133,7 @@ const EMPTY_PADDING = {
     left: 0,
     right: 0,
 };
+
 function getPadding(padding: number | { top: number; bottom: number; left: number; right: number }): {
     top: number;
     left: number;
@@ -130,7 +155,7 @@ function getPadding(padding: number | { top: number; bottom: number; left: numbe
 export function imageToCanvasCenterCrop(
     img: HTMLImageElement,
     opts: {
-        size?: { width: number; height: number };
+        size?: ImageSizeType;
         scale?: ImageScaleType;
         backgroundColor?: string;
         padding?: number | { top: number; left: number; bottom: number; right: number };
@@ -150,10 +175,11 @@ export function imageToCanvasCenterCrop(
     // canvas size
     const p = getPadding(padding);
     let canvasSize: { width: number; height: number };
-    if (opts.size) {
+    const size = getSize(opts.size);
+    if (size) {
         canvasSize = {
-            width: opts.size.width - p.left - p.right,
-            height: opts.size.height - p.top - p.bottom,
+            width: size.width - p.left - p.right,
+            height: size.height - p.top - p.bottom,
         };
     } else {
         // size를 지정하지 않은 경우에만 scale이 유효하다
@@ -181,7 +207,7 @@ export function imageToCanvasCenterCrop(
 export function imageToCanvasCenterInside(
     img: HTMLImageElement,
     opts: {
-        size?: { width: number; height: number };
+        size?: ImageSizeType;
         backgroundColor?: string;
         padding?: number | { top: number; left: number; bottom: number; right: number };
         trim?: boolean;
@@ -202,10 +228,11 @@ export function imageToCanvasCenterInside(
     // canvas size
     const p = getPadding(padding);
     let canvasSize: { width: number; height: number };
-    if (opts.size) {
+    const size = getSize(opts.size);
+    if (size) {
         canvasSize = {
-            width: opts.size.width - p.left - p.right,
-            height: opts.size.height - p.top - p.bottom,
+            width: size.width - p.left - p.right,
+            height: size.height - p.top - p.bottom,
         };
     } else {
         canvasSize = {
@@ -246,7 +273,7 @@ export function imageToCanvasCenterInside(
 export function imageToCanvasFit(
     img: HTMLImageElement,
     opts: {
-        size?: { width: number; height: number };
+        size?: ImageSizeType;
         scale?: ImageScaleType;
         backgroundColor?: string;
         padding?: number | { top: number; left: number; bottom: number; right: number };
@@ -268,10 +295,11 @@ export function imageToCanvasFit(
     // canvas size
     const p = getPadding(padding);
     let canvasSize: { width: number; height: number };
-    if (opts.size) {
+    const size = getSize(opts.size);
+    if (size) {
         canvasSize = {
-            width: opts.size.width - p.left - p.right,
-            height: opts.size.height - p.top - p.bottom,
+            width: size.width - p.left - p.right,
+            height: size.height - p.top - p.bottom,
         };
     } else {
         // size를 지정하지 않은 경우에만 scale이 유효하다
@@ -309,7 +337,7 @@ export function imageToCanvasFit(
 export function imageToCanvasFill(
     img: HTMLImageElement,
     opts: {
-        size?: { width: number; height: number };
+        size?: ImageSizeType;
         scale?: ImageScaleType;
         backgroundColor?: string;
         padding?: number | { top: number; left: number; bottom: number; right: number };
@@ -330,10 +358,11 @@ export function imageToCanvasFill(
     // canvas size
     const p = getPadding(padding);
     let canvasSize: { width: number; height: number };
-    if (opts.size) {
+    const size = getSize(opts.size);
+    if (size) {
         canvasSize = {
-            width: opts.size.width - p.left - p.right,
-            height: opts.size.height - p.top - p.bottom,
+            width: size.width - p.left - p.right,
+            height: size.height - p.top - p.bottom,
         };
     } else {
         const { scaleX, scaleY } = getScale(opts.scale);
@@ -354,20 +383,36 @@ export function imageToCanvasFill(
     return [canvas, ctx];
 }
 
-function canvasToDataUrl(canvas: HTMLCanvasElement, isPng: boolean, quality: number): DataUrlWithSize {
-    const dataUrl = canvas.toDataURL(isPng ? "image/png" : "image/jpeg", quality);
-    return {
-        dataUrl,
-        width: canvas.width,
-        height: canvas.height,
-    };
+export function toDataUrlCenterCrop(
+    img: HTMLImageElement,
+    isPng: boolean,
+    opts: {
+        size?: ImageSizeType;
+        scale?: ImageScaleType;
+        quality?: number; // 0~1
+        backgroundColor?: string;
+        padding?: ImagePaddingType;
+    },
+    canvasHookFn?: CanvasHookFn
+): DataUrlWithSize {
+    const [canvas, ctx] = imageToCanvasCenterCrop(
+        img,
+        {
+            size: opts.size,
+            scale: opts.scale,
+            backgroundColor: opts.backgroundColor,
+            padding: opts.padding,
+        },
+        canvasHookFn
+    );
+    // canvasHookFn?.(canvas, ctx);
+    return canvasToDataUrl(canvas, isPng, opts.quality);
 }
-
 export function toDataUrlCenterInside(
     img: HTMLImageElement,
     isPng: boolean,
     opts: {
-        size?: { width: number; height: number };
+        size?: ImageSizeType;
         quality?: number; // 0~1
         backgroundColor?: string;
         padding?: ImagePaddingType;
@@ -393,7 +438,7 @@ export function toDataUrlFit(
     img: HTMLImageElement,
     isPng: boolean,
     opts: {
-        size?: { width: number; height: number };
+        size?: ImageSizeType;
         scale?: ImageScaleType;
         quality?: number; // 0~1
         backgroundColor?: string;
@@ -417,37 +462,11 @@ export function toDataUrlFit(
     return canvasToDataUrl(canvas, isPng, opts.quality);
 }
 
-export function toDataUrlCenterCrop(
-    img: HTMLImageElement,
-    isPng: boolean,
-    opts: {
-        size?: { width: number; height: number };
-        scale?: ImageScaleType;
-        quality?: number; // 0~1
-        backgroundColor?: string;
-        padding?: ImagePaddingType;
-    },
-    canvasHookFn?: CanvasHookFn
-): DataUrlWithSize {
-    const [canvas, ctx] = imageToCanvasCenterCrop(
-        img,
-        {
-            size: opts.size,
-            scale: opts.scale,
-            backgroundColor: opts.backgroundColor,
-            padding: opts.padding,
-        },
-        canvasHookFn
-    );
-    // canvasHookFn?.(canvas, ctx);
-    return canvasToDataUrl(canvas, isPng, opts.quality);
-}
-
 export function toDataUrlFill(
     img: HTMLImageElement,
     isPng: boolean,
     opts: {
-        size?: { width: number; height: number };
+        size?: ImageSizeType;
         scale?: ImageScaleType;
         quality?: number; // 0~1
         backgroundColor?: string;

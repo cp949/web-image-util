@@ -26,13 +26,20 @@ export type ImageScaleType =
           scaleY: number;
       };
 
+export type ImageSizeType =
+    | number
+    | {
+          width: number;
+          height: number;
+      };
+
 type BaseImageResizeOptions = {
     crossOrigin?: string;
     quality?: number; // 0~1
     scale?: ImageScaleType;
     backgroundColor?: string;
     padding?: ImagePaddingType;
-    size?: { width: number; height: number };
+    size?: ImageSizeType;
 };
 
 export type CenterCropOptions = BaseImageResizeOptions & {};

@@ -9,9 +9,10 @@ import {
     isSvgDataUrl,
     svgToDataUrl,
     urlToBlob,
+    urlToFile,
     urlToBuffer,
     urlToDataUrl,
-    urlToImageElement,
+    urlToElement,
 } from "./base/image-common";
 import { ImageBlobs } from "./ImageBlobs";
 import { ImageBuffers } from "./ImageBuffers";
@@ -28,22 +29,22 @@ async function convertImageSourceToElement(
     }
 ): Promise<HTMLImageElement> {
     if (source instanceof Blob) {
-        return ImageBlobs.toImageElement(source);
+        return ImageBlobs.toElement(source);
     }
 
     if (source.startsWith("http://") || source.startsWith("https://") || source.startsWith("data:")) {
-        return urlToImageElement(source, opts);
+        return urlToElement(source, opts);
     }
 
     if (source.includes("<svg ")) {
-        return ImageSvgs.toImageElement(source, opts);
+        return ImageSvgs.toElement(source, opts);
     }
 
     // 상대경로 등이 있을 수 있다.
-    // ex) images/xxx
-    // /images/xxx
-    // ./images/xxx
-    return urlToImageElement(source, opts);
+    // ex) myimg/xxx
+    // /myimg/xxx
+    // ./myimg/xxx
+    return urlToElement(source, opts);
 
     // console.log('unknown source', { source })
     // throw new Error('unknown source')
@@ -59,9 +60,10 @@ const imageUtil = {
     isSvgDataUrl,
     svgToDataUrl,
     urlToBlob,
+    urlToFile,
     urlToBuffer,
     urlToDataUrl,
-    urlToImageElement,
+    urlToElement,
 };
 
 export class ImageMain {
@@ -72,7 +74,7 @@ export class ImageMain {
     blob = ImageBlobs;
     util = imageUtil;
 
-    toImageElement = (
+    toElement = (
         source: ImageSource,
         opts?: {
             crossOrigin?: string;

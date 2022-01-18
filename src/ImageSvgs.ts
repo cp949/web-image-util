@@ -1,18 +1,18 @@
-import { urlToImageElement, downloadBlob, svgToDataUrl } from "./base/image-common";
+import { urlToElement, downloadBlob, svgToDataUrl } from "./base/image-common";
 
 export class ImageSvgs {
     static toDataUrl = (svgXml: string): Promise<string> => {
         return svgToDataUrl(svgXml);
     };
 
-    static toImageElement(
+    static toElement(
         svgXml: string,
         opts?: {
             crossOrigin?: string;
             elementSize?: { width: number; height: number };
         }
     ): Promise<HTMLImageElement> {
-        return svgToDataUrl(svgXml).then((dataUrl) => urlToImageElement(dataUrl, opts));
+        return svgToDataUrl(svgXml).then((dataUrl) => urlToElement(dataUrl, opts));
     }
 
     static download = (svgXml: string, fileName: string) => {

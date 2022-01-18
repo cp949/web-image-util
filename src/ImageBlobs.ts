@@ -1,12 +1,12 @@
-import { urlToImageElement, downloadBlob, blobToDataUrl } from "./base/image-common";
+import { urlToElement, downloadBlob, blobToDataUrl } from "./base/image-common";
 
 export class ImageBlobs {
     static toDataURL = (blob: Blob): Promise<string> => {
         return blobToDataUrl(blob);
     };
 
-    static toImageElement(blob: Blob): Promise<HTMLImageElement> {
-        return blobToDataUrl(blob).then(urlToImageElement);
+    static toElement(blob: Blob): Promise<HTMLImageElement> {
+        return blobToDataUrl(blob).then(urlToElement);
     }
 
     static downloadFile(file: File) {

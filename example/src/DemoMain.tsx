@@ -66,15 +66,15 @@ export default function DemoMain() {
 
     useEffect(() => {
         if (sourceType === "file" && selectedFile) {
-            Images.toImageElement(selectedFile).then(setSourceElement);
+            Images.toElement(selectedFile).then(setSourceElement);
         } else if (sourceType === "svg" && svgXml && svgXml.length > 0) {
-            Images.toImageElement(svgXml, {
+            Images.toElement(svgXml, {
                 crossOrigin: "Anonymous",
             }).then((img) => {
                 setSourceElement(img);
             });
         } else if (sourceType === "url" && selectedUrl && selectedUrl.length > 0) {
-            Images.toImageElement(selectedUrl, {
+            Images.toElement(selectedUrl, {
                 crossOrigin: "Anonymous",
             }).then((img) => {
                 setSourceElement(img);
