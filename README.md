@@ -73,7 +73,7 @@ const file = await Images.resizeFrom(imgSrc)
 ```javascript
 const file = await Images.resizeFrom(imgSrc)
   .centerCrop({ size: 300 })
-  .toFile("png", "output.svg"); // autofix to outpu.png
+  .toFile("png", "output.svg"); // autofix to output.png
 ```
 
 ### Resize 이미지 스케일
@@ -88,7 +88,6 @@ const file = await Images.resizeFrom(imgSrc)
 
 - 이미지를 주어진 사각형에 가득 채웁니다.
 - 가득 채울때 이미지의 일부는 잘릴 수 있습니다.
-- 이미지의 Aspect Ratio는 유지됩니다.
 - 지정한 사각형보다 큰 이미지의 경우, 축소됩니다.
 - 지정한 사각형보다 작은 이미지의 경우, 확대됩니다.
 
@@ -174,7 +173,6 @@ Images.resizeFrom(img)
 
 - 이미지를 주어진 사각형안에 배치합니다.
 - 이미지의 일부가 잘리지 않습니다.
-- 이미지의 Aspect Ratio는 유지됩니다.
 - 지정한 사각형 보다 큰 이미지의 경우 축소됩니다.
 - `확대하지는 않습니다.` 지정한 사각형 보다 작은 이미지의 경우, 사각형의 중앙에 배치하며, 확대하지는 않습니다.
 
@@ -213,7 +211,6 @@ await Images.resizeFrom(imgSrc)
 
 - 이미지를 주어진 사각형안에 배치합니다.
 - 이미지의 일부가 잘리지 않습니다.
-- 이미지의 Aspect Ratio는 유지됩니다.
 - 지정한 사각형 보다 큰 이미지의 경우 축소됩니다.
 - 지정한 사각형 보다 작은 이미지의 경우, 사각형 크기만큼 확대됩니다.
 
