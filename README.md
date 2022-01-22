@@ -67,8 +67,7 @@ const file = await Images.resizeFrom(imgSrc)
   .toFile("png", "output.png"); // File
 ```
 
-- 파일 확장자의 경우는 자동으로 고쳐집니다.
-- 아래의 경우 `output.svg`를 지정했지만, `output.png`로 자동으로 고쳐집니다.
+- 파일 확장자는 자동으로 교정됩니다. 아래는 `output.svg`를 지정했지만, `output.png`로 고쳐집니다.
 
 ```javascript
 const file = await Images.resizeFrom(imgSrc)
@@ -78,11 +77,29 @@ const file = await Images.resizeFrom(imgSrc)
 
 ### Resize 이미지 스케일
 
-- 네가지의 스케일 타입이 존재합니다.
+- 간단하게 사용할 수 있는 scale이 있습니다.
+  - scale
+- 그 외에 네가지의 스케일 타입이 존재합니다.
   - centerCrop
   - centerInside
   - fit
   - fill
+
+### Resize - scale
+
+- 이미지를 확대/축소 합니다.
+
+```javascript
+await Images.resizeFrom(img)
+  .scale(2) // 2배 확대
+  .toElement("png");
+```
+
+```javascript
+await Images.resizeFrom(img)
+  .scale({ scaleX: 2, scaleY: 1 }) // x축으로 2배 확대
+  .toElement("png");
+```
 
 ### Resize - centerCrop
 
@@ -144,27 +161,27 @@ centerCrop({
 - size 기준 결과 이미지 크기
   - size를 지정한 경우 최종 결과 이미지는 무조건 size입니다.
   - 아래의 결과 이미지의 크기는 `400x400`입니다.
-  - 패딩을 제거한, 순수 이미지 영역의 크기는 `384x384`입니다.
+  - 패딩을 제거한, 순수 이미지 영역의 크기는 `380x380`입니다.
 
 ```javascript
 Images.resizeFrom(img)
   .centerCrop({
     size: 400,
-    padding: 8,
+    padding: 10,
   })
   .toDataUrl("png");
 ```
 
 - scale 기준 결과 이미지 크기
   - scale을 지정한 경우 이미지가 scale 된 후에, padding 만큼 이미지가 늘어납니다.
-  - 아래의 결과 이미지의 크기는 `416x416`입니다.
+  - 아래의 결과 이미지의 크기는 `420x420`입니다.
   - 패딩을 제거한 순수 이미지 영역의 크기는 `400x400`입니다.
 
 ```javascript
 Images.resizeFrom(img)
   .centerCrop({
     scale: 0.5,
-    padding: 8,
+    padding: 10,
   })
   .toDataUrl("png");
 ```
@@ -188,7 +205,7 @@ await Images.resizeFrom(imgSrc)
   .toElement("png");
 ```
 
-`centerInside`는 보통 큰 이미지를 이미지 잘림 없이 사각형 영역에 넣을 때 사용합니다.
+`centerInside`는 보통 큰 이미지를 잘림 없이 사각형 영역에 넣을 때 사용합니다.
 
 - `trim` 옵션
   - 예를 들어 800x800 이미지를 400x300 사각형에 넣으면, 결과 이미지의 크기는 400x300이고, 거기서 이미지 영역의 크기는 300x300이 됩니다. 만약 결과 이미지의 크기를 이미지 영역의 크기로 만들고 싶다면 `trim` 옵션을 사용할 수 있습니다.
@@ -246,7 +263,7 @@ await Images.resizeFrom(img)
 
 ## 기타 이미지 유틸리티
 
-- 이미지 소스를 다운로드
+- 이미지 소스 다운로드
 
 ```javascript
 import { Images } from "@cp949/web-image-util";
