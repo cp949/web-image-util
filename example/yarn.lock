@@ -1061,10 +1061,7 @@
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
 "@cp949/web-image-util@../dist":
-  version "1.0.5"
-
-"@cp949/web-image-util@../dist/":
-  version "1.0.5"
+  version "1.0.7"
 
 "@csstools/normalize.css@*":
   version "12.0.0"

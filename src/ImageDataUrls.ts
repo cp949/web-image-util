@@ -3,7 +3,7 @@ import { urlToElement, urlToBlob, urlToFile, urlToBuffer, downloadBlob } from ".
 const PATTERN = /^data:((.*?)(;charset=.*?)?)(;base64)?,/;
 
 // 브라우저에서 Buffer.from을 사용할 수 없다
-// Uint8Array.from은 브라우저 호환성이 좋지 않아서 아직 사용 못한다
+// Uint8Array.from은 브라우저 호환성이 좋지 않아서 사용 못한다
 //
 // if (base64) {
 //   const buffer = Buffer.from(dataUrl.substring(firstCommaIdx + 1), "base64");

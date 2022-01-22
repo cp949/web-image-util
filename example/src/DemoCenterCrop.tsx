@@ -97,7 +97,7 @@ export default function DemoCenterCrop() {
 
     return (
         <Box className="DemoCenterCrop-root" sx={rootSx}>
-            <Box className="DemoCenterCrop-title">Center Crop</Box>
+            <Box className="DemoCenterCrop-title">Center Crop(DemoCenterCrop.tsx)</Box>
 
             <Container maxWidth="md" fixed>
                 <Stack direction="row">

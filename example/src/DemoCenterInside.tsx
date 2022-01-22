@@ -100,7 +100,7 @@ export default function DemoCenterInside() {
 
     return (
         <Box className="DemoCenterInside-root" sx={rootSx}>
-            <Box className="DemoCenterInside-title">Center Inside</Box>
+            <Box className="DemoCenterInside-title">Center Inside (DemoCenterInside.tsx)</Box>
             <Box sx={{ textAlign: "center" }}>
                 <FormControlLabel
                     label="TRIM"

@@ -66,3 +66,9 @@ export type DataUrlWithSize = {
     width: number;
     height: number;
 };
+
+export type BlobWithSize = {
+    blob: Blob;
+    width: number;
+    height: number;
+};

@@ -1,6 +1,23 @@
-import { CenterCropOptions, CenterInsideOptions, DataUrlWithSize, FillOptions, FitOptions, ImageScaleType } from ".";
-import { blobToDataUrl, blobToFile, svgToDataUrl, urlToBlob, urlToElement } from "./base/image-common";
-import { toDataUrlCenterCrop, toDataUrlCenterInside, toDataUrlFill, toDataUrlFit } from "./base/image-resizes";
+import {
+    BlobWithSize,
+    CenterCropOptions,
+    CenterInsideOptions,
+    DataUrlWithSize,
+    FillOptions,
+    FitOptions,
+    ImageScaleType,
+} from "./base/common-types";
+
+import { blobToDataUrl, blobToFile, svgToDataUrl, urlToElement } from "./base/image-common";
+import {
+    CanvasConvertFn,
+    canvasToBlob,
+    canvasToDataUrl,
+    toCenterCrop,
+    toCenterInside,
+    toFill,
+    toFit,
+} from "./base/image-resizes";
 
 type ResizeSourceType = HTMLImageElement | string | Blob;
 type ResizeFormatType = "png" | "jpeg";
@@ -53,21 +70,31 @@ export class ImageResizer {
         return this;
     };
 
+    scale = (scale: ImageScaleType) => {
+        this.fillOptions = {
+            scale,
+            quality: 1,
+        };
+        return this;
+    };
+
     fill = (opts: FillOptions) => {
         this.fillOptions = opts;
         return this;
     };
 
     toFile = (format: ResizeFormatType, fileName: string) => {
-        return this.toDataUrl(format)
-            .then(urlToBlob)
-            .then((blob) => {
-                return blobToFile(blob, fileName);
-            });
+        return this.toBlob(format).then((blob) => {
+            return blobToFile(blob, fileName);
+        });
     };
 
-    toBlob = (format: ResizeFormatType): Promise<Blob> => {
-        return this.toDataUrl(format).then(urlToBlob);
+    toBlob = async (format: ResizeFormatType): Promise<Blob> => {
+        let img = await sourceToElement(this.source, {
+            crossOrigin: "Anonymous",
+        });
+        const { blob } = await this._toBlob(img, format);
+        return blob;
     };
 
     toElement = (format: ResizeFormatType): Promise<HTMLImageElement> => {
@@ -93,84 +120,82 @@ export class ImageResizer {
     };
 
     private _toDataUrl = (img: HTMLImageElement, format: ResizeFormatType): Promise<DataUrlWithSize> => {
-        return new Promise((resolve, reject) => {
-            if (this.centerInsideOptions != null) {
-                const opts = this.centerInsideOptions;
-                resolve(
-                    toDataUrlCenterInside(
-                        img,
-                        format === "png",
-                        {
-                            size: opts.size,
-                            quality: opts.quality,
-                            backgroundColor: opts.backgroundColor,
-                            padding: opts.padding,
-                            trim: opts.trim,
-                        },
-                        (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
-                    )
-                );
-                return;
-            }
+        return this._to(img, format, canvasToDataUrl);
+    };
 
-            if (this.centerCropOptions != null) {
-                const opts = this.centerCropOptions;
-                resolve(
-                    toDataUrlCenterCrop(
-                        img,
-                        format === "png",
-                        {
-                            size: opts.size,
-                            quality: opts.quality,
-                            backgroundColor: opts.backgroundColor,
-                            padding: opts.padding,
-                            scale: opts.scale,
-                        },
-                        (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
-                    )
-                );
-                return;
-            }
+    private _toBlob = (img: HTMLImageElement, format: ResizeFormatType): Promise<BlobWithSize> => {
+        return this._to(img, format, canvasToBlob);
+    };
 
-            if (this.fillOptions != null) {
-                const opts = this.fillOptions;
-                resolve(
-                    toDataUrlFill(
-                        img,
-                        format === "png",
-                        {
-                            size: opts.size,
-                            scale: opts.scale,
-                            quality: opts.quality,
-                            backgroundColor: opts.backgroundColor,
-                            padding: opts.padding,
-                        },
-                        (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
-                    )
-                );
-                return;
-            }
+    private _to = <T>(img: HTMLImageElement, format: ResizeFormatType, convertFn: CanvasConvertFn<T>): Promise<T> => {
+        if (this.centerInsideOptions != null) {
+            const opts = this.centerInsideOptions;
 
-            if (this.fitOptions != null) {
-                const opts = this.fitOptions;
-                resolve(
-                    toDataUrlFit(
-                        img,
-                        format === "png",
-                        {
-                            size: opts.size,
-                            scale: opts.scale,
-                            quality: opts.quality,
-                            backgroundColor: opts.backgroundColor,
-                            padding: opts.padding,
-                        },
-                        (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
-                    )
-                );
-                return;
-            }
+            return toCenterInside(
+                img,
+                format === "png",
+                {
+                    size: opts.size,
+                    quality: opts.quality,
+                    backgroundColor: opts.backgroundColor,
+                    padding: opts.padding,
+                    trim: opts.trim,
+                },
+                convertFn,
+                (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
+            );
+        }
+        if (this.centerCropOptions != null) {
+            const opts = this.centerCropOptions;
+            return toCenterCrop(
+                img,
+                format === "png",
+                {
+                    size: opts.size,
+                    quality: opts.quality,
+                    backgroundColor: opts.backgroundColor,
+                    padding: opts.padding,
+                    scale: opts.scale,
+                },
+                convertFn,
+                (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
+            );
+        }
 
-            reject(new Error("resize option is not valid"));
-        });
+        if (this.fillOptions != null) {
+            const opts = this.fillOptions;
+            return toFill(
+                img,
+                format === "png",
+                {
+                    size: opts.size,
+                    scale: opts.scale,
+                    quality: opts.quality,
+                    backgroundColor: opts.backgroundColor,
+                    padding: opts.padding,
+                },
+                convertFn,
+                (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
+            );
+        }
+
+        if (this.fitOptions != null) {
+            const opts = this.fitOptions;
+            return toFit(
+                img,
+                format === "png",
+                {
+                    size: opts.size,
+                    scale: opts.scale,
+                    quality: opts.quality,
+                    backgroundColor: opts.backgroundColor,
+                    padding: opts.padding,
+                },
+                convertFn,
+                (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
+            );
+        }
+
+        throw new Error("resize option is not valid");
     };
 }

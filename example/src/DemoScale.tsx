@@ -11,21 +11,21 @@ const SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.
 
 const rootSx: SxProps = {
     minWidth: 1000,
-    "& .DemoSvgResize-title": {
+    "& .DemoScale-title": {
         fontSize: "2rem",
         fontWeight: 900,
         textAlign: "center",
         mb: 1,
         mt: 4,
     },
-    "& .DemoSvgResize-sectionHeader": {
+    "& .DemoScale-sectionHeader": {
         background: "#f0f0f0",
         color: "primary.main",
         textAlign: "center",
         py: 1,
         fontSize: "1rem",
     },
-    "& .DemoSvgResize-sectionImageInfo": {
+    "& .DemoScale-sectionImageInfo": {
         mt: 1,
         fontSize: "0.8rem",
         display: "flex",
@@ -43,7 +43,7 @@ const rootSx: SxProps = {
             minWidth: 300,
         },
     },
-    "& .DemoSvgResize-sectionImageBox": {
+    "& .DemoScale-sectionImageBox": {
         position: "relative",
         outline: "1px dashed red",
         color: "primary.main",
@@ -68,133 +68,124 @@ const rootSx: SxProps = {
         },
     },
 
-    "& .DemoSvgResize-sliderBox": {
+    "& .DemoScale-sliderBox": {
         my: 2,
         textAlign: "center",
     },
 };
-export default function DemoSvgResize() {
-    const [orgImage, setOrgImage] = useState<HTMLImageElement>();
-    const [smallImage, setSmallImage] = useState<HTMLImageElement>();
-    const [largeImage, setLargeImage] = useState<HTMLImageElement>();
-    const [scale, setScale] = useState(1);
+
+// const SRC_SMALL = "/sample-200x150.png";
+
+const SRC_SMALL = SVG;
+
+export default function DemoScale() {
+    const [image1, setImage1] = useState<HTMLImageElement>();
+    const [image2, setImage2] = useState<HTMLImageElement>();
+    const [scale1, setScale1] = useState(1);
+    const [scale2, setScale2] = useState({ scaleX: 1, scaleY: 1 });
 
     const loadImages = useCallback(async () => {
-        setOrgImage(await Images.toElement(SVG));
-        // 박스보다 큰 이미지
-        Images.resizeFrom(SVG)
-            .fit({
-                size: { width: BOX_WIDTH, height: BOX_HEIGHT },
-                backgroundColor: IMAGE_BG_COLOR,
-            })
-            .toElement("png")
-            .then(setSmallImage);
-
-        // 박스보다 큰 이미지
-        Images.resizeFrom(SVG)
-            .fit({
-                scale,
-                backgroundColor: IMAGE_BG_COLOR,
-            })
-            .toElement("png")
-            .then(setLargeImage);
-    }, [scale]);
+        Images.resizeFrom(SRC_SMALL).scale(scale1).toElement("png").then(setImage1);
+        Images.resizeFrom(SRC_SMALL).scale(scale2).toElement("png").then(setImage2);
+    }, [scale1, scale2]);
     useEffect(() => {
         loadImages();
     }, [loadImages]);
 
     return (
-        <Box className="DemoSvgResize-root" sx={rootSx}>
-            <Box className="DemoSvgResize-title">SVG Scale Up(DemoSvgResize.tsx)</Box>
+        <Box className="DemoScale-root" sx={rootSx}>
+            <Box className="DemoScale-title">JUST scale(DemoScale.tsx)</Box>
             <Container maxWidth="lg" fixed>
                 <Stack direction="row">
                     <Box flex={1}>
-                        <Box className="DemoSvgResize-sectionHeader">원본</Box>
-                        <Box className="DemoSvgResize-sectionImageInfo">
+                        <Box className="DemoScale-sectionHeader">Scale</Box>
+                        <Box className="DemoScale-sectionImageInfo">
                             <Box sx={{ color: "secondary.main", fontWeight: 700 }}>
-                                <span>Original</span> {orgImage?.width} x {orgImage?.height}
+                                <span>Original</span> {image1?.width} x {image1?.height}
                             </Box>
                         </Box>
-                        <Box className="DemoSvgResize-sectionImageBox">
-                            <img src={orgImage?.src} alt="" />
+                        <Box className="DemoScale-sliderBox">
+                            <Slider
+                                aria-label="Scale steps"
+                                step={0.2}
+                                min={0}
+                                max={5}
+                                sx={{ maxWidth: 280 }}
+                                value={scale1}
+                                onChange={(e, v) => {
+                                    setScale1(v as number);
+                                }}
+                                valueLabelDisplay="auto"
+                            />
+                        </Box>
+                        <Box className="DemoScale-sectionImageBox">
+                            <img src={image1?.src} alt="" />
                         </Box>
                         <Box sx={{ my: 2, textAlign: "center" }}>
                             <Button
                                 variant="outlined"
                                 onClick={() => {
-                                    orgImage && Images.download(orgImage, "sample.png");
+                                    image1 && Images.download(image1, "sample.png");
                                 }}
                             >
                                 다운로드
                             </Button>
                         </Box>
                     </Box>
-                    <Box flex={1}>
-                        <Box className="DemoSvgResize-sectionHeader">Resize to BOX </Box>
-                        <Box className="DemoSvgResize-sectionImageInfo">
-                            <div>
-                                <span>Box(Red)</span> {BOX_WIDTH} x {BOX_HEIGHT}
-                            </div>
-                            <Box sx={{ color: "secondary.main", fontWeight: 700 }}>
-                                <span>Result(Blue)</span> {smallImage?.width} x {smallImage?.height}
-                            </Box>
-                            <div>
-                                <span>Image Bg</span> {IMAGE_BG_COLOR}
-                            </div>
-                        </Box>
 
-                        <Box className="DemoSvgResize-sectionImageBox">
-                            <Box component="img" src={smallImage?.src} />
-                        </Box>
-
-                        <Box sx={{ my: 2, textAlign: "center" }}>
-                            <Button
-                                variant="outlined"
-                                onClick={() => {
-                                    smallImage && Images.download(smallImage, "sample.png");
-                                }}
-                            >
-                                다운로드
-                            </Button>
-                        </Box>
-                    </Box>
                     <Box flex={1}>
-                        <Box className="DemoSvgResize-sectionHeader">Resize by Scale</Box>
-                        <Box className="DemoSvgResize-sectionImageInfo">
+                        <Box className="DemoScale-sectionHeader">ScaleX,Y</Box>
+                        <Box className="DemoScale-sectionImageInfo">
                             <Box sx={{ color: "secondary.main", fontWeight: 700 }}>
-                                <span>Scale</span> {scale}
+                                <span>Scale</span> {scale1}
                             </Box>
                             <Box sx={{ color: "secondary.main", fontWeight: 700 }}>
-                                <span>Result(Blue)</span> {largeImage?.width} x {largeImage?.height}
+                                <span>Result(Blue)</span> {image2?.width} x {image2?.height}
                             </Box>
-                            <div>
-                                <span>Image Bg</span> {IMAGE_BG_COLOR}
-                            </div>
+                            <Box sx={{ color: "secondary.main", fontWeight: 700 }}>
+                                <span>ScaleX</span> {scale2.scaleX}
+                            </Box>
+                            <Box sx={{ color: "secondary.main", fontWeight: 700 }}>
+                                <span>ScaleY</span> {scale2.scaleY}
+                            </Box>
                         </Box>
                         <Box>
-                            <Box className="DemoSvgResize-sliderBox">
+                            <Box className="DemoScale-sliderBox">
                                 <Slider
                                     aria-label="Scale steps"
                                     step={0.2}
                                     min={0}
                                     max={5}
                                     sx={{ maxWidth: 280 }}
-                                    value={scale}
+                                    value={scale2.scaleX}
                                     onChange={(e, v) => {
-                                        setScale(v as number);
+                                        setScale2((p) => ({ ...p, scaleX: v as number }));
+                                    }}
+                                    valueLabelDisplay="auto"
+                                />
+                                <br />
+                                <Slider
+                                    aria-label="Scale steps"
+                                    step={0.2}
+                                    min={0}
+                                    max={5}
+                                    sx={{ maxWidth: 280 }}
+                                    value={scale2.scaleY}
+                                    onChange={(e, v) => {
+                                        setScale2((p) => ({ ...p, scaleY: v as number }));
                                     }}
                                     valueLabelDisplay="auto"
                                 />
                             </Box>
                         </Box>
-                        <Box className="DemoSvgResize-sectionImageBox">
-                            <Box component="img" src={largeImage?.src} />
+                        <Box className="DemoScale-sectionImageBox">
+                            <Box component="img" src={image2?.src} />
                         </Box>
                         <Box sx={{ my: 2, textAlign: "center" }}>
                             <Button
                                 variant="outlined"
                                 onClick={() => {
-                                    largeImage && Images.download(largeImage, "sample.png");
+                                    image2 && Images.download(image2, "sample.png");
                                 }}
                             >
                                 다운로드

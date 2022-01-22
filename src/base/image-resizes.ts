@@ -1,5 +1,7 @@
-import { ImageSizeType } from "..";
+import { BlobWithSize, ImageSizeType } from "..";
 import { DataUrlWithSize, ImageScaleType, ImagePaddingType } from "./common-types";
+
+export type CanvasConvertFn<T> = (canvas: HTMLCanvasElement, isPng: boolean, quality?: number) => Promise<T>;
 
 type CanvasHookFn = (
     step: "preSetup" | "preDraw" | "postDraw",
@@ -40,13 +42,31 @@ function getSize(size?: ImageSizeType): {
     return size;
 }
 
-function canvasToDataUrl(canvas: HTMLCanvasElement, isPng: boolean, quality: number): DataUrlWithSize {
-    const dataUrl = canvas.toDataURL(isPng ? "image/png" : "image/jpeg", quality);
-    return {
-        dataUrl,
-        width: canvas.width,
-        height: canvas.height,
-    };
+export function canvasToDataUrl(canvas: HTMLCanvasElement, isPng: boolean, quality: number): Promise<DataUrlWithSize> {
+    return new Promise((resolve) => {
+        const dataUrl = canvas.toDataURL(isPng ? "image/png" : "image/jpeg", quality);
+        resolve({
+            dataUrl,
+            width: canvas.width,
+            height: canvas.height,
+        });
+    });
+}
+
+export function canvasToBlob(canvas: HTMLCanvasElement, isPng: boolean, quality: number): Promise<BlobWithSize> {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(
+            (blob) => {
+                resolve({
+                    blob,
+                    width: canvas.width,
+                    height: canvas.height,
+                });
+            },
+            isPng ? "image/png" : "image/jpeg",
+            quality
+        );
+    });
 }
 
 function fixFloat(v: number) {
@@ -385,7 +405,7 @@ export function imageToCanvasFill(
     return [canvas, ctx];
 }
 
-export function toDataUrlCenterCrop(
+export function toCenterCrop<T>(
     img: HTMLImageElement,
     isPng: boolean,
     opts: {
@@ -395,8 +415,9 @@ export function toDataUrlCenterCrop(
         backgroundColor?: string;
         padding?: ImagePaddingType;
     },
+    callback: CanvasConvertFn<T>,
     canvasHookFn?: CanvasHookFn
-): DataUrlWithSize {
+): Promise<T> {
     const [canvas, ctx] = imageToCanvasCenterCrop(
         img,
         {
@@ -408,9 +429,10 @@ export function toDataUrlCenterCrop(
         canvasHookFn
     );
     // canvasHookFn?.(canvas, ctx);
-    return canvasToDataUrl(canvas, isPng, opts.quality);
+    return callback(canvas, isPng, opts.quality);
 }
-export function toDataUrlCenterInside(
+
+export function toCenterInside<T>(
     img: HTMLImageElement,
     isPng: boolean,
     opts: {
@@ -420,8 +442,9 @@ export function toDataUrlCenterInside(
         padding?: ImagePaddingType;
         trim?: boolean;
     },
+    callback: CanvasConvertFn<T>,
     canvasHookFn?: CanvasHookFn
-): DataUrlWithSize {
+): Promise<T> {
     const [canvas, ctx] = imageToCanvasCenterInside(
         img,
         {
@@ -433,10 +456,10 @@ export function toDataUrlCenterInside(
         canvasHookFn
     );
     // canvasHookFn?.(canvas, ctx);
-    return canvasToDataUrl(canvas, isPng, opts.quality);
+    return callback(canvas, isPng, opts.quality);
 }
 
-export function toDataUrlFit(
+export function toFit<T>(
     img: HTMLImageElement,
     isPng: boolean,
     opts: {
@@ -447,8 +470,9 @@ export function toDataUrlFit(
         padding?: ImagePaddingType;
         trim?: boolean;
     },
+    callback: CanvasConvertFn<T>,
     canvasHookFn?: CanvasHookFn
-): DataUrlWithSize {
+): Promise<T> {
     const [canvas, ctx] = imageToCanvasFit(
         img,
         {
@@ -461,10 +485,10 @@ export function toDataUrlFit(
         canvasHookFn
     );
     // canvasHookFn?.(canvas, ctx);
-    return canvasToDataUrl(canvas, isPng, opts.quality);
+    return callback(canvas, isPng, opts.quality);
 }
 
-export function toDataUrlFill(
+export function toFill<T>(
     img: HTMLImageElement,
     isPng: boolean,
     opts: {
@@ -474,8 +498,9 @@ export function toDataUrlFill(
         backgroundColor?: string;
         padding?: ImagePaddingType;
     },
+    callback: CanvasConvertFn<T>,
     canvasHookFn?: CanvasHookFn
-): DataUrlWithSize {
+): Promise<T> {
     const [canvas, ctx] = imageToCanvasFill(
         img,
         {
@@ -487,5 +512,5 @@ export function toDataUrlFill(
         canvasHookFn
     );
     // canvasHookFn?.(canvas, ctx);
-    return canvasToDataUrl(canvas, isPng, opts.quality);
+    return callback(canvas, isPng, opts.quality);
 }

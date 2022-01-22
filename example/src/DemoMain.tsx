@@ -16,6 +16,7 @@ import DemoCenterInside from "./DemoCenterInside";
 import DemoFill from "./DemoFill";
 import DemoFit from "./DemoFit";
 import DemoResizer from "./DemoResizer";
+import DemoScale from "./DemoScale";
 import DemoSvgResize from "./DemoSvgResize";
 import { SAMPLE_SVG } from "./sample-svg";
 
@@ -95,6 +96,7 @@ export default function DemoMain() {
             <DemoCenterInside />
             <DemoFit />
             <DemoFill />
+            <DemoScale />
             <DemoSvgResize />
             <Grid container sx={{ mb: 4 }} columnSpacing={2}>
                 <Grid item xs={12} md={6}>

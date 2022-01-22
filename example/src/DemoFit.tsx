@@ -98,7 +98,7 @@ export default function DemoFit() {
 
     return (
         <Box className="DemoFit-root" sx={rootSx}>
-            <Box className="DemoFit-title">Fit</Box>
+            <Box className="DemoFit-title">Fit (DemoFit.tsx)</Box>
             <Container maxWidth="md" fixed>
                 <Stack direction="row">
                     <Box flex={1}>
