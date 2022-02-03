@@ -104,14 +104,20 @@ export class ImageMain {
             return;
         }
 
-        if (source.startsWith("http://") || source.startsWith("https://")) {
-            downloadLink(source);
-            return;
-        }
-
         if (source.includes("<svg ")) {
             const blob = new Blob([source], { type: "svg" });
             downloadBlob(blob, fixBlobFileExt(blob, fileName));
+            return;
+        }
+
+        // if (source.startsWith("http://") || source.startsWith("https://")) {
+        //     downloadLink(source);
+        //     return;
+        // }
+        // source https:// or http://
+        // /some/path or ./some/path or some/path
+        if (typeof source === "string") {
+            downloadLink(source);
             return;
         }
 
