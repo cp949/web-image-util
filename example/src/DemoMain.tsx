@@ -17,6 +17,7 @@ import DemoFill from "./DemoFill";
 import DemoFit from "./DemoFit";
 import DemoResizer from "./DemoResizer";
 import DemoScale from "./DemoScale";
+import DemoSimpleResizer from "./DemoSimpleResizer";
 import DemoSvgResize from "./DemoSvgResize";
 import { SAMPLE_SVG } from "./sample-svg";
 
@@ -98,6 +99,7 @@ export default function DemoMain() {
             <DemoFill />
             <DemoScale />
             <DemoSvgResize />
+            <DemoSimpleResizer />
             <Grid container sx={{ mb: 4 }} columnSpacing={2}>
                 <Grid item xs={12} md={6}>
                     <Box className="DemoMain-section" sx={{ minHeight: 400 }}>

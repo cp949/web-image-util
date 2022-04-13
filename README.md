@@ -261,6 +261,31 @@ await Images.resizeFrom(img)
   .toElement("png");
 ```
 
+## SimpleResizer
+
+- 기본 4가지 유형의 리사이징 `fit`, `centerInside`, `fit`, `fill`이 간단하긴 하지만, 실제로는 한가지 일만 하는 Resizer가 편리합니다.
+- `SimpleResizer`는 한가지 일만 하는 함수들을 제공합니다.
+
+```javascript
+Images.simpleResizer.atMostWidth(source, 300);
+Images.simpleResizer.atMostHeight(source, 400);
+Images.simpleResizer.atMostRect(source, { width: 300, height: 400 });
+Images.simpleResizer.forceWidth(source, 300);
+Images.simpleResizer.forceHeight(source, 300);
+```
+
+- 실제로 사용할 때는 다름과 같이 사용할 수 있습니다.
+
+```javascript
+const resizer = await Images.simpleResizer.atMostWidth(source, 300);
+const dataUrl = await resizer.toDataUrl("png");
+
+// 추가 변수 선언 없이 다음과 같이 할 수 있습니다.
+const dataUrl = await Images.simpleResizer
+  .atMostWidth(source, 300)
+  .then((resizer) => resizer.toDataUrl("png"));
+```
+
 ## 기타 이미지 유틸리티
 
 - 이미지 소스 다운로드

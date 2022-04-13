@@ -19,10 +19,11 @@ import { ImageBuffers } from "./ImageBuffers";
 import { ImageDataUrls } from "./ImageDataUrls";
 import { ImageElements } from "./ImageElements";
 import { ImageResizer } from "./ImageResizer";
+import { ImageSimpleResizer } from "./ImageSimpleResizer";
 import { ImageSvgs } from "./ImageSvgs";
 
 async function convertImageSourceToElement(
-    source: ImageSource,
+    source: HTMLImageElement | Blob | string,
     opts?: {
         crossOrigin?: string;
         elementSize?: { width: number; height: number };
@@ -30,21 +31,23 @@ async function convertImageSourceToElement(
 ): Promise<HTMLImageElement> {
     if (source instanceof Blob) {
         return ImageBlobs.toElement(source);
-    }
+    } else if (typeof source === "string") {
+        if (source.startsWith("http://") || source.startsWith("https://") || source.startsWith("data:")) {
+            return urlToElement(source, opts);
+        }
 
-    if (source.startsWith("http://") || source.startsWith("https://") || source.startsWith("data:")) {
+        if (source.includes("<svg ")) {
+            return ImageSvgs.toElement(source, opts);
+        }
+
+        // 상대경로 등이 있을 수 있다.
+        // ex) myimg/xxx
+        // /myimg/xxx
+        // ./myimg/xxx
         return urlToElement(source, opts);
+    } else {
+        return source;
     }
-
-    if (source.includes("<svg ")) {
-        return ImageSvgs.toElement(source, opts);
-    }
-
-    // 상대경로 등이 있을 수 있다.
-    // ex) myimg/xxx
-    // /myimg/xxx
-    // ./myimg/xxx
-    return urlToElement(source, opts);
 
     // console.log('unknown source', { source })
     // throw new Error('unknown source')
@@ -73,9 +76,10 @@ export class ImageMain {
     buffer = ImageBuffers;
     blob = ImageBlobs;
     util = imageUtil;
+    simpleResizer = ImageSimpleResizer;
 
     toElement = (
-        source: ImageSource,
+        source: HTMLImageElement | Blob | string,
         opts?: {
             crossOrigin?: string;
             elementSize?: { width: number; height: number };
