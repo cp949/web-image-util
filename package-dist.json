@@ -1,0 +1,13 @@
+{
+  "name": "@cp949/web-image-util",
+  "version": "1.0.15",
+  "description": "simple web image utils",
+  "main": "cjs/index.js",
+  "module": "es/index.js",
+  "repository": "https://github.com/cp949/web-image-util.git",
+  "author": "cp949 <cp949@naver.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/cp949/web-image-util.git",
+  "dependencies": {},
+  "peerDependencies": {}
+}
