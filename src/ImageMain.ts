@@ -1,25 +1,12 @@
-import { ImageSource } from "./base/common-types";
-import {
-    base64ToBuffer,
-    blobToDataUrl,
-    blobToFile,
-    downloadBlob,
-    downloadLink,
-    fixBlobFileExt,
-    isSvgDataUrl,
-    svgToDataUrl,
-    urlToBlob,
-    urlToFile,
-    urlToBuffer,
-    urlToDataUrl,
-    urlToElement,
-} from "./base/image-common";
+import * as imageUtil from "./base/image-common";
+import { downloadBlob, fixBlobFileExt, urlToBlob, urlToElement } from "./base/image-common";
 import { ImageBlobs } from "./ImageBlobs";
 import { ImageBuffers } from "./ImageBuffers";
 import { ImageDataUrls } from "./ImageDataUrls";
 import { ImageElements } from "./ImageElements";
 import { ImageResizer } from "./ImageResizer";
 import { ImageSimpleResizer } from "./ImageSimpleResizer";
+import { ImageStrings } from "./ImageStrings";
 import { ImageSvgs } from "./ImageSvgs";
 
 async function convertImageSourceToElement(
@@ -53,26 +40,11 @@ async function convertImageSourceToElement(
     // throw new Error('unknown source')
 }
 
-const imageUtil = {
-    base64ToBuffer,
-    blobToDataUrl,
-    blobToFile,
-    downloadBlob,
-    downloadLink,
-    fixBlobFileExt,
-    isSvgDataUrl,
-    svgToDataUrl,
-    urlToBlob,
-    urlToFile,
-    urlToBuffer,
-    urlToDataUrl,
-    urlToElement,
-};
-
 export class ImageMain {
     svg = ImageSvgs;
     element = ImageElements;
     dataUrl = ImageDataUrls;
+    strings = ImageStrings;
     buffer = ImageBuffers;
     blob = ImageBlobs;
     util = imageUtil;
@@ -109,7 +81,7 @@ export class ImageMain {
         }
 
         if (source.includes("<svg")) {
-            const blob = new Blob([source], { type: "svg" });
+            const blob = new Blob([source], { type: "image/svg+xml" });
             downloadBlob(blob, fixBlobFileExt(blob, fileName));
             return;
         }

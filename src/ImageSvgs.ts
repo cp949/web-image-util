@@ -17,7 +17,7 @@ export class ImageSvgs {
 
     static download = (svgXml: string, fileName: string) => {
         const imageAsData = [svgXml];
-        const blob = new Blob(imageAsData, { type: "svg" });
+        const blob = new Blob(imageAsData, { type: "image/svg+xml" });
         downloadBlob(blob, fileName);
     };
 }
