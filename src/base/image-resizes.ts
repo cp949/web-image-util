@@ -429,7 +429,7 @@ export function toCenterCrop<T>(
         canvasHookFn
     );
     // canvasHookFn?.(canvas, ctx);
-    return callback(canvas, isPng, opts.quality);
+    return callback(canvas, isPng, opts.quality || 1);
 }
 
 export function toCenterInside<T>(
@@ -456,7 +456,7 @@ export function toCenterInside<T>(
         canvasHookFn
     );
     // canvasHookFn?.(canvas, ctx);
-    return callback(canvas, isPng, opts.quality);
+    return callback(canvas, isPng, opts.quality || 1);
 }
 
 export function toFit<T>(
@@ -485,7 +485,7 @@ export function toFit<T>(
         canvasHookFn
     );
     // canvasHookFn?.(canvas, ctx);
-    return callback(canvas, isPng, opts.quality);
+    return callback(canvas, isPng, opts.quality || 1);
 }
 
 export function toFill<T>(
@@ -512,5 +512,5 @@ export function toFill<T>(
         canvasHookFn
     );
     // canvasHookFn?.(canvas, ctx);
-    return callback(canvas, isPng, opts.quality);
+    return callback(canvas, isPng, opts.quality || 1);
 }
