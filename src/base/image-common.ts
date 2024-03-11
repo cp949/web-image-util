@@ -1,6 +1,44 @@
 // https://stackoverflow.com/questions/21797299/convert-base64-string-to-arraybuffer/62364519#62364519
 
-import { ImageStringSourceType } from "./common-types";
+import { ImageFileExt, ImageStringSourceType } from "./common-types";
+
+const IMAGE_FROMAT = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    svg: "image/svg+xml",
+    webp: "image/webp",
+    bmp: "image/bmp",
+    ico: "image/vnd.microsoft.icon",
+    "image/png": "image/png",
+    "image/jpeg": "image/jpeg",
+    "image/jpg": "image/jpeg",
+    "image/gif": "image/gif",
+    "image/svg+xml": "image/svg+xml",
+    "image/webp": "image/webp",
+    "image/bmp": "image/bmp",
+    "image/vnd.microsoft.icon": "image/vnd.microsoft.icon",
+};
+
+const IMAGE_TYPE_TO_EXTENSION = {
+    png: "png",
+    jpg: "jpg",
+    jpeg: "jpeg",
+    gif: "gif",
+    svg: "svg",
+    webp: "webp",
+    bmp: "bmp",
+    ico: "ico",
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/gif": "gif",
+    "image/svg+xml": "svg",
+    "image/webp": "webp",
+    "image/bmp": "bmp",
+    "image/vnd.microsoft.icon": "ico",
+};
 
 // 데이터가 클때 이게 더 유리하다고
 export function base64ToBuffer(base64: string): Promise<Uint8Array> {
@@ -87,23 +125,9 @@ const fixFileExt = (fileName: string, ext: string) => {
 };
 
 export function fixBlobFileExt(blob: Blob, fileName: string) {
-    const type = blob.type;
-    if (type.includes("png")) {
-        return fixFileExt(fileName, "png");
-    } else if (type.includes("jpeg") || type.includes("jpg")) {
-        return fixFileExt(fileName, "jpg");
-    } else if (type.includes("svg") || type.includes("image/svg+xml")) {
-        return fixFileExt(fileName, "svg");
-    } else if (type.includes("webp")) {
-        return fixFileExt(fileName, "webp");
-    } else if (type.includes("image/tiff")) {
-        return fixFileExt(fileName, "tiff");
-    } else if (type.includes("image/bmp")) {
-        return fixFileExt(fileName, "bmp");
-    } else if (type.includes("image/vnd.microsoft.icon")) {
-        return fixFileExt(fileName, "ico");
-    } else if (type.includes("image/gif")) {
-        return fixFileExt(fileName, "gif");
+    const fileExt = IMAGE_TYPE_TO_EXTENSION[blob.type];
+    if (fileExt) {
+        return fixFileExt(fileName, fileExt);
     }
     return fileName;
 }
@@ -207,6 +231,7 @@ export function sourceTypeFromString(str: string): ImageStringSourceType | undef
 
 export async function stringToDataUrl(str: string): Promise<string | undefined> {
     const sourceType = sourceTypeFromString(str);
+    if (!sourceType) return undefined;
     if (sourceType === "DATA_URL" || sourceType === "HTTP_URL") {
         return await urlToDataUrl(str);
     }
@@ -219,6 +244,7 @@ export async function stringToDataUrl(str: string): Promise<string | undefined> 
 
 export async function stringToBlob(str: string): Promise<Blob | undefined> {
     const sourceType = sourceTypeFromString(str);
+    if (!sourceType) return undefined;
     if (sourceType === "DATA_URL" || sourceType === "HTTP_URL") {
         return await urlToBlob(str);
     }
@@ -230,9 +256,16 @@ export async function stringToBlob(str: string): Promise<Blob | undefined> {
     return await urlToBlob(str);
 }
 
-export async function stringToFile(str: string, fileName: string): Promise<File> {
+export async function stringToFile(str: string, fileName: string): Promise<File | undefined> {
     return stringToBlob(str) //
-        .then((blob) => new File([blob], fixBlobFileExt(blob, fileName), { type: blob.type }));
+        .then((blob) => {
+            if (!blob) return undefined;
+            return new File([blob], fixBlobFileExt(blob, fileName), { type: blob.type });
+        })
+        .catch((err) => {
+            console.log(err);
+            return undefined;
+        });
 }
 
 export async function stringToElement(
@@ -241,6 +274,73 @@ export async function stringToElement(
         crossOrigin?: string;
         elementSize?: { width: number; height: number };
     }
-): Promise<HTMLImageElement> {
-    return stringToDataUrl(str).then((url) => urlToElement(url, opts));
+): Promise<HTMLImageElement | undefined> {
+    return stringToDataUrl(str).then((url) => {
+        if (!url) return undefined;
+        return urlToElement(url, opts);
+    });
+}
+
+export async function checkImageFormatFromString(image: string): Promise<
+    | {
+          src: string;
+          format: ImageFileExt;
+      }
+    | undefined
+> {
+    if (image.startsWith("data:")) {
+        const format = imageFormatFromDataUrl(image);
+        if (format) {
+            return { format, src: image };
+        }
+        console.log("unknown image data url", image);
+        return undefined;
+    }
+    const dataUrl = await stringToDataUrl(image).catch((err) => {
+        console.log("stringToDataUrl() error", err);
+        return undefined;
+    });
+
+    if (!dataUrl) {
+        console.log("stringToDataUrl() null");
+        return undefined;
+    }
+    const format = imageFormatFromDataUrl(dataUrl);
+    return format ? { format, src: dataUrl } : undefined;
+}
+
+export function imageFormatFromDataUrl(src: string): ImageFileExt | undefined {
+    if (src.startsWith("data:image/png")) {
+        return "png";
+    }
+
+    if (src.startsWith("data:image/jpg") || src.startsWith("data:image/jpeg")) {
+        return "jpg";
+    }
+
+    if (src.startsWith("data:image/svg+xml")) {
+        return "svg";
+    }
+
+    if (src.startsWith("data:image/bmp")) {
+        return "bmp";
+    }
+
+    if (src.startsWith("data:image/tiff")) {
+        return "tiff";
+    }
+
+    if (src.startsWith("data:image/gif")) {
+        return "gif";
+    }
+
+    if (src.startsWith("data:image/webp")) {
+        return "webp";
+    }
+
+    if (src.startsWith("data:image/vnd.microsoft.icon")) {
+        return "ico";
+    }
+
+    return undefined;
 }

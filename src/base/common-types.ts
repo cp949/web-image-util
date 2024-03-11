@@ -12,6 +12,8 @@ export type ImageSource = Blob | string;
 
 export type ImageStringSourceType = "SVG_XML" | "DATA_URL" | "HTTP_URL" | "PATH";
 
+export type ImageFileExt = "jpg" | "png" | "svg" | "bmp" | "tiff" | "webp" | "gif" | "ico";
+
 export type ImagePaddingType =
     | number
     | {

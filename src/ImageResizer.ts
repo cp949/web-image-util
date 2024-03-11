@@ -142,7 +142,9 @@ export class ImageResizer {
                     trim: opts.trim,
                 },
                 convertFn,
-                (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
+                (step, canvas, ctx) => {
+                    // this._setupCanvas(step, ctx, opts.scale);
+                }
             );
         }
         if (this.centerCropOptions != null) {
@@ -158,7 +160,9 @@ export class ImageResizer {
                     scale: opts.scale,
                 },
                 convertFn,
-                (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
+                (step, canvas, ctx) => {
+                    // this._setupCanvas(step, ctx, opts.scale)
+                }
             );
         }
 
@@ -175,7 +179,9 @@ export class ImageResizer {
                     padding: opts.padding,
                 },
                 convertFn,
-                (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
+                (step, canvas, ctx) => {
+                    // this._setupCanvas(step, ctx, opts.scale)
+                }
             );
         }
 
@@ -192,7 +198,9 @@ export class ImageResizer {
                     padding: opts.padding,
                 },
                 convertFn,
-                (step, canvas, ctx) => this._setupCanvas(step, ctx, opts.scale)
+                (step, canvas, ctx) => {
+                    // this._setupCanvas(step, ctx, opts.scale)
+                }
             );
         }
 

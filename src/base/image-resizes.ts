@@ -1,7 +1,7 @@
 import { BlobWithSize, ImageSizeType } from "..";
 import { DataUrlWithSize, ImageScaleType, ImagePaddingType } from "./common-types";
 
-export type CanvasConvertFn<T> = (canvas: HTMLCanvasElement, isPng: boolean, quality?: number) => Promise<T>;
+export type CanvasConvertFn<T> = (canvas: HTMLCanvasElement, isPng: boolean, quality: number) => Promise<T>;
 
 type CanvasHookFn = (
     step: "preSetup" | "preDraw" | "postDraw",
@@ -58,7 +58,7 @@ export function canvasToBlob(canvas: HTMLCanvasElement, isPng: boolean, quality:
         canvas.toBlob(
             (blob) => {
                 resolve({
-                    blob,
+                    blob: blob!,
                     width: canvas.width,
                     height: canvas.height,
                 });

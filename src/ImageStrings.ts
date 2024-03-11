@@ -1,23 +1,44 @@
-import { ImageStringSourceType } from "./base/common-types";
-import { downloadBlob, sourceTypeFromString, stringToBlob, stringToElement, stringToFile } from "./base/image-common";
+import { ImageFileExt, ImageStringSourceType } from "./base/common-types";
+import {
+    checkImageFormatFromString,
+    downloadBlob,
+    imageFormatFromDataUrl,
+    sourceTypeFromString,
+    stringToBlob,
+    stringToDataUrl,
+    stringToElement,
+    stringToFile,
+} from "./base/image-common";
 
 export class ImageStrings {
     static sourceType = (source: string): ImageStringSourceType | undefined => {
         return sourceTypeFromString(source);
     };
 
-    static toBuffer = async (source: string): Promise<Uint8Array> => {
+    static toBuffer = async (source: string): Promise<Uint8Array | undefined> => {
         return stringToBlob(source)
-            .then((blob) => blob.arrayBuffer())
-            .then((b) => new Uint8Array(b));
+            .then((blob) => blob?.arrayBuffer())
+            .then((b) => (b ? new Uint8Array(b) : undefined));
     };
 
-    static toBlob = (source: string): Promise<Blob> => {
+    static toBlob = (source: string): Promise<Blob | undefined> => {
         return stringToBlob(source);
     };
 
-    static toFile = (source: string, fileName: string): Promise<File> => {
+    static toFile = (source: string, fileName: string): Promise<File | undefined> => {
         return stringToFile(source, fileName);
+    };
+
+    static toDataUrl = (source: string): Promise<string | undefined> => {
+        return stringToDataUrl(source);
+    };
+
+    static toDataUrlWithFormat = (source: string): Promise<{ src: string; format: ImageFileExt } | undefined> => {
+        return checkImageFormatFromString(source);
+    };
+
+    static formatOfDataUrl = (dataUrl: string): ImageFileExt | undefined => {
+        return imageFormatFromDataUrl(dataUrl);
     };
 
     static toElement = (
@@ -26,11 +47,15 @@ export class ImageStrings {
             crossOrigin?: string;
             elementSize?: { width: number; height: number };
         }
-    ): Promise<HTMLImageElement> => {
+    ): Promise<HTMLImageElement | undefined> => {
         return stringToElement(source, opts);
     };
 
     static download = (source: string, fileName: string) => {
-        stringToBlob(source).then((blob) => downloadBlob(blob, fileName));
+        stringToBlob(source).then((blob) => {
+            if (blob) {
+                downloadBlob(blob, fileName);
+            }
+        });
     };
 }
