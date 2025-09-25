@@ -77,10 +77,24 @@ typings/
 # pnpm lock file
 pnpm-lock.yaml
 
+# Turbo
+.turbo/
+
 # Test output
 coverage/
 tests/__image_snapshots__/
 __screenshots__/
+
+# Vitest
+.vitest/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
 
 # dotenv environment variables file
 .env

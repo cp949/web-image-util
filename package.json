@@ -16,6 +16,7 @@
     "build": "turbo run build",
     "build:watch": "turbo run build:watch",
     "package": "turbo run package",
+    "publish": "pnpm --filter @cp949/web-image-util package && cd packages/web-image-util && npm publish --access=public",
     "clean": "turbo run clean",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",

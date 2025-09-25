@@ -1,6 +1,6 @@
 {
   "name": "@cp949/web-image-util",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "simple web image utils",
   "type": "module",
   "main": "./dist/index.js",
@@ -25,7 +25,7 @@
   "scripts": {
     "build": "tsup",
     "build:watch": "tsup --watch",
-    "package": "pnpm build && rimraf dist-old && node ../../scripts/dist-package.cjs",
+    "package": "pnpm build",
     "clean": "rimraf dist",
     "lint": "eslint \"src/**\"",
     "lint:fix": "eslint --fix \"src/**\"",

@@ -28,7 +28,8 @@ jobs:
         with:
           version: 8
       - run: pnpm install
-      - run: pnpm dist
-      - run: npm publish dist --access=public
+      - run: pnpm build
+      - run: pnpm --filter @cp949/web-image-util package
+      - run: npm publish packages/web-image-util/dist --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
