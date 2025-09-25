@@ -1,6 +1,6 @@
 {
   "name": "@cp949/web-image-util",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "simple web image utils",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,7 +29,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "../../README.md"
   ],
   "repository": "https://github.com/cp949/web-image-util.git",
   "author": "cp949 <cp949@naver.com>",
