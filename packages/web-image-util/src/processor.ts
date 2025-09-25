@@ -467,6 +467,73 @@ export class ImageProcessor {
     return this;
   }
 
+  // ==============================================
+  // 스마트 포맷 선택 및 최적화 메서드
+  // ==============================================
+
+  /**
+   * 브라우저 지원에 따른 최적 포맷 선택
+   * @private
+   */
+  private getBestFormat(): ImageFormat {
+    // WebP 지원 검사
+    if (this.supportsFormat('webp')) {
+      return 'webp';
+    }
+
+    // 기본값: PNG (무손실, 투명도 지원)
+    return 'png';
+  }
+
+  /**
+   * 포맷별 최적 품질 반환
+   * @private
+   */
+  private getOptimalQuality(format: ImageFormat): number {
+    // 기존에 정의된 OPTIMAL_QUALITY_BY_FORMAT 사용
+    return OPTIMAL_QUALITY_BY_FORMAT[format] || (this.options.defaultQuality || 0.8);
+  }
+
+  /**
+   * 브라우저의 포맷 지원 여부 확인
+   * @private
+   */
+  private supportsFormat(format: ImageFormat): boolean {
+    if (typeof window === 'undefined') return false;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+
+    try {
+      const mimeType = `image/${format}`;
+      // Canvas에서 toDataURL로 포맷 지원 여부 확인
+      const dataUrl = canvas.toDataURL(mimeType, 0.5);
+      // 지원하지 않는 포맷은 PNG로 대체됨
+      return dataUrl.startsWith(`data:${mimeType}`);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * 파일명에서 포맷 추출
+   * @private
+   */
+  private getFormatFromFilename(filename: string): ImageFormat | null {
+    const ext = filename.toLowerCase().split('.').pop();
+
+    // 지원되는 포맷만 매핑
+    const formatMap: Record<string, ImageFormat> = {
+      'jpg': 'jpeg',
+      'jpeg': 'jpeg',
+      'png': 'png',
+      'webp': 'webp',
+      'avif': 'avif'
+    };
+
+    return formatMap[ext || ''] || null;
+  }
+
   /**
    * Blob으로 변환 (메타데이터 포함)
    *
@@ -475,10 +542,10 @@ export class ImageProcessor {
    *
    * @example
    * ```typescript
-   * // 기본 PNG
+   * // 기본값 사용 (WebP 지원 시 WebP/품질 0.8, 미지원 시 PNG/품질 0.8)
    * const result = await processor.toBlob()
    *
-   * // WebP로 변환 (고압축)
+   * // 명시적 옵션
    * const result = await processor.toBlob({
    *   format: 'webp',
    *   quality: 0.8
@@ -492,6 +559,7 @@ export class ImageProcessor {
    * console.log(`${width}x${height} 이미지, ${processingTime}ms 소요`);
    * ```
    */
+
   async toBlob(options?: OutputOptions): Promise<BlobResult>;
   async toBlob(format: ImageFormat): Promise<BlobResult>;
   async toBlob(optionsOrFormat: OutputOptions | ImageFormat = {}): Promise<BlobResult> {
@@ -500,16 +568,24 @@ export class ImageProcessor {
       typeof optionsOrFormat === 'string'
         ? {
             format: optionsOrFormat,
-            quality: OPTIMAL_QUALITY_BY_FORMAT[optionsOrFormat],
+            quality: this.getOptimalQuality(optionsOrFormat),
           }
         : optionsOrFormat;
 
+    // 스마트 기본 포맷 선택: WebP 지원 시 WebP, 아니면 PNG
+    const smartFormat = this.getBestFormat();
+
     const outputOptions: Required<OutputOptions> = {
-      format: 'png',
-      quality: this.options.defaultQuality || 0.8,
+      format: smartFormat,
+      quality: this.getOptimalQuality(smartFormat),
       fallbackFormat: 'png',
       ...options,
     };
+
+    // 사용자가 옵션을 제공했지만 quality가 없는 경우, 포맷에 최적화된 품질 사용
+    if (options.format && !options.quality) {
+      outputOptions.quality = this.getOptimalQuality(options.format);
+    }
 
     const { canvas, result } = await this.executeProcessing();
 
@@ -536,13 +612,17 @@ export class ImageProcessor {
    *
    * @example
    * ```typescript
+   * // 기본값 사용 (WebP 지원 시 WebP/품질 0.8, 미지원 시 PNG/품질 1.0)
+   * const result = await processor.toDataURL()
+   *
+   * // 명시적 옵션
    * const result = await processor.toDataURL({
    *   format: 'jpeg',
    *   quality: 0.9
    * });
    *
    * // 포맷만 지정 (최적 품질 자동 선택)
-   * const result2 = await processor.toDataURL('webp'); // 품질 0.9 자동 적용
+   * const result2 = await processor.toDataURL('webp'); // 품질 0.8 자동 적용
    *
    * // img 태그에 바로 사용 가능
    * imgElement.src = result.dataURL;
@@ -573,18 +653,23 @@ export class ImageProcessor {
    * File 객체로 변환 (메타데이터 포함)
    *
    * @param filename 파일명
-   * @param options 출력 옵션
+   * @param options 출력 옵션 (비어있으맄 파일 확장자로 포맷 자동 감지)
    * @returns 처리된 이미지 File과 메타데이터
    *
    * @example
    * ```typescript
+   * // 명시적 옵션
    * const result = await processor.toFile('thumbnail.webp', {
    *   format: 'webp',
    *   quality: 0.8
    * });
    *
+   * // 파일명으로 포맷 자동 감지 + 최적 품질
+   * const result2 = await processor.toFile('image.jpg'); // JPEG/품질 0.85 자동 적용
+   * const result3 = await processor.toFile('thumbnail.webp'); // WebP/품질 0.8 자동 적용
+   *
    * // 포맷만 지정 (최적 품질 자동 선택)
-   * const result2 = await processor.toFile('image.jpg', 'jpeg'); // 품질 0.85 자동 적용
+   * const result4 = await processor.toFile('image.jpg', 'jpeg'); // 품질 0.85 자동 적용
    *
    * // FormData에 추가하여 업로드
    * const formData = new FormData();
@@ -594,11 +679,26 @@ export class ImageProcessor {
   async toFile(filename: string, options?: OutputOptions): Promise<FileResult>;
   async toFile(filename: string, format: ImageFormat): Promise<FileResult>;
   async toFile(filename: string, optionsOrFormat: OutputOptions | ImageFormat = {}): Promise<FileResult> {
-    // 타입에 따라 적절한 toBlob 호출 방식 선택
-    const { blob, ...metadata } =
-      typeof optionsOrFormat === 'string'
-        ? await this.toBlob(optionsOrFormat) // ImageFormat 타입
-        : await this.toBlob(optionsOrFormat); // OutputOptions 타입
+    // 파일 확장자로 포맷 자동 감지
+    const formatFromFilename = this.getFormatFromFilename(filename);
+
+    // 옵션이 비어있으면 파일명에서 포맷 추출
+    let finalOptions: OutputOptions;
+    if (typeof optionsOrFormat === 'string') {
+      // 문자열 포맷 지정
+      finalOptions = { format: optionsOrFormat };
+    } else if (Object.keys(optionsOrFormat).length === 0 && formatFromFilename) {
+      // 빈 객체이고 파일명에서 포맷 감지 가능한 경우
+      finalOptions = {
+        format: formatFromFilename,
+        quality: this.getOptimalQuality(formatFromFilename)
+      };
+    } else {
+      // 기존 옵션 사용
+      finalOptions = optionsOrFormat;
+    }
+
+    const { blob, ...metadata } = await this.toBlob(finalOptions);
 
     try {
       const file = new File([blob], filename, {

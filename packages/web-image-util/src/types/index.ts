@@ -122,8 +122,14 @@ export interface AtMostOptions {
 
 /**
  * 지원하는 이미지 포맷
+ *
+ * @description 웹 브라우저에서 Canvas API로 지원가능한 포맷들:
+ * - jpeg/jpg: 손실 압축, 사진에 적합
+ * - png: 무손실, 투명도 지원
+ * - webp: 고효율 현대 포맷
+ * - avif: 차세대 고효율 포맷 (브라우저 지원 필요)
  */
-export type ImageFormat = 'jpeg' | 'jpg' | 'png' | 'webp' | 'avif' | 'gif' | 'tiff' | 'bmp';
+export type ImageFormat = 'jpeg' | 'jpg' | 'png' | 'webp' | 'avif';
 
 /**
  * 각 포맷별 최적 품질 설정
@@ -131,30 +137,29 @@ export type ImageFormat = 'jpeg' | 'jpg' | 'png' | 'webp' | 'avif' | 'gif' | 'ti
  * @description 포맷 특성에 따른 권장 품질:
  * - PNG: 무손실 압축이므로 1.0 (품질 설정이 무의미)
  * - JPEG/JPG: 0.85 (품질과 파일크기의 균형점)
- * - WebP: 0.9 (JPEG보다 효율적이므로 높은 품질 가능)
- * - AVIF: 0.9 (차세대 포맷으로 높은 효율성)
- * - GIF: 1.0 (무손실, 품질 설정 무의미)
- * - TIFF: 1.0 (일반적으로 무손실 사용)
- * - BMP: 1.0 (무압축 포맷)
+ * - WebP: 0.8 (JPEG보다 효율적, 대부분 브라우저 지원)
+ * - AVIF: 0.7 (차세대 최고 효율 포맷, 낮은 수치로도 고품질)
  */
 export const OPTIMAL_QUALITY_BY_FORMAT: Record<ImageFormat, number> = {
-  png: 1.0, // 무손실 압축
+  png: 1.0,   // 무손실 압축
   jpeg: 0.85, // 품질과 크기의 균형
-  jpg: 0.85, // JPEG와 동일
-  webp: 0.9, // 고효율 압축으로 높은 품질 가능
-  avif: 0.9, // 차세대 포맷의 높은 효율성
-  gif: 1.0, // 무손실 (256색 제한)
-  tiff: 1.0, // 일반적으로 무손실 사용
-  bmp: 1.0, // 무압축
+  jpg: 0.85,  // JPEG와 동일
+  webp: 0.8,  // 고효율 압축, 대부분 브라우저 지원
+  avif: 0.7,  // 차세대 최고 효율
 } as const;
 
 /**
  * 출력 옵션
+ *
+ * @description 인자 없이 호출 시 기본 동작:
+ * - format: WebP 지원 브라우저에서는 'webp', 미지원 시 'png'
+ * - quality: 포맷별 최적값 (webp: 0.8, jpeg: 0.85, png: 1.0, avif: 0.7)
+ * - fallbackFormat: 'png'
  */
 export interface OutputOptions {
-  /** 출력 포맷 (기본: 'png') */
+  /** 출력 포맷 (기본: WebP 지원시 'webp', 미지원시 'png') */
   format?: ImageFormat;
-  /** 압축 품질 0.0-1.0 (기본: 0.8) */
+  /** 압축 품질 0.0-1.0 (기본: 포맷별 최적값 - webp: 0.8, jpeg: 0.85, png: 1.0, avif: 0.7) */
   quality?: number;
   /** 포맷 미지원시 대체 포맷 (기본: 'png') */
   fallbackFormat?: ImageFormat;
@@ -164,11 +169,11 @@ export interface OutputOptions {
  * 프로세서 전역 옵션
  */
 export interface ProcessorOptions {
-  /** CORS 설정 */
+  /** CORS 설정 (기본: 'anonymous') */
   crossOrigin?: string;
-  /** 기본 품질 설정 */
+  /** 기본 품질 설정 (기본: 0.8, 포맷별 최적값이 우선) */
   defaultQuality?: number;
-  /** 기본 배경색 */
+  /** 기본 배경색 (기본: 투명 검정 { r: 0, g: 0, b: 0, alpha: 0 }) */
   defaultBackground?: BackgroundColor;
 }
 
