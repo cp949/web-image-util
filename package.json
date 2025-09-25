@@ -17,7 +17,7 @@
     "build:watch": "turbo run build:watch",
     "package": "turbo run package",
     "publish": "pnpm --filter @cp949/web-image-util package && cd packages/web-image-util && npm publish --access=public",
-    "version:patch": "cd packages/web-image-util && npm version patch",
+    "version:patch": "cd packages/web-image-util && npm version patch && cd ../.. && git add packages/web-image-util/package.json && git commit --amend --no-edit && git push && git push --tags",
     "version:minor": "cd packages/web-image-util && npm version minor",
     "version:major": "cd packages/web-image-util && npm version major",
     "clean": "turbo run clean",
