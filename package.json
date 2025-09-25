@@ -1,6 +1,6 @@
 {
   "name": "@cp949/web-image-util-monorepo",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "private": true,
   "description": "Web image utilities monorepo",
   "type": "module",
