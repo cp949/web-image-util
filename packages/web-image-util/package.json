@@ -1,6 +1,6 @@
 {
   "name": "@cp949/web-image-util",
-  "version": "1.0.19",
+  "version": "2.0.0",
   "description": "simple web image utils",
   "type": "module",
   "main": "./dist/index.js",
@@ -10,6 +10,22 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./advanced": {
+      "import": "./dist/advanced-index.js",
+      "types": "./dist/advanced-index.d.ts"
+    },
+    "./presets": {
+      "import": "./dist/presets/index.js",
+      "types": "./dist/presets/index.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    },
+    "./filters": {
+      "import": "./dist/filters/plugins/index.js",
+      "types": "./dist/filters/plugins/index.d.ts"
     }
   },
   "files": [
@@ -32,11 +48,13 @@
     "format": "prettier --write \"src/**\"",
     "format:check": "prettier --check \"src/**\"",
     "typecheck": "tsc --noEmit",
-    "test": "vitest",
+    "test": "vitest --config vitest.node.config.ts",
     "test:node": "vitest --config vitest.node.config.ts",
+    "test:contract": "vitest --config vitest.contract.config.ts",
     "test:ui": "vitest --ui",
     "test:browser": "vitest --browser",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:coverage:contract": "vitest --coverage --config vitest.contract.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
@@ -46,6 +64,7 @@
     "@vitest/browser": "^3.2.4",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
+    "happy-dom": "^18.0.1",
     "jest-image-snapshot": "^6.4.0",
     "playwright": "^1.48.0",
     "prettier": "^3.6.2",

@@ -5,10 +5,13 @@ export default defineConfig({
     // Node.js 환경에서 실행
     environment: 'node',
 
-    // 테스트 파일 패턴
+    // Node.js 환경에서 실행할 순수 로직 테스트들만 포함
     include: [
-      'tests/**/*.{test,spec}.{js,ts}',
-      'src/**/*.{test,spec}.{js,ts}'
+      'tests/unit/*-pure.test.ts',
+      'tests/calculations.test.ts',
+      'tests/errors.test.ts',
+      'tests/error-helpers.test.ts',
+      'tests/contract/**/*.test.ts', // Phase 3: 계약 테스트 포함
     ],
 
     // 제외할 파일들
@@ -16,18 +19,36 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/build/**',
-      '**/*.d.ts'
+      '**/*.d.ts',
     ],
 
     // 글로벌 설정
     globals: true,
 
-    // 타임아웃 설정
-    testTimeout: 10000, // 10초
-    hookTimeout: 5000,  // 5초
+    // 셋업 파일 (계약 테스트용 모킹 포함)
+    setupFiles: ['tests/contract/setup/contract-mocks.ts'],
+
+    // 커버리지 설정
+    coverage: {
+      provider: 'v8',
+      reporter: ['text'],
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/*.test.ts',
+        'src/**/*.spec.ts'
+      ],
+    },
+
+    // 타임아웃 설정 (Node.js는 빠름)
+    testTimeout: 5000,
+    hookTimeout: 3000,
+
+    // 재시도 설정 (Node.js는 안정적)
+    retry: 0,
 
     // 리포터 설정
-    reporter: ['verbose'],
+    reporter: 'verbose',
   },
 
   // Vite 설정

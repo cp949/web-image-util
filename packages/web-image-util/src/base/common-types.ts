@@ -8,71 +8,59 @@
  * path
  *
  */
-export type ImageSource = Blob | string;
+export type ImageSource = HTMLImageElement | Blob | string;
 
-export type ImageStringSourceType = "SVG_XML" | "DATA_URL" | "HTTP_URL" | "PATH";
+/**
+ * 이미지 소스 변환 옵션
+ */
+export interface ImageSourceConvertOptions {
+  crossOrigin?: string;
+  elementSize?: { width: number; height: number };
+}
 
-export type ImageFileExt = "jpg" | "png" | "svg" | "bmp" | "tiff" | "webp" | "gif" | "ico";
+export type ImageStringSourceType = 'SVG_XML' | 'DATA_URL' | 'HTTP_URL' | 'PATH';
 
-export type ImagePaddingType =
-    | number
-    | {
-          top: number;
-          left: number;
-          bottom: number;
-          right: number;
-      };
+export type ImageFileExt = 'jpg' | 'png' | 'svg' | 'bmp' | 'tiff' | 'webp' | 'gif' | 'ico';
 
-export type ImageScaleType =
-    | number
-    | {
-          scaleX: number;
-          scaleY: number;
-      };
+// ImageFormat import
+import type { ImageFormat } from './format-detector';
 
-export type ImageSizeType =
-    | number
-    | {
-          width: number;
-          height: number;
-      };
+export interface ModernConversionOptions {
+  format?: ImageFormat;
+  quality?: number;
+  fallbackFormat?: ImageFormat;
+  autoOptimize?: boolean; // 자동 포맷 선택
+}
 
-type BaseImageResizeOptions = {
-    crossOrigin?: string;
-    quality?: number; // 0~1
-    scale?: ImageScaleType;
-    backgroundColor?: string;
-    padding?: ImagePaddingType;
-    size?: ImageSizeType;
-};
+// 포맷별 메타데이터
+export interface FormatInfo {
+  format: ImageFormat;
+  mimeType: string;
+  supportsTransparency: boolean;
+  supportsAnimation: boolean;
+  averageCompression: number; // 대략적인 압축률 (%)
+}
 
-export type CenterCropOptions = BaseImageResizeOptions & {};
-
-export type CenterInsideOptions = BaseImageResizeOptions & {
-    /**
-     * centerInside인 경우, size 파라미터가 전달되면, 여백이 생긴다.
-     * 이미지에 여백을 포함할지 여부를 의미한다.
-     */
-    trim?: boolean;
-};
-
-export type FillOptions = BaseImageResizeOptions & {};
-export type FitOptions = BaseImageResizeOptions & {};
-
-export type ImageResizeOptions =
-    | (CenterCropOptions & { scaleType: "centerCrop" })
-    | (CenterInsideOptions & { scaleType: "centerInside" })
-    | (FillOptions & { scaleType: "fill" })
-    | (FitOptions & { scaleType: "fit" });
+// 레거시 타입들 제거됨 - v2.0에서는 processImage API만 사용
 
 export type DataUrlWithSize = {
-    dataUrl: string;
-    width: number;
-    height: number;
+  dataUrl: string;
+  width: number;
+  height: number;
 };
 
+// 에러 타입 export
+export {
+  ImageProcessingError,
+  ImageSourceError,
+  ImageConversionError,
+  ImageCanvasError,
+  ImageResizeError,
+  ImageErrorCode,
+} from './errors';
+
 export type BlobWithSize = {
-    blob: Blob;
-    width: number;
-    height: number;
+  blob: Blob;
+  width: number;
+  height: number;
 };

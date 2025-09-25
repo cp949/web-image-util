@@ -17,6 +17,25 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      'semi': ['error', 'always'],
+      '@typescript-eslint/semi': ['error', 'always'],
+      // TypeScript 타입 임포트 관련 규칙들
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          prefer: 'type-imports',
+          disallowTypeAnnotations: false,
+          fixStyle: 'separate-type-imports',
+        },
+      ],
+      '@typescript-eslint/consistent-type-exports': [
+        'error',
+        {
+          fixMixedExportsWithInlineTypeSpecifier: true,
+        },
+      ],
+      '@typescript-eslint/no-import-type-side-effects': 'error',
     },
   },
   {
