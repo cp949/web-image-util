@@ -1,5 +1,8 @@
 build/
 dist/
+.claude/
+_TODO/
+CLAUDE.md
 
 # Logs
 logs
@@ -70,6 +73,14 @@ typings/
 
 # Yarn Integrity file
 .yarn-integrity
+
+# pnpm lock file
+pnpm-lock.yaml
+
+# Test output
+coverage/
+tests/__image_snapshots__/
+__screenshots__/
 
 # dotenv environment variables file
 .env

@@ -1,0 +1,61 @@
+{
+  "name": "@cp949/web-image-util",
+  "version": "1.0.18",
+  "description": "simple web image utils",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": "https://github.com/cp949/web-image-util.git",
+  "author": "cp949 <cp949@naver.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/cp949/web-image-util.git",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "package": "pnpm build && rimraf dist-old && node ../../scripts/dist-package.cjs",
+    "clean": "rimraf dist",
+    "lint": "eslint \"src/**\"",
+    "lint:fix": "eslint --fix \"src/**\"",
+    "format": "prettier --write \"src/**\"",
+    "format:check": "prettier --check \"src/**\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:node": "vitest --config vitest.node.config.ts",
+    "test:ui": "vitest --ui",
+    "test:browser": "vitest --browser",
+    "test:coverage": "vitest --coverage"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@repo/config-eslint": "workspace:*",
+    "@repo/config-typescript": "workspace:*",
+    "@types/node": "^24.5.2",
+    "@vitest/browser": "^3.2.4",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "jest-image-snapshot": "^6.4.0",
+    "playwright": "^1.48.0",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "shelljs": "^0.10.0",
+    "ts-node": "^10.4.0",
+    "tslib": "^2.3.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.1",
+    "vitest": "^3.2.4"
+  }
+}
