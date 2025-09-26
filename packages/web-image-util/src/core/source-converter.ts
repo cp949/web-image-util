@@ -66,25 +66,62 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
 }
 
 /**
+ * 기본 네임스페이스·viewBox 없을 때 보강
+ */
+function normalizeSvgBasics(src: string): string {
+  try {
+    const doc = new DOMParser().parseFromString(src, 'image/svg+xml');
+    const svgEl = doc.documentElement;
+
+    // 네임스페이스 추가
+    if (!svgEl.getAttribute('xmlns')) {
+      svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    }
+    if (!svgEl.getAttribute('xmlns:xlink')) {
+      svgEl.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    }
+
+    // width/height나 viewBox가 모두 없으면 기본값 부여
+    const hasSize = svgEl.hasAttribute('width') || svgEl.hasAttribute('height') || svgEl.hasAttribute('viewBox');
+    if (!hasSize) {
+      svgEl.setAttribute('viewBox', '0 0 512 512');
+      svgEl.setAttribute('width', '512');
+      svgEl.setAttribute('height', '512');
+      svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    }
+
+    return new XMLSerializer().serializeToString(doc);
+  } catch {
+    return src; // 파서 실패 시 원본 그대로
+  }
+}
+
+/**
  * SVG 문자열을 HTMLImageElement로 변환
  */
 async function convertSvgToElement(svgString: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
+  // SVG 정규화 처리
+  const normalizedSvg = normalizeSvgBasics(svgString);
+
+  const blob = new Blob([normalizedSvg], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  try {
     const img = new Image();
+    // img.crossOrigin = 'anonymous'; // Blob URL에는 불필요. 외부 리소스 포함 시 sanitize 단계에서 제거 권장.
+    const loaded = new Promise<HTMLImageElement>((resolve, reject) => {
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new ImageProcessError('SVG 이미지 로딩에 실패했습니다', 'SOURCE_LOAD_FAILED'));
+    });
 
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new ImageProcessError('SVG 이미지 로딩에 실패했습니다', 'SOURCE_LOAD_FAILED'));
+    img.decoding = 'async';
+    img.src = url;
 
-    // SVG를 Data URL로 변환
-    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    img.src = URL.createObjectURL(blob);
-
-    // 메모리 정리를 위해 로드 후 URL 해제
-    img.onload = () => {
-      URL.revokeObjectURL(img.src);
-      resolve(img);
-    };
-  });
+    await loaded;
+    return img;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 /**
