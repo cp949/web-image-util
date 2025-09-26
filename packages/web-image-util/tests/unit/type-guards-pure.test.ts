@@ -148,7 +148,7 @@ describe('타입 가드 함수 - 순수 로직', () => {
 
   describe('isValidResizeFit', () => {
     it('유효한 fit 값 식별', () => {
-      const validFitValues = ['cover', 'pad', 'stretch', 'atMost', 'atLeast'];
+      const validFitValues = ['cover', 'letterbox', 'stretch', 'atMost', 'atLeast'];
 
       validFitValues.forEach(fit => {
         expect(isValidResizeFit(fit)).toBe(true);

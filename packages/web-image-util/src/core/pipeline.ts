@@ -150,7 +150,7 @@ export class RenderPipeline {
     newCanvas.height = dimensions.canvasHeight;
 
     // 배경색 설정
-    if (options.background && fit === 'pad') {
+    if (options.background && fit === 'letterbox') {
       this.fillBackground(newCtx, dimensions.canvasWidth, dimensions.canvasHeight, options.background);
     }
 
@@ -259,7 +259,7 @@ export class RenderPipeline {
           destHeight: finalTargetHeight,
         };
 
-      case 'pad': {
+      case 'letterbox': {
         const padScale = Math.min(finalTargetWidth / originalWidth, finalTargetHeight / originalHeight);
         const padWidth = Math.round(originalWidth * padScale);
         const padHeight = Math.round(originalHeight * padScale);

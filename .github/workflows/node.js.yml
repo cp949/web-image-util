@@ -1,13 +1,18 @@
-name: Publish Packages
+name: Deploy to NPM from Release Branch
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - "release"
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    # 오직 release 브랜치에서만 실행
+    if: github.ref == 'refs/heads/release'
+    environment:
+      name: production
+      url: https://www.npmjs.com/package/@cp949/web-image-util
 
     strategy:
       matrix:
@@ -17,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: "main"
+          ref: "release"
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -25,9 +30,31 @@ jobs:
           registry-url: https://registry.npmjs.org
           scope: "@cp949"
       - uses: pnpm/action-setup@v4
-      - run: pnpm install
-      - run: pnpm build
-      - run: pnpm --filter @cp949/web-image-util package
-      - run: cd packages/web-image-util && npm publish --access=public
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run type check
+        run: pnpm typecheck
+
+      - name: Run linting
+        run: pnpm lint
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Package for publishing
+        run: pnpm --filter @cp949/web-image-util package
+
+      - name: Check package contents
+        run: |
+          echo "Package contents:"
+          cd packages/web-image-util
+          npm pack --dry-run
+          echo "Package version:"
+          node -e "console.log('v' + require('./package.json').version)"
+
+      - name: Publish to NPM
+        run: cd packages/web-image-util && npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

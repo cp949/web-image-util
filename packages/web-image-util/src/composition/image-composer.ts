@@ -33,7 +33,7 @@ export interface GridLayoutOptions {
   cols: number;
   spacing?: number;
   backgroundColor?: string;
-  fit?: 'pad' | 'cover' | 'stretch';
+  fit?: 'letterbox' | 'cover' | 'stretch';
 }
 
 /**
@@ -92,7 +92,7 @@ export class ImageComposer {
    * 그리드 레이아웃 합성
    */
   static async composeGrid(images: HTMLImageElement[], options: GridLayoutOptions): Promise<HTMLCanvasElement> {
-    const { rows, cols, spacing = 10, backgroundColor = '#ffffff', fit = 'pad' } = options;
+    const { rows, cols, spacing = 10, backgroundColor = '#ffffff', fit = 'letterbox' } = options;
 
     if (images.length === 0) throw new Error('이미지가 제공되지 않았습니다');
     if (images.length > rows * cols) {
@@ -219,7 +219,7 @@ export class ImageComposer {
     imageHeight: number,
     containerWidth: number,
     containerHeight: number,
-    fit: 'pad' | 'cover' | 'stretch'
+    fit: 'letterbox' | 'cover' | 'stretch'
   ): { x: number; y: number; width: number; height: number } {
     let width = imageWidth;
     let height = imageHeight;
@@ -227,7 +227,7 @@ export class ImageComposer {
     let y = 0;
 
     switch (fit) {
-      case 'pad': {
+      case 'letterbox': {
         const scale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
         width = imageWidth * scale;
         height = imageHeight * scale;

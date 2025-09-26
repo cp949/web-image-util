@@ -96,7 +96,7 @@ describe('파이프라인 오퍼레이션 통합 테스트', () => {
       }).not.toThrow();
 
       expect(() => {
-        processor.resize(200, 200, { fit: 'pad' });
+        processor.resize(200, 200, { fit: 'letterbox' });
       }).not.toThrow();
     });
 
@@ -140,7 +140,7 @@ describe('파이프라인 오퍼레이션 통합 테스트', () => {
     it('편의 메서드 오퍼레이션 추가', () => {
       expect(() => {
         processor.resizeCover(100, 100);
-        processor.resizePad(100, 100);
+        processor.resizeLetterBox(100, 100);
         processor.stretch(100, 100);
       }).not.toThrow();
     });
@@ -163,7 +163,7 @@ describe('파이프라인 오퍼레이션 통합 테스트', () => {
     it('resize 커스텀 옵션 적용', () => {
       expect(() => {
         processor.resize(100, 100, {
-          fit: 'pad',
+          fit: 'letterbox',
           position: 'top',
           background: { r: 255, g: 255, b: 255, alpha: 1 },
           withoutEnlargement: true,

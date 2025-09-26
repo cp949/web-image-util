@@ -206,7 +206,7 @@ describe('복합 타입 가드 함수들', () => {
   describe('isValidResizeFit', () => {
     it('유효한 fit 값들 감지', () => {
       expect(isValidResizeFit('cover')).toBe(true);
-      expect(isValidResizeFit('pad')).toBe(true);
+      expect(isValidResizeFit('letterbox')).toBe(true);
       expect(isValidResizeFit('stretch')).toBe(true);
       expect(isValidResizeFit('atMost')).toBe(true);
       expect(isValidResizeFit('atLeast')).toBe(true);

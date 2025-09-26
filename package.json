@@ -1,6 +1,6 @@
 {
   "name": "@cp949/web-image-util-monorepo",
-  "version": "2.0.3",
+  "version": "1.0.0",
   "private": true,
   "description": "Web image utilities monorepo",
   "type": "module",
@@ -8,10 +8,9 @@
   "author": "cp949 <cp949@naver.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
+    "node": ">=18.0.0"
   },
-  "packageManager": "pnpm@10.6.3",
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
     "build": "turbo run build",
     "build:watch": "turbo run build:watch",

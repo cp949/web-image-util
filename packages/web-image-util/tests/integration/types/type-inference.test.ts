@@ -215,7 +215,7 @@ describe('TypeScript 타입 추론 통합 테스트', () => {
 
     it('ResizeFit 유니온 타입 처리', () => {
       const processor = createMockProcessor();
-      const fitModes: ResizeFit[] = ['cover', 'pad', 'stretch', 'atMost', 'atLeast'];
+      const fitModes: ResizeFit[] = ['cover', 'letterbox', 'stretch', 'atMost', 'atLeast'];
 
       fitModes.forEach(fit => {
         expect(() => {

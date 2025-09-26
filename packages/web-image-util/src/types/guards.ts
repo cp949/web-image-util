@@ -115,7 +115,7 @@ export function isValidImageSource(value: unknown): value is ImageSource {
  * @returns 유효한 ResizeFit 여부
  */
 export function isValidResizeFit(value: unknown): value is ResizeFit {
-  return typeof value === 'string' && ['cover', 'pad', 'stretch', 'atMost', 'atLeast'].includes(value);
+  return typeof value === 'string' && ['cover', 'letterbox', 'stretch', 'atMost', 'atLeast'].includes(value);
 }
 
 /**
@@ -269,7 +269,7 @@ export function validateResizeOptions(options: any): ValidationResult {
 
   if (options.fit !== undefined) {
     if (!isValidResizeFit(options.fit)) {
-      result.errors.push('fit은 cover, pad, stretch, atMost, atLeast 중 하나여야 합니다');
+      result.errors.push('fit은 cover, letterbox, stretch, atMost, atLeast 중 하나여야 합니다');
       result.isValid = false;
     }
   }

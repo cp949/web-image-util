@@ -19,7 +19,7 @@ export interface ThumbnailOptions {
   /** 압축 품질 0.0-1.0 (기본: 0.8) */
   quality?: number;
   /** 리사이징 모드 (기본: 'cover') */
-  fit?: 'cover' | 'pad';
+  fit?: 'cover' | 'letterbox';
   /** 배경색 (fit 모드에서, 기본: 흰색) */
   background?: string;
 }
@@ -54,7 +54,7 @@ export interface ThumbnailOptions {
  * // 전체 이미지 보존 (여백 포함)
  * const result = await createThumbnail(imageSource, {
  *   size: 200,
- *   fit: 'pad',
+ *   fit: 'letterbox',
  *   background: '#f0f0f0'
  * });
  * ```
@@ -289,7 +289,7 @@ export async function createSocialImage(source: ImageSource, options: SocialImag
 
   return await processImage(source)
     .resize(targetSize.width, targetSize.height, {
-      fit: 'pad', // 소셜 이미지는 보통 전체 이미지가 보이도록 함
+      fit: 'letterbox', // 소셜 이미지는 보통 전체 이미지가 보이도록 함
       position: 'center',
       background: finalOptions.background,
     })

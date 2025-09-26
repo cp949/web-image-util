@@ -18,17 +18,17 @@ export type ImageSource = HTMLImageElement | Blob | string;
  *
  * @description 이미지가 대상 치수에 맞는 방식:
  * - 'cover': 비율 유지하며 전체 영역을 채움, 필요시 잘림 (CSS object-fit: cover와 동일, 기본값)
- * - 'pad': 비율 유지하며 전체 이미지가 영역에 들어가도록 맞춤, 여백으로 채움 (확대/축소 모두)
+ * - 'letterbox': 비율 유지하며 전체 이미지가 영역에 들어가도록 맞춤, 여백으로 채움 (확대/축소 모두)
  * - 'stretch': 비율 무시하고 정확히 맞춤 (이미지가 늘어나거나 압축됨)
  * - 'atMost': 비율 유지하며 최대 크기 제한, 전체 이미지가 영역에 들어가도록 맞춤 (축소만, 확대 안함)
  * - 'atLeast': 비율 유지하며 최소 크기 보장, 전체 영역을 채움 (확대만, 축소 안함)
  */
-export type ResizeFit = 'cover' | 'pad' | 'stretch' | 'atMost' | 'atLeast';
+export type ResizeFit = 'cover' | 'letterbox' | 'stretch' | 'atMost' | 'atLeast';
 
 /**
  * 리사이징 위치/중심점 옵션 (Sharp 호환)
  *
- * @description fit이 'cover' 또는 'pad'일 때 사용할 위치:
+ * @description fit이 'cover' 또는 'letterbox'일 때 사용할 위치:
  * - 문자열: 'center', 'top', 'bottom', 'left', 'right' 등
  * - 조합: 'top left', 'bottom right' 등
  * - 숫자: 0-100 (백분율)
@@ -63,7 +63,7 @@ export type ResizePosition =
 /**
  * 배경색 타입 (Sharp 호환)
  *
- * @description fit이 'pad'일 때 사용할 배경색:
+ * @description fit이 'letterbox'일 때 사용할 배경색:
  * - 문자열: CSS 색상 ('red', '#ff0000', 'rgb(255,0,0)' 등)
  * - 객체: { r: number, g: number, b: number, alpha?: number }
  */
@@ -88,7 +88,7 @@ export interface ResizeOptions {
   fit?: ResizeFit;
   /** 위치/중심점 (기본: 'center') */
   position?: ResizePosition;
-  /** 배경색 (fit이 'pad'일 때, 기본: 투명한 검정) */
+  /** 배경색 (fit이 'letterbox'일 때, 기본: 투명한 검정) */
   background?: BackgroundColor;
   /** 확대 방지 여부 (기본: false) */
   withoutEnlargement?: boolean;

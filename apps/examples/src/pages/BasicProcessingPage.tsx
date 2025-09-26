@@ -24,7 +24,7 @@ import { BeforeAfterView } from '../components/ui/BeforeAfterView'
 interface ProcessOptions {
   width: number
   height: number
-  fit: 'cover' | 'pad' | 'stretch' | 'atMost' | 'atLeast' // 실제 ResizeFit 타입 사용
+  fit: 'cover' | 'letterbox' | 'stretch' | 'atMost' | 'atLeast' // 실제 ResizeFit 타입 사용
   quality: number
   format: 'jpeg' | 'png' | 'webp'
   background: string
@@ -116,8 +116,8 @@ export function BasicProcessingPage() {
           sy = (sh - dh / scale) / 2
           sw = dw / scale
           sh = dh / scale
-        } else if (options.fit === 'pad') {
-          // 'pad': 비율 유지하며 전체 이미지가 영역에 들어가도록 맞춤, 여백으로 채움 (확대/축소 모두)
+        } else if (options.fit === 'letterbox') {
+          // 'letterbox': 비율 유지하며 전체 이미지가 영역에 들어가도록 맞춤, 여백으로 채움 (확대/축소 모두)
           const scale = Math.min(dw / sw, dh / sh)
           const newWidth = sw * scale
           const newHeight = sh * scale
@@ -296,7 +296,7 @@ const [small, medium, large] = await Promise.all([
                     }))}
                   >
                     <MenuItem value="cover">Cover (가득 채우기, 잘림)</MenuItem>
-                    <MenuItem value="pad">Pad (전체 포함, 여백)</MenuItem>
+                    <MenuItem value="letterbox">Letterbox (전체 포함, 여백)</MenuItem>
                     <MenuItem value="stretch">Stretch (늘려서 채우기)</MenuItem>
                     <MenuItem value="atMost">AtMost (축소만)</MenuItem>
                     <MenuItem value="atLeast">AtLeast (확대만)</MenuItem>

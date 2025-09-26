@@ -1,13 +1,17 @@
 # @cp949/web-image-util
 
+> 📖 **라이브러리 API 문서** - 완전한 사용법과 레퍼런스
+
 모던 웹 브라우저에서 이미지 처리를 위한 TypeScript 라이브러리입니다. Sharp 라이브러리의 패턴을 참고하여 설계된 체이닝 API를 제공합니다.
+
+**프로젝트 전체 정보**: [메인 README](../../README.md) | **예제 앱**: [examples](../../apps/examples/)
 
 ## 🎯 제공하는 기능
 
 ### 📐 리사이징 기능
 - **크기 제한**: `atMostWidth()`, `atMostHeight()`, `atMostRect()` - 최대 크기 제한
 - **크기 보장**: `atLeastWidth()`, `atLeastHeight()`, `atLeastRect()` - 최소 크기 보장
-- **정확한 크기**: `resizePad()`, `resizeCover()`, `stretch()` - 정확한 크기로 맞춤
+- **정확한 크기**: `resizeLetterBox()`, `resizeCover()`, `stretch()` - 정확한 크기로 맞춤
 - **강제 설정**: `forceWidth()`, `forceHeight()` - 한 축 고정하여 비율 유지
 - **로우레벨**: `resize()` - 세밀한 옵션 제어 가능
 
@@ -61,7 +65,7 @@ const thumbnail = await processImage(source)
 
 // 배경 추가하여 정확한 크기 맞춤
 const padded = await processImage(source)
-  .resizePad(300, 200, '#ffffff')  // 300x200 크기에 흰 배경, 비율유지, 작은 이미지는 확대, 큰 이미지는 축소, 잘림 없음
+  .resizeLetterBox(300, 200, '#ffffff')  // 300x200 크기에 흰 배경, 비율유지, 작은 이미지는 확대, 큰 이미지는 축소, 잘림 없음
   .toBlob({ format: 'jpeg', quality: 0.85 });
 
 // 비율 유지하며 영역 채움
@@ -452,8 +456,8 @@ processImage(source).atLeastRect(300, 200);   // 최소 300x200 보장 (비율�
 ### 🎨 정확한 크기 맞춤 메서드
 ```typescript
 // 배경 추가하여 정확한 크기 - 비율 유지, 확대/축소, 잘림 없음
-processImage(source).resizePad(400, 300);           // 흰색 배경 (비율유지, 확대함, 축소함, 잘림없음)
-processImage(source).resizePad(400, 300, '#f0f0f0'); // 회색 배경 (비율유지, 확대함, 축소함, 잘림없음)
+processImage(source).resizeLetterBox(400, 300);           // 흰색 배경 (비율유지, 확대함, 축소함, 잘림없음)
+processImage(source).resizeLetterBox(400, 300, '#f0f0f0'); // 회색 배경 (비율유지, 확대함, 축소함, 잘림없음)
 
 // 영역을 가득 채우는 방식 - 비율 유지, 확대/축소, 잘림 가능
 processImage(source).resizeCover(400, 300);         // (비율유지, 확대함, 축소함, 잘림가능)
@@ -471,19 +475,19 @@ processImage(source).forceHeight(300);        // 높이 300px, 너비 비율 유
 
 ### 📊 리사이징 메서드 비교
 
-| 메서드             | 결과 크기  | 비율 유지 | 확대 | 축소 | 잘림 | 사용 목적                  |
-| ------------------ | ---------- | --------- | ---- | ---- | ---- | -------------------------- |
-| `atMostWidth(w)`   | 실제 크기  | ✅         | ❌    | ✅    | ❌    | **최대 너비 제한**         |
-| `atMostHeight(h)`  | 실제 크기  | ✅         | ❌    | ✅    | ❌    | **최대 높이 제한**         |
-| `atMostRect(w,h)`  | 실제 크기  | ✅         | ❌    | ✅    | ❌    | **최대 크기 제한**         |
-| `atLeastWidth(w)`  | 실제 크기  | ✅         | ✅    | ❌    | ✅    | **최소 너비 보장**         |
-| `atLeastHeight(h)` | 실제 크기  | ✅         | ✅    | ❌    | ✅    | **최소 높이 보장**         |
-| `atLeastRect(w,h)` | 실제 크기  | ✅         | ✅    | ❌    | ✅    | **최소 크기 보장**         |
-| `resizePad(w,h)`   | 정확히 w×h | ✅         | ✅    | ✅    | ❌    | **정확한 크기 (배경추가)** |
-| `resizeCover(w,h)` | 정확히 w×h | ✅         | ✅    | ✅    | ✅    | **정확한 크기 (잘림허용)** |
-| `stretch(w,h)`     | 정확히 w×h | ❌         | ✅    | ✅    | ❌    | **강제 맞춤 (비율무시)**   |
-| `forceWidth(w)`    | w×auto     | ✅         | ✅    | ✅    | ❌    | **정확한 너비**            |
-| `forceHeight(h)`   | auto×h     | ✅         | ✅    | ✅    | ❌    | **정확한 높이**            |
+| 메서드                 | 결과 크기  | 비율 유지 | 확대 | 축소 | 잘림 | 사용 목적                  |
+| ---------------------- | ---------- | --------- | ---- | ---- | ---- | -------------------------- |
+| `atMostWidth(w)`       | 실제 크기  | ✅         | ❌    | ✅    | ❌    | **최대 너비 제한**         |
+| `atMostHeight(h)`      | 실제 크기  | ✅         | ❌    | ✅    | ❌    | **최대 높이 제한**         |
+| `atMostRect(w,h)`      | 실제 크기  | ✅         | ❌    | ✅    | ❌    | **최대 크기 제한**         |
+| `atLeastWidth(w)`      | 실제 크기  | ✅         | ✅    | ❌    | ✅    | **최소 너비 보장**         |
+| `atLeastHeight(h)`     | 실제 크기  | ✅         | ✅    | ❌    | ✅    | **최소 높이 보장**         |
+| `atLeastRect(w,h)`     | 실제 크기  | ✅         | ✅    | ❌    | ✅    | **최소 크기 보장**         |
+| `resizeLetterBox(w,h)` | 정확히 w×h | ✅         | ✅    | ✅    | ❌    | **정확한 크기 (배경추가)** |
+| `resizeCover(w,h)`     | 정확히 w×h | ✅         | ✅    | ✅    | ✅    | **정확한 크기 (잘림허용)** |
+| `stretch(w,h)`         | 정확히 w×h | ❌         | ✅    | ✅    | ❌    | **강제 맞춤 (비율무시)**   |
+| `forceWidth(w)`        | w×auto     | ✅         | ✅    | ✅    | ❌    | **정확한 너비**            |
+| `forceHeight(h)`       | auto×h     | ✅         | ✅    | ✅    | ❌    | **정확한 높이**            |
 
 ```typescript
 // 예시: 100x100 이미지를 다양한 방식으로 처리
@@ -491,7 +495,7 @@ const source = ...; // 100x100 이미지
 
 processImage(source).atMostRect(300, 200);    // → 100x100 결과 (비율유지, 확대안함, 축소가능 잘림없음)
 processImage(source).atLeastRect(300, 200);   // → 300x300 결과 (비율유지, 확대가능, 축소안함, 잘림가능)
-processImage(source).resizePad(300, 200);     // → 300x200 결과 (비율유지, 확대가능, 축소가능, 배경추가, 잘림없음)
+processImage(source).resizeLetterBox(300, 200);     // → 300x200 결과 (비율유지, 확대가능, 축소가능, 배경추가, 잘림없음)
 processImage(source).resizeCover(300, 200);   // → 300x200 결과 (비율유지, 확대함, 축소가능, 잘림가능)
 processImage(source).stretch(300, 200);       // → 300x200 결과 (비율무시, 확대함, 축소가능, 잘림없음)
 processImage(source).forceWidth(300);         // → 300x300 결과 (비율유지, 확대함, 축소가능, 잘림없음)
@@ -504,14 +508,14 @@ processImage(source).forceWidth(300);         // → 300x300 결과 (비율유�
 ```typescript
 // 로우레벨 resize() 메서드 - 복잡한 옵션 제어
 processImage(source).resize(300, 200, {
-  fit: 'pad',                   // fit 모드별 특성:
+  fit: 'letterbox',                   // fit 모드별 특성:
                                // • 'cover': 비율유지, 확대함, 축소함, 잘림가능
-                               // • 'pad': 비율유지, 확대함, 축소함, 잘림없음
+                               // • 'letterbox': 비율유지, 확대함, 축소함, 잘림없음
                                // • 'stretch': 비율무시, 확대함, 축소함, 잘림없음
                                // • 'atMost': 비율유지, 확대안함, 축소함, 잘림없음
                                // • 'atLeast': 비율유지, 확대함, 축소안함, 잘림가능
   position: 'center',           // 'top' | 'bottom' | 'left' | 'right' | 'center'
-  background: '#ffffff',        // 배경색 (pad 모드에서 사용)
+  background: '#ffffff',        // 배경색 (letterbox 모드에서 사용)
   withoutEnlargement: false,    // 확대 방지 옵션
   withoutReduction: false       // 축소 방지 옵션
 });
@@ -959,50 +963,76 @@ npm run test:contract # 계약 테스트 실행
 - FileReader API
 - Blob API
 
-## 🚀 개발자 가이드
+## 🚀 프로덕션 사용 가이드
 
-### 배포하기
+### 번들러 설정
 
-이 프로젝트는 모노레포 구조로, 개별 패키지의 버전을 관리합니다:
-
-```bash
-# 1. 변경사항 커밋 및 푸시
-git add .
-git commit -m "변경 내용 설명"
-git push
-
-# 2. 버전 업데이트 (자동으로 패키지 버전 업데이트, 커밋, 푸시)
-pnpm version:patch  # 버그 수정 (2.0.4 → 2.0.5)
-pnpm version:minor  # 새로운 기능 (2.0.4 → 2.1.0)
-pnpm version:major  # 호환성 깨지는 변경 (2.0.4 → 3.0.0)
-
-# 3. 패키지 배포
-pnpm publish
+#### Webpack
+```javascript
+// webpack.config.js
+module.exports = {
+  resolve: {
+    fallback: {
+      "buffer": false,
+      "stream": false
+    }
+  }
+};
 ```
 
-### 개발 명령어
+#### Vite
+```javascript
+// vite.config.js
+export default {
+  define: {
+    global: 'globalThis'
+  }
+};
+```
 
-```bash
-# 빌드
-pnpm build          # 모든 패키지 빌드
-pnpm build:watch    # 감시 모드로 빌드
+### 성능 최적화
 
-# 테스트
-pnpm test           # 모든 테스트
-pnpm test:coverage  # 커버리지 포함
+```typescript
+// 대용량 이미지 처리 시 단계적 축소
+const result = await processImage(largeImage)
+  .resize(1000, 1000)  // 먼저 중간 크기로
+  .resize(300, 200)    // 최종 크기로
+  .toBlob();
 
-# 품질 검사
-pnpm typecheck      # 타입 체크
-pnpm lint           # 린팅
-pnpm format         # 포맷팅
+// 메모리 사용량 최적화
+const processor = processImage(source);
+// 처리 완료 후 메모리 정리
+const result = await processor.toBlob();
+// processor를 더 이상 사용하지 않음
 ```
 
 ## 📄 라이선스
 
 MIT License
 
+## 📚 추가 문서
+
+### API 레퍼런스
+
+모든 타입과 인터페이스에 대한 완전한 문서:
+
+- **[타입 정의](src/types/index.ts)** - ResizeFit, OutputOptions 등
+- **[타입 가드](src/types/guards.ts)** - 런타임 타입 검증
+- **[프로세서](src/processor.ts)** - 메인 ImageProcessor 클래스
+- **[프리셋](src/presets/index.ts)** - createThumbnail, createAvatar 등
+
+### 예제 및 데모
+
+- **[예제 앱](../../apps/examples/)** - React 기반 인터랙티브 데모
+- **[테스트 코드](tests/)** - 실제 사용 사례와 예제
+
+### 개발자 가이드
+
+- **[메인 프로젝트](../../README.md)** - 전체 프로젝트 소개
+- **[개발자 문서](../../CLAUDE.md)** - 개발환경 설정 및 기여 가이드
+
 ## 🔗 관련 링크
 
 - [GitHub 저장소](https://github.com/cp949/web-image-util)
 - [npm 패키지](https://www.npmjs.com/package/@cp949/web-image-util)
-- [타입 정의](https://github.com/cp949/web-image-util/blob/main/packages/web-image-util/src/types/index.ts)
+- [이슈 트래커](https://github.com/cp949/web-image-util/issues)

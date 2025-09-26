@@ -15,7 +15,7 @@
  *
  * // 고급 처리
  * const result = await processImage(source)
- *   .resize(300, 200, { fit: 'pad', background: '#ffffff' })
+ *   .resize(300, 200, { fit: 'letterbox', background: '#ffffff' })
  *   .blur(2)
  *   .toBlob({ format: 'webp', quality: 0.8 });
  * ```

@@ -63,7 +63,7 @@ export class ImageProcessor {
    * processor.resize(300, 200)
    *
    * // 전체 이미지 보존 (pad fit)
-   * processor.resize(300, 200, { fit: 'pad' })
+   * processor.resize(300, 200, { fit: 'letterbox' })
    *
    * // 비율 유지하며 너비만 지정
    * processor.resize(300)
@@ -866,16 +866,16 @@ export class ImageProcessor {
    *
    * @example
    * ```typescript
-   * // 300x200으로 pad 리사이징
-   * processor.resizePad(300, 200)
+   * // 300x200으로 letterbox 리사이징
+   * processor.resizeLetterBox(300, 200)
    *
    * // 배경색 지정
-   * processor.resizePad(300, 200, { background: '#ffffff' })
+   * processor.resizeLetterBox(300, 200, { background: '#ffffff' })
    * ```
    */
-  resizePad(width: number, height: number, options: Partial<ResizeOptions> = {}): this {
+  resizeLetterBox(width: number, height: number, options: Partial<ResizeOptions> = {}): this {
     return this.resize(width, height, {
-      fit: 'pad',
+      fit: 'letterbox',
       ...options,
     });
   }

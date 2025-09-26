@@ -96,7 +96,7 @@ describe('ImageProcessor API 통합 테스트', () => {
 
     it('편의 메서드들이 체이닝 가능', () => {
       expectChainableMethod(processor, 'resizeCover', 100, 100);
-      expectChainableMethod(processor, 'resizePad', 100, 100);
+      expectChainableMethod(processor, 'resizeLetterBox', 100, 100);
       expectChainableMethod(processor, 'stretch', 100, 100);
     });
   });
