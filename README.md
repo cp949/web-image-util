@@ -1,81 +1,261 @@
 # @cp949/web-image-util
 
-모던 웹 브라우저에서 이미지 처리를 위한 TypeScript 라이브러리입니다. Sharp 라이브러리의 패턴을 참고하여 설계된 체이닝 API를 제공합니다.
+> 🎨 모던 웹 브라우저에서 이미지 처리를 위한 고성능 TypeScript 라이브러리
 
-## 🎯 주요 특징
+Canvas 2D API 기반으로 구축된 브라우저 네이티브 이미지 처리 라이브러리입니다. Sharp.js의 직관적인 체이닝 API 패턴을 웹 브라우저 환경에 맞게 설계했습니다.
+
+## 🌟 주요 특징
 
 - **🔗 체이닝 API**: Sharp와 유사한 직관적인 메서드 체이닝
-- **🎯 타입 안전**: 완전한 TypeScript 지원
-- **🌐 브라우저 네이티브**: Canvas API 기반으로 의존성 없음
-- **📦 트리쉐이킹**: ES 모듈로 번들 크기 최적화
-- **⚡ 성능 최적화**: 고해상도 이미지 처리 지원
-- **🎨 다양한 포맷**: WebP, AVIF, JPEG, PNG 지원
+- **🎯 완전한 타입 안전성**: TypeScript로 작성된 풀 스택 타입 지원
+- **🌐 브라우저 네이티브**: Canvas API 기반, 외부 의존성 없음
+- **📦 트리쉐이킹 지원**: ES 모듈로 번들 크기 최적화
+- **⚡ 고성능**: Canvas 풀링과 메모리 최적화
+- **🎨 모던 포맷**: WebP, AVIF, JPEG, PNG 지원
+- **📱 반응형**: 다양한 화면 크기와 기기에 최적화
 
-## 🚀 설치
+## 🚀 빠른 시작
 
 ```bash
 npm install @cp949/web-image-util
 ```
 
-## 📖 빠른 시작
-
 ```typescript
 import { processImage } from '@cp949/web-image-util';
 
-// 간단한 리사이징
+// 간단한 썸네일 생성
 const thumbnail = await processImage(source)
   .resize(300, 200)
   .toBlob();
 
-// 고급 처리
+// 고급 이미지 처리
 const result = await processImage(source)
-  .resize(300, 200, { fit: 'letterbox', background: '#ffffff' })
+  .resize(800, 600, { fit: 'cover', background: '#ffffff' })
   .blur(2)
   .toBlob({ format: 'webp', quality: 0.8 });
+
+// 소셜 미디어용 이미지
+const instagramPost = await processImage(source)
+  .resize(1080, 1080, { fit: 'cover' })
+  .toFile('instagram-post.jpg');
 ```
 
-## 🎯 핵심 기능
+---
 
-### 📐 리사이징
-- **크기 제한**: `atMostWidth()`, `atMostHeight()`, `atMostRect()` - 최대 크기 제한
-- **크기 보장**: `atLeastWidth()`, `atLeastHeight()`, `atLeastRect()` - 최소 크기 보장
-- **정확한 크기**: `resizeLetterBox()`, `resizeCover()`, `stretch()` - 정확한 크기로 맞춤
-- **강제 설정**: `forceWidth()`, `forceHeight()` - 한 축 고정하여 비율 유지
+## 📦 packages/web-image-util
 
-### 🎨 이미지 효과
-- **블러**: `blur()` - 가우시안 블러 효과
-- **필터**: 색상 조정, 특수 효과 (고급 기능)
-- **워터마크**: 텍스트/이미지 워터마크 합성 (고급 기능)
+### 🎯 핵심 라이브러리 기능
 
-### 📤 출력 형태
-- **Blob**: `toBlob()` - 파일 업로드, 다운로드용
-- **Data URL**: `toDataURL()` - `<img>` 태그 직접 사용
-- **File**: `toFile()` - FormData 업로드용
-- **Canvas**: `toCanvas()` - DOM 조작용
+메인 라이브러리는 다음과 같은 포괄적인 이미지 처리 기능을 제공합니다:
 
-### 🔧 유틸리티
-- **편의 함수**: `createThumbnail()`, `createAvatar()`, `createSocialImage()`
-- **포맷 변환**: 다양한 이미지 포맷 간 변환
-- **스마트 기본값**: 브라우저 지원에 따른 최적 포맷 자동 선택
+#### 📐 **리사이징 엔진**
+```typescript
+// 정확한 크기 제어
+processImage(source).resize(300, 200, { fit: 'cover' })   // 잘라서 맞춤
+processImage(source).resize(300, 200, { fit: 'contain' }) // 비율 유지하며 맞춤
+processImage(source).resize(300, 200, { fit: 'fill' })    // 늘려서 정확히 맞춤
 
-## 📚 예제 앱
+// 스마트 크기 제한
+processImage(source).atMostWidth(800)    // 최대 너비 800px
+processImage(source).atMostHeight(600)   // 최대 높이 600px
+processImage(source).atMostRect(800, 600) // 최대 800x600 내에서
 
-이 모노레포에는 라이브러리의 기능을 보여주는 예제 앱이 포함되어 있습니다:
+// 크기 보장
+processImage(source).atLeastWidth(400)   // 최소 너비 400px 보장
+processImage(source).forceWidth(300)     // 너비 300px 고정, 비율 유지
+```
 
-### 🖥️ Examples App (`apps/examples`)
+#### 🎨 **이미지 효과 & 필터**
+```typescript
+// 고급 기능 (advanced 서브패키지)
+import { AdvancedImageProcessor, filterManager } from '@cp949/web-image-util/advanced';
 
-실제 웹 애플리케이션에서 라이브러리를 사용하는 방법을 보여주는 React 기반 예제들:
+// 내장 필터 시스템
+await filterManager.applyFilter(imageData, {
+  name: 'brightness',
+  params: { value: 10 }
+});
 
-- **기본 이미지 처리**: 리사이징, 포맷 변환, 품질 조정
-- **인터랙티브 UI**: Material-UI 기반의 직관적인 설정 패널
-- **실시간 미리보기**: Before/After 비교 뷰
-- **다양한 fit 모드**: cover, letterbox, stretch, atMost, atLeast 데모
-- **배경색 설정**: letterbox 모드에서의 배경색 커스터마이징
+// 필터 체인
+await filterManager.applyFilterChain(imageData, [
+  { name: 'brightness', params: { value: 10 } },
+  { name: 'contrast', params: { value: 15 } },
+  { name: 'blur', params: { radius: 2 } }
+]);
 
-#### 예제 실행하기
+// 워터마크 합성
+import { addTextWatermark, addImageWatermark } from '@cp949/web-image-util/advanced';
+
+await addTextWatermark(canvas, {
+  text: '© 2024 회사명',
+  position: 'bottom-right',
+  style: 'white-shadow'
+});
+```
+
+#### 📤 **출력 포맷 & 최적화**
+```typescript
+// 다양한 출력 형태
+const blob = await processImage(source).toBlob({ format: 'webp', quality: 0.8 });
+const dataURL = await processImage(source).toDataURL({ format: 'jpeg', quality: 0.9 });
+const file = await processImage(source).toFile('image.png');
+const canvas = await processImage(source).toCanvas();
+
+// 스마트 포맷 선택 (고급 기능)
+import { autoOptimize, SmartFormatSelector } from '@cp949/web-image-util/advanced';
+
+const optimized = await autoOptimize(canvas, {
+  purpose: 'web',      // 'web' | 'thumbnail' | 'print'
+  targetSize: 100000   // 100KB 목표
+});
+```
+
+#### 🎛️ **편의 함수 (Presets)**
+```typescript
+import { createThumbnail, createAvatar, createSocialImage } from '@cp949/web-image-util/presets';
+
+// 빠른 썸네일 생성
+const thumbnail = await createThumbnail(source, {
+  size: 150,
+  format: 'webp',
+  quality: 0.8
+});
+
+// 아바타 이미지 (정사각형 + 라운드)
+const avatar = await createAvatar(source, {
+  size: 120,
+  background: '#f0f0f0'
+});
+
+// 소셜 미디어 규격
+const igPost = await createSocialImage(source, 'instagram-post');
+const fbCover = await createSocialImage(source, 'facebook-cover');
+```
+
+#### ⚡ **성능 최적화 (고급 기능)**
+```typescript
+import { BatchResizer, autoResize } from '@cp949/web-image-util/advanced';
+
+// 배치 처리
+const results = await BatchResizer.processBatch([
+  { source: image1, options: { width: 300, height: 200 } },
+  { source: image2, options: { width: 400, height: 300 } }
+], {
+  concurrency: 3,
+  onProgress: (completed, total) => console.log(`${completed}/${total}`)
+});
+
+// 성능 우선 리사이징
+const fastResult = await autoResize(source, {
+  width: 800,
+  priority: 'speed'  // 'speed' | 'quality' | 'balanced'
+});
+```
+
+#### 🛠️ **유틸리티 & 변환**
+```typescript
+import {
+  toBlob,
+  toDataURL,
+  toFile,
+  detectFormat,
+  getImageDimensions
+} from '@cp949/web-image-util/utils';
+
+// 포맷 감지
+const format = await detectFormat(file);  // 'jpeg' | 'png' | 'webp' | ...
+
+// 이미지 정보 추출
+const { width, height } = await getImageDimensions(source);
+
+// 직접 변환 (체이닝 없이)
+const blob = await toBlob(canvas, { format: 'webp', quality: 0.8 });
+```
+
+---
+
+## 🖥️ apps/examples
+
+### 📱 **인터랙티브 데모 애플리케이션**
+
+React + Material-UI 기반의 종합적인 예제 애플리케이션으로, 라이브러리의 모든 기능을 실제 웹 환경에서 체험할 수 있습니다.
+
+#### 🎨 **주요 예제 페이지**
+
+1. **🏠 홈페이지**
+   - 라이브러리 소개 및 주요 기능 개요
+   - 빠른 시작 가이드
+   - 실시간 코드 예제
+
+2. **📐 기본 처리 (Basic Processing)**
+   - 리사이징 모드 비교 (cover, contain, fill, inside, outside)
+   - 실시간 미리보기와 Before/After 비교
+   - 인터랙티브 크기 조절 슬라이더
+
+3. **🎨 고급 기능 (Advanced Features)**
+   - 필터 시스템 데모 (밝기, 대비, 채도, 블러, 특수효과)
+   - 워터마크 추가 (텍스트/이미지)
+   - 이미지 합성 및 레이어 관리
+
+4. **📱 프리셋 (Presets)**
+   - 소셜 미디어 규격 자동 변환
+   - 썸네일 생성기
+   - 아바타 생성기
+
+5. **🔄 변환기 (Converters)**
+   - 포맷 변환 (JPEG ↔ PNG ↔ WebP ↔ AVIF)
+   - 품질 조절 및 압축 비교
+   - 파일 크기 최적화
+
+6. **📦 배치 처리 (Batch Processing)**
+   - 다중 파일 업로드
+   - 일괄 변환 및 ZIP 다운로드
+   - 진행률 표시 및 성능 통계
+
+7. **⚡ 성능 테스트 (Performance)**
+   - 처리 시간 벤치마크
+   - 메모리 사용량 분석
+   - 대용량 이미지 처리 테스트
+
+8. **🛠️ 개발자 도구 (Dev Tools)**
+   - 이미지 메타데이터 표시
+   - 디버깅 정보 및 로그
+   - API 호출 모니터링
+
+9. **🎯 필터 시스템 (Filters)**
+   - 플러그인 기반 필터 아키텍처
+   - 커스텀 필터 생성
+   - 필터 체인 및 프리셋
+
+10. **🖼️ SVG 호환성 (SVG Compatibility)**
+    - SVG 래스터화
+    - 호환성 개선 옵션
+    - 브라우저별 렌더링 차이 비교
+
+#### 🎛️ **인터랙티브 UI 특징**
+
+```typescript
+// 실시간 설정 패널
+- 드래그앤드롭 파일 업로드
+- 슬라이더를 통한 실시간 파라미터 조절
+- Before/After 이미지 비교 뷰
+- 코드 생성기 (현재 설정을 코드로 표시)
+- 결과 다운로드 (다양한 포맷)
+
+// 반응형 디자인
+- 데스크톱/태블릿/모바일 최적화
+- Material-UI 7.3 기반 모던 UI
+- 다크/라이트 테마 지원
+- 접근성 (WCAG 2.1) 준수
+```
+
+#### 🚀 **예제 앱 실행하기**
 
 ```bash
-# 개발 서버 실행
+# 루트에서 모든 의존성 설치
+pnpm install
+
+# 개발 서버 시작 (권장)
 pnpm dev
 
 # 또는 개별 실행
@@ -83,75 +263,159 @@ cd apps/examples
 pnpm dev
 ```
 
-웹 브라우저에서 `http://localhost:3000`을 열어 예제를 확인할 수 있습니다.
+**URL**: `http://localhost:5173`
 
-## 📖 상세 문서
+#### 📱 **기술 스택 (2025 최신)**
 
-라이브러리의 자세한 사용법과 API 문서는 패키지 디렉토리를 참조하세요:
+```json
+{
+  "React": "19.1.1",          // 최신 Concurrent Features
+  "Material-UI": "7.3.x",     // 모던 컴포넌트 라이브러리
+  "TypeScript": "5.9.x",      // 최신 타입 시스템
+  "Vite": "7.1.x",            // 초고속 개발 서버
+  "React Router": "7.9.x",    // 클라이언트 라우팅
+  "Emotion": "11.14.x"        // CSS-in-JS
+}
+```
 
-- **[라이브러리 문서](packages/web-image-util/README.md)** - 완전한 API 레퍼런스와 고급 사용법
-- **[개발자 가이드](CLAUDE.md)** - 개발환경 설정 및 기여 가이드
+#### 🎯 **예제로 배우는 패턴**
+
+```typescript
+// 1. 기본 사용 패턴
+const handleImageProcess = async (file: File) => {
+  const result = await processImage(file)
+    .resize(800, 600, { fit: 'cover' })
+    .toBlob({ format: 'webp', quality: 0.8 });
+
+  setProcessedImage(URL.createObjectURL(result.blob));
+};
+
+// 2. 고급 필터 체인
+const applyArtisticEffect = async (source: File) => {
+  const processor = processImage(source);
+
+  // 여러 효과 조합
+  const result = await processor
+    .resize(1024, 1024, { fit: 'cover' })
+    .blur(1)
+    .toBlob({ format: 'jpeg', quality: 0.9 });
+
+  return result;
+};
+
+// 3. 배치 처리 패턴
+const processBatch = async (files: File[]) => {
+  const results = await Promise.all(
+    files.map(file =>
+      processImage(file)
+        .resize(300, 300, { fit: 'cover' })
+        .toBlob({ format: 'webp' })
+    )
+  );
+
+  return results;
+};
+```
+
+---
 
 ## 🏗️ 모노레포 구조
 
 ```
 web-image-util/
-├── packages/
-│   └── web-image-util/     # 메인 라이브러리
-├── apps/
-│   └── examples/           # React 예제 앱
-└── packages/
-    └── config/             # 공유 설정
+├── 📦 packages/
+│   ├── web-image-util/          # 🎯 메인 라이브러리
+│   │   ├── src/
+│   │   │   ├── index.ts         # 기본 API
+│   │   │   ├── advanced-index.ts # 고급 기능
+│   │   │   ├── presets/         # 편의 함수
+│   │   │   ├── utils/           # 유틸리티
+│   │   │   ├── filters/         # 필터 시스템
+│   │   │   └── composition/     # 이미지 합성
+│   │   ├── tests/               # 106개 테스트
+│   │   └── README.md            # 📚 완전한 API 문서
+│   └── config/                  # 공유 설정 (ESLint, TypeScript)
+├── 🖥️ apps/
+│   └── examples/                # 📱 React 데모 앱
+│       ├── src/
+│       │   ├── pages/           # 10개 예제 페이지
+│       │   ├── components/      # 공통 UI 컴포넌트
+│       │   └── hooks/           # 커스텀 훅
+│       ├── package.json
+│       └── README.md            # 🎨 UI 개발 가이드
+├── README.md                    # 📖 이 파일 (프로젝트 개요)
+├── package.json                 # 워크스페이스 설정
+└── turbo.json                   # 빌드 파이프라인
 ```
 
-## 🚀 개발자 가이드
+## 🛠️ 개발자 가이드
 
-### 개발 명령어
+### 📋 **개발 명령어**
 
 ```bash
-# 빌드
-pnpm build          # 모든 패키지 빌드
-pnpm build:watch    # 감시 모드로 빌드
+# 🏗️ 빌드
+pnpm build              # 모든 패키지 빌드
+pnpm build:watch        # 감시 모드로 빌드
 
-# 테스트
-pnpm test           # 모든 테스트
-pnpm test:coverage  # 커버리지 포함
+# 🧪 테스트
+pnpm test               # 모든 테스트 실행
+pnpm test:coverage      # 커버리지 포함
+pnpm test:ui            # UI 모드
 
-# 품질 검사
-pnpm typecheck      # 타입 체크
-pnpm lint           # 린팅
-pnpm format         # 포맷팅
+# 🔍 품질 검사
+pnpm typecheck          # TypeScript 타입 체크
+pnpm lint               # ESLint 린팅
+pnpm lint:fix           # 린팅 오류 자동 수정
+pnpm format             # Prettier 포맷팅
 
-# 배포
-git checkout release && git merge main && git push origin release  # 자동 배포
+# 🚀 개발 서버
+pnpm dev                # 예제 앱 개발 서버
+
+# 📦 배포
+pnpm version:patch      # 패치 버전 업데이트
+pnpm version:minor      # 마이너 버전 업데이트
+pnpm publish            # npm 배포
 ```
 
-## 🌐 브라우저 지원
+### 🎯 **성능 목표**
 
-- **Chrome** 88+
-- **Firefox** 90+
-- **Safari** 14+
-- **Edge** 88+
+- **📊 테스트 커버리지**: 90% 이상
+- **⚡ 번들 크기**: 메인 모듈 < 50KB (gzipped)
+- **🏃 처리 속도**: 1080p 이미지 < 500ms
+- **💾 메모리 효율**: Canvas 풀링으로 메모리 재사용
 
-필수 브라우저 API:
-- Canvas 2D Context
-- FileReader API
-- Blob API
+### 🌐 **브라우저 지원**
 
-## 🤝 기여하기
+| 브라우저 | 최소 버전 | 주요 기능 |
+|---------|----------|----------|
+| Chrome | 88+ | WebP, AVIF, OffscreenCanvas |
+| Firefox | 90+ | WebP 지원 |
+| Safari | 14+ | WebP 지원 |
+| Edge | 88+ | 완전 지원 |
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+**필수 API**:
+- Canvas 2D Context ✅
+- FileReader API ✅
+- Blob/File API ✅
+- Web Workers (성능 향상) 🔧
+
+## 📚 상세 문서
+
+- **📖 [라이브러리 API 문서](packages/web-image-util/README.md)** - 완전한 API 레퍼런스
+- **🎨 [예제 앱 가이드](apps/examples/README.md)** - UI 개발 및 통합 가이드
+- **🔧 [개발 환경 설정](CLAUDE.md)** - 프로젝트 구조 및 기여 가이드
 
 ## 📄 라이선스
 
-MIT License
+MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
-## 🔗 관련 링크
+## 🔗 링크
 
-- [npm 패키지](https://www.npmjs.com/package/@cp949/web-image-util)
-- [GitHub 저장소](https://github.com/cp949/web-image-util)
-- [이슈 트래커](https://github.com/cp949/web-image-util/issues)
+- 📦 [npm 패키지](https://www.npmjs.com/package/@cp949/web-image-util)
+- 💻 [GitHub 저장소](https://github.com/cp949/web-image-util)
+- 🐛 [이슈 리포트](https://github.com/cp949/web-image-util/issues)
+- 📊 [릴리스 노트](https://github.com/cp949/web-image-util/releases)
+
+---
+
+**Made with ❤️ by @cp949** | **Latest Update**: 2025-01-27
