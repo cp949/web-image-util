@@ -1,98 +1,58 @@
-/**
- * 기본 이미지 처리 에러 클래스
- */
-export class ImageProcessingError extends Error {
-  constructor(
-    message: string,
-    public code: ImageErrorCode,
-    public originalError?: Error
-  ) {
-    super(message);
-    this.name = 'ImageProcessingError';
-
-    // Error 스택 추적을 위한 설정
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ImageProcessingError);
-    }
-  }
-}
+// 통합 타입 시스템에서 import
+import { ImageProcessError, ImageErrorCodeConstants } from '../types';
 
 /**
- * 에러 코드 정의
+ * 이미지 소스 로딩 에러
+ *
+ * @description 이미지 소스를 로드하는 과정에서 발생하는 에러
+ * 잘못된 URL, 네트워크 오류, CORS 문제 등이 원인일 수 있습니다.
  */
-export type ImageErrorCode =
-  // 소스 관련 에러
-  | 'INVALID_SOURCE'
-  | 'UNSUPPORTED_FORMAT'
-  | 'SOURCE_LOAD_FAILED'
-  // 처리 관련 에러
-  | 'CANVAS_CREATION_FAILED'
-  | 'RESIZE_FAILED'
-  | 'CONVERSION_FAILED'
-  // 파일 관련 에러
-  | 'DOWNLOAD_FAILED'
-  | 'FILE_TOO_LARGE'
-  // 브라우저 호환성 에러
-  | 'BROWSER_NOT_SUPPORTED'
-  | 'FEATURE_NOT_SUPPORTED';
-
-export const ImageErrorCode = {
-  // 소스 관련 에러
-  INVALID_SOURCE: 'INVALID_SOURCE' as const,
-  UNSUPPORTED_FORMAT: 'UNSUPPORTED_FORMAT' as const,
-  SOURCE_LOAD_FAILED: 'SOURCE_LOAD_FAILED' as const,
-  // 처리 관련 에러
-  CANVAS_CREATION_FAILED: 'CANVAS_CREATION_FAILED' as const,
-  RESIZE_FAILED: 'RESIZE_FAILED' as const,
-  CONVERSION_FAILED: 'CONVERSION_FAILED' as const,
-  // 파일 관련 에러
-  DOWNLOAD_FAILED: 'DOWNLOAD_FAILED' as const,
-  FILE_TOO_LARGE: 'FILE_TOO_LARGE' as const,
-  // 브라우저 호환성 에러
-  BROWSER_NOT_SUPPORTED: 'BROWSER_NOT_SUPPORTED' as const,
-  FEATURE_NOT_SUPPORTED: 'FEATURE_NOT_SUPPORTED' as const,
-} as const;
-
-/**
- * 소스 로딩 에러
- */
-export class ImageSourceError extends ImageProcessingError {
+export class ImageSourceError extends ImageProcessError {
   constructor(
     message: string,
     public source: any,
     originalError?: Error
   ) {
-    super(message, ImageErrorCode.SOURCE_LOAD_FAILED, originalError);
+    super(message, ImageErrorCodeConstants.SOURCE_LOAD_FAILED, originalError);
     this.name = 'ImageSourceError';
   }
 }
 
 /**
- * 변환 에러
+ * 이미지 변환 에러
+ *
+ * @description 이미지 포맷 변환 과정에서 발생하는 에러
+ * 지원하지 않는 포맷이나 변환 실패가 원인일 수 있습니다.
  */
-export class ImageConversionError extends ImageProcessingError {
+export class ImageConversionError extends ImageProcessError {
   constructor(message: string, fromFormat: string, toFormat: string, originalError?: Error) {
-    super(`${message} (${fromFormat} → ${toFormat})`, ImageErrorCode.CONVERSION_FAILED, originalError);
+    super(`${message} (${fromFormat} → ${toFormat})`, ImageErrorCodeConstants.CONVERSION_FAILED, originalError);
     this.name = 'ImageConversionError';
   }
 }
 
 /**
  * Canvas 관련 에러
+ *
+ * @description Canvas 생성이나 2D 컨텍스트 획득 실패 시 발생하는 에러
+ * 브라우저 지원 문제나 메모리 부족이 원인일 수 있습니다.
  */
-export class ImageCanvasError extends ImageProcessingError {
+export class ImageCanvasError extends ImageProcessError {
   constructor(message: string, originalError?: Error) {
-    super(message, ImageErrorCode.CANVAS_CREATION_FAILED, originalError);
+    super(message, ImageErrorCodeConstants.CANVAS_CREATION_FAILED, originalError);
     this.name = 'ImageCanvasError';
   }
 }
 
 /**
- * 리사이징 에러
+ * 이미지 리사이징 에러
+ *
+ * @description 이미지 크기 조정 과정에서 발생하는 에러
+ * 잘못된 크기 값이나 메모리 부족이 원인일 수 있습니다.
  */
-export class ImageResizeError extends ImageProcessingError {
+export class ImageResizeError extends ImageProcessError {
   constructor(message: string, originalError?: Error) {
-    super(message, ImageErrorCode.RESIZE_FAILED, originalError);
+    super(message, ImageErrorCodeConstants.RESIZE_FAILED, originalError);
     this.name = 'ImageResizeError';
   }
 }

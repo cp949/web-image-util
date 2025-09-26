@@ -1,7 +1,11 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: [
+    'src/index.ts',
+    'src/utils/index.ts',
+    'src/presets/index.ts'
+  ],
   format: ['esm'],
   target: 'es2020',
   platform: 'browser', // 브라우저 전용

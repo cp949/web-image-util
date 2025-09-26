@@ -1,11 +1,11 @@
 /**
  * @cp949/web-image-util - 고급 기능 API
  *
- * Phase 3에서 구현된 모든 고급 기능들을 제공하는 서브 엔트리포인트
+ * 고급 기능들을 제공하는 서브 엔트리포인트
  *
  * @example 사용법
  * ```typescript
- * // 고급 통합 처리
+ * // 고급 이미지 처리
  * import { AdvancedImageProcessor } from '@cp949/web-image-util/advanced';
  *
  * const result = await AdvancedImageProcessor.processImage(image, {
@@ -27,7 +27,7 @@
  * ```
  */
 
-// ===== 통합 처리 시스템 =====
+// ===== 이미지 처리 시스템 =====
 export {
   addWatermarkAndOptimize,
   AdvancedImageProcessor,
@@ -80,6 +80,17 @@ export {
 } from './core/smart-format';
 export type { FormatOptimizationResult, SmartFormatOptions } from './core/smart-format';
 
+// ===== 성능 최적화 시스템 =====
+export { autoResize, fastResize, qualityResize, ResizePerformance } from './core/performance-utils';
+export { BatchResizer } from './core/batch-resizer';
+export { getPerformanceConfig, RESIZE_PROFILES } from './core/performance-config';
+export type { ResizePerformanceOptions, ResizeProfile } from './core/performance-config';
+
+// ===== 향상된 에러 처리 시스템 =====
+export { createAndHandleError, createQuickError, getErrorStats, withErrorHandling } from './base/error-helpers';
+export { globalErrorHandler, ImageErrorHandler } from './core/error-handler';
+export type { ErrorStats } from './core/error-handler';
+
 // ===== 고급 기능들 =====
 
 // 필터 시스템 - 플러그인 기반 아키텍처
@@ -95,12 +106,20 @@ export { HighResolutionManager } from './base/high-res-manager';
 export type { HighResolutionOptions, ProcessingResult } from './base/high-res-manager';
 
 // 포맷 관련
-export { FORMAT_MIME_MAP, FormatDetector, ImageFormat } from './base/format-detector';
+export { FORMAT_MIME_MAP, FormatDetector } from './base/format-detector';
+export type { ImageFormat } from './base/format-detector';
 
 // ===== 편의 함수들 =====
 
 /**
  * 빠른 썸네일 생성 (가장 일반적인 사용 사례)
+ *
+ * @description 고급 옵션을 사용하여 최적화된 썸네일을 생성합니다.
+ * 워터마크, 필터, 자동 포맷 선택 등의 기능을 포함합니다.
+ * @param image 원본 이미지 엘리먼트
+ * @param size 썸네일 크기 (정사각형)
+ * @param options 썸네일 생성 옵션
+ * @returns 생성된 썸네일과 통계 정보
  */
 export async function createAdvancedThumbnail(
   image: HTMLImageElement,
@@ -161,6 +180,13 @@ export async function createAdvancedThumbnail(
 
 /**
  * 소셜 미디어용 이미지 최적화
+ *
+ * @description 각 소셜 미디어 플랫폼의 권장 사이즈와 포맷에 맞춰 이미지를 최적화합니다.
+ * 플랫폼별 최적 크기와 품질 설정을 자동으로 적용합니다.
+ * @param image 원본 이미지 엘리먼트
+ * @param platform 최적화할 소셜 미디어 플랫폼
+ * @param options 추가 옵션 (워터마크, 필터 등)
+ * @returns 최적화된 이미지 Canvas와 Blob
  */
 export async function optimizeForSocial(
   image: HTMLImageElement,
@@ -223,6 +249,12 @@ export async function optimizeForSocial(
 
 /**
  * 배치 최적화 - 여러 이미지를 한 번에 처리
+ *
+ * @description 여러 이미지를 동시에 처리하여 효율성을 높입니다.
+ * 동시성 제어와 진행률 콜백을 통해 대용량 배치 작업을 안정적으로 수행합니다.
+ * @param images 처리할 이미지 배열 (이미지와 옵션 포함)
+ * @param options 배치 처리 옵션 (동시성, 진행률 콜백 등)
+ * @returns 처리 결과 배열 (이름과 결과 포함)
  */
 export async function batchOptimize(
   images: Array<{
@@ -254,6 +286,10 @@ export async function batchOptimize(
 
 /**
  * 고급 기능 사용 통계 및 정보
+ *
+ * @description 현재 환경에서 사용 가능한 고급 기능들의 상태와 정보를 반환합니다.
+ * 브라우저 지원 여부, 등록된 플러그인 수, 성능 정보 등을 포함합니다.
+ * @returns 고급 기능 정보 객체 (버전, 기능, 플러그인, 성능 정보)
  */
 export function getAdvancedFeatureInfo() {
   return {
@@ -281,6 +317,12 @@ export function getAdvancedFeatureInfo() {
 
 /**
  * 커스텀 필터 플러그인 생성 도우미
+ *
+ * @description 개발자가 쉽게 커스텀 필터 플러그인을 만들 수 있도록 도와주는 팩토리 함수입니다.
+ * 타입 안전성을 보장하면서 필터 플러그인의 필수 구조를 제공합니다.
+ * @template TParams 필터 매개변수의 타입
+ * @param config 필터 플러그인 설정 객체
+ * @returns 생성된 필터 플러그인 객체
  */
 export function createFilterPlugin<TParams>(config: {
   name: string;

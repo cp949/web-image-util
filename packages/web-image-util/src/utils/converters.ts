@@ -1,8 +1,7 @@
 /**
  * 이미지 변환 유틸리티 함수들
  *
- * @description 기존 ImageBlobs, ImageElements 클래스들을 대체하는
- * 단순하고 직관적인 변환 함수들을 제공
+ * @description 단순하고 직관적인 이미지 변환 함수들을 제공
  */
 
 import { convertToImageElement } from '../core/source-converter';

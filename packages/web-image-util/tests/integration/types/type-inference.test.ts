@@ -112,10 +112,10 @@ describe('TypeScript 타입 추론 통합 테스트', () => {
       expect(result3).toBe(processor);
     });
 
-    it('atMost 계열 메서드가 ImageProcessor 반환', () => {
-      const result1 = processor.atMostWidth(100);
-      const result2 = processor.atMostHeight(200);
-      const result3 = processor.atMostRect(100, 200);
+    it('inside 계열 메서드가 ImageProcessor 반환', () => {
+      const result1 = processor.insideWidth(100);
+      const result2 = processor.insideHeight(200);
+      const result3 = processor.insideRect(100, 200);
 
       expectType<ImageProcessor>(result1);
       expectType<ImageProcessor>(result2);
@@ -130,7 +130,7 @@ describe('TypeScript 타입 추론 통합 테스트', () => {
       const result = processor
         .resize(100, 100)
         .blur(2)
-        .atMostWidth(200);
+        .insideWidth(200);
 
       expectType<ImageProcessor>(result);
       expect(result).toBe(processor);
@@ -215,7 +215,7 @@ describe('TypeScript 타입 추론 통합 테스트', () => {
 
     it('ResizeFit 유니온 타입 처리', () => {
       const processor = createMockProcessor();
-      const fitModes: ResizeFit[] = ['cover', 'letterbox', 'stretch', 'atMost', 'atLeast'];
+      const fitModes: ResizeFit[] = ['cover', 'contain', 'fill', 'inside', 'outside'];
 
       fitModes.forEach(fit => {
         expect(() => {

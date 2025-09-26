@@ -1,6 +1,6 @@
 /**
  * 간소화된 워터마크 API
- * 기존의 복잡한 워터마크 시스템을 사용하기 쉬운 인터페이스로 단순화
+ * 사용하기 쉬운 워터마크 인터페이스
  */
 
 import type { TextWatermarkOptions, TextStyle } from './text-watermark';
@@ -87,7 +87,7 @@ export class SimpleWatermark {
       textStyle.opacity = opacity;
     }
 
-    // 기존 TextWatermark 사용
+    // TextWatermark 설정
     const watermarkOptions: TextWatermarkOptions = {
       text,
       position: internalPosition,
@@ -114,7 +114,7 @@ export class SimpleWatermark {
     // 크기 해석
     const scale = this.resolveImageSize(size, canvas, image);
 
-    // 기존 ImageWatermark 사용
+    // ImageWatermark 설정
     const watermarkOptions: ImageWatermarkOptions = {
       watermarkImage: image,
       position: internalPosition,

@@ -1,5 +1,5 @@
 /**
- * 모든 필터 플러그인들의 통합 인덱스
+ * 필터 플러그인 export
  *
  * 이 파일은 모든 필터 플러그인들을 등록하고 내보내는 중앙 집중식 관리 파일입니다.
  */
@@ -11,12 +11,17 @@ import { EffectFilterPlugins } from './effect-plugins';
 
 /**
  * 모든 기본 필터 플러그인들
+ *
+ * @description 색상, 효과, 블러 카테고리의 모든 기본 필터 플러그인들을 포함하는 배열
+ * 라이브러리 초기화 시 자동으로 등록됩니다.
  */
 export const AllFilterPlugins = [...ColorFilterPlugins, ...EffectFilterPlugins, ...BlurFilterPlugins];
 
 /**
  * 모든 기본 필터 플러그인들을 자동으로 등록
- * 이 함수는 라이브러리 초기화 시 한 번 호출됩니다.
+ *
+ * @description 라이브러리 초기화 시 한 번 호출되어 모든 기본 필터를 filterManager에 등록합니다.
+ * 등록 성공/실패 통계를 콘솔에 출력합니다.
  */
 export function registerDefaultFilters(): void {
   console.debug('기본 필터 플러그인들을 등록 중...');
@@ -45,7 +50,9 @@ export function registerDefaultFilters(): void {
 
 /**
  * 플러그인 시스템 초기화
- * 라이브러리가 로드될 때 자동으로 호출됩니다.
+ *
+ * @description 라이브러리가 로드될 때 자동으로 호출되어 필터 시스템을 초기화합니다.
+ * 기본 필터들을 등록하고 전역 객체에 필터 API를 노출합니다.
  */
 export function initializeFilterSystem(): void {
   // 기본 필터들 등록

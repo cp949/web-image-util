@@ -1,10 +1,10 @@
-import { withManagedCanvas } from './canvas-utils';
-import { createImageError } from './error-helpers';
-import type { ImageAnalysis } from './high-res-detector';
-import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector';
+import { withManagedCanvas } from '../../base/canvas-utils';
+import { createImageError } from '../../base/error-helpers';
+import type { ImageAnalysis } from '../../base/high-res-detector';
+import { HighResolutionDetector, ProcessingStrategy } from '../../base/high-res-detector';
 // 브라우저 환경에 최적화된 메모리 관리
-import { SteppedProcessor } from './stepped-processor';
-import { TiledProcessor } from './tiled-processor';
+import { SteppedProcessor } from '../../base/stepped-processor';
+import { TiledProcessor } from '../../base/tiled-processor';
 
 /**
  * 고해상도 처리 옵션
@@ -44,10 +44,14 @@ export interface ProcessingResult {
 }
 
 /**
- * 고해상도 이미지 처리 관리자
- * 다양한 처리 전략을 조합하여 최적의 결과를 제공합니다.
+ * 내부 고해상도 이미지 처리기
+ *
+ * @description 복잡한 고해상도 처리 로직의 내부 구현체입니다.
+ * 사용자는 이 클래스를 직접 사용하지 않고, SmartProcessor를 통해 접근합니다.
+ *
+ * @internal 이 클래스는 공개 API가 아닙니다.
  */
-export class HighResolutionManager {
+export class InternalHighResProcessor {
   private static readonly DEFAULT_OPTIONS = {
     quality: 'balanced' as const,
     maxMemoryUsageMB: 256,
@@ -360,7 +364,7 @@ export class HighResolutionManager {
           currentStrategy: ProcessingStrategy.DIRECT, // 실제 전략으로 업데이트 필요
           timeElapsed: Math.round(timeElapsed * 10) / 10,
           estimatedTimeRemaining: Math.round(estimatedRemaining * 10) / 10,
-          memoryUsageMB: HighResolutionManager.getCurrentMemoryUsage(),
+          memoryUsageMB: InternalHighResProcessor.getCurrentMemoryUsage(),
           details,
         });
       },

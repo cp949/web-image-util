@@ -3,6 +3,9 @@ import type { Size, Rectangle } from './position-types';
 
 /**
  * 레이어 정보
+ *
+ * @description 이미지 합성에 사용되는 레이어의 속성들을 정의하는 인터페이스입니다.
+ * 위치, 크기, 투명도, 블렜드 모드, 회전 등을 설정할 수 있습니다.
  */
 export interface Layer {
   image: HTMLImageElement;
@@ -18,6 +21,9 @@ export interface Layer {
 
 /**
  * 합성 옵션
+ *
+ * @description 이미지 합성 시 사용되는 기본 옵션들을 정의하는 인터페이스입니다.
+ * 캠버스 크기와 배경색을 설정할 수 있습니다.
  */
 export interface CompositionOptions {
   backgroundColor?: string;
@@ -27,17 +33,23 @@ export interface CompositionOptions {
 
 /**
  * 그리드 레이아웃 옵션
+ *
+ * @description 여러 이미지를 그리드 형태로 배치할 때 사용되는 옵션들을 정의하는 인터페이스입니다.
+ * 행과 열의 수, 간격, 배경색, 이미지 맞춤 방식 등을 설정할 수 있습니다.
  */
 export interface GridLayoutOptions {
   rows: number;
   cols: number;
   spacing?: number;
   backgroundColor?: string;
-  fit?: 'letterbox' | 'cover' | 'stretch';
+  fit?: 'contain' | 'cover' | 'fill';
 }
 
 /**
  * 이미지 합성 클래스
+ *
+ * @description 여러 이미지를 합성하여 하나의 이미지로 만드는 기능들을 제공하는 정적 클래스입니다.
+ * 레이어 기반 합성, 그리드 레이아웃, 콜라주 스타일 합성 등을 지원합니다.
  */
 export class ImageComposer {
   /**
@@ -92,7 +104,7 @@ export class ImageComposer {
    * 그리드 레이아웃 합성
    */
   static async composeGrid(images: HTMLImageElement[], options: GridLayoutOptions): Promise<HTMLCanvasElement> {
-    const { rows, cols, spacing = 10, backgroundColor = '#ffffff', fit = 'letterbox' } = options;
+    const { rows, cols, spacing = 10, backgroundColor = '#ffffff', fit = 'contain' } = options;
 
     if (images.length === 0) throw new Error('이미지가 제공되지 않았습니다');
     if (images.length > rows * cols) {
@@ -219,7 +231,7 @@ export class ImageComposer {
     imageHeight: number,
     containerWidth: number,
     containerHeight: number,
-    fit: 'letterbox' | 'cover' | 'stretch'
+    fit: 'contain' | 'cover' | 'fill'
   ): { x: number; y: number; width: number; height: number } {
     let width = imageWidth;
     let height = imageHeight;
@@ -227,7 +239,7 @@ export class ImageComposer {
     let y = 0;
 
     switch (fit) {
-      case 'letterbox': {
+      case 'contain': {
         const scale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
         width = imageWidth * scale;
         height = imageHeight * scale;
@@ -245,7 +257,7 @@ export class ImageComposer {
         break;
       }
 
-      case 'stretch':
+      case 'fill':
         width = containerWidth;
         height = containerHeight;
         break;

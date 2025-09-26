@@ -3,6 +3,9 @@ import { PositionCalculator } from './position-types';
 
 /**
  * 텍스트 스타일 옵션
+ *
+ * @description 텍스트 워터마크의 시각적 스타일을 정의하는 인터페이스입니다.
+ * 폰트, 색상, 외곽선, 그림자, 투명도 등 다양한 시각적 속성을 설정할 수 있습니다.
  */
 export interface TextStyle {
   fontFamily?: string;
@@ -23,6 +26,9 @@ export interface TextStyle {
 
 /**
  * 텍스트 워터마크 옵션
+ *
+ * @description 텍스트를 워터마크로 추가할 때의 옵션들을 정의하는 인터페이스입니다.
+ * 텍스트 내용, 위치, 스타일, 여백, 회전 등을 설정할 수 있습니다.
  */
 export interface TextWatermarkOptions {
   text: string;
@@ -35,6 +41,9 @@ export interface TextWatermarkOptions {
 
 /**
  * 텍스트 워터마크 클래스
+ *
+ * @description 텍스트를 워터마크로 추가하는 기능을 제공하는 정적 클래스입니다.
+ * Canvas에 다양한 스타일의 텍스트 워터마크를 추가하거나 새로운 Canvas를 생성할 수 있습니다.
  */
 export class TextWatermark {
   /**

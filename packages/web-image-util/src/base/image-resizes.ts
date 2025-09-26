@@ -1,6 +1,6 @@
 /**
  * 이미지 리사이징 핵심 로직
- * v2.0 API에서 사용되는 핵심 함수들만 포함
+ * 이미지 리사이징 핵심 함수들
  */
 
 // Canvas 풀링은 pipeline.ts에서 처리됨
@@ -54,6 +54,6 @@ export function canvasToDataUrl(canvas: HTMLCanvasElement, format: string, quali
   return canvas.toDataURL(format, quality);
 }
 
-// 레거시 함수들은 v2.0 API에서 제거됨
+// 브라우저 Canvas API 기반 리사이징 구현
 // toCenterCrop, toCenterInside, toFill, toFit 등은 더 이상 사용하지 않음
 // 새로운 processor.ts의 pipeline 시스템 사용

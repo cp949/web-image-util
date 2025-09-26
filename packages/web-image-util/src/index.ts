@@ -1,8 +1,8 @@
 /**
  * @cp949/web-image-util
  *
- * 트리쉐이킹 친화적이고 사용하기 쉬운 이미지 처리 라이브러리
- * Sharp 라이브러리의 패턴을 참고하여 설계됨
+ * 브라우저에서 이미지 처리를 위한 TypeScript 라이브러리
+ * Canvas 2D API를 사용하여 고성능 이미지 변환 제공
  *
  * @example 기본 사용법
  * ```typescript
@@ -15,7 +15,7 @@
  *
  * // 고급 처리
  * const result = await processImage(source)
- *   .resize(300, 200, { fit: 'letterbox', background: '#ffffff' })
+ *   .resize(300, 200, { fit: 'contain', background: '#ffffff' })
  *   .blur(2)
  *   .toBlob({ format: 'webp', quality: 0.8 });
  * ```
@@ -39,6 +39,10 @@ export type {
   FileDetailedOptions,
 } from './utils';
 
+// SVG 호환성 함수들
+export { enhanceBrowserCompatibility, normalizeSvgBasics } from './utils/svg-compatibility';
+export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility';
+
 // 타입 정의
 export type {
   // 입력 타입
@@ -46,7 +50,6 @@ export type {
 
   // 옵션 타입
   ResizeOptions,
-  AtMostOptions,
   BlurOptions,
   OutputOptions,
   ProcessorOptions,
@@ -69,12 +72,18 @@ export type {
 export { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
 
 /**
- * 라이브러리 정보
+ * 라이브러리 버전 정보
+ *
+ * @description 현재 설치된 @cp949/web-image-util 라이브러리의 버전 번호
+ * 시맨틱 버저닝을 따르며 메이저.마이너.패치 형식입니다.
  */
 export const version = '2.0.0-alpha';
 
 /**
- * 지원하는 기능 확인
+ * 브라우저 기능 지원 여부 확인
+ *
+ * @description 현재 브라우저에서 지원하는 이미지 처리 기능들을 동적으로 감지합니다.
+ * 런타임에 기능 가용성을 확인하여 최적의 처리 방식을 선택할 수 있습니다.
  */
 export const features = {
   /** WebP 지원 여부 */
@@ -105,7 +114,10 @@ export const features = {
 } as const;
 
 /**
- * 기본 설정
+ * 라이브러리 기본 설정값
+ *
+ * @description 이미지 처리 시 사용되는 기본 매개변수들입니다.
+ * 사용자가 별도로 지정하지 않을 경우 이 값들이 적용됩니다.
  */
 export const defaults = {
   /** 기본 품질 (0.0 - 1.0) */

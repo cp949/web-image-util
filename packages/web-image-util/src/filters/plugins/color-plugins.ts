@@ -1,6 +1,6 @@
 /**
  * 색상 조정 필터 플러그인들
- * 기존 ColorFilters 클래스를 플러그인 시스템에 맞게 변환
+ * 색상 조정 필터 플러그인 모음 (밝기, 대비, 채도, 색상)
  */
 
 import type { FilterPlugin, FilterValidationResult } from '../plugin-system';
@@ -8,6 +8,9 @@ import { FilterCategory } from '../plugin-system';
 
 /**
  * 밝기 조정 필터 플러그인
+ *
+ * @description 이미지의 밝기를 조정하는 필터 플러그인입니다.
+ * -100에서 +100 범위의 값으로 밝기를 조절할 수 있으며, 리니어 조정을 사용합니다.
  */
 export const BrightnessFilterPlugin: FilterPlugin<{ value: number }> = {
   name: 'brightness',
@@ -57,6 +60,9 @@ export const BrightnessFilterPlugin: FilterPlugin<{ value: number }> = {
 
 /**
  * 대비 조정 필터 플러그인
+ *
+ * @description 이미지의 대비를 조정하는 필터 플러그인입니다.
+ * 표준 대비 조정 공식을 사용하여 명암 차이를 강화하거나 완화합니다.
  */
 export const ContrastFilterPlugin: FilterPlugin<{ value: number }> = {
   name: 'contrast',
@@ -100,6 +106,9 @@ export const ContrastFilterPlugin: FilterPlugin<{ value: number }> = {
 
 /**
  * 채도 조정 필터 플러그인
+ *
+ * @description 이미지의 색상 채도를 조정하는 필터 플러그인입니다.
+ * 표준 휘도 공식을 사용하여 색상의 생동감을 조절하며, 다른 색상 필터와 최적화 가능합니다.
  */
 export const SaturationFilterPlugin: FilterPlugin<{ value: number }> = {
   name: 'saturation',
@@ -151,5 +160,8 @@ export const SaturationFilterPlugin: FilterPlugin<{ value: number }> = {
 
 /**
  * 모든 색상 필터 플러그인들
+ *
+ * @description 밝기, 대비, 채도 조정 등의 기본적인 색상 보정 필터들을 모은 배열입니다.
+ * 사진 보정과 이미지 효과에 필수적인 기능들을 제공합니다.
  */
 export const ColorFilterPlugins = [BrightnessFilterPlugin, ContrastFilterPlugin, SaturationFilterPlugin];

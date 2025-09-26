@@ -2,15 +2,17 @@
  * 렌더링 파이프라인 - 이미지 처리 연산들을 순차적으로 실행
  */
 
-import type { BlurOptions, ProcessResult, ResizeOptions } from '../types';
+import type { BlurOptions, ProcessResult, ResizeOptions, SmartResizeOptions } from '../types';
 import { ImageProcessError } from '../types';
+import { CanvasPool } from '../base/canvas-pool';
+import { SmartProcessor } from './smart-processor';
 
 /**
  * 파이프라인 연산 인터페이스
  */
 export interface Operation {
-  type: 'resize' | 'blur' | 'rotate' | 'filter' | 'trim';
-  options: ResizeOptions | BlurOptions | any;
+  type: 'resize' | 'blur' | 'rotate' | 'filter' | 'trim' | 'smart-resize';
+  options: ResizeOptions | BlurOptions | SmartResizeOptions | any;
 }
 
 /**
@@ -29,6 +31,8 @@ interface CanvasContext {
 export class RenderPipeline {
   private operations: Operation[] = [];
   private startTime: number = 0;
+  private canvasPool = CanvasPool.getInstance();
+  private temporaryCanvases: HTMLCanvasElement[] = [];
 
   /**
    * 연산을 파이프라인에 추가
@@ -69,31 +73,38 @@ export class RenderPipeline {
         },
       };
 
+      // 임시 Canvas들을 Pool로 반환 (최종 결과 Canvas는 제외)
+      this.releaseTemporaryCanvases(currentContext.canvas);
+
       return {
         canvas: currentContext.canvas,
         result,
       };
     } catch (error) {
+      // 에러 발생 시에도 임시 Canvas들 정리
+      this.releaseTemporaryCanvases();
       throw new ImageProcessError('파이프라인 실행 중 오류가 발생했습니다', 'CANVAS_CREATION_FAILED', error as Error);
     }
   }
 
   /**
-   * 초기 캔버스 생성
+   * 초기 캔버스 생성 (Canvas Pool 사용)
    */
   private createInitialCanvas(sourceImage: HTMLImageElement): CanvasContext {
     const width = sourceImage.naturalWidth || sourceImage.width;
     const height = sourceImage.naturalHeight || sourceImage.height;
 
-    const canvas = document.createElement('canvas');
+    const canvas = this.canvasPool.acquire(width, height);
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
+      // Pool에서 가져온 Canvas 반환
+      this.canvasPool.release(canvas);
       throw new ImageProcessError('Canvas 2D 컨텍스트를 생성할 수 없습니다', 'CANVAS_CREATION_FAILED');
     }
 
-    canvas.width = width;
-    canvas.height = height;
+    // 임시 Canvas로 추적
+    this.temporaryCanvases.push(canvas);
 
     return { canvas, ctx, width, height };
   }
@@ -105,6 +116,8 @@ export class RenderPipeline {
     switch (operation.type) {
       case 'resize':
         return this.executeResize(context, operation.options as ResizeOptions);
+      case 'smart-resize':
+        return await this.executeSmartResize(context, operation.options as SmartResizeOptions);
       case 'blur':
         return this.executeBlur(context, operation.options as BlurOptions);
       case 'trim':
@@ -138,19 +151,20 @@ export class RenderPipeline {
       options
     );
 
-    // 새 캔버스 생성
-    const newCanvas = document.createElement('canvas');
+    // 새 캔버스 생성 (Canvas Pool 사용)
+    const newCanvas = this.canvasPool.acquire(dimensions.canvasWidth, dimensions.canvasHeight);
     const newCtx = newCanvas.getContext('2d');
 
     if (!newCtx) {
+      this.canvasPool.release(newCanvas);
       throw new ImageProcessError('리사이징용 캔버스 생성에 실패했습니다', 'CANVAS_CREATION_FAILED');
     }
 
-    newCanvas.width = dimensions.canvasWidth;
-    newCanvas.height = dimensions.canvasHeight;
+    // 임시 Canvas로 추적
+    this.temporaryCanvases.push(newCanvas);
 
     // 배경색 설정
-    if (options.background && fit === 'letterbox') {
+    if (options.background && fit === 'contain') {
       this.fillBackground(newCtx, dimensions.canvasWidth, dimensions.canvasHeight, options.background);
     }
 
@@ -176,6 +190,64 @@ export class RenderPipeline {
   }
 
   /**
+   * 스마트 리사이징 연산 실행
+   */
+  private async executeSmartResize(context: CanvasContext, options: SmartResizeOptions): Promise<CanvasContext> {
+    const { width: targetWidth, height: targetHeight } = options;
+
+    // 타겟 크기가 지정되지 않으면 원본 크기 사용
+    if (!targetWidth && !targetHeight) {
+      return context;
+    }
+
+    try {
+      // 현재 캔버스를 HTMLImageElement로 변환
+      const tempImg = await this.canvasToImage(context.canvas);
+
+      // SmartProcessor로 처리
+      const processedCanvas = await SmartProcessor.process(
+        tempImg,
+        targetWidth || context.width,
+        targetHeight || context.height,
+        options
+      );
+
+      // 새로운 컨텍스트로 반환
+      const newCtx = processedCanvas.getContext('2d');
+      if (!newCtx) {
+        throw new ImageProcessError(
+          'SmartProcessor 결과 캔버스의 컨텍스트를 가져올 수 없습니다',
+          'CANVAS_CREATION_FAILED'
+        );
+      }
+
+      // 임시 Canvas로 추적
+      this.temporaryCanvases.push(processedCanvas);
+
+      return {
+        canvas: processedCanvas,
+        ctx: newCtx,
+        width: processedCanvas.width,
+        height: processedCanvas.height,
+      };
+    } catch (error) {
+      throw new ImageProcessError('스마트 리사이징 중 오류가 발생했습니다', 'SMART_RESIZE_FAILED', error as Error);
+    }
+  }
+
+  /**
+   * Canvas를 HTMLImageElement로 변환 (SmartProcessor 사용을 위해)
+   */
+  private async canvasToImage(canvas: HTMLCanvasElement): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Canvas를 Image로 변환하는데 실패했습니다'));
+      img.src = canvas.toDataURL();
+    });
+  }
+
+  /**
    * 블러 연산 실행
    */
   private executeBlur(context: CanvasContext, options: BlurOptions): CanvasContext {
@@ -185,16 +257,14 @@ export class RenderPipeline {
       // CSS filter를 사용한 블러 (빠르지만 품질이 조금 떨어질 수 있음)
       context.ctx.filter = `blur(${radius}px)`;
 
-      // 임시 캔버스에 블러 적용된 이미지 그리기
-      const tempCanvas = document.createElement('canvas');
+      // 임시 캔버스에 블러 적용된 이미지 그리기 (Canvas Pool 사용)
+      const tempCanvas = this.canvasPool.acquire(context.width, context.height);
       const tempCtx = tempCanvas.getContext('2d');
 
       if (!tempCtx) {
+        this.canvasPool.release(tempCanvas);
         throw new ImageProcessError('블러용 임시 캔버스 생성에 실패했습니다', 'CANVAS_CREATION_FAILED');
       }
-
-      tempCanvas.width = context.width;
-      tempCanvas.height = context.height;
       tempCtx.filter = `blur(${radius}px)`;
 
       tempCtx.drawImage(context.canvas, 0, 0);
@@ -204,6 +274,9 @@ export class RenderPipeline {
       context.ctx.clearRect(0, 0, context.width, context.height);
       context.ctx.drawImage(tempCanvas, 0, 0);
 
+      // 임시 Canvas 즉시 반환
+      this.canvasPool.release(tempCanvas);
+
       return context;
     } catch (error) {
       throw new ImageProcessError('블러 적용 중 오류가 발생했습니다', 'BLUR_FAILED', error as Error);
@@ -211,7 +284,7 @@ export class RenderPipeline {
   }
 
   /**
-   * 리사이징 치수 계산 (Sharp의 로직 참고)
+   * 리사이징 치수 계산 (CSS object-fit 알고리즘 기반)
    */
   private calculateResizeDimensions(
     originalWidth: number,
@@ -245,7 +318,7 @@ export class RenderPipeline {
     }
 
     switch (fit) {
-      case 'stretch':
+      case 'fill':
         return {
           canvasWidth: finalTargetWidth,
           canvasHeight: finalTargetHeight,
@@ -259,7 +332,7 @@ export class RenderPipeline {
           destHeight: finalTargetHeight,
         };
 
-      case 'letterbox': {
+      case 'contain': {
         const padScale = Math.min(finalTargetWidth / originalWidth, finalTargetHeight / originalHeight);
         const padWidth = Math.round(originalWidth * padScale);
         const padHeight = Math.round(originalHeight * padScale);
@@ -354,16 +427,17 @@ export class RenderPipeline {
     const trimmedWidth = maxX - minX + 1;
     const trimmedHeight = maxY - minY + 1;
 
-    // 새 캔버스 생성
-    const newCanvas = document.createElement('canvas');
+    // 새 캔버스 생성 (Canvas Pool 사용)
+    const newCanvas = this.canvasPool.acquire(trimmedWidth, trimmedHeight);
     const newCtx = newCanvas.getContext('2d');
 
     if (!newCtx) {
+      this.canvasPool.release(newCanvas);
       throw new ImageProcessError('Trim용 캔버스 생성에 실패했습니다', 'CANVAS_CREATION_FAILED');
     }
 
-    newCanvas.width = trimmedWidth;
-    newCanvas.height = trimmedHeight;
+    // 임시 Canvas로 추적
+    this.temporaryCanvases.push(newCanvas);
 
     // 트림된 이미지 복사
     newCtx.drawImage(
@@ -387,9 +461,31 @@ export class RenderPipeline {
   }
 
   /**
+   * 임시 Canvas들을 Pool로 반환
+   * @param excludeCanvas - 반환에서 제외할 Canvas (최종 결과 Canvas)
+   */
+  private releaseTemporaryCanvases(excludeCanvas?: HTMLCanvasElement): void {
+    this.temporaryCanvases.forEach((canvas) => {
+      if (canvas !== excludeCanvas) {
+        this.canvasPool.release(canvas);
+      }
+    });
+
+    // 제외된 Canvas를 제외하고 임시 Canvas 목록 초기화
+    if (excludeCanvas) {
+      this.temporaryCanvases = [excludeCanvas];
+    } else {
+      this.temporaryCanvases = [];
+    }
+  }
+
+  /**
    * 파이프라인 초기화
    */
   reset(): void {
+    // 모든 임시 Canvas들을 Pool로 반환
+    this.releaseTemporaryCanvases();
+
     this.operations = [];
     this.startTime = 0;
   }

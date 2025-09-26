@@ -3,6 +3,8 @@ dist/
 .claude/
 _TODO/
 CLAUDE.md
+.mcp.json
+
 
 # Logs
 logs

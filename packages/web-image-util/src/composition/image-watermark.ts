@@ -3,6 +3,9 @@ import { PositionCalculator } from './position-types';
 
 /**
  * 이미지 워터마크 옵션
+ *
+ * @description 이미지를 워터마크로 사용할 때의 옵션들을 정의하는 인터페이스입니다.
+ * 위치, 크기, 투명도, 회전, 블렜드 모드 등을 세밀하게 설정할 수 있습니다.
  */
 export interface ImageWatermarkOptions {
   watermarkImage: HTMLImageElement;
@@ -17,6 +20,9 @@ export interface ImageWatermarkOptions {
 
 /**
  * 이미지 워터마크 클래스
+ *
+ * @description 이미지를 워터마크로 추가하는 기능을 제공하는 정적 클래스입니다.
+ * Canvas에 이미지 워터마크를 추가하거나 새로운 Canvas를 생성할 수 있습니다.
  */
 export class ImageWatermark {
   /**

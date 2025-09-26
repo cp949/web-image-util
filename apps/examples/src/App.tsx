@@ -10,6 +10,7 @@ import { FiltersPage } from './pages/FiltersPage'
 import { HomePage } from './pages/HomePage'
 import { PerformancePage } from './pages/PerformancePage'
 import { PresetsPage } from './pages/PresetsPage'
+import { SvgCompatibilityPage } from './pages/SvgCompatibilityPage'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/batch" element={<BatchPage />} />
         <Route path="/performance" element={<PerformancePage />} />
         <Route path="/dev-tools" element={<DevToolsPage />} />
+        <Route path="/svg-compatibility" element={<SvgCompatibilityPage />} />
       </Routes>
     </AppLayout>
   )

@@ -77,16 +77,16 @@ describe('ImageProcessor API 통합 테스트', () => {
       expectChainableMethod(processor, 'blur', 3, { precision: 'high' });
     });
 
-    it('atMost 계열 메서드들이 체이닝 가능', () => {
-      expectChainableMethod(processor, 'atMostWidth', 100);
-      expectChainableMethod(processor, 'atMostHeight', 200);
-      expectChainableMethod(processor, 'atMostRect', 100, 200);
+    it('inside 계열 메서드들이 체이닝 가능', () => {
+      expectChainableMethod(processor, 'insideWidth', 100);
+      expectChainableMethod(processor, 'insideHeight', 200);
+      expectChainableMethod(processor, 'insideRect', 100, 200);
     });
 
-    it('atLeast 계열 메서드들이 체이닝 가능', () => {
-      expectChainableMethod(processor, 'atLeastWidth', 100);
-      expectChainableMethod(processor, 'atLeastHeight', 200);
-      expectChainableMethod(processor, 'atLeastRect', 100, 200);
+    it('outside 계열 메서드들이 체이닝 가능', () => {
+      expectChainableMethod(processor, 'outsideWidth', 100);
+      expectChainableMethod(processor, 'outsideHeight', 200);
+      expectChainableMethod(processor, 'outsideRect', 100, 200);
     });
 
     it('force 계열 메서드들이 체이닝 가능', () => {
@@ -97,7 +97,7 @@ describe('ImageProcessor API 통합 테스트', () => {
     it('편의 메서드들이 체이닝 가능', () => {
       expectChainableMethod(processor, 'resizeCover', 100, 100);
       expectChainableMethod(processor, 'resizeLetterBox', 100, 100);
-      expectChainableMethod(processor, 'stretch', 100, 100);
+      expectChainableMethod(processor, 'fill', 100, 100);
     });
   });
 
@@ -113,7 +113,7 @@ describe('ImageProcessor API 통합 테스트', () => {
         processor
           .resize(300, 200)
           .blur(2)
-          .atMostWidth(400);
+          .insideWidth(400);
       }).not.toThrow();
     });
 
@@ -121,7 +121,7 @@ describe('ImageProcessor API 통합 테스트', () => {
       const result = processor
         .resize(200, 200, { fit: 'cover' })
         .blur(3)
-        .atMostRect(500, 500);
+        .insideRect(500, 500);
 
       expect(result).toBe(processor);
     });

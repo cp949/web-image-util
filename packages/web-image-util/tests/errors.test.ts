@@ -7,33 +7,35 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  ImageProcessingError,
   ImageSourceError,
   ImageConversionError,
   ImageCanvasError,
   ImageResizeError,
-  ImageErrorCode,
 } from '../src/base/errors';
+import {
+  ImageProcessError,
+  ImageErrorCode,
+} from '../src/types';
 
-describe('ImageProcessingError (기본 에러 클래스)', () => {
+describe('ImageProcessError (기본 에러 클래스)', () => {
   describe('생성자', () => {
     it('메시지와 코드로 에러 생성', () => {
-      const error = new ImageProcessingError(
+      const error = new ImageProcessError(
         '테스트 에러 메시지',
         ImageErrorCode.INVALID_SOURCE
       );
 
       expect(error).toBeInstanceOf(Error);
-      expect(error).toBeInstanceOf(ImageProcessingError);
+      expect(error).toBeInstanceOf(ImageProcessError);
       expect(error.message).toBe('테스트 에러 메시지');
       expect(error.code).toBe('INVALID_SOURCE');
-      expect(error.name).toBe('ImageProcessingError');
+      expect(error.name).toBe('ImageProcessError');
       expect(error.originalError).toBeUndefined();
     });
 
     it('원본 에러를 포함하여 생성', () => {
       const originalError = new Error('원본 에러');
-      const error = new ImageProcessingError(
+      const error = new ImageProcessError(
         '래핑된 에러',
         ImageErrorCode.CONVERSION_FAILED,
         originalError
@@ -45,19 +47,19 @@ describe('ImageProcessingError (기본 에러 클래스)', () => {
     });
 
     it('스택 트레이스 설정', () => {
-      const error = new ImageProcessingError(
+      const error = new ImageProcessError(
         '스택 테스트',
         ImageErrorCode.CANVAS_CREATION_FAILED
       );
 
       expect(error.stack).toBeDefined();
-      expect(error.stack).toContain('ImageProcessingError');
+      expect(error.stack).toContain('ImageProcessError');
     });
   });
 
   describe('에러 속성', () => {
     it('enumerable 속성 확인', () => {
-      const error = new ImageProcessingError(
+      const error = new ImageProcessError(
         '속성 테스트',
         ImageErrorCode.RESIZE_FAILED
       );
@@ -68,7 +70,7 @@ describe('ImageProcessingError (기본 에러 클래스)', () => {
     });
 
     it('JSON 직렬화', () => {
-      const error = new ImageProcessingError(
+      const error = new ImageProcessError(
         'JSON 테스트',
         ImageErrorCode.FILE_TOO_LARGE
       );
@@ -135,7 +137,7 @@ describe('ImageSourceError (소스 로딩 에러)', () => {
     const error = new ImageSourceError('이미지 로딩 실패', source);
 
     expect(error).toBeInstanceOf(ImageSourceError);
-    expect(error).toBeInstanceOf(ImageProcessingError);
+    expect(error).toBeInstanceOf(ImageProcessError);
     expect(error.name).toBe('ImageSourceError');
     expect(error.code).toBe('SOURCE_LOAD_FAILED');
     expect(error.source).toBe(source);
@@ -242,7 +244,7 @@ describe('ImageResizeError (리사이징 에러)', () => {
 });
 
 describe('에러 체인 및 상속 구조', () => {
-  it('모든 커스텀 에러가 ImageProcessingError 상속', () => {
+  it('모든 커스텀 에러가 ImageProcessError 상속', () => {
     const errors = [
       new ImageSourceError('test', 'source'),
       new ImageConversionError('test', 'png', 'jpg'),
@@ -251,7 +253,7 @@ describe('에러 체인 및 상속 구조', () => {
     ];
 
     errors.forEach(error => {
-      expect(error).toBeInstanceOf(ImageProcessingError);
+      expect(error).toBeInstanceOf(ImageProcessError);
       expect(error).toBeInstanceOf(Error);
     });
   });
@@ -260,7 +262,7 @@ describe('에러 체인 및 상속 구조', () => {
     const error = new ImageSourceError('test', 'source');
 
     expect(error instanceof Error).toBe(true);
-    expect(error instanceof ImageProcessingError).toBe(true);
+    expect(error instanceof ImageProcessError).toBe(true);
     expect(error instanceof ImageSourceError).toBe(true);
 
     // 다른 타입은 아님
@@ -269,8 +271,8 @@ describe('에러 체인 및 상속 구조', () => {
   });
 
   it('에러 타입 검증 함수', () => {
-    function isImageError(error: unknown): error is ImageProcessingError {
-      return error instanceof ImageProcessingError;
+    function isImageError(error: unknown): error is ImageProcessError {
+      return error instanceof ImageProcessError;
     }
 
     const imageError = new ImageResizeError('test');
@@ -283,7 +285,7 @@ describe('에러 체인 및 상속 구조', () => {
 
 describe('에러 메시지 로케일화 대비', () => {
   it('에러 코드와 메시지 분리', () => {
-    const error = new ImageProcessingError(
+    const error = new ImageProcessError(
       'English error message',
       ImageErrorCode.INVALID_SOURCE
     );
@@ -295,7 +297,7 @@ describe('에러 메시지 로케일화 대비', () => {
   });
 
   it('메시지 없이 에러 코드만으로 생성', () => {
-    const error = new ImageProcessingError('', ImageErrorCode.FILE_TOO_LARGE);
+    const error = new ImageProcessError('', ImageErrorCode.FILE_TOO_LARGE);
 
     expect(error.code).toBe('FILE_TOO_LARGE');
     expect(error.message).toBe('');
@@ -305,10 +307,10 @@ describe('에러 메시지 로케일화 대비', () => {
 describe('에러 필터링 및 분류', () => {
   it('소스 관련 에러 필터링', () => {
     const errors = [
-      new ImageProcessingError('msg1', ImageErrorCode.INVALID_SOURCE),
-      new ImageProcessingError('msg2', ImageErrorCode.SOURCE_LOAD_FAILED),
-      new ImageProcessingError('msg3', ImageErrorCode.RESIZE_FAILED),
-      new ImageProcessingError('msg4', ImageErrorCode.UNSUPPORTED_FORMAT),
+      new ImageProcessError('msg1', ImageErrorCode.INVALID_SOURCE),
+      new ImageProcessError('msg2', ImageErrorCode.SOURCE_LOAD_FAILED),
+      new ImageProcessError('msg3', ImageErrorCode.RESIZE_FAILED),
+      new ImageProcessError('msg4', ImageErrorCode.UNSUPPORTED_FORMAT),
     ];
 
     const sourceErrors = errors.filter(error =>
@@ -322,12 +324,12 @@ describe('에러 필터링 및 분류', () => {
     const criticalCodes = ['BROWSER_NOT_SUPPORTED', 'CANVAS_CREATION_FAILED'];
     const warningCodes = ['FILE_TOO_LARGE', 'UNSUPPORTED_FORMAT'];
 
-    const error1 = new ImageProcessingError('critical', ImageErrorCode.BROWSER_NOT_SUPPORTED);
-    const error2 = new ImageProcessingError('warning', ImageErrorCode.FILE_TOO_LARGE);
+    const error1 = new ImageProcessError('critical', ImageErrorCode.BROWSER_NOT_SUPPORTED);
+    const error2 = new ImageProcessError('warning', ImageErrorCode.FILE_TOO_LARGE);
 
-    const isCritical = (error: ImageProcessingError) =>
+    const isCritical = (error: ImageProcessError) =>
       criticalCodes.includes(error.code);
-    const isWarning = (error: ImageProcessingError) =>
+    const isWarning = (error: ImageProcessError) =>
       warningCodes.includes(error.code);
 
     expect(isCritical(error1)).toBe(true);

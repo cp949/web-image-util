@@ -58,8 +58,8 @@ describe('파이프라인 오퍼레이션 통합 테스트', () => {
         processor
           .resize(300, 200, { fit: 'cover' })
           .blur(3)
-          .atMostWidth(400)
-          .atLeastHeight(150)
+          .insideWidth(400)
+          .outsideHeight(150)
           .blur(1); // 같은 타입 오퍼레이션 재추가
       }).not.toThrow();
     });
@@ -96,7 +96,7 @@ describe('파이프라인 오퍼레이션 통합 테스트', () => {
       }).not.toThrow();
 
       expect(() => {
-        processor.resize(200, 200, { fit: 'letterbox' });
+        processor.resize(200, 200, { fit: 'contain' });
       }).not.toThrow();
     });
 
@@ -114,19 +114,19 @@ describe('파이프라인 오퍼레이션 통합 테스트', () => {
       }).not.toThrow();
     });
 
-    it('atMost 계열 오퍼레이션 추가', () => {
+    it('inside 계열 오퍼레이션 추가', () => {
       expect(() => {
-        processor.atMostWidth(100);
-        processor.atMostHeight(200);
-        processor.atMostRect(100, 200);
+        processor.insideWidth(100);
+        processor.insideHeight(200);
+        processor.insideRect(100, 200);
       }).not.toThrow();
     });
 
-    it('atLeast 계열 오퍼레이션 추가', () => {
+    it('outside 계열 오퍼레이션 추가', () => {
       expect(() => {
-        processor.atLeastWidth(100);
-        processor.atLeastHeight(200);
-        processor.atLeastRect(100, 200);
+        processor.outsideWidth(100);
+        processor.outsideHeight(200);
+        processor.outsideRect(100, 200);
       }).not.toThrow();
     });
 
@@ -141,7 +141,7 @@ describe('파이프라인 오퍼레이션 통합 테스트', () => {
       expect(() => {
         processor.resizeCover(100, 100);
         processor.resizeLetterBox(100, 100);
-        processor.stretch(100, 100);
+        processor.fill(100, 100);
       }).not.toThrow();
     });
   });
@@ -163,7 +163,7 @@ describe('파이프라인 오퍼레이션 통합 테스트', () => {
     it('resize 커스텀 옵션 적용', () => {
       expect(() => {
         processor.resize(100, 100, {
-          fit: 'letterbox',
+          fit: 'contain',
           position: 'top',
           background: { r: 255, g: 255, b: 255, alpha: 1 },
           withoutEnlargement: true,
@@ -220,7 +220,7 @@ describe('파이프라인 오퍼레이션 통합 테스트', () => {
       const result = await processor
         .resize(300, 200, { fit: 'cover' })
         .blur(3)
-        .atMostWidth(400)
+        .insideWidth(400)
         .toBlob();
 
       expect(result).toBeInstanceOf(Blob);
@@ -255,7 +255,7 @@ describe('파이프라인 오퍼레이션 통합 테스트', () => {
       const result = processor
         .resize(100, 100)
         .blur(2)
-        .atMostWidth(200);
+        .insideWidth(200);
 
       expect(result).toBe(processor);
     });

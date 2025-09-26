@@ -143,13 +143,17 @@ beforeEach(() => {
     ),
   })) as any;
 
-  // URL API 모킹
-  global.URL = {
-    createObjectURL: vi.fn().mockImplementation(() =>
-      `blob:http://localhost:3000/${Date.now()}-${Math.random()}`
-    ),
-    revokeObjectURL: vi.fn(),
-  } as any;
+  // URL API 모킹 - Node.js 네이티브 URL 클래스 사용하되 static 메서드 모킹
+  const OriginalURL = global.URL || URL;
+
+  // URL 생성자는 네이티브 구현 사용
+  global.URL = OriginalURL;
+
+  // static 메서드만 모킹
+  global.URL.createObjectURL = vi.fn().mockImplementation(() =>
+    `blob:http://localhost:3000/${Date.now()}-${Math.random()}`
+  );
+  global.URL.revokeObjectURL = vi.fn();
 
   // DOM 문서 객체 모킹
   global.document = {
@@ -222,6 +226,168 @@ beforeEach(() => {
     height: 100,
     close: vi.fn(),
   }));
+
+  // DOMParser 모킹 (SVG 호환성 함수용)
+  global.DOMParser = vi.fn().mockImplementation(() => ({
+    parseFromString: vi.fn().mockImplementation((str: string, type: string) => {
+      // 간단한 SVG 파싱 시뮬레이션
+      if (type === 'image/svg+xml') {
+        if (str.includes('<svg') && str.includes('</svg>')) {
+          // 속성 추적을 위한 상태
+          const elementState = {
+            attributes: new Map<string, string>(),
+            originalContent: str,
+          };
+
+          // 초기 속성들 파싱
+          const extractAttribute = (attr: string) => {
+            const match = str.match(new RegExp(`${attr}="([^"]+)"`));
+            return match ? match[1] : null;
+          };
+
+          // 초기 속성 설정
+          if (extractAttribute('xmlns')) elementState.attributes.set('xmlns', extractAttribute('xmlns')!);
+          if (extractAttribute('xmlns:xlink')) elementState.attributes.set('xmlns:xlink', extractAttribute('xmlns:xlink')!);
+          if (extractAttribute('width')) elementState.attributes.set('width', extractAttribute('width')!);
+          if (extractAttribute('height')) elementState.attributes.set('height', extractAttribute('height')!);
+          if (extractAttribute('viewBox')) elementState.attributes.set('viewBox', extractAttribute('viewBox')!);
+          if (extractAttribute('preserveAspectRatio')) elementState.attributes.set('preserveAspectRatio', extractAttribute('preserveAspectRatio')!);
+
+          const mockSvgElement = {
+            tagName: 'svg',
+            getAttribute: vi.fn().mockImplementation((attr: string) => {
+              return elementState.attributes.get(attr) || null;
+            }),
+            setAttribute: vi.fn().mockImplementation((attr: string, value: string) => {
+              elementState.attributes.set(attr, value);
+            }),
+            hasAttribute: vi.fn().mockImplementation((attr: string) => {
+              return elementState.attributes.has(attr);
+            }),
+            removeAttribute: vi.fn().mockImplementation((attr: string) => {
+              elementState.attributes.delete(attr);
+            }),
+            querySelector: vi.fn().mockImplementation((selector: string) => {
+              if (selector === 'parsererror') return null;
+              if (selector.includes('xlink:href') || selector.includes('*|href')) {
+                return str.includes('xlink:href') ? {} : null;
+              }
+              return null;
+            }),
+            querySelectorAll: vi.fn().mockImplementation((selector: string) => {
+              const mockElements = [];
+
+              // [*|href] 셀렉터 처리 (xlink:href 찾기)
+              if (selector === '[*|href]') {
+                const matches = str.match(/xlink:href="[^"]*"/g);
+                if (matches) {
+                  matches.forEach((match) => {
+                    const href = match.match(/xlink:href="([^"]*)"/)?.[1];
+                    mockElements.push({
+                      getAttribute: vi.fn().mockImplementation((attr: string) => {
+                        if (attr === 'xlink:href') return href;
+                        if (attr === 'href') return null;
+                        return null;
+                      }),
+                      setAttribute: vi.fn(),
+                      removeAttribute: vi.fn(),
+                    });
+                  });
+                }
+              }
+
+              // 다른 셀렉터들 처리
+              if (selector.includes('xlink:href')) {
+                const matches = str.match(/xlink:href="[^"]*"/g);
+                if (matches) {
+                  matches.forEach(() => {
+                    mockElements.push({
+                      getAttribute: vi.fn().mockImplementation((attr: string) => {
+                        if (attr === 'xlink:href') return '#mock';
+                        if (attr === 'href') return null;
+                        return null;
+                      }),
+                      setAttribute: vi.fn(),
+                      removeAttribute: vi.fn(),
+                    });
+                  });
+                }
+              }
+              return mockElements;
+            }),
+            innerHTML: str,
+          };
+
+          return {
+            documentElement: mockSvgElement,
+            querySelector: vi.fn().mockReturnValue(null), // parsererror 없음
+          };
+        } else {
+          // 파싱 오류가 있거나 SVG가 아닌 경우
+          if (!str.includes('<svg')) {
+            // SVG가 아닌 경우
+            return {
+              documentElement: { tagName: 'html' },
+              querySelector: vi.fn().mockReturnValue(null),
+            };
+          } else {
+            // 파싱 오류 시뮬레이션 (malformed XML)
+            return {
+              documentElement: null,
+              querySelector: vi.fn().mockImplementation((selector: string) => {
+                if (selector === 'parsererror') {
+                  return { textContent: 'Mock parsing error' };
+                }
+                return null;
+              }),
+            };
+          }
+        }
+      }
+
+      // 다른 타입은 파싱 실패
+      return {
+        documentElement: { tagName: 'html' },
+        querySelector: vi.fn().mockReturnValue(null),
+      };
+    }),
+  })) as any;
+
+  // XMLSerializer 모킹
+  global.XMLSerializer = vi.fn().mockImplementation(() => ({
+    serializeToString: vi.fn().mockImplementation((doc: any) => {
+      // 기본적인 직렬화 시뮬레이션
+      if (doc.documentElement && doc.documentElement.tagName === 'svg') {
+        let result = '<svg';
+
+        // 속성들 추가 (setAttribute 호출로 설정된 속성들 + 기존 속성들)
+        const element = doc.documentElement;
+
+        // getAttribute 호출로 현재 속성 상태 확인
+        const attributesToCheck = ['xmlns', 'xmlns:xlink', 'width', 'height', 'viewBox', 'preserveAspectRatio'];
+        attributesToCheck.forEach(attr => {
+          const value = element.getAttribute(attr);
+          if (value) {
+            result += ` ${attr}="${value}"`;
+          }
+        });
+
+        result += '>';
+
+        // 내용 추가 (원본 innerHTML에서 svg 태그 제거)
+        if (element.innerHTML) {
+          const content = element.innerHTML.replace(/<svg[^>]*>|<\/svg>/g, '');
+          result += content;
+        }
+
+        result += '</svg>';
+
+        return result;
+      }
+
+      return '<unknown/>';
+    }),
+  })) as any;
 
   // 에러 시뮬레이션을 위한 helper
   global.simulateError = (apiName: string, errorType: string) => {

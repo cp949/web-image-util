@@ -206,10 +206,10 @@ describe('복합 타입 가드 함수들', () => {
   describe('isValidResizeFit', () => {
     it('유효한 fit 값들 감지', () => {
       expect(isValidResizeFit('cover')).toBe(true);
-      expect(isValidResizeFit('letterbox')).toBe(true);
-      expect(isValidResizeFit('stretch')).toBe(true);
-      expect(isValidResizeFit('atMost')).toBe(true);
-      expect(isValidResizeFit('atLeast')).toBe(true);
+      expect(isValidResizeFit('contain')).toBe(true);
+      expect(isValidResizeFit('fill')).toBe(true);
+      expect(isValidResizeFit('inside')).toBe(true);
+      expect(isValidResizeFit('outside')).toBe(true);
     });
 
     it('유효하지 않은 fit 값은 false', () => {
@@ -362,7 +362,7 @@ describe('옵션 검증 함수들', () => {
       const result = validateResizeOptions({
         width: -100,
         height: 'invalid',
-        fit: 'stretch',
+        fit: 'fill',
         position: 'invalid',
         background: 'not-a-color'
       });

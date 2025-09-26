@@ -15,7 +15,8 @@ import {
   logError,
   type ErrorContext,
 } from '../src/base/error-helpers';
-import { ImageProcessingError, ImageErrorCode } from '../src/base/errors';
+import { ImageProcessError, ImageErrorCode } from '../src/types';
+import { ImageSourceError } from '../src/base/errors';
 
 // Node.js 환경 변수 모킹용
 const originalProcess = globalThis.process;
@@ -25,7 +26,7 @@ describe('createImageError', () => {
     it('사용자 친화적 메시지 생성', () => {
       const error = createImageError(ImageErrorCode.INVALID_SOURCE);
 
-      expect(error).toBeInstanceOf(Error); // ImageProcessError 또는 ImageProcessingError 상속
+      expect(error).toBeInstanceOf(Error); // ImageProcessError 또는 ImageProcessError 상속
       expect(error.code).toBe('INVALID_SOURCE');
       expect(error.message).toContain('이미지 소스가 유효하지 않습니다');
       expect(error.message).toContain('💡 해결 방법:');
@@ -95,15 +96,22 @@ describe('createImageError', () => {
   });
 
   describe('프로덕션 모드 처리', () => {
+    const originalWindow = globalThis.window;
+
     beforeEach(() => {
+      // NODE_ENV를 production으로 설정
       globalThis.process = {
         ...originalProcess,
         env: { NODE_ENV: 'production' }
       } as any;
+
+      // window를 undefined로 설정 (Node.js 환경 시뮬레이션)
+      globalThis.window = undefined as any;
     });
 
     afterEach(() => {
       globalThis.process = originalProcess;
+      globalThis.window = originalWindow;
     });
 
     it('프로덕션 모드에서 간단한 메시지만', () => {
@@ -203,8 +211,8 @@ describe('withErrorRecovery', () => {
     ).rejects.toThrow(); // 에러 메시지가 래핑되므로 내용은 확인하지 않음
   });
 
-  it('ImageProcessingError는 그대로 전파', async () => {
-    const imageError = new ImageProcessingError('Image error', ImageErrorCode.INVALID_SOURCE);
+  it('ImageProcessError는 그대로 전파', async () => {
+    const imageError = new ImageProcessError('Image error', ImageErrorCode.INVALID_SOURCE);
     const primaryFunction = vi.fn().mockRejectedValue(imageError);
 
     await expect(
@@ -212,7 +220,7 @@ describe('withErrorRecovery', () => {
     ).rejects.toThrow(Error); // ImageProcessError로 래핑됨
   });
 
-  it('일반 에러는 ImageProcessingError로 래핑', async () => {
+  it('일반 에러는 ImageProcessError로 래핑', async () => {
     const regularError = new Error('Regular error');
     const primaryFunction = vi.fn().mockRejectedValue(regularError);
 
@@ -382,7 +390,7 @@ describe('logError', () => {
 
     it('개발 모드에서 상세 로깅', () => {
       const originalError = new Error('Original error');
-      const error = new ImageProcessingError(
+      const error = new ImageProcessError(
         'Test error',
         ImageErrorCode.RESIZE_FAILED,
         originalError
@@ -401,7 +409,7 @@ describe('logError', () => {
     });
 
     it('원본 에러 없이 로깅', () => {
-      const error = new ImageProcessingError('Simple error', ImageErrorCode.INVALID_SOURCE);
+      const error = new ImageProcessError('Simple error', ImageErrorCode.INVALID_SOURCE);
 
       logError(error);
 
@@ -412,22 +420,29 @@ describe('logError', () => {
   });
 
   describe('프로덕션 모드', () => {
+    const originalWindow = globalThis.window;
+
     beforeEach(() => {
+      // NODE_ENV를 production으로 설정
       globalThis.process = {
         ...originalProcess,
         env: { NODE_ENV: 'production' }
       } as any;
+
+      // window를 undefined로 설정 (Node.js 환경 시뮬레이션)
+      globalThis.window = undefined as any;
 
       vi.spyOn(console, 'group').mockImplementation(() => {});
     });
 
     afterEach(() => {
       globalThis.process = originalProcess;
+      globalThis.window = originalWindow;
       vi.restoreAllMocks();
     });
 
     it('프로덕션 모드에서 로깅 안함', () => {
-      const error = new ImageProcessingError('Prod error', ImageErrorCode.CONVERSION_FAILED);
+      const error = new ImageProcessError('Prod error', ImageErrorCode.CONVERSION_FAILED);
 
       logError(error);
 

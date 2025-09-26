@@ -1,5 +1,8 @@
 /**
  * 위치 정의 (9-point 시스템)
+ *
+ * @description 이미지나 텍스트를 배치할 수 있는 9개의 기본 위치와 사용자 정의 위치를 정의합니다.
+ * CSS의 position 시스템과 유사하며 워터마크나 텍스트 오버레이에 사용됩니다.
  */
 export type Position =
   | 'top-left'
@@ -13,6 +16,12 @@ export type Position =
   | 'bottom-right'
   | 'custom';
 
+/**
+ * Position 열거형 상수
+ *
+ * @description Position 타입의 모든 값들을 상수로 정의한 객체입니다.
+ * 타입 안전성을 보장하고 IDE 자동완성을 지원합니다.
+ */
 export const Position = {
   TOP_LEFT: 'top-left' as const,
   TOP_CENTER: 'top-center' as const,
@@ -27,7 +36,10 @@ export const Position = {
 } as const;
 
 /**
- * 좌표 정의
+ * 2D 좌표 정의
+ *
+ * @description X, Y 좌표를 나타내는 인터페이스입니다.
+ * 픽셀 단위의 절대 좌표를 표현하며 위치 계산에 사용됩니다.
  */
 export interface Point {
   x: number;
@@ -36,6 +48,9 @@ export interface Point {
 
 /**
  * 크기 정의
+ *
+ * @description 너비와 높이를 나타내는 인터페이스입니다.
+ * 픽셀 단위의 크기를 표현하며 요소의 크기 계산에 사용됩니다.
  */
 export interface Size {
   width: number;
@@ -44,6 +59,9 @@ export interface Size {
 
 /**
  * 사각형 정의
+ *
+ * @description 좌표와 크기를 포함한 사각형 영역을 나타내는 인터페이스입니다.
+ * x, y 좌표와 너비, 높이를 모두 포함하여 완전한 사각형을 정의합니다.
  */
 export interface Rectangle {
   x: number;
@@ -53,7 +71,10 @@ export interface Rectangle {
 }
 
 /**
- * 위치 계산 유틸리티
+ * 위치 계산 유틸리티 클래스
+ *
+ * @description Position 열거형과 상대적 좌표를 실제 픽셀 좌표로 변환하는 정적 메서드들을 제공합니다.
+ * 워터마크, 텍스트 오버레이 등의 위치 계산에 사용됩니다.
  */
 export class PositionCalculator {
   /**

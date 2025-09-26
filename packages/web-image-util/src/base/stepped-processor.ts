@@ -13,7 +13,7 @@ export interface SteppedProcessingOptions {
 /**
  * 단계적 축소를 통한 고품질 리사이징 처리기
  * 대용량 이미지를 여러 단계에 걸쳐 점진적으로 축소하여
- * 앨리어싱을 최소화하고 품질을 향상시킵니다.
+ * 앨리어싱을 최소화하고 고품질을 유지합니다.
  */
 export class SteppedProcessor {
   private static readonly DEFAULT_OPTIONS: Required<SteppedProcessingOptions> = {

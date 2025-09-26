@@ -8,10 +8,12 @@ export default defineConfig({
     // Node.js 환경에서 실행할 순수 로직 테스트들만 포함
     include: [
       'tests/unit/*-pure.test.ts',
+      'tests/unit/svg-compatibility.test.ts', // SVG 호환성 테스트
       'tests/calculations.test.ts',
       'tests/errors.test.ts',
       'tests/error-helpers.test.ts',
       'tests/contract/**/*.test.ts', // Phase 3: 계약 테스트 포함
+      'tests/performance/**/*.test.ts', // Canvas Pool 성능 테스트 포함
     ],
 
     // 제외할 파일들

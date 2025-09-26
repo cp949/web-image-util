@@ -52,6 +52,8 @@
     "test": "vitest --config vitest.node.config.ts",
     "test:node": "vitest --config vitest.node.config.ts",
     "test:contract": "vitest --config vitest.contract.config.ts",
+    "test:security": "vitest --config tests/security/vitest.config.ts",
+    "test:security:coverage": "vitest --coverage --config tests/security/vitest.config.ts",
     "test:ui": "vitest --ui",
     "test:browser": "vitest --browser",
     "test:coverage": "vitest --coverage",

@@ -1,7 +1,7 @@
 /**
  * 새로운 플러그인 기반 필터 시스템
  *
- * 주요 개선사항:
+ * 주요 특징:
  * - 플러그인 등록 및 동적 로딩 지원
  * - 타입 안전성 강화
  * - 필터 체인 최적화
@@ -10,7 +10,10 @@
 
 /**
  * 기본 필터 플러그인 인터페이스
- * 모든 필터는 이 인터페이스를 구현해야 함
+ *
+ * @description 모든 필터 플러그인이 구현해야 하는 인터페이스
+ * 타입 안전성과 일관된 API를 보장합니다.
+ * @template TParams 필터 매개변수 타입
  */
 export interface FilterPlugin<TParams = any> {
   /** 고유한 필터 이름 */
@@ -55,6 +58,9 @@ export interface FilterPlugin<TParams = any> {
 
 /**
  * 필터 카테고리
+ *
+ * @description 필터를 기능별로 분류하는 카테고리 enum
+ * 필터 매니저에서 카테고리별 관리에 사용됩니다.
  */
 export enum FilterCategory {
   COLOR = 'color',
@@ -76,7 +82,7 @@ export interface FilterValidationResult {
 }
 
 /**
- * 필터 적용 옵션 (개선된 버전)
+ * 필터 적용 옵션
  */
 export interface FilterOptions<TParams = any> {
   name: string;
@@ -89,6 +95,9 @@ export interface FilterOptions<TParams = any> {
 
 /**
  * 블렌드 모드 (확장)
+ *
+ * @description 필터 적용 시 원본 이미지와 합성하는 방식을 정의하는 enum
+ * CSS blend-mode와 유사한 효과를 제공합니다.
  */
 export enum BlendMode {
   NORMAL = 'normal',
@@ -106,7 +115,7 @@ export enum BlendMode {
 }
 
 /**
- * 필터 체인 (개선된 버전)
+ * 필터 체인
  */
 export interface FilterChain {
   filters: FilterOptions[];
@@ -117,7 +126,9 @@ export interface FilterChain {
 
 /**
  * 필터 플러그인 매니저
- * 플러그인 등록, 관리, 적용을 담당
+ *
+ * @description 필터 플러그인의 등록, 관리, 적용을 담당하는 중앙 관리 클래스
+ * 싱글톤 패턴으로 구현되어 전역에서 일관된 필터 관리를 제공합니다.
  */
 export class FilterPluginManager {
   private static instance: FilterPluginManager;
@@ -142,7 +153,7 @@ export class FilterPluginManager {
    */
   register<TParams>(plugin: FilterPlugin<TParams>): void {
     if (this.plugins.has(plugin.name)) {
-      console.warn(`필터 '${plugin.name}'가 이미 등록되어 있습니다. 기존 필터를 덮어씁니다.`);
+      console.warn(`필터 '${plugin.name}'가 이미 등록되어 있습니다. 새 필터로 덮어씁니다.`);
     }
 
     this.plugins.set(plugin.name, plugin);
@@ -443,24 +454,55 @@ export class FilterPluginManager {
 
 /**
  * 전역 필터 매니저 인스턴스
+ *
+ * @description 라이브러리 전체에서 사용되는 필터 매니저의 싱글톤 인스턴스
+ * 모든 필터 플러그인 관리 작업은 이 인스턴스를 통해 수행됩니다.
  */
 export const filterManager = FilterPluginManager.getInstance();
 
 /**
  * 편의 함수들
  */
+/**
+ * 필터 플러그인 등록
+ *
+ * @description 새로운 필터 플러그인을 전역 필터 매니저에 등록합니다.
+ * @param plugin 등록할 필터 플러그인
+ */
 export function registerFilter(plugin: FilterPlugin<any>): void {
   filterManager.register(plugin);
 }
 
+/**
+ * 단일 필터 적용
+ *
+ * @description 하나의 필터를 이미지 데이터에 적용합니다.
+ * @param imageData 원본 이미지 데이터
+ * @param filterOptions 적용할 필터 옵션
+ * @returns 필터가 적용된 이미지 데이터
+ */
 export function applyFilter(imageData: ImageData, filterOptions: FilterOptions): ImageData {
   return filterManager.applyFilter(imageData, filterOptions);
 }
 
+/**
+ * 필터 체인 적용
+ *
+ * @description 여러 필터를 순차적으로 적용합니다.
+ * @param imageData 원본 이미지 데이터
+ * @param filterChain 적용할 필터 체인
+ * @returns 모든 필터가 적용된 이미지 데이터
+ */
 export function applyFilterChain(imageData: ImageData, filterChain: FilterChain): ImageData {
   return filterManager.applyFilterChain(imageData, filterChain);
 }
 
+/**
+ * 사용 가능한 필터 목록 조회
+ *
+ * @description 현재 등록된 모든 필터의 이름 목록을 반환합니다.
+ * @returns 등록된 필터 이름 배열
+ */
 export function getAvailableFilters(): string[] {
   return filterManager.getAvailableFilters();
 }

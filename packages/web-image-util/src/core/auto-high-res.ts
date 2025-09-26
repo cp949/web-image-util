@@ -1,6 +1,6 @@
 /**
  * 자동 고해상도 이미지 처리 시스템
- * 기존의 복잡한 고해상도 처리를 사용자에게 투명하게 제공
+ * 고해상도 이미지를 자동으로 처리하는 투명한 시스템
  */
 
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';

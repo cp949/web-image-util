@@ -24,7 +24,8 @@ import {
   SwapHoriz as ConvertersIcon,
   ViewModule as BatchIcon,
   Speed as PerformanceIcon,
-  DeveloperMode as DevToolsIcon
+  DeveloperMode as DevToolsIcon,
+  Build as SvgIcon
 } from '@mui/icons-material'
 import { Link, useLocation } from 'react-router'
 
@@ -39,7 +40,8 @@ const navigationItems = [
   { path: '/converters', label: '변환 도구', icon: <ConvertersIcon /> },
   { path: '/batch', label: '배치 처리', icon: <BatchIcon /> },
   { path: '/performance', label: '성능 테스트', icon: <PerformanceIcon /> },
-  { path: '/dev-tools', label: '개발자 도구', icon: <DevToolsIcon /> }
+  { path: '/dev-tools', label: '개발자 도구', icon: <DevToolsIcon /> },
+  { path: '/svg-compatibility', label: 'SVG 호환성', icon: <SvgIcon /> }
 ]
 
 interface AppLayoutProps {

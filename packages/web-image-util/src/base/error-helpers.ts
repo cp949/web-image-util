@@ -5,6 +5,7 @@
  */
 
 import { ImageProcessError, type ImageErrorCode } from '../types';
+import { globalErrorHandler, type ErrorStats } from '../core/error-handler';
 
 /**
  * 에러 컨텍스트 정보
@@ -18,6 +19,8 @@ export interface ErrorContext {
   dimensions?: { width: number; height: number };
   /** 브라우저 정보 */
   userAgent?: string;
+  /** 타임스탬프 */
+  timestamp?: number;
   /** 추가 디버그 정보 */
   debug?: Record<string, any>;
 }
@@ -34,9 +37,12 @@ const USER_FRIENDLY_MESSAGES: Record<ImageErrorCode, string> = {
   // 처리 관련 에러
   CANVAS_CREATION_FAILED:
     '이미지 처리를 위한 Canvas를 생성할 수 없습니다. 브라우저가 Canvas를 지원하는지 확인해주세요.',
+  CANVAS_CONTEXT_FAILED: 'Canvas 2D 컨텍스트를 가져올 수 없습니다. 브라우저가 Canvas API를 지원하는지 확인해주세요.',
   RESIZE_FAILED: '이미지 리사이징에 실패했습니다. 이미지 크기나 포맷에 문제가 있을 수 있습니다.',
   CONVERSION_FAILED: '이미지 포맷 변환에 실패했습니다. 다른 포맷으로 시도해보세요.',
   BLUR_FAILED: '이미지 블러 효과 적용에 실패했습니다.',
+  PROCESSING_FAILED: '이미지 처리 중 오류가 발생했습니다. 이미지 파일이나 옵션을 확인해주세요.',
+  SMART_RESIZE_FAILED: '스마트 리사이징 중 오류가 발생했습니다. 대용량 이미지인 경우 더 작은 크기로 시도해보세요.',
 
   // 출력 관련 에러
   OUTPUT_FAILED: '이미지 출력에 실패했습니다. 브라우저가 해당 포맷을 지원하는지 확인해주세요.',
@@ -76,6 +82,24 @@ const SOLUTION_SUGGESTIONS: Record<ImageErrorCode, string[]> = {
     'private/incognito 모드에서는 일부 기능이 제한될 수 있습니다',
   ],
 
+  CANVAS_CONTEXT_FAILED: [
+    '브라우저를 새로고침하거나 다른 브라우저를 시도해보세요',
+    'WebGL 컨텍스트가 너무 많이 사용되었을 수 있습니다',
+    '하드웨어 가속이 비활성화되었을 수 있습니다',
+  ],
+
+  PROCESSING_FAILED: [
+    '이미지 파일이 손상되었는지 확인해보세요',
+    '다른 옵션으로 시도해보세요',
+    '더 작은 이미지로 테스트해보세요',
+  ],
+
+  SMART_RESIZE_FAILED: [
+    '대용량 이미지인 경우 더 작은 크기로 시도해보세요',
+    '메모리 제한을 늘리거나 단계적 처리를 사용하세요',
+    'strategy 옵션을 "memory-efficient"로 설정해보세요',
+  ],
+
   CONVERSION_FAILED: [
     '다른 출력 포맷을 시도해보세요 (PNG, JPEG 등)',
     '이미지 크기를 줄여보세요',
@@ -89,7 +113,7 @@ const SOLUTION_SUGGESTIONS: Record<ImageErrorCode, string[]> = {
   ],
 
   BROWSER_NOT_SUPPORTED: [
-    '최신 버전의 Chrome, Firefox, Safari, Edge를 사용하세요',
+    'Chrome, Firefox, Safari, Edge를 사용하세요',
     'WebP 지원이 필요한 경우 Chrome 32+ 또는 Firefox 65+를 사용하세요',
   ],
 
@@ -112,7 +136,7 @@ function isDevelopmentMode(): boolean {
 }
 
 /**
- * 향상된 에러 생성 도우미
+ * 에러 생성 도우미
  *
  * @description 사용자 친화적 메시지와 해결 방법이 포함된 에러를 생성
  */
@@ -160,7 +184,7 @@ export function createImageError(
 /**
  * 에러 복구 시도
  *
- * @description 자동으로 대체 방법을 시도하는 래퍼 함수
+ * @description 실패시 fallback 함수를 시도하는 래퍼 함수
  */
 export async function withErrorRecovery<T>(
   primaryFunction: () => Promise<T>,
@@ -269,4 +293,73 @@ export function logError(error: ImageProcessError, context?: any): void {
 
   console.trace('Stack Trace');
   console.groupEnd();
+}
+
+/**
+ * 향상된 에러 생성 및 처리
+ *
+ * @description 중앙집중식 핸들러와 통합된 에러 생성
+ */
+export async function createAndHandleError(
+  code: ImageErrorCode,
+  originalError?: Error,
+  operation?: string,
+  context?: ErrorContext
+): Promise<ImageProcessError> {
+  // 향상된 컨텍스트 수집
+  const enhancedContext = globalErrorHandler.collectEnhancedContext(operation || 'unknown', context);
+
+  // 기존 createImageError 사용
+  const error = createImageError(code, originalError, enhancedContext);
+
+  // 중앙집중식 핸들러로 처리
+  await globalErrorHandler.handleError(error, enhancedContext);
+
+  return error;
+}
+
+/**
+ * Node.js 베스트 프랙티스 - async 에러 처리 래퍼
+ *
+ * @description try-catch를 간편하게 만드는 유틸리티
+ */
+export async function withErrorHandling<T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  context?: Partial<ErrorContext>
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    // ImageProcessError가 아닌 경우 래핑
+    if (!(error instanceof ImageProcessError)) {
+      const wrappedError = await createAndHandleError(
+        'PROCESSING_FAILED',
+        error instanceof Error ? error : new Error(String(error)),
+        operationName,
+        context
+      );
+      throw wrappedError;
+    }
+
+    // 이미 ImageProcessError인 경우 추가 처리
+    await globalErrorHandler.handleError(error, context);
+    throw error;
+  }
+}
+
+/**
+ * 간단한 에러 생성 (핸들러 없이)
+ *
+ * @description 기존 API 호환성 유지
+ */
+export function createQuickError(code: ImageErrorCode, originalError?: Error): ImageProcessError {
+  return createImageError(code, originalError, { debug: { quickError: true } });
+}
+
+/**
+ * 에러 통계 조회 함수
+ */
+export function getErrorStats() {
+  return globalErrorHandler.getStats();
 }

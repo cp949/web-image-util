@@ -1,21 +1,22 @@
 /**
  * 이미지 프로세서 - 체이닝 API의 핵심 클래스
- * Sharp 라이브러리의 패턴을 참고하여 설계됨
+ * Canvas 2D API 기반으로 구현된 브라우저 전용 이미지 처리기
  */
 
 import { createPipeline } from './core/pipeline';
 import { convertToImageElement } from './core/source-converter';
 import type {
-  AtMostOptions,
   BlobResult,
   BlurOptions,
   DataURLResult,
   FileResult,
   ImageFormat,
   ImageSource,
+  OutputFormat,
   OutputOptions,
   ProcessorOptions,
   ResizeOptions,
+  SmartResizeOptions,
 } from './types';
 import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
 
@@ -52,40 +53,64 @@ export class ImageProcessor {
   /**
    * 이미지 리사이징
    *
-   * @param width 대상 너비 (픽셀)
-   * @param height 대상 높이 (픽셀)
+   * @param width 대상 너비 (픽셀) - undefined/null 시 비율에 따라 자동 계산
+   * @param height 대상 높이 (픽셀) - undefined/null 시 비율에 따라 자동 계산
    * @param options 리사이징 옵션
    * @returns 체이닝을 위한 this
    *
    * @example
    * ```typescript
-   * // 기본 사용법 (cover fit)
-   * processor.resize(300, 200)
-   *
-   * // 전체 이미지 보존 (pad fit)
-   * processor.resize(300, 200, { fit: 'letterbox' })
-   *
-   * // 비율 유지하며 너비만 지정
-   * processor.resize(300)
+   * // 기본 사용법
+   * processor.resize(300, 200)  // 기본값: cover fit
+   * processor.resize(300)       // 너비만 지정, 높이 자동
+   * processor.resize({ width: 300 })  // 객체 스타일
+   * processor.resize({ height: 200 }) // 높이만 지정
    *
    * // 고급 옵션
    * processor.resize(300, 200, {
-   *   fit: 'cover',
-   *   position: 'top',
-   *   background: '#ffffff'
+   *   fit: 'contain',
+   *   position: 'centre',  // 영국식 철자
+   *   background: { r: 255, g: 255, b: 255, alpha: 1 },
+   *   withoutEnlargement: true
    * })
    * ```
    */
-  resize(width?: number, height?: number, options: ResizeOptions = {}): this {
+  resize(width?: number | null, height?: number | null, options?: ResizeOptions): this;
+  resize(options: ResizeOptions): this;
+  resize(width: number): this; // 너비만 지정
+  resize(width: number, height: number, options: SmartResizeOptions): this; // 스마트 리사이징
+  resize(
+    widthOrOptions?: number | null | ResizeOptions | SmartResizeOptions,
+    height?: number | null,
+    options: ResizeOptions | SmartResizeOptions = {}
+  ): this {
+    // 오버로드 파라미터 처리
+    let finalWidth: number | undefined;
+    let finalHeight: number | undefined;
+    let finalOptions: ResizeOptions | SmartResizeOptions;
+
+    if (typeof widthOrOptions === 'object' && widthOrOptions !== null) {
+      // resize({ width: 300, height: 200, ... }) 형태
+      finalOptions = widthOrOptions;
+      finalWidth = finalOptions.width;
+      finalHeight = finalOptions.height;
+    } else {
+      // resize(300, 200, { ... }) 형태
+      finalWidth = widthOrOptions || undefined;
+      finalHeight = height || undefined;
+      finalOptions = options;
+    }
+
+    // Canvas API는 리사이징 전략을 선택할 수 없으므로 모든 리사이징을 일반 방식으로 처리
     const resizeOptions: ResizeOptions = {
-      width,
-      height,
-      fit: 'cover', // Sharp와 동일한 기본값
-      position: 'center',
-      background: this.options.defaultBackground,
+      width: finalWidth,
+      height: finalHeight,
+      fit: 'cover', // 기본값
+      position: 'centre', // 기본값 (영국식 철자)
+      background: { r: 0, g: 0, b: 0, alpha: 1 }, // 기본값: 불투명한 검정
       withoutEnlargement: false,
       withoutReduction: false,
-      ...options,
+      ...finalOptions,
     };
 
     this.pipeline.addOperation({
@@ -118,350 +143,12 @@ export class ImageProcessor {
   blur(radius: number = 2, options: Partial<BlurOptions> = {}): this {
     const blurOptions: BlurOptions = {
       radius,
-      precision: 1,
-      minAmplitude: 0.2,
       ...options,
     };
 
     this.pipeline.addOperation({
       type: 'blur',
       options: blurOptions,
-    });
-
-    return this;
-  }
-
-  /**
-   * 최대 사각형 크기 제한 리사이징 (trim 적용)
-   *
-   * @param width 최대 너비 (픽셀)
-   * @param height 최대 높이 (픽셀)
-   * @param options 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 이미지를 지정한 사각형 크기를 넘지 않도록 리사이징합니다.
-   * 결과 이미지 크기는 실제 스케일링된 이미지 크기와 동일합니다.
-   * (여백 없음, 자동 trim 적용)
-   *
-   * @example
-   * ```typescript
-   * // 300x200을 넘지 않게 리사이징 (비율 유지)
-   * processor.atMostRect(300, 200)
-   *
-   * // 100x100 정사각형 이미지 → 200x200으로 스케일링됨 (결과: 200x200)
-   * processor.atMostRect(300, 200) // 작은 스케일(2배) 선택
-   * ```
-   */
-  atMostRect(width: number, height: number, options: AtMostOptions = {}): this {
-    const resizeOptions: ResizeOptions = {
-      width,
-      height,
-      fit: 'atMost', // 최대 크기로 제한하며 확대하지 않음
-      position: 'center',
-      background: options.background || this.options.defaultBackground,
-      withoutEnlargement: options.withoutEnlargement !== false, // 기본 true
-      withoutReduction: false,
-    };
-
-    this.pipeline.addOperation({
-      type: 'resize',
-      options: resizeOptions,
-    });
-
-    // trim 효과를 위한 crop 연산 추가
-    this.pipeline.addOperation({
-      type: 'trim',
-      options: {},
-    });
-
-    return this;
-  }
-
-  /**
-   * 최대 너비 제한 리사이징 (비율 유지)
-   *
-   * @param width 최대 너비 (픽셀)
-   * @param options 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 너비를 지정한 크기를 넘지 않도록 리사이징하며, 비율을 유지합니다.
-   *
-   * @example
-   * ```typescript
-   * // 너비가 300을 넘지 않게 (높이는 비율에 따라 자동 계산)
-   * processor.atMostWidth(300)
-   * ```
-   */
-  atMostWidth(width: number, options: AtMostOptions = {}): this {
-    const resizeOptions: ResizeOptions = {
-      width,
-      height: undefined, // 비율 유지를 위해 높이는 미지정
-      fit: 'atMost',
-      background: options.background || this.options.defaultBackground,
-      withoutEnlargement: options.withoutEnlargement !== false,
-      withoutReduction: false,
-    };
-
-    this.pipeline.addOperation({
-      type: 'resize',
-      options: resizeOptions,
-    });
-
-    this.pipeline.addOperation({
-      type: 'trim',
-      options: {},
-    });
-
-    return this;
-  }
-
-  /**
-   * 최대 높이 제한 리사이징 (비율 유지)
-   *
-   * @param height 최대 높이 (픽셀)
-   * @param options 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 높이를 지정한 크기를 넘지 않도록 리사이징하며, 비율을 유지합니다.
-   *
-   * @example
-   * ```typescript
-   * // 높이가 200을 넘지 않게 (너비는 비율에 따라 자동 계산)
-   * processor.atMostHeight(200)
-   * ```
-   */
-  atMostHeight(height: number, options: AtMostOptions = {}): this {
-    const resizeOptions: ResizeOptions = {
-      width: undefined, // 비율 유지를 위해 너비는 미지정
-      height,
-      fit: 'atMost',
-      background: options.background || this.options.defaultBackground,
-      withoutEnlargement: options.withoutEnlargement !== false,
-      withoutReduction: false,
-    };
-
-    this.pipeline.addOperation({
-      type: 'resize',
-      options: resizeOptions,
-    });
-
-    this.pipeline.addOperation({
-      type: 'trim',
-      options: {},
-    });
-
-    return this;
-  }
-
-  /**
-   * 최소 너비 보장 리사이징 (비율 유지, 확대만)
-   *
-   * @param width 최소 너비 (픽셀)
-   * @param options 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 이미지가 지정한 너비보다 작을 때만 확대합니다.
-   * 원본이 더 크면 그대로 유지됩니다.
-   * 높이는 비율에 따라 자동으로 계산됩니다.
-   *
-   * @example
-   * ```typescript
-   * // 최소 300px 너비 보장
-   * processor.atLeastWidth(300)
-   *
-   * // 200x100 이미지 → 300x150 (확대)
-   * // 500x250 이미지 → 500x250 (그대로)
-   * ```
-   */
-  atLeastWidth(width: number, options: AtMostOptions = {}): this {
-    const resizeOptions: ResizeOptions = {
-      width,
-      fit: 'atLeast',
-      position: 'center',
-      background: options.background || this.options.defaultBackground,
-      withoutEnlargement: false,
-      withoutReduction: options.withoutEnlargement !== false, // 기본 true (축소 방지)
-    };
-
-    this.pipeline.addOperation({
-      type: 'resize',
-      options: resizeOptions,
-    });
-
-    return this;
-  }
-
-  /**
-   * 최소 높이 보장 리사이징 (비율 유지, 확대만)
-   *
-   * @param height 최소 높이 (픽셀)
-   * @param options 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 이미지가 지정한 높이보다 작을 때만 확대합니다.
-   * 원본이 더 크면 그대로 유지됩니다.
-   * 너비는 비율에 따라 자동으로 계산됩니다.
-   *
-   * @example
-   * ```typescript
-   * // 최소 200px 높이 보장
-   * processor.atLeastHeight(200)
-   *
-   * // 300x100 이미지 → 600x200 (확대)
-   * // 400x300 이미지 → 400x300 (그대로)
-   * ```
-   */
-  atLeastHeight(height: number, options: AtMostOptions = {}): this {
-    const resizeOptions: ResizeOptions = {
-      height,
-      fit: 'atLeast',
-      position: 'center',
-      background: options.background || this.options.defaultBackground,
-      withoutEnlargement: false,
-      withoutReduction: options.withoutEnlargement !== false, // 기본 true (축소 방지)
-    };
-
-    this.pipeline.addOperation({
-      type: 'resize',
-      options: resizeOptions,
-    });
-
-    return this;
-  }
-
-  /**
-   * 최소 사각형 크기 보장 리사이징 (비율 유지, 확대만)
-   *
-   * @param width 최소 너비 (픽셀)
-   * @param height 최소 높이 (픽셀)
-   * @param options 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 이미지가 지정한 사각형보다 작을 때만 확대합니다.
-   * 원본이 더 크면 그대로 유지되며, 필요시 잘림이 발생합니다.
-   * atLeast fit을 사용하여 최소 크기를 보장합니다.
-   *
-   * @example
-   * ```typescript
-   * // 최소 300x200 크기 보장
-   * processor.atLeastRect(300, 200)
-   *
-   * // 200x100 이미지 → 400x200 (확대, 비율 유지)
-   * // 500x300 이미지 → 500x300 (그대로)
-   * ```
-   */
-  atLeastRect(width: number, height: number, options: AtMostOptions = {}): this {
-    const resizeOptions: ResizeOptions = {
-      width,
-      height,
-      fit: 'atLeast',
-      position: 'center',
-      background: options.background || this.options.defaultBackground,
-      withoutEnlargement: false,
-      withoutReduction: options.withoutEnlargement !== false, // 기본 true (축소 방지)
-    };
-
-    this.pipeline.addOperation({
-      type: 'resize',
-      options: resizeOptions,
-    });
-
-    return this;
-  }
-
-  /**
-   * 강제 너비 설정 (확대/축소 모두 수행)
-   *
-   * @param width 강제할 너비 (픽셀)
-   * @param options 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 이미지를 지정한 너비로 강제 설정합니다.
-   * 원본이 작으면 확대하고, 크면 축소합니다.
-   * 높이는 비율에 따라 자동으로 계산됩니다.
-   * SVG의 경우 확대해도 화질 저하가 없어 자주 사용됩니다.
-   *
-   * @example
-   * ```typescript
-   * // 너비를 300으로 강제 설정 (높이는 비율에 따라 자동)
-   * processor.forceWidth(300)
-   *
-   * // 50x50 이미지 → 300x300 (6배 확대)
-   * // 800x400 이미지 → 300x150 (축소)
-   * ```
-   */
-  forceWidth(width: number, options: AtMostOptions = {}): this {
-    const resizeOptions: ResizeOptions = {
-      width,
-      height: undefined, // 비율 유지를 위해 높이는 미지정
-      fit: 'stretch', // 비율을 무시하고 정확한 크기로 맞춤
-      background: options.background || this.options.defaultBackground,
-      withoutEnlargement: false, // 확대 허용
-      withoutReduction: false, // 축소 허용
-    };
-
-    this.pipeline.addOperation({
-      type: 'resize',
-      options: resizeOptions,
-    });
-
-    // trim 적용하여 실제 크기 결과 반환
-    this.pipeline.addOperation({
-      type: 'trim',
-      options: {},
-    });
-
-    return this;
-  }
-
-  /**
-   * 강제 높이 설정 (확대/축소 모두 수행)
-   *
-   * @param height 강제할 높이 (픽셀)
-   * @param options 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 이미지를 지정한 높이로 강제 설정합니다.
-   * 원본이 작으면 확대하고, 크면 축소합니다.
-   * 너비는 비율에 따라 자동으로 계산됩니다.
-   * SVG의 경우 확대해도 화질 저하가 없어 자주 사용됩니다.
-   *
-   * @example
-   * ```typescript
-   * // 높이를 200으로 강제 설정 (너비는 비율에 따라 자동)
-   * processor.forceHeight(200)
-   *
-   * // 100x50 이미지 → 400x200 (4배 확대)
-   * // 600x800 이미지 → 150x200 (축소)
-   * ```
-   */
-  forceHeight(height: number, options: AtMostOptions = {}): this {
-    const resizeOptions: ResizeOptions = {
-      width: undefined, // 비율 유지를 위해 너비는 미지정
-      height,
-      fit: 'stretch', // 비율을 무시하고 정확한 크기로 맞춤
-      background: options.background || this.options.defaultBackground,
-      withoutEnlargement: false, // 확대 허용
-      withoutReduction: false, // 축소 허용
-    };
-
-    this.pipeline.addOperation({
-      type: 'resize',
-      options: resizeOptions,
-    });
-
-    // trim 적용하여 실제 크기 결과 반환
-    this.pipeline.addOperation({
-      type: 'trim',
-      options: {},
     });
 
     return this;
@@ -475,7 +162,7 @@ export class ImageProcessor {
    * 브라우저 지원에 따른 최적 포맷 선택
    * @private
    */
-  private getBestFormat(): ImageFormat {
+  private getBestFormat(): OutputFormat {
     // WebP 지원 검사
     if (this.supportsFormat('webp')) {
       return 'webp';
@@ -490,8 +177,12 @@ export class ImageProcessor {
    * @private
    */
   private getOptimalQuality(format: ImageFormat): number {
-    // 기존에 정의된 OPTIMAL_QUALITY_BY_FORMAT 사용
-    return OPTIMAL_QUALITY_BY_FORMAT[format] || (this.options.defaultQuality || 0.8);
+    // OPTIMAL_QUALITY_BY_FORMAT 상수에서 최적 품질 값 가져오기
+    // gif, svg 등 출력 미지원 포맷은 기본값 사용
+    if (format === 'gif' || format === 'svg') {
+      return this.options.defaultQuality || 0.8;
+    }
+    return OPTIMAL_QUALITY_BY_FORMAT[format as OutputFormat] || this.options.defaultQuality || 0.8;
   }
 
   /**
@@ -519,16 +210,16 @@ export class ImageProcessor {
    * 파일명에서 포맷 추출
    * @private
    */
-  private getFormatFromFilename(filename: string): ImageFormat | null {
+  private getFormatFromFilename(filename: string): OutputFormat | null {
     const ext = filename.toLowerCase().split('.').pop();
 
     // 지원되는 포맷만 매핑
-    const formatMap: Record<string, ImageFormat> = {
-      'jpg': 'jpeg',
-      'jpeg': 'jpeg',
-      'png': 'png',
-      'webp': 'webp',
-      'avif': 'avif'
+    const formatMap: Record<string, OutputFormat> = {
+      jpg: 'jpeg',
+      jpeg: 'jpeg',
+      png: 'png',
+      webp: 'webp',
+      avif: 'avif',
     };
 
     return formatMap[ext || ''] || null;
@@ -561,8 +252,8 @@ export class ImageProcessor {
    */
 
   async toBlob(options?: OutputOptions): Promise<BlobResult>;
-  async toBlob(format: ImageFormat): Promise<BlobResult>;
-  async toBlob(optionsOrFormat: OutputOptions | ImageFormat = {}): Promise<BlobResult> {
+  async toBlob(format: OutputFormat): Promise<BlobResult>;
+  async toBlob(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<BlobResult> {
     // 문자열인 경우 포맷으로 처리하고 최적 품질 적용
     const options: OutputOptions =
       typeof optionsOrFormat === 'string'
@@ -629,12 +320,12 @@ export class ImageProcessor {
    * ```
    */
   async toDataURL(options?: OutputOptions): Promise<DataURLResult>;
-  async toDataURL(format: ImageFormat): Promise<DataURLResult>;
-  async toDataURL(optionsOrFormat: OutputOptions | ImageFormat = {}): Promise<DataURLResult> {
+  async toDataURL(format: OutputFormat): Promise<DataURLResult>;
+  async toDataURL(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<DataURLResult> {
     // 타입에 따라 적절한 toBlob 호출 방식 선택
     const { blob, ...metadata } =
       typeof optionsOrFormat === 'string'
-        ? await this.toBlob(optionsOrFormat) // ImageFormat 타입
+        ? await this.toBlob(optionsOrFormat) // OutputFormat 타입
         : await this.toBlob(optionsOrFormat); // OutputOptions 타입
 
     try {
@@ -677,8 +368,8 @@ export class ImageProcessor {
    * ```
    */
   async toFile(filename: string, options?: OutputOptions): Promise<FileResult>;
-  async toFile(filename: string, format: ImageFormat): Promise<FileResult>;
-  async toFile(filename: string, optionsOrFormat: OutputOptions | ImageFormat = {}): Promise<FileResult> {
+  async toFile(filename: string, format: OutputFormat): Promise<FileResult>;
+  async toFile(filename: string, optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<FileResult> {
     // 파일 확장자로 포맷 자동 감지
     const formatFromFilename = this.getFormatFromFilename(filename);
 
@@ -691,10 +382,10 @@ export class ImageProcessor {
       // 빈 객체이고 파일명에서 포맷 감지 가능한 경우
       finalOptions = {
         format: formatFromFilename,
-        quality: this.getOptimalQuality(formatFromFilename)
+        quality: this.getOptimalQuality(formatFromFilename),
       };
     } else {
-      // 기존 옵션 사용
+      // 제공된 옵션 사용
       finalOptions = optionsOrFormat;
     }
 
@@ -802,6 +493,8 @@ export class ImageProcessor {
     });
   }
 
+  // SmartResizeOptions는 이제 ResizeOptions와 동일하므로 구분 불필요
+
   /**
    * 포맷을 MIME 타입으로 변환
    */
@@ -818,91 +511,6 @@ export class ImageProcessor {
     };
 
     return mimeTypes[format.toLowerCase()] || 'image/png';
-  }
-
-  // ============================================
-  // 편의 함수들 (Fit 옵션별 단축 메서드)
-  // ============================================
-
-  /**
-   * Cover 리사이징 편의 함수
-   *
-   * @param width 너비 (픽셀)
-   * @param height 높이 (픽셀)
-   * @param options 추가 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 전체 영역을 채우며 필요시 잘림이 발생하는 리사이징입니다.
-   * CSS object-fit: cover와 동일한 동작을 합니다.
-   *
-   * @example
-   * ```typescript
-   * // 300x200으로 cover 리사이징
-   * processor.resizeCover(300, 200)
-   *
-   * // 위치 조정
-   * processor.resizeCover(300, 200, { position: 'top' })
-   * ```
-   */
-  resizeCover(width: number, height: number, options: Partial<ResizeOptions> = {}): this {
-    return this.resize(width, height, {
-      fit: 'cover',
-      ...options,
-    });
-  }
-
-  /**
-   * Pad 리사이징 편의 함수
-   *
-   * @param width 너비 (픽셀)
-   * @param height 높이 (픽셀)
-   * @param options 추가 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 전체 이미지가 영역에 들어가도록 하며 여백으로 채웁니다.
-   * 비율을 유지하며 확대/축소를 모두 수행합니다.
-   *
-   * @example
-   * ```typescript
-   * // 300x200으로 letterbox 리사이징
-   * processor.resizeLetterBox(300, 200)
-   *
-   * // 배경색 지정
-   * processor.resizeLetterBox(300, 200, { background: '#ffffff' })
-   * ```
-   */
-  resizeLetterBox(width: number, height: number, options: Partial<ResizeOptions> = {}): this {
-    return this.resize(width, height, {
-      fit: 'letterbox',
-      ...options,
-    });
-  }
-
-  /**
-   * Stretch 리사이징 편의 함수
-   *
-   * @param width 너비 (픽셀)
-   * @param height 높이 (픽셀)
-   * @param options 추가 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @description
-   * 비율을 무시하고 정확히 지정한 크기로 맞춥니다.
-   * 이미지가 늘어나거나 압축될 수 있습니다.
-   *
-   * @example
-   * ```typescript
-   * // 300x200으로 강제 맞춤 (비율 무시)
-   * processor.stretch(300, 200)
-   * ```
-   */
-  stretch(width: number, height: number, options: Partial<ResizeOptions> = {}): this {
-    return this.resize(width, height, {
-      fit: 'stretch',
-      ...options,
-    });
   }
 }
 

@@ -3,10 +3,15 @@
  * 이미지 특성과 브라우저 지원을 고려한 자동 포맷 최적화
  */
 
-import { FormatDetector, ImageFormat, FORMAT_MIME_MAP } from '../base/format-detector';
+import { FormatDetector, FORMAT_MIME_MAP } from '../base/format-detector';
+import type { ImageFormat } from '../base/format-detector';
+import { ImageFormats } from '../types';
 
 /**
  * 이미지 용도별 최적화 프리셋
+ *
+ * @description 이미지의 사용 용도에 따른 최적화 전략을 정의하는 enum
+ * 각 용도별로 품질, 크기, 호환성 등의 최적화 기준이 달라집니다.
  */
 export enum ImagePurpose {
   WEB = 'web', // 웹 페이지 (일반적인 웹 사용)
@@ -65,6 +70,9 @@ export interface FormatOptimizationResult {
 
 /**
  * 스마트 포맷 선택기 클래스
+ *
+ * @description 이미지 특성과 브라우저 지원을 분석하여 최적의 포맷을 자동으로 선택하는 클래스
+ * 색상 복잡도, 투명도, 이미지 용도 등을 종합적으로 고려합니다.
  */
 export class SmartFormatSelector {
   private static purposeSettings: Record<ImagePurpose, Partial<SmartFormatOptions>> = {
@@ -117,7 +125,7 @@ export class SmartFormatSelector {
       qualityPriority: 0.6,
       legacyCompatible: false,
       preserveTransparency: false,
-      allowedFormats: Object.values(ImageFormat),
+      allowedFormats: Object.values(ImageFormats),
       ...purposeDefaults,
       ...options,
     };
@@ -222,9 +230,9 @@ export class SmartFormatSelector {
       formats = formats.filter((format) => options.allowedFormats!.includes(format));
     }
 
-    // 레거시 호환성이 필요한 경우 모던 포맷 제외
+    // 구형 브라우저 호환성이 필요한 경우 모던 포맷 제외
     if (options.legacyCompatible) {
-      formats = formats.filter((format) => !['avif', 'webp'].includes(format));
+      formats = formats.filter((format) => !['webp'].includes(format));
     }
 
     return formats;
@@ -257,22 +265,22 @@ export class SmartFormatSelector {
 
       // 포맷별 기본 점수
       switch (format) {
-        case ImageFormat.AVIF:
-          score += 90; // 최신, 최고 압축률
-          estimatedSavings = 0.6; // 60% 크기 감소
+        case ImageFormats.AVIF:
+          score += 90;
+          estimatedSavings = 0.6;
           reason = 'AVIF: 최고 압축률과 품질';
           break;
-        case ImageFormat.WEBP:
+        case ImageFormats.WEBP:
           score += 80;
           estimatedSavings = 0.3; // 30% 크기 감소
           reason = 'WebP: 우수한 압축률';
           break;
-        case ImageFormat.JPEG:
+        case ImageFormats.JPEG:
           score += 60;
           estimatedSavings = 0.1;
           reason = 'JPEG: 사진에 최적화';
           break;
-        case ImageFormat.PNG:
+        case ImageFormats.PNG:
           score += 50;
           estimatedSavings = -0.2; // 20% 크기 증가 (무손실)
           reason = 'PNG: 무손실 압축';
@@ -281,7 +289,7 @@ export class SmartFormatSelector {
 
       // 투명도 지원 보너스/페널티
       if (hasTransparency) {
-        if (format === ImageFormat.PNG || format === ImageFormat.WEBP || format === ImageFormat.AVIF) {
+        if (format === ImageFormats.PNG || format === ImageFormats.WEBP || format === ImageFormats.AVIF) {
           score += 20;
           reason += ' + 투명도 지원';
         } else {
@@ -291,13 +299,13 @@ export class SmartFormatSelector {
 
       // 이미지 특성에 따른 조정
       if (analysis.hasPhotographicContent) {
-        if (format === ImageFormat.JPEG || format === ImageFormat.WEBP || format === ImageFormat.AVIF) {
+        if (format === ImageFormats.JPEG || format === ImageFormats.WEBP || format === ImageFormats.AVIF) {
           score += 15;
           reason += ' + 사진 최적화';
         }
       } else {
         // 그래픽/일러스트
-        if (format === ImageFormat.PNG || format === ImageFormat.WEBP || format === ImageFormat.AVIF) {
+        if (format === ImageFormats.PNG || format === ImageFormats.WEBP || format === ImageFormats.AVIF) {
           score += 10;
           reason += ' + 그래픽 최적화';
         }
@@ -306,12 +314,12 @@ export class SmartFormatSelector {
       // 색상 복잡도에 따른 조정
       if (analysis.colorComplexity > 0.8) {
         // 복잡한 색상
-        if (format === ImageFormat.JPEG || format === ImageFormat.AVIF) {
+        if (format === ImageFormats.JPEG || format === ImageFormats.AVIF) {
           score += 5;
         }
       } else {
         // 단순한 색상
-        if (format === ImageFormat.PNG || format === ImageFormat.WEBP) {
+        if (format === ImageFormats.PNG || format === ImageFormats.WEBP || format === ImageFormats.AVIF) {
           score += 5;
         }
       }
@@ -342,12 +350,13 @@ export class SmartFormatSelector {
    */
   private static getRecommendedQuality(format: ImageFormat, options: SmartFormatOptions): number {
     const baseQuality = {
-      [ImageFormat.JPEG]: 0.8,
-      [ImageFormat.WEBP]: 0.8,
-      [ImageFormat.AVIF]: 0.75,
-      [ImageFormat.PNG]: 1.0, // 무손실
-      [ImageFormat.GIF]: 1.0,
-      [ImageFormat.SVG]: 1.0,
+      [ImageFormats.JPEG]: 0.8,
+      [ImageFormats.JPG]: 0.8,
+      [ImageFormats.WEBP]: 0.8,
+      [ImageFormats.AVIF]: 0.75,
+      [ImageFormats.PNG]: 1.0, // 무손실
+      [ImageFormats.GIF]: 1.0,
+      [ImageFormats.SVG]: 1.0,
     };
 
     let quality = baseQuality[format] || 0.8;
@@ -378,12 +387,13 @@ export class SmartFormatSelector {
    */
   private static calculateQualityBonus(format: ImageFormat, qualityPriority: number): number {
     const qualityRanking = {
-      [ImageFormat.AVIF]: 10,
-      [ImageFormat.PNG]: 9,
-      [ImageFormat.WEBP]: 8,
-      [ImageFormat.JPEG]: 6,
-      [ImageFormat.GIF]: 4,
-      [ImageFormat.SVG]: 10,
+      [ImageFormats.AVIF]: 10,
+      [ImageFormats.PNG]: 9,
+      [ImageFormats.WEBP]: 8,
+      [ImageFormats.JPEG]: 6,
+      [ImageFormats.JPG]: 6,
+      [ImageFormats.GIF]: 4,
+      [ImageFormats.SVG]: 10,
     };
 
     return (qualityRanking[format] || 5) * qualityPriority;
@@ -397,12 +407,13 @@ export class SmartFormatSelector {
 
     // 크기 제한이 있는 경우 압축률 높은 포맷 선호
     const compressionRanking = {
-      [ImageFormat.AVIF]: 10,
-      [ImageFormat.WEBP]: 8,
-      [ImageFormat.JPEG]: 6,
-      [ImageFormat.GIF]: 4,
-      [ImageFormat.PNG]: 2,
-      [ImageFormat.SVG]: 8,
+      [ImageFormats.AVIF]: 10,
+      [ImageFormats.WEBP]: 8,
+      [ImageFormats.JPEG]: 6,
+      [ImageFormats.JPG]: 6,
+      [ImageFormats.GIF]: 4,
+      [ImageFormats.PNG]: 2,
+      [ImageFormats.SVG]: 8,
     };
 
     const sizeScore = (compressionRanking[format] || 5) + estimatedSavings * 10;
@@ -439,6 +450,11 @@ export class SmartFormatSelector {
 
 /**
  * 웹용 최적화
+ *
+ * @description 웹 페이지에서 사용할 이미지를 위한 최적화를 수행합니다.
+ * 로딩 속도와 품질의 균형을 맞춘 설정을 사용합니다.
+ * @param canvas 최적화할 Canvas 요소
+ * @returns 최적화 결과 (포맷, 품질, 이유 등)
  */
 export async function optimizeForWeb(canvas: HTMLCanvasElement): Promise<FormatOptimizationResult> {
   return SmartFormatSelector.selectOptimalFormat(canvas, {
@@ -448,6 +464,11 @@ export async function optimizeForWeb(canvas: HTMLCanvasElement): Promise<FormatO
 
 /**
  * 썸네일용 최적화
+ *
+ * @description 썸네일 이미지를 위한 최적화를 수행합니다.
+ * 작은 파일 크기와 빠른 로딩에 중점을 둔 설정을 사용합니다.
+ * @param canvas 최적화할 Canvas 요소
+ * @returns 최적화 결과 (포맷, 품질, 이유 등)
  */
 export async function optimizeForThumbnail(canvas: HTMLCanvasElement): Promise<FormatOptimizationResult> {
   return SmartFormatSelector.selectOptimalFormat(canvas, {
@@ -457,6 +478,12 @@ export async function optimizeForThumbnail(canvas: HTMLCanvasElement): Promise<F
 
 /**
  * 간단한 자동 최적화
+ *
+ * @description 이미지를 자동으로 분석하여 최적의 포맷과 품질을 선택합니다.
+ * 가장 간단한 형태의 최적화로, 웹 용도에 적합한 설정을 자동 적용합니다.
+ * @param canvas 최적화할 Canvas 요소
+ * @param maxSizeKB 최대 파일 크기 제한 (KB 단위, 선택사항)
+ * @returns 최적화된 포맷, 품질, MIME 타입 정보
  */
 export async function autoOptimize(
   canvas: HTMLCanvasElement,

@@ -1,17 +1,24 @@
 /**
- * 소스 변환기 - 기존 image-common.ts의 로직을 통합하고 개선
+ * 소스 변환기 - 다양한 이미지 소스를 HTMLImageElement로 변환
  */
 
 import type { ImageSource, ProcessorOptions } from '../types';
 import { ImageProcessError } from '../types';
+import { normalizeSvgBasics } from '../utils/svg-compatibility';
 
 /**
- * 이미지 소스 타입 감지
+ * 이미지 소스 타입
+ *
+ * @description 지원되는 이미지 소스의 타입들
  */
 export type SourceType = 'element' | 'blob' | 'svg' | 'dataurl' | 'url' | 'path';
 
 /**
  * 이미지 소스 타입을 감지합니다
+ *
+ * @description 입력된 이미지 소스의 타입을 분석하여 적절한 변환 방법을 결정합니다.
+ * @param source 분석할 이미지 소스
+ * @returns 감지된 소스 타입
  */
 export function detectSourceType(source: ImageSource): SourceType {
   if (source instanceof HTMLImageElement) {
@@ -65,36 +72,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
   }
 }
 
-/**
- * 기본 네임스페이스·viewBox 없을 때 보강
- */
-function normalizeSvgBasics(src: string): string {
-  try {
-    const doc = new DOMParser().parseFromString(src, 'image/svg+xml');
-    const svgEl = doc.documentElement;
-
-    // 네임스페이스 추가
-    if (!svgEl.getAttribute('xmlns')) {
-      svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    }
-    if (!svgEl.getAttribute('xmlns:xlink')) {
-      svgEl.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-    }
-
-    // width/height나 viewBox가 모두 없으면 기본값 부여
-    const hasSize = svgEl.hasAttribute('width') || svgEl.hasAttribute('height') || svgEl.hasAttribute('viewBox');
-    if (!hasSize) {
-      svgEl.setAttribute('viewBox', '0 0 512 512');
-      svgEl.setAttribute('width', '512');
-      svgEl.setAttribute('height', '512');
-      svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    }
-
-    return new XMLSerializer().serializeToString(doc);
-  } catch {
-    return src; // 파서 실패 시 원본 그대로
-  }
-}
+// SVG 정규화는 브라우저 호환성을 위해 svg-compatibility 모듈에서 처리
 
 /**
  * SVG 문자열을 HTMLImageElement로 변환
@@ -108,7 +86,7 @@ async function convertSvgToElement(svgString: string): Promise<HTMLImageElement>
 
   try {
     const img = new Image();
-    // img.crossOrigin = 'anonymous'; // Blob URL에는 불필요. 외부 리소스 포함 시 sanitize 단계에서 제거 권장.
+    // Blob URL은 동일 출처이므로 crossOrigin 설정 불필요
     const loaded = new Promise<HTMLImageElement>((resolve, reject) => {
       img.onload = () => resolve(img);
       img.onerror = () => reject(new ImageProcessError('SVG 이미지 로딩에 실패했습니다', 'SOURCE_LOAD_FAILED'));
@@ -166,6 +144,12 @@ async function convertBlobToElement(blob: Blob): Promise<HTMLImageElement> {
 
 /**
  * 모든 ImageSource를 HTMLImageElement로 변환하는 메인 함수
+ *
+ * @description 다양한 타입의 이미지 소스를 HTMLImageElement로 통일된 형태로 변환합니다.
+ * HTMLImageElement, Blob, 문자열(URL, SVG, Data URL) 등을 지원합니다.
+ * @param source 변환할 이미지 소스
+ * @param options 변환 옵션 (CORS 설정 등)
+ * @returns HTMLImageElement 객체
  */
 export async function convertToImageElement(
   source: ImageSource,
@@ -210,6 +194,10 @@ export async function convertToImageElement(
 
 /**
  * 이미지 소스의 크기 정보를 얻습니다
+ *
+ * @description 다양한 이미지 소스로부터 실제 크기 정보를 추출합니다.
+ * @param source 크기를 알고 싶은 이미지 소스
+ * @returns 이미지의 너비와 높이 정보
  */
 export async function getImageDimensions(source: ImageSource): Promise<{
   width: number;

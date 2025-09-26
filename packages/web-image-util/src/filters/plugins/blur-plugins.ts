@@ -1,6 +1,6 @@
 /**
  * 블러 및 선명도 관련 필터 플러그인들
- * 기존 SharpnessFilters 클래스를 플러그인 시스템에 맞게 변환
+ * 블러 및 선명도 필터 플러그인 모음 (블러, 샤프닝, 엠보스, 엣지 검출)
  */
 
 import type { FilterPlugin, FilterValidationResult } from '../plugin-system';
@@ -72,6 +72,9 @@ function applyConvolution(imageData: ImageData, kernel: number[], divisor: numbe
 
 /**
  * 가우시안 블러 플러그인
+ *
+ * @description 가우시안 그러드 경사 기반의 고품질 블러 효과를 적용하는 필터 플러그인입니다.
+ * 2패스 컸볼루션(수평/수직)을 사용하여 효율적이고 자연스러운 블러링을 수행합니다.
  */
 export const BlurFilterPlugin: FilterPlugin<{ radius: number }> = {
   name: 'blur',
@@ -182,6 +185,9 @@ export const BlurFilterPlugin: FilterPlugin<{ radius: number }> = {
 
 /**
  * 샤프닝 필터 플러그인
+ *
+ * @description 언샤프 마스킹 기법을 사용하여 이미지를 선명하게 만드는 필터 플러그인입니다.
+ * 원본 이미지와 블러된 이미지의 차이를 이용하여 엣지를 강화합니다.
  */
 export const SharpenFilterPlugin: FilterPlugin<{ amount: number }> = {
   name: 'sharpen',
@@ -194,7 +200,7 @@ export const SharpenFilterPlugin: FilterPlugin<{ amount: number }> = {
       return new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
     }
 
-    // 블러된 버전 생성 (BlurFilterPlugin 사용)
+    // 블러된 이미지 생성
     const blurred = BlurFilterPlugin.apply(imageData, { radius: 1 });
     const original = imageData.data;
     const blurredData = blurred.data;
@@ -235,6 +241,9 @@ export const SharpenFilterPlugin: FilterPlugin<{ amount: number }> = {
 
 /**
  * 엠보스 효과 플러그인
+ *
+ * @description 이미지에 3D 엠보스 효과를 적용하는 필터 플러그인입니다.
+ * 특수한 컸볼루션 커널을 사용하여 양각된 또는 욕각된 듯한 시각적 효과를 만듭니다.
  */
 export const EmbossFilterPlugin: FilterPlugin<{ strength: number }> = {
   name: 'emboss',
@@ -266,6 +275,9 @@ export const EmbossFilterPlugin: FilterPlugin<{ strength: number }> = {
 
 /**
  * 에지 검출 필터 플러그인
+ *
+ * @description 라플라시안 연산자를 사용하여 이미지에서 가장자리를 검출하는 필터 플러그인입니다.
+ * 이미지의 밝기 변화가 급격한 부분을 강조하여 윤곽선을 시각화합니다.
  */
 export const EdgeDetectionFilterPlugin: FilterPlugin<{ sensitivity: number }> = {
   name: 'edgeDetection',
@@ -297,5 +309,8 @@ export const EdgeDetectionFilterPlugin: FilterPlugin<{ sensitivity: number }> = 
 
 /**
  * 모든 블러/샤프닝 필터 플러그인들
+ *
+ * @description 블러, 샤프닝, 엠보스, 에지 검출 등의 영상 처리 필터들을 모은 배열입니다.
+ * 이미지의 선명도와 엣지 효과를 조절하는 데 필수적인 기능들을 제공합니다.
  */
 export const BlurFilterPlugins = [BlurFilterPlugin, SharpenFilterPlugin, EmbossFilterPlugin, EdgeDetectionFilterPlugin];

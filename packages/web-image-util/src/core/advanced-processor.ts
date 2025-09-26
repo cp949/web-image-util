@@ -1,6 +1,6 @@
 /**
- * 고급 이미지 프로세서 - 모든 새로운 기능들의 통합 인터페이스
- * Phase 3의 모든 고급 기능들을 하나의 일관된 API로 제공
+ * 고급 이미지 프로세서 - 모든 고급 기능들의 인터페이스
+ * 고급 기능들을 하나의 일관된 API로 제공
  */
 
 import type { ImageFormat } from '../base/format-detector';
@@ -14,7 +14,7 @@ import type { SmartFormatOptions } from './smart-format';
 import { ImagePurpose, SmartFormatSelector } from './smart-format';
 
 /**
- * 통합 이미지 처리 옵션
+ * 고급 이미지 처리 옵션
  */
 export interface AdvancedProcessingOptions {
   /** 리사이징 옵션 */
@@ -82,7 +82,7 @@ export interface AdvancedProcessingResult {
  */
 export class AdvancedImageProcessor {
   /**
-   * 통합 이미지 처리 - 모든 기능을 한 번에 적용
+   * 고급 이미지 처리 - 모든 기능을 한 번에 적용
    *
    * @param source - 소스 이미지
    * @param options - 처리 옵션

@@ -111,7 +111,10 @@ describe('타입 가드 함수 - 순수 로직', () => {
         </svg>`,
         '<svg viewBox="0 0 100 100"><path d="M10,30 Q20,15 30,30" stroke="black" /></svg>',
         '  <svg><text x="10" y="10">Hello</text></svg>  ',  // 공백 포함
-        '<svg xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#icon"/></svg>'
+        '<svg xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#icon"/></svg>',
+        '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg"><circle r="40"/></svg>',  // XML 선언 포함
+        '<?xml version="1.0"?>\n<svg><rect /></svg>',  // XML 선언 + 개행
+        '  <?xml version="1.0"?>  <svg viewBox="0 0 100 100"></svg>  '  // 공백 + XML 선언
       ];
 
       validSvgs.forEach(svg => {
@@ -129,7 +132,10 @@ describe('타입 가드 함수 - 순수 로직', () => {
         '<html><svg></svg></html>',  // HTML 태그로 감싸짐
         '',
         '<img src="test.svg" />',  // img 태그
-        'data:image/svg+xml;base64,...'  // Data URL
+        'data:image/svg+xml;base64,...',  // Data URL
+        '<?xml version="1.0"?><div></div>',  // XML 선언 있지만 SVG 아님
+        '<?xml version="1.0"?>',  // XML 선언만 있음
+        '<?xml version="1.0"?><svg>',  // XML 선언 + 불완전한 SVG
       ];
 
       invalidSvgs.forEach(svg => {
@@ -148,7 +154,7 @@ describe('타입 가드 함수 - 순수 로직', () => {
 
   describe('isValidResizeFit', () => {
     it('유효한 fit 값 식별', () => {
-      const validFitValues = ['cover', 'letterbox', 'stretch', 'atMost', 'atLeast'];
+      const validFitValues = ['cover', 'contain', 'fill', 'inside', 'outside'];
 
       validFitValues.forEach(fit => {
         expect(isValidResizeFit(fit)).toBe(true);
@@ -157,15 +163,17 @@ describe('타입 가드 함수 - 순수 로직', () => {
 
     it('무효한 fit 값 식별', () => {
       const invalidFitValues = [
-        'contain',  // 구 버전 호환성
-        'fill',     // 구 버전 호환성
-        'inside',   // Sharp 라이브러리 용어
-        'outside',  // Sharp 라이브러리 용어
         'scale-down',
         'none',
         'auto',
         'Cover',    // 대소문자 구분
         'COVER',
+        'letterbox', // 레거시 값
+        'stretch',   // 레거시 값
+        'atMost',    // 레거시 값
+        'atLeast',   // 레거시 값
+        'Inside',    // 대소문자 구분
+        'Outside',   // 대소문자 구분
         '',
         'not-a-fit-mode'
       ];
@@ -188,7 +196,6 @@ describe('타입 가드 함수 - 순수 로직', () => {
     it('유효한 문자열 위치값 식별', () => {
       const validStringPositions = [
         'center', 'centre',
-        'north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest',
         'top', 'right', 'bottom', 'left',
         'top left', 'top right', 'bottom left', 'bottom right',
         'left top', 'right top', 'left bottom', 'right bottom'

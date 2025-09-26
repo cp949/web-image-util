@@ -1,6 +1,6 @@
 /**
  * 특수 효과 필터 플러그인들
- * 기존 EffectFilters 클래스를 플러그인 시스템에 맞게 변환
+ * 이미지 효과 필터 플러그인 모음 (그레이스케일, 세피아, 반전)
  */
 
 import type { FilterPlugin, FilterValidationResult } from '../plugin-system';
@@ -8,6 +8,9 @@ import { FilterCategory } from '../plugin-system';
 
 /**
  * 그레이스케일 변환 플러그인
+ *
+ * @description 이미지를 흑백으로 변환하는 필터 플러그인입니다.
+ * 표준 휘도 공식(Y = 0.299*R + 0.587*G + 0.114*B)을 사용하여 자연스러운 그레이스케일 변환을 수행합니다.
  */
 export const GrayscaleFilterPlugin: FilterPlugin<Record<string, never>> = {
   name: 'grayscale',
@@ -43,6 +46,9 @@ export const GrayscaleFilterPlugin: FilterPlugin<Record<string, never>> = {
 
 /**
  * 세피아 효과 플러그인
+ *
+ * @description 빈티지한 세피아 톤 효과를 적용하는 필터 플러그인입니다.
+ * 강도를 조절할 수 있으며, 표준 세피아 변환 매트릭스를 사용합니다.
  */
 export const SepiaFilterPlugin: FilterPlugin<{ intensity: number }> = {
   name: 'sepia',
@@ -92,6 +98,9 @@ export const SepiaFilterPlugin: FilterPlugin<{ intensity: number }> = {
 
 /**
  * 색상 반전 플러그인
+ *
+ * @description 이미지의 모든 픽셀 색상을 반전시키는 필터 플러그인입니다.
+ * 각 RGB 채널에서 255에서 현재 값을 뺀 결과를 적용합니다.
  */
 export const InvertFilterPlugin: FilterPlugin<Record<string, never>> = {
   name: 'invert',
@@ -120,6 +129,9 @@ export const InvertFilterPlugin: FilterPlugin<Record<string, never>> = {
 
 /**
  * 노이즈 추가 플러그인
+ *
+ * @description 이미지에 랜덤 노이즈를 추가하는 필터 플러그인입니다.
+ * 강도를 조절할 수 있으며, 각 픽셀에 무작위 값을 더하거나 뺍니다.
  */
 export const NoiseFilterPlugin: FilterPlugin<{ intensity: number }> = {
   name: 'noise',
@@ -165,6 +177,9 @@ export const NoiseFilterPlugin: FilterPlugin<{ intensity: number }> = {
 
 /**
  * 비네팅 효과 플러그인
+ *
+ * @description 이미지 가장자리가 어두워지는 비네팅 효과를 적용하는 필터 플러그인입니다.
+ * 중심에서의 거리에 따라 어둡게 처리하며, 강도, 크기, 블러를 조절할 수 있습니다.
  */
 export const VignetteFilterPlugin: FilterPlugin<{ intensity: number; size: number; blur: number }> = {
   name: 'vignette',
@@ -227,6 +242,9 @@ export const VignetteFilterPlugin: FilterPlugin<{ intensity: number; size: numbe
 
 /**
  * 픽셀화 효과 플러그인
+ *
+ * @description 이미지를 픽셀 아트 스타일로 변환하는 필터 플러그인입니다.
+ * 지정된 크기의 블록으로 나누어 각 블록의 평균 색상을 적용합니다.
  */
 export const PixelateFilterPlugin: FilterPlugin<{ pixelSize: number }> = {
   name: 'pixelate',
@@ -306,6 +324,9 @@ export const PixelateFilterPlugin: FilterPlugin<{ pixelSize: number }> = {
 
 /**
  * 포스터화 효과 플러그인
+ *
+ * @description 색상 레벨을 줄여 포스터 같은 효과를 만드는 필터 플러그인입니다.
+ * 각 색상 채널의 값을 지정된 레벨 수로 양자화하여 단순화된 색상을 만듭니다.
  */
 export const PosterizeFilterPlugin: FilterPlugin<{ levels: number }> = {
   name: 'posterize',
@@ -346,6 +367,9 @@ export const PosterizeFilterPlugin: FilterPlugin<{ levels: number }> = {
 
 /**
  * 모든 효과 필터 플러그인들
+ *
+ * @description 그레이스케일, 세피아, 반전, 노이즈, 비네팅, 픽셀화, 포스터화 등의
+ * 특수 효과 필터 플러그인들을 모은 배열입니다.
  */
 export const EffectFilterPlugins = [
   GrayscaleFilterPlugin,

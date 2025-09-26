@@ -1,5 +1,5 @@
 /**
- * 이미지 합성 및 워터마크 모듈 통합 export
+ * 이미지 합성 및 워터마크 모듈 export
  */
 
 export { ImageComposer, type CompositionOptions, type GridLayoutOptions, type Layer } from './image-composer';

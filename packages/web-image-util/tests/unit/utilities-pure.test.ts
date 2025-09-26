@@ -54,16 +54,9 @@ describe('유틸리티 함수 - 순수 로직', () => {
     });
 
     it('지원하지 않는 포맷은 기본값 반환', () => {
-      const unsupportedFormats = [
-        'unknown',
-        'svg',
-        'ico',
-        'psd',
-        '',
-        'not-a-format'
-      ];
+      const unsupportedFormats = ['unknown', 'svg', 'ico', 'psd', '', 'not-a-format'];
 
-      unsupportedFormats.forEach(format => {
+      unsupportedFormats.forEach((format) => {
         expect(formatToMimeType(format)).toBe('image/png');
       });
     });
@@ -170,24 +163,24 @@ describe('유틸리티 함수 - 순수 로직', () => {
       it('유효한 품질 값 식별', () => {
         const validQualities = [0, 0.1, 0.5, 0.8, 0.95, 1];
 
-        validQualities.forEach(quality => {
+        validQualities.forEach((quality) => {
           expect(isValidQuality(quality)).toBe(true);
         });
       });
 
       it('무효한 품질 값 식별', () => {
         const invalidQualities = [
-          -0.1,     // 음수
-          1.1,      // 1 초과
-          '0.8',    // 문자열
-          true,     // boolean
-          null,     // null
+          -0.1, // 음수
+          1.1, // 1 초과
+          '0.8', // 문자열
+          true, // boolean
+          null, // null
           undefined, // undefined
-          {},       // 객체
-          []        // 배열
+          {}, // 객체
+          [], // 배열
         ];
 
-        invalidQualities.forEach(quality => {
+        invalidQualities.forEach((quality) => {
           expect(isValidQuality(quality)).toBe(false);
         });
       });
@@ -197,7 +190,7 @@ describe('유틸리티 함수 - 순수 로직', () => {
       it('지원하는 포맷 식별', () => {
         const supportedFormats = ['jpeg', 'jpg', 'png', 'webp', 'avif', 'gif', 'bmp', 'tiff'];
 
-        supportedFormats.forEach(format => {
+        supportedFormats.forEach((format) => {
           expect(isValidFormat(format)).toBe(true);
         });
       });
@@ -205,27 +198,27 @@ describe('유틸리티 함수 - 순수 로직', () => {
       it('대소문자 무관하게 포맷 식별', () => {
         const formats = ['JPEG', 'Png', 'WebP', 'AVIF', 'GIF'];
 
-        formats.forEach(format => {
+        formats.forEach((format) => {
           expect(isValidFormat(format)).toBe(true);
         });
       });
 
       it('지원하지 않는 포맷 식별', () => {
         const unsupportedFormats = [
-          'svg',      // SVG
-          'ico',      // 아이콘
-          'psd',      // Photoshop
-          'raw',      // RAW
-          'heic',     // HEIC
-          '',         // 빈 문자열
-          123,        // 숫자
-          null,       // null
-          undefined,  // undefined
-          {},         // 객체
-          []          // 배열
+          'svg', // SVG
+          'ico', // 아이콘
+          'psd', // Photoshop
+          'raw', // RAW
+          'heic', // HEIC
+          '', // 빈 문자열
+          123, // 숫자
+          null, // null
+          undefined, // undefined
+          {}, // 객체
+          [], // 배열
         ];
 
-        unsupportedFormats.forEach(format => {
+        unsupportedFormats.forEach((format) => {
           expect(isValidFormat(format)).toBe(false);
         });
       });
@@ -239,6 +232,7 @@ describe('유틸리티 함수 - 순수 로직', () => {
       }
 
       // 금지된 문자 확인 (Windows, Linux, macOS 공통)
+      // eslint-disable-next-line no-control-regex
       const forbiddenChars = /[<>:"|?*\x00-\x1f]/;
       if (forbiddenChars.test(filename)) {
         return false;
@@ -263,50 +257,42 @@ describe('유틸리티 함수 - 순수 로직', () => {
         'picture (1).jpg',
         'test.backup.png',
         '.hidden.jpg',
-        'very-long-filename-with-many-characters.jpeg'
+        'very-long-filename-with-many-characters.jpeg',
       ];
 
-      validFilenames.forEach(filename => {
+      validFilenames.forEach((filename) => {
         expect(isValidFilename(filename)).toBe(true);
       });
     });
 
     it('무효한 파일명 식별', () => {
       const invalidFilenames = [
-        '',                  // 빈 문자열
-        'file<name>.jpg',    // 금지된 문자 <
-        'file>name.png',     // 금지된 문자 >
-        'file:name.gif',     // 금지된 문자 :
-        'file"name.bmp',     // 금지된 문자 "
-        'file|name.jpg',     // 금지된 문자 |
-        'file?name.png',     // 금지된 문자 ?
-        'file*name.gif',     // 금지된 문자 *
-        'CON.jpg',           // 예약된 이름
-        'PRN.png',           // 예약된 이름
-        'COM1.gif',          // 예약된 이름
-        'LPT1.bmp',          // 예약된 이름
-        123,                 // 숫자
-        null,                // null
-        undefined            // undefined
+        '', // 빈 문자열
+        'file<name>.jpg', // 금지된 문자 <
+        'file>name.png', // 금지된 문자 >
+        'file:name.gif', // 금지된 문자 :
+        'file"name.bmp', // 금지된 문자 "
+        'file|name.jpg', // 금지된 문자 |
+        'file?name.png', // 금지된 문자 ?
+        'file*name.gif', // 금지된 문자 *
+        'CON.jpg', // 예약된 이름
+        'PRN.png', // 예약된 이름
+        'COM1.gif', // 예약된 이름
+        'LPT1.bmp', // 예약된 이름
+        123, // 숫자
+        null, // null
+        undefined, // undefined
       ];
 
-      invalidFilenames.forEach(filename => {
+      invalidFilenames.forEach((filename) => {
         expect(isValidFilename(filename)).toBe(false);
       });
     });
 
     it('타입이 문자열이 아닌 경우', () => {
-      const nonStringInputs = [
-        123,
-        true,
-        false,
-        {},
-        [],
-        null,
-        undefined
-      ];
+      const nonStringInputs = [123, true, false, {}, [], null, undefined];
 
-      nonStringInputs.forEach(input => {
+      nonStringInputs.forEach((input) => {
         expect(isValidFilename(input)).toBe(false);
       });
     });
@@ -335,12 +321,12 @@ describe('유틸리티 함수 - 순수 로직', () => {
         {
           operation: 'Blob 변환',
           details: '지원하지 않는 포맷',
-          expected: 'Blob 변환 중 오류가 발생했습니다: 지원하지 않는 포맷'
+          expected: 'Blob 변환 중 오류가 발생했습니다: 지원하지 않는 포맷',
         },
         {
           operation: 'Canvas 생성',
           details: '2D context 없음',
-          expected: 'Canvas 생성 중 오류가 발생했습니다: 2D context 없음'
+          expected: 'Canvas 생성 중 오류가 발생했습니다: 2D context 없음',
         },
       ];
 
@@ -385,17 +371,12 @@ describe('유틸리티 함수 - 순수 로직', () => {
   describe('브라우저 기능 감지 로직', () => {
     const hasCanvasSupport = (): boolean => {
       // Node.js 환경에서는 항상 false
-      return typeof HTMLCanvasElement !== 'undefined' &&
-             typeof CanvasRenderingContext2D !== 'undefined';
+      return typeof HTMLCanvasElement !== 'undefined' && typeof CanvasRenderingContext2D !== 'undefined';
     };
 
     const hasBlobSupport = (): boolean => {
       // Node.js 환경에서는 Blob이 있을 수 있음
       return typeof Blob !== 'undefined';
-    };
-
-    const hasFileReaderSupport = (): boolean => {
-      return typeof FileReader !== 'undefined';
     };
 
     it('Canvas 지원 여부 확인', () => {
@@ -406,11 +387,6 @@ describe('유틸리티 함수 - 순수 로직', () => {
     it('Blob 지원 여부 확인', () => {
       // Node.js 18+에서는 Blob이 지원됨
       expect(typeof hasBlobSupport()).toBe('boolean');
-    });
-
-    it('FileReader 지원 여부 확인', () => {
-      // Node.js 환경에서는 FileReader가 없음
-      expect(hasFileReaderSupport()).toBe(false);
     });
   });
 });

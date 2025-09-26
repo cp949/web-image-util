@@ -19,7 +19,7 @@ export interface ThumbnailOptions {
   /** 압축 품질 0.0-1.0 (기본: 0.8) */
   quality?: number;
   /** 리사이징 모드 (기본: 'cover') */
-  fit?: 'cover' | 'letterbox';
+  fit?: 'cover' | 'contain';
   /** 배경색 (fit 모드에서, 기본: 흰색) */
   background?: string;
 }
@@ -54,7 +54,7 @@ export interface ThumbnailOptions {
  * // 전체 이미지 보존 (여백 포함)
  * const result = await createThumbnail(imageSource, {
  *   size: 200,
- *   fit: 'letterbox',
+ *   fit: 'contain',
  *   background: '#f0f0f0'
  * });
  * ```
@@ -94,15 +94,6 @@ export async function createThumbnail(source: ImageSource, options: ThumbnailOpt
 export interface AvatarOptions {
   /** 아바타 크기 (정사각형, 기본: 64) */
   size?: number;
-  /** 원형 마스킹 여부 (기본: false) */
-  circle?: boolean;
-  /** 테두리 옵션 */
-  border?: {
-    /** 테두리 두께 (픽셀) */
-    width: number;
-    /** 테두리 색상 */
-    color: string;
-  };
   /** 배경색 (기본: 투명) */
   background?: string;
   /** 출력 포맷 (기본: png - 투명도 지원) */
@@ -114,8 +105,8 @@ export interface AvatarOptions {
 /**
  * 아바타 생성기
  *
- * @description 사용자 프로필용 아바타 이미지를 생성하는 프리셋
- * 정사각형 또는 원형 아바타를 생성하며, 테두리와 배경색 옵션을 제공
+ * @description 사용자 프로필용 정사각형 아바타 이미지를 생성하는 프리셋
+ * 정사각형 아바타를 생성하며, 배경색 옵션을 제공
  *
  * @param source 이미지 소스
  * @param options 아바타 옵션
@@ -126,17 +117,9 @@ export interface AvatarOptions {
  * // 기본 64px 정사각형 아바타
  * const result = await createAvatar(imageSource);
  *
- * // 128px 원형 아바타
+ * // 128px 아바타
  * const result = await createAvatar(imageSource, {
- *   size: 128,
- *   circle: true
- * });
- *
- * // 테두리가 있는 아바타
- * const result = await createAvatar(imageSource, {
- *   size: 96,
- *   circle: true,
- *   border: { width: 3, color: '#007bff' }
+ *   size: 128
  * });
  *
  * // 배경색이 있는 아바타
@@ -165,15 +148,6 @@ export async function createAvatar(source: ImageSource, options: AvatarOptions =
     background: finalOptions.background,
   });
 
-  // TODO: 원형 마스킹 구현 (추후 Phase 3에서)
-  if (finalOptions.circle) {
-    console.warn('원형 아바타 기능은 아직 구현되지 않았습니다. 정사각형으로 생성됩니다.');
-  }
-
-  // TODO: 테두리 구현 (추후 Phase 3에서)
-  if (finalOptions.border) {
-    console.warn('테두리 기능은 아직 구현되지 않았습니다. 테두리 없이 생성됩니다.');
-  }
 
   return await processor.toBlob({
     format: finalOptions.format,
@@ -196,8 +170,6 @@ export interface SocialImageOptions {
   customSize?: { width: number; height: number };
   /** 배경색 (기본: 흰색) */
   background?: string;
-  /** 패딩 (픽셀, 기본: 20) */
-  padding?: number;
   /** 출력 포맷 (기본: jpeg - 소셜 플랫폼 최적화) */
   format?: 'jpeg' | 'png' | 'webp';
   /** 압축 품질 0.0-1.0 (기본: 0.85) */
@@ -249,11 +221,10 @@ const SOCIAL_PLATFORM_SIZES: Record<SocialPlatform, { width: number; height: num
  *   platform: 'instagram'
  * });
  *
- * // 패딩과 배경색을 적용한 페이스북용 이미지
+ * // 배경색을 적용한 페이스북용 이미지
  * const result = await createSocialImage(imageSource, {
  *   platform: 'facebook',
- *   background: '#f8f9fa',
- *   padding: 40
+ *   background: '#f8f9fa'
  * });
  *
  * // 커스텀 크기 (플랫폼 설정 오버라이드)
@@ -270,26 +241,16 @@ export async function createSocialImage(source: ImageSource, options: SocialImag
   // 기본 옵션
   const defaultOptions = {
     background: '#ffffff',
-    padding: 20,
     format: 'jpeg' as const, // 소셜 플랫폼에 최적화
     quality: 0.85,
   };
 
   const finalOptions = { ...defaultOptions, ...options };
 
-  // 패딩을 고려한 실제 이미지 크기 계산
-  const actualImageWidth = targetSize.width - finalOptions.padding * 2;
-  const actualImageHeight = targetSize.height - finalOptions.padding * 2;
-
-  // TODO: 패딩이 적용된 캔버스 생성 (추후 구현)
-  // 현재는 기본 리사이징만 수행
-  if (finalOptions.padding > 0) {
-    console.warn('패딩 기능은 아직 구현되지 않았습니다. 전체 크기로 생성됩니다.');
-  }
 
   return await processImage(source)
     .resize(targetSize.width, targetSize.height, {
-      fit: 'letterbox', // 소셜 이미지는 보통 전체 이미지가 보이도록 함
+      fit: 'contain', // 소셜 이미지는 보통 전체 이미지가 보이도록 함
       position: 'center',
       background: finalOptions.background,
     })
