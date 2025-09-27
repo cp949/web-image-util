@@ -7,7 +7,7 @@
 ```bash
 # 루트 디렉토리에서
 pnpm install
-cd apps/examples
+cd apps/exam
 pnpm dev
 ```
 
@@ -16,7 +16,7 @@ pnpm dev
 ## 📦 프로젝트 구조
 
 ```
-apps/examples/
+apps/exam/
 ├── src/
 │   ├── components/
 │   │   ├── common/           # 공통 컴포넌트
@@ -278,7 +278,7 @@ cd web-image-util
 pnpm install
 
 # 개발 서버 실행
-cd apps/examples
+cd apps/exam
 pnpm dev
 ```
 
