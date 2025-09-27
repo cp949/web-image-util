@@ -1,0 +1,646 @@
+'use client'
+
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useState } from 'react';
+import { createThumbnail, createAvatar, createSocialImage } from '../../../../sub/web-image-util/dist/presets';
+import { CodeSnippet } from '../components/common/CodeSnippet';
+import { ImageUploader } from '../components/common/ImageUploader';
+import { BeforeAfterView } from '../components/ui/BeforeAfterView';
+
+const SOCIAL_PLATFORMS = {
+  twitter: { width: 1200, height: 675, label: 'Twitter (16:9)' },
+  facebook: { width: 1200, height: 630, label: 'Facebook (1.91:1)' },
+  instagram: { width: 1080, height: 1080, label: 'Instagram (1:1)' },
+  linkedin: { width: 1200, height: 627, label: 'LinkedIn (1.91:1)' },
+  youtube: { width: 1280, height: 720, label: 'YouTube (16:9)' },
+  pinterest: { width: 1000, height: 1500, label: 'Pinterest (2:3)' },
+} as const;
+
+export function PresetsPage() {
+  const [activeTab, setActiveTab] = useState(0);
+  const [originalImage, setOriginalImage] = useState<any>(null);
+  const [processedImages, setProcessedImages] = useState<any[]>([]);
+  const [processing, setProcessing] = useState(false);
+
+  // 썸네일 옵션
+  const [thumbnailOptions, setThumbnailOptions] = useState({
+    size: 150,
+    format: 'jpeg' as 'jpeg' | 'png' | 'webp',
+    quality: 0.8,
+    fit: 'cover' as 'cover' | 'contain',
+  });
+
+  // 아바타 옵션
+  const [avatarOptions, setAvatarOptions] = useState({
+    size: 128,
+    format: 'png' as 'png' | 'webp',
+    circle: false,
+  });
+
+  // 소셜 이미지 옵션
+  const [socialOptions, setSocialOptions] = useState({
+    platform: 'instagram' as keyof typeof SOCIAL_PLATFORMS,
+    background: '#ffffff',
+    format: 'jpeg' as 'jpeg' | 'png' | 'webp',
+    quality: 0.85,
+  });
+
+  const handleImageSelect = (source: File | string) => {
+    setProcessedImages([]);
+
+    if (typeof source === 'string') {
+      const img = new Image();
+      img.onload = () => {
+        setOriginalImage({
+          src: source,
+          width: img.width,
+          height: img.height,
+          format: source.split('.').pop()?.toLowerCase(),
+        });
+      };
+      img.src = source;
+    } else {
+      const url = URL.createObjectURL(source);
+      const img = new Image();
+      img.onload = () => {
+        setOriginalImage({
+          src: url,
+          width: img.width,
+          height: img.height,
+          size: source.size,
+          format: source.type.split('/')[1],
+        });
+      };
+      img.src = url;
+    }
+  };
+
+  const processThumbnail = async () => {
+    if (!originalImage) return;
+
+    setProcessing(true);
+    const startTime = Date.now();
+
+    try {
+      const result = await createThumbnail(originalImage.src, thumbnailOptions);
+
+      const processingTime = Date.now() - startTime;
+      const url = URL.createObjectURL(result.blob);
+
+      setProcessedImages([
+        {
+          src: url,
+          width: result.width,
+          height: result.height,
+          size: result.blob.size,
+          format: thumbnailOptions.format,
+          processingTime,
+        },
+      ]);
+    } catch (error) {
+      console.error('Thumbnail creation failed:', error);
+      console.error('썸네일 생성 중 오류가 발생했습니다.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const processAvatar = async () => {
+    if (!originalImage) return;
+
+    setProcessing(true);
+    const startTime = Date.now();
+
+    try {
+      const result = await createAvatar(originalImage.src, avatarOptions);
+
+      const processingTime = Date.now() - startTime;
+      const url = URL.createObjectURL(result.blob);
+
+      setProcessedImages([
+        {
+          src: url,
+          width: result.width,
+          height: result.height,
+          size: result.blob.size,
+          format: avatarOptions.format,
+          processingTime,
+        },
+      ]);
+    } catch (error) {
+      console.error('Avatar creation failed:', error);
+      console.error('아바타 생성 중 오류가 발생했습니다.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const processSocialImage = async () => {
+    if (!originalImage) return;
+
+    setProcessing(true);
+    const startTime = Date.now();
+
+    try {
+      const result = await createSocialImage(originalImage.src, socialOptions);
+
+      const processingTime = Date.now() - startTime;
+      const url = URL.createObjectURL(result.blob);
+
+      setProcessedImages([
+        {
+          src: url,
+          width: result.width,
+          height: result.height,
+          size: result.blob.size,
+          format: socialOptions.format,
+          processingTime,
+        },
+      ]);
+    } catch (error) {
+      console.error('Social image creation failed:', error);
+      console.error('소셜 이미지 생성 중 오류가 발생했습니다.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // 배치 처리 (여러 크기 동시 생성)
+  const processBatch = async () => {
+    if (!originalImage) return;
+
+    setProcessing(true);
+    const startTime = Date.now();
+
+    try {
+      const sizes = [64, 128, 256, 512];
+      const results = await Promise.all(
+        sizes.map((size) =>
+          createThumbnail(originalImage.src, {
+            size,
+            format: 'png',
+            quality: 0.9,
+          })
+        )
+      );
+
+      const processingTime = Date.now() - startTime;
+      const processedBatch = results.map((result) => ({
+        src: URL.createObjectURL(result.blob),
+        width: result.width,
+        height: result.height,
+        size: result.blob.size,
+        format: 'png',
+        processingTime: processingTime / sizes.length, // 평균 시간
+      }));
+
+      setProcessedImages(processedBatch);
+    } catch (error) {
+      console.error('Batch processing failed:', error);
+      console.error('배치 처리 중 오류가 발생했습니다.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const generateCodeExamples = () => {
+    switch (activeTab) {
+      case 0: // 썸네일
+        return [
+          {
+            title: '썸네일 생성',
+            code: `import { createThumbnail } from '@cp949/web-image-util/presets';
+
+// 기본 썸네일 (150px 정사각형)
+const thumbnail = await createThumbnail(source, {
+  size: ${thumbnailOptions.size}
+});
+
+// 고급 옵션
+const thumbnail = await createThumbnail(source, {
+  size: ${thumbnailOptions.size},
+  format: '${thumbnailOptions.format}',
+  quality: ${thumbnailOptions.quality},
+  fit: '${thumbnailOptions.fit}'
+});`,
+            language: 'typescript',
+          },
+        ];
+
+      case 1: // 아바타
+        return [
+          {
+            title: '아바타 생성',
+            code: `import { createAvatar } from '@cp949/web-image-util/presets';
+
+// 기본 아바타 (64px)
+const avatar = await createAvatar(source);
+
+// 커스텀 크기
+const avatar = await createAvatar(source, {
+  size: ${avatarOptions.size},
+  format: '${avatarOptions.format}'
+});`,
+            language: 'typescript',
+          },
+        ];
+
+      case 2: // 소셜 이미지
+        return [
+          {
+            title: '소셜 이미지 생성',
+            code: `import { createSocialImage } from '@cp949/web-image-util/presets';
+
+// 플랫폼별 권장 크기 자동 적용
+const socialImage = await createSocialImage(source, {
+  platform: '${socialOptions.platform}'
+});
+
+// 커스텀 설정
+const socialImage = await createSocialImage(source, {
+  platform: '${socialOptions.platform}',
+  background: '${socialOptions.background}',
+  format: '${socialOptions.format}',
+  quality: ${socialOptions.quality}
+});`,
+            language: 'typescript',
+          },
+        ];
+
+      case 3: // 배치 처리
+        return [
+          {
+            title: '배치 처리',
+            code: `import { createThumbnail, createSocialImage } from '@cp949/web-image-util/presets';
+
+// 여러 크기 동시 생성
+const [small, medium, large, xlarge] = await Promise.all([
+  createThumbnail(source, { size: 64 }),
+  createThumbnail(source, { size: 128 }),
+  createThumbnail(source, { size: 256 }),
+  createThumbnail(source, { size: 512 })
+]);
+
+// 플랫폼별 소셜 이미지 배치 생성
+const socialImages = await Promise.all([
+  createSocialImage(source, { platform: 'instagram' }),
+  createSocialImage(source, { platform: 'twitter' }),
+  createSocialImage(source, { platform: 'facebook' })
+]);`,
+            language: 'typescript',
+          },
+        ];
+
+      default:
+        return [];
+    }
+  };
+
+  return (
+    <Container maxWidth="lg">
+      <Typography variant="h3" component="h1" gutterBottom>
+        프리셋 기능
+      </Typography>
+      <Typography variant="body1" color="text.secondary" paragraph>
+        자주 사용하는 패턴들을 간단한 함수 호출로 처리할 수 있는 편의 기능들입니다.
+      </Typography>
+
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Stack spacing={3}>
+            <ImageUploader onImageSelect={handleImageSelect} />
+
+            <Card>
+              <CardContent>
+                <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)} variant="fullWidth" sx={{ mb: 3 }}>
+                  <Tab label="썸네일" />
+                  <Tab label="아바타" />
+                  <Tab label="소셜" />
+                  <Tab label="배치" />
+                </Tabs>
+
+                {/* 썸네일 옵션 */}
+                {activeTab === 0 && (
+                  <Box>
+                    <Typography variant="h6" gutterBottom>
+                      썸네일 설정
+                    </Typography>
+
+                    <TextField
+                      fullWidth
+                      label="크기 (px)"
+                      type="number"
+                      value={thumbnailOptions.size}
+                      onChange={(e) =>
+                        setThumbnailOptions((prev) => ({
+                          ...prev,
+                          size: parseInt(e.target.value) || 150,
+                        }))
+                      }
+                      sx={{ mb: 2 }}
+                    />
+
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>포맷</InputLabel>
+                      <Select
+                        value={thumbnailOptions.format}
+                        label="포맷"
+                        onChange={(e) =>
+                          setThumbnailOptions((prev) => ({
+                            ...prev,
+                            format: e.target.value as 'jpeg' | 'png' | 'webp',
+                          }))
+                        }
+                      >
+                        <MenuItem value="jpeg">JPEG</MenuItem>
+                        <MenuItem value="png">PNG</MenuItem>
+                        <MenuItem value="webp">WebP</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth sx={{ mb: 3 }}>
+                      <InputLabel>Fit 모드</InputLabel>
+                      <Select
+                        value={thumbnailOptions.fit}
+                        label="Fit 모드"
+                        onChange={(e) =>
+                          setThumbnailOptions((prev) => ({
+                            ...prev,
+                            fit: e.target.value as 'cover' | 'contain',
+                          }))
+                        }
+                      >
+                        <MenuItem value="cover">Cover</MenuItem>
+                        <MenuItem value="contain">Contain</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={processThumbnail}
+                      disabled={!originalImage || processing}
+                    >
+                      {processing ? '생성 중...' : '썸네일 생성'}
+                    </Button>
+                  </Box>
+                )}
+
+                {/* 아바타 옵션 */}
+                {activeTab === 1 && (
+                  <Box>
+                    <Typography variant="h6" gutterBottom>
+                      아바타 설정
+                    </Typography>
+
+                    <TextField
+                      fullWidth
+                      label="크기 (px)"
+                      type="number"
+                      value={avatarOptions.size}
+                      onChange={(e) =>
+                        setAvatarOptions((prev) => ({
+                          ...prev,
+                          size: parseInt(e.target.value) || 128,
+                        }))
+                      }
+                      sx={{ mb: 2 }}
+                    />
+
+                    <FormControl fullWidth sx={{ mb: 3 }}>
+                      <InputLabel>포맷</InputLabel>
+                      <Select
+                        value={avatarOptions.format}
+                        label="포맷"
+                        onChange={(e) =>
+                          setAvatarOptions((prev) => ({
+                            ...prev,
+                            format: e.target.value as 'png' | 'webp',
+                          }))
+                        }
+                      >
+                        <MenuItem value="jpeg">JPEG</MenuItem>
+                        <MenuItem value="png">PNG (투명도 지원)</MenuItem>
+                        <MenuItem value="webp">WebP</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                      ✅ 정사각형 아바타 생성이 구현되어 있습니다!
+                    </Alert>
+
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                      🚧 원형 마스킹 기능은 추후 추가될 예정입니다.
+                    </Alert>
+
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={processAvatar}
+                      disabled={!originalImage || processing}
+                    >
+                      {processing ? '생성 중...' : '아바타 생성'}
+                    </Button>
+                  </Box>
+                )}
+
+                {/* 소셜 이미지 옵션 */}
+                {activeTab === 2 && (
+                  <Box>
+                    <Typography variant="h6" gutterBottom>
+                      소셜 이미지 설정
+                    </Typography>
+
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>플랫폼</InputLabel>
+                      <Select
+                        value={socialOptions.platform}
+                        label="플랫폼"
+                        onChange={(e) =>
+                          setSocialOptions((prev) => ({
+                            ...prev,
+                            platform: e.target.value as keyof typeof SOCIAL_PLATFORMS,
+                          }))
+                        }
+                      >
+                        {Object.entries(SOCIAL_PLATFORMS).map(([key, { label }]) => (
+                          <MenuItem key={key} value={key}>
+                            {label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    {/* 플랫폼 정보 표시 */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        권장 크기: {SOCIAL_PLATFORMS[socialOptions.platform].width}×
+                        {SOCIAL_PLATFORMS[socialOptions.platform].height}
+                      </Typography>
+                    </Box>
+
+                    <TextField
+                      fullWidth
+                      label="배경색"
+                      value={socialOptions.background}
+                      onChange={(e) =>
+                        setSocialOptions((prev) => ({
+                          ...prev,
+                          background: e.target.value,
+                        }))
+                      }
+                      sx={{ mb: 3 }}
+                    />
+
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={processSocialImage}
+                      disabled={!originalImage || processing}
+                    >
+                      {processing ? '생성 중...' : '소셜 이미지 생성'}
+                    </Button>
+                  </Box>
+                )}
+
+                {/* 배치 처리 옵션 */}
+                {activeTab === 3 && (
+                  <Box>
+                    <Typography variant="h6" gutterBottom>
+                      배치 처리
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      여러 크기의 썸네일을 한 번에 생성합니다.
+                    </Typography>
+
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        생성될 크기들:
+                      </Typography>
+                      <Stack direction="row" spacing={1}>
+                        <Chip label="64×64" size="small" />
+                        <Chip label="128×128" size="small" />
+                        <Chip label="256×256" size="small" />
+                        <Chip label="512×512" size="small" />
+                      </Stack>
+                    </Box>
+
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={processBatch}
+                      disabled={!originalImage || processing}
+                    >
+                      {processing ? '생성 중...' : '배치 처리 시작'}
+                    </Button>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Stack>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Stack spacing={3}>
+            {/* 결과 표시 */}
+            {processedImages.length === 1 ? (
+              <BeforeAfterView before={originalImage} after={processedImages[0]} />
+            ) : processedImages.length > 1 ? (
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    배치 처리 결과
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {processedImages.map((image, index) => (
+                      <Grid key={index} size={{ xs: 6, sm: 4, md: 3 }}>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Box
+                            sx={{
+                              width: '100%',
+                              height: 150,
+                              border: 1,
+                              borderColor: 'grey.300',
+                              borderRadius: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              overflow: 'hidden',
+                              mb: 1,
+                              bgcolor: 'grey.50',
+                            }}
+                          >
+                            <img
+                              src={image.src}
+                              alt={`Processed ${index + 1}`}
+                              style={{
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                objectFit: 'contain',
+                              }}
+                            />
+                          </Box>
+                          <Typography variant="caption" display="block">
+                            {image.width}×{image.height}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {Math.round(image.size / 1024)}KB
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent>
+                  <Box
+                    sx={{
+                      height: 400,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: 1,
+                      borderColor: 'grey.300',
+                      borderStyle: 'dashed',
+                      borderRadius: 1,
+                      bgcolor: 'grey.50',
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      이미지를 선택하고 프리셋 기능을 사용해보세요
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 코드 예제 */}
+            {originalImage && <CodeSnippet title="현재 설정의 코드 예제" examples={generateCodeExamples()} />}
+          </Stack>
+        </Grid>
+      </Grid>
+    </Container>
+  );
+}
+
+export default PresetsPage;

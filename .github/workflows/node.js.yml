@@ -3,7 +3,7 @@ name: Deploy to NPM from Release Branch
 on:
   push:
     branches:
-      - "release"
+      - 'release'
 
 jobs:
   deploy:
@@ -22,13 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: "release"
+          ref: 'release'
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org
-          scope: "@cp949"
+          scope: '@cp949'
       - uses: pnpm/action-setup@v4
 
       - name: Install dependencies
@@ -49,12 +49,12 @@ jobs:
       - name: Check package contents
         run: |
           echo "Package contents:"
-          cd packages/web-image-util
+          cd sub/web-image-util
           npm pack --dry-run
           echo "Package version:"
           node -e "console.log('v' + require('./package.json').version)"
 
       - name: Publish to NPM
-        run: cd packages/web-image-util && npm publish --access=public
+        run: cd sub/web-image-util && npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

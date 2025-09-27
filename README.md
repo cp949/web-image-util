@@ -42,7 +42,7 @@ const instagramPost = await processImage(source)
 
 ---
 
-## 📦 packages/web-image-util
+## 📦 sub/web-image-util
 
 ### 🎯 핵심 라이브러리 기능
 
@@ -87,11 +87,14 @@ const watermarked = SimpleWatermark.addText(canvas, {
 
 #### 📤 **출력 포맷 & 최적화**
 ```typescript
-// 다양한 출력 형태
+// 다양한 출력 형태 (확장됨)
 const blob = await processImage(source).toBlob({ format: 'webp', quality: 0.8 });
 const dataURL = await processImage(source).toDataURL({ format: 'jpeg', quality: 0.9 });
 const file = await processImage(source).toFile('image.png');
 const canvas = await processImage(source).toCanvas();
+const element = await processImage(source).toElement();     // HTMLImageElement
+const arrayBuffer = await processImage(source).toArrayBuffer(); // ArrayBuffer
+const uint8Array = await processImage(source).toUint8Array();   // Uint8Array
 
 // 포맷별 최적화된 설정
 const webpResult = await processImage(source)
@@ -274,7 +277,7 @@ pnpm dev
   "TypeScript": "5.9.x",      // 최신 타입 시스템
   "Vite": "7.1.x",            // 초고속 개발 서버
   "React Router": "7.9.x",    // 클라이언트 라우팅
-  "Emotion": "11.14.x"        // CSS-in-JS
+  "Emotion": "11.14.x",       // CSS-in-JS
 }
 ```
 
@@ -323,7 +326,7 @@ const processBatch = async (files: File[]) => {
 
 ```
 web-image-util/
-├── 📦 packages/
+├── 📦 sub/
 │   ├── web-image-util/          # 🎯 메인 라이브러리
 │   │   ├── src/
 │   │   │   ├── index.ts         # 기본 API
@@ -334,7 +337,8 @@ web-image-util/
 │   │   │   └── composition/     # 이미지 합성
 │   │   ├── tests/               # 106개 테스트
 │   │   └── README.md            # 📚 완전한 API 문서
-│   └── config/                  # 공유 설정 (ESLint, TypeScript)
+│   ├── eslint-config/           # ESLint 공유 설정
+│   └── typescript-config/       # TypeScript 공유 설정
 ├── 🖥️ apps/
 │   └── examples/                # 📱 React 데모 앱
 │       ├── src/
@@ -386,12 +390,12 @@ pnpm publish            # npm 배포
 
 ### 🌐 **브라우저 지원**
 
-| 브라우저 | 최소 버전 | 주요 기능 |
-|---------|----------|----------|
-| Chrome | 88+ | WebP, OffscreenCanvas |
-| Firefox | 90+ | WebP 지원 |
-| Safari | 14+ | WebP 지원 |
-| Edge | 88+ | 완전 지원 |
+| 브라우저 | 최소 버전 | 주요 기능             |
+| -------- | --------- | --------------------- |
+| Chrome   | 88+       | WebP, OffscreenCanvas |
+| Firefox  | 90+       | WebP 지원             |
+| Safari   | 14+       | WebP 지원             |
+| Edge     | 88+       | 완전 지원             |
 
 **필수 API**:
 - Canvas 2D Context ✅
@@ -401,7 +405,7 @@ pnpm publish            # npm 배포
 
 ## 📚 상세 문서
 
-- **📖 [라이브러리 API 문서](packages/web-image-util/README.md)** - 완전한 API 레퍼런스
+- **📖 [라이브러리 API 문서](sub/web-image-util/README.md)** - 완전한 API 레퍼런스
 - **🎨 [예제 앱 가이드](apps/examples/README.md)** - UI 개발 및 통합 가이드
 - **🔧 [개발 환경 설정](CLAUDE.md)** - 프로젝트 구조 및 기여 가이드
 
@@ -418,4 +422,4 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
 ---
 
-**Made with ❤️ by @cp949** | **Latest Update**: 2025-01-27
+**Made with ❤️ by @cp949**
