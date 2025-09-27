@@ -5,16 +5,27 @@
  * TypeScript의 타입 narrowing을 지원하여 컴파일 타임 안전성 향상
  */
 
-import type { ImageSource, ImageFormat, ResizeFit, ResizePosition, ResizeBackground } from './index';
+import type { ImageSource, ImageFormat, ResizeFit, ResizePosition, ResizeBackground } from './base';
 
 // 순환 import 방지를 위해 상수 직접 정의
 const VALID_RESIZE_FITS = ['cover', 'contain', 'fill', 'inside', 'outside'] as const;
 const VALID_IMAGE_FORMATS = ['jpeg', 'jpg', 'png', 'webp', 'avif', 'gif', 'svg'] as const;
 
 const VALID_POSITION_STRINGS = new Set([
-  'center', 'centre', 'top', 'right', 'bottom', 'left',
-  'top left', 'top right', 'bottom left', 'bottom right',
-  'left top', 'right top', 'left bottom', 'right bottom'
+  'center',
+  'centre',
+  'top',
+  'right',
+  'bottom',
+  'left',
+  'top left',
+  'top right',
+  'bottom left',
+  'bottom right',
+  'left top',
+  'right top',
+  'left bottom',
+  'right bottom',
 ]);
 
 // CSS 색상 정규식 - 간단하고 실용적인 버전
@@ -213,11 +224,7 @@ export function isValidResizePosition(value: unknown): value is ResizePosition {
   // 객체 {x, y} 형태
   if (typeof value === 'object' && value !== null) {
     const pos = value as Record<string, unknown>;
-    return (
-      isNumberInRange(pos.x, 0, 100) &&
-      isNumberInRange(pos.y, 0, 100) &&
-      Object.keys(pos).length === 2
-    );
+    return isNumberInRange(pos.x, 0, 100) && isNumberInRange(pos.y, 0, 100) && Object.keys(pos).length === 2;
   }
 
   return false;
@@ -245,11 +252,7 @@ export function isValidBackgroundColor(value: unknown): value is ResizeBackgroun
   // RGB 객체
   if (typeof value === 'object' && value !== null) {
     const color = value as Record<string, unknown>;
-    const hasValidRGB = (
-      isValidRGBValue(color.r) &&
-      isValidRGBValue(color.g) &&
-      isValidRGBValue(color.b)
-    );
+    const hasValidRGB = isValidRGBValue(color.r) && isValidRGBValue(color.g) && isValidRGBValue(color.b);
 
     if (!hasValidRGB) return false;
 
@@ -328,9 +331,9 @@ function createValidationResult(): {
       return {
         isValid: errors.length === 0,
         errors: Object.freeze([...errors]),
-        warnings: Object.freeze([...warnings])
+        warnings: Object.freeze([...warnings]),
       };
-    }
+    },
   };
 }
 
@@ -372,10 +375,7 @@ export function validateResizeOptions(options: any): ValidationResult {
   }
 
   // 대용량 이미지 경고 (논리 수정)
-  const hasLargeDimension = (
-    (options.width && options.width > 4096) ||
-    (options.height && options.height > 4096)
-  );
+  const hasLargeDimension = (options.width && options.width > 4096) || (options.height && options.height > 4096);
   if (hasLargeDimension) {
     result.warnings.push('매우 큰 이미지 크기입니다. 메모리 사용량에 주의하세요');
   }

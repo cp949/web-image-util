@@ -4,7 +4,7 @@
  * @description 사용자 친화적인 에러 메시지와 해결 방법을 제공
  */
 
-import { ImageProcessError, type ImageErrorCode } from '../types';
+import { ImageProcessError, type ImageErrorCodeType } from '../types';
 import { globalErrorHandler, type ErrorStats } from '../core/error-handler';
 
 /**
@@ -28,7 +28,7 @@ export interface ErrorContext {
 /**
  * 사용자 친화적 에러 메시지 매핑
  */
-const USER_FRIENDLY_MESSAGES: Record<ImageErrorCode, string> = {
+const USER_FRIENDLY_MESSAGES: Record<ImageErrorCodeType, string> = {
   // 소스 관련 에러
   INVALID_SOURCE: '이미지 소스가 유효하지 않습니다. 올바른 이미지 파일이나 URL을 사용해주세요.',
   UNSUPPORTED_FORMAT: '지원하지 않는 이미지 포맷입니다. JPEG, PNG, WebP 등의 표준 포맷을 사용해주세요.',
@@ -57,7 +57,7 @@ const USER_FRIENDLY_MESSAGES: Record<ImageErrorCode, string> = {
 /**
  * 해결 방법 제안
  */
-const SOLUTION_SUGGESTIONS: Record<ImageErrorCode, string[]> = {
+const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
   INVALID_SOURCE: [
     'HTMLImageElement, Blob, 또는 유효한 URL/Data URL을 사용하세요',
     'CORS 문제인 경우 crossOrigin 설정을 확인하세요',
@@ -141,7 +141,7 @@ function isDevelopmentMode(): boolean {
  * @description 사용자 친화적 메시지와 해결 방법이 포함된 에러를 생성
  */
 export function createImageError(
-  code: ImageErrorCode,
+  code: ImageErrorCodeType,
   originalError?: Error,
   context?: ErrorContext
 ): ImageProcessError {
@@ -301,7 +301,7 @@ export function logError(error: ImageProcessError, context?: any): void {
  * @description 중앙집중식 핸들러와 통합된 에러 생성
  */
 export async function createAndHandleError(
-  code: ImageErrorCode,
+  code: ImageErrorCodeType,
   originalError?: Error,
   operation?: string,
   context?: ErrorContext
@@ -350,10 +350,8 @@ export async function withErrorHandling<T>(
 
 /**
  * 간단한 에러 생성 (핸들러 없이)
- *
- * @description 기존 API 호환성 유지
  */
-export function createQuickError(code: ImageErrorCode, originalError?: Error): ImageProcessError {
+export function createQuickError(code: ImageErrorCodeType, originalError?: Error): ImageProcessError {
   return createImageError(code, originalError, { debug: { quickError: true } });
 }
 

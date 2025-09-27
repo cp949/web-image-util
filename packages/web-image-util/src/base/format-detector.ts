@@ -2,7 +2,6 @@
 import type { ImageFormat } from '../types';
 import { ImageFormats } from '../types';
 
-// 기존 코드 호환성을 위해 re-export
 export type { ImageFormat };
 
 /**

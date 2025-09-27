@@ -1,7 +1,6 @@
 // ImageSource는 통합 타입 시스템에서 import
 import type { ImageSource } from '../types';
 
-// 기존 코드 호환성을 위해 re-export
 export type { ImageSource };
 
 /**
