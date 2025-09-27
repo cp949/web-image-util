@@ -1,12 +1,12 @@
 /**
- * 간단한 배치 리사이저 - 
+ * 간단한 배치 리사이저 -
  *
  * @description 복잡한 모니터링 없이 여러 이미지를 효율적으로 처리
  */
 
+import { AutoMemoryManager } from './auto-memory-manager';
 import type { ResizePerformanceOptions } from './performance-config';
 import { getPerformanceConfig, type ResizeProfile } from './performance-config';
-import { AutoMemoryManager } from './auto-memory-manager';
 
 /**
  * 배치 처리용 간단한 작업 정의

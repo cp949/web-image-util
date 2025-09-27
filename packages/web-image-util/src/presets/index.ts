@@ -6,7 +6,7 @@
  */
 
 import { processImage } from '../processor';
-import type { ImageSource, BlobResult } from '../types';
+import type { ImageSource, ResultBlob } from '../types';
 
 /**
  * 썸네일 생성 옵션
@@ -59,7 +59,7 @@ export interface ThumbnailOptions {
  * });
  * ```
  */
-export async function createThumbnail(source: ImageSource, options: ThumbnailOptions): Promise<BlobResult> {
+export async function createThumbnail(source: ImageSource, options: ThumbnailOptions): Promise<ResultBlob> {
   // 크기 정규화
   const { width, height } =
     typeof options.size === 'number'
@@ -129,7 +129,7 @@ export interface AvatarOptions {
  * });
  * ```
  */
-export async function createAvatar(source: ImageSource, options: AvatarOptions = {}): Promise<BlobResult> {
+export async function createAvatar(source: ImageSource, options: AvatarOptions = {}): Promise<ResultBlob> {
   // 기본 옵션
   const defaultOptions = {
     size: 64,
@@ -147,7 +147,6 @@ export async function createAvatar(source: ImageSource, options: AvatarOptions =
     position: 'center',
     background: finalOptions.background,
   });
-
 
   return await processor.toBlob({
     format: finalOptions.format,
@@ -234,7 +233,7 @@ const SOCIAL_PLATFORM_SIZES: Record<SocialPlatform, { width: number; height: num
  * });
  * ```
  */
-export async function createSocialImage(source: ImageSource, options: SocialImageOptions): Promise<BlobResult> {
+export async function createSocialImage(source: ImageSource, options: SocialImageOptions): Promise<ResultBlob> {
   // 크기 결정
   const targetSize = options.customSize || SOCIAL_PLATFORM_SIZES[options.platform];
 
@@ -246,7 +245,6 @@ export async function createSocialImage(source: ImageSource, options: SocialImag
   };
 
   const finalOptions = { ...defaultOptions, ...options };
-
 
   return await processImage(source)
     .resize(targetSize.width, targetSize.height, {

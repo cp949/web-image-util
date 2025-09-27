@@ -3,9 +3,9 @@
  * 고해상도 이미지를 자동으로 처리하는 투명한 시스템
  */
 
+import { HighResolutionDetector } from '../base/high-res-detector';
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
-import { HighResolutionDetector } from '../base/high-res-detector';
 
 /**
  * 자동 처리 임계값

@@ -2,9 +2,9 @@
  * 렌더링 파이프라인 - 이미지 처리 연산들을 순차적으로 실행
  */
 
-import type { BlurOptions, ProcessResult, ResizeOptions, SmartResizeOptions } from '../types';
-import { ImageProcessError } from '../types';
 import { CanvasPool } from '../base/canvas-pool';
+import type { BlurOptions, ResizeOptions, ResultMetadata, SmartResizeOptions } from '../types';
+import { ImageProcessError } from '../types';
 import { SmartProcessor } from './smart-processor';
 
 /**
@@ -46,7 +46,7 @@ export class RenderPipeline {
    */
   async execute(sourceImage: HTMLImageElement): Promise<{
     canvas: HTMLCanvasElement;
-    result: ProcessResult;
+    result: ResultMetadata;
   }> {
     this.startTime = performance.now();
 
@@ -63,7 +63,7 @@ export class RenderPipeline {
 
       const processingTime = performance.now() - this.startTime;
 
-      const result: ProcessResult = {
+      const result: ResultMetadata = {
         width: currentContext.width,
         height: currentContext.height,
         processingTime,

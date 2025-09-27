@@ -6,10 +6,10 @@
 import { createPipeline } from './core/pipeline';
 import { convertToImageElement } from './core/source-converter';
 import type {
-  BlobResult,
+  ResultBlob,
   BlurOptions,
-  DataURLResult,
-  FileResult,
+  ResultDataURL,
+  ResultFile,
   ImageFormat,
   ImageSource,
   OutputFormat,
@@ -251,9 +251,9 @@ export class ImageProcessor {
    * ```
    */
 
-  async toBlob(options?: OutputOptions): Promise<BlobResult>;
-  async toBlob(format: OutputFormat): Promise<BlobResult>;
-  async toBlob(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<BlobResult> {
+  async toBlob(options?: OutputOptions): Promise<ResultBlob>;
+  async toBlob(format: OutputFormat): Promise<ResultBlob>;
+  async toBlob(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultBlob> {
     // 문자열인 경우 포맷으로 처리하고 최적 품질 적용
     const options: OutputOptions =
       typeof optionsOrFormat === 'string'
@@ -319,9 +319,9 @@ export class ImageProcessor {
    * imgElement.src = result.dataURL;
    * ```
    */
-  async toDataURL(options?: OutputOptions): Promise<DataURLResult>;
-  async toDataURL(format: OutputFormat): Promise<DataURLResult>;
-  async toDataURL(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<DataURLResult> {
+  async toDataURL(options?: OutputOptions): Promise<ResultDataURL>;
+  async toDataURL(format: OutputFormat): Promise<ResultDataURL>;
+  async toDataURL(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultDataURL> {
     // 타입에 따라 적절한 toBlob 호출 방식 선택
     const { blob, ...metadata } =
       typeof optionsOrFormat === 'string'
@@ -367,9 +367,9 @@ export class ImageProcessor {
    * formData.append('image', result.file);
    * ```
    */
-  async toFile(filename: string, options?: OutputOptions): Promise<FileResult>;
-  async toFile(filename: string, format: OutputFormat): Promise<FileResult>;
-  async toFile(filename: string, optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<FileResult> {
+  async toFile(filename: string, options?: OutputOptions): Promise<ResultFile>;
+  async toFile(filename: string, format: OutputFormat): Promise<ResultFile>;
+  async toFile(filename: string, optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultFile> {
     // 파일 확장자로 포맷 자동 감지
     const formatFromFilename = this.getFormatFromFilename(filename);
 

@@ -55,17 +55,17 @@ export type {
   ProcessorOptions,
 
   // 결과 타입
-  BlobResult,
-  DataURLResult,
-  FileResult,
-  ProcessResult,
+  ResultBlob,
+  ResultDataURL,
+  ResultFile,
+  ResultMetadata,
 
   // 유틸리티 타입
   ResizeFit,
   ResizePosition,
-  BackgroundColor,
+  ResizeBackground,
   ImageFormat,
-  ImageErrorCode,
+  ImageErrorCodeType,
 } from './types';
 
 // 에러 클래스

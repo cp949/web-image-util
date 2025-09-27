@@ -5,7 +5,7 @@
  */
 
 import { convertToImageElement } from '../core/source-converter';
-import type { BlobResult, DataURLResult, FileResult, ImageSource, OutputOptions } from '../types';
+import type { ResultBlob, ResultDataURL, ResultFile, ImageSource, OutputOptions } from '../types';
 import { ImageProcessError } from '../types';
 
 /**
@@ -131,7 +131,7 @@ export async function toBlob(source: ImageSource | HTMLCanvasElement, options: B
 export async function toBlobDetailed(
   source: ImageSource | HTMLCanvasElement,
   options: BlobDetailedOptions = {}
-): Promise<BlobResult> {
+): Promise<ResultBlob> {
   const startTime = Date.now();
 
   try {
@@ -268,7 +268,7 @@ export async function toDataURL(
 export async function toDataURLDetailed(
   source: ImageSource | HTMLCanvasElement,
   options: DataURLDetailedOptions = {}
-): Promise<DataURLResult> {
+): Promise<ResultDataURL> {
   const startTime = Date.now();
 
   try {
@@ -419,7 +419,7 @@ export async function toFileDetailed(
   source: ImageSource | HTMLCanvasElement,
   filename: string,
   options: FileDetailedOptions = {}
-): Promise<FileResult> {
+): Promise<ResultFile> {
   const startTime = Date.now();
 
   try {

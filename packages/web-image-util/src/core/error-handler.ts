@@ -5,7 +5,7 @@
  */
 
 import type { ImageProcessError } from '../types';
-import type { ImageErrorCode } from '../types';
+import type { ImageErrorCodeType } from '../types';
 import type { ErrorContext } from '../base/error-helpers';
 
 /**
@@ -76,7 +76,7 @@ export class ImageErrorHandler {
    * 에러 심각도 분석
    */
   private isCriticalError(error: ImageProcessError): boolean {
-    const criticalCodes: ImageErrorCode[] = [
+    const criticalCodes: ImageErrorCodeType[] = [
       'CANVAS_CREATION_FAILED',
       'CANVAS_CONTEXT_FAILED',
       'BROWSER_NOT_SUPPORTED',

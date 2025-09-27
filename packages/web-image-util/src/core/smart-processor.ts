@@ -5,13 +5,13 @@
  * 사용자는 복잡한 전략을 몰라도 되고, 내부에서 자동으로 최적화됩니다.
  */
 
-import type { ResizeOptions } from '../types';
-import { InternalHighResProcessor } from './internal/internal-high-res-processor';
-import type { ProcessingStrategy } from '../base/high-res-detector';
 import { createImageError } from '../base/error-helpers';
+import type { ProcessingStrategy } from '../base/high-res-detector';
+import type { ResizeOptions } from '../types';
 import { AutoMemoryManager } from './auto-memory-manager';
 import { BatchResizer, type BatchResizeJob } from './batch-resizer';
-import { getPerformanceConfig, type ResizeProfile, type ResizePerformanceOptions } from './performance-config';
+import { InternalHighResProcessor } from './internal/internal-high-res-processor';
+import type { ResizeProfile } from './performance-config';
 
 /**
  * 간소화된 스마트 리사이징 옵션

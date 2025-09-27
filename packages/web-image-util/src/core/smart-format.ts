@@ -3,8 +3,8 @@
  * 이미지 특성과 브라우저 지원을 고려한 자동 포맷 최적화
  */
 
-import { FormatDetector, FORMAT_MIME_MAP } from '../base/format-detector';
 import type { ImageFormat } from '../base/format-detector';
+import { FORMAT_MIME_MAP, FormatDetector } from '../base/format-detector';
 import { ImageFormats } from '../types';
 
 /**
