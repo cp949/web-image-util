@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:vanilla": "vite --config vite.vanilla.config.ts",
     "build": "vite build",
+    "build:vanilla": "vite build --config vite.vanilla.config.ts",
     "preview": "vite preview",
+    "preview:vanilla": "vite preview --config vite.vanilla.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -15,6 +18,8 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
+    "@types/jszip": "^3.4.1",
+    "chart.js": "^4.5.0",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
     "react": "^19.1.1",

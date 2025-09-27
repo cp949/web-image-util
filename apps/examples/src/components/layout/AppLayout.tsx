@@ -25,7 +25,8 @@ import {
   ViewModule as BatchIcon,
   Speed as PerformanceIcon,
   DeveloperMode as DevToolsIcon,
-  Build as SvgIcon
+  Build as SvgIcon,
+  Transform as ConverterTestIcon
 } from '@mui/icons-material'
 import { Link, useLocation } from 'react-router'
 
@@ -38,6 +39,7 @@ const navigationItems = [
   { path: '/advanced', label: '고급 기능', icon: <AdvancedIcon /> },
   { path: '/filters', label: '필터 효과', icon: <FiltersIcon /> },
   { path: '/converters', label: '변환 도구', icon: <ConvertersIcon /> },
+  { path: '/image-source-converter', label: 'ImageSourceConverter', icon: <ConverterTestIcon /> },
   { path: '/batch', label: '배치 처리', icon: <BatchIcon /> },
   { path: '/performance', label: '성능 테스트', icon: <PerformanceIcon /> },
   { path: '/dev-tools', label: '개발자 도구', icon: <DevToolsIcon /> },

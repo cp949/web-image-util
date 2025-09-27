@@ -51,7 +51,7 @@ interface BatchOptions {
   width?: number
   height?: number
   size?: number
-  format: 'jpeg' | 'png' | 'webp'
+  format: 'jpeg' | 'png' | 'webp' | 'avif'
   quality: number
   socialPlatform?: 'instagram' | 'twitter' | 'facebook'
 }
@@ -174,7 +174,7 @@ export function BatchPage() {
     const completedFiles = files.filter(file => file.status === 'completed' && file.result)
 
     if (completedFiles.length === 0) {
-      alert('다운로드할 처리 완료된 파일이 없습니다.')
+      console.log('다운로드할 처리 완료된 파일이 없습니다.')
       return
     }
 
@@ -366,7 +366,7 @@ const downloadAsZip = async (results) => {
                     label="작업 유형"
                     onChange={(e) => setOptions(prev => ({
                       ...prev,
-                      operation: e.target.value as any
+                      operation: e.target.value as 'resize' | 'thumbnail' | 'avatar' | 'social'
                     }))}
                   >
                     <MenuItem value="resize">리사이징</MenuItem>
@@ -432,7 +432,7 @@ const downloadAsZip = async (results) => {
                       label="플랫폼"
                       onChange={(e) => setOptions(prev => ({
                         ...prev,
-                        socialPlatform: e.target.value as any
+                        socialPlatform: e.target.value as 'instagram' | 'twitter' | 'facebook'
                       }))}
                     >
                       <MenuItem value="instagram">Instagram</MenuItem>
@@ -450,7 +450,7 @@ const downloadAsZip = async (results) => {
                     label="출력 포맷"
                     onChange={(e) => setOptions(prev => ({
                       ...prev,
-                      format: e.target.value as any
+                      format: e.target.value as 'jpeg' | 'png' | 'webp' | 'avif'
                     }))}
                   >
                     <MenuItem value="jpeg">JPEG</MenuItem>

@@ -11,7 +11,7 @@ Canvas 2D API 기반으로 구축된 브라우저 네이티브 이미지 처리 
 - **🌐 브라우저 네이티브**: Canvas API 기반, 외부 의존성 없음
 - **📦 트리쉐이킹 지원**: ES 모듈로 번들 크기 최적화
 - **⚡ 고성능**: Canvas 풀링과 메모리 최적화
-- **🎨 모던 포맷**: WebP, AVIF, JPEG, PNG 지원
+- **🎨 모던 포맷**: WebP, JPEG, PNG 지원 (AVIF는 브라우저 지원에 따라)
 - **📱 반응형**: 다양한 화면 크기와 기기에 최적화
 
 ## 🚀 빠른 시작
@@ -55,38 +55,30 @@ processImage(source).resize(300, 200, { fit: 'cover' })   // 잘라서 맞춤
 processImage(source).resize(300, 200, { fit: 'contain' }) // 비율 유지하며 맞춤
 processImage(source).resize(300, 200, { fit: 'fill' })    // 늘려서 정확히 맞춤
 
-// 스마트 크기 제한
-processImage(source).atMostWidth(800)    // 최대 너비 800px
-processImage(source).atMostHeight(600)   // 최대 높이 600px
-processImage(source).atMostRect(800, 600) // 최대 800x600 내에서
+// 스마트 크기 제한 (축소만, 확대 안함)
+processImage(source).resize(800, null, { withoutEnlargement: true })    // 최대 너비 800px
+processImage(source).resize(null, 600, { withoutEnlargement: true })   // 최대 높이 600px
+processImage(source).resize(800, 600, { fit: 'inside' }) // 최대 800x600 내에서
 
-// 크기 보장
-processImage(source).atLeastWidth(400)   // 최소 너비 400px 보장
-processImage(source).forceWidth(300)     // 너비 300px 고정, 비율 유지
+// 크기 보장 (확대만, 축소 안함)
+processImage(source).resize(400, null, { withoutReduction: true })   // 최소 너비 400px 보장
+processImage(source).resize(300, null)     // 너비 300px, 높이 비율 유지
 ```
 
 #### 🎨 **이미지 효과 & 필터**
 ```typescript
-// 고급 기능 (advanced 서브패키지)
-import { AdvancedImageProcessor, filterManager } from '@cp949/web-image-util/advanced';
+// 기본 블러 효과
+const blurred = await processImage(source)
+  .resize(400, 300)
+  .blur(2)  // 블러 반지름 2px
+  .toBlob();
 
-// 내장 필터 시스템
-await filterManager.applyFilter(imageData, {
-  name: 'brightness',
-  params: { value: 10 }
-});
+// 고급 기능 (advanced 서브패키지) - 워터마크
+import { SimpleWatermark } from '@cp949/web-image-util/advanced';
 
-// 필터 체인
-await filterManager.applyFilterChain(imageData, [
-  { name: 'brightness', params: { value: 10 } },
-  { name: 'contrast', params: { value: 15 } },
-  { name: 'blur', params: { radius: 2 } }
-]);
-
-// 워터마크 합성
-import { addTextWatermark, addImageWatermark } from '@cp949/web-image-util/advanced';
-
-await addTextWatermark(canvas, {
+// 텍스트 워터마크
+const canvas = await processImage(source).resize(400, 300).toCanvas();
+const watermarked = SimpleWatermark.addText(canvas, {
   text: '© 2024 회사명',
   position: 'bottom-right',
   style: 'white-shadow'
@@ -101,13 +93,14 @@ const dataURL = await processImage(source).toDataURL({ format: 'jpeg', quality: 
 const file = await processImage(source).toFile('image.png');
 const canvas = await processImage(source).toCanvas();
 
-// 스마트 포맷 선택 (고급 기능)
-import { autoOptimize, SmartFormatSelector } from '@cp949/web-image-util/advanced';
+// 포맷별 최적화된 설정
+const webpResult = await processImage(source)
+  .resize(800, 600)
+  .toBlob({ format: 'webp', quality: 0.8 });  // WebP는 높은 압축률
 
-const optimized = await autoOptimize(canvas, {
-  purpose: 'web',      // 'web' | 'thumbnail' | 'print'
-  targetSize: 100000   // 100KB 목표
-});
+const jpegResult = await processImage(source)
+  .resize(800, 600)
+  .toBlob({ format: 'jpeg', quality: 0.85 }); // JPEG는 사진에 적합
 ```
 
 #### 🎛️ **편의 함수 (Presets)**
@@ -128,28 +121,31 @@ const avatar = await createAvatar(source, {
 });
 
 // 소셜 미디어 규격
-const igPost = await createSocialImage(source, 'instagram-post');
-const fbCover = await createSocialImage(source, 'facebook-cover');
+const igPost = await createSocialImage(source, { platform: 'instagram' });
+const fbCover = await createSocialImage(source, { platform: 'facebook' });
 ```
 
-#### ⚡ **성능 최적화 (고급 기능)**
+#### ⚡ **배치 처리**
 ```typescript
-import { BatchResizer, autoResize } from '@cp949/web-image-util/advanced';
+// 여러 이미지 동시 처리 (Promise.all 사용)
+const sources = [image1, image2, image3];
 
-// 배치 처리
-const results = await BatchResizer.processBatch([
-  { source: image1, options: { width: 300, height: 200 } },
-  { source: image2, options: { width: 400, height: 300 } }
-], {
-  concurrency: 3,
-  onProgress: (completed, total) => console.log(`${completed}/${total}`)
-});
+const results = await Promise.all(
+  sources.map(source =>
+    processImage(source)
+      .resize(300, 200, { fit: 'cover' })
+      .toBlob({ format: 'webp', quality: 0.8 })
+  )
+);
 
-// 성능 우선 리사이징
-const fastResult = await autoResize(source, {
-  width: 800,
-  priority: 'speed'  // 'speed' | 'quality' | 'balanced'
-});
+// 순차 처리 (메모리 절약)
+const batchResults = [];
+for (const source of sources) {
+  const result = await processImage(source)
+    .resize(400, 300)
+    .toBlob();
+  batchResults.push(result);
+}
 ```
 
 #### 🛠️ **유틸리티 & 변환**
@@ -158,18 +154,22 @@ import {
   toBlob,
   toDataURL,
   toFile,
-  detectFormat,
-  getImageDimensions
+  enhanceBrowserCompatibility,
+  SystemValidator
 } from '@cp949/web-image-util/utils';
 
-// 포맷 감지
-const format = await detectFormat(file);  // 'jpeg' | 'png' | 'webp' | ...
-
-// 이미지 정보 추출
-const { width, height } = await getImageDimensions(source);
+// SVG 호환성 개선
+const { enhanced, report } = enhanceBrowserCompatibility(svgString, {
+  fixDimensions: true,
+  addNamespaces: true
+});
 
 // 직접 변환 (체이닝 없이)
 const blob = await toBlob(canvas, { format: 'webp', quality: 0.8 });
+
+// 시스템 검증
+const validation = SystemValidator.validateSystem();
+console.log('브라우저 지원:', validation.browserSupport);
 ```
 
 ---
@@ -188,14 +188,14 @@ React + Material-UI 기반의 종합적인 예제 애플리케이션으로, 라�
    - 실시간 코드 예제
 
 2. **📐 기본 처리 (Basic Processing)**
-   - 리사이징 모드 비교 (cover, contain, fill, inside, outside)
+   - 리사이징 fit 모드 비교 (cover, contain, fill, inside, outside)
    - 실시간 미리보기와 Before/After 비교
    - 인터랙티브 크기 조절 슬라이더
 
 3. **🎨 고급 기능 (Advanced Features)**
-   - 필터 시스템 데모 (밝기, 대비, 채도, 블러, 특수효과)
    - 워터마크 추가 (텍스트/이미지)
    - 이미지 합성 및 레이어 관리
+   - 블러 효과 및 기본 필터
 
 4. **📱 프리셋 (Presets)**
    - 소셜 미디어 규격 자동 변환
@@ -203,7 +203,7 @@ React + Material-UI 기반의 종합적인 예제 애플리케이션으로, 라�
    - 아바타 생성기
 
 5. **🔄 변환기 (Converters)**
-   - 포맷 변환 (JPEG ↔ PNG ↔ WebP ↔ AVIF)
+   - 포맷 변환 (JPEG ↔ PNG ↔ WebP)
    - 품질 조절 및 압축 비교
    - 파일 크기 최적화
 
@@ -388,7 +388,7 @@ pnpm publish            # npm 배포
 
 | 브라우저 | 최소 버전 | 주요 기능 |
 |---------|----------|----------|
-| Chrome | 88+ | WebP, AVIF, OffscreenCanvas |
+| Chrome | 88+ | WebP, OffscreenCanvas |
 | Firefox | 90+ | WebP 지원 |
 | Safari | 14+ | WebP 지원 |
 | Edge | 88+ | 완전 지원 |

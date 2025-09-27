@@ -9,11 +9,15 @@ export default defineConfig({
     include: [
       'tests/unit/*-pure.test.ts',
       'tests/unit/svg-compatibility.test.ts', // SVG 호환성 테스트
+      'tests/unit/binary-support.test.ts', // ArrayBuffer/Uint8Array 지원 테스트
+      'tests/unit/file-support.test.ts', // File 객체 생성 테스트
+      'tests/unit/svg-support.test.ts', // SVG 특별 처리 테스트
       'tests/calculations.test.ts',
       'tests/errors.test.ts',
       'tests/error-helpers.test.ts',
-      'tests/contract/**/*.test.ts', // Phase 3: 계약 테스트 포함
+      'tests/contract/**/*.test.ts', // 계약 테스트 포함
       'tests/performance/**/*.test.ts', // Canvas Pool 성능 테스트 포함
+      'tests/integration/integration.test.ts', // 통합 테스트
     ],
 
     // 제외할 파일들

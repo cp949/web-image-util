@@ -18,14 +18,11 @@ import {
   Typography
 } from '@mui/material'
 import { useState } from 'react'
-// TODO: 실제 라이브러리가 구현되면 import 경로를 수정해야 함
-/*
 import {
   createThumbnail,
   createAvatar,
   createSocialImage
-} from '@cp949/web-image-util'
-*/
+} from '@cp949/web-image-util/presets'
 import { CodeSnippet } from '../components/common/CodeSnippet'
 import { ImageUploader } from '../components/common/ImageUploader'
 import { BeforeAfterView } from '../components/ui/BeforeAfterView'
@@ -56,8 +53,8 @@ export function PresetsPage() {
   // 아바타 옵션
   const [avatarOptions, setAvatarOptions] = useState({
     size: 128,
-    format: 'png' as 'jpeg' | 'png' | 'webp',
-    circle: false // Phase 3에서 구현 예정
+    format: 'png' as 'png' | 'webp',
+    circle: false
   })
 
   // 소셜 이미지 옵션
@@ -98,56 +95,6 @@ export function PresetsPage() {
     }
   }
 
-  // Mock 처리 함수들 (실제 구현 전까지)
-  const createMockThumbnail = (src: string, options: any): Promise<Blob> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')!
-      canvas.width = options.size
-      canvas.height = options.size
-
-      const img = new Image()
-      img.onload = () => {
-        const scale = Math.max(canvas.width / img.width, canvas.height / img.height)
-        const x = (canvas.width - img.width * scale) / 2
-        const y = (canvas.height - img.height * scale) / 2
-        
-        ctx.drawImage(img, x, y, img.width * scale, img.height * scale)
-        
-        canvas.toBlob((blob) => {
-          if (blob) resolve(blob)
-        }, `image/${options.format}`, options.quality)
-      }
-      img.src = src
-    })
-  }
-
-  const createMockSocialImage = (src: string, options: any): Promise<Blob> => {
-    return new Promise((resolve) => {
-      const platformInfo = SOCIAL_PLATFORMS[options.platform as keyof typeof SOCIAL_PLATFORMS]
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')!
-      canvas.width = platformInfo.width
-      canvas.height = platformInfo.height
-
-      const img = new Image()
-      img.onload = () => {
-        ctx.fillStyle = options.background
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        
-        const scale = Math.min(canvas.width / img.width, canvas.height / img.height)
-        const x = (canvas.width - img.width * scale) / 2
-        const y = (canvas.height - img.height * scale) / 2
-        
-        ctx.drawImage(img, x, y, img.width * scale, img.height * scale)
-        
-        canvas.toBlob((blob) => {
-          if (blob) resolve(blob)
-        }, `image/${options.format}`, options.quality)
-      }
-      img.src = src
-    })
-  }
 
   const processThumbnail = async () => {
     if (!originalImage) return
@@ -156,23 +103,22 @@ export function PresetsPage() {
     const startTime = Date.now()
 
     try {
-      // TODO: 실제 구현에서는 createThumbnail 사용
-      const result = await createMockThumbnail(originalImage.src, thumbnailOptions)
-      
+      const result = await createThumbnail(originalImage.src, thumbnailOptions)
+
       const processingTime = Date.now() - startTime
-      const url = URL.createObjectURL(result)
+      const url = URL.createObjectURL(result.blob)
 
       setProcessedImages([{
         src: url,
-        width: thumbnailOptions.size,
-        height: thumbnailOptions.size,
-        size: result.size,
+        width: result.width,
+        height: result.height,
+        size: result.blob.size,
         format: thumbnailOptions.format,
         processingTime
       }])
     } catch (error) {
       console.error('Thumbnail creation failed:', error)
-      alert('썸네일 생성 중 오류가 발생했습니다.')
+      console.error('썸네일 생성 중 오류가 발생했습니다.')
     } finally {
       setProcessing(false)
     }
@@ -185,27 +131,22 @@ export function PresetsPage() {
     const startTime = Date.now()
 
     try {
-      // TODO: 실제 구현에서는 createAvatar 사용
-      const result = await createMockThumbnail(originalImage.src, {
-        size: avatarOptions.size,
-        format: avatarOptions.format,
-        quality: 0.9
-      })
+      const result = await createAvatar(originalImage.src, avatarOptions)
 
       const processingTime = Date.now() - startTime
-      const url = URL.createObjectURL(result)
+      const url = URL.createObjectURL(result.blob)
 
       setProcessedImages([{
         src: url,
-        width: avatarOptions.size,
-        height: avatarOptions.size,
-        size: result.size,
+        width: result.width,
+        height: result.height,
+        size: result.blob.size,
         format: avatarOptions.format,
         processingTime
       }])
     } catch (error) {
       console.error('Avatar creation failed:', error)
-      alert('아바타 생성 중 오류가 발생했습니다.')
+      console.error('아바타 생성 중 오류가 발생했습니다.')
     } finally {
       setProcessing(false)
     }
@@ -218,24 +159,22 @@ export function PresetsPage() {
     const startTime = Date.now()
 
     try {
-      // TODO: 실제 구현에서는 createSocialImage 사용
-      const result = await createMockSocialImage(originalImage.src, socialOptions)
+      const result = await createSocialImage(originalImage.src, socialOptions)
 
       const processingTime = Date.now() - startTime
-      const url = URL.createObjectURL(result)
-      const platformInfo = SOCIAL_PLATFORMS[socialOptions.platform]
+      const url = URL.createObjectURL(result.blob)
 
       setProcessedImages([{
         src: url,
-        width: platformInfo.width,
-        height: platformInfo.height,
-        size: result.size,
+        width: result.width,
+        height: result.height,
+        size: result.blob.size,
         format: socialOptions.format,
         processingTime
       }])
     } catch (error) {
       console.error('Social image creation failed:', error)
-      alert('소셜 이미지 생성 중 오류가 발생했습니다.')
+      console.error('소셜 이미지 생성 중 오류가 발생했습니다.')
     } finally {
       setProcessing(false)
     }
@@ -251,19 +190,19 @@ export function PresetsPage() {
     try {
       const sizes = [64, 128, 256, 512]
       const results = await Promise.all(
-        sizes.map(size => createMockThumbnail(originalImage.src, { 
-          size, 
-          format: 'png', 
-          quality: 0.9 
+        sizes.map(size => createThumbnail(originalImage.src, {
+          size,
+          format: 'png',
+          quality: 0.9
         }))
       )
 
       const processingTime = Date.now() - startTime
-      const processedBatch = results.map((result, index) => ({
-        src: URL.createObjectURL(result),
-        width: sizes[index],
-        height: sizes[index],
-        size: result.size,
+      const processedBatch = results.map((result) => ({
+        src: URL.createObjectURL(result.blob),
+        width: result.width,
+        height: result.height,
+        size: result.blob.size,
         format: 'png',
         processingTime: processingTime / sizes.length // 평균 시간
       }))
@@ -271,7 +210,7 @@ export function PresetsPage() {
       setProcessedImages(processedBatch)
     } catch (error) {
       console.error('Batch processing failed:', error)
-      alert('배치 처리 중 오류가 발생했습니다.')
+      console.error('배치 처리 중 오류가 발생했습니다.')
     } finally {
       setProcessing(false)
     }
@@ -282,7 +221,7 @@ export function PresetsPage() {
       case 0: // 썸네일
         return [{
           title: '썸네일 생성',
-          code: `import { createThumbnail } from '@cp949/web-image-util';
+          code: `import { createThumbnail } from '@cp949/web-image-util/presets';
 
 // 기본 썸네일 (150px 정사각형)
 const thumbnail = await createThumbnail(source, {
@@ -302,9 +241,9 @@ const thumbnail = await createThumbnail(source, {
       case 1: // 아바타
         return [{
           title: '아바타 생성',
-          code: `import { createAvatar } from '@cp949/web-image-util';
+          code: `import { createAvatar } from '@cp949/web-image-util/presets';
 
-// 기본 아바타 (128px)
+// 기본 아바타 (64px)
 const avatar = await createAvatar(source);
 
 // 커스텀 크기
@@ -318,7 +257,7 @@ const avatar = await createAvatar(source, {
       case 2: // 소셜 이미지
         return [{
           title: '소셜 이미지 생성',
-          code: `import { createSocialImage } from '@cp949/web-image-util';
+          code: `import { createSocialImage } from '@cp949/web-image-util/presets';
 
 // 플랫폼별 권장 크기 자동 적용
 const socialImage = await createSocialImage(source, {
@@ -338,7 +277,7 @@ const socialImage = await createSocialImage(source, {
       case 3: // 배치 처리
         return [{
           title: '배치 처리',
-          code: `import { createThumbnail } from '@cp949/web-image-util';
+          code: `import { createThumbnail, createSocialImage } from '@cp949/web-image-util/presets';
 
 // 여러 크기 동시 생성
 const [small, medium, large, xlarge] = await Promise.all([
@@ -416,7 +355,7 @@ const socialImages = await Promise.all([
                         label="포맷"
                         onChange={(e) => setThumbnailOptions(prev => ({
                           ...prev,
-                          format: e.target.value as any
+                          format: e.target.value as 'jpeg' | 'png' | 'webp'
                         }))}
                       >
                         <MenuItem value="jpeg">JPEG</MenuItem>
@@ -432,7 +371,7 @@ const socialImages = await Promise.all([
                         label="Fit 모드"
                         onChange={(e) => setThumbnailOptions(prev => ({
                           ...prev,
-                          fit: e.target.value as any
+                          fit: e.target.value as 'cover' | 'contain'
                         }))}
                       >
                         <MenuItem value="cover">Cover</MenuItem>
@@ -477,7 +416,7 @@ const socialImages = await Promise.all([
                         label="포맷"
                         onChange={(e) => setAvatarOptions(prev => ({
                           ...prev,
-                          format: e.target.value as any
+                          format: e.target.value as 'png' | 'webp'
                         }))}
                       >
                         <MenuItem value="jpeg">JPEG</MenuItem>
@@ -486,8 +425,12 @@ const socialImages = await Promise.all([
                       </Select>
                     </FormControl>
 
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                      ✅ 정사각형 아바타 생성이 구현되어 있습니다!
+                    </Alert>
+
                     <Alert severity="info" sx={{ mb: 3 }}>
-                      원형 마스킹과 테두리 기능은 Phase 3에서 추가됩니다.
+                      🚧 원형 마스킹 기능은 추후 추가될 예정입니다.
                     </Alert>
 
                     <Button
@@ -515,7 +458,7 @@ const socialImages = await Promise.all([
                         label="플랫폼"
                         onChange={(e) => setSocialOptions(prev => ({
                           ...prev,
-                          platform: e.target.value as any
+                          platform: e.target.value as keyof typeof SOCIAL_PLATFORMS
                         }))}
                       >
                         {Object.entries(SOCIAL_PLATFORMS).map(([key, { label }]) => (

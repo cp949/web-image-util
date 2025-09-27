@@ -28,3 +28,21 @@ export {
   type SvgCompatibilityOptions,
   type SvgCompatibilityReport,
 } from './svg-compatibility';
+
+// ImageSource 변환 시스템
+export {
+  ImageSourceConverter,
+  convertTo,
+  ConversionBuilder,
+  from,
+  type ConvertibleTarget,
+  type ConvertedType,
+  type ConversionOptions,
+} from './image-source-converter';
+
+// 시스템 검증 및 문서화
+export {
+  SystemValidator,
+  API_EXAMPLES,
+  type ValidationReport,
+} from './system-validator';

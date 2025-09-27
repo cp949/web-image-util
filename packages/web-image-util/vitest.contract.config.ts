@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config'
 
 /**
- * Phase 3: 계약 테스트 전용 Vitest 설정
+ * 계약 테스트 전용 Vitest 설정
  *
  * 목적: Node.js 환경에서 브라우저 API 계약 검증
  * 특징: 실제 브라우저 API 없이 모킹을 통한 계약 테스트
@@ -12,7 +12,7 @@ export default defineConfig({
     // Node.js 환경에서 실행 (브라우저 API 모킹 사용)
     environment: 'node',
 
-    // Phase 3 계약 테스트 파일들만 포함
+    // 계약 테스트 파일들만 포함
     include: [
       'tests/contract/**/*.test.ts',
     ],

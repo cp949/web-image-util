@@ -7,6 +7,7 @@
 import { convertToImageElement } from '../core/source-converter';
 import type { ResultBlob, ResultDataURL, ResultFile, ImageSource, OutputOptions } from '../types';
 import { ImageProcessError } from '../types';
+import { DataURLResultImpl, BlobResultImpl, FileResultImpl } from '../types/result-implementations';
 
 /**
  * 기본 Blob 변환 옵션
@@ -138,12 +139,12 @@ export async function toBlobDetailed(
     // Canvas인 경우 직접 변환
     if (source instanceof HTMLCanvasElement) {
       const blob = await canvasToBlob(source, options);
-      return {
+      return new BlobResultImpl(
         blob,
-        width: source.width,
-        height: source.height,
-        processingTime: Date.now() - startTime,
-      };
+        source.width,
+        source.height,
+        Date.now() - startTime
+      );
     }
 
     // Blob인 경우
@@ -155,12 +156,12 @@ export async function toBlobDetailed(
         source.type === formatToMimeType(options.format)
       ) {
         const { width, height } = await getBlobDimensions(source);
-        return {
-          blob: source,
+        return new BlobResultImpl(
+          source,
           width,
           height,
-          processingTime: Date.now() - startTime,
-        };
+          Date.now() - startTime
+        );
       }
     }
 
@@ -169,16 +170,16 @@ export async function toBlobDetailed(
     const canvas = await imageElementToCanvas(imageElement);
     const blob = await canvasToBlob(canvas, options);
 
-    return {
+    return new BlobResultImpl(
       blob,
-      width: canvas.width,
-      height: canvas.height,
-      processingTime: Date.now() - startTime,
-      originalSize: {
+      canvas.width,
+      canvas.height,
+      Date.now() - startTime,
+      {
         width: imageElement.width,
         height: imageElement.height,
-      },
-    };
+      }
+    );
   } catch (error) {
     throw new ImageProcessError('Blob 변환 중 오류가 발생했습니다', 'CONVERSION_FAILED', error as Error);
   }
@@ -275,24 +276,24 @@ export async function toDataURLDetailed(
     // Canvas인 경우 직접 변환
     if (source instanceof HTMLCanvasElement) {
       const dataURL = canvasToDataURL(source, options);
-      return {
+      return new DataURLResultImpl(
         dataURL,
-        width: source.width,
-        height: source.height,
-        processingTime: Date.now() - startTime,
-      };
+        source.width,
+        source.height,
+        Date.now() - startTime
+      );
     }
 
     // Blob인 경우
     if (source instanceof Blob) {
       const dataURL = await blobToDataURL(source);
       const { width, height } = await getBlobDimensions(source);
-      return {
+      return new DataURLResultImpl(
         dataURL,
         width,
         height,
-        processingTime: Date.now() - startTime,
-      };
+        Date.now() - startTime
+      );
     }
 
     // HTMLImageElement인 경우 Canvas를 거쳐서 변환 (포맷/품질 옵션 적용)
@@ -302,12 +303,12 @@ export async function toDataURLDetailed(
     if (!options.format && !options.quality) {
       // 이미 Data URL인 경우 그대로 반환
       if (typeof source === 'string' && source.startsWith('data:')) {
-        return {
-          dataURL: source,
-          width: imageElement.width,
-          height: imageElement.height,
-          processingTime: Date.now() - startTime,
-        };
+        return new DataURLResultImpl(
+          source,
+          imageElement.width,
+          imageElement.height,
+          Date.now() - startTime
+        );
       }
     }
 
@@ -315,16 +316,16 @@ export async function toDataURLDetailed(
     const canvas = await imageElementToCanvas(imageElement);
     const dataURL = canvasToDataURL(canvas, options);
 
-    return {
+    return new DataURLResultImpl(
       dataURL,
-      width: canvas.width,
-      height: canvas.height,
-      processingTime: Date.now() - startTime,
-      originalSize: {
+      canvas.width,
+      canvas.height,
+      Date.now() - startTime,
+      {
         width: imageElement.width,
         height: imageElement.height,
-      },
-    };
+      }
+    );
   } catch (error) {
     throw new ImageProcessError('Data URL 변환 중 오류가 발생했습니다', 'CONVERSION_FAILED', error as Error);
   }
@@ -438,13 +439,13 @@ export async function toFileDetailed(
       lastModified: Date.now(),
     });
 
-    return {
+    return new FileResultImpl(
       file,
-      width: blobResult.width,
-      height: blobResult.height,
-      processingTime: Date.now() - startTime,
-      originalSize: blobResult.originalSize,
-    };
+      blobResult.width,
+      blobResult.height,
+      Date.now() - startTime,
+      blobResult.originalSize
+    );
   } catch (error) {
     throw new ImageProcessError('File 객체 생성 중 오류가 발생했습니다', 'CONVERSION_FAILED', error as Error);
   }

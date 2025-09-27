@@ -1,4 +1,4 @@
-import { processImage } from '@cp949/web-image-util'
+import { processImage, features } from '@cp949/web-image-util'
 import {
   Assessment as BenchmarkIcon,
   Speed as SpeedIcon,
@@ -41,6 +41,16 @@ import {
   YAxis
 } from 'recharts'
 import { CodeSnippet } from '../components/common/CodeSnippet'
+
+interface PerformanceMemory {
+  usedJSHeapSize: number
+  totalJSHeapSize: number
+  jsHeapSizeLimit: number
+}
+
+interface ExtendedPerformance extends Performance {
+  memory?: PerformanceMemory
+}
 
 interface BenchmarkResult {
   operation: string
@@ -150,10 +160,11 @@ export function PerformancePage() {
 
     try {
       // 메모리 사용량 측정 시작
-      const initialMemory = (performance as any).memory ? {
-        used: (performance as any).memory.usedJSHeapSize,
-        total: (performance as any).memory.totalJSHeapSize,
-        limit: (performance as any).memory.jsHeapSizeLimit
+      const performanceExt = performance as ExtendedPerformance
+      const initialMemory = performanceExt.memory ? {
+        used: performanceExt.memory.usedJSHeapSize,
+        total: performanceExt.memory.totalJSHeapSize,
+        limit: performanceExt.memory.jsHeapSizeLimit
       } : null
 
       const newResults: BenchmarkResult[] = []
@@ -183,11 +194,11 @@ export function PerformancePage() {
       }
 
       // 최종 메모리 사용량 측정
-      if (initialMemory && (performance as any).memory) {
+      if (initialMemory && performanceExt.memory) {
         const finalMemory = {
-          used: (performance as any).memory.usedJSHeapSize,
-          total: (performance as any).memory.totalJSHeapSize,
-          limit: (performance as any).memory.jsHeapSizeLimit
+          used: performanceExt.memory.usedJSHeapSize,
+          total: performanceExt.memory.totalJSHeapSize,
+          limit: performanceExt.memory.jsHeapSizeLimit
         }
 
         setMemoryStats({
@@ -202,7 +213,7 @@ export function PerformancePage() {
 
     } catch (error) {
       console.error('Performance test failed:', error)
-      alert('성능 테스트 중 오류가 발생했습니다.')
+      console.error('성능 테스트 중 오류가 발생했습니다.')
     } finally {
       setRunning(false)
     }
@@ -389,24 +400,36 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2">WebP 지원</Typography>
                     <Chip
-                      label={(() => {
-                        const canvas = document.createElement('canvas')
-                        return canvas.toDataURL('image/webp').startsWith('data:image/webp') ? 'Yes' : 'No'
-                      })()}
+                      label={features.webp ? 'Yes' : 'No'}
                       size="small"
-                      color={(() => {
-                        const canvas = document.createElement('canvas')
-                        return canvas.toDataURL('image/webp').startsWith('data:image/webp') ? 'success' : 'error'
-                      })()}
+                      color={features.webp ? 'success' : 'error'}
                     />
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2">OffscreenCanvas</Typography>
                     <Chip
-                      label={typeof OffscreenCanvas !== 'undefined' ? 'Yes' : 'No'}
+                      label={features.offscreenCanvas ? 'Yes' : 'No'}
                       size="small"
-                      color={typeof OffscreenCanvas !== 'undefined' ? 'success' : 'error'}
+                      color={features.offscreenCanvas ? 'success' : 'error'}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2">AVIF 지원</Typography>
+                    <Chip
+                      label={features.avif ? 'Yes' : 'No'}
+                      size="small"
+                      color={features.avif ? 'success' : 'error'}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2">ImageBitmap</Typography>
+                    <Chip
+                      label={features.imageBitmap ? 'Yes' : 'No'}
+                      size="small"
+                      color={features.imageBitmap ? 'success' : 'error'}
                     />
                   </Box>
 

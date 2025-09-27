@@ -1,4 +1,4 @@
-import { processImage } from '@cp949/web-image-util'
+import { processImage, features } from '@cp949/web-image-util'
 import {
   BugReport as BugIcon,
   Code as CodeIcon,
@@ -38,6 +38,16 @@ import Grid from '@mui/material/Grid'
 import React, { useState } from 'react'
 import { CodeSnippet } from '../components/common/CodeSnippet'
 import { ImageUploader } from '../components/common/ImageUploader'
+
+interface PerformanceMemory {
+  usedJSHeapSize: number
+  totalJSHeapSize: number
+  jsHeapSizeLimit: number
+}
+
+interface ExtendedPerformance extends Performance {
+  memory?: PerformanceMemory
+}
 
 interface LogEntry {
   id: string
@@ -99,8 +109,8 @@ export function DevToolsPage() {
 
   // 브라우저 호환성 검사
   const getBrowserInfo = (): BrowserInfo => {
-    const canvas = document.createElement('canvas')
-    const memory = (performance as any).memory
+    const performanceExt = performance as ExtendedPerformance
+    const memory = performanceExt.memory
 
     return {
       userAgent: navigator.userAgent,
@@ -109,9 +119,9 @@ export function DevToolsPage() {
       language: navigator.language,
       cookieEnabled: navigator.cookieEnabled,
       onlineStatus: navigator.onLine,
-      webpSupport: canvas.toDataURL('image/webp').startsWith('data:image/webp'),
-      avifSupport: canvas.toDataURL('image/avif').startsWith('data:image/avif'),
-      offscreenCanvasSupport: typeof OffscreenCanvas !== 'undefined',
+      webpSupport: features.webp,
+      avifSupport: features.avif,
+      offscreenCanvasSupport: features.offscreenCanvas,
       webWorkerSupport: typeof Worker !== 'undefined',
       memory: memory ? {
         used: memory.usedJSHeapSize,

@@ -45,6 +45,7 @@ export interface SimpleTextWatermarkOptions {
   size?: 'small' | 'medium' | 'large' | number;
   opacity?: number; // 0-1
   rotation?: number; // degrees
+  margin?: { x: number; y: number }; // 기본값: { x: 10, y: 10 }
 }
 
 /**
@@ -56,6 +57,7 @@ export interface SimpleImageWatermarkOptions {
   size?: 'small' | 'medium' | 'large' | number; // number는 scale 값 (0-1)
   opacity?: number; // 0-1
   rotation?: number; // degrees
+  blendMode?: 'normal' | 'multiply' | 'overlay' | 'soft-light'; // 블렌드 모드
 }
 
 /**
@@ -76,6 +78,7 @@ export class SimpleWatermark {
       size = 'medium',
       opacity = 0.8,
       rotation = 0,
+      margin = { x: 10, y: 10 },
     } = options;
 
     // 간단한 위치를 내부 Position으로 변환
@@ -93,7 +96,7 @@ export class SimpleWatermark {
       position: internalPosition,
       style: textStyle,
       rotation,
-      margin: { x: 20, y: 20 },
+      margin,
     };
 
     return TextWatermark.addToCanvas(canvas, watermarkOptions);
@@ -106,13 +109,16 @@ export class SimpleWatermark {
    * @returns 워터마크가 추가된 캔버스
    */
   static addImage(canvas: HTMLCanvasElement, options: SimpleImageWatermarkOptions): HTMLCanvasElement {
-    const { image, position = 'bottom-right', size = 'medium', opacity = 0.8, rotation = 0 } = options;
+    const { image, position = 'bottom-right', size = 'medium', opacity = 0.8, rotation = 0, blendMode = 'normal' } = options;
 
     // 간단한 위치를 내부 Position으로 변환
     const internalPosition = this.convertSimplePosition(position);
 
     // 크기 해석
     const scale = this.resolveImageSize(size, canvas, image);
+
+    // 블렌드 모드 매핑
+    const globalCompositeOperation = this.mapBlendMode(blendMode);
 
     // ImageWatermark 설정
     const watermarkOptions: ImageWatermarkOptions = {
@@ -121,6 +127,7 @@ export class SimpleWatermark {
       scale,
       opacity,
       rotation,
+      blendMode: globalCompositeOperation,
       margin: { x: 20, y: 20 },
     };
 
@@ -355,6 +362,20 @@ export class SimpleWatermark {
 
     const targetSize = canvasSize * relativeSizes[size];
     return targetSize / imageSize;
+  }
+
+  /**
+   * 블렌드 모드 매핑
+   */
+  private static mapBlendMode(blendMode: 'normal' | 'multiply' | 'overlay' | 'soft-light'): GlobalCompositeOperation {
+    const blendModeMap: Record<string, GlobalCompositeOperation> = {
+      normal: 'source-over',
+      multiply: 'multiply',
+      overlay: 'overlay',
+      'soft-light': 'soft-light',
+    };
+
+    return blendModeMap[blendMode] || 'source-over';
   }
 }
 

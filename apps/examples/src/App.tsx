@@ -8,6 +8,7 @@ import { ConvertersPage } from './pages/ConvertersPage'
 import { DevToolsPage } from './pages/DevToolsPage'
 import { FiltersPage } from './pages/FiltersPage'
 import { HomePage } from './pages/HomePage'
+import { ImageSourceConverterPage } from './pages/ImageSourceConverterPage'
 import { PerformancePage } from './pages/PerformancePage'
 import { PresetsPage } from './pages/PresetsPage'
 import { SvgCompatibilityPage } from './pages/SvgCompatibilityPage'
@@ -22,6 +23,7 @@ function App() {
         <Route path="/advanced" element={<AdvancedPage />} />
         <Route path="/filters" element={<FiltersPage />} />
         <Route path="/converters" element={<ConvertersPage />} />
+        <Route path="/image-source-converter" element={<ImageSourceConverterPage />} />
         <Route path="/batch" element={<BatchPage />} />
         <Route path="/performance" element={<PerformancePage />} />
         <Route path="/dev-tools" element={<DevToolsPage />} />

@@ -11,7 +11,7 @@ import { normalizeSvgBasics } from '../utils/svg-compatibility';
  *
  * @description 지원되는 이미지 소스의 타입들
  */
-export type SourceType = 'element' | 'blob' | 'svg' | 'dataurl' | 'url' | 'path';
+export type SourceType = 'element' | 'canvas' | 'blob' | 'arrayBuffer' | 'uint8Array' | 'svg' | 'dataurl' | 'url' | 'path';
 
 /**
  * 이미지 소스 타입을 감지합니다
@@ -25,8 +25,26 @@ export function detectSourceType(source: ImageSource): SourceType {
     return 'element';
   }
 
-  if (source instanceof Blob) {
+  // HTMLCanvasElement 감지
+  if (source instanceof HTMLCanvasElement || (source && typeof source === 'object' && 'getContext' in source && 'toDataURL' in source && typeof (source as any).getContext === 'function')) {
+    return 'canvas';
+  }
+
+  // Blob 감지 - instanceof와 덕 타이핑 둘 다 사용
+  if (source instanceof Blob ||
+      (source && typeof source === 'object' &&
+       'type' in source &&
+       'size' in source &&
+       ('slice' in source || 'arrayBuffer' in source))) {
     return 'blob';
+  }
+
+  if (source instanceof ArrayBuffer) {
+    return 'arrayBuffer';
+  }
+
+  if (source instanceof Uint8Array) {
+    return 'uint8Array';
   }
 
   if (typeof source === 'string') {
@@ -121,6 +139,87 @@ async function loadImageFromUrl(url: string, crossOrigin?: string): Promise<HTML
 }
 
 /**
+ * ArrayBuffer에서 MIME 타입을 자동 감지합니다
+ *
+ * @param buffer ArrayBuffer 데이터
+ * @returns 감지된 MIME 타입
+ */
+function detectMimeTypeFromBuffer(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+
+  // PNG 시그니처: 89 50 4E 47 0D 0A 1A 0A
+  if (bytes.length >= 8 &&
+      bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47 &&
+      bytes[4] === 0x0D && bytes[5] === 0x0A && bytes[6] === 0x1A && bytes[7] === 0x0A) {
+    return 'image/png';
+  }
+
+  // JPEG 시그니처: FF D8 FF
+  if (bytes.length >= 3 &&
+      bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+    return 'image/jpeg';
+  }
+
+  // WebP 시그니처: RIFF ... WEBP (파일 헤더 확인)
+  if (bytes.length >= 12 &&
+      bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) {
+    // WEBP 시그니처 확인 (8-11 바이트)
+    if (bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+      return 'image/webp';
+    }
+  }
+
+  // GIF 시그니처: GIF87a 또는 GIF89a
+  if (bytes.length >= 6) {
+    const gifSignature = String.fromCharCode(...bytes.slice(0, 3));
+    if (gifSignature === 'GIF') {
+      const version = String.fromCharCode(...bytes.slice(3, 6));
+      if (version === '87a' || version === '89a') {
+        return 'image/gif';
+      }
+    }
+  }
+
+  // BMP 시그니처: BM
+  if (bytes.length >= 2 &&
+      bytes[0] === 0x42 && bytes[1] === 0x4D) {
+    return 'image/bmp';
+  }
+
+  // TIFF 시그니처: II* (little-endian) 또는 MM* (big-endian)
+  if (bytes.length >= 4) {
+    if ((bytes[0] === 0x49 && bytes[1] === 0x49 && bytes[2] === 0x2A && bytes[3] === 0x00) ||
+        (bytes[0] === 0x4D && bytes[1] === 0x4D && bytes[2] === 0x00 && bytes[3] === 0x2A)) {
+      return 'image/tiff';
+    }
+  }
+
+  // ICO 시그니처: 00 00 01 00
+  if (bytes.length >= 4 &&
+      bytes[0] === 0x00 && bytes[1] === 0x00 && bytes[2] === 0x01 && bytes[3] === 0x00) {
+    return 'image/x-icon';
+  }
+
+  // 기본값으로 PNG 반환
+  return 'image/png';
+}
+
+/**
+ * HTMLCanvasElement를 HTMLImageElement로 변환
+ */
+async function convertCanvasToElement(canvas: HTMLCanvasElement): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const dataURL = canvas.toDataURL();
+
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new ImageProcessError('Canvas 이미지 로딩에 실패했습니다', 'SOURCE_LOAD_FAILED'));
+
+    img.src = dataURL;
+  });
+}
+
+/**
  * Blob을 HTMLImageElement로 변환
  */
 async function convertBlobToElement(blob: Blob): Promise<HTMLImageElement> {
@@ -174,8 +273,34 @@ export async function convertToImageElement(
       });
     }
 
-    if (source instanceof Blob) {
-      return convertBlobToElement(source);
+    // HTMLCanvasElement 처리
+    if (source instanceof HTMLCanvasElement || (source && typeof source === 'object' && 'getContext' in source && 'toDataURL' in source)) {
+      return convertCanvasToElement(source as HTMLCanvasElement);
+    }
+
+    // Blob 감지 - instanceof와 덕 타이핑 둘 다 사용
+    if (source instanceof Blob ||
+        (source && typeof source === 'object' &&
+         'type' in source &&
+         'size' in source &&
+         ('slice' in source || 'arrayBuffer' in source))) {
+      return convertBlobToElement(source as Blob);
+    }
+
+    if (source instanceof ArrayBuffer) {
+      const mimeType = detectMimeTypeFromBuffer(source);
+      const blob = new Blob([source], { type: mimeType });
+      return convertBlobToElement(blob);
+    }
+
+    if (source instanceof Uint8Array) {
+      // Uint8Array를 ArrayBuffer로 안전하게 변환
+      const arrayBuffer = source.buffer instanceof ArrayBuffer
+        ? source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength)
+        : source.slice().buffer;
+      const mimeType = detectMimeTypeFromBuffer(arrayBuffer);
+      const blob = new Blob([arrayBuffer], { type: mimeType });
+      return convertBlobToElement(blob);
     }
 
     if (typeof source === 'string') {

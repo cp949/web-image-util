@@ -14,12 +14,13 @@
  *
  * @description 지원하는 이미지 소스 형태:
  * - HTMLImageElement: DOM 이미지 엘리먼트
+ * - HTMLCanvasElement: Canvas 엘리먼트
  * - Blob: File API Blob 객체
  * - ArrayBuffer: 바이너리 데이터
  * - Uint8Array: 타입 배열
  * - string: SVG XML, Data URL, HTTP URL, 또는 상대/절대 경로
  */
-export type ImageSource = HTMLImageElement | Blob | ArrayBuffer | Uint8Array | string;
+export type ImageSource = HTMLImageElement | HTMLCanvasElement | Blob | ArrayBuffer | Uint8Array | string;
 
 /**
  * 지원하는 이미지 포맷 (브라우저 호환성 고려)
@@ -143,10 +144,16 @@ export type ImageErrorCodeType =
   | 'BLUR_FAILED'
   | 'PROCESSING_FAILED'
   | 'SMART_RESIZE_FAILED'
+  // SVG 관련 에러
+  | 'SVG_LOAD_FAILED'
+  | 'SVG_PROCESSING_FAILED'
   // 출력 관련 에러
   | 'OUTPUT_FAILED'
   | 'DOWNLOAD_FAILED'
   | 'FILE_TOO_LARGE'
+  | 'CANVAS_TO_BLOB_FAILED'
+  | 'IMAGE_LOAD_FAILED'
+  | 'BLOB_TO_ARRAYBUFFER_FAILED'
   // 브라우저 호환성 에러
   | 'BROWSER_NOT_SUPPORTED'
   | 'FEATURE_NOT_SUPPORTED';
@@ -171,6 +178,9 @@ export const ImageErrorCodeConstants = {
   OUTPUT_FAILED: 'OUTPUT_FAILED' as const,
   DOWNLOAD_FAILED: 'DOWNLOAD_FAILED' as const,
   FILE_TOO_LARGE: 'FILE_TOO_LARGE' as const,
+  CANVAS_TO_BLOB_FAILED: 'CANVAS_TO_BLOB_FAILED' as const,
+  IMAGE_LOAD_FAILED: 'IMAGE_LOAD_FAILED' as const,
+  BLOB_TO_ARRAYBUFFER_FAILED: 'BLOB_TO_ARRAYBUFFER_FAILED' as const,
   // 브라우저 호환성
   BROWSER_NOT_SUPPORTED: 'BROWSER_NOT_SUPPORTED' as const,
   FEATURE_NOT_SUPPORTED: 'FEATURE_NOT_SUPPORTED' as const,

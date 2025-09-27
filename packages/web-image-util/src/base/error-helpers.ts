@@ -44,10 +44,17 @@ const USER_FRIENDLY_MESSAGES: Record<ImageErrorCodeType, string> = {
   PROCESSING_FAILED: '이미지 처리 중 오류가 발생했습니다. 이미지 파일이나 옵션을 확인해주세요.',
   SMART_RESIZE_FAILED: '스마트 리사이징 중 오류가 발생했습니다. 대용량 이미지인 경우 더 작은 크기로 시도해보세요.',
 
+  // SVG 관련 에러
+  SVG_LOAD_FAILED: 'SVG 이미지를 불러오는데 실패했습니다. SVG 구문이 올바른지 확인해주세요.',
+  SVG_PROCESSING_FAILED: 'SVG 이미지 처리 중 오류가 발생했습니다. SVG 파일이 손상되었을 수 있습니다.',
+
   // 출력 관련 에러
   OUTPUT_FAILED: '이미지 출력에 실패했습니다. 브라우저가 해당 포맷을 지원하는지 확인해주세요.',
   DOWNLOAD_FAILED: '이미지 다운로드에 실패했습니다.',
   FILE_TOO_LARGE: '이미지 파일이 너무 큽니다. 더 작은 크기로 시도해보세요.',
+  CANVAS_TO_BLOB_FAILED: 'Canvas를 Blob으로 변환하는데 실패했습니다. 브라우저가 해당 포맷을 지원하는지 확인해주세요.',
+  IMAGE_LOAD_FAILED: '이미지를 로드하는데 실패했습니다. 이미지 파일이나 네트워크 상태를 확인해주세요.',
+  BLOB_TO_ARRAYBUFFER_FAILED: 'Blob을 ArrayBuffer로 변환하는데 실패했습니다.',
 
   // 브라우저 호환성 에러
   BROWSER_NOT_SUPPORTED: '현재 브라우저에서는 이 기능을 지원하지 않습니다. 최신 브라우저를 사용해주세요.',
@@ -122,6 +129,33 @@ const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
   BLUR_FAILED: ['블러 반지름을 더 작은 값으로 시도하세요'],
   OUTPUT_FAILED: ['다른 출력 포맷으로 시도하세요'],
   DOWNLOAD_FAILED: ['브라우저의 팝업 차단 설정을 확인하세요'],
+  CANVAS_TO_BLOB_FAILED: [
+    '다른 이미지 포맷을 시도해보세요 (PNG, JPEG 등)',
+    '브라우저를 새로고침하고 다시 시도하세요',
+    '품질 설정을 조정해보세요',
+  ],
+  IMAGE_LOAD_FAILED: [
+    '이미지 파일이 손상되었는지 확인하세요',
+    '네트워크 연결 상태를 확인하세요',
+    'CORS 설정이나 권한 문제를 확인하세요',
+  ],
+  BLOB_TO_ARRAYBUFFER_FAILED: [
+    '메모리가 부족할 수 있으니 더 작은 이미지로 시도하세요',
+    '브라우저를 새로고침하고 다시 시도하세요',
+  ],
+
+  // SVG 관련 해결책
+  SVG_LOAD_FAILED: [
+    'SVG 문법이 올바른지 확인하세요',
+    'xmlns 네임스페이스가 포함되어 있는지 확인하세요',
+    'SVG 파일이 완전한 구조를 가지고 있는지 확인하세요',
+  ],
+  SVG_PROCESSING_FAILED: [
+    'SVG 내용을 정규화하여 다시 시도하세요',
+    '복잡한 SVG인 경우 간단한 구조로 변경해보세요',
+    'SVG 크기 정보(width, height, viewBox)를 명시적으로 지정하세요',
+  ],
+
   FEATURE_NOT_SUPPORTED: ['다른 방법이나 polyfill을 사용해보세요'],
 };
 

@@ -163,6 +163,14 @@ export interface ResultMetadata {
  */
 export interface ResultBlob extends ResultMetadata {
   blob: globalThis.Blob;
+
+  // 🆕 직접 변환 메서드들 (성능 최적화)
+  toCanvas(): Promise<HTMLCanvasElement>;
+  toDataURL(options?: OutputOptions): Promise<string>;
+  toFile(filename: string, options?: OutputOptions): Promise<globalThis.File>;
+  toElement(): Promise<HTMLImageElement>;
+  toArrayBuffer(): Promise<ArrayBuffer>;
+  toUint8Array(): Promise<Uint8Array>;
 }
 
 /**
@@ -170,6 +178,14 @@ export interface ResultBlob extends ResultMetadata {
  */
 export interface ResultDataURL extends ResultMetadata {
   dataURL: string;
+
+  // 🆕 직접 변환 메서드들 (크기 정보 재사용으로 성능 최적화)
+  toCanvas(): Promise<HTMLCanvasElement>;
+  toBlob(options?: OutputOptions): Promise<globalThis.Blob>;
+  toFile(filename: string, options?: OutputOptions): Promise<globalThis.File>;
+  toElement(): Promise<HTMLImageElement>;
+  toArrayBuffer(): Promise<ArrayBuffer>;
+  toUint8Array(): Promise<Uint8Array>;
 }
 
 /**
@@ -177,6 +193,14 @@ export interface ResultDataURL extends ResultMetadata {
  */
 export interface ResultFile extends ResultMetadata {
   file: globalThis.File;
+
+  // 🆕 직접 변환 메서드들
+  toCanvas(): Promise<HTMLCanvasElement>;
+  toDataURL(options?: OutputOptions): Promise<string>;
+  toBlob(options?: OutputOptions): Promise<globalThis.Blob>;
+  toElement(): Promise<HTMLImageElement>;
+  toArrayBuffer(): Promise<ArrayBuffer>;
+  toUint8Array(): Promise<Uint8Array>;
 }
 
 /**

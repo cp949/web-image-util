@@ -15,8 +15,7 @@ import {
   Typography
 } from '@mui/material'
 import { useCallback, useState } from 'react'
-// TODO: 실제 라이브러리가 구현되면 import 경로를 수정해야 함
-// import { processImage } from '@cp949/web-image-util'
+import { processImage } from '@cp949/web-image-util'
 import { CodeSnippet } from '../components/common/CodeSnippet'
 import { ImageUploader } from '../components/common/ImageUploader'
 import { BeforeAfterView } from '../components/ui/BeforeAfterView'
@@ -24,9 +23,9 @@ import { BeforeAfterView } from '../components/ui/BeforeAfterView'
 interface ProcessOptions {
   width: number
   height: number
-  fit: 'cover' | 'letterbox' | 'stretch' | 'atMost' | 'atLeast' // 실제 ResizeFit 타입 사용
+  fit: 'cover' | 'contain' | 'fill' | 'inside' | 'outside' // 실제 ResizeFit 타입 사용
   quality: number
-  format: 'jpeg' | 'png' | 'webp'
+  format: 'jpeg' | 'jpg' | 'png' | 'webp'
   background: string
 }
 
@@ -81,8 +80,6 @@ export function BasicProcessingPage() {
     const startTime = Date.now()
 
     try {
-      // TODO: 실제 processImage API 구현 후 아래 주석을 해제하고 mock 코드 제거
-      /*
       const result = await processImage(originalImage.src)
         .resize(options.width, options.height, {
           fit: options.fit,
@@ -92,93 +89,21 @@ export function BasicProcessingPage() {
           format: options.format,
           quality: options.quality / 100
         })
-      */
 
-      // Mock 처리 (실제 구현 전까지)
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')!
-      canvas.width = options.width
-      canvas.height = options.height
+      const processingTime = Date.now() - startTime
+      const url = URL.createObjectURL(result.blob)
 
-      const img = new Image()
-      img.onload = () => {
-        ctx.fillStyle = options.background
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        
-        // 라이브러리 ResizeFit 타입에 맞는 fit 로직
-        let sx = 0, sy = 0, sw = img.width, sh = img.height
-        let dx = 0, dy = 0, dw = canvas.width, dh = canvas.height
-
-        if (options.fit === 'cover') {
-          // 비율 유지하며 전체 영역을 채움, 필요시 잘림
-          const scale = Math.max(dw / sw, dh / sh)
-          sx = (sw - dw / scale) / 2
-          sy = (sh - dh / scale) / 2
-          sw = dw / scale
-          sh = dh / scale
-        } else if (options.fit === 'letterbox') {
-          // 'letterbox': 비율 유지하며 전체 이미지가 영역에 들어가도록 맞춤, 여백으로 채움 (확대/축소 모두)
-          const scale = Math.min(dw / sw, dh / sh)
-          const newWidth = sw * scale
-          const newHeight = sh * scale
-          dx = (dw - newWidth) / 2
-          dy = (dh - newHeight) / 2
-          dw = newWidth
-          dh = newHeight
-        } else if (options.fit === 'stretch') {
-          // 비율 무시하고 정확히 맞춤 (늘어나거나 압축됨)
-          // 기본값 사용 (전체 캔버스 크기로 늘림)
-        } else if (options.fit === 'atMost') {
-          // 비율 유지하며 최대 크기 제한, 축소만 함 (확대 안함)
-          const scale = Math.min(1, Math.min(dw / sw, dh / sh)) // 1 이하로 제한
-          if (scale < 1) {
-            const newWidth = sw * scale
-            const newHeight = sh * scale
-            dx = (dw - newWidth) / 2
-            dy = (dh - newHeight) / 2
-            dw = newWidth
-            dh = newHeight
-          } else {
-            // 원본이 더 작으면 원본 크기 유지
-            dx = (dw - sw) / 2
-            dy = (dh - sh) / 2
-            dw = sw
-            dh = sh
-          }
-        } else if (options.fit === 'atLeast') {
-          // 비율 유지하며 최소 크기 보장, 확대만 함 (축소 안함)
-          const scale = Math.max(1, Math.max(dw / sw, dh / sh)) // 1 이상으로 제한
-          if (scale > 1) {
-            sx = (sw - dw / scale) / 2
-            sy = (sh - dh / scale) / 2
-            sw = dw / scale
-            sh = dh / scale
-          }
-          // 원본이 더 크면 cover와 동일한 동작
-        }
-
-        ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const processingTime = Date.now() - startTime
-            const url = URL.createObjectURL(blob)
-
-            setProcessedImage({
-              src: url,
-              width: options.width,
-              height: options.height,
-              size: blob.size,
-              format: options.format,
-              processingTime
-            })
-          }
-        }, `image/${options.format}`, options.quality / 100)
-      }
-      img.src = originalImage.src
+      setProcessedImage({
+        src: url,
+        width: result.width,
+        height: result.height,
+        size: result.blob.size,
+        format: options.format,
+        processingTime
+      })
     } catch (error) {
       console.error('Processing failed:', error)
-      alert('이미지 처리 중 오류가 발생했습니다.')
+      console.error('이미지 처리 중 오류가 발생했습니다.')
     } finally {
       setProcessing(false)
     }
@@ -292,14 +217,14 @@ const [small, medium, large] = await Promise.all([
                     label="Fit 모드"
                     onChange={(e) => setOptions(prev => ({
                       ...prev,
-                      fit: e.target.value as any
+                      fit: e.target.value as 'cover' | 'contain' | 'fill' | 'inside' | 'outside'
                     }))}
                   >
                     <MenuItem value="cover">Cover (가득 채우기, 잘림)</MenuItem>
-                    <MenuItem value="letterbox">Letterbox (전체 포함, 여백)</MenuItem>
-                    <MenuItem value="stretch">Stretch (늘려서 채우기)</MenuItem>
-                    <MenuItem value="atMost">AtMost (축소만)</MenuItem>
-                    <MenuItem value="atLeast">AtLeast (확대만)</MenuItem>
+                    <MenuItem value="contain">Contain (전체 포함, 여백)</MenuItem>
+                    <MenuItem value="fill">Fill (늘려서 채우기)</MenuItem>
+                    <MenuItem value="inside">Inside (축소만, 확대 안함)</MenuItem>
+                    <MenuItem value="outside">Outside (확대만, 축소 안함)</MenuItem>
                   </Select>
                 </FormControl>
 
@@ -311,7 +236,7 @@ const [small, medium, large] = await Promise.all([
                     label="출력 포맷"
                     onChange={(e) => setOptions(prev => ({
                       ...prev,
-                      format: e.target.value as any
+                      format: e.target.value as 'jpeg' | 'jpg' | 'png' | 'webp'
                     }))}
                   >
                     <MenuItem value="jpeg">JPEG</MenuItem>
@@ -412,7 +337,7 @@ const [small, medium, large] = await Promise.all([
           <Grid size={{xs:12, sm:6, md:2.4}} >
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Pad</Typography>
+                <Typography variant="h6" gutterBottom>Contain</Typography>
                 <Typography variant="body2">
                   비율 유지하며 전체 이미지가 영역에 들어가도록 맞춤
                 </Typography>
@@ -425,7 +350,7 @@ const [small, medium, large] = await Promise.all([
           <Grid size={{xs:12, sm:6, md:2.4}} >
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Stretch</Typography>
+                <Typography variant="h6" gutterBottom>Fill</Typography>
                 <Typography variant="body2">
                   비율 무시하고 정확히 맞춤
                 </Typography>
@@ -438,7 +363,7 @@ const [small, medium, large] = await Promise.all([
           <Grid size={{xs:12, sm:6, md:2.4}} >
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>AtMost</Typography>
+                <Typography variant="h6" gutterBottom>Inside</Typography>
                 <Typography variant="body2">
                   비율 유지하며 최대 크기 제한
                 </Typography>
@@ -451,7 +376,7 @@ const [small, medium, large] = await Promise.all([
           <Grid size={{xs:12, sm:6, md:2.4}} >
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>AtLeast</Typography>
+                <Typography variant="h6" gutterBottom>Outside</Typography>
                 <Typography variant="body2">
                   비율 유지하며 최소 크기 보장
                 </Typography>

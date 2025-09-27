@@ -97,7 +97,6 @@ export function HomePage() {
           라이브러리의 기본 사용법을 확인해보세요
         </Typography>
 
-        {/* 코드 예제 컴포넌트는 Phase 2에서 구현 */}
         <Card sx={{ mt: 4, textAlign: 'left' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -122,15 +121,15 @@ export function HomePage() {
               overflow: 'auto',
               fontSize: '0.875rem'
             }}>
-              <code>{`import { processImage } from '@cp949/web-image-util';
+              <code>{`import { processImage, createAvatar } from '@cp949/web-image-util';
 
 // 이미지 리사이징
-const thumbnail = await processImage(source)
+const resized = await processImage(source)
   .resize(300, 200)
   .toBlob();
 
-// 썸네일 생성
-const avatar = await createThumbnail(source, { size: 150 });`}</code>
+// 아바타 생성
+const avatar = await createAvatar(source, { size: 150 });`}</code>
             </Box>
           </CardContent>
         </Card>

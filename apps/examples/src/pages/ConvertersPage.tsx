@@ -52,7 +52,7 @@ export function ConvertersPage() {
   const [processing, setProcessing] = useState(false)
 
   const [options, setOptions] = useState({
-    format: 'png' as 'jpeg' | 'png' | 'webp',
+    format: 'png' as 'jpeg' | 'png' | 'webp' | 'avif',
     quality: 80,
     includeMetadata: true
   })
@@ -150,7 +150,7 @@ export function ConvertersPage() {
       setResults(newResults)
     } catch (error) {
       console.error('Conversion failed:', error)
-      alert('변환 중 오류가 발생했습니다.')
+      console.error('변환 중 오류가 발생했습니다.')
     } finally {
       setProcessing(false)
     }
@@ -169,7 +169,7 @@ export function ConvertersPage() {
 
   const copyDataURL = (dataURL: string) => {
     navigator.clipboard.writeText(dataURL).then(() => {
-      alert('Data URL이 클립보드에 복사되었습니다!')
+      console.log('Data URL이 클립보드에 복사되었습니다!')
     })
   }
 
@@ -268,7 +268,7 @@ downloadBlob(blobResult.blob, 'converted.${options.format}');`
                     label="출력 포맷"
                     onChange={(e) => setOptions(prev => ({
                       ...prev,
-                      format: e.target.value as any
+                      format: e.target.value as 'jpeg' | 'png' | 'webp' | 'avif'
                     }))}
                   >
                     <MenuItem value="jpeg">JPEG</MenuItem>

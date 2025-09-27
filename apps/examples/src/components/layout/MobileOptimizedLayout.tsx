@@ -77,7 +77,7 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
     setBottomNavValue(getCurrentNavValue())
   }, [location.pathname])
 
-  const handleBottomNavChange = (_: any, newValue: number) => {
+  const handleBottomNavChange = (_: React.SyntheticEvent, newValue: number) => {
     setBottomNavValue(newValue)
     const primaryItems = navigationItems.filter(item => item.primary)
     if (primaryItems[newValue]) {

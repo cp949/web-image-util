@@ -10,6 +10,7 @@ import type {
   BlurOptions,
   ResultDataURL,
   ResultFile,
+  ResultCanvas,
   ImageFormat,
   ImageSource,
   OutputFormat,
@@ -19,6 +20,7 @@ import type {
   SmartResizeOptions,
 } from './types';
 import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
+import { DataURLResultImpl, BlobResultImpl, FileResultImpl } from './types/result-implementations';
 
 /**
  * 이미지 프로세서 클래스
@@ -283,13 +285,15 @@ export class ImageProcessor {
     try {
       const blob = await this.canvasToBlob(canvas, outputOptions);
 
-      return {
+      // 🆕 확장된 결과 객체 반환 (직접 변환 메서드 포함)
+      return new BlobResultImpl(
         blob,
-        width: result.width,
-        height: result.height,
-        processingTime: result.processingTime,
-        originalSize: result.originalSize,
-      };
+        result.width,
+        result.height,
+        result.processingTime,
+        result.originalSize,
+        outputOptions.format
+      );
     } catch (error) {
       throw new ImageProcessError('Blob 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
     }
@@ -331,10 +335,15 @@ export class ImageProcessor {
     try {
       const dataURL = await this.blobToDataURL(blob);
 
-      return {
+      // 🆕 확장된 결과 객체 반환 (직접 변환 메서드 포함)
+      return new DataURLResultImpl(
         dataURL,
-        ...metadata,
-      };
+        metadata.width,
+        metadata.height,
+        metadata.processingTime,
+        metadata.originalSize,
+        metadata.format
+      );
     } catch (error) {
       throw new ImageProcessError('Data URL 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
     }
@@ -397,17 +406,22 @@ export class ImageProcessor {
         lastModified: Date.now(),
       });
 
-      return {
+      // 🆕 확장된 결과 객체 반환 (직접 변환 메서드 포함)
+      return new FileResultImpl(
         file,
-        ...metadata,
-      };
+        metadata.width,
+        metadata.height,
+        metadata.processingTime,
+        metadata.originalSize,
+        metadata.format
+      );
     } catch (error) {
       throw new ImageProcessError('File 객체 생성 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
     }
   }
 
   /**
-   * Canvas로 변환
+   * Canvas로 변환 (기본 - 참조 반환)
    *
    * @returns 처리된 Canvas 요소
    *
@@ -425,6 +439,147 @@ export class ImageProcessor {
     } catch (error) {
       throw new ImageProcessError('Canvas 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
     }
+  }
+
+  /**
+   * 메타데이터 포함 Canvas 결과
+   *
+   * @returns Canvas와 메타데이터를 포함한 결과 객체
+   *
+   * @example
+   * ```typescript
+   * const result = await processor.toCanvasDetailed();
+   * console.log(`${result.width}x${result.height} Canvas, ${result.processingTime}ms 소요`);
+   * ```
+   */
+  async toCanvasDetailed(): Promise<ResultCanvas> {
+    try {
+      const { canvas, result } = await this.executeProcessing();
+      return {
+        canvas,
+        width: result.width,
+        height: result.height,
+        processingTime: result.processingTime,
+        originalSize: result.originalSize,
+      };
+    } catch (error) {
+      throw new ImageProcessError('Canvas 상세 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+    }
+  }
+
+  /**
+   * HTMLImageElement 직접 생성
+   * Canvas → Blob → ObjectURL → Image 경로로 최적화
+   *
+   * @returns HTMLImageElement
+   *
+   * @example
+   * ```typescript
+   * const imgElement = await processor.toElement();
+   * document.body.appendChild(imgElement);
+   * ```
+   */
+  async toElement(): Promise<HTMLImageElement> {
+    try {
+      const { canvas } = await this.executeProcessing();
+
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new ImageProcessError('Blob 생성 실패', 'CANVAS_TO_BLOB_FAILED'));
+            return;
+          }
+
+          const objectUrl = URL.createObjectURL(blob);
+          const img = new Image();
+
+          img.onload = () => {
+            URL.revokeObjectURL(objectUrl); // 즉시 정리
+            resolve(img);
+          };
+
+          img.onerror = () => {
+            URL.revokeObjectURL(objectUrl); // 에러 시에도 정리
+            reject(new ImageProcessError('Image 로딩 실패', 'IMAGE_LOAD_FAILED'));
+          };
+
+          img.src = objectUrl;
+        });
+      });
+    } catch (error) {
+      throw new ImageProcessError('Element 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+    }
+  }
+
+  /**
+   * ArrayBuffer 직접 변환
+   * Canvas → Blob → ArrayBuffer 최적화 경로
+   *
+   * @returns ArrayBuffer
+   *
+   * @example
+   * ```typescript
+   * const buffer = await processor.toArrayBuffer();
+   * const uint8Array = new Uint8Array(buffer);
+   * ```
+   */
+  async toArrayBuffer(): Promise<ArrayBuffer> {
+    try {
+      const { canvas } = await this.executeProcessing();
+
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            reject(new ImageProcessError('Blob 생성 실패', 'CANVAS_TO_BLOB_FAILED'));
+            return;
+          }
+
+          try {
+            const arrayBuffer = await blob.arrayBuffer();
+            resolve(arrayBuffer);
+          } catch (error) {
+            reject(new ImageProcessError('ArrayBuffer 변환 실패', 'BLOB_TO_ARRAYBUFFER_FAILED', error as Error));
+          }
+        });
+      });
+    } catch (error) {
+      throw new ImageProcessError('ArrayBuffer 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+    }
+  }
+
+  /**
+   * Uint8Array 직접 변환
+   *
+   * @returns Uint8Array
+   *
+   * @example
+   * ```typescript
+   * const uint8Array = await processor.toUint8Array();
+   * console.log('Image data size:', uint8Array.length);
+   * ```
+   */
+  async toUint8Array(): Promise<Uint8Array> {
+    try {
+      const arrayBuffer = await this.toArrayBuffer();
+      return new Uint8Array(arrayBuffer);
+    } catch (error) {
+      throw new ImageProcessError('Uint8Array 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+    }
+  }
+
+  /**
+   * Canvas 복사 (안전한 참조가 필요한 경우)
+   * @private
+   */
+  private cloneCanvas(originalCanvas: HTMLCanvasElement): HTMLCanvasElement {
+    const clonedCanvas = document.createElement('canvas');
+    const ctx = clonedCanvas.getContext('2d')!;
+
+    clonedCanvas.width = originalCanvas.width;
+    clonedCanvas.height = originalCanvas.height;
+
+    ctx.drawImage(originalCanvas, 0, 0);
+    return clonedCanvas;
   }
 
   /**

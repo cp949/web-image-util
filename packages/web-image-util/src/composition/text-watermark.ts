@@ -94,8 +94,8 @@ export class TextWatermark {
       ctx.shadowBlur = style.shadow.blur;
     }
 
-    // 텍스트 그리기
-    const drawY = textPosition.y + textSize.height;
+    // 텍스트 그리기 (textBaseline = 'top'이므로 textPosition.y 사용)
+    const drawY = textPosition.y;
 
     if (style.strokeWidth && style.strokeColor) {
       ctx.strokeText(text, textPosition.x, drawY);

@@ -1,4 +1,4 @@
-import { enhanceBrowserCompatibility, SvgCompatibilityOptions } from '@cp949/web-image-util/utils'
+import { enhanceBrowserCompatibility, SvgCompatibilityOptions } from '@cp949/web-image-util'
 import {
   CheckCircle,
   Clear,
@@ -129,8 +129,6 @@ export function SvgCompatibilityPage() {
     setError('')
 
     try {
-      // TODO: 실제 구현에서는 enhanceBrowserCompatibility 사용
-      // const result = enhanceBrowserCompatibility(inputSvg, options)
       console.log('Input SVG:', inputSvg)
       console.log('Options:', options)
       const result = enhanceBrowserCompatibility(inputSvg, options)
@@ -189,7 +187,7 @@ export function SvgCompatibilityPage() {
 
   // 코드 예제 생성
   const generateCodeExamples = () => {
-    const basicCode = `import { enhanceBrowserCompatibility } from '@cp949/web-image-util/utils';
+    const basicCode = `import { enhanceBrowserCompatibility } from '@cp949/web-image-util';
 
 // 기본 SVG 호환성 개선
 const result = enhanceBrowserCompatibility(svgString, {

@@ -131,19 +131,19 @@ export class PositionCalculator {
       case Position.BOTTOM_LEFT:
         return {
           x: margin.x,
-          y: containerHeight - objectHeight - margin.y,
+          y: containerHeight - margin.y - objectHeight,
         };
 
       case Position.BOTTOM_CENTER:
         return {
           x: (containerWidth - objectWidth) / 2,
-          y: containerHeight - objectHeight - margin.y,
+          y: containerHeight - margin.y - objectHeight,
         };
 
       case Position.BOTTOM_RIGHT:
         return {
           x: containerWidth - objectWidth - margin.x,
-          y: containerHeight - objectHeight - margin.y,
+          y: containerHeight - margin.y - objectHeight,
         };
 
       default:
