@@ -177,7 +177,7 @@ console.log('브라우저 지원:', validation.browserSupport);
 
 ---
 
-## 🖥️ apps/examples
+## 🖥️ apps/exam
 
 ### 📱 **인터랙티브 데모 애플리케이션**
 
@@ -262,7 +262,7 @@ pnpm install
 pnpm dev
 
 # 또는 개별 실행
-cd apps/examples
+cd apps/exam
 pnpm dev
 ```
 
@@ -406,7 +406,7 @@ pnpm publish            # npm 배포
 ## 📚 상세 문서
 
 - **📖 [라이브러리 API 문서](sub/web-image-util/README.md)** - 완전한 API 레퍼런스
-- **🎨 [예제 앱 가이드](apps/examples/README.md)** - UI 개발 및 통합 가이드
+- **🎨 [예제 앱 가이드](apps/exam/README.md)** - UI 개발 및 통합 가이드
 
 ## 📄 라이선스
 

@@ -650,7 +650,7 @@ console.log('성능 정보:', metrics);
 ### 관련 문서
 - **[← 메인 가이드](./README.md)** - 기본 사용법과 리사이징 가이드
 - **[API 레퍼런스](./README-API.md)** - 완전한 API 문서
-- **[예제 앱](../../apps/examples/)** - 인터랙티브 데모
+- **[예제 앱](../../apps/exam/)** - 인터랙티브 데모
 
 ### 고급 사용 사례
 - **포트폴리오 웹사이트**: 이미지 갤러리 최적화
@@ -664,6 +664,6 @@ console.log('성능 정보:', metrics);
 
 **더 많은 정보가 필요하신가요?**
 
-[🏠 메인 가이드](./README.md) • [📖 API 문서](./README-API.md) • [💡 예제 보기](../../apps/examples/)
+[🏠 메인 가이드](./README.md) • [📖 API 문서](./README-API.md) • [💡 예제 보기](../../apps/exam/)
 
 </div>

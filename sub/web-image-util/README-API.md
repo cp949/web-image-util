@@ -770,6 +770,6 @@ CanvasPool.configure({
 
 **더 많은 정보가 필요하신가요?**
 
-[🏠 메인 가이드](./README.md) • [🚀 고급 기능](./README-ADVANCED.md) • [💡 예제 보기](../../apps/examples/)
+[🏠 메인 가이드](./README.md) • [🚀 고급 기능](./README-ADVANCED.md) • [💡 예제 보기](../../apps/exam/)
 
 </div>

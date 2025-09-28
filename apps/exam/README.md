@@ -148,8 +148,6 @@ apps/exam/
 2. `src/App.tsx`에 라우트 추가
 3. `src/components/layout/AppLayout.tsx`에 네비게이션 항목 추가
 
-자세한 가이드는 `CLAUDE.md` 파일을 참조하세요.
-
 ### 공통 컴포넌트 활용
 
 #### ImageUploader
