@@ -319,6 +319,7 @@ export const FORMAT_INFO = {
   [ImageFormats.JPG]: { mimeType: 'image/jpeg' },
   [ImageFormats.PNG]: { mimeType: 'image/png' },
   [ImageFormats.WEBP]: { mimeType: 'image/webp' },
+  [ImageFormats.AVIF]: { mimeType: 'image/avif' },
   [ImageFormats.GIF]: { mimeType: 'image/gif' },
   [ImageFormats.SVG]: { mimeType: 'image/svg+xml' },
 } as const;
@@ -329,7 +330,14 @@ export const OUTPUT_FORMAT_INFO = {
   [OutputFormats.JPG]: { mimeType: 'image/jpeg' },
   [OutputFormats.PNG]: { mimeType: 'image/png' },
   [OutputFormats.WEBP]: { mimeType: 'image/webp' },
+  [OutputFormats.AVIF]: { mimeType: 'image/avif' },
 } as const;
+
+// ============================================================================
+// PRESET TYPES - 프리셋 관련 타입들 re-export
+// ============================================================================
+
+export type { ThumbnailOptions, AvatarOptions, SocialImageOptions, SocialPlatform } from '../presets';
 
 // ============================================================================
 // ADDITIONAL TYPES - 테스트 호환성을 위한 추가 타입들

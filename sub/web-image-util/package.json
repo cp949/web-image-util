@@ -31,7 +31,12 @@
     "test:ui": "vitest --ui",
     "test:browser": "vitest --browser",
     "test:coverage": "vitest --coverage",
-    "test:coverage:contract": "vitest --coverage --config vitest.contract.config.ts"
+    "test:coverage:contract": "vitest --coverage --config vitest.contract.config.ts",
+    "test:wsl": "vitest --config vitest.wsl.config.ts",
+    "test:wsl:ui": "vitest --config vitest.wsl.config.ts --ui",
+    "test:wsl:coverage": "vitest --config vitest.wsl.config.ts --coverage",
+    "test:types": "vitest --config vitest.wsl.config.ts tests/unit/types",
+    "typecheck:wsl": "tsc --noEmit --project tsconfig.json"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

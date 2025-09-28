@@ -1,6 +1,7 @@
 build/
 dist/
 .claude/
+test-results/
 _TODO/
 CLAUDE.md
 .mcp.json

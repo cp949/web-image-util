@@ -340,9 +340,9 @@ web-image-util/
 │   ├── eslint-config/           # ESLint 공유 설정
 │   └── typescript-config/       # TypeScript 공유 설정
 ├── 🖥️ apps/
-│   └── examples/                # 📱 React 데모 앱
+│   └── exam/                    # 📱 Next.js 예제 앱
 │       ├── src/
-│       │   ├── pages/           # 10개 예제 페이지
+│       │   ├── app/             # Next.js 15 App Router 페이지
 │       │   ├── components/      # 공통 UI 컴포넌트
 │       │   └── hooks/           # 커스텀 훅
 │       ├── package.json
@@ -419,6 +419,3 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 - 🐛 [이슈 리포트](https://github.com/cp949/web-image-util/issues)
 - 📊 [릴리스 노트](https://github.com/cp949/web-image-util/releases)
 
----
-
-**Made with ❤️ by @cp949**

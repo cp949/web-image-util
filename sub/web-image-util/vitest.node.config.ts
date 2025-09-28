@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config'
-import { mergeConfig, sharedConfig, testTypeConfigs } from './tests/vitest.shared.config'
+import { defineConfig } from 'vitest/config';
+import { mergeConfig, sharedConfig } from './tests/vitest.shared.config';
 
 /**
  * Node.js 테스트 설정
@@ -30,7 +30,7 @@ export default defineConfig(
         // 레거시 테스트 파일들 (호환성 유지)
         'tests/calculations.test.ts',
         'tests/errors.test.ts',
-        'tests/error-helpers.test.ts'
+        'tests/error-helpers.test.ts',
       ],
 
       // 셋업 파일 (브라우저 API 모킹 포함)
@@ -42,18 +42,14 @@ export default defineConfig(
         reporter: ['text', 'json'],
         reportsDirectory: 'coverage/all',
         include: ['src/**/*.ts'],
-        exclude: [
-          'src/**/*.d.ts',
-          'src/**/*.test.ts',
-          'src/**/*.spec.ts'
-        ],
+        exclude: ['src/**/*.d.ts', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
         // 전체 테스트의 종합 커버리지 기준
         thresholds: {
           statements: 80,
           branches: 70,
           functions: 80,
-          lines: 80
-        }
+          lines: 80,
+        },
       },
 
       // Node.js 환경 최적화 타임아웃
@@ -69,8 +65,8 @@ export default defineConfig(
       // 테스트 순서 최적화 (빠른 테스트부터)
       sequence: {
         shuffle: false, // 일관된 실행 순서 유지
-        concurrent: true // 가능한 테스트는 병렬 실행
-      }
-    }
+        concurrent: true, // 가능한 테스트는 병렬 실행
+      },
+    },
   })
-)
+);

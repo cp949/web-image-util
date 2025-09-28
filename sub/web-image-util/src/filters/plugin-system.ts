@@ -239,7 +239,9 @@ export class FilterPluginManager {
 
     // 필터가 비활성화된 경우 원본 반환
     if (filterOptions.enabled === false) {
-      return new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
+      const copiedData = new Uint8ClampedArray(imageData.data.length);
+      copiedData.set(imageData.data);
+      return new ImageData(copiedData, imageData.width, imageData.height);
     }
 
     // 매개변수 유효성 검사
@@ -270,7 +272,10 @@ export class FilterPluginManager {
    * @returns 모든 필터가 적용된 이미지 데이터
    */
   applyFilterChain(imageData: ImageData, filterChain: FilterChain): ImageData {
-    let result = new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
+    // ImageData 복사 생성
+    const copiedData = new Uint8ClampedArray(imageData.data.length);
+    copiedData.set(imageData.data);
+    let result = new ImageData(copiedData, imageData.width, imageData.height);
 
     // 최적화 옵션이 활성화된 경우
     const filters = filterChain.optimize ? this.optimizeFilterChain(filterChain.filters) : filterChain.filters;
@@ -449,6 +454,18 @@ export class FilterPluginManager {
         description: plugin.description,
       })),
     };
+  }
+
+  /**
+   * 테스트용 인스턴스 리셋
+   * @internal 테스트 전용 메서드 - 프로덕션 코드에서 사용하지 마세요
+   */
+  static resetForTesting(): void {
+    if (FilterPluginManager.instance) {
+      FilterPluginManager.instance.plugins.clear();
+      FilterPluginManager.instance.categories.clear();
+    }
+    FilterPluginManager.instance = undefined as any;
   }
 }
 
