@@ -407,7 +407,6 @@ pnpm publish            # npm 배포
 
 - **📖 [라이브러리 API 문서](sub/web-image-util/README.md)** - 완전한 API 레퍼런스
 - **🎨 [예제 앱 가이드](apps/examples/README.md)** - UI 개발 및 통합 가이드
-- **🔧 [개발 환경 설정](CLAUDE.md)** - 프로젝트 구조 및 기여 가이드
 
 ## 📄 라이선스
 
