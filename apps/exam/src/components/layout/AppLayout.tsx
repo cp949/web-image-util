@@ -20,6 +20,7 @@ import {
   Menu as MenuIcon,
   Home as HomeIcon,
   PhotoSizeSelectActual as BasicIcon,
+  ViewQuilt as PreviewGalleryIcon,
   Dashboard as PresetsIcon,
   AutoFixHigh as AdvancedIcon,
   FilterBAndW as FiltersIcon,
@@ -38,6 +39,7 @@ const DRAWER_WIDTH = 280
 const navigationItems = [
   { path: '/', label: '홈', icon: <HomeIcon /> },
   { path: '/basic', label: '기본 처리', icon: <BasicIcon /> },
+  { path: '/preview-gallery', label: '변환 미리보기', icon: <PreviewGalleryIcon /> },
   { path: '/presets', label: '프리셋 기능', icon: <PresetsIcon /> },
   { path: '/advanced', label: '고급 기능', icon: <AdvancedIcon /> },
   { path: '/filters', label: '필터 효과', icon: <FiltersIcon /> },

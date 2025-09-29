@@ -33,6 +33,8 @@ interface ProcessOptions {
   background: string;
   useWidth: boolean;
   useHeight: boolean;
+  withoutEnlargement: boolean;
+  withoutReduction: boolean;
 }
 
 export function BasicProcessingPage() {
@@ -48,6 +50,8 @@ export function BasicProcessingPage() {
     background: '#ffffff',
     useWidth: true,
     useHeight: true,
+    withoutEnlargement: false,
+    withoutReduction: false,
   });
 
   const handleImageSelect = useCallback(async (source: File | string) => {
@@ -95,6 +99,8 @@ export function BasicProcessingPage() {
         .resize(resizeWidth, resizeHeight, {
           fit: options.fit,
           background: options.background,
+          withoutEnlargement: options.withoutEnlargement,
+          withoutReduction: options.withoutReduction,
         })
         .toBlob({
           format: options.format,
@@ -130,7 +136,9 @@ export function BasicProcessingPage() {
 const result = await processImage(source)
   .resize(${resizeWidth}, ${resizeHeight}, {
     fit: '${options.fit}',
-    background: '${options.background}'
+    background: '${options.background}',
+    withoutEnlargement: ${options.withoutEnlargement},
+    withoutReduction: ${options.withoutReduction}
   })
   .toBlob({
     format: '${options.format}',
@@ -280,6 +288,53 @@ const [small, medium, large] = await Promise.all([
                   </Select>
                 </FormControl>
 
+                {/* 크기 제한 옵션 */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    크기 제한 옵션
+                  </Typography>
+
+                  {/* withoutEnlargement 체크박스 */}
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={options.withoutEnlargement}
+                        onChange={(e) =>
+                          setOptions((prev) => ({
+                            ...prev,
+                            withoutEnlargement: e.target.checked,
+                          }))
+                        }
+                      />
+                    }
+                    label="확대 금지 (withoutEnlargement)"
+                    sx={{ display: 'block', mb: 1 }}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, ml: 4 }}>
+                    원본보다 큰 크기로 확대하지 않습니다. 지정된 크기보다 작게 유지됩니다.
+                  </Typography>
+
+                  {/* withoutReduction 체크박스 */}
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={options.withoutReduction}
+                        onChange={(e) =>
+                          setOptions((prev) => ({
+                            ...prev,
+                            withoutReduction: e.target.checked,
+                          }))
+                        }
+                      />
+                    }
+                    label="축소 금지 (withoutReduction)"
+                    sx={{ display: 'block', mb: 1 }}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4 }}>
+                    원본보다 작은 크기로 축소하지 않습니다. 지정된 크기보다 크게 유지됩니다.
+                  </Typography>
+                </Box>
+
                 {/* 포맷 선택 */}
                 <FormControl fullWidth sx={{ mb: 3 }}>
                   <InputLabel>출력 포맷</InputLabel>
@@ -368,6 +423,46 @@ const [small, medium, large] = await Promise.all([
       {/* 도움말 섹션 */}
       <Box sx={{ mt: 6 }}>
         <Typography variant="h5" gutterBottom>
+          옵션 설명
+        </Typography>
+
+        {/* 크기 제한 옵션 설명 */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            크기 제한 옵션
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    확대 금지 (withoutEnlargement)
+                  </Typography>
+                  <Typography variant="body2">원본 이미지보다 큰 크기로 확대하지 않습니다.</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    원본이 300x200인데 500x400을 요청하면 → 300x200으로 유지
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    축소 금지 (withoutReduction)
+                  </Typography>
+                  <Typography variant="body2">원본 이미지보다 작은 크기로 축소하지 않습니다.</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    원본이 800x600인데 300x200을 요청하면 → 800x600으로 유지
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Fit 모드 설명 */}
+        <Typography variant="h6" gutterBottom>
           Fit 모드 설명
         </Typography>
         <Grid container spacing={2}>
