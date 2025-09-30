@@ -34,7 +34,7 @@ function processImage(source: ImageSource): ImageProcessor
 import { processImage } from '@cp949/web-image-util';
 
 const processor = processImage(imageFile);
-const result = await processor.resize(300, 200).toBlob();
+const result = await processor.resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
 ```
 
 ---
@@ -678,7 +678,7 @@ import { processImage, ImageProcessError } from '@cp949/web-image-util';
 
 try {
   const result = await processImage(source)
-    .resize(300, 200)
+    .resize({ fit: 'cover', width: 300, height: 200 })
     .toBlob();
 
   console.log('처리 완료:', result);
@@ -726,7 +726,7 @@ if (!features.webp) {
 // 조건부 기능 사용
 const format = features.webp ? 'webp' : 'jpeg';
 const result = await processImage(source)
-  .resize(300, 200)
+  .resize({ fit: 'cover', width: 300, height: 200 })
   .toBlob({ format });
 ```
 

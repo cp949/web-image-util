@@ -202,7 +202,7 @@ export function SvgCompatibilityDemo() {
         const estimatedMemory = (originalImage.width * originalImage.height * 4) / (1024 * 1024); // MB
 
         const processed = await processImage(sourceToProcess)
-          .resize(300, 200, { fit: mode.fit })
+          .resize({ fit: mode.fit, width: 300, height: 200 })
           .toBlob({ format: 'png', quality: 0.9 });
 
         const processingTime = Date.now() - startTime;
@@ -277,7 +277,7 @@ export function SvgCompatibilityDemo() {
 
 // SVG 고품질 처리 (자동 감지)
 const processed = await processImage(svgSource)
-  .resize(800, 600, { fit: 'contain' })
+  .resize({ fit: 'contain', width: 800, height: 600 })
   .toBlob({ format: 'png', quality: 0.9 });
 
 // 결과 사용
@@ -297,7 +297,7 @@ const sources = [
 // 모든 소스가 자동으로 고품질 처리됨!
 for (const source of sources) {
   const result = await processImage(source)
-    .resize(400, 400)
+    .resize({ fit: 'cover', width: 400, height: 400 })
     .toBlob({ format: 'png' });
 }`;
 

@@ -87,7 +87,7 @@ export function PerformanceDemo() {
       name: '기본 리사이징',
       description: '300x200으로 리사이징',
       category: 'resize',
-      operation: () => processImage(sampleImages[testConfig.sampleImage].src).resize(300, 200).toBlob(),
+      operation: () => processImage(sampleImages[testConfig.sampleImage].src).resize({ fit: 'cover', width: 300, height: 200 }).toBlob(),
     },
     {
       name: 'JPEG 변환',
@@ -250,7 +250,7 @@ async function measurePerformance(operation, iterations = 10) {
 
 // 사용 예시
 const resizePerf = await measurePerformance(
-  () => processImage(source).resize(300, 200).toBlob()
+  () => processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob()
 );
 
 console.log(\`Average: \${resizePerf.avgTime.toFixed(2)}ms\`);

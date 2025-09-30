@@ -16,7 +16,7 @@ describe('SVG 품질 저하 수정 검증', () => {
   </svg>`;
 
   it('복잡한 SVG를 1000x1000으로 리사이징해도 품질이 보존되어야 함', async () => {
-    const result = await processImage(complexSvg).resize(1000, 1000).toBlob();
+    const result = await processImage(complexSvg).resize({ fit: 'cover', width: 1000, height: 1000 }).toBlob();
 
     expect(result.blob).toBeDefined();
     expect(result.blob.size).toBeGreaterThan(1000); // 적절한 파일 크기
@@ -28,7 +28,7 @@ describe('SVG 품질 저하 수정 검증', () => {
       <rect x="10" y="10" width="30" height="30" fill="red"/>
     </svg>`;
 
-    const result = await processImage(smallSvg).resize(2000, 2000).toBlob();
+    const result = await processImage(smallSvg).resize({ fit: 'cover', width: 2000, height: 2000 }).toBlob();
 
     expect(result.blob).toBeDefined();
     expect(result.blob.size).toBeGreaterThan(1000);
@@ -39,7 +39,7 @@ describe('SVG 품질 저하 수정 검증', () => {
       <text x="100" y="50" text-anchor="middle" font-size="30" fill="black">Hello World</text>
     </svg>`;
 
-    const result = await processImage(textSvg).resize(800, 400).toBlob();
+    const result = await processImage(textSvg).resize({ fit: 'cover', width: 800, height: 400 }).toBlob();
 
     expect(result.blob).toBeDefined();
     expect(result.blob.size).toBeGreaterThan(500);
@@ -56,7 +56,7 @@ describe('SVG 품질 저하 수정 검증', () => {
       <rect width="100" height="100" fill="url(#grad1)" />
     </svg>`;
 
-    const result = await processImage(gradientSvg).resize(500, 500).toBlob();
+    const result = await processImage(gradientSvg).resize({ fit: 'cover', width: 500, height: 500 }).toBlob();
 
     expect(result.blob).toBeDefined();
     expect(result.blob.size).toBeGreaterThan(500);
@@ -80,7 +80,7 @@ describe('SVG 품질 저하 수정 검증', () => {
 
   it('Data URL 형태의 SVG도 올바르게 처리되어야 함', async () => {
     const dataUrl = `data:image/svg+xml,${encodeURIComponent(complexSvg)}`;
-    const result = await processImage(dataUrl).resize(1000, 1000).toBlob();
+    const result = await processImage(dataUrl).resize({ fit: 'cover', width: 1000, height: 1000 }).toBlob();
 
     expect(result.blob).toBeDefined();
     expect(result.blob.size).toBeGreaterThan(1000);

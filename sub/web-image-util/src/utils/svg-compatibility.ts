@@ -612,7 +612,7 @@ function padBBox(b: { minX: number; minY: number; width: number; height: number 
  *
  * // 정규화된 SVG를 이미지로 변환
  * const result = await processImage(normalizedSvg)
- *   .resize(300, 200)
+ *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .toBlob();
  * ```
  */

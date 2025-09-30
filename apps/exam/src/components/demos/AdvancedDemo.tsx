@@ -343,7 +343,7 @@ import { SimpleWatermark } from '@cp949/web-image-util/advanced';
 
 // 다중 워터마크 합성 예제
 const processor = processImage(source);
-const canvasResult = await processor.resize(800, 600, { fit: 'cover' }).toCanvas();
+const canvasResult = await processor.resize({ fit: 'cover', width: 800, height: 600 }).toCanvas();
 
 // 로고 추가
 const logoCanvas = SimpleWatermark.addLogo(canvasResult, logoImage, {

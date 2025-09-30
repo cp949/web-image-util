@@ -109,15 +109,15 @@ const result = await processImage(source)
 
 // 여러 크기로 동시 처리
 const [small, medium, large] = await Promise.all([
-  processImage(source).resize(150, 100).toBlob(),
-  processImage(source).resize(300, 200).toBlob(),
-  processImage(source).resize(600, 400).toBlob()
+  processImage(source).resize({ fit: 'cover', width: 150, height: 100 }).toBlob(),
+  processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob(),
+  processImage(source).resize({ fit: 'cover', width: 600, height: 400 }).toBlob()
 ]);
 
 // 에러 처리
 try {
   const result = await processImage(source)
-    .resize(300, 200)
+    .resize({ fit: 'cover', width: 300, height: 200 })
     .toBlob();
 } catch (error) {
   if (error instanceof ImageProcessError) {

@@ -122,7 +122,7 @@ export function SmartFormatDemo() {
         const startTime = performance.now();
 
         const result: ResultBlob = await processImage(selectedImage)
-          .resize(800, 600)
+          .resize({ fit: 'cover', width: 800, height: 600 })
           .toBlob({ format, quality });
 
         results.push({

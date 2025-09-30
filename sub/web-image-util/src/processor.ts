@@ -33,8 +33,9 @@ import { validateResizeConfig } from './types/resize-config';
  *
  * @example
  * ```typescript
+ * // 🆕 새로운 ResizeConfig API (권장)
  * const result = await processImage(source)
- *   .resize(300, 200)
+ *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .blur(2)
  *   .toBlob({ format: 'webp', quality: 0.8 });
  * ```
@@ -77,18 +78,18 @@ export class ImageProcessor {
    * processor.resize({ fit: 'contain', width: 300, height: 200, trimEmpty: true })
    * processor.resize({ fit: 'maxFit', width: 300 })  // 최대 너비 300px
    *
-   * // 기본 사용법 (레거시)
-   * processor.resize(300, 200)  // 기본값: cover fit
-   * processor.resize(300)       // 너비만 지정, 높이 자동
-   * processor.resize({ width: 300 })  // 객체 스타일
-   * processor.resize({ height: 200 }) // 높이만 지정
+   * // 🆕 권장: 새로운 ResizeConfig API
+   * processor.resize({ fit: 'cover', width: 300, height: 200 })
+   * processor.resize({ fit: 'maxFit', width: 300 })       // 너비만 지정
+   * processor.resize({ fit: 'maxFit', height: 200 })      // 높이만 지정
    *
-   * // 고급 옵션 (레거시)
-   * processor.resize(300, 200, {
+   * // 고급 옵션
+   * processor.resize({
    *   fit: 'contain',
-   *   position: 'centre',  // 영국식 철자
-   *   background: { r: 255, g: 255, b: 255, alpha: 1 },
-   *   withoutEnlargement: true
+   *   width: 300,
+   *   height: 200,
+   *   background: '#ffffff',
+   *   withoutEnlargement: true  // contain 모드에서만 사용 가능
    * })
    * ```
    */
@@ -246,7 +247,7 @@ export class ImageProcessor {
    * processor.quality('ultra')   // 4x 스케일링 (최고품질)
    *
    * // 체이닝 사용
-   * processor.quality('high').resize(800, 600).toBlob()
+   * processor.quality('high').resize({ fit: 'cover', width: 800, height: 600 }).toBlob()
    * ```
    */
   quality(quality: QualityLevel | 'auto'): this {
@@ -282,7 +283,7 @@ export class ImageProcessor {
    * processor
    *   .performanceMode('high-performance')
    *   .quality('ultra')
-   *   .resize(2000, 1500)
+   *   .resize({ fit: 'cover', width: 2000, height: 1500 })
    *   .toBlob('webp')
    * ```
    */

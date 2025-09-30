@@ -146,7 +146,7 @@ export function DevToolsDemo() {
       addLog('debug', 'Starting image processing', null, 'processImage');
 
       const startTime = performance.now();
-      const result = await processImage(source).resize(300, 200).toBlob();
+      const result = await processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
       const endTime = performance.now();
 
       const responseData = {
@@ -232,7 +232,7 @@ export function DevToolsDemo() {
         code += `      .resize(${width}, ${height})\n`;
         break;
       case 'thumbnail':
-        code += `      .resize(150, 150, { fit: 'cover' })\n`;
+        code += `      .resize({ fit: 'cover', width: 150, height: 150 })\n`;
         break;
       case 'blur':
         code += `      .blur(5)\n`;

@@ -129,7 +129,7 @@ export function HomeDemo() {
 
 // 이미지 리사이징
 const resized = await processImage(source)
-  .resize(300, 200)
+  .resize({ fit: 'cover', width: 300, height: 200 })
   .toBlob();
 
 // 아바타 생성

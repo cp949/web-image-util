@@ -25,7 +25,7 @@ export interface BatchResizeJob<T = any> {
  * ```typescript
  * const batcher = new BatchResizer('fast');
  * const jobs = images.map(img => ({
- *   operation: () => processImage(img).resize(300, 200).toBlob()
+ *   operation: () => processImage(img).resize({ fit: 'cover', width: 300, height: 200 }).toBlob()
  * }));
  * const results = await batcher.processAll(jobs);
  * ```

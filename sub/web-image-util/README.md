@@ -6,6 +6,8 @@ Canvas 2D API 기반으로 다양한 이미지 처리 기능을 제공합니다.
 
 **🎯 설계 철학**: 이 라이브러리는 리사이저(resizer)로서, [Sharp](https://github.com/lovell/sharp)의 API 설계를 웹 브라우저 환경에 맞게 적용하여 구현했습니다. Server-side 이미지 처리의 편의성을 클라이언트 사이드에서도 제공하는 것이 목표입니다.
 
+**🔄 API 상태 (v2.0.19)**: 새로운 ResizeConfig API가 완전히 구현되었으며, 레거시 API와 점진적 마이그레이션 중입니다. 안정성과 호환성을 보장하면서 더 나은 개발자 경험을 제공합니다.
+
 ## 📚 문서 가이드
 
 **🎯 처음 사용한다면**
@@ -25,7 +27,7 @@ Canvas 2D API 기반으로 다양한 이미지 처리 기능을 제공합니다.
 ## 🎯 주요 기능
 
 ### 🔧 이미지 리사이징 (핵심 기능)
-- **5가지 fit 모드**: cover, contain, fill, inside, outside
+- **5가지 fit 모드**: cover, contain, fill, maxFit, minFit
 - **스마트 리사이징**: 확대/축소 제어, 비율 유지 옵션
 - **다양한 케이스**: 너비/높이 개별 조정, 최대/최소 크기 제한
 
@@ -54,7 +56,7 @@ Canvas 2D API 기반으로 다양한 이미지 처리 기능을 제공합니다.
 ```typescript
 // 고품질 SVG 리사이징 - 1000x1000으로 확대해도 선명함
 const result = await processImage(svgString)
-  .resize(1000, 1000)
+  .resize({ width: 1000, height: 1000 })
   .toBlob({ format: 'png' });
 ```
 
@@ -80,25 +82,44 @@ npm install @cp949/web-image-util
 
 ## 📖 기본 사용법
 
-### 체이닝 API (메인 기능)
+### 🆕 새로운 ResizeConfig API (권장)
 
 ```typescript
 import { processImage } from '@cp949/web-image-util';
 
-// 기본 리사이징
+// 🎯 권장: 명시적 fit 모드와 객체 파라미터
 const result = await processImage(source)
-  .resize(300, 200)  // 300x200 크기로 리사이징
+  .resize({ fit: 'cover', width: 300, height: 200 })
   .toBlob({ format: 'webp', quality: 0.8 });
 
 // 리사이징 + 블러 효과
 const blurred = await processImage(source)
-  .resize(400, 300, { fit: 'cover' })  // cover 모드로 리사이징
-  .blur(2)  // 블러 반지름 2px
+  .resize({ fit: 'cover', width: 400, height: 300 })
+  .blur(2)
   .toBlob();
 
-// 다양한 입력 소스 지원
-const fromUrl = await processImage('https://example.com/image.jpg')
-  .resize(200, 200)
+// 다양한 fit 모드 지원
+const contain = await processImage(source)
+  .resize({ fit: 'contain', width: 400, height: 300, background: '#ffffff' })
+  .toBlob();
+
+// maxFit: 축소만 (확대 안함)
+const maxFit = await processImage(source)
+  .resize({ fit: 'maxFit', width: 800 })
+  .toBlob();
+```
+
+### 📝 기본 사용법
+
+```typescript
+// 기본 리사이징
+const result = await processImage(source)
+  .resize({ fit: 'cover', width: 300, height: 200 })
+  .toBlob();
+
+// 배경색과 함께
+const resultWithOptions = await processImage(source)
+  .resize({ fit: 'contain', width: 300, height: 200, background: '#ffffff' })
   .toBlob();
 ```
 
@@ -112,53 +133,55 @@ const fromUrl = await processImage('https://example.com/image.jpg')
 
 ```typescript
 // 정확한 크기로 리사이징 (기본: cover 모드)
-await processImage(source).resize(300, 200).toBlob();
+await processImage(source).resize({ width: 300, height: 200 }).toBlob();
 
 // fit 모드 명시적 지정
-await processImage(source).resize(300, 200, { fit: 'cover' }).toBlob();
+await processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
 ```
 
 ### 2. 비율 유지 vs 무시
 
 ```typescript
 // ✅ 비율 유지하며 영역 가득 채움 (일부 잘림 가능)
-await processImage(source).resize(300, 200, { fit: 'cover' }).toBlob();
+await processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
 
 // ✅ 비율 유지하며 전체 이미지 보임 (여백 생성)
-await processImage(source).resize(300, 200, {
+await processImage(source).resize({
   fit: 'contain',
+  width: 300,
+  height: 200,
   background: '#ffffff'  // 여백 색상
 }).toBlob();
 
 // ❌ 비율 무시하고 강제 맞춤 (이미지 변형됨)
-await processImage(source).resize(300, 200, { fit: 'fill' }).toBlob();
+await processImage(source).resize({ fit: 'fill', width: 300, height: 200 }).toBlob();
 ```
 
 ### 3. 한쪽 크기만 지정 (비율 자동 계산)
 
 ```typescript
 // 너비만 지정, 높이는 비율에 따라 자동
-await processImage(source).resize(800, null).toBlob();
-await processImage(source).resize(800, undefined).toBlob();
+await processImage(source).resize({ width: 800 }).toBlob();
 
 // 높이만 지정, 너비는 비율에 따라 자동
-await processImage(source).resize(null, 600).toBlob();
-await processImage(source).resize(undefined, 600).toBlob();
+await processImage(source).resize({ height: 600 }).toBlob();
 ```
 
 ### 4. 확대/축소 제어
 
 ```typescript
 // 확대 방지 (축소만 허용) - 작은 이미지는 그대로 유지
-await processImage(source).resize(800, 600, {
-  fit: 'cover',
-  withoutEnlargement: true
+await processImage(source).resize({
+  fit: 'maxFit',
+  width: 800,
+  height: 600
 }).toBlob();
 
 // 축소 방지 (확대만 허용) - 큰 이미지는 그대로 유지
-await processImage(source).resize(800, 600, {
-  fit: 'cover',
-  withoutReduction: true
+await processImage(source).resize({
+  fit: 'minFit',
+  width: 800,
+  height: 600
 }).toBlob();
 ```
 
@@ -166,14 +189,16 @@ await processImage(source).resize(800, 600, {
 
 ```typescript
 // 최대 너비 800px (확대 안함, 축소만)
-await processImage(source).resize(800, null, {
-  withoutEnlargement: true
+await processImage(source).resize({
+  fit: 'maxFit',
+  width: 800
 }).toBlob();
 
 // 최대 사각형 800x600 (확대 안함, 축소만)
-await processImage(source).resize(800, 600, {
-  fit: 'contain',
-  withoutEnlargement: true
+await processImage(source).resize({
+  fit: 'maxFit',
+  width: 800,
+  height: 600
 }).toBlob();
 ```
 
@@ -181,14 +206,16 @@ await processImage(source).resize(800, 600, {
 
 ```typescript
 // 최소 너비 800px 보장 (축소 안함, 확대만)
-await processImage(source).resize(800, null, {
-  withoutReduction: true
+await processImage(source).resize({
+  fit: 'minFit',
+  width: 800
 }).toBlob();
 
 // 최소 영역 800x600 보장 (축소 안함, 확대만)
-await processImage(source).resize(800, 600, {
-  fit: 'cover',
-  withoutReduction: true
+await processImage(source).resize({
+  fit: 'minFit',
+  width: 800,
+  height: 600
 }).toBlob();
 ```
 
@@ -196,20 +223,26 @@ await processImage(source).resize(800, 600, {
 
 ```typescript
 // 상단 중심으로 잘림
-await processImage(source).resize(300, 200, {
+await processImage(source).resize({
   fit: 'cover',
+  width: 300,
+  height: 200,
   position: 'top'
 }).toBlob();
 
 // 왼쪽 중심으로 잘림
-await processImage(source).resize(300, 200, {
+await processImage(source).resize({
   fit: 'cover',
+  width: 300,
+  height: 200,
   position: 'left'
 }).toBlob();
 
 // 우하단 중심으로 잘림
-await processImage(source).resize(300, 200, {
+await processImage(source).resize({
   fit: 'cover',
+  width: 300,
+  height: 200,
   position: 'bottom-right'
 }).toBlob();
 ```
@@ -221,37 +254,37 @@ await processImage(source).resize(300, 200, {
 | `cover`   | ✅         | ❌              | ❌         | ✅           | 둘 다     | 썸네일, 배경 이미지 |
 | `contain` | ✅         | ✅              | ✅         | ❌           | 둘 다     | 갤러리, 프리뷰      |
 | `fill`    | ❌         | ✅              | ❌         | ❌           | 둘 다     | 정확한 크기 필요시  |
-| `inside`  | ✅         | ✅              | ❌         | ❌           | 축소만    | 원본 보호           |
-| `outside` | ✅         | ✅              | ❌         | ❌           | 확대만    | 최소 크기 보장      |
+| `maxFit`  | ✅         | ✅              | ❌         | ❌           | 축소만    | 원본 보호           |
+| `minFit`  | ✅         | ✅              | ❌         | ❌           | 확대만    | 최소 크기 보장      |
 
 ### 🎯 실무 사용 케이스
 
 ```typescript
 // 🖼️ 썸네일 생성 (정사각형, 잘림 허용)
 const thumbnail = await processImage(photo)
-  .resize(200, 200, { fit: 'cover' })
+  .resize({ fit: 'cover', width: 200, height: 200 })
   .toBlob({ format: 'webp', quality: 0.8 });
 
 // 📱 모바일 최적화 (세로 비율 유지)
 const mobile = await processImage(photo)
-  .resize(400, null, { withoutEnlargement: true })
+  .resize({ fit: 'maxFit', width: 400 })
   .toBlob({ format: 'webp', quality: 0.7 });
 
 // 🖥️ 데스크톱 배너 (가로 고정, 세로 자동)
 const banner = await processImage(photo)
-  .resize(1200, null, { fit: 'cover' })
+  .resize({ fit: 'cover', width: 1200 })
   .toBlob({ format: 'jpeg', quality: 0.85 });
 
 // 👤 프로필 아바타 (정사각형, 고품질)
 const avatar = await processImage(userPhoto)
-  .resize(150, 150, { fit: 'cover', position: 'top' })
+  .resize({ fit: 'cover', width: 150, height: 150, position: 'top' })
   .toBlob({ format: 'png', quality: 0.9 });
 
 // 📄 문서 첨부용 (파일 크기 최소화)
 const document = await processImage(scan)
-  .resize(800, null, {
-    fit: 'contain',
-    withoutEnlargement: true,
+  .resize({
+    fit: 'maxFit',
+    width: 800,
     background: '#ffffff'
   })
   .toBlob({ format: 'jpeg', quality: 0.6 });
@@ -311,20 +344,20 @@ const instagramPost = await createSocialImage(photo, {
 ```typescript
 // File 객체 (가장 일반적)
 const file = document.querySelector('input[type="file"]').files[0];
-await processImage(file).resize(300, 200).toBlob();
+await processImage(file).resize({ width: 300, height: 200 }).toBlob();
 
 // 이미지 URL
-await processImage('https://example.com/photo.jpg').resize(300, 200).toBlob();
+await processImage('https://example.com/photo.jpg').resize({ width: 300, height: 200 }).toBlob();
 
 // Data URL
-await processImage('data:image/jpeg;base64,/9j/4AAQ...').resize(300, 200).toBlob();
+await processImage('data:image/jpeg;base64,/9j/4AAQ...').resize({ width: 300, height: 200 }).toBlob();
 
 // DOM 이미지 엘리먼트
 const img = document.querySelector('img');
-await processImage(img).resize(300, 200).toBlob();
+await processImage(img).resize({ width: 300, height: 200 }).toBlob();
 
 // ArrayBuffer / Uint8Array
-await processImage(arrayBuffer).resize(300, 200).toBlob();
+await processImage(arrayBuffer).resize({ width: 300, height: 200 }).toBlob();
 ```
 
 ### 🎨 SVG 판정 로직
@@ -359,7 +392,7 @@ const complexSvg = `\uFEFF<?xml version="1.0" encoding="UTF-8"?>
   <circle cx="50" cy="50" r="40"/>
 </svg>`;
 
-await processImage(complexSvg).resize(200, 200).toBlob(); // ✅ 정확히 SVG로 감지
+await processImage(complexSvg).resize({ width: 200, height: 200 }).toBlob(); // ✅ 정확히 SVG로 감지
 ```
 
 **🛡️ 오판정 방지:**
@@ -398,37 +431,37 @@ const { enhanced, report } = enhanceBrowserCompatibility(svgString, {
 });
 
 console.log('처리 결과:', report.warnings); // 발견된 문제들
-await processImage(enhanced).resize(300, 200).toBlob();
+await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 ```
 
 **지원되는 SVG 소스 타입:**
 ```typescript
 // 1. SVG XML 문자열
 const svgXml = '<svg width="100" height="100">...</svg>';
-await processImage(svgXml).resize(200, 200).toBlob();
+await processImage(svgXml).resize({ width: 200, height: 200 }).toBlob();
 
 // 2. Data URL SVG
 const svgDataUrl = 'data:image/svg+xml;base64,PHN2Zz4uLi48L3N2Zz4=';
-await processImage(svgDataUrl).resize(200, 200).toBlob();
+await processImage(svgDataUrl).resize({ width: 200, height: 200 }).toBlob();
 
 // 3. HTTP/HTTPS URL (.svg 확장자 또는 Content-Type: image/svg+xml)
-await processImage('https://example.com/icon.svg').resize(200, 200).toBlob();
-await processImage('https://api.com/icon').resize(200, 200).toBlob(); // Content-Type으로 감지
+await processImage('https://example.com/icon.svg').resize({ width: 200, height: 200 }).toBlob();
+await processImage('https://api.com/icon').resize({ width: 200, height: 200 }).toBlob(); // Content-Type으로 감지
 
 // 4. 파일 경로
-await processImage('./assets/logo.svg').resize(200, 200).toBlob();
+await processImage('./assets/logo.svg').resize({ width: 200, height: 200 }).toBlob();
 
 // 5. File 객체 (type='image/svg+xml' 또는 .svg 확장자)
 const svgFile = new File([svgXml], 'icon.svg', { type: 'image/svg+xml' });
-await processImage(svgFile).resize(200, 200).toBlob();
+await processImage(svgFile).resize({ width: 200, height: 200 }).toBlob();
 
 // 6. Blob 객체 (type='image/svg+xml')
 const svgBlob = new Blob([svgXml], { type: 'image/svg+xml' });
-await processImage(svgBlob).resize(200, 200).toBlob();
+await processImage(svgBlob).resize({ width: 200, height: 200 }).toBlob();
 
 // 7. Blob URL (Content-Type으로 감지)
 const blobUrl = URL.createObjectURL(svgBlob);
-await processImage(blobUrl).resize(200, 200).toBlob();
+await processImage(blobUrl).resize({ width: 200, height: 200 }).toBlob();
 ```
 
 ---
@@ -441,7 +474,7 @@ await processImage(blobUrl).resize(200, 200).toBlob();
 
 ```typescript
 const result = await processImage(source)
-  .resize(300, 200)
+  .resize({ fit: 'cover', width: 300, height: 200 })
   .toBlob({ format: 'webp', quality: 0.8 });
 
 // 메타데이터와 함께 반환
@@ -460,7 +493,7 @@ await fetch('/upload', { method: 'POST', body: formData });
 
 ```typescript
 const result = await processImage(source)
-  .resize(300, 200)
+  .resize({ fit: 'contain', width: 300, height: 200 })
   .toDataURL({ format: 'png' });
 
 // 즉시 img 태그에 사용
@@ -471,7 +504,7 @@ document.querySelector('img').src = result.dataURL;
 
 ```typescript
 const result = await processImage(source)
-  .resize(300, 200)
+  .resize({ fit: 'cover', width: 300, height: 200 })
   .toFile('thumbnail.webp', { quality: 0.8 });
 
 // 파일 정보
@@ -483,7 +516,7 @@ console.log(result.file.size);  // 파일 크기 (bytes)
 
 ```typescript
 const canvas = await processImage(source)
-  .resize(300, 200)
+  .resize({ fit: 'contain', width: 300, height: 200 })
   .toCanvas();
 
 // Canvas에 추가 그리기 작업 가능
@@ -504,22 +537,25 @@ Phase 3에서 추가된 최첨단 성능 최적화 및 SVG 특화 기능들입�
 ```typescript
 // 🎯 자동 성능 최적화 (권장)
 const result = await processImage(svgSource)
-  .resize(800, 600)
+  .resize({ fit: 'cover', width: 800, height: 600 })
   .performanceMode('auto') // 브라우저 기능에 따라 자동 최적화
   .toBlob('png');
 
 // 🏃 고성능 모드 (OffscreenCanvas + Web Worker 우선)
 const highPerf = await processImage(svgSource)
+  .resize({ fit: 'contain', width: 800, height: 600 })
   .performanceMode('high-performance') // OffscreenCanvas 우선 사용
   .toBlob('webp');
 
 // 🎨 고품질 모드 (품질 우선)
 const highQuality = await processImage(svgSource)
+  .resize({ fit: 'cover', width: 800, height: 600 })
   .performanceMode('high-quality') // 최고 품질 우선
   .toBlob('png');
 
 // ⚖️ 균형 모드 (성능과 품질의 균형)
 const balanced = await processImage(svgSource)
+  .resize({ fit: 'contain', width: 800, height: 600 })
   .performanceMode('balanced') // 균형잡힌 처리
   .toBlob('jpeg');
 ```
@@ -587,14 +623,14 @@ console.log('AVIF 지원:', capabilities.avif);
 ```typescript
 // 📸 대용량 SVG 아이콘 처리 (성능 우선)
 const icon = await processImage(largeSvgIcon)
-  .resize(64, 64)
+  .resize({ fit: 'cover', width: 64, height: 64 })
   .performanceMode('high-performance')
   .optimization(true)
   .toBlob('webp');
 
 // 🖼️ 고품질 SVG 로고 변환 (품질 우선)
 const logo = await processImage(svgLogo)
-  .resize(400, 200)
+  .resize({ fit: 'contain', width: 400, height: 200 })
   .performanceMode('high-quality')
   .quality('ultra')
   .svgOptions({ preserveTransparency: true })
@@ -604,7 +640,7 @@ const logo = await processImage(svgLogo)
 const thumbnails = await Promise.all(
   svgFiles.map(svg =>
     processImage(svg)
-      .resize(150, 150)
+      .resize({ fit: 'cover', width: 150, height: 150 })
       .performanceMode('auto') // 각 파일마다 자동 최적화
       .quality('auto')
       .toBlob('webp')
@@ -625,7 +661,7 @@ import { BrightnessFilterPlugin, BlurFilterPlugin } from '@cp949/web-image-util/
 
 // 밝기 조정 + 블러 효과
 const filtered = await processImage(source)
-  .resize(400, 300)
+  .resize({ fit: 'cover', width: 400, height: 300 })
   .filter(BrightnessFilterPlugin, { value: 15 })
   .filter(BlurFilterPlugin, { radius: 2 })
   .toBlob();
@@ -692,7 +728,7 @@ console.log(features.avif);   // AVIF 지원 여부
 import { processImage, ImageProcessError } from '@cp949/web-image-util';
 
 try {
-  const result = await processImage(source).resize(300, 200).toBlob();
+  const result = await processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
 } catch (error) {
   if (error instanceof ImageProcessError) {
     console.error(`[${error.code}] ${error.message}`);

@@ -35,7 +35,7 @@ const brightened = await processImage(source)
 
 // 다중 필터 체이닝
 const processed = await processImage(source)
-  .resize(400, 300)
+  .resize({ fit: 'cover', width: 400, height: 300 })
   .filter(GrayscaleFilterPlugin)  // 흑백 변환
   .filter(BlurFilterPlugin, { radius: 2 })  // 블러 효과
   .toBlob();
@@ -162,7 +162,7 @@ import { TextWatermark } from '@cp949/web-image-util/advanced';
 
 // 기본 텍스트 워터마크
 const watermarked = await processImage(source)
-  .resize(800, 600)
+  .resize({ fit: 'cover', width: 800, height: 600 })
   .addTextWatermark({
     text: '© 2024 My Company',
     position: 'bottom-right',
@@ -289,7 +289,7 @@ await logoElement.decode();
 
 // 기본 이미지 워터마크
 const logoWatermarked = await processImage(source)
-  .resize(800, 600)
+  .resize({ fit: 'cover', width: 800, height: 600 })
   .addImageWatermark({
     watermarkImage: logoElement,
     position: 'top-left',
@@ -486,9 +486,11 @@ MemoryManager.cleanup();
 ```typescript
 // 성능 중심 처리
 const fastResult = await processImage(source)
-  .resize(800, 600, {
+  .resize({
     fit: 'cover',
-    interpolation: 'fast'  // 빠른 보간법
+    width: 800,
+    height: 600
+    // interpolation: 'fast'  // TODO: 보간법 옵션 구현 필요
   })
   .toBlob({
     format: 'jpeg',
@@ -498,9 +500,11 @@ const fastResult = await processImage(source)
 
 // 품질 중심 처리
 const qualityResult = await processImage(source)
-  .resize(800, 600, {
+  .resize({
     fit: 'cover',
-    interpolation: 'lanczos'  // 고품질 보간법
+    width: 800,
+    height: 600
+    // interpolation: 'lanczos'  // TODO: 고품질 보간법 옵션 구현 필요
   })
   .toBlob({
     format: 'png',
@@ -631,7 +635,7 @@ enableDebugMode(true);
 const startTime = performance.now();
 
 const result = await processImage(source)
-  .resize(800, 600)
+  .resize({ fit: 'cover', width: 800, height: 600 })
   .filter(BlurFilterPlugin, { radius: 2 })
   .toBlob();
 

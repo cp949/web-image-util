@@ -258,22 +258,25 @@ export function PreviewGalleryDemo() {
       try {
         const startTime = Date.now();
 
-        // 🔍 DEBUG: 프리셋 옵션 확인
-        const resizeOptions = {
+        // 🔍 DEBUG: 프리셋 옵션 확인 (새로운 ResizeConfig API)
+        const resizeConfig = {
           fit: preset.options.fit || 'cover',
-          withoutEnlargement: preset.options.withoutEnlargement || false,
+          width: preset.options.width,
+          height: preset.options.height,
+          ...(preset.options.withoutEnlargement && (preset.options.fit === 'contain' || preset.options.fit === 'maxFit')
+            ? { withoutEnlargement: true }
+            : {}),
         };
 
         console.log('🎭 PreviewGalleryDemo 프리셋:', {
           presetId: preset.id,
           presetName: preset.name,
-          fitOption: preset.options.fit,
-          resizeOptions,
+          resizeConfig,
           targetSize: `${preset.options.width}x${preset.options.height}`,
         });
 
         let processor = processImage(source) //
-          .resize(preset.options.width, preset.options.height, resizeOptions);
+          .resize(resizeConfig);
 
         // 블러 효과 적용
         if (preset.options.blur) {
@@ -334,7 +337,7 @@ export function PreviewGalleryDemo() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  // 간단한 체인 형태 코드 예제 생성
+  // 간단한 체인 형태 코드 예제 생성 (새로운 ResizeConfig API)
   const generateCodeForPreset = (preset: ProcessPreset): string => {
     const { options } = preset;
 
@@ -342,27 +345,31 @@ export function PreviewGalleryDemo() {
     let code = `// ${preset.name} 프리셋 예제\n`;
     code += `// ${preset.description}\n\n`;
 
-    // resize 옵션 빌드
-    const resizeParams = [options.width, options.height];
-    const resizeOptions: string[] = [];
-
-    if (options.fit && options.fit !== 'cover') {
-      resizeOptions.push(`fit: '${options.fit}'`);
-    }
-    if (options.withoutEnlargement) {
-      resizeOptions.push('withoutEnlargement: true');
-    }
-
     // 체인 형태로 코드 생성
     let chain = 'processImage(source)';
 
-    // resize 추가
+    // resize 추가 - 새로운 ResizeConfig 객체 방식
     if (options.width || options.height) {
-      chain += `.resize(${resizeParams.join(', ')}`;
-      if (resizeOptions.length > 0) {
-        chain += `, { ${resizeOptions.join(', ')} }`;
+      const resizeConfig: string[] = [];
+
+      // fit 속성 (기본값 cover)
+      const fit = options.fit || 'cover';
+      resizeConfig.push(`fit: '${fit}'`);
+
+      // width/height 속성
+      if (options.width) {
+        resizeConfig.push(`width: ${options.width}`);
       }
-      chain += ')';
+      if (options.height) {
+        resizeConfig.push(`height: ${options.height}`);
+      }
+
+      // withoutEnlargement 속성 (contain 모드에서만 유효)
+      if (options.withoutEnlargement && fit === 'contain') {
+        resizeConfig.push('withoutEnlargement: true');
+      }
+
+      chain += `.resize({ ${resizeConfig.join(', ')} })`;
     }
 
     // blur 추가

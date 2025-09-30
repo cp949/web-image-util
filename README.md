@@ -23,22 +23,23 @@ npm install @cp949/web-image-util
 ```typescript
 import { processImage } from '@cp949/web-image-util';
 
-// 간단한 썸네일 생성
+// 🆕 권장: 새로운 ResizeConfig API
 const thumbnail = await processImage(source)
-  .resize(300, 200)
+  .resize({ fit: 'cover', width: 300, height: 200 })
   .toBlob();
 
 // 고급 이미지 처리
 const result = await processImage(source)
-  .resize(800, 600, { fit: 'cover', background: '#ffffff' })
+  .resize({ fit: 'cover', width: 800, height: 600, background: '#ffffff' })
   .blur(2)
   .toBlob({ format: 'webp', quality: 0.8 });
 
 // 소셜 미디어용 이미지
 const instagramPost = await processImage(source)
-  .resize(1080, 1080, { fit: 'cover' })
+  .resize({ fit: 'cover', width: 1080, height: 1080 })
   .toFile('instagram-post.jpg');
 ```
+
 
 ---
 
@@ -51,25 +52,25 @@ const instagramPost = await processImage(source)
 #### 📐 **리사이징 엔진**
 ```typescript
 // 정확한 크기 제어
-processImage(source).resize(300, 200, { fit: 'cover' })   // 잘라서 맞춤
-processImage(source).resize(300, 200, { fit: 'contain' }) // 비율 유지하며 맞춤
-processImage(source).resize(300, 200, { fit: 'fill' })    // 늘려서 정확히 맞춤
+processImage(source).resize({ fit: 'cover', width: 300, height: 200 })   // 잘라서 맞춤 (비율 유지, 전체 영역 채움)
+processImage(source).resize({ fit: 'contain', width: 300, height: 200 }) // 비율 유지하며 맞춤 (전체 이미지 표시)
+processImage(source).resize({ fit: 'fill', width: 300, height: 200 })    // 늘려서 정확히 맞춤 (비율 변경됨)
 
 // 스마트 크기 제한 (축소만, 확대 안함)
-processImage(source).resize(800, null, { withoutEnlargement: true })    // 최대 너비 800px
-processImage(source).resize(null, 600, { withoutEnlargement: true })   // 최대 높이 600px
-processImage(source).resize(800, 600, { fit: 'inside' }) // 최대 800x600 내에서
+processImage(source).resize({ fit: 'maxFit', width: 800, height: 600 })  // 최대 800x600 내에서 맞춤
+processImage(source).resize({ fit: 'maxFit', width: 800 })               // 최대 너비 800px
+processImage(source).resize({ fit: 'maxFit', height: 600 })              // 최대 높이 600px
 
 // 크기 보장 (확대만, 축소 안함)
-processImage(source).resize(400, null, { withoutReduction: true })   // 최소 너비 400px 보장
-processImage(source).resize(300, null)     // 너비 300px, 높이 비율 유지
+processImage(source).resize({ fit: 'minFit', width: 400, height: 300 })  // 최소 400x300 보장
+processImage(source).resize({ fit: 'minFit', width: 300 })               // 최소 너비 300px 보장
 ```
 
 #### 🎨 **이미지 효과 & 필터**
 ```typescript
 // 기본 블러 효과
 const blurred = await processImage(source)
-  .resize(400, 300)
+  .resize({ fit: 'cover', width: 400, height: 300 })
   .blur(2)  // 블러 반지름 2px
   .toBlob();
 
@@ -77,7 +78,7 @@ const blurred = await processImage(source)
 import { SimpleWatermark } from '@cp949/web-image-util/advanced';
 
 // 텍스트 워터마크
-const canvas = await processImage(source).resize(400, 300).toCanvas();
+const canvas = await processImage(source).resize({ fit: 'cover', width: 400, height: 300 }).toCanvas();
 const watermarked = SimpleWatermark.addText(canvas, {
   text: '© 2024 회사명',
   position: 'bottom-right',
@@ -98,11 +99,11 @@ const uint8Array = await processImage(source).toUint8Array();   // Uint8Array
 
 // 포맷별 최적화된 설정
 const webpResult = await processImage(source)
-  .resize(800, 600)
+  .resize({ fit: 'cover', width: 800, height: 600 })
   .toBlob({ format: 'webp', quality: 0.8 });  // WebP는 높은 압축률
 
 const jpegResult = await processImage(source)
-  .resize(800, 600)
+  .resize({ fit: 'cover', width: 800, height: 600 })
   .toBlob({ format: 'jpeg', quality: 0.85 }); // JPEG는 사진에 적합
 ```
 
@@ -136,7 +137,7 @@ const sources = [image1, image2, image3];
 const results = await Promise.all(
   sources.map(source =>
     processImage(source)
-      .resize(300, 200, { fit: 'cover' })
+      .resize({ fit: 'cover', width: 300, height: 200 })
       .toBlob({ format: 'webp', quality: 0.8 })
   )
 );
@@ -145,7 +146,7 @@ const results = await Promise.all(
 const batchResults = [];
 for (const source of sources) {
   const result = await processImage(source)
-    .resize(400, 300)
+    .resize({ fit: 'cover', width: 400, height: 300 })
     .toBlob();
   batchResults.push(result);
 }
@@ -191,7 +192,7 @@ React + Material-UI 기반의 종합적인 예제 애플리케이션으로, 라�
    - 실시간 코드 예제
 
 2. **📐 기본 처리 (Basic Processing)**
-   - 리사이징 fit 모드 비교 (cover, contain, fill, inside, outside)
+   - 리사이징 fit 모드 비교 (cover, contain, fill, maxFit, minFit)
    - 실시간 미리보기와 Before/After 비교
    - 인터랙티브 크기 조절 슬라이더
 
@@ -266,7 +267,7 @@ cd apps/exam
 pnpm dev
 ```
 
-**URL**: `http://localhost:5173`
+**URL**: `http://localhost:3000`
 
 #### 📱 **기술 스택 (2025 최신)**
 
@@ -287,7 +288,7 @@ pnpm dev
 // 1. 기본 사용 패턴
 const handleImageProcess = async (file: File) => {
   const result = await processImage(file)
-    .resize(800, 600, { fit: 'cover' })
+    .resize({ fit: 'cover', width: 800, height: 600 })
     .toBlob({ format: 'webp', quality: 0.8 });
 
   setProcessedImage(URL.createObjectURL(result.blob));
@@ -299,7 +300,7 @@ const applyArtisticEffect = async (source: File) => {
 
   // 여러 효과 조합
   const result = await processor
-    .resize(1024, 1024, { fit: 'cover' })
+    .resize({ fit: 'cover', width: 1024, height: 1024 })
     .blur(1)
     .toBlob({ format: 'jpeg', quality: 0.9 });
 
@@ -311,7 +312,7 @@ const processBatch = async (files: File[]) => {
   const results = await Promise.all(
     files.map(file =>
       processImage(file)
-        .resize(300, 300, { fit: 'cover' })
+        .resize({ fit: 'cover', width: 300, height: 300 })
         .toBlob({ format: 'webp' })
     )
   );

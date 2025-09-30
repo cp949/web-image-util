@@ -10,12 +10,12 @@
  *
  * // 간단한 리사이징
  * const thumbnail = await processImage(source)
- *   .resize(300, 200)
+ *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .toBlob();
  *
  * // 고급 처리
  * const result = await processImage(source)
- *   .resize(300, 200, { fit: 'contain', background: '#ffffff' })
+ *   .resize({ fit: 'contain', width: 300, height: 200, background: '#ffffff' })
  *   .blur(2)
  *   .toBlob({ format: 'webp', quality: 0.8 });
  * ```
