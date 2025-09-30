@@ -27,8 +27,9 @@ import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { saveAs } from 'file-saver';
 import { CodeSnippet } from '../components/common/CodeSnippet';
-import { ImageSourceConverter } from '../../../../sub/web-image-util/dist/utils';
-import { processImage } from '../../../../sub/web-image-util/dist';
+// TODO: v2.0 마이그레이션 - ImageSourceConverter는 레거시 API, processImage로 대체 필요
+// import { ImageSourceConverter } from '@cp949/web-image-util/utils';
+import { processImage } from '@cp949/web-image-util';
 
 interface ConversionResult {
   type: string;
@@ -98,13 +99,12 @@ export function ImageSourceConverterPage() {
 
     const conversionTasks = [];
 
-    // 선택된 변환 작업들 준비
+    // 선택된 변환 작업들 준비 (v2.0 임시 구현 - Step 3에서 완전 마이그레이션)
     if (options.toCanvas) {
       conversionTasks.push({
         type: 'Canvas',
         task: async () => {
-          const converter = ImageSourceConverter.from(sourceFile);
-          return await converter.toCanvas();
+          return await processImage(sourceFile).toCanvas();
         },
       });
     }
@@ -113,8 +113,7 @@ export function ImageSourceConverterPage() {
       conversionTasks.push({
         type: 'Blob',
         task: async () => {
-          const converter = ImageSourceConverter.from(sourceFile);
-          return await converter.toBlob();
+          return await processImage(sourceFile).toBlob();
         },
       });
     }
@@ -123,8 +122,7 @@ export function ImageSourceConverterPage() {
       conversionTasks.push({
         type: 'DataURL',
         task: async () => {
-          const converter = ImageSourceConverter.from(sourceFile);
-          return await converter.toDataURL();
+          return await processImage(sourceFile).toDataURL();
         },
       });
     }
@@ -133,8 +131,15 @@ export function ImageSourceConverterPage() {
       conversionTasks.push({
         type: 'Element',
         task: async () => {
-          const converter = ImageSourceConverter.from(sourceFile);
-          return await converter.toElement();
+          // HTMLImageElement 생성 (v2.0에서는 Result 객체의 toElement() 메서드 사용)
+          const result = await processImage(sourceFile).toDataURL();
+          const img = new Image();
+          img.src = result.dataURL;
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+          });
+          return img;
         },
       });
     }
@@ -143,8 +148,7 @@ export function ImageSourceConverterPage() {
       conversionTasks.push({
         type: 'File',
         task: async () => {
-          const converter = ImageSourceConverter.from(sourceFile);
-          return await converter.toFile({ filename: 'converted-image.png', format: 'image/png' });
+          return await processImage(sourceFile).toFile('converted-image.png');
         },
       });
     }
@@ -153,8 +157,9 @@ export function ImageSourceConverterPage() {
       conversionTasks.push({
         type: 'ArrayBuffer',
         task: async () => {
-          const converter = ImageSourceConverter.from(sourceFile);
-          return await converter.toArrayBuffer();
+          // ArrayBuffer 변환 (v2.0에서는 ResultBlob의 toArrayBuffer() 메서드 사용)
+          const result = await processImage(sourceFile).toBlob();
+          return await result.toArrayBuffer();
         },
       });
     }
@@ -163,8 +168,9 @@ export function ImageSourceConverterPage() {
       conversionTasks.push({
         type: 'Uint8Array',
         task: async () => {
-          const converter = ImageSourceConverter.from(sourceFile);
-          return await converter.toUint8Array();
+          // Uint8Array 변환 (v2.0에서는 ResultBlob의 toUint8Array() 메서드 사용)
+          const result = await processImage(sourceFile).toBlob();
+          return await result.toUint8Array();
         },
       });
     }

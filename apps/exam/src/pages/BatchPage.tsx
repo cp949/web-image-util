@@ -1,6 +1,6 @@
 'use client'
 
-import { createAvatar, createSocialImage, createThumbnail, processImage } from '../../../../sub/web-image-util/dist';
+import { createAvatar, createSocialImage, createThumbnail, processImage } from '@cp949/web-image-util';
 import {
   CheckCircle as CompleteIcon,
   Delete as DeleteIcon,

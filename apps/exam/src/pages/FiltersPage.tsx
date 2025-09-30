@@ -1,7 +1,7 @@
 'use client'
 
-import { processImage } from '../../../../sub/web-image-util/dist';
-import { filterManager } from '../../../../sub/web-image-util/dist/advanced-index';
+import { processImage } from '@cp949/web-image-util';
+import { filterManager } from '@cp949/web-image-util/advanced';
 import {
   Alert,
   Box,

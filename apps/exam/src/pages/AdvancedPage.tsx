@@ -26,8 +26,8 @@ import {
 import { ImageUploader } from '../components/common/ImageUploader';
 import { BeforeAfterView } from '../components/ui/BeforeAfterView';
 import { CodeSnippet } from '../components/common/CodeSnippet';
-import { processImage } from '../../../../sub/web-image-util/dist';
-import { SimpleWatermark } from '../../../../sub/web-image-util/dist/advanced-index';
+import { processImage } from '@cp949/web-image-util';
+import { SimpleWatermark } from '@cp949/web-image-util/advanced';
 
 type WatermarkPosition =
   | 'top-left'

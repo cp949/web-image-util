@@ -19,7 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useState } from 'react';
-import { processImage } from '../../../../sub/web-image-util/dist';
+import { processImage } from '@cp949/web-image-util';
 import { CodeSnippet } from '../components/common/CodeSnippet';
 import { ImageUploader } from '../components/common/ImageUploader';
 import { BeforeAfterView } from '../components/ui/BeforeAfterView';

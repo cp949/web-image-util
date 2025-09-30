@@ -25,7 +25,7 @@ import {
   AccordionDetails,
 } from '@mui/material';
 import { useState, useCallback, useRef } from 'react';
-import { processImage } from '../../../../sub/web-image-util/dist';
+import { processImage } from '@cp949/web-image-util';
 import { ImageUploader } from '../components/common/ImageUploader';
 import { CodeSnippet } from '../components/common/CodeSnippet';
 import {

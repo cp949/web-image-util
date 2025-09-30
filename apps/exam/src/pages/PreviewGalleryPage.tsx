@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { Download, AccessTime, PhotoSizeSelectActual, Storage } from '@mui/icons-material';
 import { useCallback, useState } from 'react';
-import { processImage } from '../../../../sub/web-image-util/dist';
+import { processImage } from '@cp949/web-image-util';
 import { ImageUploader } from '../components/common/ImageUploader';
 import { CodeSnippet } from '../components/common/CodeSnippet';
 

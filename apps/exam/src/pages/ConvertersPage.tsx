@@ -1,6 +1,6 @@
 'use client'
 
-import { processImage } from '../../../../sub/web-image-util/dist';
+import { processImage } from '@cp949/web-image-util';
 import { ContentCopy as CopyIcon, Download as DownloadIcon, Info as InfoIcon } from '@mui/icons-material';
 import {
   Alert,

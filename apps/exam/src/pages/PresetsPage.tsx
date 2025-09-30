@@ -20,7 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { createThumbnail, createAvatar, createSocialImage } from '../../../../sub/web-image-util/dist/presets';
+import { createThumbnail, createAvatar, createSocialImage } from '@cp949/web-image-util/presets';
 import { CodeSnippet } from '../components/common/CodeSnippet';
 import { ImageUploader } from '../components/common/ImageUploader';
 import { BeforeAfterView } from '../components/ui/BeforeAfterView';

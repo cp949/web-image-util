@@ -1,6 +1,6 @@
 'use client'
 
-import { processImage, features } from '../../../../sub/web-image-util/dist';
+import { processImage, features } from '@cp949/web-image-util';
 import {
   BugReport as BugIcon,
   Code as CodeIcon,

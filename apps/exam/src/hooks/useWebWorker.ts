@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { processImage } from '../../../../sub/web-image-util/dist';
+import { processImage } from '@cp949/web-image-util';
 
 interface WebWorkerHookOptions {
   maxConcurrency?: number;
