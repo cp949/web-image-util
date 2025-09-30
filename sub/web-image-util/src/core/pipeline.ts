@@ -105,10 +105,42 @@ export class RenderPipeline {
 
   /**
    * 초기 캔버스 생성 (Canvas Pool 사용)
+   *
+   * SVG 품질 최적화: 첫 번째 resize 연산이 있으면 해당 목표 크기로 Canvas를 생성하여
+   * SVG를 고품질로 렌더링합니다.
    */
   private createInitialCanvas(sourceImage: HTMLImageElement): CanvasContext {
-    const width = sourceImage.naturalWidth || sourceImage.width;
-    const height = sourceImage.naturalHeight || sourceImage.height;
+    let width = sourceImage.naturalWidth || sourceImage.width;
+    let height = sourceImage.naturalHeight || sourceImage.height;
+
+    // SVG 품질 최적화: 첫 번째 resize 연산이 있으면 목표 크기로 Canvas 생성
+    const firstOp = this.operations[0];
+    if (firstOp?.type === 'resize') {
+      const resizeOptions = firstOp.options as ResizeOptions;
+      const targetWidth = resizeOptions.width;
+      const targetHeight = resizeOptions.height;
+
+      if (targetWidth && targetHeight) {
+        // 목표 크기가 모두 지정되어 있으면 해당 크기로 Canvas 생성
+        // SVG는 벡터 이미지이므로 Canvas에 직접 큰 크기로 그리면 고품질 유지
+        console.log('🎨 SVG 품질 최적화: 초기 Canvas를 목표 크기로 생성', {
+          originalSize: `${width}x${height}`,
+          targetSize: `${targetWidth}x${targetHeight}`,
+        });
+        width = targetWidth;
+        height = targetHeight;
+      } else if (targetWidth) {
+        // 너비만 지정된 경우 비율 유지하여 높이 계산
+        const aspectRatio = height / width;
+        width = targetWidth;
+        height = Math.round(targetWidth * aspectRatio);
+      } else if (targetHeight) {
+        // 높이만 지정된 경우 비율 유지하여 너비 계산
+        const aspectRatio = width / height;
+        height = targetHeight;
+        width = Math.round(targetHeight * aspectRatio);
+      }
+    }
 
     const canvas = this.canvasPool.acquire(width, height);
     const ctx = canvas.getContext('2d');
@@ -160,6 +192,15 @@ export class RenderPipeline {
 
     const originalWidth = context.width;
     const originalHeight = context.height;
+
+    // SVG 품질 최적화: 초기 Canvas가 이미 목표 크기로 생성된 경우 스킵
+    // (첫 번째 resize 연산이고, 현재 Canvas 크기가 목표 크기와 일치하는 경우)
+    const isFirstOperation = this.operations[0]?.type === 'resize';
+    if (isFirstOperation && targetWidth && targetHeight) {
+      if (originalWidth === targetWidth && originalHeight === targetHeight) {
+        return context; // 이미 목표 크기이므로 resize 불필요
+      }
+    }
 
     // 크기 계산
     const dimensions = this.calculateResizeDimensions(
