@@ -20,6 +20,28 @@ export type {
   GeometryRectangle,
 } from './base';
 
+// 타입-안전한 프로세서 관련 타입들
+export type {
+  ProcessorState,
+  BeforeResize,
+  AfterResize,
+  ProcessorStateType,
+  CanResize,
+  AfterResizeCall,
+  ResizeAlreadyCalledError,
+  EnsureCanResize,
+} from './processor-state';
+
+export type {
+  TypedImageProcessor,
+  InitialProcessor,
+  ResizedProcessor,
+  ProcessorFactory,
+  GetProcessorState,
+  CanCallResize,
+  ExampleUsage,
+} from './typed-processor';
+
 export { ImageFormats, OutputFormats, ResizeFitConstants, ImageErrorCodeConstants } from './base';
 
 // base.ts에서 가져온 타입들을 다시 사용 가능하도록 import
@@ -42,7 +64,7 @@ import { ImageFormats, OutputFormats, ImageErrorCodeConstants } from './base';
 // RESIZE TYPES - 리사이징 관련 타입들
 // ============================================================================
 
-// v2.0 새로운 ResizeConfig 타입 시스템 (Discriminated Union)
+// 새로운 ResizeConfig 타입 시스템 (Discriminated Union)
 export type {
   ResizeConfig,
   CoverConfig,
@@ -66,7 +88,7 @@ export {
 
 /**
  * 스마트 리사이징 옵션 (고급 처리용)
- * v2.0+에서 ResizeConfig와 함께 사용
+ * ResizeConfig와 함께 사용
  */
 export interface SmartResizeOptions {
   /** 대상 너비 (픽셀) */
@@ -151,13 +173,16 @@ export interface OutputOptions {
  */
 export class ImageProcessError extends globalThis.Error {
   public name: string = 'ImageProcessError';
+  public suggestions: string[];
 
   constructor(
     message: string,
     public code: ImageErrorCodeType,
-    public originalError?: globalThis.Error
+    public originalError?: globalThis.Error,
+    suggestions: string[] = []
   ) {
     super(message);
+    this.suggestions = suggestions;
 
     // 스택 추적 설정
     if ((globalThis.Error as any).captureStackTrace) {
@@ -187,6 +212,10 @@ export interface ResultMetadata {
   originalSize?: GeometrySize;
   /** 사용된 포맷 */
   format?: OutputFormat;
+  /** 결과물 크기 (바이트) */
+  size?: number;
+  /** 적용된 연산 개수 */
+  operations?: number;
 }
 
 /**
@@ -273,8 +302,6 @@ export interface ProcessorOptions {
   defaultFormat?: OutputFormat | 'auto';
   /** 타임아웃 (밀리초, 기본: 30초) */
   timeout?: number;
-  /** devicePixelRatio 사용 여부 (기본: false) */
-  useDevicePixelRatio?: boolean;
   // 브라우저에서 메모리 제한을 명시적으로 설정할 수 없음
 }
 
@@ -391,7 +418,7 @@ export type { HighQualityCanvasOptions } from '../base/canvas-utils';
 // SVG 복잡도 분석 및 품질 시스템 타입들
 export type { SvgComplexityMetrics, ComplexityAnalysisResult, QualityLevel } from '../core/svg-complexity-analyzer';
 
-// (제거됨: SvgProcessingOptions, SvgProcessingResult - v2.0에서 불필요)
+// (제거됨: SvgProcessingOptions, SvgProcessingResult - 불필요)
 
 // 브라우저 기능 감지 시스템 타입들
 export type { BrowserCapabilities, PerformanceFeatures, DetectionOptions } from '../utils/browser-capabilities';

@@ -55,6 +55,9 @@ const USER_FRIENDLY_MESSAGES: Record<ImageErrorCodeType, string> = {
   CANVAS_TO_BLOB_FAILED: 'Canvas를 Blob으로 변환하는데 실패했습니다. 브라우저가 해당 포맷을 지원하는지 확인해주세요.',
   IMAGE_LOAD_FAILED: '이미지를 로드하는데 실패했습니다. 이미지 파일이나 네트워크 상태를 확인해주세요.',
   BLOB_TO_ARRAYBUFFER_FAILED: 'Blob을 ArrayBuffer로 변환하는데 실패했습니다.',
+  BLOB_CONVERSION_ERROR: 'Blob 변환 중 오류가 발생했습니다. 다시 시도해주세요.',
+  MULTIPLE_RESIZE_NOT_ALLOWED: 'resize()는 한 번만 호출할 수 있습니다. 새로운 processImage() 인스턴스를 생성해주세요.',
+  CANVAS_CONTEXT_ERROR: 'Canvas 2D 컨텍스트를 생성할 수 없습니다. 브라우저 지원을 확인해주세요.',
 
   // 크기/차원 관련 에러
   INVALID_DIMENSIONS: '이미지 크기가 유효하지 않습니다. 너비와 높이는 양수여야 합니다.',
@@ -114,6 +117,7 @@ const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
     '메모리 제한을 늘리거나 단계적 처리를 사용하세요',
     'strategy 옵션을 "memory-efficient"로 설정해보세요',
   ],
+
 
   CONVERSION_FAILED: [
     '다른 출력 포맷을 시도해보세요 (PNG, JPEG 등)',
@@ -191,6 +195,23 @@ const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
   ],
 
   FEATURE_NOT_SUPPORTED: ['다른 방법이나 polyfill을 사용해보세요'],
+
+  BLOB_CONVERSION_ERROR: [
+    '브라우저를 새로고침하고 다시 시도해보세요',
+    '메모리가 부족할 수 있으니 더 작은 이미지로 시도하세요',
+  ],
+
+  MULTIPLE_RESIZE_NOT_ALLOWED: [
+    '새로운 processImage() 인스턴스를 생성하세요',
+    '한 번의 resize() 호출로 모든 옵션을 설정하세요',
+    '여러 크기가 필요한 경우 각각 별도로 처리하세요',
+  ],
+
+  CANVAS_CONTEXT_ERROR: [
+    'Canvas API를 지원하는 브라우저를 사용하세요',
+    '브라우저를 새로고침하고 다시 시도해보세요',
+    '다른 브라우저나 시크릿 모드를 시도해보세요',
+  ],
 };
 
 /**

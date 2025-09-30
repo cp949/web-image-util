@@ -161,6 +161,10 @@ export type ImageErrorCodeType =
   | 'CANVAS_TO_BLOB_FAILED'
   | 'IMAGE_LOAD_FAILED'
   | 'BLOB_TO_ARRAYBUFFER_FAILED'
+  | 'BLOB_CONVERSION_ERROR'
+  // LazyRenderPipeline 관련 에러
+  | 'MULTIPLE_RESIZE_NOT_ALLOWED'
+  | 'CANVAS_CONTEXT_ERROR'
   // 브라우저 호환성 에러
   | 'BROWSER_NOT_SUPPORTED'
   | 'FEATURE_NOT_SUPPORTED';

@@ -1,4 +1,4 @@
-import { processImage } from '../index';
+import { processImage } from '../../src/index';
 import { describe, it, expect } from 'vitest';
 
 /**

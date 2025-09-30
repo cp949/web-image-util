@@ -1,74 +1,61 @@
-import {
-  Download as DownloadIcon,
-  Fullscreen as FullscreenIcon,
-  Info as InfoIcon
-} from '@mui/icons-material'
-import {
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography
-} from '@mui/material'
-import Grid from '@mui/material/Grid'
-import { useState } from 'react'
+import { Download as DownloadIcon, Fullscreen as FullscreenIcon, Info as InfoIcon } from '@mui/icons-material';
+import { Box, Card, CardContent, Chip, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import { useState } from 'react';
 
 interface ImageData {
-  src: string
-  width?: number
-  height?: number
-  size?: number // bytes
-  format?: string
-  processingTime?: number // ms
+  src: string;
+  width?: number;
+  height?: number;
+  size?: number; // bytes
+  format?: string;
+  processingTime?: number; // ms
 }
 
 interface BeforeAfterViewProps {
-  before: ImageData | null
-  after: ImageData | null
-  showMetadata?: boolean
+  before: ImageData | null;
+  after: ImageData | null;
+  showMetadata?: boolean;
 }
 
 export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAfterViewProps) {
-  const [, setFullscreen] = useState<'before' | 'after' | null>(null)
+  const [, setFullscreen] = useState<'before' | 'after' | null>(null);
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-  }
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
 
   const downloadImage = async (imageData: ImageData, filename: string) => {
     try {
-      const response = await fetch(imageData.src)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
+      const response = await fetch(imageData.src);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
 
-      const link = document.createElement('a')
-      link.href = url
-      link.download = filename
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-      window.URL.revokeObjectURL(url)
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Download failed:', error)
+      console.error('Download failed:', error);
     }
-  }
+  };
 
   const ImageCard = ({
     imageData,
     title,
-    type
+    type,
   }: {
-    imageData: ImageData | null
-    title: string
-    type: 'before' | 'after'
+    imageData: ImageData | null;
+    title: string;
+    type: 'before' | 'after';
   }) => (
     <Card sx={{ height: '100%' }}>
       <CardContent>
@@ -77,18 +64,12 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
           {imageData && (
             <Stack direction="row" spacing={1}>
               <Tooltip title="다운로드">
-                <IconButton
-                  size="small"
-                  onClick={() => downloadImage(imageData, `${type}-image.png`)}
-                >
+                <IconButton size="small" onClick={() => downloadImage(imageData, `${type}-image.png`)}>
                   <DownloadIcon />
                 </IconButton>
               </Tooltip>
               <Tooltip title="전체화면">
-                <IconButton
-                  size="small"
-                  onClick={() => setFullscreen(type)}
-                >
+                <IconButton size="small" onClick={() => setFullscreen(type)}>
                   <FullscreenIcon />
                 </IconButton>
               </Tooltip>
@@ -111,7 +92,7 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
                 justifyContent: 'center',
                 overflow: 'hidden',
                 mb: 2,
-                bgcolor: 'grey.50'
+                bgcolor: 'grey.50',
               }}
             >
               <img
@@ -120,7 +101,7 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
                 style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
-                  objectFit: 'contain'
+                  objectFit: 'contain',
                 }}
               />
             </Box>
@@ -134,29 +115,13 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
                 </Typography>
                 <Stack direction="row" spacing={1} flexWrap="wrap">
                   {imageData.width && imageData.height && (
-                    <Chip
-                      label={`${imageData.width}×${imageData.height}`}
-                      size="small"
-                      variant="outlined"
-                    />
+                    <Chip label={`${imageData.width}×${imageData.height}`} size="small" variant="outlined" />
                   )}
-                  {imageData.format && (
-                    <Chip
-                      label={imageData.format.toUpperCase()}
-                      size="small"
-                      variant="outlined"
-                    />
-                  )}
-                  {imageData.size && (
-                    <Chip
-                      label={formatFileSize(imageData.size)}
-                      size="small"
-                      variant="outlined"
-                    />
-                  )}
+                  {imageData.format && <Chip label={imageData.format.toUpperCase()} size="small" variant="outlined" />}
+                  {imageData.size && <Chip label={formatFileSize(imageData.size)} size="small" variant="outlined" />}
                   {imageData.processingTime && (
                     <Chip
-                      label={`${imageData.processingTime}ms`}
+                      label={`${imageData.processingTime.toFixed(1)}ms`}
                       size="small"
                       variant="outlined"
                       color="primary"
@@ -177,7 +142,7 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
               borderColor: 'grey.300',
               borderStyle: 'dashed',
               borderRadius: 1,
-              bgcolor: 'grey.50'
+              bgcolor: 'grey.50',
             }}
           >
             <Typography variant="body2" color="text.secondary">
@@ -187,7 +152,7 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
         )}
       </CardContent>
     </Card>
-  )
+  );
 
   return (
     <Box>
@@ -213,9 +178,7 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
                   크기 변화
                 </Typography>
                 <Typography variant="h6">
-                  {before.size && after.size ? (
-                    `${Math.round((after.size / before.size) * 100)}%`
-                  ) : '-'}
+                  {before.size && after.size ? `${Math.round((after.size / before.size) * 100)}%` : '-'}
                 </Typography>
               </Grid>
               <Grid size={{ xs: 6, sm: 3 }}>
@@ -231,21 +194,19 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
                   처리 시간
                 </Typography>
                 <Typography variant="body1">
-                  {after.processingTime ? `${after.processingTime}ms` : '-'}
+                  {after.processingTime ? `${after.processingTime.toFixed(1)}ms` : '-'}
                 </Typography>
               </Grid>
               <Grid size={{ xs: 6, sm: 3 }}>
                 <Typography variant="body2" color="text.secondary">
                   포맷
                 </Typography>
-                <Typography variant="body1">
-                  {after.format?.toUpperCase() || '-'}
-                </Typography>
+                <Typography variant="body1">{after.format?.toUpperCase() || '-'}</Typography>
               </Grid>
             </Grid>
           </CardContent>
         </Card>
       )}
     </Box>
-  )
+  );
 }

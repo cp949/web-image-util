@@ -1,5 +1,5 @@
 /**
- * web-image-util v2.0 Resize Config 타입 시스템
+ * web-image-util Resize Config 타입 시스템
  * Sharp 라이브러리의 API 패턴을 참고한 Discriminated Union 기반 타입 정의
  */
 

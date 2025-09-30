@@ -197,22 +197,6 @@ const PROCESSING_PRESETS: ProcessPreset[] = [
     description: '5px 블러 효과',
     options: { width: 300, height: 200, fit: 'cover', quality: 80, format: 'jpeg', blur: 5 },
   },
-
-  // 크기 제한 옵션 (500x300 요청, Cover)
-  {
-    id: 'resize-normal',
-    category: '크기 제한',
-    name: '일반 처리',
-    description: '제한 없음',
-    options: { width: 500, height: 300, fit: 'cover', quality: 80, format: 'jpeg' },
-  },
-  {
-    id: 'resize-no-enlarge',
-    category: '크기 제한',
-    name: '확대 금지',
-    description: '원본보다 크게 만들지 않음',
-    options: { width: 500, height: 300, fit: 'cover', quality: 80, format: 'jpeg' },
-  },
 ];
 
 // 처리 결과 타입
@@ -282,36 +266,37 @@ export function PreviewGalleryDemo() {
         const width = preset.options.width || 300;
         const height = preset.options.height || 200;
 
-        const resizeConfig = preset.options.fit === 'contain'
-          ? {
-              fit: 'contain' as const,
-              width,
-              height,
-              ...(preset.options.withoutEnlargement ? { withoutEnlargement: true } : {}),
-            }
-          : preset.options.fit === 'cover'
-          ? {
-              fit: 'cover' as const,
-              width,
-              height,
-            }
-          : preset.options.fit === 'fill'
-          ? {
-              fit: 'fill' as const,
-              width,
-              height,
-            }
-          : preset.options.fit === 'maxFit'
-          ? {
-              fit: 'maxFit' as const,
-              width,
-              height,
-            }
-          : {
-              fit: 'minFit' as const,
-              width,
-              height,
-            };
+        const resizeConfig =
+          preset.options.fit === 'contain'
+            ? {
+                fit: 'contain' as const,
+                width,
+                height,
+                ...(preset.options.withoutEnlargement ? { withoutEnlargement: true } : {}),
+              }
+            : preset.options.fit === 'cover'
+              ? {
+                  fit: 'cover' as const,
+                  width,
+                  height,
+                }
+              : preset.options.fit === 'fill'
+                ? {
+                    fit: 'fill' as const,
+                    width,
+                    height,
+                  }
+                : preset.options.fit === 'maxFit'
+                  ? {
+                      fit: 'maxFit' as const,
+                      width,
+                      height,
+                    }
+                  : {
+                      fit: 'minFit' as const,
+                      width,
+                      height,
+                    };
 
         console.log('🎭 PreviewGalleryDemo 프리셋:', {
           presetId: preset.id,
@@ -346,7 +331,7 @@ export function PreviewGalleryDemo() {
           실제결과: `${result.width}x${result.height}`,
           fit: preset.options.fit,
           처리시간: processingTime + 'ms',
-          파일크기: Math.round(result.blob.size / 1024) + 'KB'
+          파일크기: Math.round(result.blob.size / 1024) + 'KB',
         });
 
         newResults.push({

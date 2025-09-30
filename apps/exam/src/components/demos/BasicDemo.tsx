@@ -80,51 +80,66 @@ export function BasicDemo() {
 
   // 코드 예제 생성
   const generateCodeExamples = () => {
-    const resizeWidth = useWidth ? options.width : 'undefined';
-    const resizeHeight = useHeight ? options.height : 'undefined';
+    // ResizeConfig API 사용
+    const resizeConfig = `{
+    fit: '${options.fit}',${useWidth ? `\n    width: ${options.width},` : ''}${useHeight ? `\n    height: ${options.height},` : ''}${options.withoutEnlargement ? '\n    withoutEnlargement: true,' : ''}${options.background !== '#ffffff' ? `\n    background: '${options.background}',` : ''}
+  }`;
 
     const basicCode = `import { processImage } from '@cp949/web-image-util';
 
+// ✅ ResizeConfig API
 const result = await processImage(source)
-  .resize(${resizeWidth}, ${resizeHeight}, {
-    fit: '${options.fit}',
-    background: '${options.background}',
-    withoutEnlargement: ${options.withoutEnlargement}
-  })
-  .toBlob({
-    format: '${options.format}',
-    quality: ${options.quality / 100}
-  });
+  .resize(${resizeConfig})
+  .toBlob('${options.format}');
 
 // ResultBlob 타입의 메타데이터 활용
 console.log('처리 시간:', result.processingTime, 'ms');
 console.log('원본 크기:', result.originalSize);
 console.log('결과 크기:', result.width, 'x', result.height);`;
 
-    const advancedCode = `// 더 복잡한 처리 파이프라인
-const result = await processImage(source)
-  .resize(${resizeWidth}, ${resizeHeight}, { fit: '${options.fit}' })
-  .blur(2)  // 블러 효과 추가
-  .toBlob({ format: '${options.format}', quality: ${options.quality / 100} });
+    const constraintCode = `// 🚨 resize() 제약: 한 번만 호출 가능!
+import { processImage } from '@cp949/web-image-util';
 
-// 여러 크기로 동시 처리
-const [small, medium, large] = await Promise.all([
-  processImage(source).resize({ fit: 'cover', width: 150, height: 100 }).toBlob(),
-  processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob(),
-  processImage(source).resize({ fit: 'cover', width: 600, height: 400 }).toBlob()
-]);
+// ✅ 올바른 사용법: resize() 한 번만 호출
+const correct = await processImage(source)
+  .resize({ fit: 'cover', width: 300, height: 200 })
+  .blur(2)  // resize() 후 다른 효과는 가능
+  .toBlob();
 
-// 에러 처리
+// ❌ 잘못된 사용법: resize() 중복 호출 (컴파일 에러!)
 try {
-  const result = await processImage(source)
+  const wrong = await processImage(source)
     .resize({ fit: 'cover', width: 300, height: 200 })
-    .toBlob();
+    .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 에러!
 } catch (error) {
-  if (error instanceof ImageProcessError) {
-    console.error('Error code:', error.code);
-    console.error('Error message:', error.message);
-  }
-}`;
+  // ImageProcessError: resize()는 한 번만 호출할 수 있습니다
+  console.error(error.code); // 'MULTIPLE_RESIZE_NOT_ALLOWED'
+}
+
+// ✅ 여러 크기가 필요하면 별도 인스턴스 사용
+const [small, large] = await Promise.all([
+  processImage(source).resize({ fit: 'cover', width: 150, height: 100 }).toBlob(),
+  processImage(source).resize({ fit: 'cover', width: 600, height: 400 }).toBlob()
+]);`;
+
+    const qualityCode = `// 🎯 품질 개선: "계산은 미리, 렌더링은 한 번"
+import { processImage } from '@cp949/web-image-util';
+
+// SVG 고품질 처리 (scaleFactor 제거됨)
+const svgResult = await processImage(svgString)
+  .resize({ fit: 'contain', width: 800, height: 600 })
+  .toBlob('png');
+
+// 복합 처리도 한 번에 렌더링
+const complex = await processImage(source)
+  .resize({ fit: 'cover', width: 400, height: 300 })
+  .blur(1.5)
+  .toBlob('webp');
+
+// 타입 안전성: 컴파일 시점에 제약 검증
+const processor = processImage(source);
+processor.resize({ fit: 'cover', width: 300, height: 200 });
+// processor.resize(...); // ← TypeScript 컴파일 에러!`;
 
     return [
       {
@@ -133,8 +148,13 @@ try {
         language: 'typescript',
       },
       {
-        title: '고급 사용법',
-        code: advancedCode,
+        title: 'resize() 제약 및 에러 처리',
+        code: constraintCode,
+        language: 'typescript',
+      },
+      {
+        title: '품질 개선 특징',
+        code: qualityCode,
         language: 'typescript',
       },
     ];
@@ -146,8 +166,9 @@ try {
         기본 이미지 처리
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        processImage API를 사용한 기본 이미지 처리 기능을 확인해보세요. 리사이징, 포맷 변환, 품질 조정 등의 기능을
-        실시간으로 테스트할 수 있습니다.
+        processImage API의 혁신적인 기능을 체험해보세요.
+        ResizeConfig API, resize() 단일 호출 제약, "계산은 미리, 렌더링은 한 번" 철학으로
+        더 나은 성능과 품질을 제공합니다.
       </Typography>
 
       <Grid container spacing={4}>
@@ -373,7 +394,7 @@ try {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Inside
+                  MaxFit
                 </Typography>
                 <Typography variant="body2">비율 유지하며 최대 크기 제한</Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -386,7 +407,7 @@ try {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Outside
+                  MinFit
                 </Typography>
                 <Typography variant="body2">비율 유지하며 최소 크기 보장</Typography>
                 <Typography variant="caption" color="text.secondary">

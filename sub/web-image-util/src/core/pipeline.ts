@@ -7,11 +7,8 @@ import type { BlurOptions, OutputFormat, ResultMetadata, SmartResizeOptions } fr
 import { ImageProcessError } from '../types';
 import { SmartProcessor } from './smart-processor';
 import type { ResizeConfig } from '../types/resize-config';
-import { executeCoverResize } from './resize-engines/cover';
-import { executeContainResize } from './resize-engines/contain';
-import { executeFillResize } from './resize-engines/fill';
-import { executeMaxFitResize } from './resize-engines/max-fit';
-import { executeMinFitResize } from './resize-engines/min-fit';
+import { ResizeCalculator } from './resize-calculator';
+import { OnehotRenderer } from './onehot-renderer';
 
 /**
  * 리사이즈 연산
@@ -53,6 +50,10 @@ export class RenderPipeline {
   private temporaryCanvases: HTMLCanvasElement[] = [];
   private outputFormat?: OutputFormat;
 
+  // 🎯 새로운 통합 시스템 (Phase 2 완료)
+  private calculator = new ResizeCalculator();
+  private renderer = new OnehotRenderer();
+
   /**
    * 연산을 파이프라인에 추가
    */
@@ -74,145 +75,11 @@ export class RenderPipeline {
     return [...this.operations]; // 복사본 반환으로 외부 수정 방지
   }
 
-  /**
-   * fit 모드별 최종 크기 계산 (패딩 포함)
-   *
-   * @param originalWidth 원본 너비
-   * @param originalHeight 원본 높이
-   * @param resizeConfig resize 설정
-   * @returns 최종 크기 (패딩 포함된 Canvas 크기)
-   */
-  private calculateFinalSize(
-    originalWidth: number,
-    originalHeight: number,
-    resizeConfig: any
-  ): { width: number; height: number } {
-    const { width: targetWidth, height: targetHeight, fit, padding } = resizeConfig;
-
-    // 1단계: 패딩 제외한 이미지 크기 계산
-    let imageWidth: number;
-    let imageHeight: number;
-
-    switch (fit) {
-      case 'maxFit': {
-        // 최대 크기 제한 (축소만, 확대 안함)
-        let scale = 1;
-        if (targetWidth) scale = Math.min(scale, targetWidth / originalWidth);
-        if (targetHeight) scale = Math.min(scale, targetHeight / originalHeight);
-        scale = Math.min(scale, 1); // 확대 방지
-
-        imageWidth = Math.round(originalWidth * scale);
-        imageHeight = Math.round(originalHeight * scale);
-        break;
-      }
-
-      case 'minFit': {
-        // 최소 크기 보장 (확대만, 축소 안함)
-        let scale = 1;
-        if (targetWidth) scale = Math.max(scale, targetWidth / originalWidth);
-        if (targetHeight) scale = Math.max(scale, targetHeight / originalHeight);
-        scale = Math.max(scale, 1); // 축소 방지
-
-        imageWidth = Math.round(originalWidth * scale);
-        imageHeight = Math.round(originalHeight * scale);
-        break;
-      }
-
-      case 'cover': {
-        // 전체 영역을 채움 (잘림 가능)
-        if (targetWidth && targetHeight) {
-          imageWidth = targetWidth;
-          imageHeight = targetHeight;
-        } else {
-          imageWidth = originalWidth;
-          imageHeight = originalHeight;
-        }
-        break;
-      }
-
-      case 'contain': {
-        // 전체 이미지가 들어가도록 맞춤 (여백 가능)
-        if (targetWidth && targetHeight) {
-          const scaleX = targetWidth / originalWidth;
-          const scaleY = targetHeight / originalHeight;
-          const scale = Math.min(scaleX, scaleY);
-
-          imageWidth = Math.round(originalWidth * scale);
-          imageHeight = Math.round(originalHeight * scale);
-        } else {
-          imageWidth = originalWidth;
-          imageHeight = originalHeight;
-        }
-        break;
-      }
-
-      case 'fill': {
-        // 정확히 맞춤 (비율 변경됨)
-        if (targetWidth && targetHeight) {
-          imageWidth = targetWidth;
-          imageHeight = targetHeight;
-        } else {
-          imageWidth = originalWidth;
-          imageHeight = originalHeight;
-        }
-        break;
-      }
-
-      default: {
-        // 기본 처리: cover 모드와 동일
-        if (targetWidth && targetHeight) {
-          imageWidth = targetWidth;
-          imageHeight = targetHeight;
-        } else if (targetWidth) {
-          const aspectRatio = originalHeight / originalWidth;
-          imageWidth = targetWidth;
-          imageHeight = Math.round(targetWidth * aspectRatio);
-        } else if (targetHeight) {
-          const aspectRatio = originalWidth / originalHeight;
-          imageWidth = Math.round(targetHeight * aspectRatio);
-          imageHeight = targetHeight;
-        } else {
-          imageWidth = originalWidth;
-          imageHeight = originalHeight;
-        }
-        break;
-      }
-    }
-
-    // 🎯 Pipeline에서는 패딩 제외한 이미지 크기로 Canvas 생성
-    // 패딩은 resize 엔진에서 처리하여 이미지 배치 좌표까지 함께 계산
-    return {
-      width: imageWidth,
-      height: imageHeight
-    };
-  }
-
-  /**
-   * 패딩 값 정규화 함수
-   * number 또는 객체를 {top, right, bottom, left} 형태로 변환
-   */
-  private normalizePadding(padding?: number | { top?: number; right?: number; bottom?: number; left?: number }): {
-    top: number;
-    right: number;
-    bottom: number;
-    left: number;
-  } {
-    if (typeof padding === 'number') {
-      // 숫자 하나면 4방향 동일
-      return { top: padding, right: padding, bottom: padding, left: padding };
-    } else if (padding && typeof padding === 'object') {
-      // 객체면 필요한 방향만 선택적으로 지정
-      return {
-        top: padding.top || 0,
-        right: padding.right || 0,
-        bottom: padding.bottom || 0,
-        left: padding.left || 0,
-      };
-    } else {
-      // 패딩이 없으면 모두 0
-      return { top: 0, right: 0, bottom: 0, left: 0 };
-    }
-  }
+  // 🗑️ Phase 3: 제거된 메서드들
+  // - calculateFinalSize() → ResizeCalculator.calculateFinalLayout()로 대체
+  // - normalizePadding() → ResizeCalculator에 이미 구현됨
+  // - calculateFitDrawParams() → OnehotRenderer가 처리
+  // - drawImageWithFit() → OnehotRenderer.render()로 대체
 
   /**
    * 파이프라인의 모든 연산 실행
@@ -226,8 +93,9 @@ export class RenderPipeline {
     try {
       let currentContext = this.createInitialCanvas(sourceImage);
 
-      // 소스 이미지를 첫 번째 캔버스에 그리기 (fit 모드 고려)
-      this.drawImageWithFit(currentContext, sourceImage);
+      // 🎯 Phase 3: 소스 이미지를 Canvas에 단순 복사
+      // fit 모드 처리는 executeResizeWithConfig()에서 수행
+      currentContext.ctx.drawImage(sourceImage, 0, 0);
 
       // 각 연산을 순차적으로 실행
       for (const operation of this.operations) {
@@ -264,33 +132,13 @@ export class RenderPipeline {
   /**
    * 초기 캔버스 생성 (Canvas Pool 사용)
    *
-   * SVG 품질 최적화: 첫 번째 resize 연산이 있으면 해당 목표 크기로 Canvas를 생성하여
-   * SVG를 고품질로 렌더링합니다.
+   * 🎯 Phase 3: 단순화된 초기 Canvas 생성
+   * - 원본 크기로 Canvas 생성
+   * - SVG 최적화는 OnehotRenderer가 자동 처리
    */
   private createInitialCanvas(sourceImage: HTMLImageElement): CanvasContext {
-    let width = sourceImage.naturalWidth || sourceImage.width;
-    let height = sourceImage.naturalHeight || sourceImage.height;
-
-    // 🎯 SVG 품질 최적화: resize 연산이 있으면 최종 크기를 미리 계산하여 Canvas 생성
-    const firstOp = this.operations[0];
-    if (firstOp?.type === 'resize') {
-      const resizeConfig = firstOp.config;
-      const targetWidth = resizeConfig.width;
-      const targetHeight = resizeConfig.height;
-
-      // 📐 fit 모드별 최종 크기 계산
-      const finalSize = this.calculateFinalSize(width, height, resizeConfig);
-
-      console.log('🎯 SVG 최적화: 최종 크기로 Canvas 생성', {
-        originalSize: `${width}x${height}`,
-        targetSize: `${targetWidth || 'auto'}x${targetHeight || 'auto'}`,
-        finalSize: `${finalSize.width}x${finalSize.height}`,
-        fit: resizeConfig.fit,
-      });
-
-      width = finalSize.width;
-      height = finalSize.height;
-    }
+    const width = sourceImage.naturalWidth || sourceImage.width;
+    const height = sourceImage.naturalHeight || sourceImage.height;
 
     const canvas = this.canvasPool.acquire(width, height);
     const ctx = canvas.getContext('2d');
@@ -301,7 +149,7 @@ export class RenderPipeline {
       throw new ImageProcessError('Canvas 2D 컨텍스트를 생성할 수 없습니다', 'CANVAS_CREATION_FAILED');
     }
 
-    // 🚀 고품질 렌더링 설정 추가 - SVG 화질 개선
+    // 고품질 렌더링 설정
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
@@ -429,63 +277,49 @@ export class RenderPipeline {
   }
 
   /**
-   * ResizeConfig 기반 리사이징 실행 (v2.0+)
-   * fit 모드별 분기 처리 - 각 엔진으로 위임
+   * ResizeConfig 기반 리사이징 실행 (통합 시스템)
+   *
+   * 🎯 Phase 3: 단일 drawImage 기반 렌더링으로 단순화
+   * - ResizeCalculator: 레이아웃 계산
+   * - OnehotRenderer: 단일 drawImage로 렌더링
+   * - 기존 5개 엔진 제거, 복잡한 분기 로직 제거
    */
   private executeResizeWithConfig(context: CanvasContext, config: ResizeConfig): CanvasContext {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 executeResizeWithConfig:', {
+      console.log('🔧 executeResizeWithConfig (통합 시스템):', {
         fit: config.fit,
         size: `${config.width || '?'}x${config.height || '?'}`,
         config,
       });
     }
 
-    let resizedCanvas: HTMLCanvasElement;
+    // 1. 레이아웃 계산 (ResizeCalculator)
+    const layout = this.calculator.calculateFinalLayout(
+      context.canvas.width,
+      context.canvas.height,
+      config
+    );
 
-    // fit 모드별 엔진으로 위임
-    console.log('🚦 Pipeline fit 모드 분기:', config.fit);
-
-    switch (config.fit) {
-      case 'cover':
-        console.log('✅ Cover 엔진 호출');
-        resizedCanvas = executeCoverResize(context.canvas, config);
-        break;
-      case 'contain':
-        console.log('✅ Contain 엔진 호출');
-        resizedCanvas = executeContainResize(context.canvas, config);
-        break;
-      case 'fill':
-        console.log('✅ Fill 엔진 호출');
-        resizedCanvas = executeFillResize(context.canvas, config);
-        break;
-      case 'maxFit':
-        console.log('✅ MaxFit 엔진 호출');
-        resizedCanvas = executeMaxFitResize(context.canvas, config);
-        break;
-      case 'minFit':
-        console.log('✅ MinFit 엔진 호출');
-        resizedCanvas = executeMinFitResize(context.canvas, config);
-        break;
-      default: {
-        // Exhaustiveness check: TypeScript가 모든 케이스를 처리했는지 확인
-        const _exhaustiveCheck: never = config;
-        throw new ImageProcessError(
-          `지원하지 않는 fit 모드입니다: ${(_exhaustiveCheck as any).fit}`,
-          'FEATURE_NOT_SUPPORTED'
-        );
-      }
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📐 레이아웃 계산 완료:', layout);
     }
 
-    // 새로운 컨텍스트로 반환
+    // 2. 단일 drawImage로 렌더링 (OnehotRenderer)
+    const resizedCanvas = this.renderer.render(context.canvas, layout, config, {
+      background: config.background,
+      quality: 'high',
+    });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ 렌더링 완료:', {
+        size: `${resizedCanvas.width}x${resizedCanvas.height}`,
+      });
+    }
+
+    // 3. 새로운 컨텍스트로 반환
     const newCtx = resizedCanvas.getContext('2d');
     if (!newCtx) {
       throw new ImageProcessError('리사이징 결과 캔버스의 컨텍스트를 가져올 수 없습니다', 'CANVAS_CREATION_FAILED');
-    }
-
-    // 기존 Canvas가 변경되지 않은 경우 그대로 반환
-    if (resizedCanvas === context.canvas) {
-      return context;
     }
 
     // 임시 Canvas로 추적
@@ -610,110 +444,9 @@ export class RenderPipeline {
     }
   }
 
-  /**
-   * fit 모드를 고려하여 소스 이미지를 Canvas에 그리기
-   * SVG 화질 유지하면서 fit 모드별 다른 결과 생성
-   */
-  private drawImageWithFit(context: CanvasContext, sourceImage: HTMLImageElement): void {
-    const { ctx, width: canvasWidth, height: canvasHeight } = context;
-    const sourceWidth = sourceImage.naturalWidth || sourceImage.width;
-    const sourceHeight = sourceImage.naturalHeight || sourceImage.height;
-
-    // 첫 번째 resize 연산에서 fit 정보 가져오기 (새로운 ResizeConfig 형태만 지원)
-    const firstOp = this.operations[0];
-    const fit = (firstOp?.type === 'resize' && firstOp.config.fit) || 'cover';
-
-    console.log('🎨 drawImageWithFit:', {
-      sourceSize: `${sourceWidth}x${sourceHeight}`,
-      canvasSize: `${canvasWidth}x${canvasHeight}`,
-      fitMode: fit,
-    });
-
-    // fit 모드별 drawImage 파라미터 계산
-    const drawParams = this.calculateFitDrawParams(sourceWidth, sourceHeight, canvasWidth, canvasHeight, fit);
-
-    console.log('🖼️ drawImage 파라미터:', drawParams);
-
-    // 계산된 파라미터로 이미지 그리기
-    ctx.drawImage(
-      sourceImage,
-      drawParams.sx,
-      drawParams.sy,
-      drawParams.sWidth,
-      drawParams.sHeight,
-      drawParams.dx,
-      drawParams.dy,
-      drawParams.dWidth,
-      drawParams.dHeight
-    );
-  }
-
-  /**
-   * CSS object-fit과 동일한 방식으로 drawImage 파라미터 계산
-   */
-  private calculateFitDrawParams(
-    sourceWidth: number,
-    sourceHeight: number,
-    canvasWidth: number,
-    canvasHeight: number,
-    fit: string
-  ) {
-    switch (fit) {
-      case 'fill':
-        // 비율 무시하고 Canvas 크기에 맞춤
-        return {
-          sx: 0,
-          sy: 0,
-          sWidth: sourceWidth,
-          sHeight: sourceHeight,
-          dx: 0,
-          dy: 0,
-          dWidth: canvasWidth,
-          dHeight: canvasHeight,
-        };
-
-      case 'contain': {
-        // 이미지 전체가 Canvas에 들어가도록 스케일링 (여백 생성)
-        const scale = Math.min(canvasWidth / sourceWidth, canvasHeight / sourceHeight);
-        const scaledWidth = sourceWidth * scale;
-        const scaledHeight = sourceHeight * scale;
-        const dx = (canvasWidth - scaledWidth) / 2;
-        const dy = (canvasHeight - scaledHeight) / 2;
-
-        return {
-          sx: 0,
-          sy: 0,
-          sWidth: sourceWidth,
-          sHeight: sourceHeight,
-          dx,
-          dy,
-          dWidth: scaledWidth,
-          dHeight: scaledHeight,
-        };
-      }
-
-      case 'cover':
-      default: {
-        // Canvas를 가득 채우되 비율 유지 (일부 잘림)
-        const scale = Math.max(canvasWidth / sourceWidth, canvasHeight / sourceHeight);
-        const scaledWidth = sourceWidth * scale;
-        const scaledHeight = sourceHeight * scale;
-        const dx = (canvasWidth - scaledWidth) / 2;
-        const dy = (canvasHeight - scaledHeight) / 2;
-
-        return {
-          sx: 0,
-          sy: 0,
-          sWidth: sourceWidth,
-          sHeight: sourceHeight,
-          dx,
-          dy,
-          dWidth: scaledWidth,
-          dHeight: scaledHeight,
-        };
-      }
-    }
-  }
+  // 🗑️ Phase 3: 제거된 메서드들
+  // - drawImageWithFit() → OnehotRenderer.render()로 대체
+  // - calculateFitDrawParams() → OnehotRenderer가 내부적으로 처리
 
   /**
    * 파이프라인 초기화

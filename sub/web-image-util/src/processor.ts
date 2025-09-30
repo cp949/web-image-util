@@ -5,6 +5,7 @@
 
 import { createPipeline } from './core/pipeline';
 import { convertToImageElement, detectSourceType } from './core/source-converter';
+import { LazyRenderPipeline } from './core/lazy-render-pipeline';
 import type {
   BlurOptions,
   ImageFormat,
@@ -21,25 +22,46 @@ import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
 import type { ResizeConfig } from './types/resize-config';
 import { validateResizeConfig } from './types/resize-config';
 import { BlobResultImpl, CanvasResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
+import type {
+  TypedImageProcessor,
+  InitialProcessor,
+  ResizedProcessor,
+  BeforeResize,
+  AfterResize,
+} from './types/typed-processor';
+import type { ProcessorState, EnsureCanResize, AfterResizeCall } from './types/processor-state';
 
 /**
- * 이미지 프로세서 클래스
+ * 이미지 프로세서 클래스 (타입-안전한 구현)
  *
  * @description 메서드 체이닝을 통한 이미지 처리를 제공합니다.
- * 모든 변환 메서드는 this를 반환하여 체이닝이 가능합니다.
+ * TypeScript 타입 시스템을 통해 resize() 중복 호출을 컴파일 타임에 방지합니다.
+ *
+ * @template TState 현재 프로세서 상태 (BeforeResize | AfterResize)
  *
  * @example
  * ```typescript
- * // 🆕 새로운 ResizeConfig API (권장)
+ * // ✅ 올바른 사용법
  * const result = await processImage(source)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .blur(2)
  *   .toBlob({ format: 'webp', quality: 0.8 });
+ *
+ * // ❌ 컴파일 에러: resize() 중복 호출
+ * const processor = processImage(source)
+ *   .resize({ fit: 'cover', width: 300, height: 200 })
+ *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 타입 에러!
  * ```
  */
-export class ImageProcessor {
+export class ImageProcessor<TState extends ProcessorState = BeforeResize> implements TypedImageProcessor<TState> {
   private pipeline = createPipeline();
+  private lazyPipeline: LazyRenderPipeline | null = null;
+  private sourceImage: HTMLImageElement | null = null;
   private options: ProcessorOptions;
+  private hasResized = false;
+  private useLazyRender = true; // 새로운 LazyRenderPipeline 사용
+  private pendingResizeConfig: ResizeConfig | null = null;
+  private pendingBlurOptions: BlurOptions[] = [];
 
   constructor(
     private source: ImageSource,
@@ -54,81 +76,142 @@ export class ImageProcessor {
   }
 
   /**
-   * 이미지 리사이징
-   *
-   * @param width 대상 너비 (픽셀) - undefined/null 시 비율에 따라 자동 계산
-   * @param height 대상 높이 (픽셀) - undefined/null 시 비율에 따라 자동 계산
-   * @param options 리사이징 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @example
-   * ```typescript
-   * // 🆕 새로운 API (v2.0+, 권장)
-   * processor.resize({ fit: 'cover', width: 300, height: 200 })
-   * processor.resize({ fit: 'contain', width: 300, height: 200, trimEmpty: true })
-   * processor.resize({ fit: 'maxFit', width: 300 })  // 최대 너비 300px
-   *
-   * // 🆕 권장: 새로운 ResizeConfig API
-   * processor.resize({ fit: 'cover', width: 300, height: 200 })
-   * processor.resize({ fit: 'maxFit', width: 300 })       // 너비만 지정
-   * processor.resize({ fit: 'maxFit', height: 200 })      // 높이만 지정
-   *
-   * // 고급 옵션
-   * processor.resize({
-   *   fit: 'contain',
-   *   width: 300,
-   *   height: 200,
-   *   background: '#ffffff',
-   *   withoutEnlargement: true  // contain 모드에서만 사용 가능
-   * })
-   * ```
+   * 소스 이미지를 HTMLImageElement로 변환하고 LazyRenderPipeline 초기화
    */
-  resize(config: ResizeConfig): this {
-    // 1. 런타임 검증
-    validateResizeConfig(config);
+  private async ensureLazyPipeline(): Promise<void> {
+    if (this.lazyPipeline || !this.useLazyRender) {
+      return;
+    }
 
-    // 2. 파이프라인에 resize 오퍼레이션 추가
-    this.pipeline.addOperation({
-      type: 'resize',
-      config: config,
-    });
+    // 소스를 HTMLImageElement로 변환
+    this.sourceImage = await convertToImageElement(this.source, this.options);
 
-    return this;
+    // LazyRenderPipeline 초기화
+    this.lazyPipeline = new LazyRenderPipeline(this.sourceImage);
+
+    // pending 연산들 적용
+    if (this.pendingResizeConfig) {
+      this.lazyPipeline.addResize(this.pendingResizeConfig);
+      this.pendingResizeConfig = null;
+    }
+
+    // pending blur 옵션들 적용
+    for (const blurOption of this.pendingBlurOptions) {
+      this.lazyPipeline.addBlur(blurOption);
+    }
+    this.pendingBlurOptions = [];
   }
 
   /**
-   * 이미지 블러 효과
+   * 이미지 리사이징 (타입-안전한 구현)
    *
-   * @param radius 블러 반지름 (기본: 2)
-   * @param options 블러 옵션
-   * @returns 체이닝을 위한 this
+   * @description resize() 메서드는 한 번만 호출할 수 있습니다.
+   * TypeScript 타입 시스템을 통해 중복 호출을 컴파일 타임에 방지합니다.
+   *
+   * @param config 리사이징 설정
+   * @param _constraint 타입 레벨 제약 (내부 사용)
+   * @returns resize() 호출 후 상태의 프로세서 인스턴스
    *
    * @example
    * ```typescript
-   * // 기본 블러
-   * processor.blur()
+   * // ✅ 올바른 사용법: resize() 한 번만 호출
+   * const result = await processImage(source)
+   *   .resize({ fit: 'cover', width: 300, height: 200 })
+   *   .blur(2)
+   *   .toBlob();
    *
-   * // 강한 블러
-   * processor.blur(10)
+   * // ❌ 컴파일 에러: resize() 중복 호출
+   * const processor = processImage(source)
+   *   .resize({ fit: 'cover', width: 300, height: 200 })
+   *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 타입 에러!
    *
-   * // 정밀 블러 (고품질)
-   * processor.blur(5, { precision: 2 })
+   * // ✅ 여러 크기가 필요한 경우: 별도 인스턴스 사용
+   * const small = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
+   * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
    * ```
    */
-  blur(radius: number = 2, options: Partial<BlurOptions> = {}): this {
+  resize(config: ResizeConfig, _constraint?: EnsureCanResize<TState>): ImageProcessor<AfterResizeCall<TState>> {
+    // 1. 다중 resize 호출 방지 (화질 저하 방지)
+    if (this.hasResized) {
+      throw new ImageProcessError(
+        'resize()는 한 번만 호출할 수 있습니다. 이미지 화질 저하를 방지하기 위해 단일 resize() 호출만 사용하세요.',
+        'MULTIPLE_RESIZE_NOT_ALLOWED',
+        undefined,
+        [
+          '모든 리사이징 옵션을 하나의 resize() 호출에 포함하세요',
+          '여러 크기가 필요한 경우 각각 별도의 processImage() 인스턴스를 생성하세요',
+          '예시: processImage(source).resize({ fit: "cover", width: 300, height: 200 }).toBlob()',
+        ]
+      );
+    }
+
+    // 2. 런타임 검증
+    validateResizeConfig(config);
+
+    // 3. resize 호출 기록
+    this.hasResized = true;
+
+    // 4. LazyRenderPipeline 또는 기존 파이프라인에 추가
+    if (this.useLazyRender) {
+      // LazyRenderPipeline은 나중에 ensureLazyPipeline()에서 초기화
+      // 여기서는 config만 저장
+      this.pendingResizeConfig = config;
+    } else {
+      // 기존 파이프라인 사용 (fallback)
+      this.pipeline.addOperation({
+        type: 'resize',
+        config: config,
+      });
+    }
+
+    return this as unknown as ImageProcessor<AfterResizeCall<TState>>;
+  }
+
+  /**
+   * 이미지 블러 효과 (타입-안전한 구현)
+   *
+   * @description blur() 메서드는 resize() 여부와 관계없이 사용 가능합니다.
+   * 상태를 유지하면서 체이닝을 지원합니다.
+   *
+   * @param radius 블러 반지름 (기본: 2)
+   * @param options 블러 옵션
+   * @returns 동일한 상태의 프로세서 인스턴스
+   *
+   * @example
+   * ```typescript
+   * // resize() 전에 blur 적용
+   * const result1 = await processImage(source)
+   *   .blur(2)
+   *   .resize({ fit: 'cover', width: 300, height: 200 })
+   *   .toBlob();
+   *
+   * // resize() 후에 blur 적용
+   * const result2 = await processImage(source)
+   *   .resize({ fit: 'cover', width: 300, height: 200 })
+   *   .blur(5)
+   *   .toBlob();
+   * ```
+   */
+  blur(radius: number = 2, options: Partial<BlurOptions> = {}): ImageProcessor<TState> {
     const blurOptions: BlurOptions = {
       radius,
       ...options,
     };
 
-    this.pipeline.addOperation({
-      type: 'blur',
-      options: blurOptions,
-    });
+    // LazyRenderPipeline 또는 기존 파이프라인에 추가
+    if (this.useLazyRender) {
+      // blur는 여러 번 호출 가능하므로 pending 배열로 관리 필요
+      this.pendingBlurOptions = this.pendingBlurOptions || [];
+      this.pendingBlurOptions.push(blurOptions);
+    } else {
+      this.pipeline.addOperation({
+        type: 'blur',
+        options: blurOptions,
+      });
+    }
 
-    return this;
+    return this as ImageProcessor<TState>;
   }
-
 
   // ==============================================
   // 스마트 포맷 선택 및 최적화 메서드
@@ -575,7 +658,31 @@ export class ImageProcessor {
    */
   private async executeProcessing() {
     try {
-      // 🚀 SVG 최적화 경로: 이미 고품질 렌더링된 경우 불필요한 리사이징 방지
+      // 🚀 LazyRenderPipeline 사용 (SVG 화질 개선)
+      if (this.useLazyRender) {
+        await this.ensureLazyPipeline();
+
+        if (this.lazyPipeline) {
+          // LazyRenderPipeline으로 처리
+          const { canvas, metadata } = this.lazyPipeline.toCanvas();
+
+          return {
+            canvas,
+            result: {
+              width: metadata.width,
+              height: metadata.height,
+              processingTime: metadata.processingTime,
+              originalSize: {
+                width: this.sourceImage?.naturalWidth || 0,
+                height: this.sourceImage?.naturalHeight || 0,
+              },
+              operations: metadata.operations,
+            },
+          };
+        }
+      }
+
+      // 폴백: 기존 파이프라인 사용
       const sourceType = detectSourceType(this.source);
       const imageElement = await convertToImageElement(this.source, this.options);
 
@@ -584,7 +691,7 @@ export class ImageProcessor {
         return this.createDirectCanvasResult(imageElement);
       }
 
-      // 파이프라인 실행
+      // 기존 파이프라인 실행
       const result = await this.pipeline.execute(imageElement);
 
       return result;
@@ -748,27 +855,36 @@ export class ImageProcessor {
 }
 
 /**
- * 이미지 프로세서 팩토리 함수
+ * 타입-안전한 이미지 프로세서 팩토리 함수
  *
  * @param source 이미지 소스
  * @param options 프로세서 옵션
- * @returns ImageProcessor 인스턴스
+ * @returns resize() 호출 전 상태의 ImageProcessor 인스턴스
  *
  * @example
  * ```typescript
- * // 기본 사용법
- * const processor = processImage(imageElement);
- * const processor = processImage(blob);
- * const processor = processImage('https://example.com/image.jpg');
- * const processor = processImage('<svg>...</svg>');
+ * // ✅ 올바른 사용법: resize() 한 번만 호출
+ * const result = await processImage(imageElement)
+ *   .resize({ fit: 'cover', width: 300, height: 200 })
+ *   .blur(2)
+ *   .toBlob();
  *
- * // 옵션과 함께
+ * // ❌ 컴파일 에러: resize() 중복 호출
+ * const processor = processImage(blob)
+ *   .resize({ fit: 'cover', width: 300, height: 200 })
+ *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 타입 에러!
+ *
+ * // ✅ 여러 크기 필요시: 별도 인스턴스 사용
+ * const thumbnail = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
+ * const fullsize = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
+ *
+ * // ✅ 옵션과 함께 사용
  * const processor = processImage(source, {
  *   crossOrigin: 'use-credentials',
  *   defaultQuality: 0.9
  * });
  * ```
  */
-export function processImage(source: ImageSource, options?: ProcessorOptions): ImageProcessor {
-  return new ImageProcessor(source, options);
+export function processImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {
+  return new ImageProcessor<BeforeResize>(source, options);
 }

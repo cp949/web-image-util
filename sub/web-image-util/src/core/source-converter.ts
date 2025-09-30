@@ -258,7 +258,6 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
         if (isDataUrlSvg(source.trim())) {
           const svgContent = parseSvgFromDataUrl(source);
           return convertSvgToElement(svgContent, undefined, undefined, {
-            useDevicePixelRatio: options?.useDevicePixelRatio,
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
           });
@@ -272,7 +271,6 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           }
           const svgContent = await response.text();
           return convertSvgToElement(svgContent, undefined, undefined, {
-            useDevicePixelRatio: options?.useDevicePixelRatio,
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
           });
@@ -286,7 +284,6 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           }
           const svgContent = await response.text();
           return convertSvgToElement(svgContent, undefined, undefined, {
-            useDevicePixelRatio: options?.useDevicePixelRatio,
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
           });
@@ -294,7 +291,6 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
         // 일반 SVG 문자열
         else {
           return convertSvgToElement(source, undefined, undefined, {
-            useDevicePixelRatio: options?.useDevicePixelRatio,
             quality: 'auto',
           });
         }
@@ -302,7 +298,6 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
         // SVG Blob/File을 문자열로 변환 후 처리
         const svgText = await (source as Blob).text();
         return convertSvgToElement(svgText, undefined, undefined, {
-          useDevicePixelRatio: options?.useDevicePixelRatio,
           quality: 'auto',
           crossOrigin: options?.crossOrigin,
         });
@@ -347,10 +342,6 @@ function createBase64DataUrl(svgString: string): string {
 interface SvgRenderingOptions {
   /** 품질 레벨 또는 자동 선택 */
   quality?: QualityLevel | 'auto';
-  /** 디바이스 픽셀비 사용 여부 */
-  useDevicePixelRatio?: boolean;
-  /** 최대 스케일링 팩터 제한 */
-  maxScaleFactor?: number;
   /** CORS 설정 */
   crossOrigin?: string;
 }
@@ -358,7 +349,7 @@ interface SvgRenderingOptions {
 /**
  * SVG 문자열을 HTMLImageElement로 변환 (고품질 렌더링)
  *
- * **🎨 v2.0.19 품질 개선:**
+ * **🎨 품질 개선:**
  * - SVG 원본을 그대로 유지하고 Canvas에서 직접 타겟 크기로 렌더링
  * - Canvas를 처음부터 목표 크기로 생성하여 벡터 품질 완전 보존
  * - 불필요한 중간 래스터화 단계 제거로 성능 및 메모리 효율 향상
@@ -395,36 +386,17 @@ async function convertSvgToElement(
       qualityLevel = options.quality;
     }
 
-    // 5. 품질별 스케일링 팩터 계산
-    const qualityScaleMap: Record<QualityLevel, number> = {
-      low: 1,
-      medium: 2,
-      high: 3,
-      ultra: 4,
-    };
+    // 5. 최종 렌더링 크기 = 목표 크기 (scaleFactor 제거)
+    // SVG는 벡터이므로 어떤 크기로 렌더링해도 선명함 보장
+    // 불필요한 확대 후 축소 과정을 제거하여 화질 보존
+    const renderWidth = finalWidth;
+    const renderHeight = finalHeight;
 
-    let scaleFactor = qualityScaleMap[qualityLevel];
-
-    // DevicePixelRatio 고려 (선택적)
-    if (options?.useDevicePixelRatio) {
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      scaleFactor = Math.max(scaleFactor, devicePixelRatio);
-    }
-
-    // 최대 스케일링 팩터 제한
-    const maxScale = options?.maxScaleFactor || 4;
-    scaleFactor = Math.min(scaleFactor, maxScale);
-
-    // 6. 최종 렌더링 크기 계산
-    const renderWidth = finalWidth * scaleFactor;
-    const renderHeight = finalHeight * scaleFactor;
-
-    // 🔧 DEBUG: SVG 고품질 렌더링 정보
-    console.log('🔧 convertSvgToElement 고품질 렌더링:', {
+    // 🔧 DEBUG: SVG 직접 렌더링 정보 (scaleFactor 제거)
+    console.log('🔧 convertSvgToElement 직접 렌더링:', {
       originalDimensions: `${dimensions.width}x${dimensions.height}`,
       targetDimensions: `${finalWidth}x${finalHeight}`,
       qualityLevel,
-      scaleFactor,
       renderDimensions: `${renderWidth}x${renderHeight}`,
       hasExplicitSize: dimensions.hasExplicitSize,
       viewBox: dimensions.viewBox,
@@ -528,7 +500,6 @@ async function loadBlobUrl(blobUrl: string, options?: ProcessorOptions): Promise
       if (isSvgMime || isSvgContent) {
         const svgContent = await blob.text();
         return convertSvgToElement(svgContent, undefined, undefined, {
-          useDevicePixelRatio: options?.useDevicePixelRatio,
           quality: 'auto',
         });
       }
@@ -584,8 +555,7 @@ async function loadImageFromUrl(
           // SVG MIME이거나 XML MIME에서 실제 SVG 내용이 확인된 경우
           if (isSvgMime || (isXmlMime && isInlineSvg(responseText))) {
             return convertSvgToElement(responseText, undefined, undefined, {
-              useDevicePixelRatio: options?.useDevicePixelRatio,
-              quality: 'auto',
+                quality: 'auto',
               crossOrigin: options?.crossOrigin,
             });
           }
@@ -712,7 +682,6 @@ async function convertBlobToElement(blob: Blob, options?: ProcessorOptions): Pro
   if (blob.type === 'image/svg+xml' || (blob as File).name?.endsWith('.svg')) {
     const svgText = await blob.text();
     return convertSvgToElement(svgText, undefined, undefined, {
-      useDevicePixelRatio: options?.useDevicePixelRatio,
       quality: 'auto',
     });
   }

@@ -29,7 +29,7 @@ export {
   type SvgCompatibilityReport,
 } from './svg-compatibility';
 
-// (제거됨: ImageSourceConverter, SystemValidator - v2.0 레거시 API)
+// (제거됨: ImageSourceConverter, SystemValidator)
 
 // 브라우저 기능 감지 시스템
 export {

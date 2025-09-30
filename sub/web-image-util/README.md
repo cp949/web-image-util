@@ -6,7 +6,7 @@ Canvas 2D API 기반으로 다양한 이미지 처리 기능을 제공합니다.
 
 **🎯 설계 철학**: 이 라이브러리는 리사이저(resizer)로서, [Sharp](https://github.com/lovell/sharp)의 API 설계를 웹 브라우저 환경에 맞게 적용하여 구현했습니다. Server-side 이미지 처리의 편의성을 클라이언트 사이드에서도 제공하는 것이 목표입니다.
 
-**🔄 API 상태 (v2.0.19)**: 새로운 ResizeConfig API가 완전히 구현되었으며, 레거시 API와 점진적 마이그레이션 중입니다. 안정성과 호환성을 보장하면서 더 나은 개발자 경험을 제공합니다.
+**🔄 API 상태 (v2.0.19)**: ResizeConfig API가 완전히 구현되었으며, 안정적이고 일관된 API를 제공합니다.
 
 ## 📚 문서 가이드
 
@@ -82,12 +82,12 @@ npm install @cp949/web-image-util
 
 ## 📖 기본 사용법
 
-### 🆕 새로운 ResizeConfig API (권장)
+### 🎯 ResizeConfig API
 
 ```typescript
 import { processImage } from '@cp949/web-image-util';
 
-// 🎯 권장: 명시적 fit 모드와 객체 파라미터
+// 🎯 명시적 fit 모드와 객체 파라미터
 const result = await processImage(source)
   .resize({ fit: 'cover', width: 300, height: 200 })
   .toBlob({ format: 'webp', quality: 0.8 });

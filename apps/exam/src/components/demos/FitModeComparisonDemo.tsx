@@ -199,13 +199,13 @@ export function FitModeComparisonDemo() {
 
 // PNG/JPG 이미지 처리
 const pngResult = await processImage(pngFile)
-  .resize(${targetSize.width}, ${targetSize.height}, { fit: 'contain' })
-  .toBlob({ format: '${selectedFormat}', quality: 0.9 });
+  .resize({ fit: 'contain', width: ${targetSize.width}, height: ${targetSize.height} })
+  .toBlob('${selectedFormat}');
 
 // SVG 이미지 처리 (동일한 API, 자동 고품질 처리)
 const svgResult = await processImage(svgFile)
-  .resize(${targetSize.width}, ${targetSize.height}, { fit: 'contain' })
-  .toBlob({ format: '${selectedFormat}', quality: 0.9 });
+  .resize({ fit: 'contain', width: ${targetSize.width}, height: ${targetSize.height} })
+  .toBlob('${selectedFormat}');
 
 // 결과는 동일한 구조
 console.log('PNG 크기:', pngResult.blob.size);
@@ -218,8 +218,8 @@ const results = {};
 for (const fit of fitModes) {
   // PNG와 SVG 동시 처리
   const [pngResult, svgResult] = await Promise.all([
-    processImage(pngSource).resize(${targetSize.width}, ${targetSize.height}, { fit }).toBlob(),
-    processImage(svgSource).resize(${targetSize.width}, ${targetSize.height}, { fit }).toBlob()
+    processImage(pngSource).resize({ fit, width: ${targetSize.width}, height: ${targetSize.height} }).toBlob(),
+    processImage(svgSource).resize({ fit, width: ${targetSize.width}, height: ${targetSize.height} }).toBlob()
   ]);
 
   results[fit] = { png: pngResult, svg: svgResult };

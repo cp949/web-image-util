@@ -27,7 +27,7 @@ import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { saveAs } from 'file-saver';
 import { CodeSnippet } from '../common/CodeSnippet';
-// TODO: v2.0 마이그레이션 - ImageSourceConverter는 레거시 API, processImage로 대체 필요
+// TODO: v2.0 마이그레이션 - ImageSourceConverter를 processImage로 대체 필요
 // import { ImageSourceConverter } from '@cp949/web-image-util/utils';
 import { processImage } from '@cp949/web-image-util';
 
@@ -99,7 +99,7 @@ export function ImageSourceConverterDemo() {
 
     const conversionTasks = [];
 
-    // 선택된 변환 작업들 준비 (v2.0 임시 구현 - Step 3에서 완전 마이그레이션)
+    // 선택된 변환 작업들 준비 (v2.0 임시 구현)
     if (options.toCanvas) {
       conversionTasks.push({
         type: 'Canvas',
@@ -131,7 +131,7 @@ export function ImageSourceConverterDemo() {
       conversionTasks.push({
         type: 'Element',
         task: async () => {
-          // HTMLImageElement 생성 (v2.0에서는 Result 객체의 toElement() 메서드 사용)
+          // HTMLImageElement 생성 (Result 객체의 toElement() 메서드 사용)
           const result = await processImage(sourceFile).toDataURL();
           const img = new Image();
           img.src = result.dataURL;
@@ -157,7 +157,7 @@ export function ImageSourceConverterDemo() {
       conversionTasks.push({
         type: 'ArrayBuffer',
         task: async () => {
-          // ArrayBuffer 변환 (v2.0에서는 ResultBlob의 toArrayBuffer() 메서드 사용)
+          // ArrayBuffer 변환 (ResultBlob의 toArrayBuffer() 메서드 사용)
           const result = await processImage(sourceFile).toBlob();
           return await result.toArrayBuffer();
         },
@@ -168,7 +168,7 @@ export function ImageSourceConverterDemo() {
       conversionTasks.push({
         type: 'Uint8Array',
         task: async () => {
-          // Uint8Array 변환 (v2.0에서는 ResultBlob의 toUint8Array() 메서드 사용)
+          // Uint8Array 변환 (ResultBlob의 toUint8Array() 메서드 사용)
           const result = await processImage(sourceFile).toBlob();
           return await result.toUint8Array();
         },

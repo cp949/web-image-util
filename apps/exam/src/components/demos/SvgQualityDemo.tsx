@@ -20,37 +20,41 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Divider,
 } from '@mui/material';
-import { CompareArrows as CompareIcon } from '@mui/icons-material';
+import { CompareArrows as CompareIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
 import { processImage } from '@cp949/web-image-util';
 import type { ResultBlob } from '@cp949/web-image-util';
 import { ImageUploader } from '../common/ImageUploader';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { ProcessingStatus } from '../ui/ProcessingStatus';
+import { CodeSnippet } from '../common/CodeSnippet';
 
-type QualityLevel = 'low' | 'medium' | 'high' | 'ultra';
+// 품질 레벨 타입 정의
+type QualityLevel = 'standard' | 'high' | 'ultra';
+
+// 품질 레벨별 라벨
+const QUALITY_LABELS: Record<QualityLevel, string> = {
+  standard: '표준 품질',
+  high: '고품질',
+  ultra: '최고 품질'
+};
+
+// 품질 레벨별 렌더링 크기 (직접 렌더링, scaleFactor 제거)
+const QUALITY_SIZES: Record<QualityLevel, { width: number; height: number }> = {
+  standard: { width: 400, height: 300 },  // 기본 크기
+  high: { width: 800, height: 600 },      // 2배 크기
+  ultra: { width: 1600, height: 1200 }    // 4배 크기 (픽셀 완벽)
+};
 
 interface QualityResult {
   quality: QualityLevel;
   processingTime: number;
   size: number;
   url: string;
-  scaleFactor: number;
+  width: number;
+  height: number;
 }
-
-const SCALE_FACTORS: Record<QualityLevel, number> = {
-  low: 1,
-  medium: 2,
-  high: 3,
-  ultra: 4,
-};
-
-const QUALITY_LABELS: Record<QualityLevel, string> = {
-  low: '일반 품질 (1x)',
-  medium: '중간 품질 (2x)',
-  high: '고품질 (3x)',
-  ultra: '초고품질 (4x)',
-};
 
 export function SvgQualityDemo() {
   const [selectedSvg, setSelectedSvg] = useState<string | null>(null);
@@ -86,28 +90,30 @@ export function SvgQualityDemo() {
     setProgress(0);
     setError(null);
 
-    const qualities: QualityLevel[] = ['low', 'medium', 'high', 'ultra'];
+    const qualities: QualityLevel[] = ['standard', 'high', 'ultra'];
     const results: QualityResult[] = [];
 
     try {
       for (let i = 0; i < qualities.length; i++) {
         const quality = qualities[i];
-        const scaleFactor = SCALE_FACTORS[quality];
+        const { width, height } = QUALITY_SIZES[quality];
 
         setProgress(((i + 1) / qualities.length) * 100);
 
         const startTime = performance.now();
 
+        // 직접 고해상도 렌더링 (scaleFactor 제거)
         const result: ResultBlob = await processImage(selectedSvg)
-          .resize({ fit: 'cover', width: 800 * scaleFactor, height: 600 * scaleFactor })
-          .toBlob({ format: 'png' });
+          .resize({ fit: 'contain', width, height })
+          .toBlob('png');
 
         results.push({
           quality,
           processingTime: performance.now() - startTime,
           size: result.blob.size,
           url: URL.createObjectURL(result.blob),
-          scaleFactor,
+          width,
+          height,
         });
       }
 
@@ -133,8 +139,8 @@ export function SvgQualityDemo() {
       </Typography>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        v2.0의 SVG 고품질 처리 시스템을 체험해보세요. 복잡도 자동 분석과
-        품질별 스케일링을 확인할 수 있습니다.
+        혁신적인 SVG 품질 처리를 체험해보세요.
+        "계산은 미리, 렌더링은 한 번" 철학으로 벡터 품질을 완벽하게 보존합니다.
       </Alert>
 
       <Grid container spacing={4}>
@@ -204,7 +210,11 @@ export function SvgQualityDemo() {
                           <Typography variant="h6">
                             {QUALITY_LABELS[result.quality]}
                           </Typography>
-                          <Chip label={`${result.scaleFactor}x`} color="primary" size="small" />
+                          <Chip
+                            label={`${result.width}×${result.height}`}
+                            color="primary"
+                            size="small"
+                          />
                         </Box>
                         <Stack spacing={0.5}>
                           <Typography variant="body2" color="text.secondary">
@@ -214,7 +224,7 @@ export function SvgQualityDemo() {
                             파일 크기: {formatFileSize(result.size)}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            해상도: {800 * result.scaleFactor}×{600 * result.scaleFactor}px
+                            해상도: {result.width}×{result.height}px
                           </Typography>
                         </Stack>
                       </CardContent>
@@ -233,17 +243,17 @@ export function SvgQualityDemo() {
                       <TableHead>
                         <TableRow>
                           <TableCell>품질</TableCell>
-                          <TableCell align="right">스케일</TableCell>
+                          <TableCell align="right">해상도</TableCell>
                           <TableCell align="right">처리 시간</TableCell>
                           <TableCell align="right">파일 크기</TableCell>
-                          <TableCell align="right">크기/시간 비율</TableCell>
+                          <TableCell align="right">효율성</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {qualityResults.map((result) => (
                           <TableRow key={result.quality}>
                             <TableCell>{QUALITY_LABELS[result.quality]}</TableCell>
-                            <TableCell align="right">{result.scaleFactor}x</TableCell>
+                            <TableCell align="right">{result.width}×{result.height}</TableCell>
                             <TableCell align="right">{result.processingTime.toFixed(0)}ms</TableCell>
                             <TableCell align="right">{formatFileSize(result.size)}</TableCell>
                             <TableCell align="right">
@@ -259,16 +269,18 @@ export function SvgQualityDemo() {
 
               <Alert severity="success">
                 <Typography variant="subtitle2" gutterBottom>
-                  분석 결과
+                  품질 개선 분석 결과
                 </Typography>
                 <Typography variant="body2">
-                  • 최고 품질(ultra)은 일반 품질(low)보다{' '}
-                  {((qualityResults[3]?.size || 0) / (qualityResults[0]?.size || 1)).toFixed(1)}배 큰 파일 크기
+                  • 최고 품질(ultra)은 표준 품질보다{' '}
+                  {((qualityResults[2]?.size || 0) / (qualityResults[0]?.size || 1)).toFixed(1)}배 큰 파일 크기
                   <br />
                   • 처리 시간은 약{' '}
-                  {((qualityResults[3]?.processingTime || 0) / (qualityResults[0]?.processingTime || 1)).toFixed(1)}배 증가
+                  {((qualityResults[2]?.processingTime || 0) / (qualityResults[0]?.processingTime || 1)).toFixed(1)}배 증가
                   <br />
-                  • v2.0의 스마트 스케일링으로 복잡한 SVG도 선명하게 처리
+                  • ⚡ 새로운 직접 렌더링: scaleFactor 제거로 SVG 벡터 품질 완벽 보존
+                  <br />
+                  • 🎯 "계산은 미리, 렌더링은 한 번" 철학으로 성능과 품질 모두 향상
                 </Typography>
               </Alert>
             </Stack>

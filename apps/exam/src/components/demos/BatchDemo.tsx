@@ -238,8 +238,8 @@ const processFiles = async (files) => {
       ${
         options.operation === 'resize'
           ? `const result = await processImage(file)
-        .resize(${options.width}, ${options.height})
-        .toBlob({ format: '${options.format}', quality: ${options.quality / 100} });`
+        .resize({ fit: 'cover', width: ${options.width}, height: ${options.height} })
+        .toBlob('${options.format}');`
           : options.operation === 'thumbnail'
             ? `const result = await createThumbnail(file, {
         size: ${options.size || 150},
@@ -273,7 +273,7 @@ const processFilesParallel = async (files) => {
     try {
       ${
         options.operation === 'resize'
-          ? `const result = await processImage(file).resize(${options.width}, ${options.height}).toBlob();`
+          ? `const result = await processImage(file).resize({ fit: 'cover', width: ${options.width}, height: ${options.height} }).toBlob();`
           : `const result = await ${options.operation}(file, options);`
       }
       return { file, result, status: 'success' };

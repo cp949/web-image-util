@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { processImage } from '../../processor';
-import { createTestImageBlob } from '../../test-utils/image-helper';
+import { processImage } from '../../src/processor';
+import { createTestImageBlob } from '../utils/image-helper';
 
 describe('Resize Performance Benchmarks', () => {
 	describe('single image processing', () => {
