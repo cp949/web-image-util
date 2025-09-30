@@ -7,6 +7,7 @@ import type { BlurOptions, OutputFormat, ResizeOptions, ResultMetadata, SmartRes
 import { ImageProcessError } from '../types';
 import { SmartProcessor } from './smart-processor';
 import type { ResizeConfig } from '../types/resize-config';
+import { trimEmptySpace } from '../utils/trim-empty';
 
 /**
  * 레거시 리사이즈 연산 (호환성 유지)
@@ -442,19 +443,122 @@ export class RenderPipeline {
 
   /**
    * Contain 모드 실행: 이미지를 지정된 크기 안에 전체가 들어가도록 맞춤
+   * Phase 3에서 trimEmpty 기능 추가 완료
    */
   private executeContainResize(context: CanvasContext, config: ResizeConfig & { fit: 'contain' }): CanvasContext {
-    // Phase 2에서는 기본 구조만 구현, 실제 로직은 Phase 3/5에서 구현
-    console.log('🟩 executeContainResize (Phase 3/5에서 구현 예정)');
-
-    // 임시로 레거시 executeResize를 호출하여 동작하도록 함
-    return this.executeResize(context, {
-      width: config.width,
-      height: config.height,
-      fit: 'contain',
-      background: config.background,
+    console.log('🟩 executeContainResize:', {
+      targetSize: `${config.width}x${config.height}`,
+      trimEmpty: config.trimEmpty,
       withoutEnlargement: config.withoutEnlargement,
+      background: config.background,
     });
+
+    // 1. 기본 contain 리사이즈 실행
+    let resizedContext = this.executeBasicContainResize(context, config);
+
+    // 2. trimEmpty 옵션이 true인 경우 빈 공간 제거
+    if (config.trimEmpty) {
+      console.log('✂️ trimEmpty 실행: 빈 공간 제거 중...');
+      const trimmedCanvas = trimEmptySpace(resizedContext.canvas, config.background);
+
+      // 트림된 캔버스가 다르면 새 컨텍스트 생성
+      if (trimmedCanvas !== resizedContext.canvas) {
+        const trimmedCtx = trimmedCanvas.getContext('2d');
+        if (!trimmedCtx) {
+          throw new ImageProcessError('trimEmpty 후 캔버스 컨텍스트를 가져올 수 없습니다', 'CANVAS_CREATION_FAILED');
+        }
+
+        // 기존 임시 Canvas 정리
+        this.temporaryCanvases = this.temporaryCanvases.filter((c) => c !== resizedContext.canvas);
+        this.canvasPool.release(resizedContext.canvas);
+
+        // 새 임시 Canvas 추적
+        this.temporaryCanvases.push(trimmedCanvas);
+
+        resizedContext = {
+          canvas: trimmedCanvas,
+          ctx: trimmedCtx,
+          width: trimmedCanvas.width,
+          height: trimmedCanvas.height,
+        };
+
+        console.log('✅ trimEmpty 완료:', {
+          newSize: `${resizedContext.width}x${resizedContext.height}`,
+        });
+      } else {
+        console.log('ℹ️ trimEmpty: 트림할 공간 없음');
+      }
+    }
+
+    return resizedContext;
+  }
+
+  /**
+   * 기본 Contain 리사이즈 실행 (trimEmpty 제외)
+   */
+  private executeBasicContainResize(
+    context: CanvasContext,
+    config: ResizeConfig & { fit: 'contain' }
+  ): CanvasContext {
+    const { width: targetWidth, height: targetHeight } = config;
+    const { width: srcWidth, height: srcHeight } = context;
+
+    // contain 로직: 비율 유지하며 전체가 들어가도록 크기 조정
+    const scaleX = targetWidth / srcWidth;
+    const scaleY = targetHeight / srcHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    // withoutEnlargement 옵션 처리: 확대 방지
+    const finalScale = config.withoutEnlargement && scale > 1 ? 1 : scale;
+
+    const newWidth = Math.round(srcWidth * finalScale);
+    const newHeight = Math.round(srcHeight * finalScale);
+
+    console.log('📐 contain 스케일 계산:', {
+      sourceSize: `${srcWidth}x${srcHeight}`,
+      targetSize: `${targetWidth}x${targetHeight}`,
+      scale: `${finalScale.toFixed(3)} (Math.min)`,
+      resultSize: `${newWidth}x${newHeight}`,
+    });
+
+    // 새 캔버스 생성 (배경색 적용)
+    const newCanvas = this.canvasPool.acquire(targetWidth, targetHeight);
+    const newCtx = newCanvas.getContext('2d');
+
+    if (!newCtx) {
+      this.canvasPool.release(newCanvas);
+      throw new ImageProcessError('Contain 리사이징용 캔버스 생성에 실패했습니다', 'CANVAS_CREATION_FAILED');
+    }
+
+    // 고품질 설정
+    newCtx.imageSmoothingEnabled = true;
+    newCtx.imageSmoothingQuality = 'high';
+
+    // 임시 Canvas로 추적
+    this.temporaryCanvases.push(newCanvas);
+
+    // 배경색 채우기
+    if (config.background) {
+      this.fillBackground(newCtx, targetWidth, targetHeight, config.background);
+    }
+
+    // 중앙 정렬하여 이미지 그리기
+    const offsetX = Math.round((targetWidth - newWidth) / 2);
+    const offsetY = Math.round((targetHeight - newHeight) / 2);
+
+    console.log('🖼️ 이미지 배치:', {
+      position: `${offsetX}, ${offsetY}`,
+      size: `${newWidth}x${newHeight}`,
+    });
+
+    newCtx.drawImage(context.canvas, 0, 0, srcWidth, srcHeight, offsetX, offsetY, newWidth, newHeight);
+
+    return {
+      canvas: newCanvas,
+      ctx: newCtx,
+      width: targetWidth,
+      height: targetHeight,
+    };
   }
 
   /**
