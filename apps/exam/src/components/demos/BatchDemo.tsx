@@ -37,7 +37,7 @@ import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { CodeSnippet } from '../components/common/CodeSnippet';
+import { CodeSnippet } from '../common/CodeSnippet';
 
 interface BatchFile {
   id: string;
@@ -58,7 +58,7 @@ interface BatchOptions {
   socialPlatform?: 'instagram' | 'twitter' | 'facebook';
 }
 
-export function BatchPage() {
+export function BatchDemo() {
   const [files, setFiles] = useState<BatchFile[]>([]);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -666,4 +666,4 @@ const downloadAsZip = async (results) => {
   );
 }
 
-export default BatchPage;
+// removed old export default;

@@ -1,5 +1,5 @@
-import { FitModeComparison } from '../../pages/FitModeComparison'
+import { FitModeComparisonDemo } from '../../components/demos/FitModeComparisonDemo'
 
-export default function SvgFitModesPage() {
-  return <FitModeComparison />
+export default function Page() {
+  return <FitModeComparisonDemo />
 }

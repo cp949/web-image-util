@@ -20,9 +20,9 @@ import {
 } from '@mui/material';
 import { useCallback, useState } from 'react';
 import { processImage } from '@cp949/web-image-util';
-import { CodeSnippet } from '../components/common/CodeSnippet';
-import { ImageUploader } from '../components/common/ImageUploader';
-import { BeforeAfterView } from '../components/ui/BeforeAfterView';
+import { CodeSnippet } from '../common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
+import { BeforeAfterView } from '../ui/BeforeAfterView';
 
 interface ProcessOptions {
   width: number | undefined;
@@ -37,7 +37,7 @@ interface ProcessOptions {
   withoutReduction: boolean;
 }
 
-export function BasicProcessingPage() {
+export function BasicDemo() {
   const [originalImage, setOriginalImage] = useState<any>(null);
   const [processedImage, setProcessedImage] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
@@ -537,4 +537,4 @@ const [small, medium, large] = await Promise.all([
   );
 }
 
-export default BasicProcessingPage;
+// removed old export default;

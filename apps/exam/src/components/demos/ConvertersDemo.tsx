@@ -27,8 +27,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { CodeSnippet } from '../components/common/CodeSnippet';
-import { ImageUploader } from '../components/common/ImageUploader';
+import { CodeSnippet } from '../common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
 
 interface ConversionResult {
   type: 'blob' | 'dataURL' | 'file';
@@ -44,7 +44,7 @@ interface ConversionResult {
   };
 }
 
-export function ConvertersPage() {
+export function ConvertersDemo() {
   const [originalImage, setOriginalImage] = useState<any>(null);
   const [results, setResults] = useState<ConversionResult[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -535,4 +535,4 @@ downloadBlob(blobResult.blob, 'converted.${options.format}');`;
   );
 }
 
-export default ConvertersPage;
+// removed old export default;

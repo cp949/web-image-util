@@ -38,8 +38,8 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import React, { useState } from 'react';
-import { CodeSnippet } from '../components/common/CodeSnippet';
-import { ImageUploader } from '../components/common/ImageUploader';
+import { CodeSnippet } from '../common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
 
 interface PerformanceMemory {
   usedJSHeapSize: number;
@@ -78,7 +78,7 @@ interface BrowserInfo {
   };
 }
 
-export function DevToolsPage() {
+export function DevToolsDemo() {
   const [activeTab, setActiveTab] = useState(0);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [apiResponse, setApiResponse] = useState<any>(null);
@@ -669,4 +669,4 @@ export function DevToolsPage() {
   );
 }
 
-export default DevToolsPage;
+// removed old export default;

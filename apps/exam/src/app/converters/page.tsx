@@ -1,5 +1,5 @@
-import { ConvertersPage } from '../../pages/ConvertersPage'
+import { ConvertersDemo } from '../../components/demos/ConvertersDemo'
 
 export default function Page() {
-  return <ConvertersPage />
+  return <ConvertersDemo />
 }

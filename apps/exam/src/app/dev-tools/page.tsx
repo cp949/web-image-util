@@ -1,5 +1,5 @@
-import { DevToolsPage } from '../../pages/DevToolsPage'
+import { DevToolsDemo } from '../../components/demos/DevToolsDemo'
 
 export default function Page() {
-  return <DevToolsPage />
+  return <DevToolsDemo />
 }

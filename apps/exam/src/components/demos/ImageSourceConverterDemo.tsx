@@ -26,7 +26,7 @@ import Grid from '@mui/material/Grid';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { saveAs } from 'file-saver';
-import { CodeSnippet } from '../components/common/CodeSnippet';
+import { CodeSnippet } from '../common/CodeSnippet';
 // TODO: v2.0 마이그레이션 - ImageSourceConverter는 레거시 API, processImage로 대체 필요
 // import { ImageSourceConverter } from '@cp949/web-image-util/utils';
 import { processImage } from '@cp949/web-image-util';
@@ -50,7 +50,7 @@ interface ConversionOptions {
   toUint8Array: boolean;
 }
 
-export function ImageSourceConverterPage() {
+export function ImageSourceConverterDemo() {
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [sourcePreview, setSourcePreview] = useState<string>('');
   const [converting, setConverting] = useState(false);
@@ -707,4 +707,4 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
   );
 }
 
-export default ImageSourceConverterPage;
+// removed old export default;

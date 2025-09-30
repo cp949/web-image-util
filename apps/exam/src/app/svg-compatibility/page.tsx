@@ -1,5 +1,5 @@
-import { SvgCompatibilityPage } from '../../pages/SvgCompatibilityPage'
+import { SvgCompatibilityDemo } from '../../components/demos/SvgCompatibilityDemo'
 
 export default function Page() {
-  return <SvgCompatibilityPage />
+  return <SvgCompatibilityDemo />
 }

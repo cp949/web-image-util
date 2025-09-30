@@ -1,5 +1,5 @@
-import { AdvancedPage } from '../../pages/AdvancedPage'
+import { AdvancedDemo } from '../../components/demos/AdvancedDemo'
 
 export default function Page() {
-  return <AdvancedPage />
+  return <AdvancedDemo />
 }

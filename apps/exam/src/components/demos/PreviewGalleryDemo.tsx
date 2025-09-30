@@ -15,8 +15,8 @@ import {
 import { Download, AccessTime, PhotoSizeSelectActual, Storage } from '@mui/icons-material';
 import { useCallback, useState } from 'react';
 import { processImage } from '@cp949/web-image-util';
-import { ImageUploader } from '../components/common/ImageUploader';
-import { CodeSnippet } from '../components/common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
+import { CodeSnippet } from '../common/CodeSnippet';
 
 // 처리 옵션 프리셋 정의
 interface ProcessPreset {
@@ -216,7 +216,7 @@ interface ProcessResult {
   error?: string;
 }
 
-export function PreviewGalleryPage() {
+export function PreviewGalleryDemo() {
   const [originalImage, setOriginalImage] = useState<any>(null);
   const [results, setResults] = useState<ProcessResult[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -694,4 +694,4 @@ export function PreviewGalleryPage() {
   );
 }
 
-export default PreviewGalleryPage;
+// removed old export default;

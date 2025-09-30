@@ -26,8 +26,8 @@ import {
 } from '@mui/material';
 import { useState, useCallback, useRef } from 'react';
 import { processImage } from '@cp949/web-image-util';
-import { ImageUploader } from '../components/common/ImageUploader';
-import { CodeSnippet } from '../components/common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
+import { CodeSnippet } from '../common/CodeSnippet';
 import {
   Download,
   ZoomIn,

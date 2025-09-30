@@ -1,5 +1,5 @@
-import { SvgQualityDemo } from '../../pages/SvgQualityDemo'
+import { SvgQualityDemo } from '../../components/demos/SvgQualityDemo'
 
-export default function SvgQualityPage() {
+export default function Page() {
   return <SvgQualityDemo />
 }

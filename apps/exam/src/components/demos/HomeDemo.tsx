@@ -18,7 +18,7 @@ import {
   Widgets as ComponentsIcon
 } from '@mui/icons-material'
 
-export function HomePage() {
+export function HomeDemo() {
   return (
     <Container maxWidth="lg">
       <Box sx={{ textAlign: 'center', mb: 6 }}>
@@ -141,4 +141,4 @@ const avatar = await createAvatar(source, { size: 150 });`}</code>
     </Container>
   )
 }
-export default HomePage;
+// removed old export default;

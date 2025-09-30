@@ -14,8 +14,8 @@ import {
 } from '@mui/material';
 import { useState, useCallback } from 'react';
 import { processImage } from '@cp949/web-image-util';
-import { ImageUploader } from '../components/common/ImageUploader';
-import { CodeSnippet } from '../components/common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
+import { CodeSnippet } from '../common/CodeSnippet';
 import { Download } from '@mui/icons-material';
 
 interface ProcessResult {
@@ -39,7 +39,7 @@ interface ComparisonResult {
   averageProcessingTime: number;
 }
 
-export function SvgCompatibilityPage() {
+export function SvgCompatibilityDemo() {
   const [originalImage, setOriginalImage] = useState<any>(null);
   const [originalSource, setOriginalSource] = useState<File | string | null>(null); // 🎯 원본 소스 보관
   const [comparisonResult, setComparisonResult] = useState<ComparisonResult>({
@@ -667,4 +667,4 @@ for (const source of sources) {
   );
 }
 
-export default SvgCompatibilityPage;
+// removed old export default;

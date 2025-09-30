@@ -1,5 +1,5 @@
-import { BasicProcessingPage } from '../../pages/BasicProcessingPage'
+import { BasicDemo } from '../../components/demos/BasicDemo'
 
 export default function Page() {
-  return <BasicProcessingPage />
+  return <BasicDemo />
 }

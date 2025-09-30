@@ -1,5 +1,5 @@
-import { FiltersPage } from '../../pages/FiltersPage'
+import { FiltersDemo } from '../../components/demos/FiltersDemo'
 
 export default function Page() {
-  return <FiltersPage />
+  return <FiltersDemo />
 }

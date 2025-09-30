@@ -30,7 +30,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { CodeSnippet } from '../components/common/CodeSnippet';
+import { CodeSnippet } from '../common/CodeSnippet';
 
 interface PerformanceMemory {
   usedJSHeapSize: number;
@@ -60,7 +60,7 @@ interface PerformanceTest {
   category: 'resize' | 'format' | 'filter' | 'watermark';
 }
 
-export function PerformancePage() {
+export function PerformanceDemo() {
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<BenchmarkResult[]>([]);
   const [memoryStats, setMemoryStats] = useState<any>(null);
@@ -605,4 +605,4 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
   );
 }
 
-export default PerformancePage;
+// removed old export default;

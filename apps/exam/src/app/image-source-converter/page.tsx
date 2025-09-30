@@ -1,5 +1,5 @@
-import { ImageSourceConverterPage } from '../../pages/ImageSourceConverterPage'
+import { ImageSourceConverterDemo } from '../../components/demos/ImageSourceConverterDemo'
 
 export default function Page() {
-  return <ImageSourceConverterPage />
+  return <ImageSourceConverterDemo />
 }

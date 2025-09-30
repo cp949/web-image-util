@@ -18,9 +18,9 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { CodeSnippet } from '../components/common/CodeSnippet';
-import { ImageUploader } from '../components/common/ImageUploader';
-import { BeforeAfterView } from '../components/ui/BeforeAfterView';
+import { CodeSnippet } from '../common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
+import { BeforeAfterView } from '../ui/BeforeAfterView';
 
 interface FilterOptions {
   blur: number;
@@ -34,7 +34,7 @@ interface FilterOptions {
   vintage: boolean;
 }
 
-export function FiltersPage() {
+export function FiltersDemo() {
   const [originalImage, setOriginalImage] = useState<any>(null);
   const [processedImage, setProcessedImage] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
@@ -628,4 +628,4 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
   );
 }
 
-export default FiltersPage;
+// removed old export default;

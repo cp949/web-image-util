@@ -1,5 +1,5 @@
-import { PresetsPage } from '../../pages/PresetsPage'
+import { PresetsDemo } from '../../components/demos/PresetsDemo'
 
 export default function Page() {
-  return <PresetsPage />
+  return <PresetsDemo />
 }

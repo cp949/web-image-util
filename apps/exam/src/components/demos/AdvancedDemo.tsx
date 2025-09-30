@@ -23,9 +23,9 @@ import {
   Chip,
   Alert,
 } from '@mui/material';
-import { ImageUploader } from '../components/common/ImageUploader';
-import { BeforeAfterView } from '../components/ui/BeforeAfterView';
-import { CodeSnippet } from '../components/common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
+import { BeforeAfterView } from '../ui/BeforeAfterView';
+import { CodeSnippet } from '../common/CodeSnippet';
 import { processImage } from '@cp949/web-image-util';
 import { SimpleWatermark } from '@cp949/web-image-util/advanced';
 
@@ -62,7 +62,7 @@ interface ImageWatermarkOptions {
   blendMode: 'normal' | 'multiply' | 'overlay' | 'soft-light';
 }
 
-export function AdvancedPage() {
+export function AdvancedDemo() {
   const [activeTab, setActiveTab] = useState(0);
   const [originalImage, setOriginalImage] = useState<any>(null);
   const [watermarkImage, setWatermarkImage] = useState<any>(null);
@@ -731,4 +731,4 @@ const blob = await new Promise(resolve => {
   );
 }
 
-export default AdvancedPage;
+// removed old export default;

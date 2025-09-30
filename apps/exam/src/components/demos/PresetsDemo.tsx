@@ -21,9 +21,9 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { createThumbnail, createAvatar, createSocialImage } from '@cp949/web-image-util/presets';
-import { CodeSnippet } from '../components/common/CodeSnippet';
-import { ImageUploader } from '../components/common/ImageUploader';
-import { BeforeAfterView } from '../components/ui/BeforeAfterView';
+import { CodeSnippet } from '../common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
+import { BeforeAfterView } from '../ui/BeforeAfterView';
 
 const SOCIAL_PLATFORMS = {
   twitter: { width: 1200, height: 675, label: 'Twitter (16:9)' },
@@ -34,7 +34,7 @@ const SOCIAL_PLATFORMS = {
   pinterest: { width: 1000, height: 1500, label: 'Pinterest (2:3)' },
 } as const;
 
-export function PresetsPage() {
+export function PresetsDemo() {
   const [activeTab, setActiveTab] = useState(0);
   const [originalImage, setOriginalImage] = useState<any>(null);
   const [processedImages, setProcessedImages] = useState<any[]>([]);
@@ -643,4 +643,4 @@ const socialImages = await Promise.all([
   );
 }
 
-export default PresetsPage;
+// removed old export default;

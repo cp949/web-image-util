@@ -1,5 +1,5 @@
-import { PreviewGalleryPage } from '../../pages/PreviewGalleryPage'
+import { PreviewGalleryDemo } from '../../components/demos/PreviewGalleryDemo'
 
 export default function Page() {
-  return <PreviewGalleryPage />
+  return <PreviewGalleryDemo />
 }

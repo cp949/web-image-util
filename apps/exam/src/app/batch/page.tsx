@@ -1,5 +1,5 @@
-import { BatchPage } from '../../pages/BatchPage'
+import { BatchDemo } from '../../components/demos/BatchDemo'
 
 export default function Page() {
-  return <BatchPage />
+  return <BatchDemo />
 }

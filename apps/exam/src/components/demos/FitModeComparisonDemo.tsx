@@ -20,8 +20,8 @@ import {
 } from '@mui/material';
 import { useState, useCallback } from 'react';
 import { processImage } from '@cp949/web-image-util';
-import { ImageUploader } from '../components/common/ImageUploader';
-import { CodeSnippet } from '../components/common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
+import { CodeSnippet } from '../common/CodeSnippet';
 import { Download, CompareArrows } from '@mui/icons-material';
 
 interface ProcessResult {
@@ -41,7 +41,7 @@ interface ComparisonState {
   isProcessing: boolean;
 }
 
-export function FitModeComparison() {
+export function FitModeComparisonDemo() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [targetSize, setTargetSize] = useState({ width: 300, height: 200 });
   const [comparisonState, setComparisonState] = useState<ComparisonState>({
@@ -574,4 +574,4 @@ for (const fit of fitModes) {
   );
 }
 
-export default FitModeComparison;
+// removed old export default;
