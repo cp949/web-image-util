@@ -50,7 +50,6 @@ export function BasicDemo() {
     format: 'jpeg',
     background: '#ffffff',
     withoutEnlargement: false,
-    withoutReduction: false,
   });
 
   // UI 전용 상태
@@ -90,8 +89,7 @@ const result = await processImage(source)
   .resize(${resizeWidth}, ${resizeHeight}, {
     fit: '${options.fit}',
     background: '${options.background}',
-    withoutEnlargement: ${options.withoutEnlargement},
-    withoutReduction: ${options.withoutReduction}
+    withoutEnlargement: ${options.withoutEnlargement}
   })
   .toBlob({
     format: '${options.format}',
@@ -234,14 +232,6 @@ try {
                     원본보다 큰 크기로 확대하지 않습니다.
                   </Typography>
 
-                  <FormControlLabel
-                    control={<Checkbox checked={options.withoutReduction} onChange={(e) => setOptions((prev) => ({ ...prev, withoutReduction: e.target.checked }))} />}
-                    label="축소 금지 (withoutReduction)"
-                    sx={{ display: 'block', mb: 1 }}
-                  />
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4 }}>
-                    원본보다 작은 크기로 축소하지 않습니다.
-                  </Typography>
                 </Box>
 
                 {/* 포맷 선택 */}
@@ -328,19 +318,6 @@ try {
                   <Typography variant="body2">원본 이미지보다 큰 크기로 확대하지 않습니다.</Typography>
                   <Typography variant="caption" color="text.secondary">
                     원본이 300x200인데 500x400을 요청하면 → 300x200으로 유지
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    축소 금지 (withoutReduction)
-                  </Typography>
-                  <Typography variant="body2">원본 이미지보다 작은 크기로 축소하지 않습니다.</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    원본이 800x600인데 300x200을 요청하면 → 800x600으로 유지
                   </Typography>
                 </CardContent>
               </Card>

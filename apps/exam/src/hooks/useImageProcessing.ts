@@ -113,7 +113,6 @@ export function useImageProcessing() {
             fit: options.fit,
             background: options.background,
             withoutEnlargement: options.withoutEnlargement,
-            withoutReduction: options.withoutReduction,
           })
           .toBlob({
             format: options.format,

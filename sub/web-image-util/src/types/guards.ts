@@ -8,7 +8,7 @@
 import type { ImageSource, ImageFormat, ResizeFit, ResizePosition, ResizeBackground } from './base';
 
 // 순환 import 방지를 위해 상수 직접 정의
-const VALID_RESIZE_FITS = ['cover', 'contain', 'fill'] as const;
+const VALID_RESIZE_FITS = ['cover', 'contain', 'fill', 'maxFit', 'minFit'] as const;
 const VALID_IMAGE_FORMATS = ['jpeg', 'jpg', 'png', 'webp', 'avif', 'gif', 'svg'] as const;
 
 const VALID_POSITION_STRINGS = new Set([

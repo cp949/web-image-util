@@ -26,11 +26,10 @@ interface ProcessPreset {
   options: {
     width?: number;
     height?: number;
-    fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
+    fit?: 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit';
     quality?: number;
     format?: 'jpeg' | 'png' | 'webp';
     withoutEnlargement?: boolean;
-    withoutReduction?: boolean;
     blur?: number;
   };
 }
@@ -60,18 +59,18 @@ const PROCESSING_PRESETS: ProcessPreset[] = [
     options: { width: 300, height: 200, fit: 'fill', quality: 80, format: 'jpeg' },
   },
   {
-    id: 'fit-inside',
+    id: 'fit-maxFit',
     category: 'Fit 모드',
-    name: 'Inside',
+    name: 'MaxFit',
     description: '축소만 허용, 확대 안함',
-    options: { width: 300, height: 200, fit: 'inside', quality: 80, format: 'jpeg' },
+    options: { width: 300, height: 200, fit: 'maxFit', quality: 80, format: 'jpeg' },
   },
   {
-    id: 'fit-outside',
+    id: 'fit-minFit',
     category: 'Fit 모드',
-    name: 'Outside',
+    name: 'MinFit',
     description: '확대만 허용, 축소 안함',
-    options: { width: 300, height: 200, fit: 'outside', quality: 80, format: 'jpeg' },
+    options: { width: 300, height: 200, fit: 'minFit', quality: 80, format: 'jpeg' },
   },
 
   // 크기별 비교 (Cover 고정)
@@ -195,13 +194,6 @@ const PROCESSING_PRESETS: ProcessPreset[] = [
     description: '원본보다 크게 만들지 않음',
     options: { width: 500, height: 300, fit: 'cover', quality: 80, format: 'jpeg', withoutEnlargement: true },
   },
-  {
-    id: 'resize-no-reduce',
-    category: '크기 제한',
-    name: '축소 금지',
-    description: '원본보다 작게 만들지 않음',
-    options: { width: 500, height: 300, fit: 'cover', quality: 80, format: 'jpeg', withoutReduction: true },
-  },
 ];
 
 // 처리 결과 타입
@@ -270,7 +262,6 @@ export function PreviewGalleryDemo() {
         const resizeOptions = {
           fit: preset.options.fit || 'cover',
           withoutEnlargement: preset.options.withoutEnlargement || false,
-          withoutReduction: preset.options.withoutReduction || false,
         };
 
         console.log('🎭 PreviewGalleryDemo 프리셋:', {
@@ -360,9 +351,6 @@ export function PreviewGalleryDemo() {
     }
     if (options.withoutEnlargement) {
       resizeOptions.push('withoutEnlargement: true');
-    }
-    if (options.withoutReduction) {
-      resizeOptions.push('withoutReduction: true');
     }
 
     // 체인 형태로 코드 생성

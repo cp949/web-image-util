@@ -33,8 +33,8 @@ interface ComparisonResult {
   coverResult: ProcessResult | null;
   containResult: ProcessResult | null;
   fillResult: ProcessResult | null;
-  insideResult: ProcessResult | null;
-  outsideResult: ProcessResult | null;
+  maxFitResult: ProcessResult | null;
+  minFitResult: ProcessResult | null;
   totalProcessingTime: number;
   averageProcessingTime: number;
 }
@@ -46,8 +46,8 @@ export function SvgCompatibilityDemo() {
     coverResult: null,
     containResult: null,
     fillResult: null,
-    insideResult: null,
-    outsideResult: null,
+    maxFitResult: null,
+    minFitResult: null,
     totalProcessingTime: 0,
     averageProcessingTime: 0
   });
@@ -61,8 +61,8 @@ export function SvgCompatibilityDemo() {
       coverResult: null,
       containResult: null,
       fillResult: null,
-      insideResult: null,
-      outsideResult: null,
+      maxFitResult: null,
+      minFitResult: null,
       totalProcessingTime: 0,
       averageProcessingTime: 0
     });
@@ -96,8 +96,8 @@ export function SvgCompatibilityDemo() {
       coverResult: null,
       containResult: null,
       fillResult: null,
-      insideResult: null,
-      outsideResult: null,
+      maxFitResult: null,
+      minFitResult: null,
       totalProcessingTime: 0,
       averageProcessingTime: 0
     });
@@ -142,8 +142,8 @@ export function SvgCompatibilityDemo() {
       coverResult: null,
       containResult: null,
       fillResult: null,
-      insideResult: null,
-      outsideResult: null,
+      maxFitResult: null,
+      minFitResult: null,
       totalProcessingTime: 0,
       averageProcessingTime: 0
     });
@@ -183,12 +183,12 @@ export function SvgCompatibilityDemo() {
       }
 
       // 모든 fit 모드 처리
-      const fitModes: Array<{ name: 'coverResult' | 'containResult' | 'fillResult' | 'insideResult' | 'outsideResult'; fit: 'cover' | 'contain' | 'fill' | 'inside' | 'outside'; emoji: string }> = [
+      const fitModes: Array<{ name: 'coverResult' | 'containResult' | 'fillResult' | 'maxFitResult' | 'minFitResult'; fit: 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit'; emoji: string }> = [
         { name: 'coverResult', fit: 'cover', emoji: '🔴' },
         { name: 'containResult', fit: 'contain', emoji: '🔵' },
         { name: 'fillResult', fit: 'fill', emoji: '🟡' },
-        { name: 'insideResult', fit: 'inside', emoji: '🟢' },
-        { name: 'outsideResult', fit: 'outside', emoji: '🟠' }
+        { name: 'maxFitResult', fit: 'maxFit', emoji: '🟢' },
+        { name: 'minFitResult', fit: 'minFit', emoji: '🟠' }
       ];
 
       const results: Partial<ComparisonResult> = {};
@@ -250,13 +250,13 @@ export function SvgCompatibilityDemo() {
   }, [originalImage, originalSource]);
 
   // 결과 다운로드
-  const handleDownload = useCallback((type: 'cover' | 'contain' | 'fill' | 'inside' | 'outside') => {
+  const handleDownload = useCallback((type: 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit') => {
     const resultMap = {
       cover: comparisonResult.coverResult,
       contain: comparisonResult.containResult,
       fill: comparisonResult.fillResult,
-      inside: comparisonResult.insideResult,
-      outside: comparisonResult.outsideResult
+      maxFit: comparisonResult.maxFitResult,
+      minFit: comparisonResult.minFitResult
     };
 
     const result = resultMap[type];
@@ -494,8 +494,8 @@ for (const source of sources) {
 
             {/* 모든 Fit 모드 비교 결과 */}
             {(comparisonResult.coverResult || comparisonResult.containResult ||
-              comparisonResult.fillResult || comparisonResult.insideResult ||
-              comparisonResult.outsideResult) && (
+              comparisonResult.fillResult || comparisonResult.maxFitResult ||
+              comparisonResult.minFitResult) && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -535,8 +535,8 @@ for (const source of sources) {
                       { key: 'coverResult', name: 'Cover', emoji: '🔴', description: '이미지가 영역을 가득 채움 (잘림 가능)' },
                       { key: 'containResult', name: 'Contain', emoji: '🔵', description: '이미지 전체가 영역에 맞춤 (여백 가능)' },
                       { key: 'fillResult', name: 'Fill', emoji: '🟡', description: '비율 무시하고 영역에 맞춤' },
-                      { key: 'insideResult', name: 'Inside', emoji: '🟢', description: '축소만, 확대 안함' },
-                      { key: 'outsideResult', name: 'Outside', emoji: '🟠', description: '확대만, 축소 안함' }
+                      { key: 'maxFitResult', name: 'MaxFit', emoji: '🟢', description: '축소만, 확대 안함' },
+                      { key: 'minFitResult', name: 'MinFit', emoji: '🟠', description: '확대만, 축소 안함' }
                     ].map(({ key, name, emoji, description }) => {
                       const result = comparisonResult[key as keyof ComparisonResult] as ProcessResult | null;
                       if (!result) return null;

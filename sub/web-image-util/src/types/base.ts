@@ -82,12 +82,14 @@ export const OutputFormats = {
 /**
  * 리사이징 fit 옵션 (Canvas API 제한)
  *
- * @description 브라우저 Canvas에서 실제 구현 가능한 방식만:
+ * @description 브라우저 Canvas에서 실제 구현 가능한 방식:
  * - cover: 비율 유지하며 전체 영역을 채움, 필요시 잘림 (기본값)
  * - contain: 비율 유지하며 전체 이미지가 영역에 들어가도록 맞춤
  * - fill: 비율 무시하고 정확히 맞춤
+ * - maxFit: 축소만 허용, 확대 안함 (inside 대체)
+ * - minFit: 확대만 허용, 축소 안함 (outside 대체)
  */
-export type ResizeFit = 'cover' | 'contain' | 'fill';
+export type ResizeFit = 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit';
 
 /**
  * Fit 상수

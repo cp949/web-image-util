@@ -45,7 +45,6 @@ export interface ProcessingOptions {
   format: 'jpeg' | 'png' | 'webp'; // OutputFormat 대신 직접 정의
   background?: string;
   withoutEnlargement?: boolean;
-  withoutReduction?: boolean;
 }
 
 /**
