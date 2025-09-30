@@ -7,7 +7,9 @@ import type { BlurOptions, OutputFormat, ResizeOptions, ResultMetadata, SmartRes
 import { ImageProcessError } from '../types';
 import { SmartProcessor } from './smart-processor';
 import type { ResizeConfig } from '../types/resize-config';
-import { trimEmptySpace } from '../utils/trim-empty';
+import { executeCoverResize } from './resize-engines/cover';
+import { executeContainResize } from './resize-engines/contain';
+import { executeFillResize } from './resize-engines/fill';
 import { executeMaxFitResize } from './resize-engines/max-fit';
 import { executeMinFitResize } from './resize-engines/min-fit';
 
@@ -398,233 +400,50 @@ export class RenderPipeline {
 
   /**
    * 🆕 새로운 ResizeConfig 기반 리사이징 실행 (v2.0+)
-   * fit 모드별 분기 처리
+   * fit 모드별 분기 처리 - 각 엔진으로 위임
    */
   private executeResizeNew(context: CanvasContext, config: ResizeConfig): CanvasContext {
-    console.log('🆕 executeResizeNew 실행:', {
-      fit: config.fit,
-      size: `${config.width || '?'}x${config.height || '?'}`,
-      config,
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🆕 executeResizeNew 실행:', {
+        fit: config.fit,
+        size: `${config.width || '?'}x${config.height || '?'}`,
+        config,
+      });
+    }
 
-    // fit 모드별 분기 처리
+    let resizedCanvas: HTMLCanvasElement;
+
+    // fit 모드별 엔진으로 위임
     switch (config.fit) {
       case 'cover':
-        return this.executeCoverResize(context, config);
+        resizedCanvas = executeCoverResize(context.canvas, config);
+        break;
       case 'contain':
-        return this.executeContainResize(context, config);
+        resizedCanvas = executeContainResize(context.canvas, config);
+        break;
       case 'fill':
-        return this.executeFillResize(context, config);
+        resizedCanvas = executeFillResize(context.canvas, config);
+        break;
       case 'maxFit':
-        return this.executeMaxFitResize(context, config);
+        resizedCanvas = executeMaxFitResize(context.canvas, config);
+        break;
       case 'minFit':
-        return this.executeMinFitResize(context, config);
+        resizedCanvas = executeMinFitResize(context.canvas, config);
+        break;
       default: {
         // Exhaustiveness check: TypeScript가 모든 케이스를 처리했는지 확인
         const _exhaustiveCheck: never = config;
-        throw new ImageProcessError(`지원하지 않는 fit 모드입니다: ${(_exhaustiveCheck as any).fit}`, 'FEATURE_NOT_SUPPORTED');
+        throw new ImageProcessError(
+          `지원하지 않는 fit 모드입니다: ${(_exhaustiveCheck as any).fit}`,
+          'FEATURE_NOT_SUPPORTED'
+        );
       }
     }
-  }
-
-  /**
-   * Cover 모드 실행: 이미지를 지정된 크기에 맞춰 꽉 채움
-   */
-  private executeCoverResize(context: CanvasContext, config: ResizeConfig & { fit: 'cover' }): CanvasContext {
-    // Phase 2에서는 기본 구조만 구현, 실제 로직은 Phase 5에서 구현
-    console.log('🔴 executeCoverResize (Phase 5에서 구현 예정)');
-
-    // 임시로 레거시 executeResize를 호출하여 동작하도록 함
-    return this.executeResize(context, {
-      width: config.width,
-      height: config.height,
-      fit: 'cover',
-      background: config.background,
-    });
-  }
-
-  /**
-   * Contain 모드 실행: 이미지를 지정된 크기 안에 전체가 들어가도록 맞춤
-   * Phase 3에서 trimEmpty 기능 추가 완료
-   */
-  private executeContainResize(context: CanvasContext, config: ResizeConfig & { fit: 'contain' }): CanvasContext {
-    console.log('🟩 executeContainResize:', {
-      targetSize: `${config.width}x${config.height}`,
-      trimEmpty: config.trimEmpty,
-      withoutEnlargement: config.withoutEnlargement,
-      background: config.background,
-    });
-
-    // 1. 기본 contain 리사이즈 실행
-    let resizedContext = this.executeBasicContainResize(context, config);
-
-    // 2. trimEmpty 옵션이 true인 경우 빈 공간 제거
-    if (config.trimEmpty) {
-      console.log('✂️ trimEmpty 실행: 빈 공간 제거 중...');
-      const trimmedCanvas = trimEmptySpace(resizedContext.canvas, config.background);
-
-      // 트림된 캔버스가 다르면 새 컨텍스트 생성
-      if (trimmedCanvas !== resizedContext.canvas) {
-        const trimmedCtx = trimmedCanvas.getContext('2d');
-        if (!trimmedCtx) {
-          throw new ImageProcessError('trimEmpty 후 캔버스 컨텍스트를 가져올 수 없습니다', 'CANVAS_CREATION_FAILED');
-        }
-
-        // 기존 임시 Canvas 정리
-        this.temporaryCanvases = this.temporaryCanvases.filter((c) => c !== resizedContext.canvas);
-        this.canvasPool.release(resizedContext.canvas);
-
-        // 새 임시 Canvas 추적
-        this.temporaryCanvases.push(trimmedCanvas);
-
-        resizedContext = {
-          canvas: trimmedCanvas,
-          ctx: trimmedCtx,
-          width: trimmedCanvas.width,
-          height: trimmedCanvas.height,
-        };
-
-        console.log('✅ trimEmpty 완료:', {
-          newSize: `${resizedContext.width}x${resizedContext.height}`,
-        });
-      } else {
-        console.log('ℹ️ trimEmpty: 트림할 공간 없음');
-      }
-    }
-
-    return resizedContext;
-  }
-
-  /**
-   * 기본 Contain 리사이즈 실행 (trimEmpty 제외)
-   */
-  private executeBasicContainResize(
-    context: CanvasContext,
-    config: ResizeConfig & { fit: 'contain' }
-  ): CanvasContext {
-    const { width: targetWidth, height: targetHeight } = config;
-    const { width: srcWidth, height: srcHeight } = context;
-
-    // contain 로직: 비율 유지하며 전체가 들어가도록 크기 조정
-    const scaleX = targetWidth / srcWidth;
-    const scaleY = targetHeight / srcHeight;
-    const scale = Math.min(scaleX, scaleY);
-
-    // withoutEnlargement 옵션 처리: 확대 방지
-    const finalScale = config.withoutEnlargement && scale > 1 ? 1 : scale;
-
-    const newWidth = Math.round(srcWidth * finalScale);
-    const newHeight = Math.round(srcHeight * finalScale);
-
-    console.log('📐 contain 스케일 계산:', {
-      sourceSize: `${srcWidth}x${srcHeight}`,
-      targetSize: `${targetWidth}x${targetHeight}`,
-      scale: `${finalScale.toFixed(3)} (Math.min)`,
-      resultSize: `${newWidth}x${newHeight}`,
-    });
-
-    // 새 캔버스 생성 (배경색 적용)
-    const newCanvas = this.canvasPool.acquire(targetWidth, targetHeight);
-    const newCtx = newCanvas.getContext('2d');
-
-    if (!newCtx) {
-      this.canvasPool.release(newCanvas);
-      throw new ImageProcessError('Contain 리사이징용 캔버스 생성에 실패했습니다', 'CANVAS_CREATION_FAILED');
-    }
-
-    // 고품질 설정
-    newCtx.imageSmoothingEnabled = true;
-    newCtx.imageSmoothingQuality = 'high';
-
-    // 임시 Canvas로 추적
-    this.temporaryCanvases.push(newCanvas);
-
-    // 배경색 채우기
-    if (config.background) {
-      this.fillBackground(newCtx, targetWidth, targetHeight, config.background);
-    }
-
-    // 중앙 정렬하여 이미지 그리기
-    const offsetX = Math.round((targetWidth - newWidth) / 2);
-    const offsetY = Math.round((targetHeight - newHeight) / 2);
-
-    console.log('🖼️ 이미지 배치:', {
-      position: `${offsetX}, ${offsetY}`,
-      size: `${newWidth}x${newHeight}`,
-    });
-
-    newCtx.drawImage(context.canvas, 0, 0, srcWidth, srcHeight, offsetX, offsetY, newWidth, newHeight);
-
-    return {
-      canvas: newCanvas,
-      ctx: newCtx,
-      width: targetWidth,
-      height: targetHeight,
-    };
-  }
-
-  /**
-   * Fill 모드 실행: 이미지를 지정된 크기에 정확히 맞춤 (비율 무시)
-   */
-  private executeFillResize(context: CanvasContext, config: ResizeConfig & { fit: 'fill' }): CanvasContext {
-    // Phase 2에서는 기본 구조만 구현, 실제 로직은 Phase 5에서 구현
-    console.log('🟦 executeFillResize (Phase 5에서 구현 예정)');
-
-    // 임시로 레거시 executeResize를 호출하여 동작하도록 함
-    return this.executeResize(context, {
-      width: config.width,
-      height: config.height,
-      fit: 'fill',
-      background: config.background,
-    });
-  }
-
-  /**
-   * MaxFit 모드 실행: 최대 크기 제한 (축소만, 확대 안함)
-   * Phase 4에서 구현 완료
-   */
-  private executeMaxFitResize(context: CanvasContext, config: ResizeConfig & { fit: 'maxFit' }): CanvasContext {
-    console.log('🟨 executeMaxFitResize 실행');
-
-    // maxFit 엔진 실행
-    const resizedCanvas = executeMaxFitResize(context.canvas, config);
 
     // 새로운 컨텍스트로 반환
     const newCtx = resizedCanvas.getContext('2d');
     if (!newCtx) {
-      throw new ImageProcessError('maxFit 결과 캔버스의 컨텍스트를 가져올 수 없습니다', 'CANVAS_CREATION_FAILED');
-    }
-
-    // 기존 Canvas가 변경되지 않은 경우 그대로 반환
-    if (resizedCanvas === context.canvas) {
-      return context;
-    }
-
-    // 임시 Canvas로 추적
-    this.temporaryCanvases.push(resizedCanvas);
-
-    return {
-      canvas: resizedCanvas,
-      ctx: newCtx,
-      width: resizedCanvas.width,
-      height: resizedCanvas.height,
-    };
-  }
-
-  /**
-   * MinFit 모드 실행: 최소 크기 보장 (확대만, 축소 안함)
-   * Phase 4에서 구현 완료
-   */
-  private executeMinFitResize(context: CanvasContext, config: ResizeConfig & { fit: 'minFit' }): CanvasContext {
-    console.log('🟧 executeMinFitResize 실행');
-
-    // minFit 엔진 실행
-    const resizedCanvas = executeMinFitResize(context.canvas, config);
-
-    // 새로운 컨텍스트로 반환
-    const newCtx = resizedCanvas.getContext('2d');
-    if (!newCtx) {
-      throw new ImageProcessError('minFit 결과 캔버스의 컨텍스트를 가져올 수 없습니다', 'CANVAS_CREATION_FAILED');
+      throw new ImageProcessError('리사이징 결과 캔버스의 컨텍스트를 가져올 수 없습니다', 'CANVAS_CREATION_FAILED');
     }
 
     // 기존 Canvas가 변경되지 않은 경우 그대로 반환
@@ -670,6 +489,9 @@ export class RenderPipeline {
     }
 
     if (options.withoutReduction) {
+      console.warn(
+        '⚠️ withoutReduction is deprecated and will be ignored. Use maxFit or minFit in ResizeConfig instead.'
+      );
       if (finalTargetWidth < originalWidth || finalTargetHeight < originalHeight) {
         const scale = Math.max(originalWidth / finalTargetWidth, originalHeight / finalTargetHeight);
         finalTargetWidth = Math.round(finalTargetWidth * scale);

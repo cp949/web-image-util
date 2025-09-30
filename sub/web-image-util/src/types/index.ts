@@ -77,7 +77,10 @@ export interface ResizeOptions {
   background?: ResizeBackground;
   /** 확대 방지 여부 (기본: false, contain과 함께 사용하면 작은 이미지 확대 방지) */
   withoutEnlargement?: boolean;
-  /** 축소 방지 여부 (기본: false) */
+  /**
+   * 축소 방지 여부 (기본: false)
+   * @deprecated withoutReduction is no longer supported. Use maxFit or minFit instead.
+   */
   withoutReduction?: boolean;
 }
 
