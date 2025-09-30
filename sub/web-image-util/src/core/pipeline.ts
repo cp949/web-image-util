@@ -8,6 +8,8 @@ import { ImageProcessError } from '../types';
 import { SmartProcessor } from './smart-processor';
 import type { ResizeConfig } from '../types/resize-config';
 import { trimEmptySpace } from '../utils/trim-empty';
+import { executeMaxFitResize } from './resize-engines/max-fit';
+import { executeMinFitResize } from './resize-engines/min-fit';
 
 /**
  * 레거시 리사이즈 연산 (호환성 유지)
@@ -579,34 +581,66 @@ export class RenderPipeline {
 
   /**
    * MaxFit 모드 실행: 최대 크기 제한 (축소만, 확대 안함)
+   * Phase 4에서 구현 완료
    */
   private executeMaxFitResize(context: CanvasContext, config: ResizeConfig & { fit: 'maxFit' }): CanvasContext {
-    // Phase 2에서는 기본 구조만 구현, 실제 로직은 Phase 4에서 구현
-    console.log('🟨 executeMaxFitResize (Phase 4에서 구현 예정)');
+    console.log('🟨 executeMaxFitResize 실행');
 
-    // 임시로 레거시 inside를 사용하여 동작하도록 함
-    return this.executeResize(context, {
-      width: config.width,
-      height: config.height,
-      fit: 'inside',
-      background: config.background,
-    });
+    // maxFit 엔진 실행
+    const resizedCanvas = executeMaxFitResize(context.canvas, config);
+
+    // 새로운 컨텍스트로 반환
+    const newCtx = resizedCanvas.getContext('2d');
+    if (!newCtx) {
+      throw new ImageProcessError('maxFit 결과 캔버스의 컨텍스트를 가져올 수 없습니다', 'CANVAS_CREATION_FAILED');
+    }
+
+    // 기존 Canvas가 변경되지 않은 경우 그대로 반환
+    if (resizedCanvas === context.canvas) {
+      return context;
+    }
+
+    // 임시 Canvas로 추적
+    this.temporaryCanvases.push(resizedCanvas);
+
+    return {
+      canvas: resizedCanvas,
+      ctx: newCtx,
+      width: resizedCanvas.width,
+      height: resizedCanvas.height,
+    };
   }
 
   /**
    * MinFit 모드 실행: 최소 크기 보장 (확대만, 축소 안함)
+   * Phase 4에서 구현 완료
    */
   private executeMinFitResize(context: CanvasContext, config: ResizeConfig & { fit: 'minFit' }): CanvasContext {
-    // Phase 2에서는 기본 구조만 구현, 실제 로직은 Phase 4에서 구현
-    console.log('🟧 executeMinFitResize (Phase 4에서 구현 예정)');
+    console.log('🟧 executeMinFitResize 실행');
 
-    // 임시로 레거시 outside를 사용하여 동작하도록 함
-    return this.executeResize(context, {
-      width: config.width,
-      height: config.height,
-      fit: 'outside',
-      background: config.background,
-    });
+    // minFit 엔진 실행
+    const resizedCanvas = executeMinFitResize(context.canvas, config);
+
+    // 새로운 컨텍스트로 반환
+    const newCtx = resizedCanvas.getContext('2d');
+    if (!newCtx) {
+      throw new ImageProcessError('minFit 결과 캔버스의 컨텍스트를 가져올 수 없습니다', 'CANVAS_CREATION_FAILED');
+    }
+
+    // 기존 Canvas가 변경되지 않은 경우 그대로 반환
+    if (resizedCanvas === context.canvas) {
+      return context;
+    }
+
+    // 임시 Canvas로 추적
+    this.temporaryCanvases.push(resizedCanvas);
+
+    return {
+      canvas: resizedCanvas,
+      ctx: newCtx,
+      width: resizedCanvas.width,
+      height: resizedCanvas.height,
+    };
   }
 
   /**
