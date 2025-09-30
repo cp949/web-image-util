@@ -223,3 +223,59 @@ export function clearCanvasPool(): void {
 export function setCanvasPoolMaxSize(size: number): void {
   CanvasPool.getInstance().setMaxPoolSize(size);
 }
+
+// SVG 고품질 렌더링을 위한 Canvas 옵션
+export interface HighQualityCanvasOptions {
+  scale?: number; // 사용자 정의 스케일 배율
+  imageSmoothingQuality?: 'low' | 'medium' | 'high'; // 이미지 스무딩 품질
+  willReadFrequently?: boolean; // 빈번한 픽셀 읽기 여부
+  useDevicePixelRatio?: boolean; // devicePixelRatio 사용 여부 (기본값: false)
+}
+
+/**
+ * 고품질 렌더링을 위한 Canvas 설정 함수
+ * DevicePixelRatio와 사용자 설정을 고려한 고해상도 Canvas를 생성합니다.
+ *
+ * @param width - 논리적 너비
+ * @param height - 논리적 높이
+ * @param options - 고품질 옵션
+ * @returns Canvas와 Context 객체
+ */
+export function setupHighQualityCanvas(
+  width: number,
+  height: number,
+  options: HighQualityCanvasOptions = {}
+): { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D } {
+  const canvas = document.createElement('canvas');
+
+  // DevicePixelRatio 고려한 스케일 계산 - 옵션으로 제어 가능
+  const deviceScale = options.useDevicePixelRatio ? (window.devicePixelRatio || 1) : 1;
+  const userScale = options.scale || 1;
+  const totalScale = Math.min(4, Math.max(1, deviceScale * userScale));
+
+  // Canvas 실제 크기 설정 (고해상도)
+  canvas.width = width * totalScale;
+  canvas.height = height * totalScale;
+
+  // CSS 크기는 논리적 크기로 설정
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  // Context 설정
+  const context = canvas.getContext('2d', {
+    willReadFrequently: options.willReadFrequently || false
+  });
+
+  if (!context) {
+    throw new Error('Could not get 2D context from canvas');
+  }
+
+  // 스케일 적용
+  context.scale(totalScale, totalScale);
+
+  // 고품질 렌더링 설정
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = options.imageSmoothingQuality || 'high';
+
+  return { canvas, context };
+}

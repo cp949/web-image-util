@@ -29,7 +29,9 @@ import {
   Speed as PerformanceIcon,
   DeveloperMode as DevToolsIcon,
   Build as SvgIcon,
-  Transform as ConverterTestIcon
+  Transform as ConverterTestIcon,
+  CompareArrows as FitModeIcon,
+  HighQuality as QualityIcon
 } from '@mui/icons-material'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -48,7 +50,10 @@ const navigationItems = [
   { path: '/batch', label: '배치 처리', icon: <BatchIcon /> },
   { path: '/performance', label: '성능 테스트', icon: <PerformanceIcon /> },
   { path: '/dev-tools', label: '개발자 도구', icon: <DevToolsIcon /> },
-  { path: '/svg-compatibility', label: 'SVG 호환성', icon: <SvgIcon /> }
+  // SVG Features Section
+  { path: '/svg-fit-modes', label: 'SVG Fit 모드 비교', icon: <FitModeIcon /> },
+  { path: '/svg-quality', label: 'SVG 고품질 렌더링', icon: <QualityIcon /> },
+  { path: '/svg-compatibility', label: 'SVG 호환성 처리', icon: <SvgIcon /> }
 ]
 
 interface AppLayoutProps {

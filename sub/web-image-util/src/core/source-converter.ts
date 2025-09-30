@@ -5,6 +5,11 @@
 import type { ImageSource, ProcessorOptions } from '../types';
 import { ImageProcessError } from '../types';
 import { normalizeSvgBasics } from '../utils/svg-compatibility';
+import { extractSvgDimensions, setSvgDimensions } from '../utils/svg-dimensions';
+import { setupHighQualityCanvas } from '../base/canvas-utils';
+import type { QualityLevel} from './svg-complexity-analyzer';
+import { analyzeSvgComplexity } from './svg-complexity-analyzer';
+import type { SvgProcessingOptions } from '../advanced/svg-processor';
 
 /**
  * 이미지 소스 타입
@@ -20,7 +25,83 @@ export type SourceType =
   | 'svg'
   | 'dataurl'
   | 'url'
+  | 'bloburl'
   | 'path';
+
+/**
+ * UTF-8 BOM을 제거합니다
+ * @param s 입력 문자열
+ * @returns BOM이 제거된 문자열
+ */
+function stripBom(s: string): string {
+  return s.replace(/^\uFEFF/, '');
+}
+
+/**
+ * XML 프롤로그와 노이즈를 제거합니다
+ * XML 선언, 주석, DOCTYPE, 공백을 건너뛴 후 실제 내용을 반환
+ * @param head 분석할 문자열의 앞부분
+ * @returns 정제된 문자열
+ */
+function stripXmlPreambleAndNoise(head: string): string {
+  let s = head.trimStart();
+
+  // XML 선언 제거: <?xml ...?>
+  if (s.startsWith("<?xml")) {
+    const end = s.indexOf("?>");
+    if (end >= 0) s = s.slice(end + 2).trimStart();
+  }
+
+  // 주석 제거 (여러 개 연속 처리)
+  // <!-- ... -->를 반복적으로 제거
+  while (true) {
+    const m = s.match(/^<!--[\s\S]*?-->\s*/);
+    if (!m) break;
+    s = s.slice(m[0].length);
+  }
+
+  // DOCTYPE 제거
+  const doctype = s.match(/^<!DOCTYPE[^>]*>\s*/i);
+  if (doctype) s = s.slice(doctype[0].length);
+
+  return s.trimStart();
+}
+
+/**
+ * 정확한 인라인 SVG 판정
+ * BOM 제거 → 프롤로그 제거 → <svg 태그 확인
+ * @param str 검사할 문자열
+ * @returns SVG 여부
+ */
+function isInlineSvg(str: string): boolean {
+  if (!str) return false;
+  const stripped = stripXmlPreambleAndNoise(stripBom(str));
+  return /^<svg[\s>]/i.test(stripped);
+}
+
+/**
+ * Data URL이 SVG인지 확인
+ * @param input 검사할 문자열
+ * @returns SVG Data URL 여부
+ */
+function isDataUrlSvg(input: string): boolean {
+  return /^data:image\/svg\+xml(?:[;,]|$)/i.test(input);
+}
+
+/**
+ * Blob의 앞부분을 텍스트로 읽어 SVG인지 스니핑
+ * @param blob 검사할 Blob
+ * @param bytes 읽을 바이트 수 (기본: 4096)
+ * @returns SVG 여부
+ */
+async function sniffSvgFromBlob(blob: Blob, bytes = 4096): Promise<boolean> {
+  try {
+    const slice = await blob.slice(0, bytes).text();
+    return isInlineSvg(slice);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * 이미지 소스 타입을 감지합니다
@@ -55,6 +136,10 @@ export function detectSourceType(source: ImageSource): SourceType {
       'size' in source &&
       ('slice' in source || 'arrayBuffer' in source))
   ) {
+    // SVG 파일 감지
+    if (source.type === 'image/svg+xml' || (source as File).name?.endsWith('.svg')) {
+      return 'svg';
+    }
     return 'blob';
   }
 
@@ -69,19 +154,47 @@ export function detectSourceType(source: ImageSource): SourceType {
   if (typeof source === 'string') {
     const trimmed = source.trim();
 
-    // SVG XML 감지
-    if (trimmed.startsWith('<svg') || trimmed.startsWith('<?xml')) {
+    // Data URL SVG 감지 (우선순위 - 일반 Data URL보다 먼저 체크)
+    if (isDataUrlSvg(trimmed)) {
       return 'svg';
     }
 
-    // Data URL 감지
+    // 인라인 SVG XML 감지 (정확한 검사)
+    if (isInlineSvg(trimmed)) {
+      return 'svg';
+    }
+
+    // 기타 Data URL 감지
     if (trimmed.startsWith('data:')) {
       return 'dataurl';
     }
 
     // HTTP/HTTPS URL 감지
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      // Content-Type 기반 판정은 실제 로딩 시점에서 수행
+      // 여기서는 확장자를 힌트로만 사용
+      try {
+        const url = new URL(trimmed);
+        if (url.pathname.toLowerCase().endsWith('.svg')) {
+          return 'svg';
+        }
+      } catch {
+        // URL 파싱 실패 시 문자열 기반 검사로 폴백
+        if (trimmed.toLowerCase().endsWith('.svg')) {
+          return 'svg';
+        }
+      }
       return 'url';
+    }
+
+    // Blob URL 감지 (createObjectURL로 생성된 URL)
+    if (trimmed.startsWith('blob:')) {
+      return 'bloburl';
+    }
+
+    // 파일 경로 - SVG 확장자 체크
+    if (trimmed.toLowerCase().endsWith('.svg')) {
+      return 'svg';
     }
 
     // 나머지는 파일 경로로 취급
@@ -92,6 +205,48 @@ export function detectSourceType(source: ImageSource): SourceType {
 }
 
 /**
+ * Data URL에서 SVG 문자열을 추출하고 검증합니다
+ * @param dataUrl SVG Data URL
+ * @returns 파싱되고 검증된 SVG 문자열
+ */
+function parseSvgFromDataUrl(dataUrl: string): string {
+  // data:image/svg+xml;base64,<base64-data> 형태
+  // data:image/svg+xml;charset=utf-8,<url-encoded-data> 형태
+  // data:image/svg+xml,<svg-content> 형태
+
+  const [header, content] = dataUrl.split(',');
+  if (!content) {
+    throw new ImageProcessError('유효하지 않은 SVG Data URL 형식입니다', 'INVALID_SOURCE');
+  }
+
+  let svgContent: string;
+
+  // base64 인코딩된 경우
+  if (header.includes('base64')) {
+    try {
+      svgContent = atob(content);
+    } catch (error) {
+      throw new ImageProcessError('Base64 SVG 디코딩에 실패했습니다', 'SOURCE_LOAD_FAILED', error as Error);
+    }
+  } else {
+    // URL 인코딩된 경우
+    try {
+      svgContent = decodeURIComponent(content);
+    } catch (error) {
+      // 디코딩 실패 시 원본 콘텐츠 사용
+      svgContent = content;
+    }
+  }
+
+  // 디코딩된 내용이 실제로 SVG인지 검증
+  if (!isInlineSvg(svgContent)) {
+    throw new ImageProcessError('Data URL 내용이 유효한 SVG가 아닙니다', 'INVALID_SOURCE');
+  }
+
+  return svgContent;
+}
+
+/**
  * 문자열 소스를 HTMLImageElement로 변환
  */
 async function convertStringToElement(source: string, options?: ProcessorOptions): Promise<HTMLImageElement> {
@@ -99,11 +254,67 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
 
   switch (sourceType) {
     case 'svg':
-      return convertSvgToElement(source);
+      // SVG 문자열, Data URL SVG, HTTP URL SVG 처리
+      if (typeof source === 'string') {
+        // Data URL SVG인 경우 파싱
+        if (isDataUrlSvg(source.trim())) {
+          const svgContent = parseSvgFromDataUrl(source);
+          return convertSvgToElement(svgContent, undefined, undefined, {
+            useDevicePixelRatio: options?.useDevicePixelRatio,
+            quality: 'auto',
+            crossOrigin: options?.crossOrigin
+          });
+        }
+        // HTTP URL SVG인 경우 로드 후 처리
+        else if (source.trim().startsWith('http://') || source.trim().startsWith('https://')) {
+          // URL에서 SVG 내용을 로드
+          const response = await fetch(source);
+          if (!response.ok) {
+            throw new ImageProcessError(`SVG URL 로드 실패: ${response.status}`, 'SOURCE_LOAD_FAILED');
+          }
+          const svgContent = await response.text();
+          return convertSvgToElement(svgContent, undefined, undefined, {
+            useDevicePixelRatio: options?.useDevicePixelRatio,
+            quality: 'auto',
+            crossOrigin: options?.crossOrigin
+          });
+        }
+        // 파일 경로 SVG인 경우 로드 후 처리
+        else if (source.trim().toLowerCase().endsWith('.svg')) {
+          // 파일 경로에서 SVG 내용을 로드
+          const response = await fetch(source);
+          if (!response.ok) {
+            throw new ImageProcessError(`SVG 파일 로드 실패: ${response.status}`, 'SOURCE_LOAD_FAILED');
+          }
+          const svgContent = await response.text();
+          return convertSvgToElement(svgContent, undefined, undefined, {
+            useDevicePixelRatio: options?.useDevicePixelRatio,
+            quality: 'auto',
+            crossOrigin: options?.crossOrigin
+          });
+        }
+        // 일반 SVG 문자열
+        else {
+          return convertSvgToElement(source, undefined, undefined, {
+            useDevicePixelRatio: options?.useDevicePixelRatio,
+            quality: 'auto'
+          });
+        }
+      } else {
+        // SVG Blob/File을 문자열로 변환 후 처리
+        const svgText = await (source as Blob).text();
+        return convertSvgToElement(svgText, undefined, undefined, {
+          useDevicePixelRatio: options?.useDevicePixelRatio,
+          quality: 'auto',
+          crossOrigin: options?.crossOrigin
+        });
+      }
     case 'dataurl':
     case 'url':
     case 'path':
-      return loadImageFromUrl(source, options?.crossOrigin);
+      return loadImageFromUrl(source, options?.crossOrigin, options);
+    case 'bloburl':
+      return loadBlobUrl(source, options);
     default:
       throw new ImageProcessError(`변환할 수 없는 문자열 소스입니다: ${sourceType}`, 'INVALID_SOURCE');
   }
@@ -112,49 +323,286 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
 // SVG 정규화는 브라우저 호환성을 위해 svg-compatibility 모듈에서 처리
 
 /**
- * SVG 문자열을 HTMLImageElement로 변환
+ * SVG 문자열을 Base64 Data URL로 변환
+ * @param svgString SVG 문자열
+ * @returns Base64 인코딩된 Data URL
  */
-async function convertSvgToElement(svgString: string): Promise<HTMLImageElement> {
-  // SVG 정규화 처리
-  const normalizedSvg = normalizeSvgBasics(svgString);
-
-  const blob = new Blob([normalizedSvg], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-
+function createBase64DataUrl(svgString: string): string {
   try {
-    const img = new Image();
-    // Blob URL은 동일 출처이므로 crossOrigin 설정 불필요
-    const loaded = new Promise<HTMLImageElement>((resolve, reject) => {
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new ImageProcessError('SVG 이미지 로딩에 실패했습니다', 'SOURCE_LOAD_FAILED'));
+    // UTF-8 안전한 Base64 인코딩
+    const base64 = btoa(
+      Array.from(new TextEncoder().encode(svgString))
+        .map(byte => String.fromCharCode(byte))
+        .join('')
+    );
+    return `data:image/svg+xml;base64,${base64}`;
+  } catch (error) {
+    // Base64 인코딩 실패 시 URL 인코딩 폴백
+    const encoded = encodeURIComponent(svgString);
+    return `data:image/svg+xml,${encoded}`;
+  }
+}
+
+/**
+ * SVG 고품질 렌더링 옵션
+ */
+interface SvgRenderingOptions {
+  /** 품질 레벨 또는 자동 선택 */
+  quality?: QualityLevel | 'auto';
+  /** 디바이스 픽셀비 사용 여부 */
+  useDevicePixelRatio?: boolean;
+  /** 최대 스케일링 팩터 제한 */
+  maxScaleFactor?: number;
+  /** CORS 설정 */
+  crossOrigin?: string;
+}
+
+/**
+ * SVG 문자열을 HTMLImageElement로 변환 (고품질 렌더링)
+ * @param svgString - 변환할 SVG 문자열
+ * @param targetWidth - 목표 너비 (선택적)
+ * @param targetHeight - 목표 높이 (선택적)
+ * @param options - 고품질 렌더링 옵션
+ * @returns 고품질로 처리된 HTMLImageElement
+ */
+async function convertSvgToElement(
+  svgString: string,
+  targetWidth?: number,
+  targetHeight?: number,
+  options?: SvgRenderingOptions
+): Promise<HTMLImageElement> {
+  try {
+    // 1. SVG 정규화 처리
+    const normalizedSvg = normalizeSvgBasics(svgString);
+
+    // 2. SVG 크기 정보 추출
+    const dimensions = extractSvgDimensions(normalizedSvg);
+
+    // 3. 목표 크기 결정
+    const finalWidth = targetWidth || dimensions.width;
+    const finalHeight = targetHeight || dimensions.height;
+
+    // 4. 품질 레벨 결정 (자동 또는 명시적)
+    let qualityLevel: QualityLevel = 'medium';
+    if (options?.quality === 'auto' || !options?.quality) {
+      const complexityResult = analyzeSvgComplexity(normalizedSvg);
+      qualityLevel = complexityResult.recommendedQuality;
+    } else {
+      qualityLevel = options.quality;
+    }
+
+    // 5. 품질별 스케일링 팩터 계산
+    const qualityScaleMap: Record<QualityLevel, number> = {
+      'low': 1,
+      'medium': 2,
+      'high': 3,
+      'ultra': 4
+    };
+
+    let scaleFactor = qualityScaleMap[qualityLevel];
+
+    // DevicePixelRatio 고려 (선택적)
+    if (options?.useDevicePixelRatio) {
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      scaleFactor = Math.max(scaleFactor, devicePixelRatio);
+    }
+
+    // 최대 스케일링 팩터 제한
+    const maxScale = options?.maxScaleFactor || 4;
+    scaleFactor = Math.min(scaleFactor, maxScale);
+
+    // 6. 최종 렌더링 크기 계산
+    const renderWidth = finalWidth * scaleFactor;
+    const renderHeight = finalHeight * scaleFactor;
+
+    // 🔧 DEBUG: SVG 고품질 렌더링 정보
+    console.log('🔧 convertSvgToElement 고품질 렌더링:', {
+      originalDimensions: `${dimensions.width}x${dimensions.height}`,
+      targetDimensions: `${finalWidth}x${finalHeight}`,
+      qualityLevel,
+      scaleFactor,
+      renderDimensions: `${renderWidth}x${renderHeight}`,
+      hasExplicitSize: dimensions.hasExplicitSize,
+      viewBox: dimensions.viewBox,
+      timestamp: Date.now()
     });
 
-    img.decoding = 'async';
-    img.src = url;
+    // 7. SVG 크기 명시적 설정 - aspect ratio 보존 강화
+    const enhancedSvg = setSvgDimensions(normalizedSvg, renderWidth, renderHeight, {
+      preserveAspectRatio: true
+    });
 
-    await loaded;
-    return img;
-  } finally {
-    URL.revokeObjectURL(url);
+    // 8. 최적화된 Image 생성 (하이브리드 방식)
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      let objectUrl: string | null = null;
+
+      // 성공 핸들러
+      img.onload = () => {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl); // 메모리 해제
+        }
+        resolve(img);
+      };
+
+      // 에러 핸들러 - 복구 시도 포함
+      img.onerror = (error) => {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl); // 에러 시에도 메모리 해제
+        }
+        reject(new ImageProcessError(
+          `SVG 로드 실패: 품질 레벨 ${qualityLevel}, 크기 ${renderWidth}x${renderHeight}, 오류: ${error}`,
+          'SOURCE_LOAD_FAILED'
+        ));
+      };
+
+      // SVG 크기에 따른 하이브리드 방식 선택
+      const svgSize = new Blob([enhancedSvg]).size;
+      const SIZE_THRESHOLD = 50 * 1024; // 50KB 기준
+
+      if (svgSize > SIZE_THRESHOLD) {
+        // 큰 SVG: Blob URL 방식 (메모리 효율적)
+        try {
+          const blob = new Blob([enhancedSvg], { type: 'image/svg+xml' });
+          objectUrl = URL.createObjectURL(blob);
+          img.src = objectUrl;
+        } catch (blobError) {
+          // Blob 생성 실패 시 Base64 폴백
+          console.warn('Blob URL 생성 실패, Base64로 폴백:', blobError);
+          img.src = createBase64DataUrl(enhancedSvg);
+        }
+      } else {
+        // 작은 SVG: Base64 방식 (더 빠름)
+        img.src = createBase64DataUrl(enhancedSvg);
+      }
+
+      // 🚀 고품질 이미지 디코딩 설정
+      img.decoding = 'async';
+
+      // 크로스 오리진 설정 (필요시)
+      if (options?.crossOrigin) {
+        img.crossOrigin = options.crossOrigin;
+      }
+    });
+
+  } catch (error) {
+    throw new ImageProcessError(`SVG 처리 실패: ${error instanceof Error ? error.message : error}`, 'SOURCE_LOAD_FAILED');
+  }
+}
+
+/**
+ * Blob URL에서 이미지를 로드하여 HTMLImageElement로 변환
+ * Content-Type 우선 확인 및 이중 검증으로 SVG 처리 적용
+ */
+async function loadBlobUrl(blobUrl: string, options?: ProcessorOptions): Promise<HTMLImageElement> {
+  try {
+    // Blob URL에서 Content-Type 및 내용 확인
+    const response = await fetch(blobUrl);
+
+    if (!response.ok) {
+      throw new ImageProcessError(`Blob URL 로드 실패: ${response.status}`, 'SOURCE_LOAD_FAILED');
+    }
+
+    const contentType = response.headers.get('content-type')?.toLowerCase() || '';
+    const blob = await response.blob();
+
+    // 1차: Content-Type 기반 SVG 판정
+    const isSvgMime = contentType.includes('image/svg+xml');
+
+    // 2차: MIME이 비어있거나 XML 계열인 경우 내용 스니핑
+    const isEmptyMime = !contentType;
+    const isXmlMime = contentType.includes('text/xml') || contentType.includes('application/xml');
+
+    if (isSvgMime || isEmptyMime || isXmlMime) {
+      const isSvgContent = await sniffSvgFromBlob(blob);
+
+      // SVG MIME이거나 내용 스니핑에서 SVG가 확인된 경우
+      if (isSvgMime || isSvgContent) {
+        const svgContent = await blob.text();
+        return convertSvgToElement(svgContent, undefined, undefined, {
+          useDevicePixelRatio: options?.useDevicePixelRatio,
+          quality: 'auto'
+        });
+      }
+    }
+
+    // SVG가 아닌 경우 기본 Image 로딩
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new ImageProcessError(`Blob URL 이미지 로딩에 실패했습니다: ${blobUrl}`, 'SOURCE_LOAD_FAILED'));
+      img.src = blobUrl;
+    });
+
+  } catch (error) {
+    throw new ImageProcessError('Blob URL 처리 중 오류가 발생했습니다', 'SOURCE_LOAD_FAILED', error as Error);
   }
 }
 
 /**
  * URL에서 이미지를 로드하여 HTMLImageElement로 변환
+ * Content-Type 우선 확인 및 이중 검증으로 SVG 처리 적용
  */
-async function loadImageFromUrl(url: string, crossOrigin?: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
+async function loadImageFromUrl(url: string, crossOrigin?: string, options?: ProcessorOptions): Promise<HTMLImageElement> {
+  try {
+    // HTTP/HTTPS URL인 경우 Content-Type을 우선적으로 확인
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      try {
+        // 한 번의 GET 요청으로 Content-Type 확인 및 내용 로드
+        const response = await fetch(url, {
+          method: 'GET',
+          mode: crossOrigin ? 'cors' : 'same-origin'
+        });
 
-    if (crossOrigin) {
-      img.crossOrigin = crossOrigin;
+        if (!response.ok) {
+          throw new ImageProcessError(`URL 로드 실패: ${response.status}`, 'SOURCE_LOAD_FAILED');
+        }
+
+        const contentType = response.headers.get('content-type')?.toLowerCase() || '';
+
+        // 1차: Content-Type 기반 SVG 판정
+        const isSvgMime = contentType.includes('image/svg+xml');
+
+        // 2차: XML 계열 MIME에 대한 내용 스니핑
+        const isXmlMime = contentType.includes('text/xml') || contentType.includes('application/xml');
+
+        if (isSvgMime || isXmlMime) {
+          const responseText = await response.text();
+
+          // SVG MIME이거나 XML MIME에서 실제 SVG 내용이 확인된 경우
+          if (isSvgMime || (isXmlMime && isInlineSvg(responseText))) {
+            return convertSvgToElement(responseText, undefined, undefined, {
+              useDevicePixelRatio: options?.useDevicePixelRatio,
+              quality: 'auto',
+              crossOrigin: options?.crossOrigin
+            });
+          }
+        }
+
+        // SVG가 아닌 경우 기본 Image 로딩으로 폴백
+        // Response 스트림이 이미 소비되었으므로 URL로 새 Image 생성
+      } catch (fetchError) {
+        // fetch 실패 시 기본 Image 로딩으로 폴백
+        console.warn('Content-Type 확인 실패, 기본 이미지 로딩으로 폴백:', fetchError);
+      }
     }
 
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new ImageProcessError(`이미지 로딩에 실패했습니다: ${url}`, 'SOURCE_LOAD_FAILED'));
+    // 기본 Image 로딩 방식
+    return new Promise((resolve, reject) => {
+      const img = new Image();
 
-    img.src = url;
-  });
+      if (crossOrigin) {
+        img.crossOrigin = crossOrigin;
+      }
+
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new ImageProcessError(`이미지 로딩에 실패했습니다: ${url}`, 'SOURCE_LOAD_FAILED'));
+
+      img.src = url;
+    });
+  } catch (error) {
+    throw new ImageProcessError('URL 이미지 로딩 중 오류가 발생했습니다', 'SOURCE_LOAD_FAILED', error as Error);
+  }
 }
 
 /**
@@ -245,9 +693,19 @@ async function convertCanvasToElement(canvas: HTMLCanvasElement): Promise<HTMLIm
 }
 
 /**
- * Blob을 HTMLImageElement로 변환
+ * Blob을 HTMLImageElement로 변환 (SVG 고품질 처리 포함)
  */
-async function convertBlobToElement(blob: Blob): Promise<HTMLImageElement> {
+async function convertBlobToElement(blob: Blob, options?: ProcessorOptions): Promise<HTMLImageElement> {
+  // SVG Blob인 경우 고품질 처리
+  if (blob.type === 'image/svg+xml' || (blob as File).name?.endsWith('.svg')) {
+    const svgText = await blob.text();
+    return convertSvgToElement(svgText, undefined, undefined, {
+      useDevicePixelRatio: options?.useDevicePixelRatio,
+      quality: 'auto'
+    });
+  }
+
+  // 일반 Blob 처리
   return new Promise((resolve, reject) => {
     const img = new Image();
     const objectUrl = URL.createObjectURL(blob);
@@ -315,13 +773,13 @@ export async function convertToImageElement(
         'size' in source &&
         ('slice' in source || 'arrayBuffer' in source))
     ) {
-      return convertBlobToElement(source as Blob);
+      return convertBlobToElement(source as Blob, options);
     }
 
     if (source instanceof ArrayBuffer) {
       const mimeType = detectMimeTypeFromBuffer(source);
       const blob = new Blob([source], { type: mimeType });
-      return convertBlobToElement(blob);
+      return convertBlobToElement(blob, options);
     }
 
     if (source instanceof Uint8Array) {
@@ -332,7 +790,7 @@ export async function convertToImageElement(
           : source.slice().buffer;
       const mimeType = detectMimeTypeFromBuffer(arrayBuffer);
       const blob = new Blob([arrayBuffer], { type: mimeType });
-      return convertBlobToElement(blob);
+      return convertBlobToElement(blob, options);
     }
 
     if (typeof source === 'string') {

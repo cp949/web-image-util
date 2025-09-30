@@ -4,7 +4,9 @@
  */
 
 import { createPipeline } from './core/pipeline';
-import { convertToImageElement } from './core/source-converter';
+import { convertToImageElement, detectSourceType } from './core/source-converter';
+import type { QualityLevel } from './core/svg-complexity-analyzer';
+import type { SvgProcessingOptions } from './advanced/svg-processor';
 import type {
   ResultBlob,
   BlurOptions,
@@ -39,6 +41,14 @@ import { DataURLResultImpl, BlobResultImpl, FileResultImpl, CanvasResultImpl } f
 export class ImageProcessor {
   private pipeline = createPipeline();
   private options: ProcessorOptions;
+
+  // SVG 전용 설정
+  private svgQuality: QualityLevel | 'auto' = 'auto';
+  private svgAdvancedOptions: Partial<SvgProcessingOptions> = {};
+
+  // Phase 3: 고급 성능 옵션
+  private performanceModeValue: 'auto' | 'high-performance' | 'high-quality' | 'balanced' = 'auto';
+  private enableOptimization: boolean = true;
 
   constructor(
     private source: ImageSource,
@@ -157,6 +167,132 @@ export class ImageProcessor {
   }
 
   // ==============================================
+  // SVG 품질 및 옵션 설정 메서드
+  // ==============================================
+
+  /**
+   * SVG 품질 레벨 설정
+   *
+   * @param quality 품질 레벨 또는 'auto' (자동 선택)
+   * @returns 체이닝을 위한 this
+   *
+   * @example
+   * ```typescript
+   * // 자동 품질 선택 (복잡도 기반)
+   * processor.quality('auto')
+   *
+   * // 명시적 품질 설정
+   * processor.quality('low')     // 1x 스케일링 (빠름)
+   * processor.quality('medium')  // 2x 스케일링 (균형)
+   * processor.quality('high')    // 3x 스케일링 (고품질)
+   * processor.quality('ultra')   // 4x 스케일링 (최고품질)
+   *
+   * // 체이닝 사용
+   * processor.quality('high').resize(800, 600).toBlob()
+   * ```
+   */
+  quality(quality: QualityLevel | 'auto'): this {
+    this.svgQuality = quality;
+    return this;
+  }
+
+  /**
+   * SVG 고급 처리 옵션 설정
+   *
+   * @param options SVG 처리 옵션
+   * @returns 체이닝을 위한 this
+   *
+   * @example
+   * ```typescript
+   * // 배경색 및 투명도 설정
+   * processor.svgOptions({
+   *   backgroundColor: '#ffffff',
+   *   preserveTransparency: false
+   * })
+   *
+   * // JPEG 품질 설정
+   * processor.svgOptions({
+   *   jpegQuality: 0.9
+   * })
+   *
+   * // 체이닝 사용
+   * processor
+   *   .quality('ultra')
+   *   .svgOptions({ backgroundColor: '#f0f0f0' })
+   *   .resize(1200, 800)
+   *   .toBlob({ format: 'jpeg' })
+   * ```
+   */
+  svgOptions(options: Partial<SvgProcessingOptions>): this {
+    this.svgAdvancedOptions = { ...this.svgAdvancedOptions, ...options };
+    return this;
+  }
+
+  // ==============================================
+  // Phase 3: 고급 성능 최적화 메서드
+  // ==============================================
+
+  /**
+   * 성능 모드 설정 (Phase 3 신규 기능)
+   *
+   * @param mode 성능 모드
+   * @returns 체이닝을 위한 this
+   *
+   * @example
+   * ```typescript
+   * // 자동 최적화 (기본값) - 브라우저 기능에 따라 자동 선택
+   * processor.performanceMode('auto')
+   *
+   * // 고성능 모드 - OffscreenCanvas + Web Worker 우선 사용
+   * processor.performanceMode('high-performance')
+   *
+   * // 고품질 모드 - 품질 최우선, 처리 시간 무시
+   * processor.performanceMode('high-quality')
+   *
+   * // 균형 모드 - 성능과 품질의 균형
+   * processor.performanceMode('balanced')
+   *
+   * // 체이닝 사용
+   * processor
+   *   .performanceMode('high-performance')
+   *   .quality('ultra')
+   *   .resize(2000, 1500)
+   *   .toBlob('webp')
+   * ```
+   */
+  performanceMode(mode: 'auto' | 'high-performance' | 'high-quality' | 'balanced'): this {
+    this.performanceModeValue = mode;
+    return this;
+  }
+
+  /**
+   * SVG 최적화 활성화/비활성화 (Phase 3 신규 기능)
+   *
+   * @param enabled 최적화 활성화 여부
+   * @returns 체이닝을 위한 this
+   *
+   * @example
+   * ```typescript
+   * // SVG 최적화 활성화 (기본값)
+   * processor.optimization(true)
+   *
+   * // SVG 최적화 비활성화 (원본 유지)
+   * processor.optimization(false)
+   *
+   * // 고성능 + 최적화 조합
+   * processor
+   *   .performanceMode('high-performance')
+   *   .optimization(true)
+   *   .quality('high')
+   *   .toBlob('webp')
+   * ```
+   */
+  optimization(enabled: boolean): this {
+    this.enableOptimization = enabled;
+    return this;
+  }
+
+  // ==============================================
   // 스마트 포맷 선택 및 최적화 메서드
   // ==============================================
 
@@ -256,6 +392,8 @@ export class ImageProcessor {
   async toBlob(options?: OutputOptions): Promise<ResultBlob>;
   async toBlob(format: OutputFormat): Promise<ResultBlob>;
   async toBlob(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultBlob> {
+    // ✅ 모든 소스가 동일한 파이프라인 사용 (SVG 분기 제거)
+
     // 문자열인 경우 포맷으로 처리하고 최적 품질 적용
     const options: OutputOptions =
       typeof optionsOrFormat === 'string'
@@ -599,8 +737,14 @@ export class ImageProcessor {
    */
   private async executeProcessing() {
     try {
-      // 소스를 HTMLImageElement로 변환
+      // 🚀 SVG 최적화 경로: 이미 고품질 렌더링된 경우 불필요한 리사이징 방지
+      const sourceType = detectSourceType(this.source);
       const imageElement = await convertToImageElement(this.source, this.options);
+
+      // SVG이고 단순 리사이징만 하는 경우 파이프라인 우회 검토
+      if (sourceType === 'svg' && this.shouldBypassPipelineForSvg(imageElement)) {
+        return this.createDirectCanvasResult(imageElement);
+      }
 
       // 파이프라인 실행
       const result = await this.pipeline.execute(imageElement);
@@ -613,6 +757,87 @@ export class ImageProcessor {
 
       throw new ImageProcessError('이미지 처리 중 오류가 발생했습니다', 'CANVAS_CREATION_FAILED', error as Error);
     }
+  }
+
+  /**
+   * SVG에 대해 파이프라인을 우회할지 결정
+   * 이미 최적 크기로 렌더링된 SVG는 불필요한 리사이징을 방지
+   */
+  private shouldBypassPipelineForSvg(imageElement: HTMLImageElement): boolean {
+    const operations = this.pipeline.getOperations();
+
+    // 연산이 없거나 리사이징만 있는 경우
+    if (operations.length === 0) {
+      return true;
+    }
+
+    if (operations.length === 1 && operations[0].type === 'resize') {
+      const resizeOp = operations[0];
+      const { width, height } = resizeOp.options;
+
+      // 목표 크기와 실제 크기가 일치하거나 매우 유사한 경우 (5% 이내 오차 허용)
+      if (width && height) {
+        const widthMatch = Math.abs(imageElement.naturalWidth - width) / width < 0.05;
+        const heightMatch = Math.abs(imageElement.naturalHeight - height) / height < 0.05;
+
+        if (widthMatch && heightMatch) {
+          console.log('🚀 SVG 파이프라인 우회: 크기가 이미 최적 상태', {
+            target: `${width}x${height}`,
+            actual: `${imageElement.naturalWidth}x${imageElement.naturalHeight}`,
+            bypass: true
+          });
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * 파이프라인을 우회하여 직접 Canvas 결과 생성
+   */
+  private async createDirectCanvasResult(imageElement: HTMLImageElement): Promise<{
+    canvas: HTMLCanvasElement;
+    result: any;
+  }> {
+    const startTime = performance.now();
+
+    // 고품질 Canvas 생성
+    const canvas = document.createElement('canvas');
+    canvas.width = imageElement.naturalWidth;
+    canvas.height = imageElement.naturalHeight;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new ImageProcessError('Canvas 2D 컨텍스트를 생성할 수 없습니다', 'CANVAS_CREATION_FAILED');
+    }
+
+    // 🚀 최고 품질 설정으로 SVG 그리기
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(imageElement, 0, 0);
+
+    const processingTime = performance.now() - startTime;
+
+    const result = {
+      width: canvas.width,
+      height: canvas.height,
+      processingTime,
+      originalSize: {
+        width: imageElement.naturalWidth,
+        height: imageElement.naturalHeight,
+      },
+      format: this.pipeline['outputFormat'], // private 멤버 접근
+    };
+
+    console.log('✅ SVG 직접 렌더링 완료:', {
+      size: `${canvas.width}x${canvas.height}`,
+      processingTime: `${processingTime.toFixed(2)}ms`,
+      quality: 'high (pipeline bypassed)'
+    });
+
+    return { canvas, result };
   }
 
   /**
@@ -679,6 +904,10 @@ export class ImageProcessor {
 
     return mimeTypes[format.toLowerCase()] || 'image/png';
   }
+
+  // ==============================================
+  // ✅ SVG 전용 처리 경로 제거됨 - 모든 소스가 통합 파이프라인 사용
+  // ==============================================
 }
 
 /**

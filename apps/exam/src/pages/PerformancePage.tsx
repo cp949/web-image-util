@@ -74,11 +74,11 @@ export function PerformancePage() {
     testAllSizes: false,
   });
 
-  // 샘플 이미지 설정
+  // 샘플 이미지 설정 (실제 존재하는 파일들)
   const sampleImages = {
-    small: { src: '/sample-images/small-200x200.png', width: 200, height: 200 },
-    medium: { src: '/sample-images/landscape-1920x1080.jpg', width: 1920, height: 1080 },
-    large: { src: '/sample-images/large-4000x3000.jpg', width: 4000, height: 3000 },
+    small: { src: '/sample-images/sample3.png', width: 300, height: 300 },
+    medium: { src: '/sample-images/sample1.jpg', width: 1920, height: 1080 },
+    large: { src: '/sample-images/sample2.jpg', width: 4000, height: 3000 },
   };
 
   // 성능 테스트 케이스들

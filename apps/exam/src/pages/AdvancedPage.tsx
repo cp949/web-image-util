@@ -173,7 +173,7 @@ export function AdvancedPage() {
       // 결과를 Blob으로 변환
       const blob = await new Promise<Blob>((resolve, reject) => {
         watermarkedCanvas.toBlob(
-          (blob) => {
+          (blob: Blob | null) => {
             if (blob) resolve(blob);
             else reject(new Error('Blob 생성 실패'));
           },
@@ -228,7 +228,7 @@ export function AdvancedPage() {
       // 결과를 Blob으로 변환
       const blob = await new Promise<Blob>((resolve, reject) => {
         watermarkedCanvas.toBlob(
-          (blob) => {
+          (blob: Blob | null) => {
             if (blob) resolve(blob);
             else reject(new Error('Blob 생성 실패'));
           },

@@ -119,6 +119,10 @@ export class RenderPipeline {
       throw new ImageProcessError('Canvas 2D 컨텍스트를 생성할 수 없습니다', 'CANVAS_CREATION_FAILED');
     }
 
+    // 🚀 고품질 렌더링 설정 추가 - SVG 화질 개선
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
     // 임시 Canvas로 추적
     this.temporaryCanvases.push(canvas);
 
@@ -174,6 +178,20 @@ export class RenderPipeline {
     if (!newCtx) {
       this.canvasPool.release(newCanvas);
       throw new ImageProcessError('리사이징용 캔버스 생성에 실패했습니다', 'CANVAS_CREATION_FAILED');
+    }
+
+    // 🚀 확대 시 고품질 설정 강화 - SVG 벡터 품질 유지
+    const scaleX = dimensions.destWidth / dimensions.sourceWidth;
+    const scaleY = dimensions.destHeight / dimensions.sourceHeight;
+    const isScalingUp = scaleX > 1 || scaleY > 1;
+
+    if (isScalingUp) {
+      newCtx.imageSmoothingEnabled = true;
+      newCtx.imageSmoothingQuality = 'high';
+    } else {
+      // 축소 시에도 고품질 유지
+      newCtx.imageSmoothingEnabled = true;
+      newCtx.imageSmoothingQuality = 'high';
     }
 
     // 임시 Canvas로 추적
@@ -281,6 +299,10 @@ export class RenderPipeline {
         this.canvasPool.release(tempCanvas);
         throw new ImageProcessError('블러용 임시 캔버스 생성에 실패했습니다', 'CANVAS_CREATION_FAILED');
       }
+
+      // 🚀 블러 처리 시에도 고품질 설정 유지
+      tempCtx.imageSmoothingEnabled = true;
+      tempCtx.imageSmoothingQuality = 'high';
       tempCtx.filter = `blur(${radius}px)`;
 
       tempCtx.drawImage(context.canvas, 0, 0);
@@ -333,6 +355,14 @@ export class RenderPipeline {
       }
     }
 
+    // 🔍 DEBUG: Fit mode 계산 디버깅
+    console.log('🧪 calculateResizeDimensions DEBUG:', {
+      originalSize: `${originalWidth}x${originalHeight}`,
+      targetSize: `${finalTargetWidth}x${finalTargetHeight}`,
+      fitMode: fit,
+      timestamp: Date.now()
+    });
+
     switch (fit) {
       case 'fill':
         return {
@@ -353,7 +383,8 @@ export class RenderPipeline {
         const padWidth = Math.round(originalWidth * padScale);
         const padHeight = Math.round(originalHeight * padScale);
 
-        return {
+        // 🟩 DEBUG: CONTAIN 모드 상세 계산
+        const result = {
           canvasWidth: finalTargetWidth,
           canvasHeight: finalTargetHeight,
           sourceX: 0,
@@ -365,6 +396,17 @@ export class RenderPipeline {
           destWidth: padWidth,
           destHeight: padHeight,
         };
+
+        console.log('🟩 CONTAIN result:', {
+          scale: padScale.toFixed(3) + ' (Math.min)',
+          imageSize: `${padWidth}x${padHeight}`,
+          canvasSize: `${result.canvasWidth}x${result.canvasHeight}`,
+          position: `${result.destX},${result.destY}`,
+          padding: `${finalTargetWidth - padWidth}x${finalTargetHeight - padHeight}`,
+          scaleCalculation: `Math.min(${finalTargetWidth}/${originalWidth}, ${finalTargetHeight}/${originalHeight})`
+        });
+
+        return result;
       }
 
       case 'inside': {
@@ -413,7 +455,8 @@ export class RenderPipeline {
         const coverWidth = Math.round(originalWidth * coverScale);
         const coverHeight = Math.round(originalHeight * coverScale);
 
-        return {
+        // 🔴 DEBUG: COVER 모드 상세 계산
+        const result = {
           canvasWidth: finalTargetWidth,
           canvasHeight: finalTargetHeight,
           sourceX: 0,
@@ -425,6 +468,17 @@ export class RenderPipeline {
           destWidth: coverWidth,
           destHeight: coverHeight,
         };
+
+        console.log('🔴 COVER result:', {
+          scale: coverScale.toFixed(3) + ' (Math.max)',
+          imageSize: `${coverWidth}x${coverHeight}`,
+          canvasSize: `${result.canvasWidth}x${result.canvasHeight}`,
+          position: `${result.destX},${result.destY}`,
+          overflow: `${coverWidth - finalTargetWidth}x${coverHeight - finalTargetHeight}`,
+          scaleCalculation: `Math.max(${finalTargetWidth}/${originalWidth}, ${finalTargetHeight}/${originalHeight})`
+        });
+
+        return result;
       }
     }
   }
@@ -491,6 +545,10 @@ export class RenderPipeline {
       this.canvasPool.release(newCanvas);
       throw new ImageProcessError('Trim용 캔버스 생성에 실패했습니다', 'CANVAS_CREATION_FAILED');
     }
+
+    // 🚀 트림 처리 시에도 고품질 설정 유지
+    newCtx.imageSmoothingEnabled = true;
+    newCtx.imageSmoothingQuality = 'high';
 
     // 임시 Canvas로 추적
     this.temporaryCanvases.push(newCanvas);

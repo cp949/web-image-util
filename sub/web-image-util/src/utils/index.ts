@@ -42,3 +42,26 @@ export {
 
 // 시스템 검증 및 문서화
 export { SystemValidator, API_EXAMPLES, type ValidationReport } from './system-validator';
+
+// Phase 3: 브라우저 기능 감지 시스템
+export {
+  BrowserCapabilityDetector,
+  detectBrowserCapabilities,
+  analyzePerformanceFeatures,
+  detectSyncCapabilities,
+  detectFormatSupport,
+  getOptimalProcessingMode,
+  DEFAULT_DETECTION_OPTIONS,
+  PROCESSING_MODE_DESCRIPTIONS,
+  FEATURE_PERFORMANCE_WEIGHTS,
+  type BrowserCapabilities,
+  type PerformanceFeatures,
+  type DetectionOptions,
+} from './browser-capabilities';
+
+// SVG 벡터 최적화 시스템 (Phase 3 Step 3)
+export {
+  SvgOptimizer,
+  type SvgOptimizationOptions,
+  type OptimizationResult,
+} from './svg-optimizer';

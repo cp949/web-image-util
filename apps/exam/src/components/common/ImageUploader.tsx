@@ -12,7 +12,6 @@ import {
 } from '@mui/material'
 import {
   CloudUpload as UploadIcon,
-  Image as ImageIcon,
   Link as LinkIcon
 } from '@mui/icons-material'
 import { useDropzone } from 'react-dropzone'
@@ -120,14 +119,6 @@ export function ImageUploader({
             URL로 불러오기
           </Button>
 
-          {/* 샘플 이미지 버튼들 */}
-          <Button
-            variant="outlined"
-            startIcon={<ImageIcon />}
-            onClick={() => onImageSelect('/sample-images/landscape-1920x1080.jpg')}
-          >
-            샘플 이미지
-          </Button>
         </Stack>
 
         {/* 로딩 상태 */}

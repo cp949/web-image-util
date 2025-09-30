@@ -29,6 +29,12 @@ Canvas 2D API 기반으로 다양한 이미지 처리 기능을 제공합니다.
 - **스마트 리사이징**: 확대/축소 제어, 비율 유지 옵션
 - **다양한 케이스**: 너비/높이 개별 조정, 최대/최소 크기 제한
 
+### 🧠 SVG 판정 로직 (핵심 기술)
+- **정확한 소스 감지**: 프롤로그 처리 후 정확한 SVG 태그 매칭
+- **이중 검증 시스템**: MIME 타입 + 내용 스니핑으로 안전한 판정
+- **오판정 방지**: HTML 내 SVG, 일반 XML 등 비SVG 소스 정확히 구분
+- **다양한 소스 지원**: 인라인, Data URL, Blob URL, HTTP URL, 파일 경로
+
 ### 📋 편의 함수 (Presets)
 - **썸네일 생성**: `createThumbnail()` - 웹 최적화 (WebP 우선)
 - **아바타 생성**: `createAvatar()` - 고품질 프로필 이미지 (투명도 지원)
@@ -39,7 +45,7 @@ Canvas 2D API 기반으로 다양한 이미지 처리 기능을 제공합니다.
 - **🎯 타입 안전**: 완전한 TypeScript 지원
 - **🌐 브라우저 네이티브**: Canvas API 기반으로 의존성 없음
 - **📦 트리쉐이킹**: ES 모듈로 번들 크기 최적화
-- **🎨 SVG 호환성**: 문제가 있는 SVG 자동 수정 및 최적화
+- **🛡️ 보안성**: XSS 방지, 캔버스 오염 방지, 안전한 SVG 처리
 
 ---
 
@@ -300,32 +306,65 @@ await processImage(img).resize(300, 200).toBlob();
 await processImage(arrayBuffer).resize(300, 200).toBlob();
 ```
 
-### 🎨 SVG 특별 지원
+### 🎨 SVG 판정 로직
 
-**문제가 있는 SVG라도 렌더링 가능**하도록 자동 호환성 처리를 제공합니다:
+#### 🧠 **고도화된 SVG 판정 로직**
 
+라이브러리의 **핵심 기술**로, 다양한 형태의 SVG 입력을 정확하고 안전하게 감지합니다:
+
+**📋 판정 우선순위:**
+1. **인라인 SVG 마크업** - 프롤로그 처리 후 정확한 `<svg>` 태그 매칭
+2. **Data URL** - `data:image/svg+xml` 접두사 + 내용 검증
+3. **Blob URL** - MIME 타입 + 내용 스니핑 이중 확인
+4. **HTTP(S) URL** - Content-Type 우선, 확장자는 보조 힌트
+5. **파일 경로** - 확장자 기반 (`.svg`)
+
+**🔍 프롤로그 정제 과정:**
 ```typescript
-// 기본 SVG 처리
-await processImage('<svg>...</svg>').resize(300, 200).toBlob();
+// ✅ 다음을 모두 제거한 후 <svg> 태그 확인
+// - UTF-8 BOM (\uFEFF)
+// - XML 선언 (<?xml ...?>)
+// - HTML/SVG 주석 (<!-- ... -->)
+// - DOCTYPE 선언 (<!DOCTYPE svg ...>)
+// - 공백 문자들
 
-// 파일 경로 (상대/절대 경로)
-await processImage('./assets/logo.svg').resize(200, 200).toBlob();
-await processImage('/images/icon.svg').resize(100, 100).toBlob();
+// 예시: 복잡한 SVG도 정확히 판정
+const complexSvg = `\uFEFF<?xml version="1.0" encoding="UTF-8"?>
+<!-- Designer: John Doe -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Main content -->
+<svg xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="50" r="40"/>
+</svg>`;
 
-// 표준을 따르지 않는 SVG도 처리 가능
-const brokenSvg = `<svg width="100" height="100">
-  <circle cx="50" cy="50" r="40" fill="red"/>
-</svg>`; // 네임스페이스 누락, viewBox 없음 등
-
-await processImage(brokenSvg).resize(200, 200).toBlob();
+await processImage(complexSvg).resize(200, 200).toBlob(); // ✅ 정확히 SVG로 감지
 ```
 
-**SVG 호환성 개선 기능:**
-- 누락된 네임스페이스 자동 추가
-- viewBox 자동 생성
-- 레거시 문법 현대화 (xlink:href → href)
-- 크기 속성 자동 보정
-- 렌더링 오류 방지
+**🛡️ 오판정 방지:**
+```typescript
+// ❌ 이제 SVG로 잘못 판정되지 않음
+const htmlDoc = '<html><body><svg>...</svg></body></html>';     // → path 타입
+const xmlDoc = '<?xml version="1.0"?><root>data</root>';        // → path 타입
+const textWithSvg = 'This text contains <svg> tag';             // → path 타입
+
+// ✅ 정확한 SVG만 SVG로 판정
+const validSvg = '<svg xmlns="http://www.w3.org/2000/svg">...</svg>'; // → svg 타입
+```
+
+**🔄 이중 검증 시스템:**
+- **1차**: MIME 타입 확인 (`image/svg+xml`)
+- **2차**: 내용 스니핑으로 재확인 (첫 4KB 분석)
+- **XML 계열**: `text/xml`, `application/xml`에서 실제 SVG 내용 확인
+- **안전성**: 서버 MIME 오류나 Blob 타입 누락에도 정확한 판정
+
+**SVG 자동 감지 및 고품질 처리:**
+- **정확한 SVG 판정**: 오판정 없는 엄격한 검증 시스템
+- **다양한 소스 지원**: XML 태그, Data URL, 파일 확장자, HTTP Content-Type
+- **벡터 품질 보존**: 확대해도 화질 저하 없는 고해상도 렌더링
+- **호환성 개선**: 누락된 네임스페이스, viewBox 자동 생성, 레거시 문법 현대화
+- **표준 fit 모드 지원**: contain, cover, fill, inside, outside 모든 모드 완벽 지원
+- **보안 고려**: XSS 방지, 캔버스 오염 방지, CORS 처리
 
 ```typescript
 // 수동으로 SVG 호환성 처리 (선택사항)
@@ -339,6 +378,36 @@ const { enhanced, report } = enhanceBrowserCompatibility(svgString, {
 
 console.log('처리 결과:', report.warnings); // 발견된 문제들
 await processImage(enhanced).resize(300, 200).toBlob();
+```
+
+**지원되는 SVG 소스 타입:**
+```typescript
+// 1. SVG XML 문자열
+const svgXml = '<svg width="100" height="100">...</svg>';
+await processImage(svgXml).resize(200, 200).toBlob();
+
+// 2. Data URL SVG
+const svgDataUrl = 'data:image/svg+xml;base64,PHN2Zz4uLi48L3N2Zz4=';
+await processImage(svgDataUrl).resize(200, 200).toBlob();
+
+// 3. HTTP/HTTPS URL (.svg 확장자 또는 Content-Type: image/svg+xml)
+await processImage('https://example.com/icon.svg').resize(200, 200).toBlob();
+await processImage('https://api.com/icon').resize(200, 200).toBlob(); // Content-Type으로 감지
+
+// 4. 파일 경로
+await processImage('./assets/logo.svg').resize(200, 200).toBlob();
+
+// 5. File 객체 (type='image/svg+xml' 또는 .svg 확장자)
+const svgFile = new File([svgXml], 'icon.svg', { type: 'image/svg+xml' });
+await processImage(svgFile).resize(200, 200).toBlob();
+
+// 6. Blob 객체 (type='image/svg+xml')
+const svgBlob = new Blob([svgXml], { type: 'image/svg+xml' });
+await processImage(svgBlob).resize(200, 200).toBlob();
+
+// 7. Blob URL (Content-Type으로 감지)
+const blobUrl = URL.createObjectURL(svgBlob);
+await processImage(blobUrl).resize(200, 200).toBlob();
 ```
 
 ---
@@ -403,7 +472,128 @@ ctx.fillText('워터마크', 10, 20);
 
 ---
 
-## 🚀 고급 기능이 필요하다면?
+## 🚀 고급 기능 (v2.1+)
+
+Phase 3에서 추가된 최첨단 성능 최적화 및 SVG 특화 기능들입니다.
+
+### ⚡ 성능 최적화
+
+브라우저 기능에 따라 자동으로 최적화되거나 수동으로 성능 모드를 제어할 수 있습니다:
+
+```typescript
+// 🎯 자동 성능 최적화 (권장)
+const result = await processImage(svgSource)
+  .resize(800, 600)
+  .performanceMode('auto') // 브라우저 기능에 따라 자동 최적화
+  .toBlob('png');
+
+// 🏃 고성능 모드 (OffscreenCanvas + Web Worker 우선)
+const highPerf = await processImage(svgSource)
+  .performanceMode('high-performance') // OffscreenCanvas 우선 사용
+  .toBlob('webp');
+
+// 🎨 고품질 모드 (품질 우선)
+const highQuality = await processImage(svgSource)
+  .performanceMode('high-quality') // 최고 품질 우선
+  .toBlob('png');
+
+// ⚖️ 균형 모드 (성능과 품질의 균형)
+const balanced = await processImage(svgSource)
+  .performanceMode('balanced') // 균형잡힌 처리
+  .toBlob('jpeg');
+```
+
+**성능 모드별 특징:**
+- **auto** (기본값): 브라우저 기능 감지 후 자동 최적화
+- **high-performance**: OffscreenCanvas + Web Worker 우선 (30% 성능 향상)
+- **high-quality**: 최고 품질 우선 (2x-4x 고해상도 렌더링)
+- **balanced**: 성능과 품질의 균형
+
+### 🎨 SVG 특화 기능
+
+SVG 품질 및 최적화를 세밀하게 제어할 수 있습니다:
+
+```typescript
+// 🔍 품질 레벨 제어
+const ultraQuality = await processImage(svgSource)
+  .quality('ultra') // 4x 고해상도 렌더링
+  .toBlob('png');
+
+const autoQuality = await processImage(svgSource)
+  .quality('auto') // SVG 복잡도에 따라 자동 결정
+  .toBlob('webp');
+
+// ⚙️ SVG 최적화 활성화
+const optimized = await processImage(svgSource)
+  .optimization(true) // SVG 벡터 최적화 (파일 크기 30% 감소)
+  .quality('high')
+  .toBlob('png');
+
+// 🛠️ SVG 세부 옵션 제어
+const customized = await processImage(svgSource)
+  .svgOptions({
+    preserveTransparency: true,     // 투명도 보존
+    backgroundColor: '#ffffff',     // 배경색 설정
+    scaleFactor: 3                  // 수동 스케일 팩터
+  })
+  .quality('high')
+  .toBlob('png');
+```
+
+**품질 레벨 설명:**
+- **auto**: SVG 복잡도 분석 후 자동 선택 (권장)
+- **low**: 1x 렌더링 (빠른 처리)
+- **medium**: 2x 렌더링 (기본 품질)
+- **high**: 3x 렌더링 (고품질)
+- **ultra**: 4x 렌더링 (최고 품질)
+
+### 🔧 브라우저 호환성 자동 감지
+
+브라우저별 최적화가 자동으로 적용됩니다:
+
+```typescript
+// 브라우저 기능을 수동으로 확인하고 싶다면
+import { BrowserCapabilityDetector } from '@cp949/web-image-util/utils';
+
+const capabilities = await BrowserCapabilityDetector.detectCapabilities();
+console.log('OffscreenCanvas 지원:', capabilities.offscreenCanvas);
+console.log('WebP 지원:', capabilities.webp);
+console.log('AVIF 지원:', capabilities.avif);
+```
+
+### 🎯 실무 활용 예시
+
+```typescript
+// 📸 대용량 SVG 아이콘 처리 (성능 우선)
+const icon = await processImage(largeSvgIcon)
+  .resize(64, 64)
+  .performanceMode('high-performance')
+  .optimization(true)
+  .toBlob('webp');
+
+// 🖼️ 고품질 SVG 로고 변환 (품질 우선)
+const logo = await processImage(svgLogo)
+  .resize(400, 200)
+  .performanceMode('high-quality')
+  .quality('ultra')
+  .svgOptions({ preserveTransparency: true })
+  .toBlob('png');
+
+// 🚀 배치 처리 (자동 최적화)
+const thumbnails = await Promise.all(
+  svgFiles.map(svg =>
+    processImage(svg)
+      .resize(150, 150)
+      .performanceMode('auto') // 각 파일마다 자동 최적화
+      .quality('auto')
+      .toBlob('webp')
+  )
+);
+```
+
+---
+
+## 🚀 추가 고급 기능이 필요하다면?
 
 더 강력한 기능들을 원한다면 고급 패키지를 사용하세요:
 

@@ -338,49 +338,80 @@ export function PreviewGalleryPage() {
   const generateCodeForPreset = (preset: ProcessPreset): string => {
     const { options } = preset;
 
-    let code = `import { processImage } from '@cp949/web-image-util';\n\n`;
-    code += `const result = await processImage(source)`;
+    // 헤더 주석과 import 구문
+    let code = '// ' + preset.name + ' 프리셋 예제\n';
+    code += '// ' + preset.description + '\n\n';
+    code += "import { processImage } from '@cp949/web-image-util';\n\n";
+
+    // 소스 예시 (다양한 타입 보여주기)
+    code += '// 이미지 소스 (파일, URL, Blob 등 다양한 형태)\n';
+    code += 'const source = file; // File 객체\n';
+    code += "// const source = 'https://example.com/image.jpg'; // URL\n";
+    code += "// const source = '<svg>...</svg>'; // SVG 문자열\n\n";
+
+    // 메인 처리 코드
+    code += '// 이미지 처리 실행\n';
+    code += 'const processor = processImage(source);';
 
     // resize 옵션 생성
     const resizeOptions: string[] = [];
     if (options.fit && options.fit !== 'cover') {
-      resizeOptions.push(`fit: '${options.fit}'`);
+      resizeOptions.push("fit: '" + options.fit + "'");
     }
     if (options.withoutEnlargement) {
-      resizeOptions.push(`withoutEnlargement: true`);
+      resizeOptions.push('withoutEnlargement: true');
     }
     if (options.withoutReduction) {
-      resizeOptions.push(`withoutReduction: true`);
+      resizeOptions.push('withoutReduction: true');
     }
 
     // resize 호출 생성
     if (options.width || options.height) {
-      code += `\n  .resize(${options.width || 'undefined'}, ${options.height || 'undefined'}`;
+      code += '\nconst resized = processor.resize(';
+      code += options.width + ', ' + options.height;
       if (resizeOptions.length > 0) {
-        code += `, {\n    ${resizeOptions.join(',\n    ')}\n  }`;
+        code += ', {\n    ' + resizeOptions.join(',\n    ') + '\n  }';
       }
-      code += `)`;
+      code += ');';
     }
 
     // blur 효과 추가
+    let currentProcessor = options.width || options.height ? 'resized' : 'processor';
     if (options.blur) {
-      code += `\n  .blur(${options.blur})`;
+      code += '\nconst blurred = ' + currentProcessor + '.blur(' + options.blur + ');';
+      currentProcessor = 'blurred';
     }
 
     // 출력 옵션 생성
     const outputOptions: string[] = [];
-    if (options.format && options.format !== 'jpeg') {
-      outputOptions.push(`format: '${options.format}'`);
+    if (options.format) {
+      outputOptions.push("format: '" + options.format + "'");
     }
     if (options.quality && options.quality !== 80) {
-      outputOptions.push(`quality: ${options.quality / 100}`);
+      outputOptions.push('quality: ' + (options.quality / 100));
     }
 
-    code += `\n  .toBlob(`;
+    // 다양한 출력 형태 예시
+    code += '\n\n// 다양한 출력 형태\n';
+    code += 'const blob = await ' + currentProcessor + '.toBlob(';
     if (outputOptions.length > 0) {
-      code += `{\n    ${outputOptions.join(',\n    ')}\n  }`;
+      code += '{\n  ' + outputOptions.join(',\n  ') + '\n}';
     }
-    code += `);`;
+    code += ');';
+
+    code += '\nconst dataUrl = await ' + currentProcessor + '.toDataURL(';
+    if (outputOptions.length > 0) {
+      code += '{\n  ' + outputOptions.join(',\n  ') + '\n}';
+    }
+    code += ');';
+
+    code += '\nconst canvas = await ' + currentProcessor + '.toCanvas();';
+
+    // 사용 예시
+    code += '\n\n// 결과 사용 예시\n';
+    code += 'const img = new Image();\n';
+    code += 'img.src = dataUrl;\n';
+    code += 'document.body.appendChild(img);';
 
     return code;
   };
@@ -400,7 +431,7 @@ export function PreviewGalleryPage() {
       <Typography variant="h3" component="h1" gutterBottom>
         변환 미리보기
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
         이미지 하나로 모든 처리 옵션을 한눈에 비교해보세요. 다양한 크기, 품질, 포맷, 효과가 적용된 결과를
         실시간으로 확인할 수 있습니다.
       </Typography>
@@ -408,6 +439,39 @@ export function PreviewGalleryPage() {
       {/* 이미지 업로더 */}
       <Box sx={{ mb: 4 }}>
         <ImageUploader onImageSelect={handleImageSelect} />
+
+        {/* 샘플 이미지 버튼들 */}
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            또는 샘플 이미지 선택:
+          </Typography>
+          <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+            <Button
+              variant="outlined"
+              onClick={() => handleImageSelect('/sample-images/sample1.svg')}
+            >
+              SVG 샘플
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => handleImageSelect('/sample-images/sample2.png')}
+            >
+              PNG 샘플
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => handleImageSelect('/sample-images/sample1.jpg')}
+            >
+              JPG 샘플
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => handleImageSelect('/sample-images/sample4.svg')}
+            >
+              복잡한 SVG
+            </Button>
+          </Stack>
+        </Box>
       </Box>
 
       {/* 원본 이미지 정보 */}
@@ -572,7 +636,7 @@ export function PreviewGalleryPage() {
                     {/* 코드 스니펫 */}
                     {!result.error && result.imageUrl && (
                       <Box sx={{ mb: 2, flexGrow: 1 }}>
-                        <Typography variant="subtitle2" gutterBottom sx={{ fontSize: '0.75rem' }}>
+                        <Typography variant="subtitle2" gutterBottom sx={{ fontSize: '0.85rem' }}>
                           사용법
                         </Typography>
                         <Box
@@ -583,7 +647,7 @@ export function PreviewGalleryPage() {
                             maxHeight: 200,
                             overflow: 'auto',
                             fontFamily: 'monospace',
-                            fontSize: '0.7rem',
+                            fontSize: '0.8rem',
                             lineHeight: 1.4
                           }}
                         >

@@ -174,7 +174,7 @@ export function FiltersPage() {
 
       // Canvas를 Blob으로 변환
       const blob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((blob) => resolve(blob!), 'image/png');
+        canvas.toBlob((blob: Blob | null) => resolve(blob!), 'image/png');
       });
 
       const processingTime = Date.now() - startTime;

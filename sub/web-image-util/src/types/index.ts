@@ -262,6 +262,8 @@ export interface ProcessorOptions {
   defaultFormat?: OutputFormat | 'auto';
   /** 타임아웃 (밀리초, 기본: 30초) */
   timeout?: number;
+  /** devicePixelRatio 사용 여부 (기본: false) */
+  useDevicePixelRatio?: boolean;
   // 브라우저에서 메모리 제한을 명시적으로 설정할 수 없음
 }
 
@@ -367,3 +369,59 @@ export interface PerformanceConfig {
   chunkSize?: number;
   optimizeForSpeed?: boolean;
 }
+
+// ============================================================================
+// SVG QUALITY ENHANCEMENT TYPES - SVG 품질 향상 관련 타입들
+// ============================================================================
+
+// SVG 크기 정보 및 Canvas 고품질 설정 타입 re-export
+export type { SvgDimensions, SvgEnhanceOptions } from '../utils/svg-dimensions';
+export type { HighQualityCanvasOptions } from '../base/canvas-utils';
+
+// Phase 2: SVG 복잡도 분석 및 품질 시스템 타입들
+export type {
+  SvgComplexityMetrics,
+  ComplexityAnalysisResult,
+  QualityLevel
+} from '../core/svg-complexity-analyzer';
+
+export type {
+  SvgProcessingOptions,
+  SvgProcessingResult
+} from '../advanced/svg-processor';
+
+// Phase 3: 브라우저 기능 감지 시스템 타입들
+export type {
+  BrowserCapabilities,
+  PerformanceFeatures,
+  DetectionOptions
+} from '../utils/browser-capabilities';
+
+// Phase 3 Step 2: OffscreenCanvas + Web Worker 고성능 처리 타입들
+// (OffscreenSVGProcessor에서 사용하는 타입들은 해당 모듈에서 정의되어 있음)
+
+// ============================================================================
+// ADVANCED PROCESSING TYPES - 고급 처리 관련 통합 타입들
+// ============================================================================
+
+/**
+ * 고급 SVG 처리 모드
+ */
+export type AdvancedProcessingMode = 'standard' | 'offscreen' | 'auto';
+
+/**
+ * 성능 벤치마크 결과
+ */
+export interface PerformanceBenchmark {
+  /** 표준 처리 시간 (밀리초) */
+  standardTime: number;
+  /** OffscreenCanvas 처리 시간 (밀리초, 지원 시에만) */
+  offscreenTime?: number;
+  /** OffscreenCanvas가 더 빠른지 여부 */
+  isOffscreenFaster: boolean;
+  /** 권장 처리 방식 */
+  recommendation: 'standard' | 'offscreen';
+}
+
+// SystemPerformanceProfile은 advanced/index.ts에서 직접 정의
+// 여기서는 re-export만 수행하여 타입 의존성 문제 해결
