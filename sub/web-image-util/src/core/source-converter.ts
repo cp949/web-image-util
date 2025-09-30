@@ -9,7 +9,6 @@ import { extractSvgDimensions, setSvgDimensions } from '../utils/svg-dimensions'
 import { setupHighQualityCanvas } from '../base/canvas-utils';
 import type { QualityLevel} from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
-import type { SvgProcessingOptions } from '../advanced/svg-processor';
 
 /**
  * 이미지 소스 타입

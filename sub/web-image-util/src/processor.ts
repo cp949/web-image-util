@@ -6,7 +6,6 @@
 import { createPipeline } from './core/pipeline';
 import { convertToImageElement, detectSourceType } from './core/source-converter';
 import type { QualityLevel } from './core/svg-complexity-analyzer';
-import type { SvgProcessingOptions } from './advanced/svg-processor';
 import type {
   ResultBlob,
   BlurOptions,
@@ -44,7 +43,6 @@ export class ImageProcessor {
 
   // SVG 전용 설정
   private svgQuality: QualityLevel | 'auto' = 'auto';
-  private svgAdvancedOptions: Partial<SvgProcessingOptions> = {};
 
   // Phase 3: 고급 성능 옵션
   private performanceModeValue: 'auto' | 'high-performance' | 'high-quality' | 'balanced' = 'auto';
@@ -196,37 +194,6 @@ export class ImageProcessor {
     return this;
   }
 
-  /**
-   * SVG 고급 처리 옵션 설정
-   *
-   * @param options SVG 처리 옵션
-   * @returns 체이닝을 위한 this
-   *
-   * @example
-   * ```typescript
-   * // 배경색 및 투명도 설정
-   * processor.svgOptions({
-   *   backgroundColor: '#ffffff',
-   *   preserveTransparency: false
-   * })
-   *
-   * // JPEG 품질 설정
-   * processor.svgOptions({
-   *   jpegQuality: 0.9
-   * })
-   *
-   * // 체이닝 사용
-   * processor
-   *   .quality('ultra')
-   *   .svgOptions({ backgroundColor: '#f0f0f0' })
-   *   .resize(1200, 800)
-   *   .toBlob({ format: 'jpeg' })
-   * ```
-   */
-  svgOptions(options: Partial<SvgProcessingOptions>): this {
-    this.svgAdvancedOptions = { ...this.svgAdvancedOptions, ...options };
-    return this;
-  }
 
   // ==============================================
   // Phase 3: 고급 성능 최적화 메서드

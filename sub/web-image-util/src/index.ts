@@ -44,7 +44,6 @@ export { enhanceBrowserCompatibility, normalizeSvgBasics } from './utils/svg-com
 export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility';
 
 // Phase 2: SVG 품질 시스템 (고급 기능)
-export { SVGProcessor } from './advanced/svg-processor';
 export { analyzeSvgComplexity } from './core/svg-complexity-analyzer';
 
 // SVG 유틸리티 함수들 (Phase 1에서 구현됨)
@@ -78,8 +77,6 @@ export type {
   QualityLevel,
   SvgComplexityMetrics,
   ComplexityAnalysisResult,
-  SvgProcessingOptions,
-  SvgProcessingResult,
 
   // SVG 유틸리티 타입들
   SvgDimensions,

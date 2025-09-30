@@ -385,10 +385,7 @@ export type {
   QualityLevel
 } from '../core/svg-complexity-analyzer';
 
-export type {
-  SvgProcessingOptions,
-  SvgProcessingResult
-} from '../advanced/svg-processor';
+// (제거됨: SvgProcessingOptions, SvgProcessingResult - v2.0에서 불필요)
 
 // Phase 3: 브라우저 기능 감지 시스템 타입들
 export type {
