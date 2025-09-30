@@ -39,8 +39,30 @@ import { ImageFormats, OutputFormats, ImageErrorCodeConstants } from './base';
 // RESIZE TYPES - 리사이징 관련 타입들
 // ============================================================================
 
+// v2.0 새로운 ResizeConfig 타입 시스템 (Discriminated Union)
+export type {
+  ResizeConfig,
+  CoverConfig,
+  ContainConfig,
+  FillConfig,
+  MaxFitConfig,
+  MinFitConfig,
+  Padding,
+  BaseResizeConfig,
+} from './resize-config';
+
+export {
+  isCoverConfig,
+  isContainConfig,
+  isFillConfig,
+  isMaxFitConfig,
+  isMinFitConfig,
+  validateResizeConfig,
+} from './resize-config';
+
 /**
  * 리사이징 옵션
+ * @deprecated Use ResizeConfig instead (v2.0+)
  */
 export interface ResizeOptions {
   /** 대상 너비 (픽셀) */
