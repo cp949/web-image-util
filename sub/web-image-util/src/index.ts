@@ -56,7 +56,7 @@ export type {
 
   // 옵션 타입
   ResizeConfig,
-  ResizeOptions, // @deprecated v2.0+에서 ResizeConfig 사용 권장
+  SmartResizeOptions,
   BlurOptions,
   OutputOptions,
   ProcessorOptions,

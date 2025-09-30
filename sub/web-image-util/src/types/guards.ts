@@ -388,50 +388,6 @@ function createValidationResult(): {
 }
 
 // 옵션 검증 함수들
-/**
- * 리사이즈 옵션 검증
- *
- * @param options 검증할 옵션 객체
- * @returns 검증 결과
- * @description width, height, fit, position, background 옵션들을 검증하고 에러와 경고 메시지를 반환
- */
-export function validateResizeOptions(options: any): ValidationResult {
-  const result = createValidationResult();
-
-  // 필수 검증들
-  if (options.width !== undefined && !isValidDimension(options.width)) {
-    result.errors.push('width는 양의 정수여야 합니다');
-  }
-
-  if (options.height !== undefined && !isValidDimension(options.height)) {
-    result.errors.push('height는 양의 정수여야 합니다');
-  }
-
-  if (options.fit !== undefined && !isValidResizeFit(options.fit)) {
-    result.errors.push(`fit은 다음 중 하나여야 합니다: ${VALID_RESIZE_FITS.join(', ')}`);
-  }
-
-  if (options.position !== undefined && !isValidResizePosition(options.position)) {
-    result.errors.push('position은 유효한 위치 값이어야 합니다 (문자열, 숫자 0-100, 또는 {x, y} 객체)');
-  }
-
-  if (options.background !== undefined && !isValidBackgroundColor(options.background)) {
-    result.errors.push('background는 유효한 색상 값이어야 합니다 (CSS 색상 문자열 또는 RGB 객체)');
-  }
-
-  // 경고들
-  if (!options.width && !options.height) {
-    result.warnings.push('width와 height가 모두 지정되지 않았습니다');
-  }
-
-  // 대용량 이미지 경고 (논리 수정)
-  const hasLargeDimension = (options.width && options.width > 4096) || (options.height && options.height > 4096);
-  if (hasLargeDimension) {
-    result.warnings.push('매우 큰 이미지 크기입니다. 메모리 사용량에 주의하세요');
-  }
-
-  return result.build();
-}
 
 /**
  * 출력 옵션 검증

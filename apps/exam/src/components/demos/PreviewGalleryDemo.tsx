@@ -58,11 +58,11 @@ const PROCESSING_PRESETS: ProcessPreset[] = [
   {
     id: 'fit-maxFit',
     category: 'Fit 모드',
-    name: 'MaxFit',
-    description: '축소만 허용, 확대 안함',
+    name: 'MaxFit (축소만)',
+    description: '큰 이미지만 축소, 작은 이미지는 원본 유지',
     options: {
-      width: 300,
-      height: 200,
+      width: 200,
+      height: 150,
       fit: 'maxFit',
       quality: 80,
       format: 'jpeg',
@@ -71,9 +71,25 @@ const PROCESSING_PRESETS: ProcessPreset[] = [
   {
     id: 'fit-minFit',
     category: 'Fit 모드',
-    name: 'MinFit',
-    description: '확대만 허용, 축소 안함',
-    options: { width: 300, height: 200, fit: 'minFit', quality: 80, format: 'jpeg' },
+    name: 'MinFit (확대만)',
+    description: '작은 이미지만 확대, 큰 이미지는 원본 유지',
+    options: { width: 400, height: 300, fit: 'minFit', quality: 80, format: 'jpeg' },
+  },
+
+  // MaxFit/MinFit 상세 테스트
+  {
+    id: 'maxfit-test-small',
+    category: 'MaxFit 테스트',
+    name: 'MaxFit 작은제약 (100x80)',
+    description: '작은 이미지에는 영향없음, 큰 이미지만 축소',
+    options: { width: 100, height: 80, fit: 'maxFit', quality: 80, format: 'jpeg' },
+  },
+  {
+    id: 'minfit-test-large',
+    category: 'MinFit 테스트',
+    name: 'MinFit 큰제약 (600x400)',
+    description: '큰 이미지에는 영향없음, 작은 이미지만 확대',
+    options: { width: 600, height: 400, fit: 'minFit', quality: 80, format: 'jpeg' },
   },
 
   // 크기별 비교 (Cover 고정)
@@ -262,21 +278,52 @@ export function PreviewGalleryDemo() {
         const startTime = Date.now();
 
         // 🔍 DEBUG: 프리셋 옵션 확인 (새로운 ResizeConfig API)
-        const resizeConfig = {
-          fit: preset.options.fit,
-          width: preset.options.width,
-          height: preset.options.height,
-          ...(preset.options.withoutEnlargement && preset.options.fit === 'contain'
-            ? { withoutEnlargement: true }
-            : {}),
-        };
+        // 타입 안전성을 위해 기본값 제공
+        const width = preset.options.width || 300;
+        const height = preset.options.height || 200;
+
+        const resizeConfig = preset.options.fit === 'contain'
+          ? {
+              fit: 'contain' as const,
+              width,
+              height,
+              ...(preset.options.withoutEnlargement ? { withoutEnlargement: true } : {}),
+            }
+          : preset.options.fit === 'cover'
+          ? {
+              fit: 'cover' as const,
+              width,
+              height,
+            }
+          : preset.options.fit === 'fill'
+          ? {
+              fit: 'fill' as const,
+              width,
+              height,
+            }
+          : preset.options.fit === 'maxFit'
+          ? {
+              fit: 'maxFit' as const,
+              width,
+              height,
+            }
+          : {
+              fit: 'minFit' as const,
+              width,
+              height,
+            };
 
         console.log('🎭 PreviewGalleryDemo 프리셋:', {
           presetId: preset.id,
           presetName: preset.name,
           targetSize: `${preset.options.width}x${preset.options.height}`,
-          ...resizeConfig,
+          resizeConfig: resizeConfig,
         });
+
+        // 🐛 DEBUG: 원본 이미지 크기 로깅
+        if (source instanceof Blob) {
+          console.log('🖼️ 원본 이미지 타입:', source.type, '크기:', Math.round(source.size / 1024) + 'KB');
+        }
 
         let processor = processImage(source) //
           .resize(resizeConfig);
@@ -293,6 +340,14 @@ export function PreviewGalleryDemo() {
 
         const processingTime = Date.now() - startTime;
         const imageUrl = URL.createObjectURL(result.blob);
+
+        console.log(`✅ ${preset.name} 처리 완료:`, {
+          목표크기: `${preset.options.width}x${preset.options.height}`,
+          실제결과: `${result.width}x${result.height}`,
+          fit: preset.options.fit,
+          처리시간: processingTime + 'ms',
+          파일크기: Math.round(result.blob.size / 1024) + 'KB'
+        });
 
         newResults.push({
           preset,

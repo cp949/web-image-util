@@ -99,7 +99,7 @@ export function SvgQualityDemo() {
         const startTime = performance.now();
 
         const result: ResultBlob = await processImage(selectedSvg)
-          .resize(800 * scaleFactor, 600 * scaleFactor)
+          .resize({ fit: 'cover', width: 800 * scaleFactor, height: 600 * scaleFactor })
           .toBlob({ format: 'png' });
 
         results.push({

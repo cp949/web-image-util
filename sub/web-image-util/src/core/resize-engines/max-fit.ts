@@ -10,7 +10,29 @@
  */
 
 import type { MaxFitConfig } from '../../types/resize-config';
-import { resizeCanvasWithPadding, resizeCanvasHighQuality } from './common';
+import { resizeCanvasHighQuality } from './common';
+
+/**
+ * 패딩 값 정규화 함수
+ */
+function normalizePadding(padding?: number | { top?: number; right?: number; bottom?: number; left?: number }): {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+} {
+  if (typeof padding === 'number') {
+    return { top: padding, right: padding, bottom: padding, left: padding };
+  } else if (padding && typeof padding === 'object') {
+    return {
+      top: padding.top || 0,
+      right: padding.right || 0,
+      bottom: padding.bottom || 0,
+      left: padding.left || 0,
+    };
+  }
+  return { top: 0, right: 0, bottom: 0, left: 0 };
+}
 
 /**
  * MaxFit 리사이징 실행
@@ -22,6 +44,13 @@ import { resizeCanvasWithPadding, resizeCanvasHighQuality } from './common';
 export function executeMaxFitResize(canvas: HTMLCanvasElement, config: MaxFitConfig): HTMLCanvasElement {
   const { width: maxWidth, height: maxHeight } = config;
   const { width: srcWidth, height: srcHeight } = canvas;
+
+  // 🐛 DEBUG: maxFit 엔진 호출 확인
+  console.log('🔧 executeMaxFitResize 호출:', {
+    원본크기: `${srcWidth}x${srcHeight}`,
+    최대크기: `${maxWidth || '∞'}x${maxHeight || '∞'}`,
+    config: JSON.stringify(config, null, 2)
+  });
 
   // width나 height 중 하나는 반드시 지정되어야 함 (런타임에서 이미 검증됨)
   if (!maxWidth && !maxHeight) {
@@ -38,6 +67,32 @@ export function executeMaxFitResize(canvas: HTMLCanvasElement, config: MaxFitCon
     });
 
     // 패딩/배경이 지정된 경우에만 적용
+    if (config.padding || config.background) {
+      return resizeCanvasWithPadding(canvas, srcWidth, srcHeight, config);
+    }
+
+    return canvas;
+  }
+
+  // 🎨 SVG 화질 최적화: Canvas가 이미 최적 크기로 생성된 경우 확인
+  // Pipeline에서 최적 크기로 Canvas를 생성했다면 추가 리사이징 불필요
+  // maxFit에서는 정확한 크기가 아닐 수 있으므로 스케일 기반으로 확인
+  let optimalScale = 1;
+  if (maxWidth) optimalScale = Math.min(optimalScale, maxWidth / srcWidth);
+  if (maxHeight) optimalScale = Math.min(optimalScale, maxHeight / srcHeight);
+  optimalScale = Math.min(optimalScale, 1);
+
+  const optimalWidth = Math.round(srcWidth * optimalScale);
+  const optimalHeight = Math.round(srcHeight * optimalScale);
+
+  if (srcWidth === optimalWidth && srcHeight === optimalHeight) {
+    console.log('✨ maxFit: Canvas가 이미 최적 크기로 생성됨 (SVG 화질 최적화)', {
+      current: `${srcWidth}x${srcHeight}`,
+      optimal: `${optimalWidth}x${optimalHeight}`,
+      scale: optimalScale.toFixed(3),
+    });
+
+    // 패딩/배경 적용만 수행
     if (config.padding || config.background) {
       return resizeCanvasWithPadding(canvas, srcWidth, srcHeight, config);
     }
@@ -69,13 +124,39 @@ export function executeMaxFitResize(canvas: HTMLCanvasElement, config: MaxFitCon
     newSize: `${newWidth}x${newHeight}`,
   });
 
-  // 고품질 리사이징 실행
-  const resizedCanvas = resizeCanvasHighQuality(canvas, newWidth, newHeight);
-
-  // 패딩/배경 적용
+  // 🚀 효율적인 한 번의 처리: 리사이징 + 패딩을 동시에 수행
   if (config.padding || config.background) {
-    return resizeCanvasWithPadding(resizedCanvas, newWidth, newHeight, config);
-  }
+    // 패딩을 고려한 최종 Canvas 크기 계산
+    const { top, right, bottom, left } = normalizePadding(config.padding);
+    const finalWidth = newWidth + left + right;
+    const finalHeight = newHeight + top + bottom;
 
-  return resizedCanvas;
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = finalWidth;
+    finalCanvas.height = finalHeight;
+
+    const ctx = finalCanvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot create canvas context for maxFit with padding');
+    }
+
+    // 고품질 설정
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // 배경색 적용
+    if (config.background) {
+      ctx.fillStyle = config.background;
+      ctx.fillRect(0, 0, finalWidth, finalHeight);
+    }
+
+    // 한 번에 리사이징 + 패딩 위치에 배치
+    ctx.drawImage(canvas, left, top, newWidth, newHeight);
+
+    return finalCanvas;
+  } else {
+    // 패딩 없는 경우: 단순 리사이징
+    const resizedCanvas = resizeCanvasHighQuality(canvas, newWidth, newHeight);
+    return resizedCanvas;
+  }
 }

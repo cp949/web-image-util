@@ -121,7 +121,7 @@ export function FitModeComparisonDemo() {
         try {
           const startTime = Date.now();
           const processed = await processImage(selectedImage)
-            .resize(targetSize.width, targetSize.height, { fit: mode.key as any })
+            .resize({ fit: mode.key as any, width: targetSize.width, height: targetSize.height })
             .toBlob({ format: selectedFormat, quality: 0.9 });
 
           pngResults[mode.key] = {
@@ -131,7 +131,7 @@ export function FitModeComparisonDemo() {
             fileSize: processed.blob.size,
             dimensions: targetSize,
             fit: mode.key,
-            actualDimensions: { width: targetSize.width, height: targetSize.height }
+            actualDimensions: { width: processed.width, height: processed.height }
           };
 
           currentStep++;
@@ -148,7 +148,7 @@ export function FitModeComparisonDemo() {
         try {
           const startTime = Date.now();
           const processed = await processImage(svgSource)
-            .resize(targetSize.width, targetSize.height, { fit: mode.key as any })
+            .resize({ fit: mode.key as any, width: targetSize.width, height: targetSize.height })
             .toBlob({ format: selectedFormat, quality: 0.9 });
 
           svgResults[mode.key] = {
@@ -158,7 +158,7 @@ export function FitModeComparisonDemo() {
             fileSize: processed.blob.size,
             dimensions: targetSize,
             fit: mode.key,
-            actualDimensions: { width: targetSize.width, height: targetSize.height }
+            actualDimensions: { width: processed.width, height: processed.height }
           };
 
           currentStep++;

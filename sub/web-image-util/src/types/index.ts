@@ -63,29 +63,17 @@ export {
   validateResizeConfig,
 } from './resize-config';
 
+
 /**
- * 리사이징 옵션
- * @deprecated Use ResizeConfig instead (v2.0+)
+ * 스마트 리사이징 옵션 (고급 처리용)
+ * v2.0+에서 ResizeConfig와 함께 사용
  */
-export interface ResizeOptions {
+export interface SmartResizeOptions {
   /** 대상 너비 (픽셀) */
   width?: number;
   /** 대상 높이 (픽셀) */
   height?: number;
-  /** 이미지가 대상 치수에 맞는 방식 (기본: 'cover') */
-  fit?: ResizeFit;
-  /** 위치/중심점 (기본: 'center') */
-  position?: ResizePosition;
-  /** 배경색 (fit이 'contain'일 때, 기본: 투명한 검정) */
-  background?: ResizeBackground;
-  /** 확대 방지 여부 (기본: false, contain과 함께 사용하면 작은 이미지 확대 방지) */
-  withoutEnlargement?: boolean;
-}
 
-/**
- * 스마트 리사이징 옵션 (고급 처리용)
- */
-export interface SmartResizeOptions extends ResizeOptions {
   /**
    * 처리 전략 - 대부분의 경우 'auto'면 충분
    * @default 'auto'

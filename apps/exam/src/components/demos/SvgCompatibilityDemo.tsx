@@ -213,10 +213,10 @@ export function SvgCompatibilityDemo() {
           processedUrl: URL.createObjectURL(processed.blob),
           processingTime,
           fileSize: processed.blob.size,
-          dimensions: { width: 300, height: 200 },
+          dimensions: { width: processed.width, height: processed.height },
           fit: mode.fit,
           memoryUsed: estimatedMemory,
-          scaleFactor: Math.max(300 / originalImage.width, 200 / originalImage.height)
+          scaleFactor: Math.max(processed.width / originalImage.width, processed.height / originalImage.height)
         };
 
         results[mode.name] = result;

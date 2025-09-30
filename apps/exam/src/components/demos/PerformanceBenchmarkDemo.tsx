@@ -91,7 +91,7 @@ export function PerformanceBenchmarkDemo() {
         // 성능 측정
         const result: ResultBlob = await measurePerformance(async () => {
           return await processImage(selectedImage)
-            .resize(config.width, config.height)
+            .resize({ fit: 'cover', width: config.width, height: config.height })
             .toBlob({ format: 'jpeg', quality: 0.8 });
         });
 

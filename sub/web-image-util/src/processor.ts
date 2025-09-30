@@ -5,25 +5,22 @@
 
 import { createPipeline } from './core/pipeline';
 import { convertToImageElement, detectSourceType } from './core/source-converter';
-import type { QualityLevel } from './core/svg-complexity-analyzer';
 import type {
-  ResultBlob,
   BlurOptions,
-  ResultDataURL,
-  ResultFile,
-  ResultCanvas,
   ImageFormat,
   ImageSource,
   OutputFormat,
   OutputOptions,
   ProcessorOptions,
-  ResizeOptions,
-  SmartResizeOptions,
+  ResultBlob,
+  ResultCanvas,
+  ResultDataURL,
+  ResultFile,
 } from './types';
 import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
-import { DataURLResultImpl, BlobResultImpl, FileResultImpl, CanvasResultImpl } from './types/result-implementations';
 import type { ResizeConfig } from './types/resize-config';
 import { validateResizeConfig } from './types/resize-config';
+import { BlobResultImpl, CanvasResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
 
 /**
  * 이미지 프로세서 클래스
@@ -43,13 +40,6 @@ import { validateResizeConfig } from './types/resize-config';
 export class ImageProcessor {
   private pipeline = createPipeline();
   private options: ProcessorOptions;
-
-  // SVG 전용 설정
-  private svgQuality: QualityLevel | 'auto' = 'auto';
-
-  // 고급 성능 옵션
-  private performanceModeValue: 'auto' | 'high-performance' | 'high-quality' | 'balanced' = 'auto';
-  private enableOptimization: boolean = true;
 
   constructor(
     private source: ImageSource,
@@ -93,19 +83,7 @@ export class ImageProcessor {
    * })
    * ```
    */
-  // 🆕 새로운 API (v2.0+)
-  resize(config: ResizeConfig): this;
-
-
   resize(config: ResizeConfig): this {
-    return this.resizeWithConfig(config);
-  }
-
-  /**
-   * 🆕 새로운 ResizeConfig 기반 리사이징 (v2.0+)
-   * @private
-   */
-  private resizeWithConfig(config: ResizeConfig): this {
     // 1. 런타임 검증
     validateResizeConfig(config);
 
@@ -117,7 +95,6 @@ export class ImageProcessor {
 
     return this;
   }
-
 
   /**
    * 이미지 블러 효과
@@ -152,99 +129,6 @@ export class ImageProcessor {
     return this;
   }
 
-  // ==============================================
-  // SVG 품질 및 옵션 설정 메서드
-  // ==============================================
-
-  /**
-   * SVG 품질 레벨 설정
-   *
-   * @param quality 품질 레벨 또는 'auto' (자동 선택)
-   * @returns 체이닝을 위한 this
-   *
-   * @example
-   * ```typescript
-   * // 자동 품질 선택 (복잡도 기반)
-   * processor.quality('auto')
-   *
-   * // 명시적 품질 설정
-   * processor.quality('low')     // 1x 스케일링 (빠름)
-   * processor.quality('medium')  // 2x 스케일링 (균형)
-   * processor.quality('high')    // 3x 스케일링 (고품질)
-   * processor.quality('ultra')   // 4x 스케일링 (최고품질)
-   *
-   * // 체이닝 사용
-   * processor.quality('high').resize({ fit: 'cover', width: 800, height: 600 }).toBlob()
-   * ```
-   */
-  quality(quality: QualityLevel | 'auto'): this {
-    this.svgQuality = quality;
-    return this;
-  }
-
-  // ==============================================
-  // 고급 성능 최적화 메서드
-  // ==============================================
-
-  /**
-   * 성능 모드 설정
-   *
-   * @param mode 성능 모드
-   * @returns 체이닝을 위한 this
-   *
-   * @example
-   * ```typescript
-   * // 자동 최적화 (기본값) - 브라우저 기능에 따라 자동 선택
-   * processor.performanceMode('auto')
-   *
-   * // 고성능 모드 - OffscreenCanvas + Web Worker 우선 사용
-   * processor.performanceMode('high-performance')
-   *
-   * // 고품질 모드 - 품질 최우선, 처리 시간 무시
-   * processor.performanceMode('high-quality')
-   *
-   * // 균형 모드 - 성능과 품질의 균형
-   * processor.performanceMode('balanced')
-   *
-   * // 체이닝 사용
-   * processor
-   *   .performanceMode('high-performance')
-   *   .quality('ultra')
-   *   .resize({ fit: 'cover', width: 2000, height: 1500 })
-   *   .toBlob('webp')
-   * ```
-   */
-  performanceMode(mode: 'auto' | 'high-performance' | 'high-quality' | 'balanced'): this {
-    this.performanceModeValue = mode;
-    return this;
-  }
-
-  /**
-   * SVG 최적화 활성화/비활성화
-   *
-   * @param enabled 최적화 활성화 여부
-   * @returns 체이닝을 위한 this
-   *
-   * @example
-   * ```typescript
-   * // SVG 최적화 활성화 (기본값)
-   * processor.optimization(true)
-   *
-   * // SVG 최적화 비활성화 (원본 유지)
-   * processor.optimization(false)
-   *
-   * // 고성능 + 최적화 조합
-   * processor
-   *   .performanceMode('high-performance')
-   *   .optimization(true)
-   *   .quality('high')
-   *   .toBlob('webp')
-   * ```
-   */
-  optimization(enabled: boolean): this {
-    this.enableOptimization = enabled;
-    return this;
-  }
 
   // ==============================================
   // 스마트 포맷 선택 및 최적화 메서드
@@ -839,8 +723,6 @@ export class ImageProcessor {
       reader.readAsDataURL(blob);
     });
   }
-
-  // SmartResizeOptions는 이제 ResizeOptions와 동일하므로 구분 불필요
 
   /**
    * 포맷을 MIME 타입으로 변환

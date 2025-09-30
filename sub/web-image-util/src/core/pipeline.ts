@@ -3,7 +3,7 @@
  */
 
 import { CanvasPool } from '../base/canvas-pool';
-import type { BlurOptions, OutputFormat, ResizeOptions, ResultMetadata, SmartResizeOptions } from '../types';
+import type { BlurOptions, OutputFormat, ResultMetadata, SmartResizeOptions } from '../types';
 import { ImageProcessError } from '../types';
 import { SmartProcessor } from './smart-processor';
 import type { ResizeConfig } from '../types/resize-config';
@@ -75,6 +75,146 @@ export class RenderPipeline {
   }
 
   /**
+   * fit 모드별 최종 크기 계산 (패딩 포함)
+   *
+   * @param originalWidth 원본 너비
+   * @param originalHeight 원본 높이
+   * @param resizeConfig resize 설정
+   * @returns 최종 크기 (패딩 포함된 Canvas 크기)
+   */
+  private calculateFinalSize(
+    originalWidth: number,
+    originalHeight: number,
+    resizeConfig: any
+  ): { width: number; height: number } {
+    const { width: targetWidth, height: targetHeight, fit, padding } = resizeConfig;
+
+    // 1단계: 패딩 제외한 이미지 크기 계산
+    let imageWidth: number;
+    let imageHeight: number;
+
+    switch (fit) {
+      case 'maxFit': {
+        // 최대 크기 제한 (축소만, 확대 안함)
+        let scale = 1;
+        if (targetWidth) scale = Math.min(scale, targetWidth / originalWidth);
+        if (targetHeight) scale = Math.min(scale, targetHeight / originalHeight);
+        scale = Math.min(scale, 1); // 확대 방지
+
+        imageWidth = Math.round(originalWidth * scale);
+        imageHeight = Math.round(originalHeight * scale);
+        break;
+      }
+
+      case 'minFit': {
+        // 최소 크기 보장 (확대만, 축소 안함)
+        let scale = 1;
+        if (targetWidth) scale = Math.max(scale, targetWidth / originalWidth);
+        if (targetHeight) scale = Math.max(scale, targetHeight / originalHeight);
+        scale = Math.max(scale, 1); // 축소 방지
+
+        imageWidth = Math.round(originalWidth * scale);
+        imageHeight = Math.round(originalHeight * scale);
+        break;
+      }
+
+      case 'cover': {
+        // 전체 영역을 채움 (잘림 가능)
+        if (targetWidth && targetHeight) {
+          imageWidth = targetWidth;
+          imageHeight = targetHeight;
+        } else {
+          imageWidth = originalWidth;
+          imageHeight = originalHeight;
+        }
+        break;
+      }
+
+      case 'contain': {
+        // 전체 이미지가 들어가도록 맞춤 (여백 가능)
+        if (targetWidth && targetHeight) {
+          const scaleX = targetWidth / originalWidth;
+          const scaleY = targetHeight / originalHeight;
+          const scale = Math.min(scaleX, scaleY);
+
+          imageWidth = Math.round(originalWidth * scale);
+          imageHeight = Math.round(originalHeight * scale);
+        } else {
+          imageWidth = originalWidth;
+          imageHeight = originalHeight;
+        }
+        break;
+      }
+
+      case 'fill': {
+        // 정확히 맞춤 (비율 변경됨)
+        if (targetWidth && targetHeight) {
+          imageWidth = targetWidth;
+          imageHeight = targetHeight;
+        } else {
+          imageWidth = originalWidth;
+          imageHeight = originalHeight;
+        }
+        break;
+      }
+
+      default: {
+        // 기본 처리: cover 모드와 동일
+        if (targetWidth && targetHeight) {
+          imageWidth = targetWidth;
+          imageHeight = targetHeight;
+        } else if (targetWidth) {
+          const aspectRatio = originalHeight / originalWidth;
+          imageWidth = targetWidth;
+          imageHeight = Math.round(targetWidth * aspectRatio);
+        } else if (targetHeight) {
+          const aspectRatio = originalWidth / originalHeight;
+          imageWidth = Math.round(targetHeight * aspectRatio);
+          imageHeight = targetHeight;
+        } else {
+          imageWidth = originalWidth;
+          imageHeight = originalHeight;
+        }
+        break;
+      }
+    }
+
+    // 🎯 Pipeline에서는 패딩 제외한 이미지 크기로 Canvas 생성
+    // 패딩은 resize 엔진에서 처리하여 이미지 배치 좌표까지 함께 계산
+    return {
+      width: imageWidth,
+      height: imageHeight
+    };
+  }
+
+  /**
+   * 패딩 값 정규화 함수
+   * number 또는 객체를 {top, right, bottom, left} 형태로 변환
+   */
+  private normalizePadding(padding?: number | { top?: number; right?: number; bottom?: number; left?: number }): {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  } {
+    if (typeof padding === 'number') {
+      // 숫자 하나면 4방향 동일
+      return { top: padding, right: padding, bottom: padding, left: padding };
+    } else if (padding && typeof padding === 'object') {
+      // 객체면 필요한 방향만 선택적으로 지정
+      return {
+        top: padding.top || 0,
+        right: padding.right || 0,
+        bottom: padding.bottom || 0,
+        left: padding.left || 0,
+      };
+    } else {
+      // 패딩이 없으면 모두 0
+      return { top: 0, right: 0, bottom: 0, left: 0 };
+    }
+  }
+
+  /**
    * 파이프라인의 모든 연산 실행
    */
   async execute(sourceImage: HTMLImageElement): Promise<{
@@ -131,33 +271,25 @@ export class RenderPipeline {
     let width = sourceImage.naturalWidth || sourceImage.width;
     let height = sourceImage.naturalHeight || sourceImage.height;
 
-    // SVG 품질 최적화: 첫 번째 resize 연산이 있으면 목표 크기로 Canvas 생성
+    // 🎯 SVG 품질 최적화: resize 연산이 있으면 최종 크기를 미리 계산하여 Canvas 생성
     const firstOp = this.operations[0];
     if (firstOp?.type === 'resize') {
       const resizeConfig = firstOp.config;
       const targetWidth = resizeConfig.width;
       const targetHeight = resizeConfig.height;
 
-      if (targetWidth && targetHeight) {
-        // 목표 크기가 모두 지정되어 있으면 해당 크기로 Canvas 생성
-        // SVG는 벡터 이미지이므로 Canvas에 직접 큰 크기로 그리면 고품질 유지
-        console.log('🎨 SVG 품질 최적화: 초기 Canvas를 목표 크기로 생성', {
-          originalSize: `${width}x${height}`,
-          targetSize: `${targetWidth}x${targetHeight}`,
-        });
-        width = targetWidth;
-        height = targetHeight;
-      } else if (targetWidth) {
-        // 너비만 지정된 경우 비율 유지하여 높이 계산
-        const aspectRatio = height / width;
-        width = targetWidth;
-        height = Math.round(targetWidth * aspectRatio);
-      } else if (targetHeight) {
-        // 높이만 지정된 경우 비율 유지하여 너비 계산
-        const aspectRatio = width / height;
-        height = targetHeight;
-        width = Math.round(targetHeight * aspectRatio);
-      }
+      // 📐 fit 모드별 최종 크기 계산
+      const finalSize = this.calculateFinalSize(width, height, resizeConfig);
+
+      console.log('🎯 SVG 최적화: 최종 크기로 Canvas 생성', {
+        originalSize: `${width}x${height}`,
+        targetSize: `${targetWidth || 'auto'}x${targetHeight || 'auto'}`,
+        finalSize: `${finalSize.width}x${finalSize.height}`,
+        fit: resizeConfig.fit,
+      });
+
+      width = finalSize.width;
+      height = finalSize.height;
     }
 
     const canvas = this.canvasPool.acquire(width, height);
@@ -312,20 +444,27 @@ export class RenderPipeline {
     let resizedCanvas: HTMLCanvasElement;
 
     // fit 모드별 엔진으로 위임
+    console.log('🚦 Pipeline fit 모드 분기:', config.fit);
+
     switch (config.fit) {
       case 'cover':
+        console.log('✅ Cover 엔진 호출');
         resizedCanvas = executeCoverResize(context.canvas, config);
         break;
       case 'contain':
+        console.log('✅ Contain 엔진 호출');
         resizedCanvas = executeContainResize(context.canvas, config);
         break;
       case 'fill':
+        console.log('✅ Fill 엔진 호출');
         resizedCanvas = executeFillResize(context.canvas, config);
         break;
       case 'maxFit':
+        console.log('✅ MaxFit 엔진 호출');
         resizedCanvas = executeMaxFitResize(context.canvas, config);
         break;
       case 'minFit':
+        console.log('✅ MinFit 엔진 호출');
         resizedCanvas = executeMinFitResize(context.canvas, config);
         break;
       default: {
@@ -360,132 +499,6 @@ export class RenderPipeline {
     };
   }
 
-  /**
-   * 리사이징 치수 계산 (CSS object-fit 알고리즘 기반)
-   */
-  private calculateResizeDimensions(
-    originalWidth: number,
-    originalHeight: number,
-    targetWidth: number | undefined,
-    targetHeight: number | undefined,
-    fit: string,
-    options: ResizeOptions
-  ) {
-    // 타겟 크기 결정
-    let finalTargetWidth =
-      targetWidth || Math.round((originalWidth * (targetHeight || originalHeight)) / originalHeight);
-    let finalTargetHeight =
-      targetHeight || Math.round((originalHeight * (targetWidth || originalWidth)) / originalWidth);
-
-    // 확대 방지 옵션 적용
-    if (options.withoutEnlargement) {
-      if (finalTargetWidth > originalWidth || finalTargetHeight > originalHeight) {
-        const scale = Math.min(originalWidth / finalTargetWidth, originalHeight / finalTargetHeight);
-        finalTargetWidth = Math.round(finalTargetWidth * scale);
-        finalTargetHeight = Math.round(finalTargetHeight * scale);
-      }
-    }
-
-    // 🔍 DEBUG: Fit mode 계산 디버깅
-    console.log('🧪 calculateResizeDimensions DEBUG:', {
-      originalSize: `${originalWidth}x${originalHeight}`,
-      targetSize: `${finalTargetWidth}x${finalTargetHeight}`,
-      fitMode: fit,
-      timestamp: Date.now(),
-    });
-
-    // 🚨 CRITICAL DEBUG: switch 분기 확인
-    console.log('🚨 SWITCH 분기 직전:', {
-      fit,
-      fitType: typeof fit,
-      fitValue: JSON.stringify(fit),
-      possibleValues: ['cover', 'contain', 'fill'],
-      strictEquals: {
-        cover: fit === 'cover',
-        contain: fit === 'contain',
-        fill: fit === 'fill',
-      },
-    });
-
-    switch (fit) {
-      case 'fill':
-        return {
-          canvasWidth: finalTargetWidth,
-          canvasHeight: finalTargetHeight,
-          sourceX: 0,
-          sourceY: 0,
-          sourceWidth: originalWidth,
-          sourceHeight: originalHeight,
-          destX: 0,
-          destY: 0,
-          destWidth: finalTargetWidth,
-          destHeight: finalTargetHeight,
-        };
-
-      case 'contain': {
-        const padScale = Math.min(finalTargetWidth / originalWidth, finalTargetHeight / originalHeight);
-        const padWidth = Math.round(originalWidth * padScale);
-        const padHeight = Math.round(originalHeight * padScale);
-
-        // 🟩 DEBUG: CONTAIN 모드 상세 계산
-        const result = {
-          canvasWidth: finalTargetWidth,
-          canvasHeight: finalTargetHeight,
-          sourceX: 0,
-          sourceY: 0,
-          sourceWidth: originalWidth,
-          sourceHeight: originalHeight,
-          destX: Math.round((finalTargetWidth - padWidth) / 2),
-          destY: Math.round((finalTargetHeight - padHeight) / 2),
-          destWidth: padWidth,
-          destHeight: padHeight,
-        };
-
-        console.log('🟩 CONTAIN result:', {
-          scale: padScale.toFixed(3) + ' (Math.min)',
-          imageSize: `${padWidth}x${padHeight}`,
-          canvasSize: `${result.canvasWidth}x${result.canvasHeight}`,
-          position: `${result.destX},${result.destY}`,
-          padding: `${finalTargetWidth - padWidth}x${finalTargetHeight - padHeight}`,
-          scaleCalculation: `Math.min(${finalTargetWidth}/${originalWidth}, ${finalTargetHeight}/${originalHeight})`,
-        });
-
-        return result;
-      }
-
-      case 'cover':
-      default: {
-        const coverScale = Math.max(finalTargetWidth / originalWidth, finalTargetHeight / originalHeight);
-        const coverWidth = Math.round(originalWidth * coverScale);
-        const coverHeight = Math.round(originalHeight * coverScale);
-
-        // 🔴 DEBUG: COVER 모드 상세 계산
-        const result = {
-          canvasWidth: finalTargetWidth,
-          canvasHeight: finalTargetHeight,
-          sourceX: 0,
-          sourceY: 0,
-          sourceWidth: originalWidth,
-          sourceHeight: originalHeight,
-          destX: Math.round((finalTargetWidth - coverWidth) / 2),
-          destY: Math.round((finalTargetHeight - coverHeight) / 2),
-          destWidth: coverWidth,
-          destHeight: coverHeight,
-        };
-
-        console.log('🔴 COVER result:', {
-          scale: coverScale.toFixed(3) + ' (Math.max)',
-          imageSize: `${coverWidth}x${coverHeight}`,
-          canvasSize: `${result.canvasWidth}x${result.canvasHeight}`,
-          position: `${result.destX},${result.destY}`,
-          overflow: `${coverWidth - finalTargetWidth}x${coverHeight - finalTargetHeight}`,
-          scaleCalculation: `Math.max(${finalTargetWidth}/${originalWidth}, ${finalTargetHeight}/${originalHeight})`,
-        });
-
-        return result;
-      }
-    }
-  }
 
   /**
    * 배경색 채우기

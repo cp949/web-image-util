@@ -7,40 +7,12 @@
 
 import { createImageError } from '../base/error-helpers';
 import type { ProcessingStrategy } from '../base/high-res-detector';
-import type { ResizeOptions } from '../types';
+import type { SmartResizeOptions } from '../types';
 import { AutoMemoryManager } from './auto-memory-manager';
 import { BatchResizer, type BatchResizeJob } from './batch-resizer';
 import { InternalHighResProcessor } from './internal/internal-high-res-processor';
 import type { ResizeProfile } from './performance-config';
 
-/**
- * 간소화된 스마트 리사이징 옵션
- * 철학을 따라 최소한의 옵션만 노출
- */
-export interface SmartResizeOptions extends ResizeOptions {
-  /**
-   * 처리 전략 - 대부분의 경우 'auto'면 충분
-   * @default 'auto'
-   */
-  strategy?: 'auto' | 'fast' | 'quality' | 'memory-efficient';
-
-  /**
-   * 성능 프로파일 - 간단한 3가지 선택지
-   * @default 'balanced'
-   */
-  performance?: ResizeProfile;
-
-  /**
-   * 진행률 콜백 - 0-100 단순 진행률만 제공
-   * @param progress 0-100 진행률
-   */
-  onProgress?: (progress: number) => void;
-
-  /**
-   * 메모리 제한 (MB) - 기본값: 자동 감지
-   */
-  maxMemoryMB?: number;
-}
 
 /**
  * 스마트 프로세서 - 고해상도 이미지 처리의 복잡성을 숨기는 클래스

@@ -109,11 +109,13 @@ export function useImageProcessing() {
         const startTime = performance.now();
 
         const result: ResultBlob = await processImage(state.originalImage.src)
-          .resize(options.width, options.height, {
+          .resize({
             fit: options.fit,
+            width: options.width,
+            height: options.height,
             background: options.background,
             withoutEnlargement: options.withoutEnlargement,
-          })
+          } as any)
           .toBlob({
             format: options.format,
             quality: options.quality / 100,

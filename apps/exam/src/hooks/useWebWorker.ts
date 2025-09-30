@@ -17,10 +17,12 @@ export function useImageWorker(_options: WebWorkerHookOptions = {}) {
   const processImageAsync = useCallback(async (source: any, processingOptions: any = {}) => {
     try {
       return await processImage(source)
-        .resize(processingOptions.width, processingOptions.height, {
+        .resize({
           fit: processingOptions.fit || 'cover',
+          width: processingOptions.width,
+          height: processingOptions.height,
           background: processingOptions.background || '#ffffff',
-        })
+        } as any)
         .toBlob({
           format: processingOptions.format || 'jpeg',
           quality: processingOptions.quality || 0.8,

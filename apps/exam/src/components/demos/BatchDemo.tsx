@@ -118,7 +118,7 @@ export function BatchDemo() {
         switch (options.operation) {
           case 'resize':
             const resizeResult = await processImage(file.file)
-              .resize(options.width!, options.height!)
+              .resize({ fit: 'cover', width: options.width!, height: options.height! })
               .toBlob({
                 format: options.format as 'png' | 'jpeg' | 'webp',
                 quality: options.quality / 100,
