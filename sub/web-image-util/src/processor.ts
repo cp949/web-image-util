@@ -22,6 +22,8 @@ import type {
 } from './types';
 import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
 import { DataURLResultImpl, BlobResultImpl, FileResultImpl, CanvasResultImpl } from './types/result-implementations';
+import type { ResizeConfig } from './types/resize-config';
+import { validateResizeConfig } from './types/resize-config';
 
 /**
  * 이미지 프로세서 클래스
@@ -70,13 +72,18 @@ export class ImageProcessor {
    *
    * @example
    * ```typescript
-   * // 기본 사용법
+   * // 🆕 새로운 API (v2.0+, 권장)
+   * processor.resize({ fit: 'cover', width: 300, height: 200 })
+   * processor.resize({ fit: 'contain', width: 300, height: 200, trimEmpty: true })
+   * processor.resize({ fit: 'maxFit', width: 300 })  // 최대 너비 300px
+   *
+   * // 기본 사용법 (레거시)
    * processor.resize(300, 200)  // 기본값: cover fit
    * processor.resize(300)       // 너비만 지정, 높이 자동
    * processor.resize({ width: 300 })  // 객체 스타일
    * processor.resize({ height: 200 }) // 높이만 지정
    *
-   * // 고급 옵션
+   * // 고급 옵션 (레거시)
    * processor.resize(300, 200, {
    *   fit: 'contain',
    *   position: 'centre',  // 영국식 철자
@@ -85,11 +92,65 @@ export class ImageProcessor {
    * })
    * ```
    */
+  // 🆕 새로운 API (v2.0+)
+  resize(config: ResizeConfig): this;
+
+  // 레거시 API (호환성 유지)
+  /** @deprecated Use resize(config: ResizeConfig) instead */
   resize(width?: number | null, height?: number | null, options?: ResizeOptions): this;
+  /** @deprecated Use resize(config: ResizeConfig) instead */
   resize(options: ResizeOptions): this;
+  /** @deprecated Use resize(config: ResizeConfig) instead */
   resize(width: number): this; // 너비만 지정
+  /** @deprecated Use resize(config: ResizeConfig) instead */
   resize(width: number, height: number, options: SmartResizeOptions): this; // 스마트 리사이징
+
   resize(
+    widthOrOptionsOrConfig?: number | null | ResizeOptions | SmartResizeOptions | ResizeConfig,
+    height?: number | null,
+    options: ResizeOptions | SmartResizeOptions = {}
+  ): this {
+    // 🆕 새로운 API 감지: fit 필드가 있고 ResizeConfig 형태인지 확인
+    if (
+      typeof widthOrOptionsOrConfig === 'object' &&
+      widthOrOptionsOrConfig !== null &&
+      'fit' in widthOrOptionsOrConfig &&
+      (widthOrOptionsOrConfig.fit === 'cover' ||
+        widthOrOptionsOrConfig.fit === 'contain' ||
+        widthOrOptionsOrConfig.fit === 'fill' ||
+        widthOrOptionsOrConfig.fit === 'maxFit' ||
+        widthOrOptionsOrConfig.fit === 'minFit')
+    ) {
+      // 새로운 ResizeConfig API 처리
+      return this.resizeWithConfig(widthOrOptionsOrConfig as ResizeConfig);
+    }
+
+    // 레거시 API 처리
+    return this.resizeWithLegacyAPI(widthOrOptionsOrConfig, height, options);
+  }
+
+  /**
+   * 🆕 새로운 ResizeConfig 기반 리사이징 (v2.0+)
+   * @private
+   */
+  private resizeWithConfig(config: ResizeConfig): this {
+    // 1. 런타임 검증
+    validateResizeConfig(config);
+
+    // 2. 파이프라인에 새로운 resize 오퍼레이션 추가
+    this.pipeline.addOperation({
+      type: 'resizeNew',
+      config: config,
+    });
+
+    return this;
+  }
+
+  /**
+   * 레거시 API 처리 (호환성 유지)
+   * @private
+   */
+  private resizeWithLegacyAPI(
     widthOrOptions?: number | null | ResizeOptions | SmartResizeOptions,
     height?: number | null,
     options: ResizeOptions | SmartResizeOptions = {}

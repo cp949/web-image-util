@@ -6,14 +6,35 @@ import { CanvasPool } from '../base/canvas-pool';
 import type { BlurOptions, OutputFormat, ResizeOptions, ResultMetadata, SmartResizeOptions } from '../types';
 import { ImageProcessError } from '../types';
 import { SmartProcessor } from './smart-processor';
+import type { ResizeConfig } from '../types/resize-config';
+
+/**
+ * 레거시 리사이즈 연산 (호환성 유지)
+ */
+export interface ResizeLegacyOperation {
+  type: 'resize';
+  options: ResizeOptions;
+}
+
+/**
+ * 🆕 새로운 리사이즈 연산 (v2.0+)
+ */
+export interface ResizeNewOperation {
+  type: 'resizeNew';
+  config: ResizeConfig;
+}
 
 /**
  * 파이프라인 연산 인터페이스
  */
-export interface Operation {
-  type: 'resize' | 'blur' | 'rotate' | 'filter' | 'trim' | 'smart-resize';
-  options: ResizeOptions | BlurOptions | SmartResizeOptions | any;
-}
+export type Operation =
+  | ResizeLegacyOperation
+  | ResizeNewOperation
+  | { type: 'blur'; options: BlurOptions }
+  | { type: 'smart-resize'; options: SmartResizeOptions }
+  | { type: 'rotate'; options: any }
+  | { type: 'filter'; options: any }
+  | { type: 'trim'; options?: any };
 
 /**
  * Canvas 컨텍스트 정보
@@ -167,15 +188,17 @@ export class RenderPipeline {
   private async executeOperation(context: CanvasContext, operation: Operation): Promise<CanvasContext> {
     switch (operation.type) {
       case 'resize':
-        return this.executeResize(context, operation.options as ResizeOptions);
+        return this.executeResize(context, operation.options);
+      case 'resizeNew':
+        return this.executeResizeNew(context, operation.config);
       case 'smart-resize':
-        return await this.executeSmartResize(context, operation.options as SmartResizeOptions);
+        return await this.executeSmartResize(context, operation.options);
       case 'blur':
-        return this.executeBlur(context, operation.options as BlurOptions);
+        return this.executeBlur(context, operation.options);
       case 'trim':
         return this.executeTrim(context);
       default:
-        throw new ImageProcessError(`지원하지 않는 연산입니다: ${operation.type}`, 'FEATURE_NOT_SUPPORTED');
+        throw new ImageProcessError(`지원하지 않는 연산입니다: ${(operation as any).type}`, 'FEATURE_NOT_SUPPORTED');
     }
   }
 
@@ -368,6 +391,118 @@ export class RenderPipeline {
     } catch (error) {
       throw new ImageProcessError('블러 적용 중 오류가 발생했습니다', 'BLUR_FAILED', error as Error);
     }
+  }
+
+  /**
+   * 🆕 새로운 ResizeConfig 기반 리사이징 실행 (v2.0+)
+   * fit 모드별 분기 처리
+   */
+  private executeResizeNew(context: CanvasContext, config: ResizeConfig): CanvasContext {
+    console.log('🆕 executeResizeNew 실행:', {
+      fit: config.fit,
+      size: `${config.width || '?'}x${config.height || '?'}`,
+      config,
+    });
+
+    // fit 모드별 분기 처리
+    switch (config.fit) {
+      case 'cover':
+        return this.executeCoverResize(context, config);
+      case 'contain':
+        return this.executeContainResize(context, config);
+      case 'fill':
+        return this.executeFillResize(context, config);
+      case 'maxFit':
+        return this.executeMaxFitResize(context, config);
+      case 'minFit':
+        return this.executeMinFitResize(context, config);
+      default: {
+        // Exhaustiveness check: TypeScript가 모든 케이스를 처리했는지 확인
+        const _exhaustiveCheck: never = config;
+        throw new ImageProcessError(`지원하지 않는 fit 모드입니다: ${(_exhaustiveCheck as any).fit}`, 'FEATURE_NOT_SUPPORTED');
+      }
+    }
+  }
+
+  /**
+   * Cover 모드 실행: 이미지를 지정된 크기에 맞춰 꽉 채움
+   */
+  private executeCoverResize(context: CanvasContext, config: ResizeConfig & { fit: 'cover' }): CanvasContext {
+    // Phase 2에서는 기본 구조만 구현, 실제 로직은 Phase 5에서 구현
+    console.log('🔴 executeCoverResize (Phase 5에서 구현 예정)');
+
+    // 임시로 레거시 executeResize를 호출하여 동작하도록 함
+    return this.executeResize(context, {
+      width: config.width,
+      height: config.height,
+      fit: 'cover',
+      background: config.background,
+    });
+  }
+
+  /**
+   * Contain 모드 실행: 이미지를 지정된 크기 안에 전체가 들어가도록 맞춤
+   */
+  private executeContainResize(context: CanvasContext, config: ResizeConfig & { fit: 'contain' }): CanvasContext {
+    // Phase 2에서는 기본 구조만 구현, 실제 로직은 Phase 3/5에서 구현
+    console.log('🟩 executeContainResize (Phase 3/5에서 구현 예정)');
+
+    // 임시로 레거시 executeResize를 호출하여 동작하도록 함
+    return this.executeResize(context, {
+      width: config.width,
+      height: config.height,
+      fit: 'contain',
+      background: config.background,
+      withoutEnlargement: config.withoutEnlargement,
+    });
+  }
+
+  /**
+   * Fill 모드 실행: 이미지를 지정된 크기에 정확히 맞춤 (비율 무시)
+   */
+  private executeFillResize(context: CanvasContext, config: ResizeConfig & { fit: 'fill' }): CanvasContext {
+    // Phase 2에서는 기본 구조만 구현, 실제 로직은 Phase 5에서 구현
+    console.log('🟦 executeFillResize (Phase 5에서 구현 예정)');
+
+    // 임시로 레거시 executeResize를 호출하여 동작하도록 함
+    return this.executeResize(context, {
+      width: config.width,
+      height: config.height,
+      fit: 'fill',
+      background: config.background,
+    });
+  }
+
+  /**
+   * MaxFit 모드 실행: 최대 크기 제한 (축소만, 확대 안함)
+   */
+  private executeMaxFitResize(context: CanvasContext, config: ResizeConfig & { fit: 'maxFit' }): CanvasContext {
+    // Phase 2에서는 기본 구조만 구현, 실제 로직은 Phase 4에서 구현
+    console.log('🟨 executeMaxFitResize (Phase 4에서 구현 예정)');
+
+    // 임시로 레거시 inside를 사용하여 동작하도록 함
+    return this.executeResize(context, {
+      width: config.width,
+      height: config.height,
+      fit: 'inside',
+      background: config.background,
+    });
+  }
+
+  /**
+   * MinFit 모드 실행: 최소 크기 보장 (확대만, 축소 안함)
+   */
+  private executeMinFitResize(context: CanvasContext, config: ResizeConfig & { fit: 'minFit' }): CanvasContext {
+    // Phase 2에서는 기본 구조만 구현, 실제 로직은 Phase 4에서 구현
+    console.log('🟧 executeMinFitResize (Phase 4에서 구현 예정)');
+
+    // 임시로 레거시 outside를 사용하여 동작하도록 함
+    return this.executeResize(context, {
+      width: config.width,
+      height: config.height,
+      fit: 'outside',
+      background: config.background,
+    });
   }
 
   /**
