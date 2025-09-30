@@ -85,8 +85,8 @@ export type MaxFitConfig =
     })
   | (BaseResizeConfig & {
       fit: 'maxFit';
-      width: number;
-      height?: number;
+      width?: number;
+      height: number;
     })
   | (BaseResizeConfig & {
       fit: 'maxFit';
@@ -108,8 +108,8 @@ export type MinFitConfig =
     })
   | (BaseResizeConfig & {
       fit: 'minFit';
-      width: number;
-      height?: number;
+      width?: number;
+      height: number;
     })
   | (BaseResizeConfig & {
       fit: 'minFit';
