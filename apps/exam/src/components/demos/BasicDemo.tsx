@@ -212,8 +212,8 @@ try {
                     <MenuItem value="cover">Cover (가득 채우기, 잘림)</MenuItem>
                     <MenuItem value="contain">Contain (전체 포함, 여백)</MenuItem>
                     <MenuItem value="fill">Fill (늘려서 채우기)</MenuItem>
-                    <MenuItem value="inside">Inside (축소만, 확대 안함)</MenuItem>
-                    <MenuItem value="outside">Outside (확대만, 축소 안함)</MenuItem>
+                    <MenuItem value="maxFit">MaxFit (축소만, 확대 안함)</MenuItem>
+                    <MenuItem value="minFit">MinFit (확대만, 축소 안함)</MenuItem>
                   </Select>
                 </FormControl>
 

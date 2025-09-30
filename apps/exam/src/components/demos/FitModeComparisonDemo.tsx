@@ -57,8 +57,8 @@ export function FitModeComparisonDemo() {
     { key: 'cover', name: 'Cover', color: '#f44336', description: '이미지가 영역을 가득 채움 (잘림 가능)' },
     { key: 'contain', name: 'Contain', color: '#2196f3', description: '이미지 전체가 영역에 맞춤 (여백 가능)' },
     { key: 'fill', name: 'Fill', color: '#ff9800', description: '비율 무시하고 영역에 맞춤' },
-    { key: 'inside', name: 'Inside', color: '#4caf50', description: '축소만, 확대 안함' },
-    { key: 'outside', name: 'Outside', color: '#9c27b0', description: '확대만, 축소 안함' }
+    { key: 'maxFit', name: 'MaxFit', color: '#4caf50', description: '축소만, 확대 안함' },
+    { key: 'minFit', name: 'MinFit', color: '#9c27b0', description: '확대만, 축소 안함' }
   ];
 
   // 타겟 크기 변경 핸들러
@@ -212,7 +212,7 @@ console.log('PNG 크기:', pngResult.blob.size);
 console.log('SVG 크기:', svgResult.blob.size);`;
 
     const comparisonCode = `// 모든 fit 모드 비교
-const fitModes = ['cover', 'contain', 'fill', 'inside', 'outside'];
+const fitModes = ['cover', 'contain', 'fill', 'maxFit', 'minFit'];
 const results = {};
 
 for (const fit of fitModes) {
