@@ -8,7 +8,7 @@
 import type { ImageSource, ImageFormat, ResizeFit, ResizePosition, ResizeBackground } from './base';
 
 // 순환 import 방지를 위해 상수 직접 정의
-const VALID_RESIZE_FITS = ['cover', 'contain', 'fill', 'inside', 'outside'] as const;
+const VALID_RESIZE_FITS = ['cover', 'contain', 'fill'] as const;
 const VALID_IMAGE_FORMATS = ['jpeg', 'jpg', 'png', 'webp', 'avif', 'gif', 'svg'] as const;
 
 const VALID_POSITION_STRINGS = new Set([
@@ -211,7 +211,7 @@ export function isValidImageSource(value: unknown): value is ImageSource {
  *
  * @param value 검사할 값
  * @returns 유효한 ResizeFit 여부
- * @description cover, contain, fill, inside, outside 값 지원
+ * @description cover, contain, fill 값 지원
  */
 export function isValidResizeFit(value: unknown): value is ResizeFit {
   return isNonEmptyString(value) && VALID_RESIZE_FITS.includes(value as ResizeFit);

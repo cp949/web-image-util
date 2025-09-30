@@ -87,7 +87,7 @@ export const OutputFormats = {
  * - contain: 비율 유지하며 전체 이미지가 영역에 들어가도록 맞춤
  * - fill: 비율 무시하고 정확히 맞춤
  */
-export type ResizeFit = 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
+export type ResizeFit = 'cover' | 'contain' | 'fill';
 
 /**
  * Fit 상수
@@ -96,8 +96,6 @@ export const ResizeFitConstants = {
   COVER: 'cover' as const,
   CONTAIN: 'contain' as const,
   FILL: 'fill' as const,
-  INSIDE: 'inside' as const,
-  OUTSIDE: 'outside' as const,
 } as const;
 
 /**

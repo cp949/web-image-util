@@ -137,9 +137,9 @@ export class ImageProcessor {
     // 1. 런타임 검증
     validateResizeConfig(config);
 
-    // 2. 파이프라인에 새로운 resize 오퍼레이션 추가
+    // 2. 파이프라인에 resize 오퍼레이션 추가
     this.pipeline.addOperation({
-      type: 'resizeNew',
+      type: 'resize',
       config: config,
     });
 
@@ -178,14 +178,13 @@ export class ImageProcessor {
       position: 'centre', // 기본값 (영국식 철자)
       background: { r: 0, g: 0, b: 0, alpha: 1 }, // 기본값: 불투명한 검정
       withoutEnlargement: false,
-      withoutReduction: false,
       ...finalOptions, // 사용자 옵션이 기본값을 덮어씀
       width: finalWidth,
       height: finalHeight,
     };
 
     this.pipeline.addOperation({
-      type: 'resize',
+      type: 'resize-legacy',
       options: resizeOptions,
     });
 
@@ -798,9 +797,10 @@ export class ImageProcessor {
       return true;
     }
 
-    if (operations.length === 1 && operations[0].type === 'resize') {
+    if (operations.length === 1 && (operations[0].type === 'resize' || operations[0].type === 'resize-legacy')) {
       const resizeOp = operations[0];
-      const { width, height } = resizeOp.options;
+      const width = resizeOp.type === 'resize' ? resizeOp.config.width : resizeOp.options.width;
+      const height = resizeOp.type === 'resize' ? resizeOp.config.height : resizeOp.options.height;
 
       // 목표 크기와 실제 크기가 일치하거나 매우 유사한 경우 (5% 이내 오차 허용)
       if (width && height) {

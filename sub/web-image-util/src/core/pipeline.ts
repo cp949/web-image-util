@@ -14,27 +14,28 @@ import { executeMaxFitResize } from './resize-engines/max-fit';
 import { executeMinFitResize } from './resize-engines/min-fit';
 
 /**
- * 레거시 리사이즈 연산 (호환성 유지)
+ * 리사이즈 연산
  */
-export interface ResizeLegacyOperation {
+export interface ResizeOperation {
   type: 'resize';
-  options: ResizeOptions;
+  config: ResizeConfig;
 }
 
 /**
- * 🆕 새로운 리사이즈 연산 (v2.0+)
+ * 레거시 리사이즈 연산 (호환성 유지)
+ * @deprecated Use ResizeOperation instead
  */
-export interface ResizeNewOperation {
-  type: 'resizeNew';
-  config: ResizeConfig;
+export interface ResizeLegacyOperation {
+  type: 'resize-legacy';
+  options: ResizeOptions;
 }
 
 /**
  * 파이프라인 연산 인터페이스
  */
 export type Operation =
+  | ResizeOperation
   | ResizeLegacyOperation
-  | ResizeNewOperation
   | { type: 'blur'; options: BlurOptions }
   | { type: 'smart-resize'; options: SmartResizeOptions }
   | { type: 'rotate'; options: any }
@@ -142,9 +143,9 @@ export class RenderPipeline {
     // SVG 품질 최적화: 첫 번째 resize 연산이 있으면 목표 크기로 Canvas 생성
     const firstOp = this.operations[0];
     if (firstOp?.type === 'resize') {
-      const resizeOptions = firstOp.options as ResizeOptions;
-      const targetWidth = resizeOptions.width;
-      const targetHeight = resizeOptions.height;
+      const resizeConfig = firstOp.config;
+      const targetWidth = resizeConfig.width;
+      const targetHeight = resizeConfig.height;
 
       if (targetWidth && targetHeight) {
         // 목표 크기가 모두 지정되어 있으면 해당 크기로 Canvas 생성
@@ -162,6 +163,27 @@ export class RenderPipeline {
         height = Math.round(targetWidth * aspectRatio);
       } else if (targetHeight) {
         // 높이만 지정된 경우 비율 유지하여 너비 계산
+        const aspectRatio = width / height;
+        height = targetHeight;
+        width = Math.round(targetHeight * aspectRatio);
+      }
+    } else if (firstOp?.type === 'resize-legacy') {
+      const resizeOptions = firstOp.options as ResizeOptions;
+      const targetWidth = resizeOptions.width;
+      const targetHeight = resizeOptions.height;
+
+      if (targetWidth && targetHeight) {
+        console.log('🎨 SVG 품질 최적화 (레거시): 초기 Canvas를 목표 크기로 생성', {
+          originalSize: `${width}x${height}`,
+          targetSize: `${targetWidth}x${targetHeight}`,
+        });
+        width = targetWidth;
+        height = targetHeight;
+      } else if (targetWidth) {
+        const aspectRatio = height / width;
+        width = targetWidth;
+        height = Math.round(targetWidth * aspectRatio);
+      } else if (targetHeight) {
         const aspectRatio = width / height;
         height = targetHeight;
         width = Math.round(targetHeight * aspectRatio);
@@ -193,9 +215,9 @@ export class RenderPipeline {
   private async executeOperation(context: CanvasContext, operation: Operation): Promise<CanvasContext> {
     switch (operation.type) {
       case 'resize':
-        return this.executeResize(context, operation.options);
-      case 'resizeNew':
-        return this.executeResizeNew(context, operation.config);
+        return this.executeResizeWithConfig(context, operation.config);
+      case 'resize-legacy':
+        return this.executeResizeLegacy(context, operation.options);
       case 'smart-resize':
         return await this.executeSmartResize(context, operation.options);
       case 'blur':
@@ -208,9 +230,10 @@ export class RenderPipeline {
   }
 
   /**
-   * 리사이징 연산 실행
+   * 레거시 리사이징 연산 실행
+   * @deprecated Use executeResizeWithConfig instead
    */
-  private executeResize(context: CanvasContext, options: ResizeOptions): CanvasContext {
+  private executeResizeLegacy(context: CanvasContext, options: ResizeOptions): CanvasContext {
     const { width: targetWidth, height: targetHeight, fit = 'cover' } = options;
 
     // 🔍 DEBUG: 실제 전달된 fit 옵션 확인
@@ -231,7 +254,7 @@ export class RenderPipeline {
 
     // SVG 품질 최적화: 초기 Canvas가 이미 목표 크기로 생성된 경우 스킵
     // (첫 번째 resize 연산이고, 현재 Canvas 크기가 목표 크기와 일치하는 경우)
-    const isFirstOperation = this.operations[0]?.type === 'resize';
+    const isFirstOperation = this.operations[0]?.type === 'resize-legacy';
     if (isFirstOperation && targetWidth && targetHeight) {
       if (originalWidth === targetWidth && originalHeight === targetHeight) {
         return context; // 이미 목표 크기이므로 resize 불필요
@@ -399,12 +422,12 @@ export class RenderPipeline {
   }
 
   /**
-   * 🆕 새로운 ResizeConfig 기반 리사이징 실행 (v2.0+)
+   * ResizeConfig 기반 리사이징 실행 (v2.0+)
    * fit 모드별 분기 처리 - 각 엔진으로 위임
    */
-  private executeResizeNew(context: CanvasContext, config: ResizeConfig): CanvasContext {
+  private executeResizeWithConfig(context: CanvasContext, config: ResizeConfig): CanvasContext {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🆕 executeResizeNew 실행:', {
+      console.log('🔧 executeResizeWithConfig:', {
         fit: config.fit,
         size: `${config.width || '?'}x${config.height || '?'}`,
         config,
@@ -479,21 +502,10 @@ export class RenderPipeline {
     let finalTargetHeight =
       targetHeight || Math.round((originalHeight * (targetWidth || originalWidth)) / originalWidth);
 
-    // 확대/축소 방지 옵션 적용
+    // 확대 방지 옵션 적용
     if (options.withoutEnlargement) {
       if (finalTargetWidth > originalWidth || finalTargetHeight > originalHeight) {
         const scale = Math.min(originalWidth / finalTargetWidth, originalHeight / finalTargetHeight);
-        finalTargetWidth = Math.round(finalTargetWidth * scale);
-        finalTargetHeight = Math.round(finalTargetHeight * scale);
-      }
-    }
-
-    if (options.withoutReduction) {
-      console.warn(
-        '⚠️ withoutReduction is deprecated and will be ignored. Use maxFit or minFit in ResizeConfig instead.'
-      );
-      if (finalTargetWidth < originalWidth || finalTargetHeight < originalHeight) {
-        const scale = Math.max(originalWidth / finalTargetWidth, originalHeight / finalTargetHeight);
         finalTargetWidth = Math.round(finalTargetWidth * scale);
         finalTargetHeight = Math.round(finalTargetHeight * scale);
       }
@@ -512,13 +524,11 @@ export class RenderPipeline {
       fit,
       fitType: typeof fit,
       fitValue: JSON.stringify(fit),
-      possibleValues: ['cover', 'contain', 'fill', 'inside', 'outside'],
+      possibleValues: ['cover', 'contain', 'fill'],
       strictEquals: {
         cover: fit === 'cover',
         contain: fit === 'contain',
         fill: fit === 'fill',
-        inside: fit === 'inside',
-        outside: fit === 'outside',
       },
     });
 
@@ -566,46 +576,6 @@ export class RenderPipeline {
         });
 
         return result;
-      }
-
-      case 'inside': {
-        // 최대 크기 제한: 비율 유지하며 축소만 (확대 안함)
-        const insideScale = Math.min(finalTargetWidth / originalWidth, finalTargetHeight / originalHeight);
-        const insideWidth = Math.round(originalWidth * insideScale);
-        const insideHeight = Math.round(originalHeight * insideScale);
-
-        return {
-          canvasWidth: insideWidth, // 실제 이미지 크기로 Canvas 생성
-          canvasHeight: insideHeight,
-          sourceX: 0,
-          sourceY: 0,
-          sourceWidth: originalWidth,
-          sourceHeight: originalHeight,
-          destX: 0,
-          destY: 0,
-          destWidth: insideWidth,
-          destHeight: insideHeight,
-        };
-      }
-
-      case 'outside': {
-        // 최소 크기 보장: 비율 유지하며 확대만 (축소 안함)
-        const outsideScale = Math.max(finalTargetWidth / originalWidth, finalTargetHeight / originalHeight);
-        const outsideWidth = Math.round(originalWidth * outsideScale);
-        const outsideHeight = Math.round(originalHeight * outsideScale);
-
-        return {
-          canvasWidth: outsideWidth, // 실제 이미지 크기로 Canvas 생성
-          canvasHeight: outsideHeight,
-          sourceX: 0,
-          sourceY: 0,
-          sourceWidth: originalWidth,
-          sourceHeight: originalHeight,
-          destX: 0,
-          destY: 0,
-          destWidth: outsideWidth,
-          destHeight: outsideHeight,
-        };
       }
 
       case 'cover':
@@ -763,7 +733,7 @@ export class RenderPipeline {
 
     // 첫 번째 resize 연산에서 fit 정보 가져오기
     const firstOp = this.operations[0];
-    const fit = (firstOp?.type === 'resize' && (firstOp.options as ResizeOptions).fit) || 'cover';
+    const fit = (firstOp?.type === 'resize-legacy' && (firstOp.options as ResizeOptions).fit) || 'cover';
 
     console.log('🎨 drawImageWithFit:', {
       sourceSize: `${sourceWidth}x${sourceHeight}`,
@@ -817,46 +787,6 @@ export class RenderPipeline {
       case 'contain': {
         // 이미지 전체가 Canvas에 들어가도록 스케일링 (여백 생성)
         const scale = Math.min(canvasWidth / sourceWidth, canvasHeight / sourceHeight);
-        const scaledWidth = sourceWidth * scale;
-        const scaledHeight = sourceHeight * scale;
-        const dx = (canvasWidth - scaledWidth) / 2;
-        const dy = (canvasHeight - scaledHeight) / 2;
-
-        return {
-          sx: 0,
-          sy: 0,
-          sWidth: sourceWidth,
-          sHeight: sourceHeight,
-          dx,
-          dy,
-          dWidth: scaledWidth,
-          dHeight: scaledHeight,
-        };
-      }
-
-      case 'inside': {
-        // contain과 같지만 확대 안함 (축소만)
-        const scale = Math.min(canvasWidth / sourceWidth, canvasHeight / sourceHeight, 1);
-        const scaledWidth = sourceWidth * scale;
-        const scaledHeight = sourceHeight * scale;
-        const dx = (canvasWidth - scaledWidth) / 2;
-        const dy = (canvasHeight - scaledHeight) / 2;
-
-        return {
-          sx: 0,
-          sy: 0,
-          sWidth: sourceWidth,
-          sHeight: sourceHeight,
-          dx,
-          dy,
-          dWidth: scaledWidth,
-          dHeight: scaledHeight,
-        };
-      }
-
-      case 'outside': {
-        // cover와 같지만 축소 안함 (확대만)
-        const scale = Math.max(canvasWidth / sourceWidth, canvasHeight / sourceHeight, 1);
         const scaledWidth = sourceWidth * scale;
         const scaledHeight = sourceHeight * scale;
         const dx = (canvasWidth - scaledWidth) / 2;
