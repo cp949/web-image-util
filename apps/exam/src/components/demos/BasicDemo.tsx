@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import {
   Box,
@@ -18,118 +18,71 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useState } from 'react';
-import { processImage } from '@cp949/web-image-util';
+import { useState } from 'react';
+import type { ProcessingOptions } from './types';
+import { useImageProcessing } from '../../hooks/useImageProcessing';
 import { CodeSnippet } from '../common/CodeSnippet';
 import { ImageUploader } from '../common/ImageUploader';
 import { BeforeAfterView } from '../ui/BeforeAfterView';
-
-interface ProcessOptions {
-  width: number | undefined;
-  height: number | undefined;
-  fit: 'cover' | 'contain' | 'fill' | 'inside' | 'outside'; // 실제 ResizeFit 타입 사용
-  quality: number;
-  format: 'jpeg' | 'jpg' | 'png' | 'webp';
-  background: string;
-  useWidth: boolean;
-  useHeight: boolean;
-  withoutEnlargement: boolean;
-  withoutReduction: boolean;
-}
+import { ErrorDisplay } from '../ui/ErrorDisplay';
+import { ProcessingStatus } from '../ui/ProcessingStatus';
+import { ImageMetadata } from '../ui/ImageMetadata';
 
 export function BasicDemo() {
-  const [originalImage, setOriginalImage] = useState<any>(null);
-  const [processedImage, setProcessedImage] = useState<any>(null);
-  const [processing, setProcessing] = useState(false);
-  const [options, setOptions] = useState<ProcessOptions>({
+  const {
+    originalImage,
+    processedImages,
+    processing,
+    error,
+    handleImageSelect,
+    handleProcess,
+    clearError,
+    retry,
+    getErrorMessage,
+    canRetry,
+  } = useImageProcessing();
+
+  const [options, setOptions] = useState<ProcessingOptions>({
     width: 300,
     height: 200,
     fit: 'cover',
     quality: 80,
     format: 'jpeg',
     background: '#ffffff',
-    useWidth: true,
-    useHeight: true,
     withoutEnlargement: false,
     withoutReduction: false,
   });
 
-  const handleImageSelect = useCallback(async (source: File | string) => {
-    setProcessedImage(null);
+  // UI 전용 상태
+  const [useWidth, setUseWidth] = useState(true);
+  const [useHeight, setUseHeight] = useState(true);
 
-    // 원본 이미지 정보 설정
-    if (typeof source === 'string') {
-      const img = new Image();
-      img.onload = () => {
-        setOriginalImage({
-          src: source,
-          width: img.width,
-          height: img.height,
-          format: source.split('.').pop()?.toLowerCase(),
-        });
-      };
-      img.src = source;
-    } else {
-      const url = URL.createObjectURL(source);
-      const img = new Image();
-      img.onload = () => {
-        setOriginalImage({
-          src: url,
-          width: img.width,
-          height: img.height,
-          size: source.size,
-          format: source.type.split('/')[1],
-        });
-      };
-      img.src = url;
-    }
-  }, []);
+  // 최신 처리된 이미지
+  const processedImage = processedImages[processedImages.length - 1] || null;
 
-  const handleProcess = async () => {
-    if (!originalImage) return;
+  // 처리 옵션 준비
+  const prepareProcessingOptions = (): ProcessingOptions => {
+    return {
+      ...options,
+      width: useWidth ? options.width : undefined,
+      height: useHeight ? options.height : undefined,
+    };
+  };
 
-    setProcessing(true);
-    const startTime = Date.now();
+  // 처리 실행
+  const handleProcessClick = async () => {
+    await handleProcess(prepareProcessingOptions());
+  };
 
-    try {
-      const resizeWidth = options.useWidth ? options.width : undefined;
-      const resizeHeight = options.useHeight ? options.height : undefined;
-
-      const result = await processImage(originalImage.src)
-        .resize(resizeWidth, resizeHeight, {
-          fit: options.fit,
-          background: options.background,
-          withoutEnlargement: options.withoutEnlargement,
-          withoutReduction: options.withoutReduction,
-        })
-        .toBlob({
-          format: options.format,
-          quality: options.quality / 100,
-        });
-
-      const processingTime = Date.now() - startTime;
-      const url = URL.createObjectURL(result.blob);
-
-      setProcessedImage({
-        src: url,
-        width: result.width,
-        height: result.height,
-        size: result.blob.size,
-        format: options.format,
-        processingTime,
-      });
-    } catch (error) {
-      console.error('Processing failed:', error);
-      console.error('이미지 처리 중 오류가 발생했습니다.');
-    } finally {
-      setProcessing(false);
-    }
+  // 재시도
+  const handleRetryClick = async () => {
+    await retry(prepareProcessingOptions());
   };
 
   // 코드 예제 생성
   const generateCodeExamples = () => {
-    const resizeWidth = options.useWidth ? options.width : 'undefined';
-    const resizeHeight = options.useHeight ? options.height : 'undefined';
+    const resizeWidth = useWidth ? options.width : 'undefined';
+    const resizeHeight = useHeight ? options.height : 'undefined';
 
     const basicCode = `import { processImage } from '@cp949/web-image-util';
 
@@ -143,7 +96,12 @@ const result = await processImage(source)
   .toBlob({
     format: '${options.format}',
     quality: ${options.quality / 100}
-  });`;
+  });
+
+// ResultBlob 타입의 메타데이터 활용
+console.log('처리 시간:', result.processingTime, 'ms');
+console.log('원본 크기:', result.originalSize);
+console.log('결과 크기:', result.width, 'x', result.height);`;
 
     const advancedCode = `// 더 복잡한 처리 파이프라인
 const result = await processImage(source)
@@ -156,7 +114,19 @@ const [small, medium, large] = await Promise.all([
   processImage(source).resize(150, 100).toBlob(),
   processImage(source).resize(300, 200).toBlob(),
   processImage(source).resize(600, 400).toBlob()
-]);`;
+]);
+
+// 에러 처리
+try {
+  const result = await processImage(source)
+    .resize(300, 200)
+    .toBlob();
+} catch (error) {
+  if (error instanceof ImageProcessError) {
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+  }
+}`;
 
     return [
       {
@@ -189,6 +159,12 @@ const [small, medium, large] = await Promise.all([
             {/* 이미지 업로더 */}
             <ImageUploader onImageSelect={handleImageSelect} />
 
+            {/* 에러 표시 */}
+            {error && <ErrorDisplay error={error} onRetry={canRetry ? handleRetryClick : undefined} onClear={clearError} canRetry={canRetry} />}
+
+            {/* 처리 상태 */}
+            <ProcessingStatus processing={processing} message="이미지를 처리하고 있습니다..." />
+
             {/* 처리 옵션 */}
             <Card>
               <CardContent>
@@ -202,66 +178,30 @@ const [small, medium, large] = await Promise.all([
                     출력 크기
                   </Typography>
 
-                  {/* 너비 체크박스 및 입력 */}
+                  {/* 너비 */}
                   <Box sx={{ mb: 2 }}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={options.useWidth}
-                          onChange={(e) =>
-                            setOptions((prev) => ({
-                              ...prev,
-                              useWidth: e.target.checked,
-                            }))
-                          }
-                        />
-                      }
-                      label="너비 사용"
-                    />
+                    <FormControlLabel control={<Checkbox checked={useWidth} onChange={(e) => setUseWidth(e.target.checked)} />} label="너비 사용" />
                     <TextField
                       fullWidth
                       label="너비"
                       type="number"
                       value={options.width || ''}
-                      disabled={!options.useWidth}
-                      onChange={(e) =>
-                        setOptions((prev) => ({
-                          ...prev,
-                          width: parseInt(e.target.value) || undefined,
-                        }))
-                      }
+                      disabled={!useWidth}
+                      onChange={(e) => setOptions((prev) => ({ ...prev, width: parseInt(e.target.value) || undefined }))}
                       sx={{ mt: 1 }}
                     />
                   </Box>
 
-                  {/* 높이 체크박스 및 입력 */}
+                  {/* 높이 */}
                   <Box>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={options.useHeight}
-                          onChange={(e) =>
-                            setOptions((prev) => ({
-                              ...prev,
-                              useHeight: e.target.checked,
-                            }))
-                          }
-                        />
-                      }
-                      label="높이 사용"
-                    />
+                    <FormControlLabel control={<Checkbox checked={useHeight} onChange={(e) => setUseHeight(e.target.checked)} />} label="높이 사용" />
                     <TextField
                       fullWidth
                       label="높이"
                       type="number"
                       value={options.height || ''}
-                      disabled={!options.useHeight}
-                      onChange={(e) =>
-                        setOptions((prev) => ({
-                          ...prev,
-                          height: parseInt(e.target.value) || undefined,
-                        }))
-                      }
+                      disabled={!useHeight}
+                      onChange={(e) => setOptions((prev) => ({ ...prev, height: parseInt(e.target.value) || undefined }))}
                       sx={{ mt: 1 }}
                     />
                   </Box>
@@ -270,16 +210,7 @@ const [small, medium, large] = await Promise.all([
                 {/* Fit 모드 */}
                 <FormControl fullWidth sx={{ mb: 3 }}>
                   <InputLabel>Fit 모드</InputLabel>
-                  <Select
-                    value={options.fit}
-                    label="Fit 모드"
-                    onChange={(e) =>
-                      setOptions((prev) => ({
-                        ...prev,
-                        fit: e.target.value as 'cover' | 'contain' | 'fill' | 'inside' | 'outside',
-                      }))
-                    }
-                  >
+                  <Select value={options.fit} label="Fit 모드" onChange={(e) => setOptions((prev) => ({ ...prev, fit: e.target.value as any }))}>
                     <MenuItem value="cover">Cover (가득 채우기, 잘림)</MenuItem>
                     <MenuItem value="contain">Contain (전체 포함, 여백)</MenuItem>
                     <MenuItem value="fill">Fill (늘려서 채우기)</MenuItem>
@@ -294,60 +225,29 @@ const [small, medium, large] = await Promise.all([
                     크기 제한 옵션
                   </Typography>
 
-                  {/* withoutEnlargement 체크박스 */}
                   <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={options.withoutEnlargement}
-                        onChange={(e) =>
-                          setOptions((prev) => ({
-                            ...prev,
-                            withoutEnlargement: e.target.checked,
-                          }))
-                        }
-                      />
-                    }
+                    control={<Checkbox checked={options.withoutEnlargement} onChange={(e) => setOptions((prev) => ({ ...prev, withoutEnlargement: e.target.checked }))} />}
                     label="확대 금지 (withoutEnlargement)"
                     sx={{ display: 'block', mb: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, ml: 4 }}>
-                    원본보다 큰 크기로 확대하지 않습니다. 지정된 크기보다 작게 유지됩니다.
+                    원본보다 큰 크기로 확대하지 않습니다.
                   </Typography>
 
-                  {/* withoutReduction 체크박스 */}
                   <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={options.withoutReduction}
-                        onChange={(e) =>
-                          setOptions((prev) => ({
-                            ...prev,
-                            withoutReduction: e.target.checked,
-                          }))
-                        }
-                      />
-                    }
+                    control={<Checkbox checked={options.withoutReduction} onChange={(e) => setOptions((prev) => ({ ...prev, withoutReduction: e.target.checked }))} />}
                     label="축소 금지 (withoutReduction)"
                     sx={{ display: 'block', mb: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4 }}>
-                    원본보다 작은 크기로 축소하지 않습니다. 지정된 크기보다 크게 유지됩니다.
+                    원본보다 작은 크기로 축소하지 않습니다.
                   </Typography>
                 </Box>
 
                 {/* 포맷 선택 */}
                 <FormControl fullWidth sx={{ mb: 3 }}>
                   <InputLabel>출력 포맷</InputLabel>
-                  <Select
-                    value={options.format}
-                    label="출력 포맷"
-                    onChange={(e) =>
-                      setOptions((prev) => ({
-                        ...prev,
-                        format: e.target.value as 'jpeg' | 'jpg' | 'png' | 'webp',
-                      }))
-                    }
-                  >
+                  <Select value={options.format} label="출력 포맷" onChange={(e) => setOptions((prev) => ({ ...prev, format: e.target.value as any }))}>
                     <MenuItem value="jpeg">JPEG</MenuItem>
                     <MenuItem value="png">PNG</MenuItem>
                     <MenuItem value="webp">WebP</MenuItem>
@@ -361,12 +261,7 @@ const [small, medium, large] = await Promise.all([
                   </Typography>
                   <Slider
                     value={options.quality}
-                    onChange={(_, value) =>
-                      setOptions((prev) => ({
-                        ...prev,
-                        quality: value as number,
-                      }))
-                    }
+                    onChange={(_, value) => setOptions((prev) => ({ ...prev, quality: value as number }))}
                     min={10}
                     max={100}
                     step={5}
@@ -383,24 +278,13 @@ const [small, medium, large] = await Promise.all([
                   fullWidth
                   label="배경색 (투명 영역)"
                   value={options.background}
-                  onChange={(e) =>
-                    setOptions((prev) => ({
-                      ...prev,
-                      background: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setOptions((prev) => ({ ...prev, background: e.target.value }))}
                   placeholder="#ffffff"
                   sx={{ mb: 3 }}
                 />
 
                 {/* 처리 버튼 */}
-                <Button
-                  fullWidth
-                  variant="contained"
-                  onClick={handleProcess}
-                  disabled={!originalImage || processing}
-                  size="large"
-                >
+                <Button fullWidth variant="contained" onClick={handleProcessClick} disabled={!originalImage || processing} size="large">
                   {processing ? '처리 중...' : '이미지 처리'}
                 </Button>
               </CardContent>
@@ -408,11 +292,14 @@ const [small, medium, large] = await Promise.all([
           </Stack>
         </Grid>
 
-        {/* 우측: 이미지 비교 뷰어 */}
+        {/* 우측: 이미지 비교 및 메타데이터 */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
             {/* Before/After 뷰어 */}
             <BeforeAfterView before={originalImage} after={processedImage} />
+
+            {/* 메타데이터 */}
+            <ImageMetadata original={originalImage} processed={processedImage} />
 
             {/* 코드 스니펫 */}
             {originalImage && <CodeSnippet title="현재 설정의 코드 예제" examples={generateCodeExamples()} />}
@@ -536,5 +423,3 @@ const [small, medium, large] = await Promise.all([
     </Container>
   );
 }
-
-// removed old export default;
