@@ -194,7 +194,6 @@ export class ImageProcessor {
     return this;
   }
 
-
   // ==============================================
   // Phase 3: 고급 성능 최적화 메서드
   // ==============================================
@@ -751,7 +750,7 @@ export class ImageProcessor {
           console.log('🚀 SVG 파이프라인 우회: 크기가 이미 최적 상태', {
             target: `${width}x${height}`,
             actual: `${imageElement.naturalWidth}x${imageElement.naturalHeight}`,
-            bypass: true
+            bypass: true,
           });
           return true;
         }
@@ -801,7 +800,7 @@ export class ImageProcessor {
     console.log('✅ SVG 직접 렌더링 완료:', {
       size: `${canvas.width}x${canvas.height}`,
       processingTime: `${processingTime.toFixed(2)}ms`,
-      quality: 'high (pipeline bypassed)'
+      quality: 'high (pipeline bypassed)',
     });
 
     return { canvas, result };

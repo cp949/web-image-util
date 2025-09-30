@@ -50,7 +50,7 @@ export function extractSvgDimensions(svgString: string): SvgDimensions {
     width: width || viewBox?.width || 100, // 기본값 100
     height: height || viewBox?.height || 100,
     viewBox,
-    hasExplicitSize: Boolean(width && height)
+    hasExplicitSize: Boolean(width && height),
   };
 }
 
@@ -83,7 +83,7 @@ function parseViewBox(viewBoxStr: string | null): SvgDimensions['viewBox'] {
     x: values[0],
     y: values[1],
     width: values[2],
-    height: values[3]
+    height: values[3],
   };
 }
 

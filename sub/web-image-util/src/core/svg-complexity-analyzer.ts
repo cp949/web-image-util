@@ -7,23 +7,23 @@
 
 // SVG 복잡도 메트릭 인터페이스
 export interface SvgComplexityMetrics {
-  pathCount: number;           // path 요소 개수
-  gradientCount: number;       // 그라데이션 개수
-  filterCount: number;         // 필터 효과 개수
-  animationCount: number;      // 애니메이션 요소 개수
-  textElementCount: number;    // 텍스트 요소 개수
-  totalElementCount: number;   // 전체 요소 개수
-  hasClipPath: boolean;        // 클리핑 패스 사용 여부
-  hasMask: boolean;            // 마스크 사용 여부
-  fileSize: number;            // 파일 크기 (bytes)
+  pathCount: number; // path 요소 개수
+  gradientCount: number; // 그라데이션 개수
+  filterCount: number; // 필터 효과 개수
+  animationCount: number; // 애니메이션 요소 개수
+  textElementCount: number; // 텍스트 요소 개수
+  totalElementCount: number; // 전체 요소 개수
+  hasClipPath: boolean; // 클리핑 패스 사용 여부
+  hasMask: boolean; // 마스크 사용 여부
+  fileSize: number; // 파일 크기 (bytes)
 }
 
 // 복잡도 분석 결과
 export interface ComplexityAnalysisResult {
   metrics: SvgComplexityMetrics;
-  complexityScore: number;      // 0.0 ~ 1.0 복잡도 점수
+  complexityScore: number; // 0.0 ~ 1.0 복잡도 점수
   recommendedQuality: QualityLevel;
-  reasoning: string[];          // 추천 이유 목록
+  reasoning: string[]; // 추천 이유 목록
 }
 
 // 품질 레벨 타입
@@ -62,7 +62,7 @@ export function analyzeSvgComplexity(svgString: string): ComplexityAnalysisResul
       metrics,
       complexityScore,
       recommendedQuality,
-      reasoning
+      reasoning,
     };
   } catch (error) {
     // 에러 발생 시 기본값 반환
@@ -87,7 +87,7 @@ function collectMetrics(doc: Document, svgString: string): SvgComplexityMetrics 
     totalElementCount: doc.querySelectorAll('*').length,
     hasClipPath: doc.querySelector('clipPath') !== null,
     hasMask: doc.querySelector('mask') !== null,
-    fileSize: new Blob([svgString]).size
+    fileSize: new Blob([svgString]).size,
   };
 }
 
@@ -136,10 +136,7 @@ function calculateComplexityScore(metrics: SvgComplexityMetrics): number {
  * @param metrics 메트릭 정보
  * @returns 권장 품질 레벨
  */
-function determineQualityLevel(
-  complexityScore: number,
-  metrics: SvgComplexityMetrics
-): QualityLevel {
+function determineQualityLevel(complexityScore: number, metrics: SvgComplexityMetrics): QualityLevel {
   // 파일 크기 고려 (50KB 이상은 대용량으로 간주)
   const isLargeFile = metrics.fileSize > 50000;
 
@@ -169,10 +166,7 @@ function determineQualityLevel(
  * @param complexityScore 복잡도 점수
  * @returns 추천 이유 목록
  */
-function generateRecommendationReasoning(
-  metrics: SvgComplexityMetrics,
-  complexityScore: number
-): string[] {
+function generateRecommendationReasoning(metrics: SvgComplexityMetrics, complexityScore: number): string[] {
   const reasoning: string[] = [];
 
   // 전체 복잡도 평가
@@ -238,14 +232,14 @@ function createFallbackAnalysisResult(svgString: string, errorMessage: string): 
       totalElementCount: 0,
       hasClipPath: false,
       hasMask: false,
-      fileSize
+      fileSize,
     },
     complexityScore: 0.5, // 중간 복잡도로 가정
     recommendedQuality: fileSize > 50000 ? 'high' : 'medium', // 파일 크기 기반 결정
     reasoning: [
       '분석 실패로 기본값 사용',
       `오류: ${errorMessage}`,
-      fileSize > 50000 ? '파일 크기 기반 high 품질 추천' : '중간 품질 추천'
-    ]
+      fileSize > 50000 ? '파일 크기 기반 high 품질 추천' : '중간 품질 추천',
+    ],
   };
 }

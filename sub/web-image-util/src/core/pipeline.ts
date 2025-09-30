@@ -401,7 +401,7 @@ export class RenderPipeline {
       originalSize: `${originalWidth}x${originalHeight}`,
       targetSize: `${finalTargetWidth}x${finalTargetHeight}`,
       fitMode: fit,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     switch (fit) {
@@ -444,7 +444,7 @@ export class RenderPipeline {
           canvasSize: `${result.canvasWidth}x${result.canvasHeight}`,
           position: `${result.destX},${result.destY}`,
           padding: `${finalTargetWidth - padWidth}x${finalTargetHeight - padHeight}`,
-          scaleCalculation: `Math.min(${finalTargetWidth}/${originalWidth}, ${finalTargetHeight}/${originalHeight})`
+          scaleCalculation: `Math.min(${finalTargetWidth}/${originalWidth}, ${finalTargetHeight}/${originalHeight})`,
         });
 
         return result;
@@ -516,7 +516,7 @@ export class RenderPipeline {
           canvasSize: `${result.canvasWidth}x${result.canvasHeight}`,
           position: `${result.destX},${result.destY}`,
           overflow: `${coverWidth - finalTargetWidth}x${coverHeight - finalTargetHeight}`,
-          scaleCalculation: `Math.max(${finalTargetWidth}/${originalWidth}, ${finalTargetHeight}/${originalHeight})`
+          scaleCalculation: `Math.max(${finalTargetWidth}/${originalWidth}, ${finalTargetHeight}/${originalHeight})`,
         });
 
         return result;

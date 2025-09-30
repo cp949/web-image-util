@@ -36,7 +36,6 @@ export interface OptimizationResult {
  * 벡터 그래픽의 렌더링 품질 향상을 위한 전처리 최적화
  */
 export class SvgOptimizer {
-
   /**
    * 기본 최적화 옵션
    */
@@ -47,7 +46,7 @@ export class SvgOptimizer {
       optimizeGradients: true,
       mergeElements: false, // 안전을 위해 기본값은 false
       removeUnusedDefs: true,
-      precision: 3 // 3자리 소수점 유지
+      precision: 3, // 3자리 소수점 유지
     };
   }
 
@@ -105,10 +104,9 @@ export class SvgOptimizer {
           optimizedSize,
           compressionRatio: (originalSize - optimizedSize) / originalSize,
           optimizations,
-          processingTimeMs
-        }
+          processingTimeMs,
+        },
       };
-
     } catch (error) {
       // 최적화 실패 시 원본 반환
       console.warn('SVG 최적화 중 오류 발생:', error);
@@ -121,8 +119,8 @@ export class SvgOptimizer {
           optimizedSize: originalSize,
           compressionRatio: 0,
           optimizations: ['최적화 실패 - 원본 반환'],
-          processingTimeMs
-        }
+          processingTimeMs,
+        },
       };
     }
   }
@@ -149,10 +147,10 @@ export class SvgOptimizer {
       /xmlns:rdf="[^"]*"/g,
       /xmlns:svg="[^"]*"/g,
       /xmlns:sodipodi="[^"]*"/g,
-      /xmlns:inkscape="[^"]*"/g
+      /xmlns:inkscape="[^"]*"/g,
     ];
 
-    unnecessaryNamespaces.forEach(regex => {
+    unnecessaryNamespaces.forEach((regex) => {
       cleaned = cleaned.replace(regex, '');
     });
 
@@ -162,10 +160,10 @@ export class SvgOptimizer {
       /<title[\s\S]*?<\/title>/gi,
       /<desc[\s\S]*?<\/desc>/gi,
       /<sodipodi:[^>]*>/gi,
-      /<inkscape:[^>]*>/gi
+      /<inkscape:[^>]*>/gi,
     ];
 
-    metadataElements.forEach(regex => {
+    metadataElements.forEach((regex) => {
       cleaned = cleaned.replace(regex, '');
     });
 
@@ -175,10 +173,10 @@ export class SvgOptimizer {
       /data-[^=]*="[^"]*"/g,
       /id="[^"]*"/g, // ID 속성도 렌더링에 불필요하면 제거
       /style=""/g, // 빈 스타일 속성
-      /transform=""/g // 빈 트랜스폼 속성
+      /transform=""/g, // 빈 트랜스폼 속성
     ];
 
-    unnecessaryAttrs.forEach(regex => {
+    unnecessaryAttrs.forEach((regex) => {
       cleaned = cleaned.replace(regex, '');
     });
 
@@ -250,7 +248,7 @@ export class SvgOptimizer {
       const replacementMap = new Map<string, string>();
 
       // 중복 그라데이션 감지 및 매핑
-      gradients.forEach(gradient => {
+      gradients.forEach((gradient) => {
         const hash = this.hashGradient(gradient);
         const currentId = gradient.getAttribute('id');
 
@@ -273,7 +271,7 @@ export class SvgOptimizer {
       // 참조 업데이트
       replacementMap.forEach((newId, oldId) => {
         const elements = doc.querySelectorAll(`[fill="url(#${oldId})"], [stroke="url(#${oldId})"]`);
-        elements.forEach(element => {
+        elements.forEach((element) => {
           if (element.getAttribute('fill') === `url(#${oldId})`) {
             element.setAttribute('fill', `url(#${newId})`);
           }
@@ -284,7 +282,6 @@ export class SvgOptimizer {
       });
 
       return new XMLSerializer().serializeToString(doc);
-
     } catch (error) {
       console.warn('그라데이션 최적화 실패:', error);
       return svgString; // 실패 시 원본 반환
@@ -297,7 +294,7 @@ export class SvgOptimizer {
   private static hashGradient(gradient: Element): string {
     const type = gradient.tagName;
     const stops = Array.from(gradient.querySelectorAll('stop'))
-      .map(stop => {
+      .map((stop) => {
         const offset = stop.getAttribute('offset') || '0';
         const color = stop.getAttribute('stop-color') || '#000000';
         const opacity = stop.getAttribute('stop-opacity') || '1';
@@ -307,8 +304,8 @@ export class SvgOptimizer {
 
     // 그라데이션 특성 (방향, 크기 등)
     const attrs = ['x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'fx', 'fy']
-      .map(attr => gradient.getAttribute(attr) || '')
-      .filter(val => val !== '')
+      .map((attr) => gradient.getAttribute(attr) || '')
+      .filter((val) => val !== '')
       .join(',');
 
     return `${type}:${attrs}:${stops}`;
@@ -340,7 +337,7 @@ export class SvgOptimizer {
 
       // defs 내의 모든 요소 ID 수집
       const definedIds = new Set<string>();
-      defs.querySelectorAll('[id]').forEach(element => {
+      defs.querySelectorAll('[id]').forEach((element) => {
         const id = element.getAttribute('id');
         if (id) definedIds.add(id);
       });
@@ -349,11 +346,11 @@ export class SvgOptimizer {
       const usedIds = new Set<string>();
       const svgContent = doc.documentElement;
 
-      definedIds.forEach(id => {
+      definedIds.forEach((id) => {
         const references = svgContent.querySelectorAll(
           `[fill="url(#${id})"], [stroke="url(#${id})"], [filter="url(#${id})"], ` +
-          `[clip-path="url(#${id})"], [mask="url(#${id})"], [marker-start="url(#${id})"], ` +
-          `[marker-mid="url(#${id})"], [marker-end="url(#${id})"], [href="#${id}"]`
+            `[clip-path="url(#${id})"], [mask="url(#${id})"], [marker-start="url(#${id})"], ` +
+            `[marker-mid="url(#${id})"], [marker-end="url(#${id})"], [href="#${id}"]`
         );
 
         if (references.length > 0) {
@@ -362,7 +359,7 @@ export class SvgOptimizer {
       });
 
       // 사용하지 않는 정의 제거
-      definedIds.forEach(id => {
+      definedIds.forEach((id) => {
         if (!usedIds.has(id)) {
           const unusedElement = defs.querySelector(`[id="${id}"]`);
           if (unusedElement) {
@@ -377,7 +374,6 @@ export class SvgOptimizer {
       }
 
       return new XMLSerializer().serializeToString(doc);
-
     } catch (error) {
       console.warn('미사용 정의 제거 실패:', error);
       return svgString;
@@ -388,16 +384,18 @@ export class SvgOptimizer {
    * 전체 공백 정리
    */
   private static cleanupWhitespace(svgString: string): string {
-    return svgString
-      // 태그 사이의 불필요한 공백 제거
-      .replace(/>\s+</g, '><')
-      // 연속된 공백을 하나로 통합 (속성값 내부 제외)
-      .replace(/(\s)\s+/g, '$1')
-      // 속성 주변 공백 정리 (등호 주변)
-      .replace(/\s*=\s*/g, '=')
-      // 속성 간 공백 정리
-      .replace(/"\s+([a-zA-Z-])/g, '" $1')
-      // 시작과 끝 공백 제거
-      .trim();
+    return (
+      svgString
+        // 태그 사이의 불필요한 공백 제거
+        .replace(/>\s+</g, '><')
+        // 연속된 공백을 하나로 통합 (속성값 내부 제외)
+        .replace(/(\s)\s+/g, '$1')
+        // 속성 주변 공백 정리 (등호 주변)
+        .replace(/\s*=\s*/g, '=')
+        // 속성 간 공백 정리
+        .replace(/"\s+([a-zA-Z-])/g, '" $1')
+        // 시작과 끝 공백 제거
+        .trim()
+    );
   }
 }

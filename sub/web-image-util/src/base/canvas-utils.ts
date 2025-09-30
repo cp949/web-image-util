@@ -249,7 +249,7 @@ export function setupHighQualityCanvas(
   const canvas = document.createElement('canvas');
 
   // DevicePixelRatio 고려한 스케일 계산 - 옵션으로 제어 가능
-  const deviceScale = options.useDevicePixelRatio ? (window.devicePixelRatio || 1) : 1;
+  const deviceScale = options.useDevicePixelRatio ? window.devicePixelRatio || 1 : 1;
   const userScale = options.scale || 1;
   const totalScale = Math.min(4, Math.max(1, deviceScale * userScale));
 
@@ -263,7 +263,7 @@ export function setupHighQualityCanvas(
 
   // Context 설정
   const context = canvas.getContext('2d', {
-    willReadFrequently: options.willReadFrequently || false
+    willReadFrequently: options.willReadFrequently || false,
   });
 
   if (!context) {

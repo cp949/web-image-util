@@ -112,8 +112,7 @@ function detectOffscreenCanvas(): boolean {
   if (capabilityCache.isServerSide) return false;
 
   try {
-    return typeof OffscreenCanvas !== 'undefined' &&
-           typeof OffscreenCanvas.prototype.getContext === 'function';
+    return typeof OffscreenCanvas !== 'undefined' && typeof OffscreenCanvas.prototype.getContext === 'function';
   } catch {
     return false;
   }
@@ -139,8 +138,7 @@ function detectImageBitmap(): boolean {
   if (capabilityCache.isServerSide) return false;
 
   try {
-    return typeof ImageBitmap !== 'undefined' &&
-           typeof createImageBitmap === 'function';
+    return typeof ImageBitmap !== 'undefined' && typeof createImageBitmap === 'function';
   } catch {
     return false;
   }
@@ -158,8 +156,7 @@ function detectTransferableObjects(): boolean {
     const buffer = new ArrayBuffer(8);
 
     // 동기적으로 transferable 여부만 확인
-    return typeof channel.port1.postMessage === 'function' &&
-           buffer instanceof ArrayBuffer;
+    return typeof channel.port1.postMessage === 'function' && buffer instanceof ArrayBuffer;
   } catch {
     return false;
   }
@@ -262,7 +259,8 @@ async function detectAVIFSupport(timeout: number = 5000): Promise<boolean> {
       };
 
       // 1x1 AVIF 이미지 (투명)
-      img.src = 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEAwgMg8f8D///8WfhwB8+ErK42A=';
+      img.src =
+        'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEAwgMg8f8D///8WfhwB8+ErK42A=';
     } catch {
       clearTimeout(timeoutId);
       capabilityCache.set('avif', false);
@@ -282,16 +280,17 @@ function determineOptimalProcessingMode(capabilities: BrowserCapabilities): 'mai
   // 우선순위: offscreen > web-worker > main-thread
 
   // 1. OffscreenCanvas + Web Workers + ImageBitmap = 최고 성능
-  if (capabilities.offscreenCanvas &&
-      capabilities.webWorkers &&
-      capabilities.imageBitmap &&
-      capabilities.transferableObjects) {
+  if (
+    capabilities.offscreenCanvas &&
+    capabilities.webWorkers &&
+    capabilities.imageBitmap &&
+    capabilities.transferableObjects
+  ) {
     return 'offscreen';
   }
 
   // 2. Web Workers + Transferable Objects = 중간 성능
-  if (capabilities.webWorkers &&
-      capabilities.transferableObjects) {
+  if (capabilities.webWorkers && capabilities.transferableObjects) {
     return 'web-worker';
   }
 
@@ -363,10 +362,7 @@ export class BrowserCapabilityDetector {
     if (debug) console.log('[BrowserCapabilities] 동기 기능 감지 완료:', syncCapabilities);
 
     // 비동기 포맷 지원 감지
-    const [webp, avif] = await Promise.all([
-      detectWebPSupport(timeout),
-      detectAVIFSupport(timeout),
-    ]);
+    const [webp, avif] = await Promise.all([detectWebPSupport(timeout), detectAVIFSupport(timeout)]);
 
     const capabilities: BrowserCapabilities = {
       ...syncCapabilities,
@@ -410,10 +406,7 @@ export class BrowserCapabilityDetector {
    * 포맷 지원 감지 (비동기)
    */
   async detectFormatSupport(timeout: number = 5000): Promise<{ webp: boolean; avif: boolean }> {
-    const [webp, avif] = await Promise.all([
-      detectWebPSupport(timeout),
-      detectAVIFSupport(timeout),
-    ]);
+    const [webp, avif] = await Promise.all([detectWebPSupport(timeout), detectAVIFSupport(timeout)]);
 
     return { webp, avif };
   }
@@ -472,7 +465,9 @@ export async function detectFormatSupport(timeout?: number): Promise<{ webp: boo
 /**
  * 최적 처리 모드 빠른 결정
  */
-export async function getOptimalProcessingMode(options?: DetectionOptions): Promise<'main-thread' | 'web-worker' | 'offscreen'> {
+export async function getOptimalProcessingMode(
+  options?: DetectionOptions
+): Promise<'main-thread' | 'web-worker' | 'offscreen'> {
   const performance = await analyzePerformanceFeatures(options);
   return performance.recommendedProcessingMode;
 }
@@ -494,7 +489,7 @@ export const DEFAULT_DETECTION_OPTIONS: Required<DetectionOptions> = {
  * 처리 모드별 설명
  */
 export const PROCESSING_MODE_DESCRIPTIONS = {
-  'offscreen': 'OffscreenCanvas + Web Worker를 사용한 최고 성능 처리',
+  offscreen: 'OffscreenCanvas + Web Worker를 사용한 최고 성능 처리',
   'web-worker': 'Web Worker를 사용한 멀티스레드 처리',
   'main-thread': '메인 스레드에서 처리 (기본, 호환성 최우선)',
 } as const;
@@ -503,10 +498,10 @@ export const PROCESSING_MODE_DESCRIPTIONS = {
  * 기능별 성능 임팩트 가중치
  */
 export const FEATURE_PERFORMANCE_WEIGHTS = {
-  offscreenCanvas: 0.4,    // 40% - 가장 큰 성능 향상
-  webWorkers: 0.3,         // 30% - 멀티스레드 처리
-  imageBitmap: 0.15,       // 15% - 효율적인 이미지 처리
+  offscreenCanvas: 0.4, // 40% - 가장 큰 성능 향상
+  webWorkers: 0.3, // 30% - 멀티스레드 처리
+  imageBitmap: 0.15, // 15% - 효율적인 이미지 처리
   transferableObjects: 0.1, // 10% - 데이터 전송 최적화
-  webp: 0.03,              // 3% - 작은 파일 크기
-  avif: 0.02,              // 2% - 더 작은 파일 크기
+  webp: 0.03, // 3% - 작은 파일 크기
+  avif: 0.02, // 2% - 더 작은 파일 크기
 } as const;

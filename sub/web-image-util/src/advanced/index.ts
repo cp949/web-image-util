@@ -26,14 +26,10 @@ export {
   getOptimalProcessingMode,
   DEFAULT_DETECTION_OPTIONS,
   PROCESSING_MODE_DESCRIPTIONS,
-  FEATURE_PERFORMANCE_WEIGHTS
+  FEATURE_PERFORMANCE_WEIGHTS,
 } from '../utils/browser-capabilities';
 
-export type {
-  BrowserCapabilities,
-  PerformanceFeatures,
-  DetectionOptions
-} from '../utils/browser-capabilities';
+export type { BrowserCapabilities, PerformanceFeatures, DetectionOptions } from '../utils/browser-capabilities';
 
 // ============================================================================
 // SVG 품질 분석 및 복잡도 시스템
@@ -44,15 +40,9 @@ export { analyzeSvgComplexity } from '../core/svg-complexity-analyzer';
 export type { SvgComplexityMetrics, ComplexityAnalysisResult, QualityLevel } from '../core/svg-complexity-analyzer';
 
 // SVG 호환성 및 차원 처리
-export {
-  normalizeSvgBasics,
-  enhanceBrowserCompatibility
-} from '../utils/svg-compatibility';
+export { normalizeSvgBasics, enhanceBrowserCompatibility } from '../utils/svg-compatibility';
 
-export {
-  extractSvgDimensions,
-  setSvgDimensions
-} from '../utils/svg-dimensions';
+export { extractSvgDimensions, setSvgDimensions } from '../utils/svg-dimensions';
 
 export type { SvgDimensions, SvgEnhanceOptions } from '../utils/svg-dimensions';
 
@@ -102,15 +92,14 @@ export async function profileSystemPerformance(): Promise<SystemPerformanceProfi
 
   // 시스템 특성에 따른 권장 설정
   const recommendedSettings = {
-    maxConcurrentWorkers: capabilities.webWorkers ?
-      (capabilities.sharedArrayBuffer ? 4 : 2) : 1,
-    optimalQualityLevel: capabilities.offscreenCanvas ? 'high' as QualityLevel : 'medium' as QualityLevel,
-    useOffscreenCanvas: performance.canUseOffscreenCanvas
+    maxConcurrentWorkers: capabilities.webWorkers ? (capabilities.sharedArrayBuffer ? 4 : 2) : 1,
+    optimalQualityLevel: capabilities.offscreenCanvas ? ('high' as QualityLevel) : ('medium' as QualityLevel),
+    useOffscreenCanvas: performance.canUseOffscreenCanvas,
   };
 
   return {
     capabilities,
     performance,
-    recommendedSettings
+    recommendedSettings,
   };
 }

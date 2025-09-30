@@ -48,8 +48,4 @@ export {
 } from './browser-capabilities';
 
 // SVG 벡터 최적화 시스템 (Phase 3 Step 3)
-export {
-  SvgOptimizer,
-  type SvgOptimizationOptions,
-  type OptimizationResult,
-} from './svg-optimizer';
+export { SvgOptimizer, type SvgOptimizationOptions, type OptimizationResult } from './svg-optimizer';

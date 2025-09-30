@@ -379,20 +379,12 @@ export type { SvgDimensions, SvgEnhanceOptions } from '../utils/svg-dimensions';
 export type { HighQualityCanvasOptions } from '../base/canvas-utils';
 
 // Phase 2: SVG 복잡도 분석 및 품질 시스템 타입들
-export type {
-  SvgComplexityMetrics,
-  ComplexityAnalysisResult,
-  QualityLevel
-} from '../core/svg-complexity-analyzer';
+export type { SvgComplexityMetrics, ComplexityAnalysisResult, QualityLevel } from '../core/svg-complexity-analyzer';
 
 // (제거됨: SvgProcessingOptions, SvgProcessingResult - v2.0에서 불필요)
 
 // Phase 3: 브라우저 기능 감지 시스템 타입들
-export type {
-  BrowserCapabilities,
-  PerformanceFeatures,
-  DetectionOptions
-} from '../utils/browser-capabilities';
+export type { BrowserCapabilities, PerformanceFeatures, DetectionOptions } from '../utils/browser-capabilities';
 
 // Phase 3 Step 2: OffscreenCanvas + Web Worker 고성능 처리 타입들
 // (OffscreenSVGProcessor에서 사용하는 타입들은 해당 모듈에서 정의되어 있음)
