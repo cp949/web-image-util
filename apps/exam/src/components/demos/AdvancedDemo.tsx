@@ -26,6 +26,8 @@ import {
 import { ImageUploader } from '../common/ImageUploader';
 import { BeforeAfterView } from '../ui/BeforeAfterView';
 import { CodeSnippet } from '../common/CodeSnippet';
+import { ProcessingStatus } from '../ui/ProcessingStatus';
+import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { processImage } from '@cp949/web-image-util';
 import { SimpleWatermark } from '@cp949/web-image-util/advanced';
 
@@ -68,6 +70,7 @@ export function AdvancedDemo() {
   const [watermarkImage, setWatermarkImage] = useState<any>(null);
   const [processedImage, setProcessedImage] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   // 텍스트 워터마크 옵션
   const [textOptions, setTextOptions] = useState<TextWatermarkOptions>({
@@ -148,6 +151,7 @@ export function AdvancedDemo() {
     if (!originalImage) return;
 
     setProcessing(true);
+    setError(null);
     try {
       // 먼저 기본 이미지를 Canvas로 변환
       const processor = processImage(originalImage.src);
@@ -189,8 +193,9 @@ export function AdvancedDemo() {
         height: watermarkedCanvas.height,
         format: 'png',
       });
-    } catch (error) {
-      console.error('텍스트 워터마크 처리 중 오류:', error);
+    } catch (err) {
+      console.error('텍스트 워터마크 처리 중 오류:', err);
+      setError(err instanceof Error ? err : new Error('텍스트 워터마크 처리 중 오류가 발생했습니다.'));
     } finally {
       setProcessing(false);
     }
@@ -200,6 +205,7 @@ export function AdvancedDemo() {
     if (!originalImage || !watermarkImage) return;
 
     setProcessing(true);
+    setError(null);
     try {
       // 먼저 기본 이미지를 Canvas로 변환
       const processor = processImage(originalImage.src);
@@ -244,8 +250,9 @@ export function AdvancedDemo() {
         height: watermarkedCanvas.height,
         format: 'png',
       });
-    } catch (error) {
-      console.error('이미지 워터마크 처리 중 오류:', error);
+    } catch (err) {
+      console.error('이미지 워터마크 처리 중 오류:', err);
+      setError(err instanceof Error ? err : new Error('이미지 워터마크 처리 중 오류가 발생했습니다.'));
     } finally {
       setProcessing(false);
     }
@@ -372,6 +379,17 @@ const blob = await new Promise(resolve => {
       <Typography variant="body1" color="text.secondary" paragraph>
         워터마크 추가, 이미지 합성, 다중 레이어 처리 등 고급 이미지 처리 기능을 확인해보세요.
       </Typography>
+
+      {/* 에러 표시 */}
+      {error && (
+        <ErrorDisplay
+          error={error}
+          onClear={() => setError(null)}
+        />
+      )}
+
+      {/* 처리 상태 */}
+      <ProcessingStatus processing={processing} message="워터마크 처리 중..." />
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>

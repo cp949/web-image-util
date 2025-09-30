@@ -21,9 +21,15 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { createThumbnail, createAvatar, createSocialImage } from '@cp949/web-image-util/presets';
+import type { ImageProcessError } from '@cp949/web-image-util';
 import { CodeSnippet } from '../common/CodeSnippet';
 import { ImageUploader } from '../common/ImageUploader';
 import { BeforeAfterView } from '../ui/BeforeAfterView';
+import { ErrorDisplay } from '../ui/ErrorDisplay';
+import { ProcessingStatus } from '../ui/ProcessingStatus';
+import { ImageMetadata } from '../ui/ImageMetadata';
+import type { ImageInfo, ProcessedImageInfo } from './types';
+import { getErrorMessage, isRecoverableError } from '../../utils/errorHandling';
 
 const SOCIAL_PLATFORMS = {
   twitter: { width: 1200, height: 675, label: 'Twitter (16:9)' },
@@ -36,9 +42,10 @@ const SOCIAL_PLATFORMS = {
 
 export function PresetsDemo() {
   const [activeTab, setActiveTab] = useState(0);
-  const [originalImage, setOriginalImage] = useState<any>(null);
-  const [processedImages, setProcessedImages] = useState<any[]>([]);
+  const [originalImage, setOriginalImage] = useState<ImageInfo | null>(null);
+  const [processedImages, setProcessedImages] = useState<ProcessedImageInfo[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<ImageProcessError | Error | null>(null);
 
   // 썸네일 옵션
   const [thumbnailOptions, setThumbnailOptions] = useState({
@@ -65,6 +72,7 @@ export function PresetsDemo() {
 
   const handleImageSelect = (source: File | string) => {
     setProcessedImages([]);
+    setError(null);
 
     if (typeof source === 'string') {
       const img = new Image();
@@ -74,7 +82,11 @@ export function PresetsDemo() {
           width: img.width,
           height: img.height,
           format: source.split('.').pop()?.toLowerCase(),
+          name: source.split('/').pop()
         });
+      };
+      img.onerror = () => {
+        setError(new Error('이미지를 불러올 수 없습니다.'));
       };
       img.src = source;
     } else {
@@ -87,7 +99,11 @@ export function PresetsDemo() {
           height: img.height,
           size: source.size,
           format: source.type.split('/')[1],
+          name: source.name
         });
+      };
+      img.onerror = () => {
+        setError(new Error('이미지를 불러올 수 없습니다.'));
       };
       img.src = url;
     }
@@ -97,27 +113,28 @@ export function PresetsDemo() {
     if (!originalImage) return;
 
     setProcessing(true);
-    const startTime = Date.now();
+    setError(null);
 
     try {
       const result = await createThumbnail(originalImage.src, thumbnailOptions);
 
-      const processingTime = Date.now() - startTime;
       const url = URL.createObjectURL(result.blob);
 
-      setProcessedImages([
-        {
-          src: url,
-          width: result.width,
-          height: result.height,
-          size: result.blob.size,
-          format: thumbnailOptions.format,
-          processingTime,
-        },
-      ]);
-    } catch (error) {
-      console.error('Thumbnail creation failed:', error);
-      console.error('썸네일 생성 중 오류가 발생했습니다.');
+      const processedInfo: ProcessedImageInfo = {
+        src: url,
+        width: result.width,
+        height: result.height,
+        size: result.blob.size,
+        format: thumbnailOptions.format,
+        processingTime: result.processingTime,
+        originalSize: result.originalSize,
+        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined
+      };
+
+      setProcessedImages([processedInfo]);
+    } catch (err) {
+      console.error('Thumbnail creation failed:', err);
+      setError(err instanceof Error ? err : new Error('썸네일 생성 중 오류가 발생했습니다.'));
     } finally {
       setProcessing(false);
     }
@@ -127,27 +144,28 @@ export function PresetsDemo() {
     if (!originalImage) return;
 
     setProcessing(true);
-    const startTime = Date.now();
+    setError(null);
 
     try {
       const result = await createAvatar(originalImage.src, avatarOptions);
 
-      const processingTime = Date.now() - startTime;
       const url = URL.createObjectURL(result.blob);
 
-      setProcessedImages([
-        {
-          src: url,
-          width: result.width,
-          height: result.height,
-          size: result.blob.size,
-          format: avatarOptions.format,
-          processingTime,
-        },
-      ]);
-    } catch (error) {
-      console.error('Avatar creation failed:', error);
-      console.error('아바타 생성 중 오류가 발생했습니다.');
+      const processedInfo: ProcessedImageInfo = {
+        src: url,
+        width: result.width,
+        height: result.height,
+        size: result.blob.size,
+        format: avatarOptions.format,
+        processingTime: result.processingTime,
+        originalSize: result.originalSize,
+        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined
+      };
+
+      setProcessedImages([processedInfo]);
+    } catch (err) {
+      console.error('Avatar creation failed:', err);
+      setError(err instanceof Error ? err : new Error('아바타 생성 중 오류가 발생했습니다.'));
     } finally {
       setProcessing(false);
     }
@@ -157,27 +175,28 @@ export function PresetsDemo() {
     if (!originalImage) return;
 
     setProcessing(true);
-    const startTime = Date.now();
+    setError(null);
 
     try {
       const result = await createSocialImage(originalImage.src, socialOptions);
 
-      const processingTime = Date.now() - startTime;
       const url = URL.createObjectURL(result.blob);
 
-      setProcessedImages([
-        {
-          src: url,
-          width: result.width,
-          height: result.height,
-          size: result.blob.size,
-          format: socialOptions.format,
-          processingTime,
-        },
-      ]);
-    } catch (error) {
-      console.error('Social image creation failed:', error);
-      console.error('소셜 이미지 생성 중 오류가 발생했습니다.');
+      const processedInfo: ProcessedImageInfo = {
+        src: url,
+        width: result.width,
+        height: result.height,
+        size: result.blob.size,
+        format: socialOptions.format,
+        processingTime: result.processingTime,
+        originalSize: result.originalSize,
+        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined
+      };
+
+      setProcessedImages([processedInfo]);
+    } catch (err) {
+      console.error('Social image creation failed:', err);
+      setError(err instanceof Error ? err : new Error('소셜 이미지 생성 중 오류가 발생했습니다.'));
     } finally {
       setProcessing(false);
     }
@@ -188,7 +207,7 @@ export function PresetsDemo() {
     if (!originalImage) return;
 
     setProcessing(true);
-    const startTime = Date.now();
+    setError(null);
 
     try {
       const sizes = [64, 128, 256, 512];
@@ -202,20 +221,21 @@ export function PresetsDemo() {
         )
       );
 
-      const processingTime = Date.now() - startTime;
-      const processedBatch = results.map((result) => ({
+      const processedBatch: ProcessedImageInfo[] = results.map((result) => ({
         src: URL.createObjectURL(result.blob),
         width: result.width,
         height: result.height,
         size: result.blob.size,
-        format: 'png',
-        processingTime: processingTime / sizes.length, // 평균 시간
+        format: 'png' as const,
+        processingTime: result.processingTime,
+        originalSize: result.originalSize,
+        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined
       }));
 
       setProcessedImages(processedBatch);
-    } catch (error) {
-      console.error('Batch processing failed:', error);
-      console.error('배치 처리 중 오류가 발생했습니다.');
+    } catch (err) {
+      console.error('Batch processing failed:', err);
+      setError(err instanceof Error ? err : new Error('배치 처리 중 오류가 발생했습니다.'));
     } finally {
       setProcessing(false);
     }
@@ -322,6 +342,17 @@ const socialImages = await Promise.all([
       <Typography variant="body1" color="text.secondary" paragraph>
         자주 사용하는 패턴들을 간단한 함수 호출로 처리할 수 있는 편의 기능들입니다.
       </Typography>
+
+      {/* 에러 표시 */}
+      {error && (
+        <ErrorDisplay
+          error={error}
+          onClear={() => setError(null)}
+        />
+      )}
+
+      {/* 처리 상태 */}
+      <ProcessingStatus processing={processing} message="프리셋 처리 중..." />
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
@@ -560,6 +591,14 @@ const socialImages = await Promise.all([
 
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
+            {/* 메타데이터 표시 */}
+            {processedImages.length === 1 && (
+              <ImageMetadata
+                original={originalImage}
+                processed={processedImages[0]}
+              />
+            )}
+
             {/* 결과 표시 */}
             {processedImages.length === 1 ? (
               <BeforeAfterView before={originalImage} after={processedImages[0]} />
@@ -602,7 +641,7 @@ const socialImages = await Promise.all([
                             {image.width}×{image.height}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {Math.round(image.size / 1024)}KB
+                            {image.size ? `${Math.round(image.size / 1024)}KB` : 'N/A'}
                           </Typography>
                         </Box>
                       </Grid>

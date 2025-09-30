@@ -29,7 +29,7 @@ export interface ImageInfo {
  */
 export interface ProcessedImageInfo extends ImageInfo {
   processingTime: number;
-  originalSize: { width: number; height: number };
+  originalSize?: { width: number; height: number };
   compressionRatio?: number;
   qualityScore?: number;
 }
