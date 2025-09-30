@@ -96,38 +96,9 @@ export class ImageProcessor {
   // 🆕 새로운 API (v2.0+)
   resize(config: ResizeConfig): this;
 
-  // 레거시 API (호환성 유지)
-  /** @deprecated Use resize(config: ResizeConfig) instead */
-  resize(width?: number | null, height?: number | null, options?: ResizeOptions): this;
-  /** @deprecated Use resize(config: ResizeConfig) instead */
-  resize(options: ResizeOptions): this;
-  /** @deprecated Use resize(config: ResizeConfig) instead */
-  resize(width: number): this; // 너비만 지정
-  /** @deprecated Use resize(config: ResizeConfig) instead */
-  resize(width: number, height: number, options: SmartResizeOptions): this; // 스마트 리사이징
 
-  resize(
-    widthOrOptionsOrConfig?: number | null | ResizeOptions | SmartResizeOptions | ResizeConfig,
-    height?: number | null,
-    options: ResizeOptions | SmartResizeOptions = {}
-  ): this {
-    // 🆕 새로운 API 감지: fit 필드가 있고 ResizeConfig 형태인지 확인
-    if (
-      typeof widthOrOptionsOrConfig === 'object' &&
-      widthOrOptionsOrConfig !== null &&
-      'fit' in widthOrOptionsOrConfig &&
-      (widthOrOptionsOrConfig.fit === 'cover' ||
-        widthOrOptionsOrConfig.fit === 'contain' ||
-        widthOrOptionsOrConfig.fit === 'fill' ||
-        widthOrOptionsOrConfig.fit === 'maxFit' ||
-        widthOrOptionsOrConfig.fit === 'minFit')
-    ) {
-      // 새로운 ResizeConfig API 처리
-      return this.resizeWithConfig(widthOrOptionsOrConfig as ResizeConfig);
-    }
-
-    // 레거시 API 처리
-    return this.resizeWithLegacyAPI(widthOrOptionsOrConfig, height, options);
+  resize(config: ResizeConfig): this {
+    return this.resizeWithConfig(config);
   }
 
   /**
@@ -147,83 +118,6 @@ export class ImageProcessor {
     return this;
   }
 
-  /**
-   * 레거시 API 처리 (호환성 유지)
-   * @private
-   */
-  private resizeWithLegacyAPI(
-    widthOrOptions?: number | null | ResizeOptions | SmartResizeOptions,
-    height?: number | null,
-    options: ResizeOptions | SmartResizeOptions = {}
-  ): this {
-    // 오버로드 파라미터 처리
-    let finalWidth: number | undefined;
-    let finalHeight: number | undefined;
-    let finalOptions: ResizeOptions | SmartResizeOptions;
-
-    if (typeof widthOrOptions === 'object' && widthOrOptions !== null) {
-      // resize({ width: 300, height: 200, ... }) 형태
-      finalOptions = widthOrOptions;
-      finalWidth = finalOptions.width;
-      finalHeight = finalOptions.height;
-    } else {
-      // resize(300, 200, { ... }) 형태
-      finalWidth = widthOrOptions || undefined;
-      finalHeight = height || undefined;
-      finalOptions = options;
-    }
-
-    // 새로운 ResizeConfig 방식으로 변환
-    const legacyFit = (finalOptions as ResizeOptions).fit || 'cover';
-    let resizeConfig: ResizeConfig;
-
-    // 레거시 fit 값을 새로운 ResizeConfig로 변환
-    if (legacyFit === 'inside' as any) {
-      // maxFit 모드
-      if (finalWidth && finalHeight) {
-        resizeConfig = { fit: 'maxFit', width: finalWidth, height: finalHeight };
-      } else if (finalWidth) {
-        resizeConfig = { fit: 'maxFit', width: finalWidth } as ResizeConfig;
-      } else if (finalHeight) {
-        resizeConfig = { fit: 'maxFit', height: finalHeight } as ResizeConfig;
-      } else {
-        throw new ImageProcessError('maxFit 모드는 width 또는 height 중 하나는 필요합니다', 'INVALID_DIMENSIONS');
-      }
-    } else if (legacyFit === 'outside' as any) {
-      // minFit 모드
-      if (finalWidth && finalHeight) {
-        resizeConfig = { fit: 'minFit', width: finalWidth, height: finalHeight };
-      } else if (finalWidth) {
-        resizeConfig = { fit: 'minFit', width: finalWidth } as ResizeConfig;
-      } else if (finalHeight) {
-        resizeConfig = { fit: 'minFit', height: finalHeight } as ResizeConfig;
-      } else {
-        throw new ImageProcessError('minFit 모드는 width 또는 height 중 하나는 필요합니다', 'INVALID_DIMENSIONS');
-      }
-    } else {
-      // cover, contain, fill 모드
-      if (!finalWidth || !finalHeight) {
-        throw new ImageProcessError(`${legacyFit} 모드는 width와 height가 모두 필요합니다`, 'INVALID_DIMENSIONS');
-      }
-
-      if (legacyFit === 'cover' || legacyFit === 'contain' || legacyFit === 'fill') {
-        resizeConfig = { fit: legacyFit, width: finalWidth, height: finalHeight };
-      } else {
-        // 기본값
-        resizeConfig = { fit: 'cover', width: finalWidth, height: finalHeight };
-      }
-    }
-
-    // ResizeConfig 검증
-    validateResizeConfig(resizeConfig);
-
-    this.pipeline.addOperation({
-      type: 'resize',
-      config: resizeConfig,
-    });
-
-    return this;
-  }
 
   /**
    * 이미지 블러 효과

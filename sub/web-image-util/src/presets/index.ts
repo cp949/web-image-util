@@ -78,8 +78,10 @@ export async function createThumbnail(source: ImageSource, options: ThumbnailOpt
 
   // 이미지 프로세싱
   return await processImage(source)
-    .resize(width, height, {
+    .resize({
       fit: finalOptions.fit,
+      width,
+      height,
       background: finalOptions.background,
     })
     .toBlob({
@@ -144,9 +146,10 @@ export async function createAvatar(source: ImageSource, options: AvatarOptions =
   const finalOptions = { ...defaultOptions, ...options };
 
   // 기본 리사이징 (정사각형, cover fit)
-  const processor = processImage(source).resize(finalOptions.size, finalOptions.size, {
+  const processor = processImage(source).resize({
     fit: 'cover',
-    position: 'center',
+    width: finalOptions.size,
+    height: finalOptions.size,
     background: finalOptions.background,
   });
 
@@ -249,9 +252,10 @@ export async function createSocialImage(source: ImageSource, options: SocialImag
   const finalOptions = { ...defaultOptions, ...options };
 
   return await processImage(source)
-    .resize(targetSize.width, targetSize.height, {
+    .resize({
       fit: 'contain', // 소셜 이미지는 보통 전체 이미지가 보이도록 함
-      position: 'center',
+      width: targetSize.width,
+      height: targetSize.height,
       background: finalOptions.background,
     })
     .toBlob({

@@ -33,6 +33,9 @@ import type {
   ImageErrorCodeType,
 } from './base';
 
+// ResizeConfig 타입을 ImageProcessor에서 사용하기 위해 import
+import type { ResizeConfig } from './resize-config';
+
 import { ImageFormats, OutputFormats, ImageErrorCodeConstants } from './base';
 
 // ============================================================================
@@ -291,8 +294,7 @@ export interface ProcessorOptions {
  * 이미지 프로세서 인터페이스
  */
 export interface ImageProcessor {
-  resize(width?: number | null, height?: number | null, options?: ResizeOptions): ImageProcessor;
-  resize(width: number, height: number, options: SmartResizeOptions): ImageProcessor;
+  resize(config: ResizeConfig): ImageProcessor;
   blur(radius?: number, options?: Partial<BlurOptions>): ImageProcessor;
   toBlob(options?: OutputOptions): Promise<ResultBlob>;
   toDataURL(options?: OutputOptions): Promise<ResultDataURL>;

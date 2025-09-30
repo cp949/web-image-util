@@ -1,6 +1,6 @@
 'use client';
 
-import { processImage } from '@cp949/web-image-util';
+import { processImage, ResizeConfig } from '@cp949/web-image-util';
 import { Download, PhotoSizeSelectActual, Storage } from '@mui/icons-material';
 import {
   Box,
@@ -23,14 +23,11 @@ interface ProcessPreset {
   category: string;
   name: string;
   description: string;
-  options: {
-    width?: number;
-    height?: number;
-    fit: 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit';
-    quality?: number;
-    format?: 'jpeg' | 'png' | 'webp';
-    withoutEnlargement?: boolean;
+  options: ResizeConfig & {
+    quality: number;
+    format: 'jpeg' | 'png' | 'webp';
     blur?: number;
+    withoutEnlargement?: boolean;
   };
 }
 
@@ -198,7 +195,7 @@ const PROCESSING_PRESETS: ProcessPreset[] = [
     category: '크기 제한',
     name: '확대 금지',
     description: '원본보다 크게 만들지 않음',
-    options: { width: 500, height: 300, fit: 'cover', quality: 80, format: 'jpeg', withoutEnlargement: true },
+    options: { width: 500, height: 300, fit: 'cover', quality: 80, format: 'jpeg' },
   },
 ];
 

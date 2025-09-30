@@ -71,7 +71,7 @@ describe('SVG 품질 저하 수정 검증', () => {
     ];
 
     for (const [width, height] of sizes) {
-      const result = await processImage(complexSvg).resize(width, height).toBlob();
+      const result = await processImage(complexSvg).resize({ fit: 'cover', width, height }).toBlob();
 
       expect(result.blob).toBeDefined();
       expect(result.blob.size).toBeGreaterThan(0);
