@@ -26,7 +26,7 @@ interface ProcessPreset {
   options: {
     width?: number;
     height?: number;
-    fit?: 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit';
+    fit: 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit';
     quality?: number;
     format?: 'jpeg' | 'png' | 'webp';
     withoutEnlargement?: boolean;
@@ -63,7 +63,13 @@ const PROCESSING_PRESETS: ProcessPreset[] = [
     category: 'Fit 모드',
     name: 'MaxFit',
     description: '축소만 허용, 확대 안함',
-    options: { width: 300, height: 200, fit: 'maxFit', quality: 80, format: 'jpeg' },
+    options: {
+      width: 300,
+      height: 200,
+      fit: 'maxFit',
+      quality: 80,
+      format: 'jpeg',
+    },
   },
   {
     id: 'fit-minFit',
@@ -260,10 +266,10 @@ export function PreviewGalleryDemo() {
 
         // 🔍 DEBUG: 프리셋 옵션 확인 (새로운 ResizeConfig API)
         const resizeConfig = {
-          fit: preset.options.fit || 'cover',
+          fit: preset.options.fit,
           width: preset.options.width,
           height: preset.options.height,
-          ...(preset.options.withoutEnlargement && (preset.options.fit === 'contain' || preset.options.fit === 'maxFit')
+          ...(preset.options.withoutEnlargement && preset.options.fit === 'contain'
             ? { withoutEnlargement: true }
             : {}),
         };
@@ -271,8 +277,8 @@ export function PreviewGalleryDemo() {
         console.log('🎭 PreviewGalleryDemo 프리셋:', {
           presetId: preset.id,
           presetName: preset.name,
-          resizeConfig,
           targetSize: `${preset.options.width}x${preset.options.height}`,
+          ...resizeConfig,
         });
 
         let processor = processImage(source) //

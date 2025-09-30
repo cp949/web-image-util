@@ -173,20 +173,53 @@ export class ImageProcessor {
       finalOptions = options;
     }
 
-    // fit 모드별 차별화된 리사이징 처리
-    const resizeOptions: ResizeOptions = {
-      fit: 'cover', // 기본값
-      position: 'centre', // 기본값 (영국식 철자)
-      background: { r: 0, g: 0, b: 0, alpha: 1 }, // 기본값: 불투명한 검정
-      withoutEnlargement: false,
-      ...finalOptions, // 사용자 옵션이 기본값을 덮어씀
-      width: finalWidth,
-      height: finalHeight,
-    };
+    // 새로운 ResizeConfig 방식으로 변환
+    const legacyFit = (finalOptions as ResizeOptions).fit || 'cover';
+    let resizeConfig: ResizeConfig;
+
+    // 레거시 fit 값을 새로운 ResizeConfig로 변환
+    if (legacyFit === 'inside' as any) {
+      // maxFit 모드
+      if (finalWidth && finalHeight) {
+        resizeConfig = { fit: 'maxFit', width: finalWidth, height: finalHeight };
+      } else if (finalWidth) {
+        resizeConfig = { fit: 'maxFit', width: finalWidth } as ResizeConfig;
+      } else if (finalHeight) {
+        resizeConfig = { fit: 'maxFit', height: finalHeight } as ResizeConfig;
+      } else {
+        throw new ImageProcessError('maxFit 모드는 width 또는 height 중 하나는 필요합니다', 'INVALID_DIMENSIONS');
+      }
+    } else if (legacyFit === 'outside' as any) {
+      // minFit 모드
+      if (finalWidth && finalHeight) {
+        resizeConfig = { fit: 'minFit', width: finalWidth, height: finalHeight };
+      } else if (finalWidth) {
+        resizeConfig = { fit: 'minFit', width: finalWidth } as ResizeConfig;
+      } else if (finalHeight) {
+        resizeConfig = { fit: 'minFit', height: finalHeight } as ResizeConfig;
+      } else {
+        throw new ImageProcessError('minFit 모드는 width 또는 height 중 하나는 필요합니다', 'INVALID_DIMENSIONS');
+      }
+    } else {
+      // cover, contain, fill 모드
+      if (!finalWidth || !finalHeight) {
+        throw new ImageProcessError(`${legacyFit} 모드는 width와 height가 모두 필요합니다`, 'INVALID_DIMENSIONS');
+      }
+
+      if (legacyFit === 'cover' || legacyFit === 'contain' || legacyFit === 'fill') {
+        resizeConfig = { fit: legacyFit, width: finalWidth, height: finalHeight };
+      } else {
+        // 기본값
+        resizeConfig = { fit: 'cover', width: finalWidth, height: finalHeight };
+      }
+    }
+
+    // ResizeConfig 검증
+    validateResizeConfig(resizeConfig);
 
     this.pipeline.addOperation({
-      type: 'resize-legacy',
-      options: resizeOptions,
+      type: 'resize',
+      config: resizeConfig,
     });
 
     return this;
@@ -798,10 +831,10 @@ export class ImageProcessor {
       return true;
     }
 
-    if (operations.length === 1 && (operations[0].type === 'resize' || operations[0].type === 'resize-legacy')) {
+    if (operations.length === 1 && operations[0].type === 'resize') {
       const resizeOp = operations[0];
-      const width = resizeOp.type === 'resize' ? resizeOp.config.width : resizeOp.options.width;
-      const height = resizeOp.type === 'resize' ? resizeOp.config.height : resizeOp.options.height;
+      const width = resizeOp.config.width;
+      const height = resizeOp.config.height;
 
       // 목표 크기와 실제 크기가 일치하거나 매우 유사한 경우 (5% 이내 오차 허용)
       if (width && height) {

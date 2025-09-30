@@ -21,21 +21,12 @@ export interface ResizeOperation {
   config: ResizeConfig;
 }
 
-/**
- * 레거시 리사이즈 연산 (호환성 유지)
- * @deprecated Use ResizeOperation instead
- */
-export interface ResizeLegacyOperation {
-  type: 'resize-legacy';
-  options: ResizeOptions;
-}
 
 /**
  * 파이프라인 연산 인터페이스
  */
 export type Operation =
   | ResizeOperation
-  | ResizeLegacyOperation
   | { type: 'blur'; options: BlurOptions }
   | { type: 'smart-resize'; options: SmartResizeOptions }
   | { type: 'rotate'; options: any }
@@ -167,27 +158,6 @@ export class RenderPipeline {
         height = targetHeight;
         width = Math.round(targetHeight * aspectRatio);
       }
-    } else if (firstOp?.type === 'resize-legacy') {
-      const resizeOptions = firstOp.options as ResizeOptions;
-      const targetWidth = resizeOptions.width;
-      const targetHeight = resizeOptions.height;
-
-      if (targetWidth && targetHeight) {
-        console.log('🎨 SVG 품질 최적화 (레거시): 초기 Canvas를 목표 크기로 생성', {
-          originalSize: `${width}x${height}`,
-          targetSize: `${targetWidth}x${targetHeight}`,
-        });
-        width = targetWidth;
-        height = targetHeight;
-      } else if (targetWidth) {
-        const aspectRatio = height / width;
-        width = targetWidth;
-        height = Math.round(targetWidth * aspectRatio);
-      } else if (targetHeight) {
-        const aspectRatio = width / height;
-        height = targetHeight;
-        width = Math.round(targetHeight * aspectRatio);
-      }
     }
 
     const canvas = this.canvasPool.acquire(width, height);
@@ -216,8 +186,6 @@ export class RenderPipeline {
     switch (operation.type) {
       case 'resize':
         return this.executeResizeWithConfig(context, operation.config);
-      case 'resize-legacy':
-        return this.executeResizeLegacy(context, operation.options);
       case 'smart-resize':
         return await this.executeSmartResize(context, operation.options);
       case 'blur':
@@ -229,99 +197,6 @@ export class RenderPipeline {
     }
   }
 
-  /**
-   * 레거시 리사이징 연산 실행
-   * @deprecated Use executeResizeWithConfig instead
-   */
-  private executeResizeLegacy(context: CanvasContext, options: ResizeOptions): CanvasContext {
-    const { width: targetWidth, height: targetHeight, fit = 'cover' } = options;
-
-    // 🔍 DEBUG: 실제 전달된 fit 옵션 확인
-    console.log('🎯 executeResize 받은 옵션:', {
-      targetSize: `${targetWidth}x${targetHeight}`,
-      fitMode: fit,
-      allOptions: options,
-      timestamp: Date.now(),
-    });
-
-    // 타겟 크기가 지정되지 않으면 원본 크기 사용
-    if (!targetWidth && !targetHeight) {
-      return context;
-    }
-
-    const originalWidth = context.width;
-    const originalHeight = context.height;
-
-    // SVG 품질 최적화: 초기 Canvas가 이미 목표 크기로 생성된 경우 스킵
-    // (첫 번째 resize 연산이고, 현재 Canvas 크기가 목표 크기와 일치하는 경우)
-    const isFirstOperation = this.operations[0]?.type === 'resize-legacy';
-    if (isFirstOperation && targetWidth && targetHeight) {
-      if (originalWidth === targetWidth && originalHeight === targetHeight) {
-        return context; // 이미 목표 크기이므로 resize 불필요
-      }
-    }
-
-    // 크기 계산
-    const dimensions = this.calculateResizeDimensions(
-      originalWidth,
-      originalHeight,
-      targetWidth,
-      targetHeight,
-      fit,
-      options
-    );
-
-    // 새 캔버스 생성 (Canvas Pool 사용)
-    const newCanvas = this.canvasPool.acquire(dimensions.canvasWidth, dimensions.canvasHeight);
-    const newCtx = newCanvas.getContext('2d');
-
-    if (!newCtx) {
-      this.canvasPool.release(newCanvas);
-      throw new ImageProcessError('리사이징용 캔버스 생성에 실패했습니다', 'CANVAS_CREATION_FAILED');
-    }
-
-    // 🚀 확대 시 고품질 설정 강화 - SVG 벡터 품질 유지
-    const scaleX = dimensions.destWidth / dimensions.sourceWidth;
-    const scaleY = dimensions.destHeight / dimensions.sourceHeight;
-    const isScalingUp = scaleX > 1 || scaleY > 1;
-
-    if (isScalingUp) {
-      newCtx.imageSmoothingEnabled = true;
-      newCtx.imageSmoothingQuality = 'high';
-    } else {
-      // 축소 시에도 고품질 유지
-      newCtx.imageSmoothingEnabled = true;
-      newCtx.imageSmoothingQuality = 'high';
-    }
-
-    // 임시 Canvas로 추적
-    this.temporaryCanvases.push(newCanvas);
-
-    // 배경색 설정
-    if (options.background && fit === 'contain') {
-      this.fillBackground(newCtx, dimensions.canvasWidth, dimensions.canvasHeight, options.background);
-    }
-
-    // 이미지 그리기
-    newCtx.drawImage(
-      context.canvas,
-      dimensions.sourceX,
-      dimensions.sourceY,
-      dimensions.sourceWidth,
-      dimensions.sourceHeight,
-      dimensions.destX,
-      dimensions.destY,
-      dimensions.destWidth,
-      dimensions.destHeight
-    );
-
-    return {
-      canvas: newCanvas,
-      ctx: newCtx,
-      width: dimensions.canvasWidth,
-      height: dimensions.canvasHeight,
-    };
-  }
 
   /**
    * 스마트 리사이징 연산 실행
@@ -731,9 +606,9 @@ export class RenderPipeline {
     const sourceWidth = sourceImage.naturalWidth || sourceImage.width;
     const sourceHeight = sourceImage.naturalHeight || sourceImage.height;
 
-    // 첫 번째 resize 연산에서 fit 정보 가져오기
+    // 첫 번째 resize 연산에서 fit 정보 가져오기 (새로운 ResizeConfig 형태만 지원)
     const firstOp = this.operations[0];
-    const fit = (firstOp?.type === 'resize-legacy' && (firstOp.options as ResizeOptions).fit) || 'cover';
+    const fit = (firstOp?.type === 'resize' && firstOp.config.fit) || 'cover';
 
     console.log('🎨 drawImageWithFit:', {
       sourceSize: `${sourceWidth}x${sourceHeight}`,
