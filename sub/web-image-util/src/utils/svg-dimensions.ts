@@ -16,7 +16,6 @@ export interface SvgDimensions {
   hasExplicitSize: boolean; // width, height 속성이 명시적으로 설정되어 있는지 여부
 }
 
-
 /**
  * SVG 문자열에서 크기 정보를 추출하는 함수
  * @param svgString - 분석할 SVG 문자열
@@ -80,4 +79,3 @@ function parseViewBox(viewBoxStr: string | null): SvgDimensions['viewBox'] {
     height: values[3],
   };
 }
-

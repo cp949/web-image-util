@@ -118,4 +118,3 @@ export const features = {
   /** ImageBitmap 지원 여부 */
   imageBitmap: typeof createImageBitmap !== 'undefined',
 } as const;
-

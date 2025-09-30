@@ -68,8 +68,8 @@ export class RenderPipeline {
     try {
       let currentContext = this.createInitialCanvas(sourceImage);
 
-      // 소스 이미지를 첫 번째 캔버스에 그리기
-      currentContext.ctx.drawImage(sourceImage, 0, 0, currentContext.width, currentContext.height);
+      // 소스 이미지를 첫 번째 캔버스에 그리기 (fit 모드 고려)
+      this.drawImageWithFit(currentContext, sourceImage);
 
       // 각 연산을 순차적으로 실행
       for (const operation of this.operations) {
@@ -184,6 +184,14 @@ export class RenderPipeline {
    */
   private executeResize(context: CanvasContext, options: ResizeOptions): CanvasContext {
     const { width: targetWidth, height: targetHeight, fit = 'cover' } = options;
+
+    // 🔍 DEBUG: 실제 전달된 fit 옵션 확인
+    console.log('🎯 executeResize 받은 옵션:', {
+      targetSize: `${targetWidth}x${targetHeight}`,
+      fitMode: fit,
+      allOptions: options,
+      timestamp: Date.now(),
+    });
 
     // 타겟 크기가 지정되지 않으면 원본 크기 사용
     if (!targetWidth && !targetHeight) {
@@ -402,6 +410,21 @@ export class RenderPipeline {
       targetSize: `${finalTargetWidth}x${finalTargetHeight}`,
       fitMode: fit,
       timestamp: Date.now(),
+    });
+
+    // 🚨 CRITICAL DEBUG: switch 분기 확인
+    console.log('🚨 SWITCH 분기 직전:', {
+      fit,
+      fitType: typeof fit,
+      fitValue: JSON.stringify(fit),
+      possibleValues: ['cover', 'contain', 'fill', 'inside', 'outside'],
+      strictEquals: {
+        cover: fit === 'cover',
+        contain: fit === 'contain',
+        fill: fit === 'fill',
+        inside: fit === 'inside',
+        outside: fit === 'outside',
+      },
     });
 
     switch (fit) {
@@ -631,6 +654,151 @@ export class RenderPipeline {
       this.temporaryCanvases = [excludeCanvas];
     } else {
       this.temporaryCanvases = [];
+    }
+  }
+
+  /**
+   * fit 모드를 고려하여 소스 이미지를 Canvas에 그리기
+   * SVG 화질 유지하면서 fit 모드별 다른 결과 생성
+   */
+  private drawImageWithFit(context: CanvasContext, sourceImage: HTMLImageElement): void {
+    const { ctx, width: canvasWidth, height: canvasHeight } = context;
+    const sourceWidth = sourceImage.naturalWidth || sourceImage.width;
+    const sourceHeight = sourceImage.naturalHeight || sourceImage.height;
+
+    // 첫 번째 resize 연산에서 fit 정보 가져오기
+    const firstOp = this.operations[0];
+    const fit = (firstOp?.type === 'resize' && (firstOp.options as ResizeOptions).fit) || 'cover';
+
+    console.log('🎨 drawImageWithFit:', {
+      sourceSize: `${sourceWidth}x${sourceHeight}`,
+      canvasSize: `${canvasWidth}x${canvasHeight}`,
+      fitMode: fit,
+    });
+
+    // fit 모드별 drawImage 파라미터 계산
+    const drawParams = this.calculateFitDrawParams(sourceWidth, sourceHeight, canvasWidth, canvasHeight, fit);
+
+    console.log('🖼️ drawImage 파라미터:', drawParams);
+
+    // 계산된 파라미터로 이미지 그리기
+    ctx.drawImage(
+      sourceImage,
+      drawParams.sx,
+      drawParams.sy,
+      drawParams.sWidth,
+      drawParams.sHeight,
+      drawParams.dx,
+      drawParams.dy,
+      drawParams.dWidth,
+      drawParams.dHeight
+    );
+  }
+
+  /**
+   * CSS object-fit과 동일한 방식으로 drawImage 파라미터 계산
+   */
+  private calculateFitDrawParams(
+    sourceWidth: number,
+    sourceHeight: number,
+    canvasWidth: number,
+    canvasHeight: number,
+    fit: string
+  ) {
+    switch (fit) {
+      case 'fill':
+        // 비율 무시하고 Canvas 크기에 맞춤
+        return {
+          sx: 0,
+          sy: 0,
+          sWidth: sourceWidth,
+          sHeight: sourceHeight,
+          dx: 0,
+          dy: 0,
+          dWidth: canvasWidth,
+          dHeight: canvasHeight,
+        };
+
+      case 'contain': {
+        // 이미지 전체가 Canvas에 들어가도록 스케일링 (여백 생성)
+        const scale = Math.min(canvasWidth / sourceWidth, canvasHeight / sourceHeight);
+        const scaledWidth = sourceWidth * scale;
+        const scaledHeight = sourceHeight * scale;
+        const dx = (canvasWidth - scaledWidth) / 2;
+        const dy = (canvasHeight - scaledHeight) / 2;
+
+        return {
+          sx: 0,
+          sy: 0,
+          sWidth: sourceWidth,
+          sHeight: sourceHeight,
+          dx,
+          dy,
+          dWidth: scaledWidth,
+          dHeight: scaledHeight,
+        };
+      }
+
+      case 'inside': {
+        // contain과 같지만 확대 안함 (축소만)
+        const scale = Math.min(canvasWidth / sourceWidth, canvasHeight / sourceHeight, 1);
+        const scaledWidth = sourceWidth * scale;
+        const scaledHeight = sourceHeight * scale;
+        const dx = (canvasWidth - scaledWidth) / 2;
+        const dy = (canvasHeight - scaledHeight) / 2;
+
+        return {
+          sx: 0,
+          sy: 0,
+          sWidth: sourceWidth,
+          sHeight: sourceHeight,
+          dx,
+          dy,
+          dWidth: scaledWidth,
+          dHeight: scaledHeight,
+        };
+      }
+
+      case 'outside': {
+        // cover와 같지만 축소 안함 (확대만)
+        const scale = Math.max(canvasWidth / sourceWidth, canvasHeight / sourceHeight, 1);
+        const scaledWidth = sourceWidth * scale;
+        const scaledHeight = sourceHeight * scale;
+        const dx = (canvasWidth - scaledWidth) / 2;
+        const dy = (canvasHeight - scaledHeight) / 2;
+
+        return {
+          sx: 0,
+          sy: 0,
+          sWidth: sourceWidth,
+          sHeight: sourceHeight,
+          dx,
+          dy,
+          dWidth: scaledWidth,
+          dHeight: scaledHeight,
+        };
+      }
+
+      case 'cover':
+      default: {
+        // Canvas를 가득 채우되 비율 유지 (일부 잘림)
+        const scale = Math.max(canvasWidth / sourceWidth, canvasHeight / sourceHeight);
+        const scaledWidth = sourceWidth * scale;
+        const scaledHeight = sourceHeight * scale;
+        const dx = (canvasWidth - scaledWidth) / 2;
+        const dy = (canvasHeight - scaledHeight) / 2;
+
+        return {
+          sx: 0,
+          sy: 0,
+          sWidth: sourceWidth,
+          sHeight: sourceHeight,
+          dx,
+          dy,
+          dWidth: scaledWidth,
+          dHeight: scaledHeight,
+        };
+      }
     }
   }
 

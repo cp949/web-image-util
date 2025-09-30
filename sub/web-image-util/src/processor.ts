@@ -111,16 +111,16 @@ export class ImageProcessor {
       finalOptions = options;
     }
 
-    // Canvas API는 리사이징 전략을 선택할 수 없으므로 모든 리사이징을 일반 방식으로 처리
+    // fit 모드별 차별화된 리사이징 처리
     const resizeOptions: ResizeOptions = {
-      width: finalWidth,
-      height: finalHeight,
       fit: 'cover', // 기본값
       position: 'centre', // 기본값 (영국식 철자)
       background: { r: 0, g: 0, b: 0, alpha: 1 }, // 기본값: 불투명한 검정
       withoutEnlargement: false,
       withoutReduction: false,
-      ...finalOptions,
+      ...finalOptions, // 사용자 옵션이 기본값을 덮어씀
+      width: finalWidth,
+      height: finalHeight,
     };
 
     this.pipeline.addOperation({
