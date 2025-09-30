@@ -427,10 +427,10 @@ async function convertSvgToElement(
       timestamp: Date.now()
     });
 
-    // 7. SVG 크기 명시적 설정 - aspect ratio 보존 강화
-    const enhancedSvg = setSvgDimensions(normalizedSvg, renderWidth, renderHeight, {
-      preserveAspectRatio: true
-    });
+    // 7. SVG 원본 크기 유지 (벡터 품질 보존)
+    // setSvgDimensions를 사용하지 않고 normalizedSvg를 그대로 사용하여
+    // Canvas에서 직접 타겟 크기로 렌더링함으로써 벡터 품질을 보존합니다.
+    const enhancedSvg = normalizedSvg;
 
     // 8. 최적화된 Image 생성 (하이브리드 방식)
     return new Promise<HTMLImageElement>((resolve, reject) => {
