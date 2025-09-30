@@ -18,18 +18,18 @@
 
 // 브라우저 기능 감지
 export {
-  BrowserCapabilityDetector,
-  detectBrowserCapabilities,
   analyzePerformanceFeatures,
-  detectSyncCapabilities,
-  detectFormatSupport,
-  getOptimalProcessingMode,
+  BrowserCapabilityDetector,
   DEFAULT_DETECTION_OPTIONS,
-  PROCESSING_MODE_DESCRIPTIONS,
+  detectBrowserCapabilities,
+  detectFormatSupport,
+  detectSyncCapabilities,
   FEATURE_PERFORMANCE_WEIGHTS,
+  getOptimalProcessingMode,
+  PROCESSING_MODE_DESCRIPTIONS,
 } from '../utils/browser-capabilities';
 
-export type { BrowserCapabilities, PerformanceFeatures, DetectionOptions } from '../utils/browser-capabilities';
+export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from '../utils/browser-capabilities';
 
 // ============================================================================
 // SVG 품질 분석 및 복잡도 시스템
@@ -37,14 +37,14 @@ export type { BrowserCapabilities, PerformanceFeatures, DetectionOptions } from 
 
 // SVG 복잡도 분석
 export { analyzeSvgComplexity } from '../core/svg-complexity-analyzer';
-export type { SvgComplexityMetrics, ComplexityAnalysisResult, QualityLevel } from '../core/svg-complexity-analyzer';
+export type { ComplexityAnalysisResult, QualityLevel, SvgComplexityMetrics } from '../core/svg-complexity-analyzer';
 
 // SVG 호환성 및 차원 처리
-export { normalizeSvgBasics, enhanceBrowserCompatibility } from '../utils/svg-compatibility';
+export { enhanceBrowserCompatibility, normalizeSvgBasics } from '../utils/svg-compatibility';
 
-export { extractSvgDimensions, setSvgDimensions } from '../utils/svg-dimensions';
+export { extractSvgDimensions } from '../utils/svg-dimensions';
 
-export type { SvgDimensions, SvgEnhanceOptions } from '../utils/svg-dimensions';
+export type { SvgDimensions } from '../utils/svg-dimensions';
 
 // ============================================================================
 // Canvas 고품질 설정
@@ -57,8 +57,8 @@ export type { HighQualityCanvasOptions } from '../base/canvas-utils';
 // 편의 함수들 및 통합 API
 // ============================================================================
 
-import type { BrowserCapabilities, PerformanceFeatures } from '../utils/browser-capabilities';
 import type { QualityLevel } from '../core/svg-complexity-analyzer';
+import type { BrowserCapabilities, PerformanceFeatures } from '../utils/browser-capabilities';
 
 /**
  * 시스템 성능 프로파일 결과 타입

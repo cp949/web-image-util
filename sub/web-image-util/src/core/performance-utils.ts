@@ -4,9 +4,9 @@
  * @description 간단한 성능 제어 함수들 제공
  */
 
-import { SmartProcessor } from './smart-processor';
 import { BatchResizer } from './batch-resizer';
 import { getPerformanceConfig, type ResizeProfile } from './performance-config';
+import { SmartProcessor } from './smart-processor';
 
 /**
  * 전역 성능 설정
@@ -132,7 +132,6 @@ export class ResizePerformance {
     reason: string;
   } {
     const memoryInfo = this.getMemoryInfo();
-    const totalPixels = imageCount * avgImageSize;
 
     // 메모리 압박 상황
     if (memoryInfo.pressureLevel === 'high') {

@@ -1,7 +1,7 @@
 /**
  * 브라우저 기능 감지 시스템
  *
- * @description Phase 3: OffscreenCanvas + Web Worker 성능 최적화를 위한
+ * @description OffscreenCanvas + Web Worker 성능 최적화를 위한
  * 브라우저 기능 감지 및 최적 처리 모드 선택 시스템
  */
 

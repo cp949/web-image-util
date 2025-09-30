@@ -6,7 +6,6 @@ import type { ImageSource, ProcessorOptions } from '../types';
 import { ImageProcessError } from '../types';
 import { normalizeSvgBasics } from '../utils/svg-compatibility';
 import { extractSvgDimensions } from '../utils/svg-dimensions';
-import { setupHighQualityCanvas } from '../base/canvas-utils';
 import type { QualityLevel } from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
 

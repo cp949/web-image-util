@@ -4,8 +4,8 @@
  * @description 사용자 친화적인 에러 메시지와 해결 방법을 제공
  */
 
+import { globalErrorHandler } from '../core/error-handler';
 import { ImageProcessError, type ImageErrorCodeType } from '../types';
-import { globalErrorHandler, type ErrorStats } from '../core/error-handler';
 
 /**
  * 에러 컨텍스트 정보

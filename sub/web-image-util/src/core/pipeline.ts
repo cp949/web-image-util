@@ -3,7 +3,7 @@
  */
 
 import { CanvasPool } from '../base/canvas-pool';
-import type { BlurOptions, ResizeOptions, ResultMetadata, SmartResizeOptions, OutputFormat } from '../types';
+import type { BlurOptions, OutputFormat, ResizeOptions, ResultMetadata, SmartResizeOptions } from '../types';
 import { ImageProcessError } from '../types';
 import { SmartProcessor } from './smart-processor';
 

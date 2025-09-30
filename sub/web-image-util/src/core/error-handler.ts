@@ -4,9 +4,9 @@
  * @description 모든 에러를 일관되게 처리하는 간단한 핸들러
  */
 
-import { ImageProcessError } from '../types';
-import type { ImageErrorCodeType } from '../types';
 import type { ErrorContext } from '../base/error-helpers';
+import type { ImageErrorCodeType } from '../types';
+import { ImageProcessError } from '../types';
 
 // ImageProcessError 클래스를 다시 export
 export { ImageProcessError };

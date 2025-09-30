@@ -44,7 +44,7 @@ export class ImageProcessor {
   // SVG 전용 설정
   private svgQuality: QualityLevel | 'auto' = 'auto';
 
-  // Phase 3: 고급 성능 옵션
+  // 고급 성능 옵션
   private performanceModeValue: 'auto' | 'high-performance' | 'high-quality' | 'balanced' = 'auto';
   private enableOptimization: boolean = true;
 
@@ -195,11 +195,11 @@ export class ImageProcessor {
   }
 
   // ==============================================
-  // Phase 3: 고급 성능 최적화 메서드
+  // 고급 성능 최적화 메서드
   // ==============================================
 
   /**
-   * 성능 모드 설정 (Phase 3 신규 기능)
+   * 성능 모드 설정
    *
    * @param mode 성능 모드
    * @returns 체이닝을 위한 this
@@ -232,7 +232,7 @@ export class ImageProcessor {
   }
 
   /**
-   * SVG 최적화 활성화/비활성화 (Phase 3 신규 기능)
+   * SVG 최적화 활성화/비활성화
    *
    * @param enabled 최적화 활성화 여부
    * @returns 체이닝을 위한 this

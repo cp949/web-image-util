@@ -1,5 +1,5 @@
 import { withManagedCanvas } from '../base/canvas-utils';
-import type { Size, Rectangle } from './position-types';
+import type { Rectangle, Size } from './position-types';
 
 /**
  * 레이어 정보

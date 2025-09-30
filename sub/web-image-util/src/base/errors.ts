@@ -1,5 +1,5 @@
 // 통합 타입 시스템에서 import
-import { ImageProcessError, ImageErrorCodeConstants } from '../types';
+import { ImageErrorCodeConstants, ImageProcessError } from '../types';
 
 /**
  * 이미지 소스 로딩 에러

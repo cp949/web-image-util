@@ -43,11 +43,6 @@ export interface SmartResizeOptions extends ResizeOptions {
 }
 
 /**
- * 내부 전략 타입 (사용자에게 노출하지 않음)
- */
-type InternalStrategy = 'direct' | 'chunked' | 'stepped' | 'tiled';
-
-/**
  * 스마트 프로세서 - 고해상도 이미지 처리의 복잡성을 숨기는 클래스
  *
  * @example

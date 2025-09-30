@@ -1,4 +1,4 @@
-import type { Position, Point, Size } from './position-types';
+import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 
 /**

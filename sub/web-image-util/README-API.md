@@ -736,21 +736,7 @@ const result = await processImage(source)
 
 ### 버전 정보
 
-```typescript
-import { version } from '@cp949/web-image-util';
-console.log('라이브러리 버전:', version);
-```
-
-### 기본 설정
-
-```typescript
-import { defaults } from '@cp949/web-image-util';
-
-// 기본 설정 확인
-console.log('기본 품질:', defaults.quality);      // 0.8
-console.log('기본 포맷:', defaults.format);       // 'webp'
-console.log('기본 fit 모드:', defaults.fit);      // 'cover'
-```
+라이브러리 버전은 package.json에서 확인할 수 있습니다.
 
 ### 성능 최적화 팁
 

@@ -2,27 +2,8 @@
  * 이미지 공통 유틸리티 - 브라우저 환경에서 이미지 변환 및 처리 지원
  */
 
-import type { ImageFileExt, ImageStringSourceType, ImageSource, ImageSourceConvertOptions } from './common-types';
+import type { ImageFileExt, ImageSource, ImageSourceConvertOptions, ImageStringSourceType } from './common-types';
 import { createImageError } from './error-helpers';
-
-const IMAGE_FROMAT = {
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  gif: 'image/gif',
-  svg: 'image/svg+xml',
-  webp: 'image/webp',
-  bmp: 'image/bmp',
-  ico: 'image/vnd.microsoft.icon',
-  'image/png': 'image/png',
-  'image/jpeg': 'image/jpeg',
-  'image/jpg': 'image/jpeg',
-  'image/gif': 'image/gif',
-  'image/svg+xml': 'image/svg+xml',
-  'image/webp': 'image/webp',
-  'image/bmp': 'image/bmp',
-  'image/vnd.microsoft.icon': 'image/vnd.microsoft.icon',
-};
 
 const IMAGE_TYPE_TO_EXTENSION: Record<string, string> = {
   png: 'png',

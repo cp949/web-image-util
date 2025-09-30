@@ -43,11 +43,11 @@ export type {
 export { enhanceBrowserCompatibility, normalizeSvgBasics } from './utils/svg-compatibility';
 export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility';
 
-// Phase 2: SVG 품질 시스템 (고급 기능)
+// SVG 복잡도 분석
 export { analyzeSvgComplexity } from './core/svg-complexity-analyzer';
 
-// SVG 유틸리티 함수들 (Phase 1에서 구현됨)
-export { extractSvgDimensions, setSvgDimensions } from './utils/svg-dimensions';
+// SVG 유틸리티 함수들
+export { extractSvgDimensions } from './utils/svg-dimensions';
 
 // 타입 정의
 export type {
@@ -73,14 +73,13 @@ export type {
   ImageFormat,
   ImageErrorCodeType,
 
-  // Phase 2: SVG 품질 시스템 타입들
+  // SVG 품질 시스템 타입들
   QualityLevel,
   SvgComplexityMetrics,
   ComplexityAnalysisResult,
 
   // SVG 유틸리티 타입들
   SvgDimensions,
-  SvgEnhanceOptions,
 } from './types';
 
 // 에러 클래스
@@ -120,25 +119,3 @@ export const features = {
   imageBitmap: typeof createImageBitmap !== 'undefined',
 } as const;
 
-/**
- * 라이브러리 기본 설정값
- *
- * @description 이미지 처리 시 사용되는 기본 매개변수들입니다.
- * 사용자가 별도로 지정하지 않을 경우 이 값들이 적용됩니다.
- */
-export const defaults = {
-  /** 기본 품질 (0.0 - 1.0) */
-  quality: 0.8,
-
-  /** 기본 리사이징 fit 방식 */
-  fit: 'cover' as const,
-
-  /** 기본 배경색 (투명) */
-  background: { r: 0, g: 0, b: 0, alpha: 0 },
-
-  /** 기본 블러 반지름 */
-  blurRadius: 2,
-
-  /** 기본 출력 포맷 */
-  format: 'png' as const,
-} as const;

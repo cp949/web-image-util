@@ -31,7 +31,7 @@ export {
 
 // (제거됨: ImageSourceConverter, SystemValidator - v2.0 레거시 API)
 
-// Phase 3: 브라우저 기능 감지 시스템
+// 브라우저 기능 감지 시스템
 export {
   BrowserCapabilityDetector,
   detectBrowserCapabilities,
@@ -47,5 +47,5 @@ export {
   type DetectionOptions,
 } from './browser-capabilities';
 
-// SVG 벡터 최적화 시스템 (Phase 3 Step 3)
+// SVG 벡터 최적화 시스템
 export { SvgOptimizer, type SvgOptimizationOptions, type OptimizationResult } from './svg-optimizer';

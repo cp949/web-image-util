@@ -3,11 +3,11 @@
  * 사용하기 쉬운 워터마크 인터페이스
  */
 
-import type { TextWatermarkOptions, TextStyle } from './text-watermark';
-import { TextWatermark } from './text-watermark';
 import type { ImageWatermarkOptions } from './image-watermark';
 import { ImageWatermark } from './image-watermark';
 import { Position } from './position-types';
+import type { TextStyle, TextWatermarkOptions } from './text-watermark';
+import { TextWatermark } from './text-watermark';
 
 /**
  * 간단한 위치 타입 (사용자 친화적)
