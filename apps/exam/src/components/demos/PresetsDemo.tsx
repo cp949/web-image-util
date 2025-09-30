@@ -357,7 +357,7 @@ const socialImages = await Promise.all([
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
-            <ImageUploader onImageSelect={handleImageSelect} />
+            <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="presets" />
 
             <Card>
               <CardContent>

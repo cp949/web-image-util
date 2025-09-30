@@ -157,7 +157,7 @@ try {
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
             {/* 이미지 업로더 */}
-            <ImageUploader onImageSelect={handleImageSelect} />
+            <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="basic" />
 
             {/* 에러 표시 */}
             {error && <ErrorDisplay error={error} onRetry={canRetry ? handleRetryClick : undefined} onClear={clearError} canRetry={canRetry} />}

@@ -400,7 +400,7 @@ const blob = await new Promise(resolve => {
                 <Typography variant="h6" gutterBottom>
                   메인 이미지
                 </Typography>
-                <ImageUploader onImageSelect={handleImageSelect} />
+                <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="advanced" />
               </CardContent>
             </Card>
 

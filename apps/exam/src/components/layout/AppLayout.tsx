@@ -31,7 +31,9 @@ import {
   Build as SvgIcon,
   Transform as ConverterTestIcon,
   CompareArrows as FitModeIcon,
-  HighQuality as QualityIcon
+  HighQuality as QualityIcon,
+  PhotoLibrary as FormatIcon,
+  Timeline as BenchmarkIcon
 } from '@mui/icons-material'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -53,7 +55,11 @@ const navigationItems = [
   // SVG Features Section
   { path: '/svg-fit-modes', label: 'SVG Fit 모드 비교', icon: <FitModeIcon /> },
   { path: '/svg-quality', label: 'SVG 고품질 렌더링', icon: <QualityIcon /> },
-  { path: '/svg-compatibility', label: 'SVG 호환성 처리', icon: <SvgIcon /> }
+  { path: '/svg-compatibility', label: 'SVG 호환성 처리', icon: <SvgIcon /> },
+  // v2.0 New Features
+  { path: '/svg-quality-comparison', label: 'SVG 품질 비교', icon: <QualityIcon /> },
+  { path: '/smart-format', label: '스마트 포맷 선택', icon: <FormatIcon /> },
+  { path: '/performance-benchmark', label: '성능 벤치마크', icon: <BenchmarkIcon /> }
 ]
 
 interface AppLayoutProps {
