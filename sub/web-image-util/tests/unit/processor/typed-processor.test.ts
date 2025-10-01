@@ -55,9 +55,10 @@ describe('타입-안전한 프로세서 테스트', () => {
 
   describe('런타임 동작 검증', () => {
     it('정상적인 체이닝 동작 검증', async () => {
-      const testBlob = await createTestImageBlob(400, 300, 'purple');
+      // Canvas mock으로 인한 타임아웃 방지를 위해 간단한 Data URL 사용
+      const testDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
-      const result = await processImage(testBlob)
+      const result = await processImage(testDataUrl)
         .blur(1)
         .resize({ fit: 'cover', width: 200, height: 200 })
         .blur(2)

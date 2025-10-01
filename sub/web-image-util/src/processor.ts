@@ -1,11 +1,15 @@
 /**
  * 이미지 프로세서 - 체이닝 API의 핵심 클래스
- * Canvas 2D API 기반으로 구현된 브라우저 전용 이미지 처리기
+ *
+ * @description
+ * Canvas 2D API 기반 브라우저 전용 이미지 처리기
+ * - 메서드 체이닝을 통한 직관적인 API
+ * - TypeScript 타입 시스템을 활용한 컴파일 타임 안전성
+ * - 지연 렌더링 파이프라인으로 최적화된 성능
  */
 
-import { convertToImageElement, detectSourceType } from './core/source-converter';
 import { LazyRenderPipeline } from './core/lazy-render-pipeline';
-import { debugLog } from './utils/debug';
+import { convertToImageElement } from './core/source-converter';
 import type {
   BlurOptions,
   ImageFormat,
@@ -19,47 +23,56 @@ import type {
   ResultFile,
 } from './types';
 import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
+import type { AfterResizeCall, EnsureCanResize, ProcessorState } from './types/processor-state';
+import type { IImageProcessor, IShortcutBuilder } from './types/processor-interface';
+import type { ResizeOperation } from './types/shortcut-types';
 import type { ResizeConfig } from './types/resize-config';
 import { validateResizeConfig } from './types/resize-config';
 import { BlobResultImpl, CanvasResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
-import type {
-  TypedImageProcessor,
-  InitialProcessor,
-  ResizedProcessor,
-  BeforeResize,
-  AfterResize,
-} from './types/typed-processor';
-import type { ProcessorState, EnsureCanResize, AfterResizeCall } from './types/processor-state';
+import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
+import { ShortcutBuilder } from './shortcut/shortcut-builder';
 
 /**
- * 이미지 프로세서 클래스 (타입-안전한 구현)
+ * 이미지 프로세서 클래스
  *
- * @description 메서드 체이닝을 통한 이미지 처리를 제공합니다.
- * TypeScript 타입 시스템을 통해 resize() 중복 호출을 컴파일 타임에 방지합니다.
+ * @description
+ * 타입 안전한 메서드 체이닝 API를 제공하는 이미지 처리 클래스
  *
- * @template TState 현재 프로세서 상태 (BeforeResize | AfterResize)
+ * **핵심 설계 원칙:**
+ * - resize()는 한 번만 호출 가능 (화질 저하 방지)
+ * - TypeScript 타입 시스템으로 컴파일 타임 안전성 보장
+ * - 지연 렌더링으로 성능 최적화 (최종 출력 시 한 번만 렌더링)
+ *
+ * @template TState 프로세서 상태 (BeforeResize | AfterResize)
  *
  * @example
  * ```typescript
- * // ✅ 올바른 사용법
+ * // ✅ 올바른 사용: resize() 한 번만 호출
  * const result = await processImage(source)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .blur(2)
- *   .toBlob({ format: 'webp', quality: 0.8 });
+ *   .toBlob();
  *
  * // ❌ 컴파일 에러: resize() 중복 호출
  * const processor = processImage(source)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 타입 에러!
+ *
+ * // ✅ 여러 크기 필요시: 별도 인스턴스 사용
+ * const small = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
+ * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  * ```
  */
-export class ImageProcessor<TState extends ProcessorState = BeforeResize> implements TypedImageProcessor<TState> {
+export class ImageProcessor<TState extends ProcessorState = BeforeResize>
+  implements TypedImageProcessor<TState>, IImageProcessor<TState>
+{
   private lazyPipeline: LazyRenderPipeline | null = null;
   private sourceImage: HTMLImageElement | null = null;
   private options: ProcessorOptions;
   private hasResized = false;
   private pendingResizeConfig: ResizeConfig | null = null;
   private pendingBlurOptions: BlurOptions[] = [];
+  private pendingResizeOperation: ResizeOperation | null = null;
 
   constructor(
     private source: ImageSource,
@@ -93,6 +106,12 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
       this.pendingResizeConfig = null;
     }
 
+    // pending ResizeOperation 적용 (Shortcut API용)
+    if (this.pendingResizeOperation) {
+      this.lazyPipeline._addResizeOperation(this.pendingResizeOperation);
+      this.pendingResizeOperation = null;
+    }
+
     // pending blur 옵션들 적용
     for (const blurOption of this.pendingBlurOptions) {
       this.lazyPipeline.addBlur(blurOption);
@@ -101,29 +120,34 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
   }
 
   /**
-   * 이미지 리사이징 (타입-안전한 구현)
+   * 이미지 리사이징
    *
-   * @description resize() 메서드는 한 번만 호출할 수 있습니다.
-   * TypeScript 타입 시스템을 통해 중복 호출을 컴파일 타임에 방지합니다.
+   * @description
+   * **중요: 한 번만 호출 가능**
+   * - 화질 저하 방지: 여러 번 리사이징하면 벡터(SVG) → 래스터 변환으로 품질 손실
+   * - 성능 최적화: 불필요한 중간 Canvas 생성 방지
+   * - TypeScript가 컴파일 타임에 중복 호출 방지
    *
-   * @param config 리사이징 설정
-   * @param _constraint 타입 레벨 제약 (내부 사용)
-   * @returns resize() 호출 후 상태의 프로세서 인스턴스
+   * @param config 리사이징 설정 (ResizeConfig)
+   * @param _constraint 타입 레벨 제약 (내부 사용, 무시하세요)
+   * @returns AfterResize 상태의 프로세서 (blur, toBlob 등 사용 가능)
+   *
+   * @throws {ImageProcessError} resize()를 두 번 이상 호출하면 런타임 에러
    *
    * @example
    * ```typescript
-   * // ✅ 올바른 사용법: resize() 한 번만 호출
-   * const result = await processImage(source)
+   * // ✅ 올바른 사용: resize() 한 번만 호출
+   * await processImage(source)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .blur(2)
    *   .toBlob();
    *
    * // ❌ 컴파일 에러: resize() 중복 호출
-   * const processor = processImage(source)
+   * processImage(source)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 타입 에러!
    *
-   * // ✅ 여러 크기가 필요한 경우: 별도 인스턴스 사용
+   * // ✅ 여러 크기 필요시: 각각 별도 인스턴스 생성
    * const small = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
    * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
    * ```
@@ -158,27 +182,34 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
   }
 
   /**
-   * 이미지 블러 효과 (타입-안전한 구현)
+   * 이미지 블러 효과
    *
-   * @description blur() 메서드는 resize() 여부와 관계없이 사용 가능합니다.
-   * 상태를 유지하면서 체이닝을 지원합니다.
+   * @description
+   * 가우시안 블러를 이미지에 적용합니다.
+   * resize() 전후 어디서나 사용 가능하며, 여러 번 호출 가능합니다.
    *
-   * @param radius 블러 반지름 (기본: 2)
-   * @param options 블러 옵션
-   * @returns 동일한 상태의 프로세서 인스턴스
+   * @param radius 블러 반지름 (픽셀, 기본: 2)
+   * @param options 블러 옵션 (추가 설정)
+   * @returns 동일한 상태의 프로세서 (체이닝 가능)
    *
    * @example
    * ```typescript
-   * // resize() 전에 blur 적용
-   * const result1 = await processImage(source)
+   * // resize 전 blur 적용
+   * await processImage(source)
    *   .blur(2)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .toBlob();
    *
-   * // resize() 후에 blur 적용
-   * const result2 = await processImage(source)
+   * // resize 후 blur 적용
+   * await processImage(source)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .blur(5)
+   *   .toBlob();
+   *
+   * // 여러 번 blur 적용 가능 (누적)
+   * await processImage(source)
+   *   .blur(2)
+   *   .blur(3)
    *   .toBlob();
    * ```
    */
@@ -194,6 +225,57 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
     this.pendingBlurOptions.push(blurOptions);
 
     return this as ImageProcessor<TState>;
+  }
+
+  /**
+   * Lazy 리사이즈 연산 추가 (Shortcut API용 내부 메서드)
+   *
+   * @description ShortcutBuilder가 사용하는 내부 API입니다.
+   * 소스 크기가 필요한 연산(scale, toWidth, toHeight)을 pending 상태로 저장합니다.
+   * 실제 변환은 최종 출력 시점(toBlob, toCanvas 등)에 수행됩니다.
+   *
+   * @param operation ResizeOperation (scale, toWidth, toHeight)
+   * @internal
+   */
+  _addResizeOperation(operation: ResizeOperation): void {
+    // LazyRenderPipeline 초기화 전: pending 상태로 저장
+    // LazyRenderPipeline 초기화 후: 바로 전달
+    if (this.lazyPipeline) {
+      // 이미 초기화된 경우 바로 전달
+      this.lazyPipeline._addResizeOperation(operation);
+    } else {
+      // 아직 초기화 안된 경우 pending 상태로 저장
+      // ensureLazyPipeline()에서 초기화 시 자동 적용됨
+      this.pendingResizeOperation = operation;
+    }
+  }
+
+  /**
+   * Shortcut API 접근자
+   *
+   * @description
+   * 간편한 리사이징 메서드를 제공하는 ShortcutBuilder를 반환합니다.
+   * 복잡한 ResizeConfig 대신 직관적인 메서드 이름으로 리사이징할 수 있습니다.
+   *
+   * @returns ShortcutBuilder 인스턴스
+   *
+   * @example
+   * ```typescript
+   * // 기본 방식
+   * await processImage(src).resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
+   *
+   * // Shortcut API (더 간결함)
+   * await processImage(src).shortcut.coverBox(300, 200).toBlob();
+   *
+   * // 다양한 shortcut 메서드 사용 예시
+   * await processImage(src).shortcut.maxWidth(500).toBlob();                        // 최대 너비 제한
+   * await processImage(src).shortcut.containBox(300, 200, { withoutEnlargement: true }).toBlob();  // 확대 방지
+   * await processImage(src).shortcut.exactSize(400, 300).toBlob();                  // 정확한 크기
+   * await processImage(src).shortcut.scale(1.5).toBlob();                           // 배율 조정
+   * ```
+   */
+  get shortcut(): IShortcutBuilder<TState> {
+    return new ShortcutBuilder(this);
   }
 
   // ==============================================
@@ -738,34 +820,41 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
 }
 
 /**
- * 타입-안전한 이미지 프로세서 팩토리 함수
+ * 이미지 프로세서 팩토리 함수
  *
- * @param source 이미지 소스
- * @param options 프로세서 옵션
- * @returns resize() 호출 전 상태의 ImageProcessor 인스턴스
+ * @description
+ * 다양한 타입의 이미지 소스로부터 ImageProcessor 인스턴스를 생성합니다.
+ * TypeScript 타입 시스템을 활용하여 resize() 중복 호출을 컴파일 타임에 방지합니다.
+ *
+ * @param source 이미지 소스 (HTMLImageElement, Blob, URL, Data URL, SVG, ArrayBuffer 등)
+ * @param options 프로세서 옵션 (crossOrigin, defaultQuality 등)
+ * @returns BeforeResize 상태의 ImageProcessor (resize() 호출 가능)
  *
  * @example
  * ```typescript
- * // ✅ 올바른 사용법: resize() 한 번만 호출
+ * // 기본 사용법
  * const result = await processImage(imageElement)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .blur(2)
  *   .toBlob();
  *
- * // ❌ 컴파일 에러: resize() 중복 호출
- * const processor = processImage(blob)
- *   .resize({ fit: 'cover', width: 300, height: 200 })
- *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 타입 에러!
+ * // 다양한 소스 타입 지원
+ * processImage(blob)                    // Blob
+ * processImage('https://example.com/image.jpg')  // HTTP URL
+ * processImage('data:image/svg+xml,...')         // Data URL
+ * processImage('<svg>...</svg>')                 // SVG XML
+ * processImage(arrayBuffer)                       // ArrayBuffer
  *
- * // ✅ 여러 크기 필요시: 별도 인스턴스 사용
- * const thumbnail = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
- * const fullsize = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
- *
- * // ✅ 옵션과 함께 사용
+ * // 옵션과 함께 사용
  * const processor = processImage(source, {
  *   crossOrigin: 'use-credentials',
- *   defaultQuality: 0.9
+ *   defaultQuality: 0.9,
+ *   defaultBackground: { r: 255, g: 255, b: 255, alpha: 1 }
  * });
+ *
+ * // 여러 크기 필요시: 각각 별도 인스턴스 생성
+ * const thumbnail = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
+ * const fullsize = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  * ```
  */
 export function processImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {

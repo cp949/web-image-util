@@ -68,7 +68,7 @@ export const debugLog = {
     if (isDevelopmentMode()) {
       console.info('[web-image-util]', ...args);
     }
-  }
+  },
 };
 
 /**
@@ -80,5 +80,5 @@ export const productionLog = {
   },
   error: (...args: any[]) => {
     console.error('[web-image-util]', ...args);
-  }
+  },
 };

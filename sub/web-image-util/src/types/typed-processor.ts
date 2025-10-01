@@ -5,12 +5,13 @@
  * 컴파일 타임에 잘못된 사용법을 방지합니다.
  */
 
-import type { ProcessorState, BeforeResize, AfterResize, AfterResizeCall, EnsureCanResize } from './processor-state';
+import type { BlurOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from '../types';
+import type { AfterResize, AfterResizeCall, BeforeResize, EnsureCanResize, ProcessorState } from './processor-state';
+import type { ResizeConfig } from './resize-config';
+import type { IShortcutBuilder } from './processor-interface';
 
 // 다른 모듈에서 사용할 수 있도록 re-export
-export type { BeforeResize, AfterResize } from './processor-state';
-import type { ResizeConfig } from './resize-config';
-import type { BlurOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from '../types';
+export type { AfterResize, BeforeResize } from './processor-state';
 
 /**
  * 타입-안전한 이미지 프로세서 인터페이스
@@ -18,6 +19,14 @@ import type { BlurOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile }
  * @template TState 현재 프로세서 상태 (BeforeResize | AfterResize)
  */
 export interface TypedImageProcessor<TState extends ProcessorState = BeforeResize> {
+  /**
+   * Shortcut API 접근자
+   *
+   * @description Sharp.js 스타일의 간편한 리사이징 메서드를 제공합니다.
+   * 타입 안전한 인터페이스를 통해 자동완성과 타입 체크를 지원합니다.
+   */
+  shortcut: IShortcutBuilder<TState>;
+
   /**
    * 이미지 리사이징 (한 번만 호출 가능)
    *
@@ -97,37 +106,3 @@ export type GetProcessorState<T> = T extends TypedImageProcessor<infer S> ? S : 
  * 타입 유틸리티: resize() 호출 가능 여부
  */
 export type CanCallResize<T> = T extends TypedImageProcessor<BeforeResize> ? true : false;
-
-/**
- * JSDoc 예제용 타입 정의
- */
-export interface ExampleUsage {
-  /**
-   * 올바른 사용 예제
-   * @example
-   * ```typescript
-   * import { processImage } from '@cp949/web-image-util';
-   *
-   * // ✅ 정상: resize() 한 번만 호출
-   * const result = await processImage(source)
-   *   .resize({ fit: 'cover', width: 300, height: 200 })
-   *   .blur({ radius: 2 })
-   *   .toBlob();
-   * ```
-   */
-  correctUsage: void;
-
-  /**
-   * 잘못된 사용 예제 (컴파일 에러)
-   * @example
-   * ```typescript
-   * import { processImage } from '@cp949/web-image-util';
-   *
-   * // ❌ 컴파일 에러: resize() 중복 호출
-   * const processor = processImage(source)
-   *   .resize({ fit: 'cover', width: 300, height: 200 })
-   *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 타입 에러!
-   * ```
-   */
-  incorrectUsage: void;
-}

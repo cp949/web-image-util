@@ -24,6 +24,9 @@
 // 핵심 API
 export { processImage, ImageProcessor } from './processor';
 
+// Shortcut API
+export { ShortcutBuilder } from './shortcut';
+
 // 편의성 기능들
 export { createThumbnail, createAvatar, createSocialImage } from './presets';
 export type { ThumbnailOptions, AvatarOptions, SocialImageOptions, SocialPlatform } from './presets';
@@ -56,19 +59,27 @@ export type {
 
   // 옵션 타입
   ResizeConfig,
+  // ResizeConfig 서브 타입들 (명시적 타입 지정용)
+  CoverConfig,
+  ContainConfig,
+  FillConfig,
+  MaxFitConfig,
+  MinFitConfig,
   SmartResizeOptions,
   BlurOptions,
   OutputOptions,
   ProcessorOptions,
-  Padding, // 🆕 Phase 1: Padding 타입 export
+  Padding,
 
   // 결과 타입
   ResultBlob,
+  ResultCanvas,
   ResultDataURL,
   ResultFile,
   ResultMetadata,
 
   // 유틸리티 타입
+  OutputFormat, // 추가: 출력 포맷 명시적 지정용
   ResizeFit,
   ResizePosition,
   ResizeBackground,

@@ -50,5 +50,11 @@ export {
 // SVG 벡터 최적화 시스템
 export { SvgOptimizer, type SvgOptimizationOptions, type OptimizationResult } from './svg-optimizer';
 
-// 디버그 및 개발 유틸리티
-export { isDevelopmentMode, debugLog, productionLog } from './debug';
+// ============================================================================
+// DEBUG UTILITIES - 내부 개발 도구 (공개 API에서 제외)
+// ============================================================================
+//
+// 디버그 유틸리티는 라이브러리 내부에서만 사용됩니다.
+// 사용자가 직접 호출할 필요가 없으므로 export에서 제외합니다.
+//
+// export { isDevelopmentMode, debugLog, productionLog } from './debug';

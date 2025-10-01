@@ -102,7 +102,7 @@ describe('Processor Resize Integration Tests', () => {
         .toCanvas();
 
       // 트림 후에도 캔버스 생성 성공
-      expect(result).toBeInstanceOf(HTMLCanvasElement);
+      expect(result.canvas).toBeInstanceOf(HTMLCanvasElement);
       expect(result.width).toBeGreaterThan(0);
       expect(result.height).toBeGreaterThan(0);
     });
@@ -218,7 +218,7 @@ describe('Processor Resize Integration Tests', () => {
       const testBlob = await createTestImageBlob(400, 300, 'blue');
       const result = await processImage(testBlob).resize({ fit: 'cover', width: 200, height: 200 }).toCanvas();
 
-      expect(result).toBeInstanceOf(HTMLCanvasElement);
+      expect(result.canvas).toBeInstanceOf(HTMLCanvasElement);
       expect(result.width).toBe(200);
       expect(result.height).toBe(200);
     });
@@ -227,8 +227,10 @@ describe('Processor Resize Integration Tests', () => {
       const testBlob = await createTestImageBlob(400, 300, 'green');
       const result = await processImage(testBlob).resize({ fit: 'cover', width: 200, height: 200 }).toDataURL();
 
-      expect(typeof result).toBe('string');
-      expect(result).toMatch(/^data:image\//);
+      expect(typeof result.dataURL).toBe('string');
+      expect(result.dataURL).toMatch(/^data:image\//);
+      expect(result.width).toBe(200);
+      expect(result.height).toBe(200);
     });
   });
 
@@ -312,7 +314,7 @@ describe('Processor Resize Integration Tests', () => {
           expect(error.message).toContain('resize()는 한 번만 호출할 수 있습니다');
           expect(error.suggestions).toBeInstanceOf(Array);
           expect(error.suggestions.length).toBeGreaterThan(0);
-          expect(error.suggestions[0]).toContain('최종 크기를 직접 지정');
+          expect(error.suggestions[0]).toContain('모든 리사이징 옵션을 하나의 resize() 호출에 포함');
         }
       }
     });

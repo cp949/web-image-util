@@ -24,27 +24,58 @@ Canvas 2D API 기반으로 리사이징, SVG 처리, 포맷 변환 등 다양한
 npm install @cp949/web-image-util
 ```
 
-## 빠른 시작
+## 🚀 빠른 시작
+
+### ⚡ 5분 내 첫 성공 경험
 
 ```typescript
 import { processImage } from '@cp949/web-image-util';
 
-// 기본 리사이징
-const result = await processImage(imageFile)
-  .resize({ fit: 'cover', width: 300, height: 200 })
-  .toBlob();
+// 🎯 시나리오 1: SNS 프로필 이미지 (정사각형, 고품질)
+const profileImage = await processImage(userPhoto)
+  .shortcut.coverBox(400, 400)  // 정사각형으로 크롭
+  .toBlob({ format: 'webp', quality: 0.9 });
 
-// 블러 효과 추가
-const blurred = await processImage(imageFile)
-  .resize({ fit: 'cover', width: 400, height: 300 })
-  .blur(2)
+// 📱 시나리오 2: 반응형 썸네일 (빠른 로딩)
+const thumbnail = await processImage(originalImage)
+  .shortcut.scale(0.5)  // 50% 축소
   .toBlob({ format: 'webp', quality: 0.8 });
+
+// 🎨 시나리오 3: 워터마크가 있는 배너
+const banner = await processImage(backgroundImage)
+  .resize({ fit: 'cover', width: 1200, height: 400 })
+  .blur(1)  // 살짝 블러 처리
+  .toBlob({ format: 'jpeg', quality: 0.85 });
+```
+
+### 🎮 더 많은 예제
+
+```typescript
+// ✨ 편의 함수로 더 간단하게
+import { createThumbnail, createAvatar } from '@cp949/web-image-util/presets';
+
+const thumbnail = await createThumbnail(imageFile, { width: 300, height: 200 });
+const avatar = await createAvatar(profilePhoto, { size: 128 });
+```
+
+### 📦 프로젝트에 바로 적용
+
+```bash
+# 1. 설치
+npm install @cp949/web-image-util
+
+# 2. 타입 정의 (TypeScript)
+import { processImage } from '@cp949/web-image-util';
+
+# 3. 첫 번째 이미지 처리
+const result = await processImage(file).shortcut.scale(0.8).toBlob();
 ```
 
 ## 📖 목차
 
 - [아키텍처](#-아키텍처)
 - [리사이징 가이드](#-리사이징-가이드)
+- [🚀 Shortcut API](#-shortcut-api)
 - [편의 함수 (Presets)](#-편의-함수-presets)
 - [입력/출력 타입](#-입력출력-타입)
 - [SVG 처리](#-svg-처리)
@@ -91,68 +122,19 @@ const blurred = await processImage(imageFile)
                                                     └───────────────────────────┘
 ```
 
-### 핵심 컴포넌트
+### 핵심 플로우
 
-#### 1. **SourceConverter** (소스 변환기)
-- 다양한 이미지 소스를 HTMLImageElement로 통일
-- SVG 판정 로직: BOM 제거 → XML 프롤로그 제거 → 태그 검증
-- 이중 검증: MIME 타입 + 내용 스니핑
+1. **입력 처리**: 다양한 소스(File, URL, SVG 등)를 HTMLImageElement로 변환
+2. **연산 누적**: 체이닝된 메서드들(.resize(), .blur() 등)이 LazyPipeline에 저장
+3. **일괄 렌더링**: 최종 출력 시에만 단일 Canvas 연산으로 모든 처리 실행
+4. **포맷 변환**: Canvas를 Blob, DataURL, File 등으로 변환
 
-#### 2. **ImageProcessor** (체이닝 API)
-- 메서드 체이닝 인터페이스 제공
-- 타입 안전한 상태 관리 (BeforeResize → AfterResize)
-- LazyRenderPipeline 오케스트레이션
+### 주요 특징
 
-#### 3. **LazyRenderPipeline** (지연 렌더링)
-- 모든 연산을 메모리에 누적
-- 최종 출력 시에만 한 번 렌더링
-- 중간 Canvas 생성 없어 메모리 효율적
-
-#### 4. **ResizeCalculator** (레이아웃 계산)
-- fit 모드별 이미지 크기 계산
-- padding 적용 및 정규화
-- 이미지 위치 계산 (중앙 정렬)
-
-#### 5. **OnehotRenderer** (단일 렌더링)
-- 단일 drawImage() 호출로 리사이징+패딩 동시 처리
-- 품질 설정 (low/medium/high)
-- 배경색 및 투명도 처리
-
-#### 6. **CanvasPool** (메모리 관리)
-- Canvas 객체 재사용으로 성능 최적화
-- 메모리 압박 자동 감지 및 풀 크기 조정
-- Fabric.js 패턴 기반 동적 관리
-
-### 처리 플로우
-
-```typescript
-// 1. 입력 소스 감지 및 변환
-ImageSource → detectSourceType() → convertToImageElement() → HTMLImageElement
-
-// 2. SVG 특별 처리 (해당 시)
-SVG 문자열 → normalizeSvgBasics() → analyzeSvgComplexity() → 고품질 렌더링
-
-// 3. 연산 누적 (LazyRenderPipeline)
-.resize() → 연산 저장
-.blur()   → 연산 저장
-
-// 4. 레이아웃 계산 (ResizeCalculator)
-모든 연산 분석 → calculateFinalLayout() → LayoutResult
-
-// 5. 단일 렌더링 (OnehotRenderer)
-LayoutResult → render() → 단일 drawImage() → 최종 Canvas
-
-// 6. 출력 변환
-Canvas → toBlob/toDataURL/toFile/toCanvas
-```
-
-### 설계 원칙
-
-- **관심사의 분리**: 계산 로직(Calculator)과 렌더링 로직(Renderer) 명확히 분리
-- **단일 책임**: 각 컴포넌트가 하나의 책임만 수행
-- **지연 실행**: 연산은 메모리에 누적, 실제 렌더링은 최소화
-- **타입 안전성**: Discriminated Union으로 컴파일 타임 안전성 보장
-- **성능 최적화**: Canvas Pool, 단일 drawImage, 스마트 포맷 선택
+- **지연 렌더링**: 중간 Canvas 생성 없이 메모리 효율적 처리
+- **SVG 호환성**: 브라우저별 SVG 렌더링 차이를 자동 보정
+- **타입 안전성**: 컴파일 타임에 잘못된 메서드 체이닝 방지
+- **스마트 포맷**: 브라우저 지원에 따른 최적 포맷 자동 선택
 
 ---
 
@@ -162,13 +144,13 @@ Canvas → toBlob/toDataURL/toFile/toCanvas
 
 5가지 리사이징 방식을 제공합니다:
 
-| fit 모드 | 비율 유지 | 전체 보임 | 여백 생성 | 잘림 | 확대/축소 | 사용 사례 |
-|---------|----------|----------|----------|------|---------|----------|
-| `cover` | ✅ | ❌ | ❌ | ✅ | 둘 다 | 썸네일, 배경 |
-| `contain` | ✅ | ✅ | ✅ | ❌ | 둘 다 | 갤러리, 프리뷰 |
-| `fill` | ❌ | ✅ | ❌ | ❌ | 둘 다 | 정확한 크기 필요 |
-| `maxFit` | ✅ | ✅ | ❌ | ❌ | 축소만 | 최대 크기 제한 |
-| `minFit` | ✅ | ✅ | ❌ | ❌ | 확대만 | 최소 크기 보장 |
+| fit 모드  | 비율 유지 | 전체 보임 | 여백 생성 | 잘림 | 확대/축소 | 사용 사례        |
+| --------- | --------- | --------- | --------- | ---- | --------- | ---------------- |
+| `cover`   | ✅         | ❌         | ❌         | ✅    | 둘 다     | 썸네일, 배경     |
+| `contain` | ✅         | ✅         | ✅         | ❌    | 둘 다     | 갤러리, 프리뷰   |
+| `fill`    | ❌         | ✅         | ❌         | ❌    | 둘 다     | 정확한 크기 필요 |
+| `maxFit`  | ✅         | ✅         | ❌         | ❌    | 축소만    | 최대 크기 제한   |
+| `minFit`  | ✅         | ✅         | ❌         | ❌    | 확대만    | 최소 크기 보장   |
 
 ### 기본 사용법
 
@@ -251,6 +233,138 @@ const wrong = await processImage(source)
 const correct = await processImage(source)
   .resize({ fit: 'contain', width: 400, height: 300 })
   .toBlob();
+```
+
+---
+
+## 🚀 Shortcut API
+
+Sharp.js와 유사한 직관적인 shortcut API를 제공합니다. 자주 사용하는 리사이징 패턴을 간결하게 표현할 수 있습니다.
+
+### 사용법
+
+```typescript
+import { processImage } from '@cp949/web-image-util';
+
+// Shortcut API를 통해 간편하게 사용
+const result = await processImage(source)
+  .shortcut.coverBox(300, 200)
+  .toBlob();
+
+// 체이닝도 가능
+const blurred = await processImage(source)
+  .shortcut.scale(1.5)
+  .blur(2)
+  .toBlob();
+```
+
+### 직접 매핑 (Direct Mapping)
+
+ResizeConfig로 즉시 변환되는 편의 메서드들입니다.
+
+```typescript
+// 박스에 꽉 채우기 (일부 잘릴 수 있음)
+await processImage(source).shortcut.coverBox(300, 200).toBlob();
+
+// 박스 안에 전체 이미지 맞추기
+await processImage(source).shortcut.containBox(300, 200).toBlob();
+
+// 정확한 크기로 변환
+await processImage(source).shortcut.exactSize(300, 200).toBlob();
+
+// 크기 제한
+await processImage(source).shortcut.maxWidth(500).toBlob();
+await processImage(source).shortcut.maxHeight(400).toBlob();
+await processImage(source).shortcut.maxSize({ width: 800, height: 600 }).toBlob();
+
+// 최소 크기 보장
+await processImage(source).shortcut.minWidth(300).toBlob();
+await processImage(source).shortcut.minHeight(200).toBlob();
+await processImage(source).shortcut.minSize({ width: 400, height: 300 }).toBlob();
+```
+
+### 지연 연산 (Lazy Operations)
+
+원본 이미지 크기를 기반으로 계산되는 연산들입니다. 실제 계산은 최종 출력 시점에 수행됩니다.
+
+```typescript
+// 균등 스케일링
+await processImage(source).shortcut.scale(1.5).toBlob();        // 1.5배 확대
+await processImage(source).shortcut.scale(0.5).toBlob();        // 0.5배 축소
+
+// 한쪽 크기 지정
+await processImage(source).shortcut.exactWidth(300).toBlob();        // 너비 300px로 조정
+await processImage(source).shortcut.exactHeight(200).toBlob();       // 높이 200px로 조정
+
+// 개별 축 스케일링
+await processImage(source).shortcut.scaleX(2).toBlob();         // 가로만 2배
+await processImage(source).shortcut.scaleY(0.5).toBlob();       // 세로만 0.5배
+await processImage(source).shortcut.scaleXY(2, 1.5).toBlob();   // 가로 2배, 세로 1.5배
+
+// 객체 형태로도 사용 가능
+await processImage(source).shortcut.scale({ sx: 2, sy: 1.5 }).toBlob();
+```
+
+### ScaleOperation 타입
+
+`scale` 메서드는 다양한 형태의 스케일 값을 받을 수 있습니다:
+
+```typescript
+// 균등 스케일
+scale(2)                      // number
+
+// 가로만
+scale({ sx: 2 })              // { sx: number }
+
+// 세로만
+scale({ sy: 1.5 })            // { sy: number }
+
+// 개별 설정
+scale({ sx: 2, sy: 0.75 })    // { sx: number, sy: number }
+```
+
+### 체이닝
+
+Shortcut API는 다른 메서드들과 자유롭게 조합할 수 있습니다:
+
+```typescript
+// Shortcut + blur
+const result = await processImage(source)
+  .shortcut.coverBox(300, 200)
+  .blur(3)
+  .toBlob({ format: 'webp', quality: 0.8 });
+
+// Lazy 연산 + blur
+const scaled = await processImage(source)
+  .shortcut.scale(1.5)
+  .blur(2)
+  .toDataURL();
+
+// 복합 체이닝
+const complex = await processImage(source)
+  .shortcut.exactWidth(300)
+  .blur(2)
+  .toBlob();
+```
+
+### 옵션 지원
+
+일부 메서드는 추가 옵션을 지원합니다:
+
+```typescript
+// containBox 옵션
+await processImage(source).shortcut.containBox(300, 200, {
+  padding: { top: 10, bottom: 10, left: 10, right: 10 },
+  background: '#ffffff',
+  trimEmpty: true,
+  withoutEnlargement: true
+}).toBlob();
+
+// coverBox 옵션
+await processImage(source).shortcut.coverBox(300, 200, {
+  padding: { top: 5, bottom: 5, left: 5, right: 5 },
+  background: '#000000'
+}).toBlob();
 ```
 
 ---

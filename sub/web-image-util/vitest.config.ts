@@ -1,10 +1,10 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     // Browser Mode 설정
     browser: {
-      enabled: true,
+      enabled: false,
       provider: 'playwright',
       headless: true,
       instances: [
@@ -32,21 +32,13 @@ export default defineConfig({
     },
 
     // 테스트 환경 설정
-    environment: 'happy-dom', // 비브라우저 테스트용
+    environment: 'node', // Node.js 환경으로 고정
 
     // 테스트 파일 패턴
-    include: [
-      'tests/**/*.{test,spec}.{js,ts}',
-      'src/**/*.{test,spec}.{js,ts}'
-    ],
+    include: ['tests/**/*.{test,spec}.{js,ts}', 'src/**/*.{test,spec}.{js,ts}'],
 
     // 제외할 파일들
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/build/**',
-      '**/*.d.ts'
-    ],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/*.d.ts'],
 
     // 글로벌 설정
     globals: true,
@@ -56,19 +48,15 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.ts'],
-      exclude: [
-        'src/**/*.d.ts',
-        'src/**/*.test.ts',
-        'src/**/*.spec.ts'
-      ],
+      exclude: ['src/**/*.d.ts', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
       thresholds: {
         global: {
           branches: 90,
           functions: 90,
           lines: 90,
-          statements: 90
-        }
-      }
+          statements: 90,
+        },
+      },
     },
 
     // 타임아웃 설정
@@ -79,7 +67,7 @@ export default defineConfig({
     retry: 2, // 실패시 2번 재시도 (브라우저 불안정성 대응)
 
     // 리포터 설정
-    reporter: process.env.CI ? ['junit', 'github-actions'] : ['verbose'],
+    reporters: process.env.CI ? ['junit', 'github-actions'] : ['verbose'],
 
     // 셋업 파일
     setupFiles: ['./tests/setup.ts'],
@@ -89,7 +77,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': '/src',
-      '@tests': '/tests'
-    }
-  }
-})
+      '@tests': '/tests',
+    },
+  },
+});

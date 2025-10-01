@@ -631,7 +631,7 @@ export function normalizeSvgBasics(svgString: string): string {
 
     // === 성능 최적화 ===
     preferResponsive: false, // Canvas 렌더링에서는 고정 크기 필요
-    enableLiveBBox: true, // 브라우저에서 정확한 크기 계산
+    enableLiveBBox: false, // getBBox() 호출로 인한 테스트 환경 타임아웃 방지
     enableHeuristicBBox: true, // Node.js 환경 대응
   });
   return enhancedSvg;

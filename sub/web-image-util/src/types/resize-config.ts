@@ -1,6 +1,11 @@
 /**
- * web-image-util Resize Config 타입 시스템
- * Sharp 라이브러리의 API 패턴을 참고한 Discriminated Union 기반 타입 정의
+ * Resize Config 타입 시스템
+ *
+ * @description
+ * Discriminated Union 기반의 타입 안전한 리사이징 설정 시스템
+ * - fit 필드를 통한 타입 좁히기 (type narrowing)
+ * - 컴파일 타임 타입 안전성 보장
+ * - 각 fit 모드별 필수/선택 옵션 강제
  */
 
 import { ImageProcessError } from './index';
@@ -122,9 +127,18 @@ export type MinFitConfig =
 // ============================================================================
 
 /**
- * 새로운 ResizeConfig Discriminated Union 타입
- * - fit 필드로 타입 좁히기 가능
- * - 컴파일 타임 타입 안전성 보장
+ * ResizeConfig Discriminated Union 타입
+ *
+ * @description
+ * 5가지 fit 모드를 지원하는 리사이징 설정 타입:
+ * - cover: 영역을 가득 채움 (잘림 가능)
+ * - contain: 전체 이미지가 들어가도록 맞춤 (여백 생성)
+ * - fill: 정확한 크기로 맞춤 (비율 무시)
+ * - maxFit: 축소만 허용 (확대 안함)
+ * - minFit: 확대만 허용 (축소 안함)
+ *
+ * TypeScript의 Discriminated Union을 활용하여
+ * fit 필드로 타입을 좁히고 각 모드별 필수/선택 속성을 강제합니다.
  */
 export type ResizeConfig = CoverConfig | ContainConfig | FillConfig | MaxFitConfig | MinFitConfig;
 

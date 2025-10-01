@@ -150,20 +150,25 @@ describe('Resize Performance Benchmarks', () => {
 			expect(processingTime).toBeLessThan(1500);
 		});
 
-		it('should handle multiple chained resizes', async () => {
+		it('should handle multiple sequential resizes', async () => {
 			const testBlob = await createTestImageBlob(1600, 1200, 'magenta');
 
 			const startTime = performance.now();
 
-			await processImage(testBlob)
+			// 첫 번째 리사이즈: 800px 최대 크기
+			const firstResult = await processImage(testBlob)
 				.resize({ fit: 'maxFit', width: 800 })
+				.toBlob();
+
+			// 두 번째 리사이즈: 첫 번째 결과를 400x400으로
+			await processImage(firstResult.blob)
 				.resize({ fit: 'cover', width: 400, height: 400 })
 				.toBlob();
 
 			const endTime = performance.now();
 			const processingTime = endTime - startTime;
 
-			// 다중 리사이즈가 1초 이내
+			// 순차적 리사이즈가 1초 이내
 			expect(processingTime).toBeLessThan(1000);
 		});
 	});
@@ -242,7 +247,9 @@ describe('Resize Performance Benchmarks', () => {
 			// 모든 결과가 정상적으로 생성됨
 			expect(results).toHaveLength(50);
 			results.forEach((result) => {
-				expect(result).toBeInstanceOf(Blob);
+				expect(result.blob).toBeInstanceOf(Blob);
+				expect(result.width).toBe(150);
+				expect(result.height).toBe(150);
 			});
 		}, 10000); // 10초 타임아웃
 	});

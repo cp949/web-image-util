@@ -8,57 +8,60 @@
 // ============================================================================
 
 export type {
-  ImageSource,
+  GeometryPoint,
+  GeometryRectangle,
+  GeometrySize,
+  ImageErrorCodeType,
   ImageFormat,
+  ImageSource,
   OutputFormat,
+  ResizeBackground,
   ResizeFit,
   ResizePosition,
-  ResizeBackground,
-  ImageErrorCodeType,
-  GeometryPoint,
-  GeometrySize,
-  GeometryRectangle,
 } from './base';
 
-// 타입-안전한 프로세서 관련 타입들
-export type {
-  ProcessorState,
-  BeforeResize,
-  AfterResize,
-  ProcessorStateType,
-  CanResize,
-  AfterResizeCall,
-  ResizeAlreadyCalledError,
-  EnsureCanResize,
-} from './processor-state';
+// ============================================================================
+// INTERNAL TYPES - 라이브러리 내부 구현용 타입들 (공개 API에서 제외)
+// ============================================================================
+//
+// 다음 타입들은 라이브러리 내부에서만 사용되며, 사용자가 직접 사용할 필요가 없습니다:
+// - ProcessorState, BeforeResize, AfterResize: 내부 상태 머신
+// - EnsureCanResize, CanResize, AfterResizeCall: TypeScript 컴파일러 제약
+// - TypedImageProcessor, InitialProcessor, ResizedProcessor: 내부 구현 타입
+//
+// 사용자는 ImageProcessor 인터페이스만 사용하면 됩니다.
+// ============================================================================
 
-export type {
-  TypedImageProcessor,
-  InitialProcessor,
-  ResizedProcessor,
-  ProcessorFactory,
-  GetProcessorState,
-  CanCallResize,
-  ExampleUsage,
-} from './typed-processor';
+// 내부 구현에서만 import 가능하도록 주석 처리
+// export type {
+//   AfterResize,
+//   AfterResizeCall,
+//   BeforeResize,
+//   CanResize,
+//   EnsureCanResize,
+//   ProcessorState,
+//   ProcessorStateType,
+//   ResizeAlreadyCalledError,
+// } from './processor-state';
+//
+// export type {
+//   CanCallResize,
+//   GetProcessorState,
+//   InitialProcessor,
+//   ProcessorFactory,
+//   ResizedProcessor,
+//   TypedImageProcessor,
+// } from './typed-processor';
 
-export { ImageFormats, OutputFormats, ResizeFitConstants, ImageErrorCodeConstants } from './base';
+export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstants } from './base';
 
 // base.ts에서 가져온 타입들을 다시 사용 가능하도록 import
-import type {
-  ImageFormat,
-  OutputFormat,
-  GeometrySize,
-  ResizeBackground,
-  ResizeFit,
-  ResizePosition,
-  ImageErrorCodeType,
-} from './base';
+import type { GeometrySize, ImageErrorCodeType, OutputFormat, ResizeBackground } from './base';
 
 // ResizeConfig 타입을 ImageProcessor에서 사용하기 위해 import
 import type { ResizeConfig } from './resize-config';
 
-import { ImageFormats, OutputFormats, ImageErrorCodeConstants } from './base';
+import { ImageErrorCodeConstants, ImageFormats, OutputFormats } from './base';
 
 // ============================================================================
 // RESIZE TYPES - 리사이징 관련 타입들
@@ -66,19 +69,19 @@ import { ImageFormats, OutputFormats, ImageErrorCodeConstants } from './base';
 
 // 새로운 ResizeConfig 타입 시스템 (Discriminated Union)
 export type {
-  ResizeConfig,
-  CoverConfig,
+  BaseResizeConfig,
   ContainConfig,
+  CoverConfig,
   FillConfig,
   MaxFitConfig,
   MinFitConfig,
   Padding,
-  BaseResizeConfig,
+  ResizeConfig,
 } from './resize-config';
 
 export {
-  isCoverConfig,
   isContainConfig,
+  isCoverConfig,
   isFillConfig,
   isMaxFitConfig,
   isMinFitConfig,
@@ -375,7 +378,19 @@ export const OUTPUT_FORMAT_INFO = {
 // PRESET TYPES - 프리셋 관련 타입들 re-export
 // ============================================================================
 
-export type { ThumbnailOptions, AvatarOptions, SocialImageOptions, SocialPlatform } from '../presets';
+export type { AvatarOptions, SocialImageOptions, SocialPlatform, ThumbnailOptions } from '../presets';
+
+// ============================================================================
+// SHORTCUT API TYPES - Shortcut API 관련 타입들
+// ============================================================================
+
+export { isScaleX, isScaleXY, isScaleY, isUniformScale } from './shortcut-types';
+export type { DirectResizeConfig, ResizeOperation, ScaleOperation } from './shortcut-types';
+
+export type { IImageProcessor, InitialProcessorInterface, ResizedProcessorInterface } from './processor-interface';
+
+// LazyRenderPipeline에서 정의된 Size 타입 re-export
+export type { Size } from '../core/lazy-render-pipeline';
 
 // ============================================================================
 // ADDITIONAL TYPES - 테스트 호환성을 위한 추가 타입들
@@ -411,16 +426,16 @@ export interface PerformanceConfig {
 // ============================================================================
 
 // SVG 크기 정보 및 Canvas 고품질 설정 타입 re-export
-export type { SvgDimensions } from '../utils/svg-dimensions';
 export type { HighQualityCanvasOptions } from '../base/canvas-utils';
+export type { SvgDimensions } from '../utils/svg-dimensions';
 
 // SVG 복잡도 분석 및 품질 시스템 타입들
-export type { SvgComplexityMetrics, ComplexityAnalysisResult, QualityLevel } from '../core/svg-complexity-analyzer';
+export type { ComplexityAnalysisResult, QualityLevel, SvgComplexityMetrics } from '../core/svg-complexity-analyzer';
 
 // (제거됨: SvgProcessingOptions, SvgProcessingResult - 불필요)
 
 // 브라우저 기능 감지 시스템 타입들
-export type { BrowserCapabilities, PerformanceFeatures, DetectionOptions } from '../utils/browser-capabilities';
+export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from '../utils/browser-capabilities';
 
 // OffscreenCanvas + Web Worker 고성능 처리 타입들
 // (OffscreenSVGProcessor에서 사용하는 타입들은 해당 모듈에서 정의되어 있음)

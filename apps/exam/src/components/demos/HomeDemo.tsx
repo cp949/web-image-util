@@ -1,22 +1,16 @@
-'use client'
+'use client';
 
-'use client'
+'use client';
 
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  Chip,
-  Container
-} from '@mui/material'
+import { Box, Typography, Card, CardContent, Grid, Chip, Container, Button, Stack } from '@mui/material';
 import {
   PhotoLibrary as GalleryIcon,
   Speed as SpeedIcon,
   Security as SecurityIcon,
-  Widgets as ComponentsIcon
-} from '@mui/icons-material'
+  Widgets as ComponentsIcon,
+  AutoFixHigh as ShortcutIcon,
+} from '@mui/icons-material';
+import Link from 'next/link';
 
 export function HomeDemo() {
   return (
@@ -106,25 +100,31 @@ export function HomeDemo() {
             <Typography variant="h6" gutterBottom>
               설치
             </Typography>
-            <Box component="pre" sx={{
-              backgroundColor: 'grey.100',
-              p: 2,
-              borderRadius: 1,
-              overflow: 'auto'
-            }}>
+            <Box
+              component="pre"
+              sx={{
+                backgroundColor: 'grey.100',
+                p: 2,
+                borderRadius: 1,
+                overflow: 'auto',
+              }}
+            >
               <code>npm install @cp949/web-image-util</code>
             </Box>
 
             <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
               기본 사용법
             </Typography>
-            <Box component="pre" sx={{
-              backgroundColor: 'grey.100',
-              p: 2,
-              borderRadius: 1,
-              overflow: 'auto',
-              fontSize: '0.875rem'
-            }}>
+            <Box
+              component="pre"
+              sx={{
+                backgroundColor: 'grey.100',
+                p: 2,
+                borderRadius: 1,
+                overflow: 'auto',
+                fontSize: '0.875rem',
+              }}
+            >
               <code>{`import { processImage, createAvatar } from '@cp949/web-image-util';
 
 // 이미지 리사이징
@@ -133,12 +133,43 @@ const resized = await processImage(source)
   .toBlob();
 
 // 아바타 생성
-const avatar = await createAvatar(source, { size: 150 });`}</code>
+const avatar = await createAvatar(source, { size: 150 });
+
+// 🚀 Shortcut API (Sharp.js 스타일)
+const result = await processImage(source)
+  .shortcut.coverBox(300, 200)
+  .blur(2)
+  .toBlob();`}</code>
             </Box>
           </CardContent>
         </Card>
       </Box>
+
+      {/* 데모 페이지 링크 */}
+      <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          데모 페이지
+        </Typography>
+        <Typography variant="body1" color="text.secondary" paragraph>
+          다양한 기능들을 직접 체험해보세요
+        </Typography>
+
+        <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap" sx={{ gap: 2 }}>
+          <Button component={Link} href="/basic" variant="outlined" size="large">
+            기본 리사이징
+          </Button>
+          <Button component={Link} href="/shortcut-api" variant="outlined" size="large" startIcon={<ShortcutIcon />}>
+            Shortcut API
+          </Button>
+          <Button component={Link} href="/presets" variant="outlined" size="large">
+            프리셋
+          </Button>
+          <Button component={Link} href="/advanced" variant="outlined" size="large">
+            고급 기능
+          </Button>
+        </Stack>
+      </Box>
     </Container>
-  )
+  );
 }
 // removed old export default;

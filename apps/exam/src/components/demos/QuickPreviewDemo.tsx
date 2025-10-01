@@ -1,6 +1,6 @@
 'use client';
 
-import { Photo, PhotoSizeSelectLarge, PhotoSizeSelectSmall, Speed } from '@mui/icons-material';
+import { Photo, PhotoSizeSelectLarge, PhotoSizeSelectSmall } from '@mui/icons-material';
 import {
   Box,
   Card,
@@ -112,7 +112,6 @@ const {
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        <Speed sx={{ mr: 1, verticalAlign: 'middle' }} />
         원클릭 미리보기
       </Typography>
 
@@ -124,7 +123,7 @@ const {
             <Card>
               <CardContent>
                 <Typography variant="subtitle2" gutterBottom>
-                  🎨 프리셋 선택
+                  프리셋 선택
                 </Typography>
                 <ToggleButtonGroup
                   value={selectedPreset}
@@ -134,18 +133,19 @@ const {
                   size="small"
                   sx={{ mt: 1 }}
                 >
-                  <ToggleButton value="thumbnail">
-                    <PhotoSizeSelectSmall sx={{ mr: 1 }} />
+                  <ToggleButton
+                    value="thumbnail"
+                    component="div"
+                    sx={{ display: 'inline-flex', flexDirection: 'column' }}
+                  >
                     썸네일
-                    <Chip label="150×150" size="small" sx={{ ml: 1 }} />
+                    <Chip label="150×150" size="small" />
                   </ToggleButton>
-                  <ToggleButton value="medium">
-                    <Photo sx={{ mr: 1 }} />
+                  <ToggleButton value="medium" component="div" sx={{ display: 'inline-flex', flexDirection: 'column' }}>
                     중간
                     <Chip label="400×300" size="small" sx={{ ml: 1 }} />
                   </ToggleButton>
-                  <ToggleButton value="large">
-                    <PhotoSizeSelectLarge sx={{ mr: 1 }} />
+                  <ToggleButton value="large" component="div" sx={{ display: 'inline-flex', flexDirection: 'column' }}>
                     큰 크기
                     <Chip label="800×600" size="small" sx={{ ml: 1 }} />
                   </ToggleButton>
@@ -201,7 +201,7 @@ const {
               <Card sx={{ bgcolor: 'background.default' }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    🎯 사용 방법
+                    사용 방법
                   </Typography>
                   <Typography variant="body2" paragraph>
                     1. 왼쪽에서 <strong>프리셋을 선택</strong>하세요 (썸네일/중간/큰 크기)

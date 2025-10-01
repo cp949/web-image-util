@@ -8,9 +8,10 @@
  */
 
 import type { BlurOptions, ResultMetadata } from '../types';
-import type { ResizeConfig } from '../types/resize-config';
 import { ImageProcessError } from '../types';
-import { analyzeAllOperations, renderAllOperationsOnce, debugLayout } from './single-renderer';
+import type { ResizeConfig } from '../types/resize-config';
+import type { ResizeOperation, ScaleOperation } from '../types/shortcut-types';
+import { analyzeAllOperations, debugLayout, renderAllOperationsOnce } from './single-renderer';
 
 /**
  * 지연 실행용 연산 정의
@@ -33,6 +34,14 @@ export interface FinalLayout {
 }
 
 /**
+ * 크기 정보 인터페이스
+ */
+export interface Size {
+  width: number;
+  height: number;
+}
+
+/**
  * 지연 렌더링 파이프라인
  *
  * 기존 파이프라인과 달리 각 연산마다 즉시 Canvas에 그리지 않고,
@@ -42,6 +51,7 @@ export class LazyRenderPipeline {
   private operations: LazyOperation[] = [];
   private sourceImage: HTMLImageElement;
   private resizeCalled = false;
+  private pendingResizeOperation?: ResizeOperation;
 
   constructor(sourceImage: HTMLImageElement) {
     this.sourceImage = sourceImage;
@@ -70,6 +80,19 @@ export class LazyRenderPipeline {
   addBlur(options: BlurOptions): this {
     this.operations.push({ type: 'blur', options });
     return this;
+  }
+
+  /**
+   * Lazy 리사이즈 연산 추가 (Shortcut API용 내부 메서드)
+   *
+   * @description 소스 크기가 필요한 연산을 pending 상태로 저장합니다.
+   * 최종 출력 시점에 convertToResizeConfig를 통해 ResizeConfig로 변환됩니다.
+   *
+   * @param operation ResizeOperation (scale, toWidth, toHeight)
+   * @internal
+   */
+  _addResizeOperation(operation: ResizeOperation): void {
+    this.pendingResizeOperation = operation;
   }
 
   /**
@@ -139,6 +162,14 @@ export class LazyRenderPipeline {
    */
   toCanvas(): { canvas: HTMLCanvasElement; metadata: ResultMetadata } {
     const startTime = performance.now();
+
+    // 🎯 철학 구현: 최종 출력 시점에만 연산 수행
+    if (this.pendingResizeOperation) {
+      const resizeConfig = this.convertToResizeConfig(this.pendingResizeOperation);
+      this.addResize(resizeConfig); // 기존 시스템 활용
+      this.pendingResizeOperation = undefined; // 처리 완료 후 정리
+    }
+
     const canvas = this.renderOnce();
 
     const metadata: ResultMetadata = {
@@ -169,5 +200,108 @@ export class LazyRenderPipeline {
    */
   getOperations(): LazyOperation[] {
     return [...this.operations];
+  }
+
+  /**
+   * 소스 이미지 크기 조회
+   * @private
+   */
+  private getSourceSize(): Size {
+    return {
+      width: this.sourceImage.naturalWidth,
+      height: this.sourceImage.naturalHeight,
+    };
+  }
+
+  /**
+   * ResizeOperation을 ResizeConfig로 변환
+   *
+   * @description 이 시점에서만 소스 크기를 조회하여 최종 ResizeConfig를 생성합니다.
+   * Discriminated Union 패턴을 사용하여 타입 안전성을 보장합니다.
+   *
+   * TypeScript 모범 사례 (Context7):
+   * - switch 문으로 Discriminated Union 타입 narrowing
+   * - 각 case 블록에서 타입이 자동으로 좁혀짐
+   * - exhaustive checking으로 모든 케이스 처리 보장
+   *
+   * @param operation 변환할 ResizeOperation
+   * @returns ResizeConfig
+   * @private
+   */
+  private convertToResizeConfig(operation: ResizeOperation): ResizeConfig {
+    const sourceSize = this.getSourceSize(); // 이 시점에서만 크기 조회!
+
+    // TypeScript 모범 사례: switch 문으로 Discriminated Union 처리
+    // 각 case에서 operation.type에 따라 타입이 자동으로 narrowing됨
+    switch (operation.type) {
+      case 'scale':
+        // operation: { type: 'scale'; value: ScaleOperation }
+        return this.handleScale(sourceSize, operation.value);
+
+      case 'toWidth': {
+        // operation: { type: 'toWidth'; width: number }
+        const aspectRatio = sourceSize.height / sourceSize.width;
+        return {
+          fit: 'fill',
+          width: operation.width,
+          height: Math.round(operation.width * aspectRatio),
+        };
+      }
+
+      case 'toHeight': {
+        // operation: { type: 'toHeight'; height: number }
+        const aspectRatio = sourceSize.width / sourceSize.height;
+        return {
+          fit: 'fill',
+          width: Math.round(operation.height * aspectRatio),
+          height: operation.height,
+        };
+      }
+
+      // TypeScript exhaustive checking:
+      // 모든 케이스를 처리했으므로 default는 도달 불가능
+      // 새로운 타입 추가 시 컴파일 에러 발생으로 안전성 보장
+    }
+  }
+
+  /**
+   * ScaleOperation을 ResizeConfig로 변환
+   *
+   * @description ScaleOperation의 4가지 형태를 모두 처리합니다:
+   * - number: 균등 배율
+   * - { sx }: X축만 배율
+   * - { sy }: Y축만 배율
+   * - { sx, sy }: X/Y 축 개별 배율
+   *
+   * TypeScript 모범 사례:
+   * - Discriminated Union 타입 narrowing을 위해 명시적 타입 가드 사용
+   * - 타입 안전성을 위한 exhaustive checking 패턴 적용
+   *
+   * @param source 소스 이미지 크기
+   * @param scale ScaleOperation
+   * @returns ResizeConfig
+   * @private
+   */
+  private handleScale(source: Size, scale: ScaleOperation): ResizeConfig {
+    // 균등 배율인 경우 (타입: number)
+    if (typeof scale === 'number') {
+      return {
+        fit: 'fill',
+        width: Math.round(source.width * scale),
+        height: Math.round(source.height * scale),
+      };
+    }
+
+    // 객체 형태인 경우: { sx?, sy? }
+    // TypeScript 모범 사례: 'in' 연산자로 타입 narrowing
+    // sx와 sy의 존재 여부에 따라 적절한 기본값 적용
+    const sx = 'sx' in scale ? scale.sx : 1;
+    const sy = 'sy' in scale ? scale.sy : 1;
+
+    return {
+      fit: 'fill',
+      width: Math.round(source.width * sx),
+      height: Math.round(source.height * sy),
+    };
   }
 }
