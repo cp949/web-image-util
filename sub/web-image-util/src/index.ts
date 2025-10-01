@@ -60,6 +60,7 @@ export type {
   BlurOptions,
   OutputOptions,
   ProcessorOptions,
+  Padding, // 🆕 Phase 1: Padding 타입 export
 
   // 결과 타입
   ResultBlob,

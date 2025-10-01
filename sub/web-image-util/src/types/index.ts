@@ -85,7 +85,6 @@ export {
   validateResizeConfig,
 } from './resize-config';
 
-
 /**
  * 스마트 리사이징 옵션 (고급 처리용)
  * ResizeConfig와 함께 사용

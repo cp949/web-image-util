@@ -4,6 +4,7 @@
 
 import type { ImageFileExt, ImageSource, ImageSourceConvertOptions, ImageStringSourceType } from './common-types';
 import { createImageError } from './error-helpers';
+import { debugLog } from '../utils/debug';
 
 const IMAGE_TYPE_TO_EXTENSION: Record<string, string> = {
   png: 'png',
@@ -71,7 +72,7 @@ export function downloadBlob(blob: Blob, fileName: string) {
       };
       reader.readAsDataURL(blob);
     } else {
-      console.warn('window.open() fail');
+      debugLog.warn('window.open() fail');
     }
   }
 }
@@ -90,7 +91,7 @@ export function downloadLink(href: string) {
     if (popup) {
       popup.location.href = href;
     } else {
-      console.warn('window.open() fail');
+      debugLog.warn('window.open() fail');
     }
   }
 }
@@ -302,7 +303,7 @@ export async function stringToFile(str: string, fileName: string): Promise<File 
       return new File([blob], fixBlobFileExt(blob, fileName), { type: blob.type });
     })
     .catch((err) => {
-      console.log(err);
+      debugLog.warn('파일 변환 실패:', err);
       return undefined;
     });
 }
@@ -332,16 +333,16 @@ export async function checkImageFormatFromString(image: string): Promise<
     if (format) {
       return { format, src: image };
     }
-    console.log('unknown image data url', image);
+    debugLog.warn('알 수 없는 이미지 data URL:', image.substring(0, 100) + '...');
     return undefined;
   }
   const dataUrl = await stringToDataUrl(image).catch((err) => {
-    console.log('stringToDataUrl() error', err);
+    debugLog.warn('stringToDataUrl() 실패:', err);
     return undefined;
   });
 
   if (!dataUrl) {
-    console.log('stringToDataUrl() null');
+    debugLog.warn('stringToDataUrl() 결과가 null');
     return undefined;
   }
   const format = imageFormatFromDataUrl(dataUrl);

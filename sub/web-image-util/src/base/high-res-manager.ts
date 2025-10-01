@@ -1,5 +1,6 @@
 import { withManagedCanvas } from './canvas-utils';
 import { createImageError } from './error-helpers';
+import { productionLog } from '../utils/debug';
 import type { ImageAnalysis } from './high-res-detector';
 import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector';
 // 브라우저 환경에 최적화된 메모리 관리
@@ -136,7 +137,7 @@ export class HighResolutionManager {
     // 간단한 메모리 체크
     const memoryCheck = this.isMemoryLow();
     if (memoryCheck) {
-      console.warn('Low memory detected, selecting memory-efficient strategy');
+      productionLog.warn('Low memory detected, selecting memory-efficient strategy');
       return this.selectMemoryEfficientStrategy(analysis);
     }
 

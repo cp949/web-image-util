@@ -24,7 +24,6 @@ import {
   Dashboard as PresetsIcon,
   AutoFixHigh as AdvancedIcon,
   FilterBAndW as FiltersIcon,
-  SwapHoriz as ConvertersIcon,
   ViewModule as BatchIcon,
   Speed as PerformanceIcon,
   DeveloperMode as DevToolsIcon,
@@ -33,7 +32,10 @@ import {
   CompareArrows as FitModeIcon,
   HighQuality as QualityIcon,
   PhotoLibrary as FormatIcon,
-  Timeline as BenchmarkIcon
+  Timeline as BenchmarkIcon,
+  AutoAwesome as QuickPreviewIcon,
+  Padding as PaddingIcon,
+  CompareArrows as BatchComparisonIcon
 } from '@mui/icons-material'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -42,20 +44,21 @@ const DRAWER_WIDTH = 280
 
 const navigationItems = [
   { path: '/', label: '홈', icon: <HomeIcon /> },
+  { path: '/quick-preview', label: '원클릭 미리보기', icon: <QuickPreviewIcon /> },
   { path: '/basic', label: '기본 처리', icon: <BasicIcon /> },
+  { path: '/padding', label: '패딩 기능', icon: <PaddingIcon /> },
   { path: '/preview-gallery', label: '변환 미리보기', icon: <PreviewGalleryIcon /> },
   { path: '/presets', label: '프리셋 기능', icon: <PresetsIcon /> },
   { path: '/advanced', label: '고급 기능', icon: <AdvancedIcon /> },
   { path: '/filters', label: '필터 효과', icon: <FiltersIcon /> },
-  { path: '/converters', label: '변환 도구', icon: <ConvertersIcon /> },
   { path: '/image-source-converter', label: 'ImageSourceConverter', icon: <ConverterTestIcon /> },
   { path: '/batch', label: '배치 처리', icon: <BatchIcon /> },
+  { path: '/batch-comparison', label: '배치 처리 비교', icon: <BatchComparisonIcon /> },
   { path: '/performance', label: '성능 테스트', icon: <PerformanceIcon /> },
   { path: '/dev-tools', label: '개발자 도구', icon: <DevToolsIcon /> },
   // SVG Features Section
   { path: '/svg-fit-modes', label: 'SVG Fit 모드 비교', icon: <FitModeIcon /> },
   { path: '/svg-quality', label: 'SVG 고품질 렌더링', icon: <QualityIcon /> },
-  { path: '/svg-compatibility', label: 'SVG 호환성 처리', icon: <SvgIcon /> },
   // v2.0 New Features
   { path: '/svg-quality-comparison', label: 'SVG 품질 비교', icon: <QualityIcon /> },
   { path: '/smart-format', label: '스마트 포맷 선택', icon: <FormatIcon /> },

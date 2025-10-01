@@ -118,7 +118,6 @@ const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
     'strategy 옵션을 "memory-efficient"로 설정해보세요',
   ],
 
-
   CONVERSION_FAILED: [
     '다른 출력 포맷을 시도해보세요 (PNG, JPEG 등)',
     '이미지 크기를 줄여보세요',

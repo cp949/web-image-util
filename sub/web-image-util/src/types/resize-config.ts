@@ -191,10 +191,11 @@ export function validateResizeConfig(config: ResizeConfig): void {
 
   // cover, contain, fill은 width와 height 모두 필수
   if (config.fit === 'cover' || config.fit === 'contain' || config.fit === 'fill') {
-    if (!config.width || !config.height) {
+    // 먼저 undefined/null 체크 (0은 유효하지 않지만 별도로 체크)
+    if (config.width === undefined || config.width === null || config.height === undefined || config.height === null) {
       throw new ImageProcessError(`${config.fit} requires both width and height`, 'INVALID_DIMENSIONS');
     }
-    // width 또는 height가 음수인지 확인
+    // width 또는 height가 0 이하인지 확인 (음수 또는 0)
     if (config.width <= 0 || config.height <= 0) {
       throw new ImageProcessError(`${config.fit} width and height must be positive numbers`, 'INVALID_DIMENSIONS');
     }

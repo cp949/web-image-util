@@ -13,7 +13,6 @@ import { BatchResizer, type BatchResizeJob } from './batch-resizer';
 import { InternalHighResProcessor } from './internal/internal-high-res-processor';
 import type { ResizeProfile } from './performance-config';
 
-
 /**
  * 스마트 프로세서 - 고해상도 이미지 처리의 복잡성을 숨기는 클래스
  *

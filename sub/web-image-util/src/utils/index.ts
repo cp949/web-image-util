@@ -49,3 +49,6 @@ export {
 
 // SVG 벡터 최적화 시스템
 export { SvgOptimizer, type SvgOptimizationOptions, type OptimizationResult } from './svg-optimizer';
+
+// 디버그 및 개발 유틸리티
+export { isDevelopmentMode, debugLog, productionLog } from './debug';

@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
+import { processImage } from '@cp949/web-image-util';
 import {
-  Assignment as ConvertIcon,
-  CloudUpload as UploadIcon,
   Download as DownloadIcon,
-  CheckCircle as SuccessIcon,
   Error as ErrorIcon,
+  CheckCircle as SuccessIcon,
+  CloudUpload as UploadIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -23,13 +23,11 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useCallback, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
 import { saveAs } from 'file-saver';
+import { useCallback, useEffect, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { CodeSnippet } from '../common/CodeSnippet';
-// TODO: v2.0 마이그레이션 - ImageSourceConverter를 processImage로 대체 필요
-// import { ImageSourceConverter } from '@cp949/web-image-util/utils';
-import { processImage } from '@cp949/web-image-util';
+import { SampleImageSelector } from '../common/SampleImageSelector';
 
 interface ConversionResult {
   type: string;
@@ -83,6 +81,21 @@ export function ImageSourceConverterDemo() {
     }
   }, []);
 
+  // 샘플 이미지 선택 핸들러
+  const handleSampleImageSelect = useCallback(async (imagePath: string) => {
+    try {
+      const response = await fetch(imagePath);
+      const blob = await response.blob();
+      const file = new File([blob], imagePath.split('/').pop() || 'sample.jpg', { type: blob.type });
+
+      setSourceFile(file);
+      setSourcePreview(imagePath);
+      setResults([]);
+    } catch (error) {
+      console.error('샘플 이미지 로드 실패:', error);
+    }
+  }, []);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
@@ -99,7 +112,7 @@ export function ImageSourceConverterDemo() {
 
     const conversionTasks = [];
 
-    // 선택된 변환 작업들 준비 (v2.0 임시 구현)
+    // 선택된 변환 작업들 준비
     if (options.toCanvas) {
       conversionTasks.push({
         type: 'Canvas',
@@ -223,6 +236,13 @@ export function ImageSourceConverterDemo() {
 
     setConverting(false);
   };
+
+  // 이미지 선택 시 자동으로 변환 시작
+  useEffect(() => {
+    if (sourceFile && !converting && Object.values(options).some(Boolean)) {
+      handleConvert();
+    }
+  }, [sourceFile]);
 
   const handleDownload = async (result: ConversionResult) => {
     if (!result.success || !result.result) return;
@@ -456,6 +476,16 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
               </CardContent>
             </Card>
 
+            {/* 샘플 이미지 */}
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  샘플 이미지
+                </Typography>
+                <SampleImageSelector onImageSelect={handleSampleImageSelect} recommendedFor="image-source-converter" />
+              </CardContent>
+            </Card>
+
             {/* 변환 옵션 */}
             <Card>
               <CardContent>
@@ -528,18 +558,6 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
                     label="Uint8Array"
                   />
                 </FormGroup>
-
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<ConvertIcon />}
-                  onClick={handleConvert}
-                  disabled={!sourceFile || converting || !Object.values(options).some(Boolean)}
-                  sx={{ mt: 2 }}
-                  size="large"
-                >
-                  {converting ? '변환 중...' : '변환 시작'}
-                </Button>
 
                 {converting && (
                   <Box sx={{ mt: 2 }}>

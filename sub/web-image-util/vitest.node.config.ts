@@ -9,6 +9,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'happy-dom',
+    setupFiles: ['./tests/setup/canvas-mock.ts'],
     include: ['tests/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     globals: true,

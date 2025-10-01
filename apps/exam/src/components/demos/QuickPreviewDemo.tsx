@@ -1,28 +1,27 @@
 'use client';
 
+import { Photo, PhotoSizeSelectLarge, PhotoSizeSelectSmall, Speed } from '@mui/icons-material';
 import {
   Box,
   Card,
   CardContent,
+  Chip,
   Container,
   Grid,
   Stack,
-  Typography,
-  Alert,
-  Chip,
   ToggleButton,
   ToggleButtonGroup,
+  Typography,
 } from '@mui/material';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useImageProcessing } from '../../hooks/useImageProcessing';
+import { CodeSnippet } from '../common/CodeSnippet';
 import { ImageUploader } from '../common/ImageUploader';
 import { BeforeAfterView } from '../ui/BeforeAfterView';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
-import { ProcessingStatus } from '../ui/ProcessingStatus';
 import { ImageMetadata } from '../ui/ImageMetadata';
-import { CodeSnippet } from '../common/CodeSnippet';
-import type { ProcessingOptions, ResizeFit } from './types';
-import { Speed, AutoAwesome, PhotoSizeSelectSmall, PhotoSizeSelectLarge, Photo } from '@mui/icons-material';
+import { ProcessingStatus } from '../ui/ProcessingStatus';
+import type { ProcessingOptions } from './types';
 
 /**
  * 원클릭 미리보기 데모
@@ -116,10 +115,6 @@ const {
         <Speed sx={{ mr: 1, verticalAlign: 'middle' }} />
         원클릭 미리보기
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
-        <strong>autoProcess</strong> 기능으로 샘플 이미지를 클릭하는 즉시 처리 결과를 확인하세요.
-        별도의 "처리하기" 버튼 클릭이 필요 없습니다!
-      </Typography>
 
       <Grid container spacing={4}>
         {/* 좌측: 이미지 업로더 및 정보 */}
@@ -156,48 +151,24 @@ const {
                   </ToggleButton>
                 </ToggleButtonGroup>
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                  Fit: <strong>{presets[selectedPreset].fit}</strong> |
-                  Quality: <strong>{presets[selectedPreset].quality}</strong> |
-                  Format: <strong>{presets[selectedPreset].format.toUpperCase()}</strong>
+                  Fit: <strong>{presets[selectedPreset].fit}</strong> | Quality:{' '}
+                  <strong>{presets[selectedPreset].quality}</strong> | Format:{' '}
+                  <strong>{presets[selectedPreset].format.toUpperCase()}</strong>
                 </Typography>
               </CardContent>
             </Card>
 
-            {/* autoProcess 활성화 안내 */}
-            <Alert severity="info" icon={<AutoAwesome />}>
-              <Typography variant="subtitle2" gutterBottom>
-                ✨ 자동 처리 모드 활성화
-              </Typography>
-              <Typography variant="body2">
-                이미지를 선택하거나 프리셋을 변경하면 자동으로 처리됩니다.
-              </Typography>
-            </Alert>
-
             {/* 이미지 업로더 */}
-            <ImageUploader
-              onImageSelect={handleImageSelect}
-              recommendedSamplesFor="quick-preview"
-            />
+            <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="quick-preview" />
 
             {/* 에러 표시 */}
-            {error && (
-              <ErrorDisplay
-                error={error}
-                onClear={clearError}
-                canRetry={false}
-              />
-            )}
+            {error && <ErrorDisplay error={error} onClear={clearError} canRetry={false} />}
 
             {/* 처리 상태 */}
-            <ProcessingStatus
-              processing={processing}
-              message="이미지를 자동으로 처리하고 있습니다..."
-            />
+            <ProcessingStatus processing={processing} message="이미지를 자동으로 처리하고 있습니다..." />
 
             {/* 처리 결과 메타데이터 */}
-            {originalImage && processedImage && (
-              <ImageMetadata original={originalImage} processed={processedImage} />
-            )}
+            {originalImage && processedImage && <ImageMetadata original={originalImage} processed={processedImage} />}
           </Stack>
         </Grid>
 
@@ -241,9 +212,7 @@ const {
                   <Typography variant="body2" paragraph>
                     3. 이미지가 선택되면 <strong>자동으로 즉시 처리</strong>됩니다
                   </Typography>
-                  <Typography variant="body2">
-                    4. 프리셋을 변경하면 이미지가 자동으로 재처리됩니다
-                  </Typography>
+                  <Typography variant="body2">4. 프리셋을 변경하면 이미지가 자동으로 재처리됩니다</Typography>
                 </CardContent>
               </Card>
             )}

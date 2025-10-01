@@ -55,6 +55,4 @@ export type ResizeAlreadyCalledError = {
 /**
  * 타입 레벨 제약 조건 검사
  */
-export type EnsureCanResize<T extends ProcessorState> = CanResize<T> extends true
-  ? void
-  : ResizeAlreadyCalledError;
+export type EnsureCanResize<T extends ProcessorState> = CanResize<T> extends true ? void : ResizeAlreadyCalledError;

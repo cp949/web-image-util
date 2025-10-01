@@ -3,9 +3,9 @@
  * Canvas 2D API 기반으로 구현된 브라우저 전용 이미지 처리기
  */
 
-import { createPipeline } from './core/pipeline';
 import { convertToImageElement, detectSourceType } from './core/source-converter';
 import { LazyRenderPipeline } from './core/lazy-render-pipeline';
+import { debugLog } from './utils/debug';
 import type {
   BlurOptions,
   ImageFormat,
@@ -54,12 +54,10 @@ import type { ProcessorState, EnsureCanResize, AfterResizeCall } from './types/p
  * ```
  */
 export class ImageProcessor<TState extends ProcessorState = BeforeResize> implements TypedImageProcessor<TState> {
-  private pipeline = createPipeline();
   private lazyPipeline: LazyRenderPipeline | null = null;
   private sourceImage: HTMLImageElement | null = null;
   private options: ProcessorOptions;
   private hasResized = false;
-  private useLazyRender = true; // 새로운 LazyRenderPipeline 사용
   private pendingResizeConfig: ResizeConfig | null = null;
   private pendingBlurOptions: BlurOptions[] = [];
 
@@ -79,7 +77,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    * 소스 이미지를 HTMLImageElement로 변환하고 LazyRenderPipeline 초기화
    */
   private async ensureLazyPipeline(): Promise<void> {
-    if (this.lazyPipeline || !this.useLazyRender) {
+    if (this.lazyPipeline) {
       return;
     }
 
@@ -151,18 +149,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
     // 3. resize 호출 기록
     this.hasResized = true;
 
-    // 4. LazyRenderPipeline 또는 기존 파이프라인에 추가
-    if (this.useLazyRender) {
-      // LazyRenderPipeline은 나중에 ensureLazyPipeline()에서 초기화
-      // 여기서는 config만 저장
-      this.pendingResizeConfig = config;
-    } else {
-      // 기존 파이프라인 사용 (fallback)
-      this.pipeline.addOperation({
-        type: 'resize',
-        config: config,
-      });
-    }
+    // 4. LazyRenderPipeline에 추가
+    // LazyRenderPipeline은 나중에 ensureLazyPipeline()에서 초기화
+    // 여기서는 config만 저장
+    this.pendingResizeConfig = config;
 
     return this as unknown as ImageProcessor<AfterResizeCall<TState>>;
   }
@@ -198,17 +188,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
       ...options,
     };
 
-    // LazyRenderPipeline 또는 기존 파이프라인에 추가
-    if (this.useLazyRender) {
-      // blur는 여러 번 호출 가능하므로 pending 배열로 관리 필요
-      this.pendingBlurOptions = this.pendingBlurOptions || [];
-      this.pendingBlurOptions.push(blurOptions);
-    } else {
-      this.pipeline.addOperation({
-        type: 'blur',
-        options: blurOptions,
-      });
-    }
+    // LazyRenderPipeline에 추가
+    // blur는 여러 번 호출 가능하므로 pending 배열로 관리
+    this.pendingBlurOptions = this.pendingBlurOptions || [];
+    this.pendingBlurOptions.push(blurOptions);
 
     return this as ImageProcessor<TState>;
   }
@@ -338,9 +321,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
     if (options.format && !options.quality) {
       outputOptions.quality = this.getOptimalQuality(options.format);
     }
-
-    // 파이프라인에 출력 포맷 설정
-    this.pipeline.setOutputFormat(outputOptions.format);
 
     const { canvas, result } = await this.executeProcessing();
 
@@ -504,7 +484,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
         result.height,
         result.processingTime,
         result.originalSize,
-        result.format
+        undefined // Canvas는 포맷 정보가 없음
       );
     } catch (error) {
       throw new ImageProcessError('Canvas 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
@@ -531,7 +511,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
         result.height,
         result.processingTime,
         result.originalSize,
-        result.format
+        undefined // Canvas는 포맷 정보가 없음
       );
     } catch (error) {
       throw new ImageProcessError('Canvas 상세 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
@@ -658,43 +638,28 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    */
   private async executeProcessing() {
     try {
-      // 🚀 LazyRenderPipeline 사용 (SVG 화질 개선)
-      if (this.useLazyRender) {
-        await this.ensureLazyPipeline();
+      // LazyRenderPipeline으로 처리
+      await this.ensureLazyPipeline();
 
-        if (this.lazyPipeline) {
-          // LazyRenderPipeline으로 처리
-          const { canvas, metadata } = this.lazyPipeline.toCanvas();
-
-          return {
-            canvas,
-            result: {
-              width: metadata.width,
-              height: metadata.height,
-              processingTime: metadata.processingTime,
-              originalSize: {
-                width: this.sourceImage?.naturalWidth || 0,
-                height: this.sourceImage?.naturalHeight || 0,
-              },
-              operations: metadata.operations,
-            },
-          };
-        }
+      if (!this.lazyPipeline) {
+        throw new ImageProcessError('LazyRenderPipeline 초기화 실패', 'PROCESSING_FAILED');
       }
 
-      // 폴백: 기존 파이프라인 사용
-      const sourceType = detectSourceType(this.source);
-      const imageElement = await convertToImageElement(this.source, this.options);
+      const { canvas, metadata } = this.lazyPipeline.toCanvas();
 
-      // SVG이고 단순 리사이징만 하는 경우 파이프라인 우회 검토
-      if (sourceType === 'svg' && this.shouldBypassPipelineForSvg(imageElement)) {
-        return this.createDirectCanvasResult(imageElement);
-      }
-
-      // 기존 파이프라인 실행
-      const result = await this.pipeline.execute(imageElement);
-
-      return result;
+      return {
+        canvas,
+        result: {
+          width: metadata.width,
+          height: metadata.height,
+          processingTime: metadata.processingTime,
+          originalSize: {
+            width: this.sourceImage?.naturalWidth || 0,
+            height: this.sourceImage?.naturalHeight || 0,
+          },
+          operations: metadata.operations,
+        },
+      };
     } catch (error) {
       if (error instanceof ImageProcessError) {
         throw error;
@@ -702,88 +667,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
 
       throw new ImageProcessError('이미지 처리 중 오류가 발생했습니다', 'CANVAS_CREATION_FAILED', error as Error);
     }
-  }
-
-  /**
-   * SVG에 대해 파이프라인을 우회할지 결정
-   * 이미 최적 크기로 렌더링된 SVG는 불필요한 리사이징을 방지
-   */
-  private shouldBypassPipelineForSvg(imageElement: HTMLImageElement): boolean {
-    const operations = this.pipeline.getOperations();
-
-    // 연산이 없거나 리사이징만 있는 경우
-    if (operations.length === 0) {
-      return true;
-    }
-
-    if (operations.length === 1 && operations[0].type === 'resize') {
-      const resizeOp = operations[0];
-      const width = resizeOp.config.width;
-      const height = resizeOp.config.height;
-
-      // 목표 크기와 실제 크기가 일치하거나 매우 유사한 경우 (5% 이내 오차 허용)
-      if (width && height) {
-        const widthMatch = Math.abs(imageElement.naturalWidth - width) / width < 0.05;
-        const heightMatch = Math.abs(imageElement.naturalHeight - height) / height < 0.05;
-
-        if (widthMatch && heightMatch) {
-          console.log('🚀 SVG 파이프라인 우회: 크기가 이미 최적 상태', {
-            target: `${width}x${height}`,
-            actual: `${imageElement.naturalWidth}x${imageElement.naturalHeight}`,
-            bypass: true,
-          });
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * 파이프라인을 우회하여 직접 Canvas 결과 생성
-   */
-  private async createDirectCanvasResult(imageElement: HTMLImageElement): Promise<{
-    canvas: HTMLCanvasElement;
-    result: any;
-  }> {
-    const startTime = performance.now();
-
-    // 고품질 Canvas 생성
-    const canvas = document.createElement('canvas');
-    canvas.width = imageElement.naturalWidth;
-    canvas.height = imageElement.naturalHeight;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new ImageProcessError('Canvas 2D 컨텍스트를 생성할 수 없습니다', 'CANVAS_CREATION_FAILED');
-    }
-
-    // 🚀 최고 품질 설정으로 SVG 그리기
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(imageElement, 0, 0);
-
-    const processingTime = performance.now() - startTime;
-
-    const result = {
-      width: canvas.width,
-      height: canvas.height,
-      processingTime,
-      originalSize: {
-        width: imageElement.naturalWidth,
-        height: imageElement.naturalHeight,
-      },
-      format: this.pipeline['outputFormat'], // private 멤버 접근
-    };
-
-    console.log('✅ SVG 직접 렌더링 완료:', {
-      size: `${canvas.width}x${canvas.height}`,
-      processingTime: `${processingTime.toFixed(2)}ms`,
-      quality: 'high (pipeline bypassed)',
-    });
-
-    return { canvas, result };
   }
 
   /**

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { processImage } from '@cp949/web-image-util';
 import { filterManager } from '@cp949/web-image-util/advanced';
@@ -34,9 +34,18 @@ interface FilterOptions {
   vintage: boolean;
 }
 
+interface ImageData {
+  src: string;
+  width: number;
+  height: number;
+  size?: number;
+  format?: string;
+  processingTime?: number;
+}
+
 export function FiltersDemo() {
-  const [originalImage, setOriginalImage] = useState<any>(null);
-  const [processedImage, setProcessedImage] = useState<any>(null);
+  const [originalImage, setOriginalImage] = useState<ImageData | null>(null);
+  const [processedImage, setProcessedImage] = useState<ImageData | null>(null);
   const [processing, setProcessing] = useState(false);
 
   const [filters, setFilters] = useState<FilterOptions>({
@@ -81,21 +90,12 @@ export function FiltersDemo() {
     }
   };
 
-  // 지원되지 않는 필터가 사용되었는지 확인하는 함수
-  const checkUnsupportedFilters = (_filters: FilterOptions): string[] => {
-    const unsupported: string[] = [];
-
-    // 모든 필터가 구현되어 있음
-    // 빈티지 필터도 세피아 조합으로 구현됨
-
-    return unsupported;
-  };
-
   const applyFilters = async () => {
     if (!originalImage) return;
 
-    // 지원되지 않는 필터 확인
-    const unsupported = checkUnsupportedFilters(filters);
+    // 모든 필터가 구현되어 있으므로 지원되지 않는 필터 없음
+    // 빈티지 필터도 세피아 조합으로 구현됨
+    const unsupported: string[] = [];
     if (unsupported.length > 0) {
       console.log(`다음 필터들은 추후 추가될 예정입니다: ${unsupported.join(', ')}`);
       return;
@@ -627,5 +627,3 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
     </Container>
   );
 }
-
-// removed old export default;

@@ -89,8 +89,9 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
 
       const result = renderer.render(largeCanvas, layout, config);
 
-      expect(result.width).toBeCloseTo(300, 1);
-      expect(result.height).toBeCloseTo(225, 1);
+      // 800x600 (4:3) → maxFit 300x200 → height 기준으로 축소 → 267x200
+      expect(result.width).toBeCloseTo(267, 1);
+      expect(result.height).toBeCloseTo(200, 1);
     });
 
     it('minFit: 작은 이미지는 확대됨', () => {

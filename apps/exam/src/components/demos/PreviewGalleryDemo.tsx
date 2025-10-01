@@ -261,7 +261,6 @@ export function PreviewGalleryDemo() {
       try {
         const startTime = Date.now();
 
-        // 🔍 DEBUG: 프리셋 옵션 확인 (새로운 ResizeConfig API)
         // 타입 안전성을 위해 기본값 제공
         const width = preset.options.width || 300;
         const height = preset.options.height || 200;
@@ -298,17 +297,6 @@ export function PreviewGalleryDemo() {
                       height,
                     };
 
-        console.log('🎭 PreviewGalleryDemo 프리셋:', {
-          presetId: preset.id,
-          presetName: preset.name,
-          targetSize: `${preset.options.width}x${preset.options.height}`,
-          resizeConfig: resizeConfig,
-        });
-
-        // 🐛 DEBUG: 원본 이미지 크기 로깅
-        if (source instanceof Blob) {
-          console.log('🖼️ 원본 이미지 타입:', source.type, '크기:', Math.round(source.size / 1024) + 'KB');
-        }
 
         let processor = processImage(source) //
           .resize(resizeConfig);
@@ -326,13 +314,6 @@ export function PreviewGalleryDemo() {
         const processingTime = Date.now() - startTime;
         const imageUrl = URL.createObjectURL(result.blob);
 
-        console.log(`✅ ${preset.name} 처리 완료:`, {
-          목표크기: `${preset.options.width}x${preset.options.height}`,
-          실제결과: `${result.width}x${result.height}`,
-          fit: preset.options.fit,
-          처리시간: processingTime + 'ms',
-          파일크기: Math.round(result.blob.size / 1024) + 'KB',
-        });
 
         newResults.push({
           preset,
@@ -472,29 +453,8 @@ export function PreviewGalleryDemo() {
       </Typography>
 
       {/* 이미지 업로더 */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 4, maxWidth: 400 }}>
         <ImageUploader onImageSelect={handleImageSelect} />
-
-        {/* 샘플 이미지 버튼들 */}
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            또는 샘플 이미지 선택:
-          </Typography>
-          <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-            <Button variant="outlined" onClick={() => handleImageSelect('/sample-images/sample1.svg')}>
-              SVG 샘플
-            </Button>
-            <Button variant="outlined" onClick={() => handleImageSelect('/sample-images/sample2.png')}>
-              PNG 샘플
-            </Button>
-            <Button variant="outlined" onClick={() => handleImageSelect('/sample-images/sample1.jpg')}>
-              JPG 샘플
-            </Button>
-            <Button variant="outlined" onClick={() => handleImageSelect('/sample-images/sample4.svg')}>
-              복잡한 SVG
-            </Button>
-          </Stack>
-        </Box>
       </Box>
 
       {/* 원본 이미지 정보 */}

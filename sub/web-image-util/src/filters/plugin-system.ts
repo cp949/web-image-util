@@ -8,6 +8,8 @@
  * - 커스텀 필터 지원
  */
 
+import { debugLog, productionLog } from '../utils/debug';
+
 /**
  * 기본 필터 플러그인 인터페이스
  *
@@ -153,7 +155,7 @@ export class FilterPluginManager {
    */
   register<TParams>(plugin: FilterPlugin<TParams>): void {
     if (this.plugins.has(plugin.name)) {
-      console.warn(`필터 '${plugin.name}'가 이미 등록되어 있습니다. 새 필터로 덮어씁니다.`);
+      productionLog.warn(`필터 '${plugin.name}'가 이미 등록되어 있습니다. 새 필터로 덮어씁니다.`);
     }
 
     this.plugins.set(plugin.name, plugin);
@@ -164,7 +166,7 @@ export class FilterPluginManager {
     }
     this.categories.get(plugin.category)!.add(plugin.name);
 
-    console.debug(`필터 플러그인 '${plugin.name}' 등록 완료`);
+    debugLog.debug(`필터 플러그인 '${plugin.name}' 등록 완료`);
   }
 
   /**
@@ -180,7 +182,7 @@ export class FilterPluginManager {
     this.plugins.delete(name);
     this.categories.get(plugin.category)?.delete(name);
 
-    console.debug(`필터 플러그인 '${name}' 등록 해제 완료`);
+    debugLog.debug(`필터 플러그인 '${name}' 등록 해제 완료`);
     return true;
   }
 

@@ -9,24 +9,25 @@ import {
   Container,
   FormControl,
   FormControlLabel,
+  FormLabel,
   Grid,
-  InputLabel,
-  MenuItem,
-  Select,
+  Radio,
+  RadioGroup,
   Slider,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
-import type { ProcessingOptions } from './types';
+import { useMemo, useState } from 'react';
+import { useDebounce } from 'react-use';
 import { useImageProcessing } from '../../hooks/useImageProcessing';
 import { CodeSnippet } from '../common/CodeSnippet';
 import { ImageUploader } from '../common/ImageUploader';
 import { BeforeAfterView } from '../ui/BeforeAfterView';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
-import { ProcessingStatus } from '../ui/ProcessingStatus';
 import { ImageMetadata } from '../ui/ImageMetadata';
+import { ProcessingStatus } from '../ui/ProcessingStatus';
+import type { OutputFormat, ProcessingOptions, ResizeFit } from './types';
 
 export function BasicDemo() {
   const {
@@ -38,7 +39,6 @@ export function BasicDemo() {
     handleProcess,
     clearError,
     retry,
-    getErrorMessage,
     canRetry,
   } = useImageProcessing();
 
@@ -55,34 +55,46 @@ export function BasicDemo() {
   // UI 전용 상태
   const [useWidth, setUseWidth] = useState(true);
   const [useHeight, setUseHeight] = useState(true);
+  const [usePadding, setUsePadding] = useState(false);
+  const [paddingValue, setPaddingValue] = useState(20);
 
-  // 최신 처리된 이미지
-  const processedImage = processedImages[processedImages.length - 1] || null;
-
-  // 처리 옵션 준비
-  const prepareProcessingOptions = (): ProcessingOptions => {
+  // 자동 처리를 위한 memoized 옵션
+  const processingOptions = useMemo(() => {
     return {
       ...options,
       width: useWidth ? options.width : undefined,
       height: useHeight ? options.height : undefined,
+      padding: usePadding ? paddingValue : undefined,
     };
-  };
+  }, [options, useWidth, useHeight, usePadding, paddingValue]);
 
-  // 처리 실행
-  const handleProcessClick = async () => {
-    await handleProcess(prepareProcessingOptions());
-  };
+  // 최신 처리된 이미지
+  const processedImage = useMemo(() => {
+    return processedImages[processedImages.length - 1] || null;
+  }, [processedImages]);
+
+  // useDebounce를 사용한 자동 처리 (깜빡임 방지)
+  const [, cancelDebounce] = useDebounce(
+    async () => {
+      if (originalImage && processingOptions) {
+        await handleProcess(processingOptions);
+      }
+    },
+    500, // 500ms 디바운스
+    [originalImage, processingOptions, handleProcess]
+  );
+
 
   // 재시도
   const handleRetryClick = async () => {
-    await retry(prepareProcessingOptions());
+    await retry(processingOptions);
   };
 
   // 코드 예제 생성
   const generateCodeExamples = () => {
     // ResizeConfig API 사용
     const resizeConfig = `{
-    fit: '${options.fit}',${useWidth ? `\n    width: ${options.width},` : ''}${useHeight ? `\n    height: ${options.height},` : ''}${options.withoutEnlargement ? '\n    withoutEnlargement: true,' : ''}${options.background !== '#ffffff' ? `\n    background: '${options.background}',` : ''}
+    fit: '${options.fit}',${useWidth ? `\n    width: ${options.width},` : ''}${useHeight ? `\n    height: ${options.height},` : ''}${options.withoutEnlargement ? '\n    withoutEnlargement: true,' : ''}${usePadding ? `\n    padding: ${paddingValue},` : ''}${options.background !== '#ffffff' ? `\n    background: '${options.background}',` : ''}
   }`;
 
     const basicCode = `import { processImage } from '@cp949/web-image-util';
@@ -166,9 +178,8 @@ processor.resize({ fit: 'cover', width: 300, height: 200 });
         기본 이미지 처리
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        processImage API의 혁신적인 기능을 체험해보세요.
-        ResizeConfig API, resize() 단일 호출 제약, "계산은 미리, 렌더링은 한 번" 철학으로
-        더 나은 성능과 품질을 제공합니다.
+        processImage API의 혁신적인 기능을 체험해보세요. ResizeConfig API, resize() 단일 호출 제약, "계산은 미리,
+        렌더링은 한 번" 철학으로 더 나은 성능과 품질을 제공합니다.
       </Typography>
 
       <Grid container spacing={4}>
@@ -179,7 +190,14 @@ processor.resize({ fit: 'cover', width: 300, height: 200 });
             <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="basic" />
 
             {/* 에러 표시 */}
-            {error && <ErrorDisplay error={error} onRetry={canRetry ? handleRetryClick : undefined} onClear={clearError} canRetry={canRetry} />}
+            {error && (
+              <ErrorDisplay
+                error={error}
+                onRetry={canRetry ? handleRetryClick : undefined}
+                onClear={clearError}
+                canRetry={canRetry}
+              />
+            )}
 
             {/* 처리 상태 */}
             <ProcessingStatus processing={processing} message="이미지를 처리하고 있습니다..." />
@@ -199,44 +217,63 @@ processor.resize({ fit: 'cover', width: 300, height: 200 });
 
                   {/* 너비 */}
                   <Box sx={{ mb: 2 }}>
-                    <FormControlLabel control={<Checkbox checked={useWidth} onChange={(e) => setUseWidth(e.target.checked)} />} label="너비 사용" />
-                    <TextField
-                      fullWidth
-                      label="너비"
-                      type="number"
-                      value={options.width || ''}
-                      disabled={!useWidth}
-                      onChange={(e) => setOptions((prev) => ({ ...prev, width: parseInt(e.target.value) || undefined }))}
-                      sx={{ mt: 1 }}
+                    <FormControlLabel
+                      control={<Checkbox checked={useWidth} onChange={(e) => setUseWidth(e.target.checked)} />}
+                      label="너비 사용"
                     />
+                    {useWidth && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="caption" gutterBottom>
+                          너비: {options.width || 300}px
+                        </Typography>
+                        <Slider
+                          value={options.width || 300}
+                          onChange={(_, value) => setOptions((prev) => ({ ...prev, width: value as number }))}
+                          min={1}
+                          max={1600}
+                          step={1}
+                          marks={[
+                            { value: 1, label: '1' },
+                            { value: 400, label: '400' },
+                            { value: 800, label: '800' },
+                            { value: 1200, label: '1200' },
+                            { value: 1600, label: '1600' },
+                          ]}
+                        />
+                      </Box>
+                    )}
                   </Box>
 
                   {/* 높이 */}
                   <Box>
-                    <FormControlLabel control={<Checkbox checked={useHeight} onChange={(e) => setUseHeight(e.target.checked)} />} label="높이 사용" />
-                    <TextField
-                      fullWidth
-                      label="높이"
-                      type="number"
-                      value={options.height || ''}
-                      disabled={!useHeight}
-                      onChange={(e) => setOptions((prev) => ({ ...prev, height: parseInt(e.target.value) || undefined }))}
-                      sx={{ mt: 1 }}
+                    <FormControlLabel
+                      control={<Checkbox checked={useHeight} onChange={(e) => setUseHeight(e.target.checked)} />}
+                      label="높이 사용"
                     />
+                    {useHeight && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="caption" gutterBottom>
+                          높이: {options.height || 200}px
+                        </Typography>
+                        <Slider
+                          value={options.height || 200}
+                          onChange={(_, value) => setOptions((prev) => ({ ...prev, height: value as number }))}
+                          min={1}
+                          max={1600}
+                          step={1}
+                          marks={[
+                            { value: 1, label: '1' },
+                            { value: 400, label: '400' },
+                            { value: 800, label: '800' },
+                            { value: 1200, label: '1200' },
+                            { value: 1600, label: '1600' },
+                          ]}
+                        />
+                      </Box>
+                    )}
                   </Box>
                 </Box>
 
-                {/* Fit 모드 */}
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <InputLabel>Fit 모드</InputLabel>
-                  <Select value={options.fit} label="Fit 모드" onChange={(e) => setOptions((prev) => ({ ...prev, fit: e.target.value as any }))}>
-                    <MenuItem value="cover">Cover (가득 채우기, 잘림)</MenuItem>
-                    <MenuItem value="contain">Contain (전체 포함, 여백)</MenuItem>
-                    <MenuItem value="fill">Fill (늘려서 채우기)</MenuItem>
-                    <MenuItem value="maxFit">MaxFit (축소만, 확대 안함)</MenuItem>
-                    <MenuItem value="minFit">MinFit (확대만, 축소 안함)</MenuItem>
-                  </Select>
-                </FormControl>
 
                 {/* 크기 제한 옵션 */}
                 <Box sx={{ mb: 3 }}>
@@ -245,25 +282,68 @@ processor.resize({ fit: 'cover', width: 300, height: 200 });
                   </Typography>
 
                   <FormControlLabel
-                    control={<Checkbox checked={options.withoutEnlargement} onChange={(e) => setOptions((prev) => ({ ...prev, withoutEnlargement: e.target.checked }))} />}
+                    control={
+                      <Checkbox
+                        checked={options.withoutEnlargement}
+                        onChange={(e) => setOptions((prev) => ({ ...prev, withoutEnlargement: e.target.checked }))}
+                      />
+                    }
                     label="확대 금지 (withoutEnlargement)"
                     sx={{ display: 'block', mb: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, ml: 4 }}>
                     원본보다 큰 크기로 확대하지 않습니다.
                   </Typography>
-
                 </Box>
 
-                {/* 포맷 선택 */}
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <InputLabel>출력 포맷</InputLabel>
-                  <Select value={options.format} label="출력 포맷" onChange={(e) => setOptions((prev) => ({ ...prev, format: e.target.value as any }))}>
-                    <MenuItem value="jpeg">JPEG</MenuItem>
-                    <MenuItem value="png">PNG</MenuItem>
-                    <MenuItem value="webp">WebP</MenuItem>
-                  </Select>
-                </FormControl>
+                {/* 패딩 옵션 */}
+                <Box sx={{ mb: 3 }}>
+                  <FormControlLabel
+                    control={<Checkbox checked={usePadding} onChange={(e) => setUsePadding(e.target.checked)} />}
+                    label="패딩 추가 (padding)"
+                    sx={{ display: 'block', mb: 1 }}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, ml: 4 }}>
+                    이미지 주변에 여백을 추가합니다. (액자 효과, 안전 영역)
+                  </Typography>
+
+                  {usePadding && (
+                    <Box sx={{ ml: 4, mt: 2 }}>
+                      <Typography variant="caption" gutterBottom>
+                        패딩 크기: {paddingValue}px (상하좌우)
+                      </Typography>
+
+                      {/* 프리셋 패딩 버튼들 */}
+                      <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                        {[10, 20, 30, 50].map((preset) => (
+                          <Button
+                            key={preset}
+                            size="small"
+                            variant={paddingValue === preset ? 'contained' : 'outlined'}
+                            onClick={() => setPaddingValue(preset)}
+                            sx={{ minWidth: 50 }}
+                          >
+                            {preset}
+                          </Button>
+                        ))}
+                      </Stack>
+
+                      <Slider
+                        value={paddingValue}
+                        onChange={(_, value) => setPaddingValue(value as number)}
+                        min={0}
+                        max={100}
+                        step={5}
+                        marks={[
+                          { value: 0, label: '0' },
+                          { value: 50, label: '50' },
+                          { value: 100, label: '100' },
+                        ]}
+                      />
+                    </Box>
+                  )}
+                </Box>
+
 
                 {/* 품질 슬라이더 */}
                 <Box sx={{ mb: 3 }}>
@@ -294,18 +374,64 @@ processor.resize({ fit: 'cover', width: 300, height: 200 });
                   sx={{ mb: 3 }}
                 />
 
-                {/* 처리 버튼 */}
-                <Button fullWidth variant="contained" onClick={handleProcessClick} disabled={!originalImage || processing} size="large">
-                  {processing ? '처리 중...' : '이미지 처리'}
-                </Button>
+                {/* 자동 처리 안내 */}
+                <Box sx={{ p: 2, bgcolor: 'primary.50', borderRadius: 1, border: '1px solid', borderColor: 'primary.200' }}>
+                  <Typography variant="body2" color="primary.main">
+                    ✨ 자동 처리: 이미지 선택이나 옵션 변경 시 자동으로 처리됩니다
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    500ms 딜레이로 깜빡임을 최소화합니다
+                  </Typography>
+                </Box>
               </CardContent>
             </Card>
           </Stack>
         </Grid>
 
-        {/* 우측: 이미지 비교 및 메타데이터 */}
+        {/* 우측: 상단 옵션, 이미지 비교 및 메타데이터 */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
+            {/* 상단: Fit 모드와 출력 포맷 옵션 */}
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  빠른 설정
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    {/* Fit 모드 - RadioGroup */}
+                    <FormControl>
+                      <FormLabel component="legend">Fit 모드</FormLabel>
+                      <RadioGroup
+                        value={options.fit}
+                        onChange={(e) => setOptions((prev) => ({ ...prev, fit: e.target.value as ResizeFit }))}
+                      >
+                        <FormControlLabel value="cover" control={<Radio />} label="Cover (가득 채우기, 잘림)" />
+                        <FormControlLabel value="contain" control={<Radio />} label="Contain (전체 포함, 여백)" />
+                        <FormControlLabel value="fill" control={<Radio />} label="Fill (늘려서 채우기)" />
+                        <FormControlLabel value="maxFit" control={<Radio />} label="MaxFit (축소만, 확대 안함)" />
+                        <FormControlLabel value="minFit" control={<Radio />} label="MinFit (확대만, 축소 안함)" />
+                      </RadioGroup>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    {/* 출력 포맷 - RadioGroup */}
+                    <FormControl>
+                      <FormLabel component="legend">출력 포맷</FormLabel>
+                      <RadioGroup
+                        value={options.format}
+                        onChange={(e) => setOptions((prev) => ({ ...prev, format: e.target.value as OutputFormat }))}
+                      >
+                        <FormControlLabel value="jpeg" control={<Radio />} label="JPEG" />
+                        <FormControlLabel value="png" control={<Radio />} label="PNG" />
+                        <FormControlLabel value="webp" control={<Radio />} label="WebP" />
+                      </RadioGroup>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+
             {/* Before/After 뷰어 */}
             <BeforeAfterView before={originalImage} after={processedImage} />
 
@@ -317,107 +443,6 @@ processor.resize({ fit: 'cover', width: 300, height: 200 });
           </Stack>
         </Grid>
       </Grid>
-
-      {/* 도움말 섹션 */}
-      <Box sx={{ mt: 6 }}>
-        <Typography variant="h5" gutterBottom>
-          옵션 설명
-        </Typography>
-
-        {/* 크기 제한 옵션 설명 */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            크기 제한 옵션
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    확대 금지 (withoutEnlargement)
-                  </Typography>
-                  <Typography variant="body2">원본 이미지보다 큰 크기로 확대하지 않습니다.</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    원본이 300x200인데 500x400을 요청하면 → 300x200으로 유지
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </Box>
-
-        {/* Fit 모드 설명 */}
-        <Typography variant="h6" gutterBottom>
-          Fit 모드 설명
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Cover
-                </Typography>
-                <Typography variant="body2">비율 유지하며 전체 영역을 채움, 필요시 잘림</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  CSS object-fit: cover와 동일 (기본값)
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Contain
-                </Typography>
-                <Typography variant="body2">비율 유지하며 전체 이미지가 영역에 들어가도록 맞춤</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  여백으로 채움 (확대/축소 모두)
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Fill
-                </Typography>
-                <Typography variant="body2">비율 무시하고 정확히 맞춤</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  이미지가 늘어나거나 압축됨
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  MaxFit
-                </Typography>
-                <Typography variant="body2">비율 유지하며 최대 크기 제한</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  축소만, 확대 안함
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  MinFit
-                </Typography>
-                <Typography variant="body2">비율 유지하며 최소 크기 보장</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  확대만, 축소 안함
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </Box>
     </Container>
   );
 }

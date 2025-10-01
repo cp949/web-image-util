@@ -118,7 +118,7 @@ export class LazyRenderPipeline {
             format: format as any,
             size: blob.size,
             processingTime: performance.now() - startTime,
-            operations: this.operations.length
+            operations: this.operations.length,
           };
 
           // 디버깅 정보 출력
@@ -147,7 +147,7 @@ export class LazyRenderPipeline {
       format: 'canvas' as any,
       size: canvas.width * canvas.height * 4, // RGBA 추정
       processingTime: performance.now() - startTime,
-      operations: this.operations.length
+      operations: this.operations.length,
     };
 
     // 디버깅 정보 출력

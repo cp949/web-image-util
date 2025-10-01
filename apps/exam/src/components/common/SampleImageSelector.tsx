@@ -47,12 +47,13 @@ export function SampleImageSelector({
     'all' | 'jpg' | 'png' | 'svg'
   >(selectedType);
 
-  // 추천 이미지가 지정된 경우 해당 이미지만 표시
-  const displayImages: SampleImage[] = recommendedFor
-    ? getRecommendedImages(recommendedFor)
-    : selectedCategory === 'all'
-      ? sampleImages
-      : getImagesByType(selectedCategory);
+  // 모든 샘플 이미지 표시 (추천 이미지 제한 제거)
+  const displayImages: SampleImage[] = selectedCategory === 'all'
+    ? sampleImages
+    : getImagesByType(selectedCategory);
+
+  // 추천 이미지 정보 (표시용)
+  const recommendedImages = recommendedFor ? getRecommendedImages(recommendedFor) : [];
 
   return (
     <Card>
@@ -66,10 +67,10 @@ export function SampleImageSelector({
             }}
           >
             <Typography variant="h6">
-              {recommendedFor ? '추천 샘플 이미지' : '샘플 이미지 선택'}
+              샘플 이미지 선택
             </Typography>
 
-            {!compact && !recommendedFor && (
+            {!compact && (
               <ToggleButtonGroup
                 value={selectedCategory}
                 exclusive
@@ -85,6 +86,13 @@ export function SampleImageSelector({
               </ToggleButtonGroup>
             )}
           </Box>
+
+          {/* 성능 비교 안내 문구 */}
+          {recommendedFor === 'performance' && (
+            <Typography variant="subtitle2" color="primary" sx={{ mt: 1, mb: 1 }}>
+              📊 성능 비교를 위해 큰 이미지를 선택하세요
+            </Typography>
+          )}
 
           <Grid container spacing={2}>
             {displayImages.map((image, index) => (
@@ -102,10 +110,13 @@ export function SampleImageSelector({
                 >
                   <CardMedia
                     component="img"
-                    height={compact ? 80 : 120}
                     image={image.preview}
                     alt={image.name}
-                    sx={{ objectFit: 'cover' }}
+                    sx={{
+                      aspectRatio: '1 / 1',
+                      objectFit: 'cover',
+                      height: compact ? 80 : 120
+                    }}
                   />
                   {!compact && (
                     <CardContent sx={{ p: 1 }}>

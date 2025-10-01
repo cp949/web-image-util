@@ -141,14 +141,7 @@ export function parseBackgroundColor(backgroundColor?: string): RGBA {
  * @param tolerance 허용 오차 (기본값: 5)
  * @returns 배경색과 일치하면 true
  */
-export function isBackgroundPixel(
-  r: number,
-  g: number,
-  b: number,
-  a: number,
-  bgColor: RGBA,
-  tolerance = 5
-): boolean {
+export function isBackgroundPixel(r: number, g: number, b: number, a: number, bgColor: RGBA, tolerance = 5): boolean {
   return (
     Math.abs(r - bgColor.r) <= tolerance &&
     Math.abs(g - bgColor.g) <= tolerance &&
@@ -165,10 +158,7 @@ export function isBackgroundPixel(
  * @param backgroundColor 배경색 (투명도 포함)
  * @returns 비어있지 않은 영역의 경계 정보
  */
-export function findContentBounds(
-  canvas: HTMLCanvasElement,
-  backgroundColor?: string
-): TrimBounds {
+export function findContentBounds(canvas: HTMLCanvasElement, backgroundColor?: string): TrimBounds {
   const ctx = canvas.getContext('2d');
   if (!ctx) {
     throw new Error('Cannot get canvas context');
@@ -242,17 +232,7 @@ export function cropCanvas(canvas: HTMLCanvasElement, bounds: TrimBounds): HTMLC
   }
 
   // 원본 캔버스에서 지정된 영역을 새 캔버스로 복사
-  ctx.drawImage(
-    canvas,
-    bounds.left,
-    bounds.top,
-    bounds.width,
-    bounds.height,
-    0,
-    0,
-    bounds.width,
-    bounds.height
-  );
+  ctx.drawImage(canvas, bounds.left, bounds.top, bounds.width, bounds.height, 0, 0, bounds.width, bounds.height);
 
   return newCanvas;
 }
@@ -265,19 +245,11 @@ export function cropCanvas(canvas: HTMLCanvasElement, bounds: TrimBounds): HTMLC
  * @param backgroundColor 배경색 (지정하지 않으면 투명 영역을 기준으로 트림)
  * @returns 트림된 캔버스 (트림할 공간이 없으면 원본 반환)
  */
-export function trimEmptySpace(
-  canvas: HTMLCanvasElement,
-  backgroundColor?: string
-): HTMLCanvasElement {
+export function trimEmptySpace(canvas: HTMLCanvasElement, backgroundColor?: string): HTMLCanvasElement {
   const bounds = findContentBounds(canvas, backgroundColor);
 
   // 트림할 공간이 없으면 원본 반환
-  if (
-    bounds.left === 0 &&
-    bounds.top === 0 &&
-    bounds.width === canvas.width &&
-    bounds.height === canvas.height
-  ) {
+  if (bounds.left === 0 && bounds.top === 0 && bounds.width === canvas.width && bounds.height === canvas.height) {
     return canvas;
   }
 

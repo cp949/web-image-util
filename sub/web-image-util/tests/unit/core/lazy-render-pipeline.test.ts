@@ -125,9 +125,15 @@ describe('LazyRenderPipeline', () => {
 
   describe('에러 처리', () => {
     it('잘못된 resize 설정에 대해 적절한 에러를 발생시켜야 함', () => {
+      const mockImage = createMockImage(100, 100);
+      const invalidPipeline = new LazyRenderPipeline(mockImage);
+
+      // LazyRenderPipeline은 지연 실행이므로, addResize는 에러를 발생시키지 않음
+      // 대신 toCanvas() 호출 시 에러가 발생해야 함
       expect(() => {
         // @ts-expect-error 테스트를 위한 잘못된 타입
-        pipeline.addResize({ fit: 'invalid', width: -100 });
+        invalidPipeline.addResize({ fit: 'invalid', width: -100 });
+        invalidPipeline.toCanvas(); // 실제 렌더링 시 에러 발생
       }).toThrow();
     });
   });

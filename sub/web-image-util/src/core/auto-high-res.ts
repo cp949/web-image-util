@@ -6,6 +6,7 @@
 import { HighResolutionDetector } from '../base/high-res-detector';
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
+import { productionLog } from '../utils/debug';
 
 /**
  * 자동 처리 임계값
@@ -137,7 +138,7 @@ export class AutoHighResProcessor {
       }
     } catch (error) {
       // 실패 시 fallback 처리
-      console.warn('고해상도 처리 실패, 표준 처리로 전환:', error);
+      productionLog.warn('고해상도 처리 실패, 표준 처리로 전환:', error);
       onProgress?.(50, '처리 방식을 변경 중...');
       processingResult = await this.standardResize(img, targetWidth, targetHeight, 'balanced');
     }
@@ -268,7 +269,7 @@ export class AutoHighResProcessor {
 
           return result;
         } catch (error) {
-          console.error(`이미지 처리 실패 (${name || globalIndex}):`, error);
+          productionLog.error(`이미지 처리 실패 (${name || globalIndex}):`, error);
           throw error;
         }
       });

@@ -143,24 +143,98 @@ export function useSampleImages() {
   }, []);
 
   /**
-   * 추천 이미지 가져오기
+   * 추천 이미지 가져오기 - Phase 3: 확장된 추천 시스템
    */
   const getRecommendedImages = useCallback((demoType: string): SampleImage[] => {
-    const recommendations: Record<string, string[]> = {
-      basic: ['sample1.jpg', 'sample2.png'],
-      presets: ['sample1.jpg', 'sample3.png', 'sample4.jpg'],
-      advanced: ['sample4.svg', 'sample2.png', 'sample3.svg'],
-      filters: ['sample1.jpg', 'sample2.jpg'],
-      svg: ['sample1.svg', 'sample2.svg', 'sample3.svg', 'sample4.svg'],
-      batch: ['sample1.jpg', 'sample2.png', 'sample3.svg', 'sample4.jpg'],
-      performance: ['sample1.jpg', 'sample2.jpg'],
-      'svg-quality': ['sample3.svg', 'sample4.svg'],
-      'smart-format': ['sample1.jpg', 'sample2.jpg'],
+    const recommendations: Record<string, { images: string[]; reason: string }> = {
+      // 기본 데모들
+      basic: {
+        images: ['sample1.jpg', 'sample2.png', 'sample3.jpg'],
+        reason: '다양한 크기와 포맷으로 기본 기능 테스트에 최적',
+      },
+      padding: {
+        images: ['sample1.jpg', 'sample2.png', 'sample1.svg'],
+        reason: '패딩 효과가 명확히 보이는 이미지들',
+      },
+      'quick-preview': {
+        images: ['sample3.jpg', 'sample4.jpg', 'sample2.png'],
+        reason: '빠른 미리보기에 적합한 중간 크기 이미지',
+      },
+
+      // 고급 기능
+      presets: {
+        images: ['sample1.jpg', 'sample3.png', 'sample4.jpg'],
+        reason: '프리셋 기능 시연에 적합한 다양한 이미지',
+      },
+      advanced: {
+        images: ['sample4.svg', 'sample2.png', 'sample3.svg'],
+        reason: '고급 처리 기능 테스트에 적합',
+      },
+      filters: {
+        images: ['sample1.jpg', 'sample2.jpg', 'sample4.jpg'],
+        reason: '필터 효과가 잘 보이는 고화질 사진',
+      },
+
+      // SVG 관련
+      svg: {
+        images: ['sample1.svg', 'sample2.svg', 'sample3.svg', 'sample4.svg'],
+        reason: 'SVG 처리 및 호환성 테스트용',
+      },
+      'svg-quality': {
+        images: ['sample3.svg', 'sample4.svg', 'sample2.svg'],
+        reason: 'SVG 품질 테스트를 위한 복잡한 벡터 이미지',
+      },
+
+      // 성능 및 배치
+      batch: {
+        images: ['sample1.jpg', 'sample2.png', 'sample3.svg', 'sample4.jpg'],
+        reason: '배치 처리를 위한 다양한 포맷 혼합',
+      },
+      performance: {
+        images: ['sample2.jpg', 'sample1.jpg', 'sample4.jpg'],
+        reason: '성능 측정을 위한 대용량 이미지',
+      },
+      'performance-benchmark': {
+        images: ['sample2.jpg', 'sample4.svg'],
+        reason: '벤치마크 테스트용 고해상도 이미지',
+      },
+
+      // 변환 및 포맷
+      converters: {
+        images: ['sample1.jpg', 'sample2.png', 'sample1.svg'],
+        reason: '다양한 포맷 변환 테스트용',
+      },
+      'smart-format': {
+        images: ['sample1.jpg', 'sample2.jpg', 'sample3.jpg'],
+        reason: '스마트 포맷 선택 테스트용 JPEG 이미지',
+      },
+      'image-source-converter': {
+        images: ['sample1.jpg', 'sample2.png', 'sample3.svg'],
+        reason: '소스 타입 변환 테스트용',
+      },
+
+      // 비교 및 갤러리
+      'fit-mode-comparison': {
+        images: ['sample1.jpg', 'sample2.png'],
+        reason: 'Fit 모드 비교를 위한 일반적인 비율 이미지',
+      },
+      'preview-gallery': {
+        images: ['sample1.jpg', 'sample2.png', 'sample3.jpg', 'sample4.jpg'],
+        reason: '갤러리 미리보기용 다양한 이미지',
+      },
+
+      // 개발자 도구
+      'dev-tools': {
+        images: ['sample1.jpg', 'sample2.png', 'sample3.svg'],
+        reason: '개발 도구용',
+      },
     };
 
-    const recommendedNames = recommendations[demoType] || [];
+    const recommendation = recommendations[demoType];
+    if (!recommendation) return [];
+
     return SAMPLE_IMAGES.filter((img) =>
-      recommendedNames.some((name) => img.path.includes(name)),
+      recommendation.images.some((name) => img.path.includes(name)),
     );
   }, []);
 

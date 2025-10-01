@@ -3,6 +3,8 @@
  * SVG 렌더링 품질 향상을 위한 전처리 최적화 시스템
  */
 
+import { productionLog } from './debug';
+
 export interface SvgOptimizationOptions {
   /** 메타데이터(주석, 불필요한 속성) 제거 */
   removeMetadata: boolean;
@@ -109,7 +111,7 @@ export class SvgOptimizer {
       };
     } catch (error) {
       // 최적화 실패 시 원본 반환
-      console.warn('SVG 최적화 중 오류 발생:', error);
+      productionLog.warn('SVG 최적화 중 오류 발생:', error);
       const processingTimeMs = performance.now() - startTime;
 
       return {
@@ -229,7 +231,7 @@ export class SvgOptimizer {
     try {
       // Node.js 환경에서 DOMParser 사용 가능 여부 확인
       if (typeof DOMParser === 'undefined') {
-        console.warn('DOMParser가 사용할 수 없는 환경입니다. 그라데이션 최적화를 건너뜁니다.');
+        productionLog.warn('DOMParser가 사용할 수 없는 환경입니다. 그라데이션 최적화를 건너뜁니다.');
         return svgString;
       }
 
@@ -283,7 +285,7 @@ export class SvgOptimizer {
 
       return new XMLSerializer().serializeToString(doc);
     } catch (error) {
-      console.warn('그라데이션 최적화 실패:', error);
+      productionLog.warn('그라데이션 최적화 실패:', error);
       return svgString; // 실패 시 원본 반환
     }
   }
@@ -318,7 +320,7 @@ export class SvgOptimizer {
     try {
       // Node.js 환경에서 DOMParser 사용 가능 여부 확인
       if (typeof DOMParser === 'undefined') {
-        console.warn('DOMParser가 사용할 수 없는 환경입니다. 미사용 정의 제거를 건너뜁니다.');
+        productionLog.warn('DOMParser가 사용할 수 없는 환경입니다. 미사용 정의 제거를 건너뜁니다.');
         return svgString;
       }
 
@@ -375,7 +377,7 @@ export class SvgOptimizer {
 
       return new XMLSerializer().serializeToString(doc);
     } catch (error) {
-      console.warn('미사용 정의 제거 실패:', error);
+      productionLog.warn('미사용 정의 제거 실패:', error);
       return svgString;
     }
   }

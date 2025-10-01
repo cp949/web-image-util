@@ -1,34 +1,21 @@
-import { useCallback, useState } from 'react'
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Alert,
-  LinearProgress,
-  Stack,
-  Chip
-} from '@mui/material'
-import {
-  CloudUpload as UploadIcon,
-  Link as LinkIcon
-} from '@mui/icons-material'
-import { useDropzone } from 'react-dropzone'
-import { SampleImageSelector } from './SampleImageSelector'
+import { useCallback, useState } from 'react';
+import { Box, Button, Card, CardContent, Typography, Alert, LinearProgress, Stack, Chip, SxProps } from '@mui/material';
+import { CloudUpload as UploadIcon, Link as LinkIcon } from '@mui/icons-material';
+import { useDropzone } from 'react-dropzone';
+import { SampleImageSelector } from './SampleImageSelector';
 
 interface ImageUploaderProps {
-  onImageSelect: (source: File | string) => void
-  supportedFormats?: string[]
-  maxSize?: number // MB
+  onImageSelect: (source: File | string) => void;
+  supportedFormats?: string[];
+  maxSize?: number; // MB
   /** 샘플 이미지 선택기 표시 여부 (기본값: true) */
-  showSampleSelector?: boolean
+  showSampleSelector?: boolean;
   /** 샘플 선택기 타입 필터 */
-  sampleSelectorType?: 'all' | 'jpg' | 'png' | 'svg'
+  sampleSelectorType?: 'all' | 'jpg' | 'png' | 'svg';
   /** 샘플 선택기 컴팩트 모드 */
-  sampleSelectorCompact?: boolean
+  sampleSelectorCompact?: boolean;
   /** 추천 샘플 데모 타입 */
-  recommendedSamplesFor?: string
+  recommendedSamplesFor?: string;
 }
 
 export function ImageUploader({
@@ -38,52 +25,55 @@ export function ImageUploader({
   showSampleSelector = true,
   sampleSelectorType = 'all',
   sampleSelectorCompact = true,
-  recommendedSamplesFor
+  recommendedSamplesFor,
 }: ImageUploaderProps) {
-  const [dragActive, setDragActive] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [dragActive, setDragActive] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0]
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        const file = acceptedFiles[0];
 
-      // 파일 크기 체크
-      if (file.size > maxSize * 1024 * 1024) {
-        setError(`파일 크기는 ${maxSize}MB 이하여야 합니다.`)
-        return
+        // 파일 크기 체크
+        if (file.size > maxSize * 1024 * 1024) {
+          setError(`파일 크기는 ${maxSize}MB 이하여야 합니다.`);
+          return;
+        }
+
+        setError(null);
+        setLoading(true);
+
+        try {
+          onImageSelect(file);
+        } catch {
+          setError('이미지 로드 중 오류가 발생했습니다.');
+        } finally {
+          setLoading(false);
+        }
       }
-
-      setError(null)
-      setLoading(true)
-
-      try {
-        onImageSelect(file)
-      } catch (err) {
-        setError('이미지 로드 중 오류가 발생했습니다.')
-      } finally {
-        setLoading(false)
-      }
-    }
-  }, [onImageSelect, maxSize])
+    },
+    [onImageSelect, maxSize]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': supportedFormats.map(format => `.${format}`)
+      'image/*': supportedFormats.map((format) => `.${format}`),
     },
     multiple: false,
     onDragEnter: () => setDragActive(true),
-    onDragLeave: () => setDragActive(false)
-  })
+    onDragLeave: () => setDragActive(false),
+  });
 
   const handleUrlInput = () => {
-    const url = prompt('이미지 URL을 입력하세요:')
+    const url = prompt('이미지 URL을 입력하세요:');
     if (url) {
-      setError(null)
-      onImageSelect(url)
+      setError(null);
+      onImageSelect(url);
     }
-  }
+  };
 
   return (
     <Stack spacing={3}>
@@ -110,8 +100,8 @@ export function ImageUploader({
               mb: 2,
               '&:hover': {
                 borderColor: 'primary.main',
-                bgcolor: 'primary.50'
-              }
+                bgcolor: 'primary.50',
+              },
             }}
           >
             <input {...getInputProps()} />
@@ -126,14 +116,9 @@ export function ImageUploader({
 
           {/* 추가 옵션 버튼들 */}
           <Stack direction="row" spacing={1} justifyContent="center">
-            <Button
-              variant="outlined"
-              startIcon={<LinkIcon />}
-              onClick={handleUrlInput}
-            >
+            <Button variant="outlined" startIcon={<LinkIcon />} onClick={handleUrlInput}>
               URL로 불러오기
             </Button>
-
           </Stack>
 
           {/* 로딩 상태 */}
@@ -159,7 +144,7 @@ export function ImageUploader({
               지원 포맷:
             </Typography>
             <Stack direction="row" spacing={0.5} flexWrap="wrap">
-              {supportedFormats.map(format => (
+              {supportedFormats.map((format) => (
                 <Chip key={format} label={format.toUpperCase()} size="small" variant="outlined" />
               ))}
             </Stack>
@@ -177,5 +162,5 @@ export function ImageUploader({
         />
       )}
     </Stack>
-  )
+  );
 }

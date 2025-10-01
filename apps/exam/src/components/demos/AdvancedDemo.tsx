@@ -1,35 +1,35 @@
-'use client'
+'use client';
 
-import { useState } from 'react';
-import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Box,
-  Tabs,
-  Tab,
-  TextField,
-  Button,
-  Stack,
-  Slider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Switch,
-  FormControlLabel,
-  Chip,
-  Alert,
-} from '@mui/material';
-import { ImageUploader } from '../common/ImageUploader';
-import { BeforeAfterView } from '../ui/BeforeAfterView';
-import { CodeSnippet } from '../common/CodeSnippet';
-import { ProcessingStatus } from '../ui/ProcessingStatus';
-import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { processImage } from '@cp949/web-image-util';
 import { SimpleWatermark } from '@cp949/web-image-util/advanced';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  Slider,
+  Stack,
+  Switch,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useState } from 'react';
+import { CodeSnippet } from '../common/CodeSnippet';
+import { ImageUploader } from '../common/ImageUploader';
+import { BeforeAfterView } from '../ui/BeforeAfterView';
+import { ErrorDisplay } from '../ui/ErrorDisplay';
+import { ProcessingStatus } from '../ui/ProcessingStatus';
 
 type WatermarkPosition =
   | 'top-left'
@@ -64,11 +64,19 @@ interface ImageWatermarkOptions {
   blendMode: 'normal' | 'multiply' | 'overlay' | 'soft-light';
 }
 
+interface ImageData {
+  src: string;
+  width: number;
+  height: number;
+  size?: number;
+  format?: string;
+}
+
 export function AdvancedDemo() {
   const [activeTab, setActiveTab] = useState(0);
-  const [originalImage, setOriginalImage] = useState<any>(null);
-  const [watermarkImage, setWatermarkImage] = useState<any>(null);
-  const [processedImage, setProcessedImage] = useState<any>(null);
+  const [originalImage, setOriginalImage] = useState<ImageData | null>(null);
+  const [watermarkImage, setWatermarkImage] = useState<ImageData | null>(null);
+  const [processedImage, setProcessedImage] = useState<ImageData | null>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -140,10 +148,18 @@ export function AdvancedDemo() {
 
   const handleWatermarkImageSelect = (source: File | string) => {
     if (typeof source === 'string') {
-      setWatermarkImage({ src: source });
+      const img = new Image();
+      img.onload = () => {
+        setWatermarkImage({ src: source, width: img.width, height: img.height });
+      };
+      img.src = source;
     } else {
       const url = URL.createObjectURL(source);
-      setWatermarkImage({ src: url });
+      const img = new Image();
+      img.onload = () => {
+        setWatermarkImage({ src: url, width: img.width, height: img.height, size: source.size });
+      };
+      img.src = url;
     }
   };
 
@@ -381,12 +397,7 @@ const blob = await new Promise(resolve => {
       </Typography>
 
       {/* 에러 표시 */}
-      {error && (
-        <ErrorDisplay
-          error={error}
-          onClear={() => setError(null)}
-        />
-      )}
+      {error && <ErrorDisplay error={error} onClear={() => setError(null)} />}
 
       {/* 처리 상태 */}
       <ProcessingStatus processing={processing} message="워터마크 처리 중..." />

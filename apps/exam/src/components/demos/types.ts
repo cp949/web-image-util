@@ -1,6 +1,6 @@
 // 공통 타입 정의 - v2.0 API 완전 활용
 
-import type { ResizeFit, ImageSource, ResultBlob, ResultDataURL, ResultFile, ImageProcessError } from '@cp949/web-image-util';
+import type { ResizeFit, ImageSource, ResultBlob, ResultDataURL, ResultFile, ImageProcessError, Padding } from '@cp949/web-image-util';
 
 /**
  * 데모 애플리케이션 전체 상태
@@ -45,6 +45,7 @@ export interface ProcessingOptions {
   format: 'jpeg' | 'png' | 'webp'; // OutputFormat 대신 직접 정의
   background?: string;
   withoutEnlargement?: boolean;
+  padding?: Padding; // 🆕 Phase 1: 패딩 옵션 추가
 }
 
 /**
@@ -69,7 +70,7 @@ export interface PerformanceMetrics {
 }
 
 // Re-export useful types from library
-export type { ResizeFit, ImageSource, ResultBlob, ResultDataURL, ResultFile, ImageProcessError };
+export type { ResizeFit, ImageSource, ResultBlob, ResultDataURL, ResultFile, ImageProcessError, Padding };
 
 // Local type aliases
 export type OutputFormat = 'jpeg' | 'png' | 'webp';

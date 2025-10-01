@@ -162,7 +162,6 @@ export function PerformanceDemo() {
         const test = performanceTests[i];
 
         try {
-          console.log(`Running test: ${test.name}`);
           const result = await runBenchmark(test, testConfig.iterations);
           newResults.push(result);
 
@@ -200,7 +199,6 @@ export function PerformanceDemo() {
       }
     } catch (error) {
       console.error('Performance test failed:', error);
-      console.error('성능 테스트 중 오류가 발생했습니다.');
     } finally {
       setRunning(false);
     }

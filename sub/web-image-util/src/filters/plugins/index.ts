@@ -8,6 +8,7 @@ import { filterManager, registerFilter } from '../plugin-system';
 import { BlurFilterPlugins } from './blur-plugins';
 import { ColorFilterPlugins } from './color-plugins';
 import { EffectFilterPlugins } from './effect-plugins';
+import { debugLog, productionLog } from '../../utils/debug';
 
 /**
  * 모든 기본 필터 플러그인들
@@ -24,7 +25,7 @@ export const AllFilterPlugins = [...ColorFilterPlugins, ...EffectFilterPlugins, 
  * 등록 성공/실패 통계를 콘솔에 출력합니다.
  */
 export function registerDefaultFilters(): void {
-  console.debug('기본 필터 플러그인들을 등록 중...');
+  debugLog.debug('기본 필터 플러그인들을 등록 중...');
 
   let registeredCount = 0;
   let failedCount = 0;
@@ -34,17 +35,17 @@ export function registerDefaultFilters(): void {
       registerFilter(plugin);
       registeredCount++;
     } catch (error) {
-      console.error(`필터 플러그인 '${plugin.name}' 등록 실패:`, error);
+      productionLog.error(`필터 플러그인 '${plugin.name}' 등록 실패:`, error);
       failedCount++;
     }
   }
 
-  console.debug(`필터 플러그인 등록 완료: ${registeredCount}개 성공, ${failedCount}개 실패`);
+  debugLog.debug(`필터 플러그인 등록 완료: ${registeredCount}개 성공, ${failedCount}개 실패`);
 
   // 시스템 정보 출력 (개발 모드에서만)
   if (process.env.NODE_ENV === 'development') {
     const systemInfo = filterManager.getSystemInfo();
-    console.debug('필터 시스템 정보:', systemInfo);
+    debugLog.debug('필터 시스템 정보:', systemInfo);
   }
 }
 

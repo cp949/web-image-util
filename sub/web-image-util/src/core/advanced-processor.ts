@@ -6,6 +6,7 @@
 import type { ImageFormat } from '../base/format-detector';
 import type { SimpleImageWatermarkOptions, SimpleTextWatermarkOptions } from '../composition/simple-watermark';
 import { SimpleWatermark } from '../composition/simple-watermark';
+import { productionLog } from '../utils/debug';
 import type { FilterChain } from '../filters/plugin-system';
 import { filterManager } from '../filters/plugin-system';
 import type { AutoProcessingResult } from './auto-high-res';
@@ -139,7 +140,7 @@ export class AdvancedImageProcessor {
         filtersApplied = options.filters.filters.filter((f) => f.enabled !== false).length;
         messages.push(`${filtersApplied}개의 필터가 적용되었습니다.`);
       } catch (error) {
-        console.error('필터 적용 실패:', error);
+        productionLog.error('필터 적용 실패:', error);
         messages.push('일부 필터 적용에 실패했습니다.');
       }
     }
@@ -238,7 +239,7 @@ export class AdvancedImageProcessor {
           messages.push(`포맷 최적화: ${formatResult.reason}`);
         }
       } catch (error) {
-        console.error('포맷 최적화 실패:', error);
+        productionLog.error('포맷 최적화 실패:', error);
         messages.push('포맷 최적화에 실패했습니다.');
       }
     }
@@ -362,7 +363,7 @@ export class AdvancedImageProcessor {
 
           return result;
         } catch (error) {
-          console.error(`이미지 처리 실패 (${item.name || globalIndex}):`, error);
+          productionLog.error(`이미지 처리 실패 (${item.name || globalIndex}):`, error);
           throw error;
         }
       });

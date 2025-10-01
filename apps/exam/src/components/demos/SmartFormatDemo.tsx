@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -86,6 +86,13 @@ export function SmartFormatDemo() {
       setError(err instanceof Error ? err : new Error('이미지 선택 실패'));
     }
   };
+
+  // 이미지 선택 시 자동으로 포맷 비교 실행
+  useEffect(() => {
+    if (selectedImage && !processing) {
+      handleFormatComparison();
+    }
+  }, [selectedImage]);
 
   const handleFormatComparison = async () => {
     if (!selectedImage) return;
@@ -214,21 +221,9 @@ export function SmartFormatDemo() {
             recommendedSamplesFor="smart-format"
           />
 
-          <Button
-            fullWidth
-            variant="contained"
-            size="large"
-            startIcon={<CompareIcon />}
-            onClick={handleFormatComparison}
-            disabled={!selectedImage || processing}
-            sx={{ mt: 2 }}
-          >
-            포맷 비교 시작
-          </Button>
-
-          {selectedImage && !processing && formatResults.length === 0 && (
-            <Alert severity="success" sx={{ mt: 2 }}>
-              이미지가 선택되었습니다. 포맷 비교를 시작하세요.
+          {selectedImage && processing && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              이미지가 선택되었습니다. 자동으로 포맷 비교를 시작합니다.
             </Alert>
           )}
         </Grid>
@@ -390,7 +385,7 @@ export function SmartFormatDemo() {
 
           {!processing && !error && formatResults.length === 0 && !selectedImage && (
             <Alert severity="info">
-              이미지를 선택하고 포맷 비교를 시작하세요.
+              이미지를 선택하면 자동으로 포맷 비교가 시작됩니다.
             </Alert>
           )}
         </Grid>

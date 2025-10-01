@@ -6,6 +6,7 @@ import type { ImageSource, ProcessorOptions } from '../types';
 import { ImageProcessError } from '../types';
 import { normalizeSvgBasics } from '../utils/svg-compatibility';
 import { extractSvgDimensions } from '../utils/svg-dimensions';
+import { debugLog, productionLog } from '../utils/debug';
 import type { QualityLevel } from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
 
@@ -392,8 +393,7 @@ async function convertSvgToElement(
     const renderWidth = finalWidth;
     const renderHeight = finalHeight;
 
-    // 🔧 DEBUG: SVG 직접 렌더링 정보 (scaleFactor 제거)
-    console.log('🔧 convertSvgToElement 직접 렌더링:', {
+    debugLog.log('🔧 convertSvgToElement 직접 렌더링:', {
       originalDimensions: `${dimensions.width}x${dimensions.height}`,
       targetDimensions: `${finalWidth}x${finalHeight}`,
       qualityLevel,
@@ -446,7 +446,7 @@ async function convertSvgToElement(
           img.src = objectUrl;
         } catch (blobError) {
           // Blob 생성 실패 시 Base64 폴백
-          console.warn('Blob URL 생성 실패, Base64로 폴백:', blobError);
+          productionLog.warn('Blob URL 생성 실패, Base64로 폴백:', blobError);
           img.src = createBase64DataUrl(enhancedSvg);
         }
       } else {
@@ -555,7 +555,7 @@ async function loadImageFromUrl(
           // SVG MIME이거나 XML MIME에서 실제 SVG 내용이 확인된 경우
           if (isSvgMime || (isXmlMime && isInlineSvg(responseText))) {
             return convertSvgToElement(responseText, undefined, undefined, {
-                quality: 'auto',
+              quality: 'auto',
               crossOrigin: options?.crossOrigin,
             });
           }
@@ -565,7 +565,7 @@ async function loadImageFromUrl(
         // Response 스트림이 이미 소비되었으므로 URL로 새 Image 생성
       } catch (fetchError) {
         // fetch 실패 시 기본 Image 로딩으로 폴백
-        console.warn('Content-Type 확인 실패, 기본 이미지 로딩으로 폴백:', fetchError);
+        productionLog.warn('Content-Type 확인 실패, 기본 이미지 로딩으로 폴백:', fetchError);
       }
     }
 

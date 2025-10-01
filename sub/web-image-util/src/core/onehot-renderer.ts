@@ -15,6 +15,7 @@
 
 import type { ResizeConfig } from '../types/resize-config';
 import type { LayoutResult } from './resize-calculator';
+import { productionLog } from '../utils/debug';
 
 // ============================================================================
 // INTERFACES - 인터페이스 정의
@@ -105,7 +106,7 @@ export class OnehotRenderer {
     sourceCanvas: HTMLCanvasElement,
     layout: LayoutResult,
     config: ResizeConfig,
-    options?: RenderOptions,
+    options?: RenderOptions
   ): HTMLCanvasElement {
     // 1. 출력 캔버스 생성 및 크기 검증
     this.validateLayout(layout);
@@ -131,7 +132,7 @@ export class OnehotRenderer {
       Math.round(layout.position.x),
       Math.round(layout.position.y), // 대상 위치 (패딩 고려)
       Math.round(layout.imageSize.width),
-      Math.round(layout.imageSize.height), // 대상 크기 (리사이징됨)
+      Math.round(layout.imageSize.height) // 대상 크기 (리사이징됨)
     );
 
     return canvas;
@@ -180,7 +181,7 @@ export class OnehotRenderer {
   private applyQualitySettings(
     ctx: CanvasRenderingContext2D,
     quality: RenderQuality,
-    smoothingOverride?: boolean,
+    smoothingOverride?: boolean
   ): void {
     // 스무딩 활성화 여부
     if (smoothingOverride !== undefined) {
@@ -217,12 +218,7 @@ export class OnehotRenderer {
    * applyBackground(ctx, 800, 600, 'transparent');  // 투명 (아무것도 안함)
    * ```
    */
-  private applyBackground(
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-    background: string,
-  ): void {
+  private applyBackground(ctx: CanvasRenderingContext2D, width: number, height: number, background: string): void {
     // 투명 배경인 경우 아무것도 하지 않음
     if (background === 'transparent' || !background) {
       return;
@@ -250,16 +246,12 @@ export class OnehotRenderer {
 
     // Canvas 크기 검증
     if (canvasSize.width <= 0 || canvasSize.height <= 0) {
-      throw new Error(
-        `Invalid canvas size: ${canvasSize.width}x${canvasSize.height}. Both dimensions must be > 0.`,
-      );
+      throw new Error(`Invalid canvas size: ${canvasSize.width}x${canvasSize.height}. Both dimensions must be > 0.`);
     }
 
     // 이미지 크기 검증
     if (imageSize.width <= 0 || imageSize.height <= 0) {
-      throw new Error(
-        `Invalid image size: ${imageSize.width}x${imageSize.height}. Both dimensions must be > 0.`,
-      );
+      throw new Error(`Invalid image size: ${imageSize.width}x${imageSize.height}. Both dimensions must be > 0.`);
     }
 
     // 좌표 검증 (NaN 또는 Infinity 체크)
@@ -271,9 +263,9 @@ export class OnehotRenderer {
     const maxCanvasArea = 16384 * 16384; // 약 268MB (RGBA 기준)
     const canvasArea = canvasSize.width * canvasSize.height;
     if (canvasArea > maxCanvasArea) {
-      console.warn(
+      productionLog.warn(
         `Warning: Large canvas size (${canvasSize.width}x${canvasSize.height}). ` +
-          `This may cause memory issues on some devices.`,
+          `This may cause memory issues on some devices.`
       );
     }
   }

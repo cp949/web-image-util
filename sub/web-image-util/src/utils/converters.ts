@@ -119,8 +119,8 @@ export async function toBlob(source: ImageSource | HTMLCanvasElement, options: B
  * ```typescript
  * // 상세 정보 포함
  * const result = await toBlobDetailed(imageElement);
- * console.log(`크기: ${result.width}x${result.height}`);
- * console.log(`처리 시간: ${result.processingTime}ms`);
+ * // 크기와 처리 시간 확인 가능
+ * // result.width, result.height, result.processingTime
  *
  * // 포맷과 품질 지정
  * const result = await toBlobDetailed(canvasElement, {
@@ -240,8 +240,8 @@ export async function toDataURL(
  * ```typescript
  * // 상세 정보 포함
  * const result = await toDataURLDetailed(imageElement);
- * console.log(`Data URL 길이: ${result.dataURL.length}`);
- * console.log(`크기: ${result.width}x${result.height}`);
+ * // Data URL 길이와 크기 확인 가능
+ * // result.dataURL.length, result.width, result.height
  *
  * // 고품질 JPEG로 변환
  * const result = await toDataURLDetailed(blob, {
@@ -369,8 +369,8 @@ export async function toFile(
  * ```typescript
  * // 상세 정보 포함
  * const result = await toFileDetailed(imageElement, 'photo.jpg');
- * console.log(`파일 크기: ${result.file.size} bytes`);
- * console.log(`이미지 크기: ${result.width}x${result.height}`);
+ * // 파일 크기와 이미지 크기 확인 가능
+ * // result.file.size, result.width, result.height
  *
  * // WebP로 변환하여 파일 생성
  * const result = await toFileDetailed(blob, 'image.webp', {

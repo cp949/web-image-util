@@ -56,7 +56,7 @@ interface LogEntry {
   timestamp: Date;
   level: 'info' | 'warn' | 'error' | 'debug';
   message: string;
-  data?: any;
+  data?: unknown;
   operation?: string;
 }
 
@@ -81,7 +81,7 @@ interface BrowserInfo {
 export function DevToolsDemo() {
   const [activeTab, setActiveTab] = useState(0);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [apiResponse, setApiResponse] = useState<any>(null);
+  const [apiResponse, setApiResponse] = useState<unknown>(null);
   const [generatedCode, setGeneratedCode] = useState('');
   const [debugMode, setDebugMode] = useState(false);
 
@@ -97,7 +97,7 @@ export function DevToolsDemo() {
   });
 
   // 로그 추가 함수
-  const addLog = (level: LogEntry['level'], message: string, data?: any, operation?: string) => {
+  const addLog = (level: LogEntry['level'], message: string, data?: unknown, operation?: string) => {
     const logEntry: LogEntry = {
       id: Date.now().toString(),
       timestamp: new Date(),
@@ -495,7 +495,7 @@ export function DevToolsDemo() {
                                   <Typography variant="caption" color="text.secondary">
                                     {log.timestamp.toLocaleTimeString()}
                                   </Typography>
-                                  {log.data && debugMode && (
+                                  {log.data !== undefined && debugMode && (
                                     <Accordion sx={{ mt: 1 }}>
                                       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                         <Typography variant="caption">데이터 보기</Typography>
@@ -503,7 +503,7 @@ export function DevToolsDemo() {
                                       <AccordionDetails>
                                         <Box sx={{ fontSize: '0.75rem' }}>
                                           <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                                            {JSON.stringify(log.data, null, 2)}
+                                            {JSON.stringify(log.data as Record<string, unknown>, null, 2)}
                                           </pre>
                                         </Box>
                                       </AccordionDetails>

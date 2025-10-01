@@ -1,5 +1,6 @@
 import { withManagedCanvas } from '../base/canvas-utils';
 import type { Rectangle, Size } from './position-types';
+import { productionLog } from '../utils/debug';
 
 /**
  * 레이어 정보
@@ -108,7 +109,7 @@ export class ImageComposer {
 
     if (images.length === 0) throw new Error('이미지가 제공되지 않았습니다');
     if (images.length > rows * cols) {
-      console.warn(`이미지가 너무 많습니다 (${images.length}개). 그리드 크기: ${rows}x${cols}`);
+      productionLog.warn(`이미지가 너무 많습니다 (${images.length}개). 그리드 크기: ${rows}x${cols}`);
     }
 
     // 그리드 크기 계산

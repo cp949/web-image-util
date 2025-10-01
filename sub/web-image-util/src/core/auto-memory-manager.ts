@@ -6,6 +6,7 @@
  */
 
 import { CanvasPool } from '../base/canvas-pool';
+import { debugLog, productionLog } from '../utils/debug';
 
 /**
  * 메모리 상태 정보
@@ -71,23 +72,23 @@ export class AutoMemoryManager {
       const canvasPool = CanvasPool.getInstance();
       // Canvas Pool이 비어있지 않으면 정리 (내부 pool 배열에 접근)
       canvasPool.clear();
-      console.debug('[AutoMemoryManager] Canvas pool cleared due to memory pressure');
+      debugLog.debug('[AutoMemoryManager] Canvas pool cleared due to memory pressure');
 
       // 2. 가비지 컬렉션 유도 (Node.js 환경에서)
       if (typeof global !== 'undefined' && global.gc) {
         global.gc();
-        console.debug('[AutoMemoryManager] Garbage collection triggered');
+        debugLog.debug('[AutoMemoryManager] Garbage collection triggered');
       }
 
       // 3. 브라우저 환경에서 메모리 압박 상황 로깅
       if (typeof console !== 'undefined' && memoryInfo.pressure > 0.9) {
-        console.warn(
+        productionLog.warn(
           `[AutoMemoryManager] High memory pressure: ${Math.round(memoryInfo.pressure * 100)}% ` +
             `(${memoryInfo.usedMB}MB / ${memoryInfo.limitMB}MB)`
         );
       }
     } catch (error) {
-      console.error('[AutoMemoryManager] Optimization failed:', error);
+      productionLog.error('[AutoMemoryManager] Optimization failed:', error);
     }
   }
 

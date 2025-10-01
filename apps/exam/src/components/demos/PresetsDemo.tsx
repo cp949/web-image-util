@@ -1,5 +1,7 @@
-'use client'
+'use client';
 
+import type { ImageProcessError } from '@cp949/web-image-util';
+import { createAvatar, createSocialImage, createThumbnail } from '@cp949/web-image-util/presets';
 import {
   Alert,
   Box,
@@ -20,16 +22,13 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { createThumbnail, createAvatar, createSocialImage } from '@cp949/web-image-util/presets';
-import type { ImageProcessError } from '@cp949/web-image-util';
 import { CodeSnippet } from '../common/CodeSnippet';
 import { ImageUploader } from '../common/ImageUploader';
 import { BeforeAfterView } from '../ui/BeforeAfterView';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
-import { ProcessingStatus } from '../ui/ProcessingStatus';
 import { ImageMetadata } from '../ui/ImageMetadata';
+import { ProcessingStatus } from '../ui/ProcessingStatus';
 import type { ImageInfo, ProcessedImageInfo } from './types';
-import { getErrorMessage, isRecoverableError } from '../../utils/errorHandling';
 
 const SOCIAL_PLATFORMS = {
   twitter: { width: 1200, height: 675, label: 'Twitter (16:9)' },
@@ -82,7 +81,7 @@ export function PresetsDemo() {
           width: img.width,
           height: img.height,
           format: source.split('.').pop()?.toLowerCase(),
-          name: source.split('/').pop()
+          name: source.split('/').pop(),
         });
       };
       img.onerror = () => {
@@ -99,7 +98,7 @@ export function PresetsDemo() {
           height: img.height,
           size: source.size,
           format: source.type.split('/')[1],
-          name: source.name
+          name: source.name,
         });
       };
       img.onerror = () => {
@@ -128,7 +127,7 @@ export function PresetsDemo() {
         format: thumbnailOptions.format,
         processingTime: result.processingTime,
         originalSize: result.originalSize,
-        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined
+        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined,
       };
 
       setProcessedImages([processedInfo]);
@@ -159,7 +158,7 @@ export function PresetsDemo() {
         format: avatarOptions.format,
         processingTime: result.processingTime,
         originalSize: result.originalSize,
-        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined
+        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined,
       };
 
       setProcessedImages([processedInfo]);
@@ -190,7 +189,7 @@ export function PresetsDemo() {
         format: socialOptions.format,
         processingTime: result.processingTime,
         originalSize: result.originalSize,
-        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined
+        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined,
       };
 
       setProcessedImages([processedInfo]);
@@ -229,7 +228,7 @@ export function PresetsDemo() {
         format: 'png' as const,
         processingTime: result.processingTime,
         originalSize: result.originalSize,
-        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined
+        compressionRatio: originalImage.size ? result.blob.size / originalImage.size : undefined,
       }));
 
       setProcessedImages(processedBatch);
@@ -344,12 +343,7 @@ const socialImages = await Promise.all([
       </Typography>
 
       {/* 에러 표시 */}
-      {error && (
-        <ErrorDisplay
-          error={error}
-          onClear={() => setError(null)}
-        />
-      )}
+      {error && <ErrorDisplay error={error} onClear={() => setError(null)} />}
 
       {/* 처리 상태 */}
       <ProcessingStatus processing={processing} message="프리셋 처리 중..." />
@@ -592,12 +586,7 @@ const socialImages = await Promise.all([
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
             {/* 메타데이터 표시 */}
-            {processedImages.length === 1 && (
-              <ImageMetadata
-                original={originalImage}
-                processed={processedImages[0]}
-              />
-            )}
+            {processedImages.length === 1 && <ImageMetadata original={originalImage} processed={processedImages[0]} />}
 
             {/* 결과 표시 */}
             {processedImages.length === 1 ? (
@@ -681,5 +670,3 @@ const socialImages = await Promise.all([
     </Container>
   );
 }
-
-// removed old export default;

@@ -1,7 +1,8 @@
 import { Download as DownloadIcon, Fullscreen as FullscreenIcon, Info as InfoIcon } from '@mui/icons-material';
 import { Box, Card, CardContent, Chip, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useState } from 'react';
+import { memo, useState } from 'react';
+import { formatFileSize } from '../../utils/errorHandling';
 
 interface ImageData {
   src: string;
@@ -18,16 +19,9 @@ interface BeforeAfterViewProps {
   showMetadata?: boolean;
 }
 
-export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAfterViewProps) {
+function BeforeAfterViewComponent({ before, after, showMetadata = true }: BeforeAfterViewProps) {
   const [, setFullscreen] = useState<'before' | 'after' | null>(null);
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  };
 
   const downloadImage = async (imageData: ImageData, filename: string) => {
     try {
@@ -44,7 +38,7 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
 
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Download failed:', error);
+      // Download failed
     }
   };
 
@@ -103,6 +97,8 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
                   maxHeight: '100%',
                   objectFit: 'contain',
                 }}
+                onLoad={() => {}}
+                onError={() => {}}
               />
             </Box>
 
@@ -165,43 +161,97 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
         </Grid>
       </Grid>
 
-      {/* 처리 통계 비교 */}
+      {/* 처리 통계 비교 - Phase 3: 향상된 비교 명확성 */}
       {before && after && showMetadata && (
-        <Card sx={{ mt: 3 }}>
+        <Card sx={{ mt: 3, bgcolor: 'primary.50', borderLeft: 4, borderColor: 'primary.main' }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <InfoIcon color="primary" />
               처리 결과 비교
             </Typography>
             <Grid container spacing={2}>
+              {/* 파일 크기 변화 */}
               <Grid size={{ xs: 6, sm: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  크기 변화
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  파일 크기 변화
                 </Typography>
-                <Typography variant="h6">
-                  {before.size && after.size ? `${Math.round((after.size / before.size) * 100)}%` : '-'}
-                </Typography>
+                {before.size && after.size ? (
+                  <Box>
+                    <Typography variant="h5" color={after.size < before.size ? 'success.main' : 'warning.main'}>
+                      {Math.round((after.size / before.size) * 100)}%
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatFileSize(before.size)} → {formatFileSize(after.size)}
+                    </Typography>
+                    {after.size < before.size && (
+                      <Chip
+                        label={`${Math.round((1 - after.size / before.size) * 100)}% 감소`}
+                        size="small"
+                        color="success"
+                        sx={{ mt: 0.5 }}
+                      />
+                    )}
+                  </Box>
+                ) : (
+                  <Typography variant="h6">-</Typography>
+                )}
               </Grid>
+
+              {/* 해상도 변화 */}
               <Grid size={{ xs: 6, sm: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  해상도
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  해상도 변화
                 </Typography>
-                <Typography variant="body1">
-                  {after.width}×{after.height}
-                </Typography>
+                <Box>
+                  <Typography variant="h6">
+                    {after.width}×{after.height}
+                  </Typography>
+                  {before.width && before.height && (
+                    <Typography variant="caption" color="text.secondary">
+                      원본: {before.width}×{before.height}
+                    </Typography>
+                  )}
+                </Box>
               </Grid>
+
+              {/* 처리 시간 */}
               <Grid size={{ xs: 6, sm: 3 }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" gutterBottom>
                   처리 시간
                 </Typography>
-                <Typography variant="body1">
-                  {after.processingTime ? `${after.processingTime.toFixed(1)}ms` : '-'}
-                </Typography>
+                {after.processingTime ? (
+                  <Box>
+                    <Typography variant="h5" color="primary">
+                      {after.processingTime.toFixed(1)}ms
+                    </Typography>
+                    {after.processingTime < 100 && (
+                      <Chip label="빠름" size="small" color="success" sx={{ mt: 0.5 }} />
+                    )}
+                    {after.processingTime >= 100 && after.processingTime < 500 && (
+                      <Chip label="보통" size="small" color="info" sx={{ mt: 0.5 }} />
+                    )}
+                    {after.processingTime >= 500 && (
+                      <Chip label="느림" size="small" color="warning" sx={{ mt: 0.5 }} />
+                    )}
+                  </Box>
+                ) : (
+                  <Typography variant="h6">-</Typography>
+                )}
               </Grid>
+
+              {/* 포맷 변환 */}
               <Grid size={{ xs: 6, sm: 3 }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" gutterBottom>
                   포맷
                 </Typography>
-                <Typography variant="body1">{after.format?.toUpperCase() || '-'}</Typography>
+                <Box>
+                  <Typography variant="h6">{after.format?.toUpperCase() || '-'}</Typography>
+                  {before.format && after.format && before.format !== after.format && (
+                    <Typography variant="caption" color="text.secondary">
+                      {before.format.toUpperCase()} → {after.format.toUpperCase()}
+                    </Typography>
+                  )}
+                </Box>
               </Grid>
             </Grid>
           </CardContent>
@@ -210,3 +260,6 @@ export function BeforeAfterView({ before, after, showMetadata = true }: BeforeAf
     </Box>
   );
 }
+
+// 🎯 React.memo로 불필요한 리렌더링 방지
+export const BeforeAfterView = memo(BeforeAfterViewComponent);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -39,6 +39,7 @@ interface BenchmarkResult {
   fileSize: number;
   throughput: number; // bytes per second
   memoryUsage: number;
+  isMemoryEstimated?: boolean;
 }
 
 const SIZE_CONFIGS: Record<BenchmarkSize, { width: number; height: number; label: string }> = {
@@ -69,6 +70,13 @@ export function PerformanceBenchmarkDemo() {
     }
   };
 
+  // 이미지 선택 시 자동으로 벤치마크 실행
+  useEffect(() => {
+    if (selectedImage && !processing) {
+      handleBenchmark();
+    }
+  }, [selectedImage]);
+
   const handleBenchmark = async () => {
     if (!selectedImage) return;
 
@@ -85,8 +93,8 @@ export function PerformanceBenchmarkDemo() {
         const config = SIZE_CONFIGS[size];
         setProgress(((i + 1) / sizes.length) * 100);
 
-        // 메모리 사용량 측정 시작
-        const startMemory = (performance as any).memory?.usedJSHeapSize || 0;
+        // 메모리 사용량 추정 (이미지 크기 기반)
+        const estimatedMemoryUsage = config.width * config.height * 4; // RGBA 4바이트
 
         // 성능 측정
         const result: ResultBlob = await measurePerformance(async () => {
@@ -95,8 +103,9 @@ export function PerformanceBenchmarkDemo() {
             .toBlob({ format: 'jpeg', quality: 0.8 });
         });
 
-        const endMemory = (performance as any).memory?.usedJSHeapSize || 0;
-        const memoryUsage = endMemory - startMemory;
+        // 메모리 사용량 추정 (실제 측정은 브라우저 제약으로 부정확)
+        const memoryUsage = estimatedMemoryUsage;
+        const isMemoryEstimated = true;
 
         // Throughput 계산 (bytes per second)
         const throughput =
@@ -112,6 +121,7 @@ export function PerformanceBenchmarkDemo() {
           fileSize: result.blob.size,
           throughput,
           memoryUsage,
+          isMemoryEstimated,
         });
       }
 
@@ -126,9 +136,16 @@ export function PerformanceBenchmarkDemo() {
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
+    if (bytes < 0) return '추정값'; // 음수인 경우 처리
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  // 메모리 사용량 포맷팅 (추정값 표시 포함)
+  const formatMemoryUsage = (bytes: number, isEstimated: boolean = false): string => {
+    const size = formatFileSize(Math.abs(bytes));
+    return isEstimated ? `~${size}` : size;
   };
 
   const formatThroughput = (bytesPerSecond: number): string => {
@@ -168,21 +185,9 @@ export function PerformanceBenchmarkDemo() {
             recommendedSamplesFor="performance"
           />
 
-          <Button
-            fullWidth
-            variant="contained"
-            size="large"
-            startIcon={<SpeedIcon />}
-            onClick={handleBenchmark}
-            disabled={!selectedImage || processing}
-            sx={{ mt: 2 }}
-          >
-            벤치마크 시작
-          </Button>
-
-          {selectedImage && !processing && benchmarkResults.length === 0 && (
-            <Alert severity="success" sx={{ mt: 2 }}>
-              이미지가 선택되었습니다. 벤치마크를 시작하세요.
+          {selectedImage && processing && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              이미지가 선택되었습니다. 자동으로 벤치마크를 시작합니다.
             </Alert>
           )}
 
@@ -233,6 +238,36 @@ export function PerformanceBenchmarkDemo() {
 
           {benchmarkResults.length > 0 && (
             <Stack spacing={3}>
+              {/* 선택된 이미지 표시 */}
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    선택된 이미지
+                  </Typography>
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    bgcolor: 'grey.50',
+                    borderRadius: 1,
+                    p: 2,
+                    maxHeight: 300,
+                    overflow: 'hidden'
+                  }}>
+                    <img
+                      src={selectedImage || ''}
+                      alt="선택된 이미지"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '250px',
+                        objectFit: 'contain',
+                        borderRadius: '4px'
+                      }}
+                    />
+                  </Box>
+                </CardContent>
+              </Card>
+
               {/* 요약 통계 */}
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -253,7 +288,7 @@ export function PerformanceBenchmarkDemo() {
                       <Typography variant="caption" display="block" color="text.secondary">
                         총 메모리 사용
                       </Typography>
-                      <Typography variant="h5">{formatFileSize(totalMemory)}</Typography>
+                      <Typography variant="h5">~{formatFileSize(totalMemory)}</Typography>
                     </CardContent>
                   </Card>
                 </Grid>
@@ -330,7 +365,7 @@ export function PerformanceBenchmarkDemo() {
                               {formatThroughput(result.throughput)}
                             </TableCell>
                             <TableCell align="right">
-                              {formatFileSize(result.memoryUsage)}
+                              {formatMemoryUsage(result.memoryUsage, result.isMemoryEstimated)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -400,7 +435,7 @@ export function PerformanceBenchmarkDemo() {
 
           {!processing && !error && benchmarkResults.length === 0 && !selectedImage && (
             <Alert severity="info">
-              이미지를 선택하고 벤치마크를 시작하세요. 다양한 크기에서의 성능을 측정할
+              이미지를 선택하면 자동으로 벤치마크가 시작됩니다. 다양한 크기에서의 성능을 측정할
               수 있습니다.
             </Alert>
           )}

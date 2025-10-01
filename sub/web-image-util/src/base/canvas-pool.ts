@@ -3,6 +3,8 @@
  * Canvas 객체를 재사용하여 성능을 최적화합니다.
  * Fabric.js 패턴을 참고한 동적 메모리 관리 시스템
  */
+
+import { debugLog } from '../utils/debug';
 export class CanvasPool {
   private static instance: CanvasPool;
   private pool: HTMLCanvasElement[] = [];
@@ -272,7 +274,7 @@ export class CanvasPool {
    */
   logStats(): void {
     const stats = this.getStats();
-    console.log('Canvas Pool Stats:', {
+    debugLog.log('Canvas Pool Stats:', {
       'Pool Size': `${stats.poolSize}/${stats.maxPoolSize}`,
       'Hit Ratio': `${(stats.hitRatio * 100).toFixed(1)}%`,
       'Memory Usage': `${stats.memoryUsageMB}MB`,

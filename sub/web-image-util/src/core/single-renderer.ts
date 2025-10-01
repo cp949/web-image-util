@@ -11,6 +11,7 @@ import type { LazyOperation, FinalLayout } from './lazy-render-pipeline';
 import type { ResizeConfig } from '../types/resize-config';
 import { ImageProcessError } from '../types';
 import { ResizeCalculator } from './resize-calculator';
+import { debugLog } from '../utils/debug';
 
 /**
  * 모든 연산을 분석하여 최종 레이아웃 계산
@@ -18,10 +19,7 @@ import { ResizeCalculator } from './resize-calculator';
  * 이 함수가 복잡한 수학적 계산을 모두 처리하고,
  * renderAllOperationsOnce()는 순수하게 렌더링만 담당
  */
-export function analyzeAllOperations(
-  sourceImage: HTMLImageElement,
-  operations: LazyOperation[]
-): FinalLayout {
+export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: LazyOperation[]): FinalLayout {
   const sourceWidth = sourceImage.naturalWidth;
   const sourceHeight = sourceImage.naturalHeight;
 
@@ -32,7 +30,7 @@ export function analyzeAllOperations(
     position: { x: 0, y: 0 },
     imageSize: { width: sourceWidth, height: sourceHeight },
     background: 'transparent',
-    filters: []
+    filters: [],
   };
 
   // 각 연산을 순차적으로 분석
@@ -56,33 +54,25 @@ export function analyzeAllOperations(
 /**
  * 리사이즈 연산 분석 - ResizeCalculator 활용
  */
-function analyzeResizeOperation(
-  sourceImage: HTMLImageElement,
-  layout: FinalLayout,
-  config: ResizeConfig
-): FinalLayout {
+function analyzeResizeOperation(sourceImage: HTMLImageElement, layout: FinalLayout, config: ResizeConfig): FinalLayout {
   const calculator = new ResizeCalculator();
 
   // ResizeCalculator를 사용하여 정확한 레이아웃 계산
-  const result = calculator.calculateFinalLayout(
-    sourceImage.naturalWidth,
-    sourceImage.naturalHeight,
-    config
-  );
+  const result = calculator.calculateFinalLayout(sourceImage.naturalWidth, sourceImage.naturalHeight, config);
 
   return {
     width: result.canvasSize.width,
     height: result.canvasSize.height,
     position: {
       x: result.position.x,
-      y: result.position.y
+      y: result.position.y,
     },
     imageSize: {
       width: result.imageSize.width,
-      height: result.imageSize.height
+      height: result.imageSize.height,
     },
     background: config.background || 'transparent',
-    filters: layout.filters // 기존 필터 유지
+    filters: layout.filters, // 기존 필터 유지
   };
 }
 
@@ -150,10 +140,7 @@ export function calculateAllFilters(operations: LazyOperation[]): string {
  * - 모든 필터를 한 번에 적용하고
  * - 단 한 번의 drawImage로 모든 처리 완료
  */
-export function renderAllOperationsOnce(
-  sourceImage: HTMLImageElement,
-  operations: LazyOperation[]
-): HTMLCanvasElement {
+export function renderAllOperationsOnce(sourceImage: HTMLImageElement, operations: LazyOperation[]): HTMLCanvasElement {
   // 1. 모든 연산을 분석하여 최종 레이아웃 계산
   const layout = analyzeAllOperations(sourceImage, operations);
 
@@ -164,10 +151,7 @@ export function renderAllOperationsOnce(
 
   const ctx = canvas.getContext('2d');
   if (!ctx) {
-    throw new ImageProcessError(
-      'Canvas 2D context를 생성할 수 없습니다',
-      'CANVAS_CONTEXT_ERROR'
-    );
+    throw new ImageProcessError('Canvas 2D context를 생성할 수 없습니다', 'CANVAS_CONTEXT_ERROR');
   }
 
   // 3. 고품질 렌더링 설정
@@ -217,7 +201,7 @@ function setupHighQualityRendering(ctx: CanvasRenderingContext2D): void {
  * 디버깅용: 레이아웃 정보 출력
  */
 export function debugLayout(layout: FinalLayout, operationCount: number): void {
-  console.log('🎯 단일 렌더링 레이아웃:', {
+  debugLog.log('🎯 단일 렌더링 레이아웃:', {
     canvasSize: `${layout.width}x${layout.height}`,
     imagePosition: `(${layout.position.x}, ${layout.position.y})`,
     imageSize: `${layout.imageSize.width}x${layout.imageSize.height}`,
@@ -225,6 +209,6 @@ export function debugLayout(layout: FinalLayout, operationCount: number): void {
     filters: layout.filters,
     operationCount,
     renderingApproach: 'single-pass',
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
 }
