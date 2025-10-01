@@ -32,7 +32,7 @@ export { createThumbnail, createAvatar, createSocialImage } from './presets';
 export type { ThumbnailOptions, AvatarOptions, SocialImageOptions, SocialPlatform } from './presets';
 
 // 유틸리티 함수들
-export { toBlob, toBlobDetailed, toDataURL, toDataURLDetailed, toFile, toFileDetailed } from './utils';
+export { toBlob, toBlobDetailed, toDataURL, toDataURLDetailed, toFile, toFileDetailed, toElement } from './utils';
 export type {
   BlobOptions,
   BlobDetailedOptions,

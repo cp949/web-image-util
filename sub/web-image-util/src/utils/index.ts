@@ -13,6 +13,7 @@ export {
   toDataURLDetailed,
   toFile,
   toFileDetailed,
+  toElement,
   type BlobOptions,
   type BlobDetailedOptions,
   type DataURLOptions,
@@ -28,8 +29,6 @@ export {
   type SvgCompatibilityOptions,
   type SvgCompatibilityReport,
 } from './svg-compatibility';
-
-// (제거됨: ImageSourceConverter, SystemValidator)
 
 // 브라우저 기능 감지 시스템
 export {
@@ -49,12 +48,3 @@ export {
 
 // SVG 벡터 최적화 시스템
 export { SvgOptimizer, type SvgOptimizationOptions, type OptimizationResult } from './svg-optimizer';
-
-// ============================================================================
-// DEBUG UTILITIES - 내부 개발 도구 (공개 API에서 제외)
-// ============================================================================
-//
-// 디버그 유틸리티는 라이브러리 내부에서만 사용됩니다.
-// 사용자가 직접 호출할 필요가 없으므로 export에서 제외합니다.
-//
-// export { isDevelopmentMode, debugLog, productionLog } from './debug';

@@ -473,6 +473,25 @@ async function blobToDataURL(blob: Blob): Promise<string> {
 }
 
 /**
+ * 이미지 소스를 HTMLImageElement로 변환
+ *
+ * @param source 이미지 소스 (HTMLImageElement, Blob, URL, Data URL, SVG XML, ArrayBuffer 등)
+ * @returns HTMLImageElement Promise
+ *
+ * @example
+ * ```typescript
+ * import { toElement } from '@cp949/web-image-util/utils';
+ *
+ * const element = await toElement(blob);
+ * const element2 = await toElement('https://example.com/image.jpg');
+ * const element3 = await toElement('<svg>...</svg>');
+ * ```
+ */
+export async function toElement(source: ImageSource): Promise<HTMLImageElement> {
+  return convertToImageElement(source);
+}
+
+/**
  * HTMLImageElement를 Canvas로 변환
  */
 async function imageElementToCanvas(imageElement: HTMLImageElement): Promise<HTMLCanvasElement> {

@@ -158,9 +158,13 @@ import {
   toBlob,
   toDataURL,
   toFile,
+  toElement,
   enhanceBrowserCompatibility,
-  SystemValidator
-} from '@cp949/web-image-util/utils';
+  features
+} from '@cp949/web-image-util';
+
+// 이미지 소스를 HTMLImageElement로 변환
+const imageElement = await toElement(blob);
 
 // SVG 호환성 개선
 const { enhanced, report } = enhanceBrowserCompatibility(svgString, {
@@ -171,9 +175,10 @@ const { enhanced, report } = enhanceBrowserCompatibility(svgString, {
 // 직접 변환 (체이닝 없이)
 const blob = await toBlob(canvas, { format: 'webp', quality: 0.8 });
 
-// 시스템 검증
-const validation = SystemValidator.validateSystem();
-console.log('브라우저 지원:', validation.browserSupport);
+// 브라우저 기능 지원 확인
+console.log('WebP 지원:', features.webp);
+console.log('AVIF 지원:', features.avif);
+console.log('OffscreenCanvas 지원:', features.offscreenCanvas);
 ```
 
 ---
