@@ -1,39 +1,93 @@
 /**
  * SVG 복잡도 분석 시스템
  *
+ * @description
  * SVG의 구조와 내용을 분석하여 렌더링 복잡도를 계산하고
- * 최적의 품질 레벨을 자동으로 결정하는 시스템
+ * 최적의 품질 레벨을 자동으로 결정하는 지능형 분석 시스템
+ *
+ * **핵심 기능:**
+ * - 다양한 SVG 요소별 복잡도 가중치 적용
+ * - 파일 크기, 고급 기능 사용 여부 종합 분석
+ * - 브라우저 렌더링 성능을 고려한 품질 레벨 추천
+ * - 분석 실패 시 안전한 폴백 제공
  */
 
-// SVG 복잡도 메트릭 인터페이스
+/**
+ * SVG 복잡도 메트릭 인터페이스
+ *
+ * @description SVG 분석을 통해 수집되는 다양한 복잡도 지표들
+ */
 export interface SvgComplexityMetrics {
-  pathCount: number; // path 요소 개수
-  gradientCount: number; // 그라데이션 개수
-  filterCount: number; // 필터 효과 개수
-  animationCount: number; // 애니메이션 요소 개수
-  textElementCount: number; // 텍스트 요소 개수
-  totalElementCount: number; // 전체 요소 개수
-  hasClipPath: boolean; // 클리핑 패스 사용 여부
-  hasMask: boolean; // 마스크 사용 여부
-  fileSize: number; // 파일 크기 (bytes)
+  /** path 요소 개수 - 벡터 경로의 복잡성 지표 */
+  pathCount: number;
+  /** 그라데이션 개수 - 색상 보간 계산 복잡도 */
+  gradientCount: number;
+  /** 필터 효과 개수 - 가장 높은 렌더링 비용 */
+  filterCount: number;
+  /** 애니메이션 요소 개수 - 동적 처리 복잡도 */
+  animationCount: number;
+  /** 텍스트 요소 개수 - 폰트 렌더링 복잡도 */
+  textElementCount: number;
+  /** 전체 요소 개수 - 전반적인 DOM 복잡도 */
+  totalElementCount: number;
+  /** 클리핑 패스 사용 여부 - 고급 마스킹 기능 */
+  hasClipPath: boolean;
+  /** 마스크 사용 여부 - 고급 투명도 처리 */
+  hasMask: boolean;
+  /** 파일 크기 (bytes) - 메모리 사용량 지표 */
+  fileSize: number;
 }
 
-// 복잡도 분석 결과
+/**
+ * 복잡도 분석 결과 인터페이스
+ *
+ * @description SVG 복잡도 분석의 최종 결과를 담는 종합 보고서
+ */
 export interface ComplexityAnalysisResult {
+  /** 수집된 메트릭 정보 */
   metrics: SvgComplexityMetrics;
-  complexityScore: number; // 0.0 ~ 1.0 복잡도 점수
+  /** 0.0 ~ 1.0 범위의 정규화된 복잡도 점수 */
+  complexityScore: number;
+  /** 분석 결과에 기반한 권장 품질 레벨 */
   recommendedQuality: QualityLevel;
-  reasoning: string[]; // 추천 이유 목록
+  /** 추천 근거가 되는 구체적인 이유들 */
+  reasoning: string[];
 }
 
-// 품질 레벨 타입
+/**
+ * SVG 렌더링 품질 레벨
+ *
+ * @description 복잡도에 따른 4단계 품질 레벨
+ * - low: 단순한 SVG, 기본 렌더링
+ * - medium: 보통 복잡도, 표준 품질
+ * - high: 복잡한 SVG, 고품질 렌더링
+ * - ultra: 매우 복잡하거나 대용량 SVG, 최고 품질
+ */
 export type QualityLevel = 'low' | 'medium' | 'high' | 'ultra';
 
 /**
  * SVG 복잡도 분석 메인 함수
  *
- * @param svgString SVG XML 문자열
- * @returns 복잡도 분석 결과
+ * @description
+ * SVG 문자열을 파싱하여 복잡도를 종합적으로 분석하고
+ * 최적의 렌더링 품질 레벨을 추천하는 핵심 함수
+ *
+ * **분석 과정:**
+ * 1. XML 파싱 및 유효성 검증
+ * 2. 다양한 복잡도 메트릭 수집
+ * 3. 가중치 기반 복잡도 점수 계산
+ * 4. 품질 레벨 결정 및 추천 근거 생성
+ *
+ * @param svgString 분석할 SVG XML 문자열
+ * @returns 복잡도 분석 결과 (메트릭, 점수, 권장 품질, 근거)
+ *
+ * @example
+ * ```typescript
+ * const result = analyzeSvgComplexity('<svg>...</svg>');
+ * console.log(`복잡도: ${result.complexityScore}`);
+ * console.log(`권장 품질: ${result.recommendedQuality}`);
+ * console.log(`근거: ${result.reasoning.join(', ')}`);
+ * ```
  */
 export function analyzeSvgComplexity(svgString: string): ComplexityAnalysisResult {
   try {

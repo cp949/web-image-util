@@ -1,7 +1,11 @@
 /**
- * SVG Browser Compatibility Utilities
- * - Focus on rendering compatibility while preserving original intent.
- * - Never overwrite existing semantics (viewBox/width/height/preserveAspectRatio/xmlns*).
+ * SVG 브라우저 호환성 유틸리티
+ *
+ * @description
+ * SVG의 브라우저 간 렌더링 호환성을 향상시키는 유틸리티 모음
+ * - 원본 SVG의 의도를 보존하면서 렌더링 호환성에 집중
+ * - 기존 의미 정보를 덮어쓰지 않음 (viewBox/width/height/preserveAspectRatio/xmlns* 등)
+ * - 누락된 필수 속성들을 자동으로 보완
  */
 
 /**
@@ -213,7 +217,10 @@ function toMsg(e: unknown) {
   return e instanceof Error ? e.message : String(e);
 }
 
-/** Add xmlns + xmlns:xlink(if needed). Never overwrite existing. */
+/**
+ * 필수 네임스페이스 추가
+ * xmlns와 xmlns:xlink(필요한 경우)를 추가하되, 기존 설정을 덮어쓰지 않음
+ */
 function addRequiredNamespaces(root: Element, report: SvgCompatibilityReport) {
   const added: string[] = [];
   if (!root.getAttribute('xmlns')) {
@@ -228,7 +235,10 @@ function addRequiredNamespaces(root: Element, report: SvgCompatibilityReport) {
   report.addedNamespaces = added;
 }
 
-/** xlink:href -> href (if href absent). */
+/**
+ * SVG 문법 현대화
+ * xlink:href를 href로 변환 (href가 없는 경우에만)
+ */
 function modernizeSvgSyntax(root: Element, report: SvgCompatibilityReport) {
   let count = 0;
   const nodes = root.querySelectorAll('[xlink\\:href]');
@@ -245,14 +255,22 @@ function modernizeSvgSyntax(root: Element, report: SvgCompatibilityReport) {
   report.modernizedSyntax = count;
 }
 
-/** Add preserveAspectRatio default if missing. */
+/**
+ * preserveAspectRatio 기본값 추가
+ * 누락된 경우 기본 값을 추가
+ */
 function addPAR(root: Element) {
   if (!root.getAttribute('preserveAspectRatio')) {
     root.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   }
 }
 
-/** CSS length parser: returns (value, unit). Accepts -num, decimals, scientific, unit or %. */
+/**
+ * CSS 길이 값 파서
+ * @param input 파싱할 CSS 길이 값 문자열
+ * @returns 파싱된 숫자 값과 단위 (value, unit)
+ * @description 음수, 소수, 과학적 표기법, 단위(%, px 등) 모두 지원
+ */
 function parseCssLength(input?: string | null): { value: number | null; unit: string | null } {
   if (!input) return { value: null, unit: null };
   const s = String(input).trim();
@@ -264,7 +282,10 @@ function parseCssLength(input?: string | null): { value: number | null; unit: st
   return { value: num, unit };
 }
 
-/** Extract width/height from attributes or style. */
+/**
+ * 크기 힌트 추출
+ * SVG 엘리먼트의 속성이나 스타일에서 width/height 값을 추출
+ */
 function extractSizeHints(root: Element): { wAttr?: string; hAttr?: string } {
   const wAttr = root.getAttribute('width') ?? getStyleLength(root, 'width') ?? undefined;
   const hAttr = root.getAttribute('height') ?? getStyleLength(root, 'height') ?? undefined;
@@ -278,7 +299,10 @@ function getStyleLength(el: Element, prop: 'width' | 'height'): string | null {
   return m?.[1]?.trim() ?? null;
 }
 
-/** Main policy for setting viewBox (and possibly width/height). */
+/**
+ * viewBox 정책 적용
+ * @description viewBox를 설정하고 필요시 width/height도 함께 설정하는 메인 정책 함수
+ */
 function applyViewBoxPolicy(
   root: Element,
   opts: Required<SvgCompatibilityOptions>,
@@ -378,12 +402,18 @@ function applyViewBoxPolicy(
   setVB(0, 0, opts.defaultSize.width, opts.defaultSize.height);
 }
 
-/** Sanitize number to avoid scientific notation in attributes. */
+/**
+ * 숫자 값 정제
+ * @description 속성에서 과학적 표기법을 피하도록 숫자를 정제
+ */
 function sanitizeNum(n: number) {
   return Number.isFinite(n) ? parseFloat(n.toFixed(6)) : 0;
 }
 
-/** Compute bbox: try live getBBox when enabled; else heuristic if allowed; otherwise null. */
+/**
+ * 문자열 기반 휴리스틱 BBox 계산
+ * @description SVG 문자열을 정규표현식으로 분석하여 대략적인 경계상자를 계산
+ */
 function heuristicBBoxFromString(
   svgString: string
 ): { minX: number; minY: number; width: number; height: number } | null {
@@ -474,7 +504,10 @@ function isBrowser() {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
 }
 
-/** Attach to hidden SVG in DOM and compute getBBox result. */
+/**
+ * 실시간 getBBox 계산
+ * @description 숨겨진 SVG를 DOM에 부착하여 실제 getBBox 결과를 계산
+ */
 function liveGetBBox(parsedRoot: SVGSVGElement): { minX: number; minY: number; width: number; height: number } | null {
   const tmpSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   tmpSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
@@ -508,9 +541,10 @@ function isValidBBox(b: { minX: number; minY: number; width: number; height: num
 }
 
 /**
- * Heuristic bbox:
- * - Supports: rect, circle, ellipse, line, polyline, polygon
- * - Ignores: path, text, filters, markers (use padding if needed)
+ * 휴리스틱 BBox 계산
+ * @description DOM 기반 경계상자 계산
+ * - 지원: rect, circle, ellipse, line, polyline, polygon
+ * - 무시: path, text, filters, markers (필요시 패딩 사용)
  */
 function heuristicBBox(root: Element): { minX: number; minY: number; width: number; height: number } | null {
   let minX = +Infinity,
@@ -594,7 +628,9 @@ function padBBox(b: { minX: number; minY: number; width: number; height: number 
   return { minX: b.minX - dx, minY: b.minY - dy, width: b.width + 2 * dx, height: b.height + 2 * dy };
 }
 
-/* ----------------------------- Simple facade ------------------------------ */
+/* ========================================================================== */
+/* 간단한 퍼사드 API - 이미지 리사이저용 단순화된 인터페이스                           */
+/* ========================================================================== */
 
 /**
  * SVG 기본 정규화 (이미지 리사이저용)
