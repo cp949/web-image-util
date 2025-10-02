@@ -155,16 +155,13 @@ for (const source of sources) {
 #### 🛠️ **유틸리티 & 변환**
 ```typescript
 import {
-  toBlob,
-  toDataURL,
-  toFile,
-  toElement,
+  convertToBlob,
+  convertToDataURL,
+  convertToFile,
+  convertToElement,
   enhanceBrowserCompatibility,
   features
 } from '@cp949/web-image-util';
-
-// 이미지 소스를 HTMLImageElement로 변환
-const imageElement = await toElement(blob);
 
 // SVG 호환성 개선
 const { enhanced, report } = enhanceBrowserCompatibility(svgString, {
@@ -172,8 +169,11 @@ const { enhanced, report } = enhanceBrowserCompatibility(svgString, {
   addNamespaces: true
 });
 
+// 이미지 소스를 HTMLImageElement로 변환
+const imageElement = await convertToElement(blob);
+
 // 직접 변환 (체이닝 없이)
-const blob = await toBlob(canvas, { format: 'webp', quality: 0.8 });
+const blob = await convertToBlob(canvas, { format: 'webp', quality: 0.8 });
 
 // 브라우저 기능 지원 확인
 console.log('WebP 지원:', features.webp);

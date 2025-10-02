@@ -86,43 +86,43 @@ describe('Shortcut API Integration Tests', () => {
     // Vitest 모범 사례: describe.each로 lazy 연산 테스트를 체계적으로 구조화
     describe.each([
       {
-        method: 'toWidth',
+        method: 'exactWidth',
         args: [100],
         description: 'resize to specific width maintaining aspect ratio',
         expectedScale: { sx: 1, sy: 1 }, // 100x100 원본 -> 100x100
       },
       {
-        method: 'toHeight',
+        method: 'exactHeight',
         args: [200],
         description: 'resize to specific height maintaining aspect ratio',
         expectedScale: { sx: 2, sy: 2 }, // 100x100 원본 -> 200x200
       },
       {
-        method: 'toScale',
+        method: 'scale',
         args: [1.5],
         description: 'uniform scale transformation',
         expectedScale: { sx: 1.5, sy: 1.5 },
       },
       {
-        method: 'toScale',
+        method: 'scale',
         args: [{ sx: 2, sy: 0.75 }],
         description: 'non-uniform scale with object notation',
         expectedScale: { sx: 2, sy: 0.75 },
       },
       {
-        method: 'toScaleX',
+        method: 'scaleX',
         args: [2],
         description: 'horizontal scale only',
         expectedScale: { sx: 2, sy: 1 },
       },
       {
-        method: 'toScaleY',
+        method: 'scaleY',
         args: [0.5],
         description: 'vertical scale only',
         expectedScale: { sx: 1, sy: 0.5 },
       },
       {
-        method: 'toScaleXY',
+        method: 'scaleXY',
         args: [2, 1.5],
         description: 'independent horizontal and vertical scale',
         expectedScale: { sx: 2, sy: 1.5 },

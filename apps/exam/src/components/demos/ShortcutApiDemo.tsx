@@ -87,7 +87,7 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   .toBlob();`,
   },
   {
-    name: 'toScale(0.5)',
+    name: 'scale(0.5)',
     description: '0.5배 균등 축소',
     operation: async (src: File) => processImage(src).shortcut.scale(0.5).toCanvas(),
     code: `await processImage(file)
@@ -95,7 +95,7 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   .toBlob();`,
   },
   {
-    name: 'toWidth(200)',
+    name: 'exactWidth(200)',
     description: '너비를 200px로 조정',
     operation: async (src: File) => processImage(src).shortcut.exactWidth(200).toCanvas(),
     code: `await processImage(file)
@@ -103,7 +103,7 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   .toBlob();`,
   },
   {
-    name: 'toHeight(200)',
+    name: 'exactHeight(200)',
     description: '높이를 200px로 조정',
     operation: async (src: File) => processImage(src).shortcut.exactHeight(200).toCanvas(),
     code: `await processImage(file)
@@ -111,7 +111,7 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   .toBlob();`,
   },
   {
-    name: 'toScaleX(2)',
+    name: 'scaleX(2)',
     description: '가로만 2배 확대',
     operation: async (src: File) => processImage(src).shortcut.scaleX(2).toCanvas(),
     code: `await processImage(file)
@@ -119,7 +119,7 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   .toBlob();`,
   },
   {
-    name: 'toScaleY(0.5)',
+    name: 'scaleY(0.5)',
     description: '세로만 0.5배 축소',
     operation: (src: File) => processImage(src).shortcut.scaleY(0.5).toCanvas(),
     code: `await processImage(file)
@@ -149,7 +149,7 @@ const CHAINING_OPERATIONS: ShortcutOperation[] = [
   .toBlob();`,
   },
   {
-    name: 'toWidth + blur',
+    name: 'exactWidth + blur',
     description: '너비 조정 후 블러 효과',
     operation: (src: File) => processImage(src).shortcut.exactWidth(300).blur(2).toCanvas(),
     code: `await processImage(file)

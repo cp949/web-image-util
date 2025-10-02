@@ -12,35 +12,35 @@ import { DataURLResultImpl, BlobResultImpl, FileResultImpl } from '../types/resu
 /**
  * 기본 Blob 변환 옵션
  */
-export interface BlobOptions extends OutputOptions {
+export interface ConvertToBlobOptions extends OutputOptions {
   // includeMetadata 옵션 제거 - 별도 함수로 분리
 }
 
 /**
  * 상세 정보 포함 Blob 변환 옵션
  */
-export interface BlobDetailedOptions extends OutputOptions {
+export interface ConvertToBlobDetailedOptions extends OutputOptions {
   // 상세 정보는 항상 포함됨
 }
 
 /**
  * 기본 DataURL 변환 옵션
  */
-export interface DataURLOptions extends OutputOptions {
+export interface ConvertToDataURLOptions extends OutputOptions {
   // includeMetadata 옵션 제거 - 별도 함수로 분리
 }
 
 /**
  * 상세 정보 포함 DataURL 변환 옵션
  */
-export interface DataURLDetailedOptions extends OutputOptions {
+export interface ConvertToDataURLDetailedOptions extends OutputOptions {
   // 상세 정보는 항상 포함됨
 }
 
 /**
  * 기본 File 변환 옵션
  */
-export interface FileOptions extends OutputOptions {
+export interface ConvertToFileOptions extends OutputOptions {
   /** 파일 확장자 자동 수정 여부 (기본: true) */
   autoExtension?: boolean;
 }
@@ -48,7 +48,7 @@ export interface FileOptions extends OutputOptions {
 /**
  * 상세 정보 포함 File 변환 옵션
  */
-export interface FileDetailedOptions extends OutputOptions {
+export interface ConvertToFileDetailedOptions extends OutputOptions {
   /** 파일 확장자 자동 수정 여부 (기본: true) */
   autoExtension?: boolean;
 }
@@ -66,19 +66,22 @@ export interface FileDetailedOptions extends OutputOptions {
  * @example
  * ```typescript
  * // 기본 사용법
- * const blob = await toBlob(imageElement);
+ * const blob = await convertToBlob(imageElement);
  *
  * // 포맷과 품질 지정
- * const blob = await toBlob(canvasElement, {
+ * const blob = await convertToBlob(canvasElement, {
  *   format: 'webp',
  *   quality: 0.8
  * });
  *
  * // Blob을 다시 Blob으로 (포맷 변환)
- * const webpBlob = await toBlob(jpegBlob, { format: 'webp' });
+ * const webpBlob = await convertToBlob(jpegBlob, { format: 'webp' });
  * ```
  */
-export async function toBlob(source: ImageSource | HTMLCanvasElement, options: BlobOptions = {}): Promise<Blob> {
+export async function convertToBlob(
+  source: ImageSource | HTMLCanvasElement,
+  options: ConvertToBlobOptions = {}
+): Promise<Blob> {
   try {
     // Canvas인 경우 직접 변환
     if (source instanceof HTMLCanvasElement) {
@@ -129,9 +132,9 @@ export async function toBlob(source: ImageSource | HTMLCanvasElement, options: B
  * });
  * ```
  */
-export async function toBlobDetailed(
+export async function convertToBlobDetailed(
   source: ImageSource | HTMLCanvasElement,
-  options: BlobDetailedOptions = {}
+  options: ConvertToBlobDetailedOptions = {}
 ): Promise<ResultBlob> {
   const startTime = Date.now();
 
@@ -183,19 +186,19 @@ export async function toBlobDetailed(
  * @example
  * ```typescript
  * // 기본 사용법
- * const dataURL = await toDataURL(imageElement);
+ * const dataURL = await convertToDataURL(imageElement);
  * imgTag.src = dataURL;
  *
  * // 고품질 JPEG로 변환
- * const dataURL = await toDataURL(blob, {
+ * const dataURL = await convertToDataURL(blob, {
  *   format: 'jpeg',
  *   quality: 0.95
  * });
  * ```
  */
-export async function toDataURL(
+export async function convertToDataURL(
   source: ImageSource | HTMLCanvasElement,
-  options: DataURLOptions = {}
+  options: ConvertToDataURLOptions = {}
 ): Promise<string> {
   try {
     // Canvas인 경우 직접 변환
@@ -250,9 +253,9 @@ export async function toDataURL(
  * });
  * ```
  */
-export async function toDataURLDetailed(
+export async function convertToDataURLDetailed(
   source: ImageSource | HTMLCanvasElement,
-  options: DataURLDetailedOptions = {}
+  options: ConvertToDataURLDetailedOptions = {}
 ): Promise<ResultDataURL> {
   const startTime = Date.now();
 
@@ -309,16 +312,16 @@ export async function toDataURLDetailed(
  * @example
  * ```typescript
  * // 기본 사용법
- * const file = await toFile(imageElement, 'photo.jpg');
+ * const file = await convertToFile(imageElement, 'photo.jpg');
  *
  * // WebP로 변환하여 파일 생성
- * const file = await toFile(blob, 'image.webp', {
+ * const file = await convertToFile(blob, 'image.webp', {
  *   format: 'webp',
  *   quality: 0.8
  * });
  *
  * // 확장자 자동 수정
- * const file = await toFile(source, 'image.png', {
+ * const file = await convertToFile(source, 'image.png', {
  *   format: 'jpeg', // 파일명이 자동으로 'image.jpeg'로 변경됨
  *   autoExtension: true
  * });
@@ -329,14 +332,14 @@ export async function toDataURLDetailed(
  * await fetch('/upload', { method: 'POST', body: formData });
  * ```
  */
-export async function toFile(
+export async function convertToFile(
   source: ImageSource | HTMLCanvasElement,
   filename: string,
-  options: FileOptions = {}
+  options: ConvertToFileOptions = {}
 ): Promise<File> {
   try {
     // Blob 생성
-    const blob = await toBlob(source, options);
+    const blob = await convertToBlob(source, options);
 
     // 파일명 확장자 자동 수정
     let finalFilename = filename;
@@ -379,16 +382,16 @@ export async function toFile(
  * });
  * ```
  */
-export async function toFileDetailed(
+export async function convertToFileDetailed(
   source: ImageSource | HTMLCanvasElement,
   filename: string,
-  options: FileDetailedOptions = {}
+  options: ConvertToFileDetailedOptions = {}
 ): Promise<ResultFile> {
   const startTime = Date.now();
 
   try {
     // Blob 생성 (상세 정보 포함)
-    const blobResult = await toBlobDetailed(source, options);
+    const blobResult = await convertToBlobDetailed(source, options);
 
     // 파일명 확장자 자동 수정
     let finalFilename = filename;
@@ -480,14 +483,14 @@ async function blobToDataURL(blob: Blob): Promise<string> {
  *
  * @example
  * ```typescript
- * import { toElement } from '@cp949/web-image-util/utils';
+ * import { convertToElement } from '@cp949/web-image-util/utils';
  *
- * const element = await toElement(blob);
- * const element2 = await toElement('https://example.com/image.jpg');
- * const element3 = await toElement('<svg>...</svg>');
+ * const element = await convertToElement(blob);
+ * const element2 = await convertToElement('https://example.com/image.jpg');
+ * const element3 = await convertToElement('<svg>...</svg>');
  * ```
  */
-export async function toElement(source: ImageSource): Promise<HTMLImageElement> {
+export async function convertToElement(source: ImageSource): Promise<HTMLImageElement> {
   return convertToImageElement(source);
 }
 

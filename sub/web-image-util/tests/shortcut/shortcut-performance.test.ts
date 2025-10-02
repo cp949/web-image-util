@@ -45,12 +45,12 @@ describe('Shortcut API Performance', () => {
         threshold: 100,
       },
       {
-        name: 'Lazy Operation - toScale',
+        name: 'Lazy Operation - scale',
         factory: () => processImage(testImageUrl).shortcut.scale(1.5),
         threshold: 100,
       },
       {
-        name: 'Lazy Operation - toWidth',
+        name: 'Lazy Operation - exactWidth',
         factory: () => processImage(testImageUrl).shortcut.exactWidth(300),
         threshold: 100,
       },
@@ -94,7 +94,7 @@ describe('Shortcut API Performance', () => {
       const startTime = performance.now();
 
       for (let i = 0; i < 100; i++) {
-        const processor = processImage(testImageUrl).shortcut.scale(1.5).blur(2);
+        processImage(testImageUrl).shortcut.scale(1.5).blur(2);
       }
 
       const endTime = performance.now();
@@ -109,7 +109,7 @@ describe('Shortcut API Performance', () => {
       const startTime = performance.now();
 
       for (let i = 0; i < 100; i++) {
-        const processor = processImage(testImageUrl).shortcut.exactWidth(300).blur(2);
+        processImage(testImageUrl).shortcut.exactWidth(300).blur(2);
       }
 
       const endTime = performance.now();

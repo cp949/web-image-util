@@ -289,10 +289,9 @@ export function ImageSourceConverterDemo() {
       .filter(([_, enabled]) => enabled)
       .map(([type, _]) => type.replace('to', ''));
 
-    const code = `import { ImageSourceConverter, from } from '@cp949/web-image-util/utils';
+    const code = `import { convertToBlob, convertToDataURL, convertToFile, convertToElement } from '@cp949/web-image-util';
 
-// 기본 사용법 - 클래스 기반 API
-const converter = ImageSourceConverter.from(imageSource);
+// 기본 사용법 - 함수 기반 API
 
 // 체이닝 변환 예제
 ${selectedConversions
@@ -341,7 +340,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
 
     return [
       {
-        title: 'ImageSourceConverter 사용 예제',
+        title: 'convertTo 함수들 사용 예제',
         code,
         language: 'typescript' as const,
       },
@@ -409,10 +408,10 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        ImageSourceConverter 테스트
+        이미지 변환 함수들 테스트
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-        ImageSourceConverter의 모든 변환 기능을 테스트해보세요. 다양한 입력 형태에서 여러 출력 형태로의 변환을
+        새로운 convertTo 변환 함수들의 모든 기능을 테스트해보세요. 다양한 입력 형태에서 여러 출력 형태로의 변환을
         지원합니다.
       </Typography>
 
@@ -705,7 +704,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
             {/* 사용 팁 */}
             <Alert severity="info">
               <Typography variant="body2">
-                <strong>ImageSourceConverter 특징:</strong>
+                <strong>convertTo 함수들 특징:</strong>
                 <br />
                 • 타입 안전한 변환: 각 메서드는 정확한 타입을 반환합니다
                 <br />
@@ -717,7 +716,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
             </Alert>
 
             {/* 코드 예제 */}
-            <CodeSnippet title="ImageSourceConverter 사용법" examples={generateCodeExample()} />
+            <CodeSnippet title="convertTo 함수들 사용법" examples={generateCodeExample()} />
           </Stack>
         </Grid>
       </Grid>

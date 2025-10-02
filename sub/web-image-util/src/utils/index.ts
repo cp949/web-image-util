@@ -7,19 +7,19 @@
 
 // 변환 함수들
 export {
-  toBlob,
-  toBlobDetailed,
-  toDataURL,
-  toDataURLDetailed,
-  toFile,
-  toFileDetailed,
-  toElement,
-  type BlobOptions,
-  type BlobDetailedOptions,
-  type DataURLOptions,
-  type DataURLDetailedOptions,
-  type FileOptions,
-  type FileDetailedOptions,
+  convertToBlob,
+  convertToBlobDetailed,
+  convertToDataURL,
+  convertToDataURLDetailed,
+  convertToFile,
+  convertToFileDetailed,
+  convertToElement,
+  type ConvertToBlobOptions,
+  type ConvertToBlobDetailedOptions,
+  type ConvertToDataURLOptions,
+  type ConvertToDataURLDetailedOptions,
+  type ConvertToFileOptions,
+  type ConvertToFileDetailedOptions,
 } from './converters';
 
 // SVG 호환성 함수들

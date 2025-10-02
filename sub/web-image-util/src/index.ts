@@ -32,14 +32,22 @@ export { createThumbnail, createAvatar, createSocialImage } from './presets';
 export type { ThumbnailOptions, AvatarOptions, SocialImageOptions, SocialPlatform } from './presets';
 
 // 유틸리티 함수들
-export { toBlob, toBlobDetailed, toDataURL, toDataURLDetailed, toFile, toFileDetailed, toElement } from './utils';
+export {
+  convertToBlob,
+  convertToBlobDetailed,
+  convertToDataURL,
+  convertToDataURLDetailed,
+  convertToFile,
+  convertToFileDetailed,
+  convertToElement,
+} from './utils';
 export type {
-  BlobOptions,
-  BlobDetailedOptions,
-  DataURLOptions,
-  DataURLDetailedOptions,
-  FileOptions,
-  FileDetailedOptions,
+  ConvertToBlobOptions,
+  ConvertToBlobDetailedOptions,
+  ConvertToDataURLOptions,
+  ConvertToDataURLDetailedOptions,
+  ConvertToFileOptions,
+  ConvertToFileDetailedOptions,
 } from './utils';
 
 // SVG 호환성 함수들

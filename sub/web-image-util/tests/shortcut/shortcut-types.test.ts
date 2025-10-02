@@ -17,11 +17,11 @@ describe('Shortcut API Type Safety', () => {
         factory: (url: string) => processImage(url).shortcut.containBox(300, 200),
       },
       {
-        operation: 'Lazy Operation (toScale)',
+        operation: 'Lazy Operation (scale)',
         factory: (url: string) => processImage(url).shortcut.scale(1.5),
       },
       {
-        operation: 'Lazy Operation (toWidth)',
+        operation: 'Lazy Operation (exactWidth)',
         factory: (url: string) => processImage(url).shortcut.exactWidth(300),
       },
     ])('$operation', ({ factory }) => {
