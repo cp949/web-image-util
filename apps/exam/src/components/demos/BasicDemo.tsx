@@ -84,7 +84,6 @@ export function BasicDemo() {
     [originalImage, processingOptions, handleProcess]
   );
 
-
   // 재시도
   const handleRetryClick = async () => {
     await retry(processingOptions);
@@ -109,64 +108,10 @@ console.log('처리 시간:', result.processingTime, 'ms');
 console.log('원본 크기:', result.originalSize);
 console.log('결과 크기:', result.width, 'x', result.height);`;
 
-    const constraintCode = `// 🚨 resize() 제약: 한 번만 호출 가능!
-import { processImage } from '@cp949/web-image-util';
-
-// ✅ 올바른 사용법: resize() 한 번만 호출
-const correct = await processImage(source)
-  .resize({ fit: 'cover', width: 300, height: 200 })
-  .blur(2)  // resize() 후 다른 효과는 가능
-  .toBlob();
-
-// ❌ 잘못된 사용법: resize() 중복 호출 (컴파일 에러!)
-try {
-  const wrong = await processImage(source)
-    .resize({ fit: 'cover', width: 300, height: 200 })
-    .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 에러!
-} catch (error) {
-  // ImageProcessError: resize()는 한 번만 호출할 수 있습니다
-  console.error(error.code); // 'MULTIPLE_RESIZE_NOT_ALLOWED'
-}
-
-// ✅ 여러 크기가 필요하면 별도 인스턴스 사용
-const [small, large] = await Promise.all([
-  processImage(source).resize({ fit: 'cover', width: 150, height: 100 }).toBlob(),
-  processImage(source).resize({ fit: 'cover', width: 600, height: 400 }).toBlob()
-]);`;
-
-    const qualityCode = `// 🎯 품질 개선: "계산은 미리, 렌더링은 한 번"
-import { processImage } from '@cp949/web-image-util';
-
-// SVG 고품질 처리 (scaleFactor 제거됨)
-const svgResult = await processImage(svgString)
-  .resize({ fit: 'contain', width: 800, height: 600 })
-  .toBlob('png');
-
-// 복합 처리도 한 번에 렌더링
-const complex = await processImage(source)
-  .resize({ fit: 'cover', width: 400, height: 300 })
-  .blur(1.5)
-  .toBlob('webp');
-
-// 타입 안전성: 컴파일 시점에 제약 검증
-const processor = processImage(source);
-processor.resize({ fit: 'cover', width: 300, height: 200 });
-// processor.resize(...); // ← TypeScript 컴파일 에러!`;
-
     return [
       {
         title: '기본 사용법',
         code: basicCode,
-        language: 'typescript',
-      },
-      {
-        title: 'resize() 제약 및 에러 처리',
-        code: constraintCode,
-        language: 'typescript',
-      },
-      {
-        title: '품질 개선 특징',
-        code: qualityCode,
         language: 'typescript',
       },
     ];
@@ -274,7 +219,6 @@ processor.resize({ fit: 'cover', width: 300, height: 200 });
                   </Box>
                 </Box>
 
-
                 {/* 크기 제한 옵션 */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
@@ -304,7 +248,7 @@ processor.resize({ fit: 'cover', width: 300, height: 200 });
                     sx={{ display: 'block', mb: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, ml: 4 }}>
-                    이미지 주변에 여백을 추가합니다. (액자 효과, 안전 영역)
+                    이미지 주변에 여백을 추가합니다.
                   </Typography>
 
                   {usePadding && (
@@ -344,7 +288,6 @@ processor.resize({ fit: 'cover', width: 300, height: 200 });
                   )}
                 </Box>
 
-
                 {/* 품질 슬라이더 */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
@@ -373,16 +316,6 @@ processor.resize({ fit: 'cover', width: 300, height: 200 });
                   placeholder="#ffffff"
                   sx={{ mb: 3 }}
                 />
-
-                {/* 자동 처리 안내 */}
-                <Box sx={{ p: 2, bgcolor: 'primary.50', borderRadius: 1, border: '1px solid', borderColor: 'primary.200' }}>
-                  <Typography variant="body2" color="primary.main">
-                    ✨ 자동 처리: 이미지 선택이나 옵션 변경 시 자동으로 처리됩니다
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    500ms 딜레이로 깜빡임을 최소화합니다
-                  </Typography>
-                </Box>
               </CardContent>
             </Card>
           </Stack>

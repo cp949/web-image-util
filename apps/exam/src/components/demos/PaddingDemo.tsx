@@ -89,14 +89,13 @@ export function PaddingDemo() {
 
   // 🎯 ProcessingStatus 깜빡임 방지를 위한 안정적인 처리 상태 (수동 처리만 사용)
   const [stableProcessing, setStableProcessing] = useState(false);
-  const [, cancelProcessingDebounce] = useDebounce(
+  useDebounce(
     () => {
       setStableProcessing(processing); // 실시간 처리 상태 제거
     },
     100, // 100ms 디바운스로 깜빡임 방지
     [processing]
   );
-
 
   // 처리 옵션 준비 (패딩 포함) - useMemo로 메모이제이션
   const processingOptions = useMemo((): ProcessingOptions => {
@@ -107,7 +106,7 @@ export function PaddingDemo() {
   }, [options, paddingMode, numberPadding, objectPadding]);
 
   // useDebounce로 옵션 변경 디바운싱 (수동 처리만 사용)
-  const [, cancelDebounce] = useDebounce(
+  useDebounce(
     async () => {
       if (originalImage && processingOptions) {
         // 수동 처리만 사용 (실시간 처리 비활성화로 깜빡임 방지)
@@ -180,12 +179,7 @@ const custom = await processImage(source)
     fit: 'contain',
     width: 300,
     height: 200,
-    padding: {
-      top: 10,
-      right: 20,
-      bottom: 30,
-      left: 40,
-    },
+    padding: { top: 10, right: 20, bottom: 30, left: 40, },
     background: '#f0f0f0',
   })
   .toBlob();
@@ -205,44 +199,6 @@ const partial = await processImage(source)
   })
   .toBlob('png');  // 투명도 지원 위해 PNG`;
 
-    const useCaseCode = `// 💡 실제 사용 사례
-
-// 🖼️ 액자 효과 (프레임)
-const frame = await processImage(photo)
-  .resize({
-    fit: 'contain',
-    width: 500,
-    height: 400,
-    padding: 30,  // 액자 테두리
-    background: '#8b4513',  // 나무색 프레임
-  })
-  .toBlob();
-
-// 📱 SNS 업로드 (안전 영역 확보)
-const social = await processImage(image)
-  .resize({
-    fit: 'contain',
-    width: 1080,
-    height: 1080,
-    padding: 50,  // 잘림 방지 여백
-    background: '#ffffff',
-  })
-  .toBlob('jpeg');
-
-// 🎨 썸네일 (그림자 효과용 여백)
-const thumbnail = await processImage(source)
-  .resize({
-    fit: 'cover',
-    width: 200,
-    height: 200,
-    padding: {
-      right: 8,   // 그림자 공간
-      bottom: 8,  // 그림자 공간
-    },
-    background: 'transparent',
-  })
-  .toBlob('png');`;
-
     return [
       {
         title: '기본 사용법',
@@ -252,11 +208,6 @@ const thumbnail = await processImage(source)
       {
         title: '패딩 패턴들',
         code: patternCode,
-        language: 'typescript',
-      },
-      {
-        title: '실제 사용 사례',
-        code: useCaseCode,
         language: 'typescript',
       },
     ];
