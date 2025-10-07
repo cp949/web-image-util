@@ -1,105 +1,105 @@
 # @cp949/web-image-util
 
-> 웹 브라우저를 위한 고성능 이미지 처리 라이브러리
+> High-performance image processing library for web browsers
 
-Canvas 2D API 기반으로 리사이징, SVG 처리, 포맷 변환 등 다양한 이미지 처리 기능을 제공합니다.
+Provides various image processing capabilities including resizing, SVG processing, and format conversion based on Canvas 2D API.
 
-**설계 철학**: [Sharp](https://github.com/lovell/sharp) 라이브러리의 API 설계를 웹 브라우저 환경에 맞게 구현하여, server-side 이미지 처리의 편의성을 클라이언트 사이드에서도 제공합니다.
+**Design Philosophy**: Implements the API design of the [Sharp](https://github.com/lovell/sharp) library adapted for web browser environments, bringing the convenience of server-side image processing to the client side.
 
 [![npm version](https://img.shields.io/npm/v/@cp949/web-image-util)](https://www.npmjs.com/package/@cp949/web-image-util)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## 주요 특징
+## Key Features
 
-- **🎯 완전한 타입 안전성**: TypeScript 지원과 Discriminated Union 타입 시스템
-- **🎨 SVG 고품질 처리**: 벡터 품질을 완전히 보존하는 특별 파이프라인
-- **🔗 체이닝 API**: 직관적인 메서드 체이닝으로 편리한 사용
-- **⚡ 고성능**: Canvas Pool, 스마트 포맷 선택 등 최적화
-- **🌐 의존성 없음**: 브라우저 네이티브 API만 사용
-- **📦 트리쉐이킹**: ES 모듈로 번들 크기 최적화
+- **🎯 Complete Type Safety**: TypeScript support with Discriminated Union type system
+- **🎨 High-Quality SVG Processing**: Special pipeline that fully preserves vector quality
+- **🔗 Chainable API**: Convenient usage with intuitive method chaining
+- **⚡ High Performance**: Optimizations including Canvas Pool and smart format selection
+- **🌐 Zero Dependencies**: Uses only browser native APIs
+- **📦 Tree-Shakable**: Bundle size optimization with ES modules
 
-## 설치
+## Installation
 
 ```bash
 npm install @cp949/web-image-util
 ```
 
-## 🚀 빠른 시작
+## 🚀 Quick Start
 
-### ⚡ 5분 내 첫 성공 경험
+### ⚡ First Success in 5 Minutes
 
 ```typescript
 import { processImage } from '@cp949/web-image-util';
 
-// 🎯 시나리오 1: SNS 프로필 이미지 (정사각형, 고품질)
+// 🎯 Scenario 1: Social media profile image (square, high quality)
 const profileImage = await processImage(userPhoto)
-  .shortcut.coverBox(400, 400)  // 정사각형으로 크롭
+  .shortcut.coverBox(400, 400)  // Crop to square
   .toBlob({ format: 'webp', quality: 0.9 });
 
-// 📱 시나리오 2: 반응형 썸네일 (빠른 로딩)
+// 📱 Scenario 2: Responsive thumbnail (fast loading)
 const thumbnail = await processImage(originalImage)
-  .shortcut.scale(0.5)  // 50% 축소
+  .shortcut.scale(0.5)  // 50% reduction
   .toBlob({ format: 'webp', quality: 0.8 });
 
-// 🎨 시나리오 3: 워터마크가 있는 배너
+// 🎨 Scenario 3: Banner with watermark
 const banner = await processImage(backgroundImage)
   .resize({ fit: 'cover', width: 1200, height: 400 })
-  .blur(1)  // 살짝 블러 처리
+  .blur(1)  // Slight blur effect
   .toBlob({ format: 'jpeg', quality: 0.85 });
 ```
 
-### 🎮 더 많은 예제
+### 🎮 More Examples
 
 ```typescript
-// ✨ 편의 함수로 더 간단하게
+// ✨ Even simpler with convenience functions
 import { createThumbnail, createAvatar } from '@cp949/web-image-util/presets';
 
 const thumbnail = await createThumbnail(imageFile, { width: 300, height: 200 });
 const avatar = await createAvatar(profilePhoto, { size: 128 });
 ```
 
-### 📦 프로젝트에 바로 적용
+### 📦 Direct Application to Your Project
 
 ```bash
-# 1. 설치
+# 1. Installation
 npm install @cp949/web-image-util
 
-# 2. 타입 정의 (TypeScript)
+# 2. Type definitions (TypeScript)
 import { processImage } from '@cp949/web-image-util';
 
-# 3. 첫 번째 이미지 처리
+# 3. First image processing
 const result = await processImage(file).shortcut.scale(0.8).toBlob();
 ```
 
-## 📖 목차
+## 📖 Table of Contents
 
-- [아키텍처](#-아키텍처)
-- [리사이징 가이드](#-리사이징-가이드)
+- [Architecture](#-architecture)
+- [Resizing Guide](#-resizing-guide)
 - [🚀 Shortcut API](#-shortcut-api)
-- [편의 함수 (Presets)](#-편의-함수-presets)
-- [입력/출력 타입](#-입력출력-타입)
-- [SVG 처리](#-svg-처리)
-- [API 레퍼런스](#-api-레퍼런스)
-- [브라우저 지원](#-브라우저-지원)
+- [Convenience Functions (Presets)](#-convenience-functions-presets)
+- [Input/Output Types](#-inputoutput-types)
+- [SVG Processing](#-svg-processing)
+- [API Reference](#-api-reference)
+- [Browser Support](#-browser-support)
 
 ---
 
-## 🏗️ 아키텍처
+## 🏗️ Architecture
 
-### 전체 흐름도
+### Overall Flow Diagram
 
 ```
-                                  ┌─────────────────┐
-                                  │  processImage() │
-                                  │   (팩토리 함수)  │
-                                  └────────┬────────┘
-                                           │
-                    ┌──────────────────────┴──────────────────────┐
-                    │                                              │
-            ┌───────▼────────┐                            ┌───────▼────────┐
-            │ SourceConverter│                            │ ImageProcessor │
-            │  (소스 변환)    │                            │  (체이닝 API)   │
-            └───────┬────────┘                            └───────┬────────┘
+                                  ┌────────────────────┐
+                                  │  processImage()    │
+                                  │ (factory function) │
+                                  └─────────┬──────────┘
+                                            │
+                    ┌───────────────────────┴─────────────────────┐
+                    │                                             │
+            ┌───────▼─────────┐                            ┌───────▼────────┐
+            │ SourceConverter │                            │ ImageProcessor │
+            │ (source convert)│                            │ (chaining API) │
+            └───────┬─────────┘                            └───────┬────────┘
                     │                                              │
           ┌─────────▼──────────┐                          ┌───────▼────────┐
           │ SVG Detection      │                          │ LazyPipeline   │
@@ -107,129 +107,130 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
           │ - sniffSvgFromBlob │                          │ - blur()       │
           │ - MIME + Content   │                          └───────┬────────┘
           └─────────┬──────────┘                                  │
-                    │                                              │
-          ┌─────────▼──────────┐                    ┌─────────────▼─────────────┐
-          │ convertSvgToElement│                    │ ResizeCalculator          │
-          │ - SVG 정규화        │                    │ - calculateFinalLayout()  │
-          │ - 복잡도 분석       │                    │ - fit 모드별 계산          │
-          │ - 품질 레벨 선택    │                    └─────────────┬─────────────┘
-          │ - 고품질 렌더링     │                                  │
-          └────────────────────┘                    ┌─────────────▼─────────────┐
+                    │                                             │
+          ┌─────────▼──────────────┐                ┌─────────────▼─────────────┐
+          │ convertSvgToElement    │                │ ResizeCalculator          │
+          │ - SVG normalization    │                │ - calculateFinalLayout()  │
+          │ - complexity analysis  │                │ - fit mode calculation    │
+          │ - quality level select │                └─────────────┬─────────────┘
+          │ - high quality render  │                              │
+          └────────────────────────┘                ┌─────────────▼─────────────┐
                                                     │ OnehotRenderer            │
-                                                    │ - 단일 drawImage() 호출    │
-                                                    │ - 품질 설정               │
-                                                    │ - 배경색 처리             │
+                                                    │ - single drawImage() call │
+                                                    │ - quality setting         │
+                                                    │ - background color        │
                                                     └───────────────────────────┘
 ```
 
-### 핵심 플로우
 
-1. **입력 처리**: 다양한 소스(File, URL, SVG 등)를 HTMLImageElement로 변환
-2. **연산 누적**: 체이닝된 메서드들(.resize(), .blur() 등)이 LazyPipeline에 저장
-3. **일괄 렌더링**: 최종 출력 시에만 단일 Canvas 연산으로 모든 처리 실행
-4. **포맷 변환**: Canvas를 Blob, DataURL, File 등으로 변환
+### Core Flow
 
-### 주요 특징
+1. **Input Processing**: Convert various sources (File, URL, SVG, etc.) to HTMLImageElement
+2. **Operation Accumulation**: Chained methods (.resize(), .blur(), etc.) are stored in LazyPipeline
+3. **Batch Rendering**: Execute all processing with a single Canvas operation only at final output
+4. **Format Conversion**: Convert Canvas to Blob, DataURL, File, etc.
 
-- **지연 렌더링**: 중간 Canvas 생성 없이 메모리 효율적 처리
-- **SVG 호환성**: 브라우저별 SVG 렌더링 차이를 자동 보정
-- **타입 안전성**: 컴파일 타임에 잘못된 메서드 체이닝 방지
-- **스마트 포맷**: 브라우저 지원에 따른 최적 포맷 자동 선택
+### Key Features
+
+- **Lazy Rendering**: Memory-efficient processing without creating intermediate Canvas
+- **SVG Compatibility**: Automatic correction of browser-specific SVG rendering differences
+- **Type Safety**: Prevent incorrect method chaining at compile time
+- **Smart Format**: Automatic selection of optimal format based on browser support
 
 ---
 
-## 🎯 리사이징 가이드
+## 🎯 Resizing Guide
 
-### Fit 모드
+### Fit Modes
 
-5가지 리사이징 방식을 제공합니다:
+Provides 5 different resizing methods:
 
-| fit 모드  | 비율 유지 | 전체 보임 | 여백 생성 | 잘림 | 확대/축소 | 사용 사례        |
-| --------- | --------- | --------- | --------- | ---- | --------- | ---------------- |
-| `cover`   | ✅         | ❌         | ❌         | ✅    | 둘 다     | 썸네일, 배경     |
-| `contain` | ✅         | ✅         | ✅         | ❌    | 둘 다     | 갤러리, 프리뷰   |
-| `fill`    | ❌         | ✅         | ❌         | ❌    | 둘 다     | 정확한 크기 필요 |
-| `maxFit`  | ✅         | ✅         | ❌         | ❌    | 축소만    | 최대 크기 제한   |
-| `minFit`  | ✅         | ✅         | ❌         | ❌    | 확대만    | 최소 크기 보장   |
+| fit mode  | Maintain Ratio | Show Full | Add Padding | Crop | Scale | Use Case         |
+| --------- | -------------- | --------- | ----------- | ---- | ----- | ---------------- |
+| `cover`   | ✅              | ❌         | ❌           | ✅    | Both  | Thumbnails, backgrounds |
+| `contain` | ✅              | ✅         | ✅           | ❌    | Both  | Gallery, preview |
+| `fill`    | ❌              | ✅         | ❌           | ❌    | Both  | Exact size needed |
+| `maxFit`  | ✅              | ✅         | ❌           | ❌    | Shrink only | Maximum size limit |
+| `minFit`  | ✅              | ✅         | ❌           | ❌    | Enlarge only | Minimum size guarantee |
 
-### 기본 사용법
+### Basic Usage
 
 ```typescript
-// cover: 비율 유지하며 전체 영역 채움 (기본값, 잘림 가능)
+// cover: Maintain ratio and fill entire area (default, cropping possible)
 await processImage(source)
   .resize({ fit: 'cover', width: 300, height: 200 })
   .toBlob();
 
-// contain: 비율 유지하며 전체 이미지 보임 (여백 생성)
+// contain: Maintain ratio and show full image (padding added)
 await processImage(source)
   .resize({
     fit: 'contain',
     width: 300,
     height: 200,
-    background: '#ffffff'  // 여백 색상
+    background: '#ffffff'  // Padding color
   })
   .toBlob();
 
-// fill: 비율 무시하고 정확히 맞춤 (이미지 변형됨)
+// fill: Ignore ratio and fit exactly (image distorted)
 await processImage(source)
   .resize({ fit: 'fill', width: 300, height: 200 })
   .toBlob();
 
-// maxFit: 축소만 (확대 안함) - 원본 크기 보호
+// maxFit: Shrink only (no enlargement) - Protect original size
 await processImage(source)
   .resize({ fit: 'maxFit', width: 800, height: 600 })
   .toBlob();
 
-// minFit: 확대만 (축소 안함) - 최소 크기 보장
+// minFit: Enlarge only (no shrinking) - Guarantee minimum size
 await processImage(source)
   .resize({ fit: 'minFit', width: 800, height: 600 })
   .toBlob();
 ```
 
-### 한쪽 크기만 지정
+### Specifying Only One Dimension
 
 ```typescript
-// 너비만 지정 (높이는 비율에 따라 자동 계산)
+// Specify width only (height calculated automatically based on ratio)
 await processImage(source)
   .resize({ fit: 'maxFit', width: 800 })
   .toBlob();
 
-// 높이만 지정 (너비는 비율에 따라 자동 계산)
+// Specify height only (width calculated automatically based on ratio)
 await processImage(source)
   .resize({ fit: 'maxFit', height: 600 })
   .toBlob();
 ```
 
-### 실무 예제
+### Practical Examples
 
 ```typescript
-// 썸네일 (정사각형, 잘림 허용)
+// Thumbnail (square, cropping allowed)
 const thumbnail = await processImage(photo)
   .resize({ fit: 'cover', width: 200, height: 200 })
   .toBlob({ format: 'webp', quality: 0.8 });
 
-// 프로필 아바타 (고품질)
+// Profile avatar (high quality)
 const avatar = await processImage(userPhoto)
   .resize({ fit: 'cover', width: 150, height: 150 })
   .toBlob({ format: 'png', quality: 0.9 });
 
-// 모바일 최적화 (원본 크기 보호)
+// Mobile optimization (protect original size)
 const mobile = await processImage(photo)
   .resize({ fit: 'maxFit', width: 400 })
   .toBlob({ format: 'webp', quality: 0.7 });
 ```
 
-### 중요: resize() 제약사항
+### Important: resize() Constraints
 
-**resize()는 한 번만 호출 가능합니다.** 이는 이미지 품질(특히 SVG)을 보장하기 위한 설계 결정입니다.
+**resize() can only be called once.** This is a design decision to ensure image quality (especially for SVG).
 
 ```typescript
-// ❌ 에러: resize() 두 번 호출
+// ❌ Error: Calling resize() twice
 const wrong = await processImage(source)
   .resize({ fit: 'cover', width: 300, height: 200 })
   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 ImageProcessError
 
-// ✅ 올바름: 최종 크기를 직접 지정
+// ✅ Correct: Specify final size directly
 const correct = await processImage(source)
   .resize({ fit: 'contain', width: 400, height: 300 })
   .toBlob();
@@ -239,45 +240,45 @@ const correct = await processImage(source)
 
 ## 🚀 Shortcut API
 
-Sharp.js와 유사한 직관적인 shortcut API를 제공합니다. 자주 사용하는 리사이징 패턴을 간결하게 표현할 수 있습니다.
+Provides intuitive shortcut API similar to Sharp.js. Commonly used resizing patterns can be expressed concisely.
 
-### 사용법
+### Usage
 
 ```typescript
 import { processImage } from '@cp949/web-image-util';
 
-// Shortcut API를 통해 간편하게 사용
+// Easy usage with Shortcut API
 const result = await processImage(source)
   .shortcut.coverBox(300, 200)
   .toBlob();
 
-// 체이닝도 가능
+// Chaining is also possible
 const blurred = await processImage(source)
   .shortcut.scale(1.5)
   .blur(2)
   .toBlob();
 ```
 
-### 직접 매핑 (Direct Mapping)
+### Direct Mapping
 
-ResizeConfig로 즉시 변환되는 편의 메서드들입니다.
+Convenience methods that are immediately converted to ResizeConfig.
 
 ```typescript
-// 박스에 꽉 채우기 (일부 잘릴 수 있음)
+// Fill box completely (some parts may be cropped)
 await processImage(source).shortcut.coverBox(300, 200).toBlob();
 
-// 박스 안에 전체 이미지 맞추기
+// Fit entire image within box
 await processImage(source).shortcut.containBox(300, 200).toBlob();
 
-// 정확한 크기로 변환
+// Convert to exact size
 await processImage(source).shortcut.exactSize(300, 200).toBlob();
 
-// 크기 제한
+// Size limits
 await processImage(source).shortcut.maxWidth(500).toBlob();
 await processImage(source).shortcut.maxHeight(400).toBlob();
 await processImage(source).shortcut.maxSize({ width: 800, height: 600 }).toBlob();
 
-// 최소 크기 보장
+// Minimum size guarantee
 await processImage(source).shortcut.minWidth(300).toBlob();
 await processImage(source).shortcut.minHeight(200).toBlob();
 await processImage(source).shortcut.minSize({ width: 400, height: 300 }).toBlob();
@@ -293,8 +294,8 @@ await processImage(source).shortcut.scale(1.5).toBlob();        // 1.5배 확대
 await processImage(source).shortcut.scale(0.5).toBlob();        // 0.5배 축소
 
 // 한쪽 크기 지정
-await processImage(source).shortcut.exactWidth(300).toBlob();        // 너비 300px로 조정
-await processImage(source).shortcut.exactHeight(200).toBlob();       // 높이 200px로 조정
+await processImage(source).shortcut.exactWidth(300).toBlob();   // 너비 300px로 조정
+await processImage(source).shortcut.exactHeight(200).toBlob();  // 높이 200px로 조정
 
 // 개별 축 스케일링
 await processImage(source).shortcut.scaleX(2).toBlob();         // 가로만 2배
@@ -369,9 +370,9 @@ await processImage(source).shortcut.coverBox(300, 200, {
 
 ---
 
-## 📋 편의 함수 (Presets)
+## 📋 Convenience Functions (Presets)
 
-각 용도에 최적화된 설정을 자동으로 적용하는 함수들입니다.
+Functions that automatically apply optimized settings for each purpose.
 
 ```typescript
 import {
@@ -406,11 +407,11 @@ const instagramPost = await createSocialImage(photo, {
 
 ---
 
-## 📥📤 입력/출력 타입
+## 📥📤 Input/Output Types
 
-### 입력 (ImageSource)
+### Input (ImageSource)
 
-다양한 형태의 이미지 소스를 지원합니다:
+Supports various types of image sources:
 
 ```typescript
 // File/Blob 객체
@@ -496,11 +497,11 @@ ctx.fillText('워터마크', 10, 20);
 
 ---
 
-## 🎨 SVG 처리
+## 🎨 SVG Processing
 
-### SVG 자동 감지 및 고품질 렌더링
+### Automatic SVG Detection and High-Quality Rendering
 
-라이브러리의 **핵심 기술**로, 다양한 형태의 SVG 입력을 정확하고 안전하게 감지하여 벡터 품질을 완전히 보존합니다.
+The **core technology** of the library, accurately and safely detecting various forms of SVG input to fully preserve vector quality.
 
 #### 지원하는 SVG 소스 타입
 
@@ -559,11 +560,11 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 
 ---
 
-## 📚 API 레퍼런스
+## 📚 API Reference
 
 ### processImage()
 
-메인 진입점 함수로, 이미지 처리 체이닝을 시작합니다.
+The main entry point function that starts image processing chaining.
 
 ```typescript
 function processImage(source: ImageSource): ImageProcessor
@@ -663,9 +664,9 @@ import { toBlob, toDataURL, toFile } from '@cp949/web-image-util/utils';
 
 ---
 
-## ⚙️ 브라우저 지원
+## ⚙️ Browser Support
 
-**권장 브라우저 버전**:
+**Recommended Browser Versions**:
 - Chrome 88+
 - Firefox 90+
 - Safari 14+

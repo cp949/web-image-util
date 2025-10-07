@@ -1,29 +1,29 @@
-# @cp949/web-image-util 예제 앱
+# @cp949/web-image-util Example App
 
-`@cp949/web-image-util` 라이브러리의 기능을 시연하고 테스트하기 위한 Next.js 15 App Router 기반 웹 애플리케이션입니다.
+A Next.js 15 App Router-based web application for demonstrating and testing the features of the `@cp949/web-image-util` library.
 
-## 🚀 빠른 시작
+## 🚀 Quick Start
 
-### 의존성 설치
+### Install Dependencies
 
 ```bash
-# 루트 디렉토리에서
+# From root directory
 pnpm install
 ```
 
-### 개발 서버 실행
+### Run Development Server
 
 ```bash
-# 예제 앱 디렉토리로 이동
+# Navigate to example app directory
 cd apps/exam
 
-# 개발 서버 실행
+# Run development server
 pnpm dev
 ```
 
-브라우저에서 `http://localhost:3000`을 열면 예제 애플리케이션을 확인할 수 있습니다.
+Open `http://localhost:3000` in your browser to view the example application.
 
-### 프로덕션 빌드
+### Production Build
 
 ```bash
 pnpm build
@@ -32,116 +32,116 @@ pnpm start
 
 ---
 
-## 📱 주요 기능
+## 📱 Key Features
 
-### ✨ 기본 기능 (v2.0 API)
+### ✨ Core Features (v2.0 API)
 
-#### 1. **기본 이미지 처리** (`/basic`)
-- 리사이징: 너비/높이 설정, Fit 모드 (cover, contain, fill, inside, outside)
-- 포맷 변환: JPEG, PNG, WebP
-- 품질 조정: 10-100% 슬라이더
-- 고급 옵션: 확대/축소 금지, 배경색 설정
-- 실시간 미리보기 및 Before/After 비교
-- 메타데이터 표시: 처리 시간, 파일 크기, 압축률
+#### 1. **Basic Image Processing** (`/basic`)
+- Resizing: Width/height settings, Fit modes (cover, contain, fill, inside, outside)
+- Format conversion: JPEG, PNG, WebP
+- Quality adjustment: 10-100% slider
+- Advanced options: Prevent enlargement/reduction, background color settings
+- Real-time preview and Before/After comparison
+- Metadata display: Processing time, file size, compression ratio
 
-**핵심 기능**:
-- `processImage()` 함수 기반 v2.0 API 데모
-- `ResultBlob`, `ResultDataURL` 타입 시스템 활용
-- `ImageProcessError` 에러 핸들링
-- 샘플 이미지 선택기 통합
-
----
-
-#### 2. **프리셋 함수** (`/presets`)
-- **썸네일 생성**: 50px, 100px, 150px, 200px (WebP 최적화)
-- **아바타 생성**: 정사각형, 고품질 PNG (향후: 원형 마스킹, 테두리)
-- **소셜 미디어 이미지**: Instagram, Twitter, Facebook, LinkedIn, YouTube 플랫폼별 최적 크기
-
-**특징**:
-- `createThumbnail`, `createAvatar`, `createSocialImage` 프리셋 함수
-- 플랫폼별 권장 크기 자동 적용
-- 성능 최적화된 기본 설정
+**Core Features**:
+- v2.0 API demo based on `processImage()` function
+- Utilization of `ResultBlob`, `ResultDataURL` type system
+- `ImageProcessError` error handling
+- Integrated sample image selector
 
 ---
 
-#### 3. **고급 기능** (`/advanced`)
-- **워터마크**: 텍스트/이미지 워터마크 합성 (9가지 위치, 불투명도 조정)
-- **필터**: Grayscale, Sepia, Brightness, Contrast, Blur (실시간 미리보기)
-- **배치 처리**: 여러 이미지 동시 처리, 진행률 표시, ZIP 다운로드
+#### 2. **Preset Functions** (`/presets`)
+- **Thumbnail Generation**: 50px, 100px, 150px, 200px (WebP optimized)
+- **Avatar Creation**: Square, high-quality PNG (Future: circular masking, borders)
+- **Social Media Images**: Optimal sizes for Instagram, Twitter, Facebook, LinkedIn, YouTube platforms
 
-**특징**:
-- `AdvancedImageProcessor` 클래스 활용
-- 플러그인 기반 필터 시스템
-- 병렬 처리 및 성능 최적화
-
----
-
-### 🆕 v2.0 신기능
-
-#### 4. **SVG 품질 비교** (`/svg-quality-comparison`)
-- SVG를 래스터 이미지로 변환 시 품질 레벨 비교
-- 4가지 품질 레벨: 1x (low), 2x (standard), 3x (high), 4x (ultra)
-- 처리 시간 및 파일 크기 분석
-- 상세 비교 테이블 및 권장 사항
-
-**핵심 기술**:
-- SVG 복잡도 기반 자동 품질 선택 (`quality: 'auto'`)
-- 벡터 그래픽 품질 보존 시스템
-- 성능과 품질의 균형 최적화
+**Features**:
+- `createThumbnail`, `createAvatar`, `createSocialImage` preset functions
+- Automatic application of platform-specific recommended sizes
+- Performance-optimized default settings
 
 ---
 
-#### 5. **스마트 포맷 선택** (`/smart-format`)
-- JPEG, PNG, WebP 포맷 비교
-- 브라우저 지원 자동 감지 (WebP, AVIF, OffscreenCanvas)
-- 파일 크기 및 압축률 계산
-- 최적 포맷 자동 추천 로직
+#### 3. **Advanced Features** (`/advanced`)
+- **Watermark**: Text/image watermark composition (9 positions, opacity adjustment)
+- **Filters**: Grayscale, Sepia, Brightness, Contrast, Blur (real-time preview)
+- **Batch Processing**: Multiple image processing, progress indicators, ZIP download
 
-**추천 알고리즘**:
-1. WebP 지원 + 압축률 > 20% → **WebP**
-2. 투명도 필요 → **PNG**
-3. 기본값 → **JPEG**
-
----
-
-#### 6. **성능 벤치마크** (`/performance-benchmark`)
-- 소형/중형/대형 이미지 처리 시간 측정
-- 메모리 사용량 모니터링 (`usePerformanceMonitor` 훅)
-- 처리량(throughput) 계산
-- 벤치마크 결과 테이블 및 요약 통계
-
-**측정 항목**:
-- 처리 시간 (ms)
-- 메모리 사용량 (MB)
-- 처리량 (images/sec)
-- 성능 점수 (종합)
+**Features**:
+- Utilization of `AdvancedImageProcessor` class
+- Plugin-based filter system
+- Parallel processing and performance optimization
 
 ---
 
-### 🛠️ 편의 기능
+### 🆕 v2.0 New Features
 
-#### 샘플 이미지 선택기
-- 12개 샘플 이미지 (JPEG, PNG, SVG 각 4개)
-- 포맷별 필터링 (ALL/JPG/PNG/SVG)
-- 그리드 미리보기 및 원클릭 선택
-- 모든 주요 데모 페이지에 통합
+#### 4. **SVG Quality Comparison** (`/svg-quality-comparison`)
+- Quality level comparison when converting SVG to raster images
+- 4 quality levels: 1x (low), 2x (standard), 3x (high), 4x (ultra)
+- Processing time and file size analysis
+- Detailed comparison table and recommendations
 
-#### 이미지 업로더
-- 드래그앤드롭 지원
-- 파일 선택 버튼
-- 샘플 이미지 선택기 통합
-- 파일 타입 및 크기 검증
-
-#### Before/After 비교
-- 처리 전후 이미지 나란히 표시
-- 확대/축소 및 팬 기능
-- 메타데이터 표시 (크기, 파일 크기, 압축률)
+**Core Technology**:
+- Automatic quality selection based on SVG complexity (`quality: 'auto'`)
+- Vector graphics quality preservation system
+- Performance and quality balance optimization
 
 ---
 
-## 🏗️ 프로젝트 구조
+#### 5. **Smart Format Selection** (`/smart-format`)
+- JPEG, PNG, WebP format comparison
+- Automatic browser support detection (WebP, AVIF, OffscreenCanvas)
+- File size and compression ratio calculation
+- Optimal format automatic recommendation logic
 
-### 모노레포 구조
+**Recommendation Algorithm**:
+1. WebP support + compression ratio > 20% → **WebP**
+2. Transparency required → **PNG**
+3. Default → **JPEG**
+
+---
+
+#### 6. **Performance Benchmark** (`/performance-benchmark`)
+- Small/medium/large image processing time measurement
+- Memory usage monitoring (`usePerformanceMonitor` hook)
+- Throughput calculation
+- Benchmark results table and summary statistics
+
+**Measurement Items**:
+- Processing time (ms)
+- Memory usage (MB)
+- Throughput (images/sec)
+- Performance score (comprehensive)
+
+---
+
+### 🛠️ Convenience Features
+
+#### Sample Image Selector
+- 12 sample images (4 each of JPEG, PNG, SVG)
+- Format-based filtering (ALL/JPG/PNG/SVG)
+- Grid preview and one-click selection
+- Integrated into all major demo pages
+
+#### Image Uploader
+- Drag & drop support
+- File selection button
+- Integrated sample image selector
+- File type and size validation
+
+#### Before/After Comparison
+- Side-by-side display of before and after processing
+- Zoom and pan functionality
+- Metadata display (size, file size, compression ratio)
+
+---
+
+## 🏗️ Project Structure
+
+### Monorepo Structure
 
 ```
 web-image-util/                    # 모노레포 루트
@@ -187,7 +187,7 @@ web-image-util/                    # 모노레포 루트
 
 ---
 
-## 🔧 기술 스택
+## 🔧 Technology Stack
 
 ### Core Framework
 - **Next.js 15.5.4**: App Router, Server/Client Components, React 19 지원
@@ -214,7 +214,7 @@ web-image-util/                    # 모노레포 루트
 
 ---
 
-## 📖 주요 페이지 가이드
+## 📖 Key Page Guide
 
 ### 1. 홈페이지 (`/`)
 - 라이브러리 소개 및 빠른 시작 가이드
@@ -253,7 +253,7 @@ web-image-util/                    # 모노레포 루트
 
 ---
 
-## 💻 개발 명령어
+## 💻 Development Commands
 
 ### 개발 서버
 ```bash
@@ -274,7 +274,7 @@ pnpm lint         # ESLint 린팅
 
 ---
 
-## 🎨 디자인 시스템
+## 🎨 Design System
 
 ### Material-UI 7.3 컴포넌트
 
@@ -308,7 +308,7 @@ const theme = createTheme({
 
 ---
 
-## 📚 문서
+## 📚 Documentation
 
 ### 예제 앱 전용 문서
 
@@ -325,7 +325,7 @@ const theme = createTheme({
 
 ---
 
-## 🔒 보안 고려사항
+## 🔒 Security Considerations
 
 ### 파일 업로드 보안
 - **파일 타입 검증**: MIME type + 확장자 확인
@@ -339,7 +339,7 @@ const theme = createTheme({
 
 ---
 
-## 🌐 브라우저 호환성
+## 🌐 Browser Compatibility
 
 ### 지원 브라우저 (권장)
 - **Chrome**: 90+
@@ -364,7 +364,7 @@ console.log('OffscreenCanvas 지원:', support.offscreenCanvas);
 
 ---
 
-## ⚡ 성능 최적화
+## ⚡ Performance Optimization
 
 ### 1. 이미지 최적화
 - WebP 포맷 우선 사용 (브라우저 지원 시)
@@ -388,7 +388,7 @@ console.log('OffscreenCanvas 지원:', support.offscreenCanvas);
 
 ---
 
-## 🐛 알려진 이슈
+## 🐛 Known Issues
 
 ### 1. Next.js 15 + React 19
 - 일부 MUI 컴포넌트에서 hydration 경고 (개발 환경)
@@ -404,7 +404,7 @@ console.log('OffscreenCanvas 지원:', support.offscreenCanvas);
 
 ---
 
-## 🤝 기여하기
+## 🤝 Contributing
 
 ### 개발 환경 설정
 
