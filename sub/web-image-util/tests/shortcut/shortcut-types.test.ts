@@ -6,7 +6,7 @@ describe('Shortcut API Type Safety', () => {
   const testImageUrl = 'test.jpg';
 
   describe('Return Type Validation', () => {
-    // Vitest 모범 사례: describe.each로 반복적인 타입 검증을 체계화
+    // Vitest best practice: organize repetitive type validation with describe.each
     describe.each([
       {
         operation: 'Direct Mapping (coverBox)',
@@ -52,7 +52,7 @@ describe('Shortcut API Type Safety', () => {
   });
 
   describe('ScaleOperation Type System', () => {
-    // Vitest 모범 사례: Discriminated Union 타입 검증을 각 케이스별로 명확히 테스트
+    // Vitest best practice: clearly test Discriminated Union type validation for each case
     describe.each([
       {
         type: 'uniform number scale',
@@ -76,13 +76,13 @@ describe('Shortcut API Type Safety', () => {
       },
     ])('$type: $description', ({ value, type }) => {
       it('should be valid at compile time', () => {
-        // 타입 검증: TypeScript 컴파일러가 이 코드를 허용해야 함
+        // Type validation: TypeScript compiler should accept this code
         const scaleValue: ScaleOperation = value;
         expect(scaleValue, `${type} should be a valid ScaleOperation`).toBeDefined();
       });
 
       it('should not throw at runtime when used', () => {
-        // 런타임 검증: 실제로 사용 시 오류가 없어야 함
+        // Runtime validation: should work without errors when actually used
         expect(() => {
           processImage(testImageUrl).shortcut.scale(value);
         }, `${type} should work without throwing`).not.toThrow();
@@ -97,7 +97,7 @@ describe('Shortcut API Type Safety', () => {
   });
 
   it('should support options for containBox method', () => {
-    // containBox에 모든 옵션 전달 가능한지 확인
+    // Verify that all options can be passed to containBox
     const processor = processImage(testImageUrl).shortcut.containBox(300, 200, {
       padding: { top: 10, bottom: 10, left: 10, right: 10 },
       background: '#ffffff',
@@ -182,7 +182,7 @@ describe('Shortcut API Type Safety', () => {
     });
 
     it('should handle zero dimensions gracefully', () => {
-      // 이 케이스는 실제로는 에러가 발생할 수 있지만, 타입 시스템은 허용합니다
+      // This case may actually throw an error, but the type system allows it
       const processor = processImage(testImageUrl).shortcut.exactWidth(0);
       expect(processor).toBeDefined();
     });

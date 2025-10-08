@@ -3,10 +3,10 @@ import type { Rectangle, Size } from './position-types';
 import { productionLog } from '../utils/debug';
 
 /**
- * 레이어 정보
+ * Layer information
  *
- * @description 이미지 합성에 사용되는 레이어의 속성들을 정의하는 인터페이스입니다.
- * 위치, 크기, 투명도, 블렜드 모드, 회전 등을 설정할 수 있습니다.
+ * @description Interface that defines the properties of layers used in image composition.
+ * You can set position, size, transparency, blend mode, rotation, and more.
  */
 export interface Layer {
   image: HTMLImageElement;
@@ -21,10 +21,10 @@ export interface Layer {
 }
 
 /**
- * 합성 옵션
+ * Composition options
  *
- * @description 이미지 합성 시 사용되는 기본 옵션들을 정의하는 인터페이스입니다.
- * 캠버스 크기와 배경색을 설정할 수 있습니다.
+ * @description Interface that defines basic options used for image composition.
+ * You can set canvas size and background color.
  */
 export interface CompositionOptions {
   backgroundColor?: string;
@@ -33,10 +33,10 @@ export interface CompositionOptions {
 }
 
 /**
- * 그리드 레이아웃 옵션
+ * Grid layout options
  *
- * @description 여러 이미지를 그리드 형태로 배치할 때 사용되는 옵션들을 정의하는 인터페이스입니다.
- * 행과 열의 수, 간격, 배경색, 이미지 맞춤 방식 등을 설정할 수 있습니다.
+ * @description Interface that defines options used when arranging multiple images in grid format.
+ * You can set number of rows and columns, spacing, background color, image fit mode, etc.
  */
 export interface GridLayoutOptions {
   rows: number;
@@ -47,36 +47,36 @@ export interface GridLayoutOptions {
 }
 
 /**
- * 이미지 합성 클래스
+ * Image composition class
  *
- * @description 여러 이미지를 합성하여 하나의 이미지로 만드는 기능들을 제공하는 정적 클래스입니다.
- * 레이어 기반 합성, 그리드 레이아웃, 콜라주 스타일 합성 등을 지원합니다.
+ * @description Static class that provides functions to composite multiple images into one image.
+ * Supports layer-based composition, grid layout, collage-style composition, etc.
  */
 export class ImageComposer {
   /**
-   * 레이어 기반 합성
+   * Layer-based composition
    */
   static async composeLayers(layers: Layer[], options: CompositionOptions): Promise<HTMLCanvasElement> {
     const { width, height, backgroundColor } = options;
 
     return withManagedCanvas(width, height, (canvas, ctx) => {
-      // 배경색 설정
+      // Set background color
       if (backgroundColor) {
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, width, height);
       }
 
-      // 레이어별 그리기
+      // Draw each layer
       for (const layer of layers) {
         if (layer.visible === false) continue;
 
         ctx.save();
 
-        // 투명도 및 블렌딩 모드 설정
+        // Set opacity and blending mode
         ctx.globalAlpha = layer.opacity || 1;
         ctx.globalCompositeOperation = layer.blendMode || 'source-over';
 
-        // 회전 설정
+        // Set rotation
         if (layer.rotation) {
           const centerX = layer.x + (layer.width || layer.image.width) / 2;
           const centerY = layer.y + (layer.height || layer.image.height) / 2;
@@ -85,7 +85,7 @@ export class ImageComposer {
           ctx.translate(-centerX, -centerY);
         }
 
-        // 이미지 그리기
+        // Draw image
         ctx.drawImage(
           layer.image,
           layer.x,
@@ -102,17 +102,17 @@ export class ImageComposer {
   }
 
   /**
-   * 그리드 레이아웃 합성
+   * Grid layout composition
    */
   static async composeGrid(images: HTMLImageElement[], options: GridLayoutOptions): Promise<HTMLCanvasElement> {
     const { rows, cols, spacing = 10, backgroundColor = '#ffffff', fit = 'contain' } = options;
 
-    if (images.length === 0) throw new Error('이미지가 제공되지 않았습니다');
+    if (images.length === 0) throw new Error('No images provided');
     if (images.length > rows * cols) {
-      productionLog.warn(`이미지가 너무 많습니다 (${images.length}개). 그리드 크기: ${rows}x${cols}`);
+      productionLog.warn(`Too many images (${images.length}). Grid size: ${rows}x${cols}`);
     }
 
-    // 그리드 크기 계산
+    // Calculate grid size
     const maxImages = Math.min(images.length, rows * cols);
     const cellWidth = Math.max(...images.map((img) => img.width));
     const cellHeight = Math.max(...images.map((img) => img.height));
@@ -121,11 +121,11 @@ export class ImageComposer {
     const canvasHeight = rows * cellHeight + (rows + 1) * spacing;
 
     return withManagedCanvas(canvasWidth, canvasHeight, (canvas, ctx) => {
-      // 배경 설정
+      // Set background
       ctx.fillStyle = backgroundColor;
       ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-      // 이미지 배치
+      // Place images
       for (let i = 0; i < maxImages; i++) {
         const row = Math.floor(i / cols);
         const col = i % cols;
@@ -134,7 +134,7 @@ export class ImageComposer {
         const cellX = spacing + col * (cellWidth + spacing);
         const cellY = spacing + row * (cellHeight + spacing);
 
-        // 이미지 크기 조정 계산
+        // Calculate image size adjustment
         const { x, y, width, height } = this.calculateFitSize(image.width, image.height, cellWidth, cellHeight, fit);
 
         ctx.drawImage(image, cellX + x, cellY + y, width, height);
@@ -145,7 +145,7 @@ export class ImageComposer {
   }
 
   /**
-   * 콜라주 스타일 합성
+   * Collage-style composition
    */
   static async composeCollage(
     images: HTMLImageElement[],
@@ -160,17 +160,17 @@ export class ImageComposer {
     const { backgroundColor = '#ffffff', randomRotation = true, maxRotation = 15, overlap = true } = options;
 
     return withManagedCanvas(canvasSize.width, canvasSize.height, (canvas, ctx) => {
-      // 배경 설정
+      // Set background
       ctx.fillStyle = backgroundColor;
       ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
 
-      // 이미지들을 랜덤하게 배치
+      // Randomly place images
       const usedAreas: Rectangle[] = [];
 
       for (let i = 0; i < images.length; i++) {
         const image = images[i];
 
-        // 크기 조정 (캔버스의 15-30% 크기)
+        // Scale adjustment (15-30% of canvas size)
         const minScale = 0.15;
         const maxScale = 0.3;
         const scale = minScale + Math.random() * (maxScale - minScale);
@@ -178,7 +178,7 @@ export class ImageComposer {
         const scaledWidth = image.width * scale;
         const scaledHeight = image.height * scale;
 
-        // 위치 결정
+        // Determine position
         let x, y;
         let attempts = 0;
         const maxAttempts = 50;
@@ -193,12 +193,12 @@ export class ImageComposer {
           this.isOverlapping({ x, y, width: scaledWidth, height: scaledHeight }, usedAreas)
         );
 
-        // 영역 기록
+        // Record area
         usedAreas.push({ x, y, width: scaledWidth, height: scaledHeight });
 
         ctx.save();
 
-        // 회전
+        // Rotation
         if (randomRotation) {
           const rotation = (Math.random() - 0.5) * 2 * maxRotation;
           const centerX = x + scaledWidth / 2;
@@ -208,13 +208,13 @@ export class ImageComposer {
           ctx.translate(-centerX, -centerY);
         }
 
-        // 그림자 효과
+        // Shadow effect
         ctx.shadowColor = 'rgba(0,0,0,0.3)';
         ctx.shadowBlur = 10;
         ctx.shadowOffsetX = 3;
         ctx.shadowOffsetY = 3;
 
-        // 이미지 그리기
+        // Draw image
         ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
 
         ctx.restore();
@@ -225,7 +225,7 @@ export class ImageComposer {
   }
 
   /**
-   * 이미지 크기 맞춤 계산
+   * Calculate image size fitting
    */
   private static calculateFitSize(
     imageWidth: number,
@@ -268,7 +268,7 @@ export class ImageComposer {
   }
 
   /**
-   * 영역 겹침 검사
+   * Check area overlap
    */
   private static isOverlapping(rect: Rectangle, areas: Rectangle[]): boolean {
     return areas.some(

@@ -43,9 +43,9 @@ interface BenchmarkResult {
 }
 
 const SIZE_CONFIGS: Record<BenchmarkSize, { width: number; height: number; label: string }> = {
-  small: { width: 300, height: 200, label: '소형 (300x200)' },
-  medium: { width: 800, height: 600, label: '중형 (800x600)' },
-  large: { width: 1920, height: 1080, label: '대형 (1920x1080)' },
+  small: { width: 300, height: 200, label: 'Small (300x200)' },
+  medium: { width: 800, height: 600, label: 'Medium (800x600)' },
+  large: { width: 1920, height: 1080, label: 'Large (1920x1080)' },
 };
 
 export function PerformanceBenchmarkDemo() {
@@ -66,11 +66,11 @@ export function PerformanceBenchmarkDemo() {
       setError(null);
       setBenchmarkResults([]);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('이미지 선택 실패'));
+      setError(err instanceof Error ? err : new Error('Image selection failed'));
     }
   };
 
-  // 이미지 선택 시 자동으로 벤치마크 실행
+  // Run benchmark automatically when image is selected
   useEffect(() => {
     if (selectedImage && !processing) {
       handleBenchmark();
@@ -93,21 +93,21 @@ export function PerformanceBenchmarkDemo() {
         const config = SIZE_CONFIGS[size];
         setProgress(((i + 1) / sizes.length) * 100);
 
-        // 메모리 사용량 추정 (이미지 크기 기반)
-        const estimatedMemoryUsage = config.width * config.height * 4; // RGBA 4바이트
+        // Estimate memory usage (based on image size)
+        const estimatedMemoryUsage = config.width * config.height * 4; // RGBA 4 bytes
 
-        // 성능 측정
+        // Performance measurement
         const result: ResultBlob = await measurePerformance(async () => {
           return await processImage(selectedImage)
             .resize({ fit: 'cover', width: config.width, height: config.height })
             .toBlob({ format: 'jpeg', quality: 0.8 });
         });
 
-        // 메모리 사용량 추정 (실제 측정은 브라우저 제약으로 부정확)
+        // Estimate memory usage (actual measurement is inaccurate due to browser constraints)
         const memoryUsage = estimatedMemoryUsage;
         const isMemoryEstimated = true;
 
-        // Throughput 계산 (bytes per second)
+        // Calculate throughput (bytes per second)
         const throughput =
           result.processingTime > 0
             ? (result.blob.size / result.processingTime) * 1000
@@ -127,7 +127,7 @@ export function PerformanceBenchmarkDemo() {
 
       setBenchmarkResults(results);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('벤치마크 실패'));
+      setError(err instanceof Error ? err : new Error('Benchmark failed'));
     } finally {
       setProcessing(false);
       setProgress(0);
@@ -136,13 +136,13 @@ export function PerformanceBenchmarkDemo() {
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
-    if (bytes < 0) return '추정값'; // 음수인 경우 처리
+    if (bytes < 0) return 'Estimated'; // Handle negative values
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  // 메모리 사용량 포맷팅 (추정값 표시 포함)
+  // Format memory usage (including estimated value indication)
   const formatMemoryUsage = (bytes: number, isEstimated: boolean = false): string => {
     const size = formatFileSize(Math.abs(bytes));
     return isEstimated ? `~${size}` : size;
@@ -156,7 +156,7 @@ export function PerformanceBenchmarkDemo() {
     return `${(bytesPerSecond / (1024 * 1024)).toFixed(2)} MB/s`;
   };
 
-  // 통계 계산
+  // Calculate statistics
   const totalTime = benchmarkResults.reduce((sum, r) => sum + r.processingTime, 0);
   const avgTime =
     benchmarkResults.length > 0 ? totalTime / benchmarkResults.length : 0;
@@ -170,12 +170,12 @@ export function PerformanceBenchmarkDemo() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom>
-        성능 벤치마크 데모
+        Performance Benchmark Demo
       </Typography>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        다양한 이미지 크기에서 처리 성능을 측정합니다. 처리 시간, 메모리 사용량,
-        처리량(throughput)을 비교할 수 있습니다.
+        Measure processing performance across various image sizes. Compare processing time, memory usage,
+        and throughput.
       </Alert>
 
       <Grid container spacing={4}>
@@ -187,28 +187,28 @@ export function PerformanceBenchmarkDemo() {
 
           {selectedImage && processing && (
             <Alert severity="info" sx={{ mt: 2 }}>
-              이미지가 선택되었습니다. 자동으로 벤치마크를 시작합니다.
+              Image selected. Starting benchmark automatically.
             </Alert>
           )}
 
-          {/* 벤치마크 설정 정보 */}
+          {/* Benchmark Settings Information */}
           <Card sx={{ mt: 2 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                벤치마크 설정
+                Benchmark Settings
               </Typography>
               <Stack spacing={1}>
                 <Typography variant="body2" color="text.secondary">
-                  • 소형: 300×200px
+                  • Small: 300×200px
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  • 중형: 800×600px
+                  • Medium: 800×600px
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  • 대형: 1920×1080px
+                  • Large: 1920×1080px
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  • 포맷: JPEG (품질 80%)
+                  • Format: JPEG (Quality 80%)
                 </Typography>
               </Stack>
             </CardContent>
@@ -221,7 +221,7 @@ export function PerformanceBenchmarkDemo() {
               <ProcessingStatus
                 processing={true}
                 progress={progress}
-                message={`벤치마크 진행 중... ${Math.round(progress)}%`}
+                message={`Benchmark in progress... ${Math.round(progress)}%`}
               />
             </Box>
           )}
@@ -238,11 +238,11 @@ export function PerformanceBenchmarkDemo() {
 
           {benchmarkResults.length > 0 && (
             <Stack spacing={3}>
-              {/* 선택된 이미지 표시 */}
+              {/* Selected Image Display */}
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    선택된 이미지
+                    Selected Image
                   </Typography>
                   <Box sx={{
                     display: 'flex',
@@ -256,7 +256,7 @@ export function PerformanceBenchmarkDemo() {
                   }}>
                     <img
                       src={selectedImage || ''}
-                      alt="선택된 이미지"
+                      alt="Selected image"
                       style={{
                         maxWidth: '100%',
                         maxHeight: '250px',
@@ -268,14 +268,14 @@ export function PerformanceBenchmarkDemo() {
                 </CardContent>
               </Card>
 
-              {/* 요약 통계 */}
+              {/* Summary Statistics */}
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <Card>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Timer color="primary" sx={{ fontSize: 40, mb: 1 }} />
                       <Typography variant="caption" display="block" color="text.secondary">
-                        평균 처리 시간
+                        Average Processing Time
                       </Typography>
                       <Typography variant="h5">{avgTime.toFixed(0)}ms</Typography>
                     </CardContent>
@@ -286,7 +286,7 @@ export function PerformanceBenchmarkDemo() {
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Memory color="secondary" sx={{ fontSize: 40, mb: 1 }} />
                       <Typography variant="caption" display="block" color="text.secondary">
-                        총 메모리 사용
+                        Total Memory Usage
                       </Typography>
                       <Typography variant="h5">~{formatFileSize(totalMemory)}</Typography>
                     </CardContent>
@@ -297,7 +297,7 @@ export function PerformanceBenchmarkDemo() {
                     <CardContent sx={{ textAlign: 'center' }}>
                       <SpeedIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
                       <Typography variant="caption" display="block" color="text.secondary">
-                        평균 처리량
+                        Average Throughput
                       </Typography>
                       <Typography variant="h5" sx={{ fontSize: '1.3rem' }}>
                         {formatThroughput(avgThroughput)}
@@ -310,7 +310,7 @@ export function PerformanceBenchmarkDemo() {
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Timer color="info" sx={{ fontSize: 40, mb: 1 }} />
                       <Typography variant="caption" display="block" color="text.secondary">
-                        총 처리 시간
+                        Total Processing Time
                       </Typography>
                       <Typography variant="h5">{totalTime.toFixed(0)}ms</Typography>
                     </CardContent>
@@ -318,22 +318,22 @@ export function PerformanceBenchmarkDemo() {
                 </Grid>
               </Grid>
 
-              {/* 상세 결과 표 */}
+              {/* Detailed Results Table */}
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    상세 벤치마크 결과
+                    Detailed Benchmark Results
                   </Typography>
                   <TableContainer component={Paper} variant="outlined">
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell>크기</TableCell>
-                          <TableCell align="right">해상도</TableCell>
-                          <TableCell align="right">처리 시간</TableCell>
-                          <TableCell align="right">파일 크기</TableCell>
-                          <TableCell align="right">처리량</TableCell>
-                          <TableCell align="right">메모리 사용</TableCell>
+                          <TableCell>Size</TableCell>
+                          <TableCell align="right">Resolution</TableCell>
+                          <TableCell align="right">Processing Time</TableCell>
+                          <TableCell align="right">File Size</TableCell>
+                          <TableCell align="right">Throughput</TableCell>
+                          <TableCell align="right">Memory Usage</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -375,17 +375,17 @@ export function PerformanceBenchmarkDemo() {
                 </CardContent>
               </Card>
 
-              {/* 성능 분석 */}
+              {/* Performance Analysis */}
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    성능 분석
+                    Performance Analysis
                   </Typography>
                   <Stack spacing={1}>
                     {benchmarkResults.length >= 2 && (
                       <>
                         <Typography variant="body2">
-                          • 소형 → 중형 처리 시간 증가율:{' '}
+                          • Small → Medium processing time increase:{' '}
                           {(
                             ((benchmarkResults[1].processingTime -
                               benchmarkResults[0].processingTime) /
@@ -396,7 +396,7 @@ export function PerformanceBenchmarkDemo() {
                         </Typography>
                         {benchmarkResults.length >= 3 && (
                           <Typography variant="body2">
-                            • 중형 → 대형 처리 시간 증가율:{' '}
+                            • Medium → Large processing time increase:{' '}
                             {(
                               ((benchmarkResults[2].processingTime -
                                 benchmarkResults[1].processingTime) /
@@ -409,25 +409,25 @@ export function PerformanceBenchmarkDemo() {
                       </>
                     )}
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      💡 작은 이미지일수록 빠른 처리 속도와 낮은 메모리 사용량을 보입니다.
+                      💡 Smaller images show faster processing speed and lower memory usage.
                     </Typography>
                   </Stack>
                 </CardContent>
               </Card>
 
-              {/* 권장 사항 */}
+              {/* Recommendations */}
               <Alert severity="success">
                 <Typography variant="subtitle2" gutterBottom>
-                  성능 최적화 권장 사항
+                  Performance Optimization Recommendations
                 </Typography>
                 <Typography variant="body2">
-                  • 평균 처리 시간이 {avgTime.toFixed(0)}ms입니다.
-                  {avgTime < 100 && ' 매우 빠른 성능입니다!'}
-                  {avgTime >= 100 && avgTime < 500 && ' 좋은 성능입니다.'}
-                  {avgTime >= 500 && ' 더 작은 이미지 크기 사용을 권장합니다.'}
+                  • Average processing time is {avgTime.toFixed(0)}ms.
+                  {avgTime < 100 && ' Excellent performance!'}
+                  {avgTime >= 100 && avgTime < 500 && ' Good performance.'}
+                  {avgTime >= 500 && ' Consider using smaller image sizes.'}
                   <br />
-                  • 대용량 이미지 처리 시 메모리 사용량에 주의하세요.
-                  <br />• 실시간 처리가 필요하다면 소형~중형 크기를 사용하세요.
+                  • Be mindful of memory usage when processing large images.
+                  <br />• For real-time processing, use small to medium sizes.
                 </Typography>
               </Alert>
             </Stack>
@@ -435,8 +435,8 @@ export function PerformanceBenchmarkDemo() {
 
           {!processing && !error && benchmarkResults.length === 0 && !selectedImage && (
             <Alert severity="info">
-              이미지를 선택하면 자동으로 벤치마크가 시작됩니다. 다양한 크기에서의 성능을 측정할
-              수 있습니다.
+              Select an image to automatically start the benchmark. You can measure performance
+              across various sizes.
             </Alert>
           )}
         </Grid>

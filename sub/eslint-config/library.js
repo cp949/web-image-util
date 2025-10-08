@@ -20,7 +20,7 @@ export default tseslint.config(
       '@typescript-eslint/no-empty-object-type': 'off',
       'semi': ['error', 'always'],
       '@typescript-eslint/semi': ['error', 'always'],
-      // TypeScript 타입 임포트 관련 규칙들
+      // TypeScript type import related rules
       '@typescript-eslint/consistent-type-imports': [
         'error',
         {

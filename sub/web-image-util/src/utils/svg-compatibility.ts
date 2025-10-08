@@ -1,85 +1,85 @@
 /**
- * SVG 브라우저 호환성 유틸리티
+ * SVG Browser Compatibility Utilities
  *
  * @description
- * SVG의 브라우저 간 렌더링 호환성을 향상시키는 유틸리티 모음
- * - 원본 SVG의 의도를 보존하면서 렌더링 호환성에 집중
- * - 기존 의미 정보를 덮어쓰지 않음 (viewBox/width/height/preserveAspectRatio/xmlns* 등)
- * - 누락된 필수 속성들을 자동으로 보완
+ * Utility collection for improving cross-browser SVG rendering compatibility
+ * - Focuses on rendering compatibility while preserving original SVG intent
+ * - Does not overwrite existing semantic information (viewBox/width/height/preserveAspectRatio/xmlns*, etc.)
+ * - Automatically supplements missing essential attributes
  */
 
 /**
- * SVG 호환성 향상을 위한 옵션
+ * Options for SVG compatibility enhancement
  *
- * @description 브라우저 간 SVG 렌더링 호환성을 위한 설정 옵션들
- * 원본 SVG의 의미를 보존하면서 렌더링 호환성을 높입니다.
+ * @description Configuration options for cross-browser SVG rendering compatibility
+ * Enhances rendering compatibility while preserving original SVG semantics.
  */
 export interface SvgCompatibilityOptions {
-  /** 기본 크기(마땅한 크기 단서를 못 찾을 때, preserve-framing 모드에서 viewBox W/H 추정치) */
+  /** Default size (viewBox W/H estimate in preserve-framing mode when no size clues are found) */
   defaultSize?: { width: number; height: number };
-  /** 네임스페이스 자동 추가 여부 */
+  /** Whether to automatically add namespaces */
   addNamespaces?: boolean;
-  /** 크기 속성/좌표계 보정 여부(viewBox 생성 등) */
+  /** Whether to fix dimension attributes/coordinate system (viewBox generation, etc.) */
   fixDimensions?: boolean;
-  /** 구형 문법 현대화(xlink:href→href) */
+  /** Modernize legacy syntax (xlink:href→href) */
   modernizeSyntax?: boolean;
-  /** preserveAspectRatio 기본값 추가 */
+  /** Add default preserveAspectRatio */
   addPreserveAspectRatio?: boolean;
 
-  /** 반응형 선호(기본 true): true면 width/height를 가능하면 주입하지 않음 */
+  /** Prefer responsive (default true): if true, avoid injecting width/height when possible */
   preferResponsive?: boolean;
 
   /**
-   * viewBox 정책
-   * - preserve-framing: 원점 0,0로 두고 W×H 추정(원본 프레이밍 보존)
-   * - fit-content: 실제 내용 bbox로 딱 맞춤(필요 시 패딩)
+   * viewBox policy
+   * - preserve-framing: Keep origin at 0,0 and estimate W×H (preserve original framing)
+   * - fit-content: Fit exactly to actual content bbox (with padding if needed)
    */
   mode?: 'preserve-framing' | 'fit-content';
 
-  /** fit-content 모드에서 여유 패딩 비율(0.02=2%) */
+  /** Padding percentage for fit-content mode (0.02=2%) */
   paddingPercent?: number;
 
   /**
-   * 브라우저 환경에서 실제 레이아웃 기반 BBox(getBBox) 사용(기본 false)
-   * - DOMParser 결과를 hidden SVG 트리에 붙여서 계산
-   * - SSR/Node에서는 자동 비활성
+   * Use actual layout-based BBox (getBBox) in browser environment (default false)
+   * - Calculate by attaching DOMParser result to hidden SVG tree
+   * - Automatically disabled in SSR/Node
    */
   enableLiveBBox?: boolean;
 
   /**
-   * 휴리스틱 BBox 허용(기본 true)
-   * - getBBox를 못 쓰는 환경에서 rect/circle/ellipse/line/poly* 정도만 근사 계산
-   * - path/text 등은 보수적으로 무시(필요 시 paddingPercent로 안전 여백)
+   * Allow heuristic BBox (default true)
+   * - Approximate calculation for rect/circle/ellipse/line/poly* only in environments where getBBox is unavailable
+   * - Conservatively ignore path/text etc. (use paddingPercent for safety margin if needed)
    */
   enableHeuristicBBox?: boolean;
 
   /**
-   * 0×0 방지 및 콘텐츠 기반 크기 계산:
-   * 1) viewBox만 있고 width/height 없을 때 viewBox W/H를 width/height로 주입
-   * 2) preserve-framing 모드에서도 콘텐츠 기반 viewBox 계산 시도
+   * Prevent 0×0 and content-based size calculation:
+   * 1) When only viewBox exists without width/height, inject viewBox W/H as width/height
+   * 2) Attempt content-based viewBox calculation even in preserve-framing mode
    *
-   * 기본값:
-   * - preserve-framing 모드: false (defaultSize 512×512 사용)
-   * - fit-content 모드: true (항상 콘텐츠 기반 계산)
+   * Default values:
+   * - preserve-framing mode: false (use defaultSize 512×512)
+   * - fit-content mode: true (always content-based calculation)
    *
-   * true 설정 시: 실제 콘텐츠 크기에 맞는 viewBox 생성 시도
-   * false 설정 시: defaultSize 기반 고정 크기 viewBox 사용
+   * When set to true: Attempt to generate viewBox matching actual content size
+   * When set to false: Use fixed-size viewBox based on defaultSize
    */
   ensureNonZeroViewport?: boolean;
 }
 
 /**
- * SVG 호환성 처리 결과 보고서
+ * SVG compatibility processing result report
  *
- * @description SVG 호환성 처리 과정에서 수행된 작업들과 결과를 담은 보고서
- * 디버깅과 최적화에 유용한 정보를 제공합니다.
+ * @description Report containing operations performed and results during SVG compatibility processing
+ * Provides useful information for debugging and optimization.
  */
 export interface SvgCompatibilityReport {
   addedNamespaces: string[];
   fixedDimensions: boolean;
   modernizedSyntax: number;
-  warnings: string[]; // 처리상 주의
-  infos?: string[]; // 참고 정보
+  warnings: string[]; // Processing warnings
+  infos?: string[]; // Reference information
   processingTimeMs: number;
 }
 
@@ -101,23 +101,23 @@ const DEFAULT_OPTIONS: Required<Omit<SvgCompatibilityOptions, 'defaultSize' | 'p
 };
 
 /**
- * SVG 브라우저 호환성 향상
+ * Enhance SVG browser compatibility
  *
- * @description SVG 문자열을 브라우저 간 호환성을 위해 최적화합니다.
- * 네임스페이스 추가, 크기 속성 보정, 구형 문법 현대화 등을 수행합니다.
+ * @description Optimizes SVG strings for cross-browser compatibility.
+ * Performs namespace addition, dimension attribute correction, legacy syntax modernization, etc.
  *
- * @param svgString 원본 SVG 문자열
- * @param options 호환성 처리 옵션
- * @returns 향상된 SVG 문자열과 처리 보고서
+ * @param svgString Original SVG string
+ * @param options Compatibility processing options
+ * @returns Enhanced SVG string and processing report
  *
  * @example
  * ```typescript
- * // 기본 호환성 향상
+ * // Basic compatibility enhancement
  * const result = enhanceBrowserCompatibility(svgString);
  * console.log(result.enhancedSvg);
  * console.log(result.report.warnings);
  *
- * // 특정 모드로 처리
+ * // Process with specific mode
  * const result = enhanceBrowserCompatibility(svgString, {
  *   mode: 'fit-content',
  *   ensureNonZeroViewport: true
@@ -128,12 +128,12 @@ export function enhanceBrowserCompatibility(
   svgString: string,
   options: SvgCompatibilityOptions = {}
 ): { enhancedSvg: string; report: SvgCompatibilityReport } {
-  // 모드에 따른 스마트 기본값 설정
+  // Smart default settings based on mode
   const mode = options.mode ?? DEFAULT_OPTIONS.mode;
   const smartDefaults = {
     ...DEFAULT_OPTIONS,
-    // preserve-framing 모드에서는 defaultSize로 이미 0×0 방지됨
-    // 하지만 사용자가 명시적으로 설정한 경우는 우선 적용
+    // In preserve-framing mode, 0×0 is already prevented by defaultSize
+    // However, if user explicitly sets this option, prioritize user setting
     ensureNonZeroViewport:
       options.ensureNonZeroViewport !== undefined
         ? options.ensureNonZeroViewport
@@ -218,8 +218,8 @@ function toMsg(e: unknown) {
 }
 
 /**
- * 필수 네임스페이스 추가
- * xmlns와 xmlns:xlink(필요한 경우)를 추가하되, 기존 설정을 덮어쓰지 않음
+ * Add required namespaces
+ * Add xmlns and xmlns:xlink (when needed) without overwriting existing settings
  */
 function addRequiredNamespaces(root: Element, report: SvgCompatibilityReport) {
   const added: string[] = [];
@@ -236,8 +236,8 @@ function addRequiredNamespaces(root: Element, report: SvgCompatibilityReport) {
 }
 
 /**
- * SVG 문법 현대화
- * xlink:href를 href로 변환 (href가 없는 경우에만)
+ * Modernize SVG syntax
+ * Convert xlink:href to href (only when href is not present)
  */
 function modernizeSvgSyntax(root: Element, report: SvgCompatibilityReport) {
   let count = 0;
@@ -256,8 +256,8 @@ function modernizeSvgSyntax(root: Element, report: SvgCompatibilityReport) {
 }
 
 /**
- * preserveAspectRatio 기본값 추가
- * 누락된 경우 기본 값을 추가
+ * Add default preserveAspectRatio
+ * Add default value when missing
  */
 function addPAR(root: Element) {
   if (!root.getAttribute('preserveAspectRatio')) {
@@ -266,10 +266,10 @@ function addPAR(root: Element) {
 }
 
 /**
- * CSS 길이 값 파서
- * @param input 파싱할 CSS 길이 값 문자열
- * @returns 파싱된 숫자 값과 단위 (value, unit)
- * @description 음수, 소수, 과학적 표기법, 단위(%, px 등) 모두 지원
+ * CSS length value parser
+ * @param input CSS length value string to parse
+ * @returns Parsed numeric value and unit (value, unit)
+ * @description Supports negative numbers, decimals, scientific notation, and units (%, px, etc.)
  */
 function parseCssLength(input?: string | null): { value: number | null; unit: string | null } {
   if (!input) return { value: null, unit: null };
@@ -278,13 +278,13 @@ function parseCssLength(input?: string | null): { value: number | null; unit: st
   if (!m) return { value: null, unit: null };
   const num = Number(m[1]);
   if (!Number.isFinite(num)) return { value: null, unit: null };
-  const unit = m[2] ? m[2].toLowerCase() : null; // 단위 없음은 user unit
+  const unit = m[2] ? m[2].toLowerCase() : null; // No unit means user unit
   return { value: num, unit };
 }
 
 /**
- * 크기 힌트 추출
- * SVG 엘리먼트의 속성이나 스타일에서 width/height 값을 추출
+ * Extract size hints
+ * Extract width/height values from SVG element attributes or styles
  */
 function extractSizeHints(root: Element): { wAttr?: string; hAttr?: string } {
   const wAttr = root.getAttribute('width') ?? getStyleLength(root, 'width') ?? undefined;
@@ -300,8 +300,8 @@ function getStyleLength(el: Element, prop: 'width' | 'height'): string | null {
 }
 
 /**
- * viewBox 정책 적용
- * @description viewBox를 설정하고 필요시 width/height도 함께 설정하는 메인 정책 함수
+ * Apply viewBox policy
+ * @description Main policy function that sets viewBox and optionally width/height as needed
  */
 function applyViewBoxPolicy(
   root: Element,
@@ -313,13 +313,13 @@ function applyViewBoxPolicy(
   const hasW = root.hasAttribute('width') || !!getStyleLength(root, 'width');
   const hasH = root.hasAttribute('height') || !!getStyleLength(root, 'height');
 
-  // viewBox 이미 있는 경우: 덮어쓰지 않음
+  // If viewBox already exists: do not overwrite
   if (hasVB) {
-    // 0×0 방지: 크기 단서 전혀 없고 ensureNonZeroViewport=true → viewBox의 W/H 사용
+    // Prevent 0×0: no size clues at all and ensureNonZeroViewport=true → use viewBox W/H
     if (opts.ensureNonZeroViewport && !hasW && !hasH) {
       const vb = root.getAttribute('viewBox')!;
       const [, , rawW, rawH] = vb.split(/[\s,]+/).map(Number);
-      // viewBox가 0 또는 음수여도 안전값으로 보정
+      // Even if viewBox is 0 or negative, correct to safe values
       const W = rawW > 0 ? rawW : opts.defaultSize.width;
       const H = rawH > 0 ? rawH : opts.defaultSize.height;
       root.setAttribute('width', String(W));
@@ -331,16 +331,16 @@ function applyViewBoxPolicy(
     return;
   }
 
-  // width/height 힌트 파싱
+  // Parse width/height hints
   const { wAttr, hAttr } = extractSizeHints(root);
   const { value: wVal, unit: wUnit } = parseCssLength(wAttr);
   const { value: hVal, unit: hUnit } = parseCssLength(hAttr);
   const wIsPxLike = wVal != null && (!wUnit || wUnit === 'px');
   const hIsPxLike = hVal != null && (!hUnit || hUnit === 'px');
 
-  // 안전 주입 헬퍼
+  // Safe injection helper
   const setVB = (minX: number, minY: number, rawW: number, rawH: number) => {
-    // 0 또는 음수는 기본 크기로 보정
+    // Correct 0 or negative values to default size
     const W = rawW > 0 ? rawW : opts.defaultSize.width;
     const H = rawH > 0 ? rawH : opts.defaultSize.height;
 
@@ -356,7 +356,7 @@ function applyViewBoxPolicy(
       if (!hasAttrW) root.setAttribute('width', String(W));
       if (!hasAttrH) root.setAttribute('height', String(H));
     } else if (opts.ensureNonZeroViewport && noAnySize) {
-      // 반응형 선호라도 최소 크기 주입(0×0 방지)
+      // Even when preferring responsive, inject minimum size (prevent 0×0)
       root.setAttribute('width', String(W));
       root.setAttribute('height', String(H));
       report.infos?.push('Injected width/height from viewBox (coerced to non-zero).');
@@ -364,10 +364,10 @@ function applyViewBoxPolicy(
     report.fixedDimensions = true;
   };
 
-  // Case A) 숫자형 width/height 둘 다 있는 경우
+  // Case A) When both numeric width/height are present
   if (wIsPxLike && hIsPxLike) {
     if (opts.mode === 'preserve-framing') {
-      setVB(0, 0, wVal!, hVal!); // 내부에서 0 보정
+      setVB(0, 0, wVal!, hVal!); // 0 correction handled internally
       return;
     } else {
       // fit-content
@@ -378,21 +378,21 @@ function applyViewBoxPolicy(
     }
   }
 
-  // Case B) 하나만 있거나 비픽셀 단위 → defaultSize로
+  // Case B) Only one present or non-pixel units → use defaultSize
   if ((wAttr || hAttr) && (!wIsPxLike || !hIsPxLike)) {
     report.warnings.push('Non-px or partial size detected. Falling back to defaultSize for viewBox.');
   }
 
-  // Case C) 힌트 없음 → 모드에 따라 처리
+  // Case C) No hints → handle based on mode
   if (opts.mode === 'fit-content' || opts.ensureNonZeroViewport) {
-    // fit-content 모드이거나 ensureNonZeroViewport=true이면 콘텐츠 기반 계산 시도
+    // In fit-content mode or when ensureNonZeroViewport=true, attempt content-based calculation
     const bbox = computeBBox(root, opts, report, svgString);
     if (bbox && bbox.width > 0 && bbox.height > 0) {
       const padded = padBBox(bbox, opts.paddingPercent);
       setVB(padded.minX, padded.minY, padded.width, padded.height);
       return;
     }
-    // Debug: bbox 계산 결과 확인
+    // Debug: check bbox calculation result
     report.warnings.push(
       `Content bbox unavailable (${bbox ? `${bbox.width}x${bbox.height}` : 'null'}). Falling back to defaultSize.`
     );
@@ -403,16 +403,16 @@ function applyViewBoxPolicy(
 }
 
 /**
- * 숫자 값 정제
- * @description 속성에서 과학적 표기법을 피하도록 숫자를 정제
+ * Sanitize numeric values
+ * @description Sanitize numbers to avoid scientific notation in attributes
  */
 function sanitizeNum(n: number) {
   return Number.isFinite(n) ? parseFloat(n.toFixed(6)) : 0;
 }
 
 /**
- * 문자열 기반 휴리스틱 BBox 계산
- * @description SVG 문자열을 정규표현식으로 분석하여 대략적인 경계상자를 계산
+ * String-based heuristic BBox calculation
+ * @description Analyze SVG string with regex to calculate approximate bounding box
  */
 function heuristicBBoxFromString(
   svgString: string
@@ -430,7 +430,7 @@ function heuristicBBoxFromString(
     maxY = Math.max(maxY, y1, y2);
   };
 
-  // circle 정규표현식으로 찾기
+  // Find circles using regex
   const circleRegex =
     /<circle[^>]*cx=["']?([^"'\s]+)["']?[^>]*cy=["']?([^"'\s]+)["']?[^>]*r=["']?([^"'\s]+)["']?[^>]*\/?>/gi;
   let circleMatch;
@@ -441,7 +441,7 @@ function heuristicBBoxFromString(
     if (r > 0) push(cx - r, cy - r, cx + r, cy + r);
   }
 
-  // rect 정규표현식으로 찾기
+  // Find rectangles using regex
   const rectRegex =
     /<rect[^>]*x=["']?([^"'\s]+)["']?[^>]*y=["']?([^"'\s]+)["']?[^>]*width=["']?([^"'\s]+)["']?[^>]*height=["']?([^"'\s]+)["']?[^>]*\/?>/gi;
   let rectMatch;
@@ -505,8 +505,8 @@ function isBrowser() {
 }
 
 /**
- * 실시간 getBBox 계산
- * @description 숨겨진 SVG를 DOM에 부착하여 실제 getBBox 결과를 계산
+ * Real-time getBBox calculation
+ * @description Calculate actual getBBox result by attaching hidden SVG to DOM
  */
 function liveGetBBox(parsedRoot: SVGSVGElement): { minX: number; minY: number; width: number; height: number } | null {
   const tmpSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -541,10 +541,10 @@ function isValidBBox(b: { minX: number; minY: number; width: number; height: num
 }
 
 /**
- * 휴리스틱 BBox 계산
- * @description DOM 기반 경계상자 계산
- * - 지원: rect, circle, ellipse, line, polyline, polygon
- * - 무시: path, text, filters, markers (필요시 패딩 사용)
+ * Heuristic BBox calculation
+ * @description DOM-based bounding box calculation
+ * - Supported: rect, circle, ellipse, line, polyline, polygon
+ * - Ignored: path, text, filters, markers (use padding if needed)
  */
 function heuristicBBox(root: Element): { minX: number; minY: number; width: number; height: number } | null {
   let minX = +Infinity,
@@ -629,24 +629,24 @@ function padBBox(b: { minX: number; minY: number; width: number; height: number 
 }
 
 /* ========================================================================== */
-/* 간단한 퍼사드 API - 이미지 리사이저용 단순화된 인터페이스                           */
+/* Simple Facade API - Simplified Interface for Image Resizer                */
 /* ========================================================================== */
 
 /**
- * SVG 기본 정규화 (이미지 리사이저용)
+ * Basic SVG normalization (for image resizer)
  *
- * @description 이미지 리사이저에서 SVG를 처리하기 위한 기본적인 정규화를 수행합니다.
- * Canvas 렌더링에 최적화된 옵션으로 SVG를 정규화합니다.
+ * @description Performs basic normalization for processing SVG in image resizer.
+ * Normalizes SVG with options optimized for Canvas rendering.
  *
- * @param svgString 원본 SVG 문자열
- * @returns 정규화된 SVG 문자열
+ * @param svgString Original SVG string
+ * @returns Normalized SVG string
  *
  * @example
  * ```typescript
- * // SVG를 Canvas 렌더링용으로 정규화
+ * // Normalize SVG for Canvas rendering
  * const normalizedSvg = normalizeSvgBasics(svgString);
  *
- * // 정규화된 SVG를 이미지로 변환
+ * // Convert normalized SVG to image
  * const result = await processImage(normalizedSvg)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .toBlob();
@@ -654,21 +654,21 @@ function padBBox(b: { minX: number; minY: number; width: number; height: number 
  */
 export function normalizeSvgBasics(svgString: string): string {
   const { enhancedSvg } = enhanceBrowserCompatibility(svgString, {
-    // === 필수 호환성 ===
-    addNamespaces: true, // 브라우저 호환성 필수
-    fixDimensions: true, // Canvas 렌더링을 위해 필요
-    modernizeSyntax: true, // xlink → href 현대화
-    addPreserveAspectRatio: true, // 비율 유지 보장
+    // === Essential Compatibility ===
+    addNamespaces: true, // Required for browser compatibility
+    fixDimensions: true, // Needed for Canvas rendering
+    modernizeSyntax: true, // xlink → href modernization
+    addPreserveAspectRatio: true, // Ensure aspect ratio preservation
 
-    // === 크기 처리 전략 ===
-    mode: 'fit-content', // 콘텐츠에 정확히 맞춤 (리사이저에 적합)
-    ensureNonZeroViewport: true, // 0×0 렌더링 방지
-    paddingPercent: 0, // 패딩 없음 - 정확한 크기
+    // === Size Handling Strategy ===
+    mode: 'fit-content', // Fit exactly to content (suitable for resizer)
+    ensureNonZeroViewport: true, // Prevent 0×0 rendering
+    paddingPercent: 0, // No padding - exact size
 
-    // === 성능 최적화 ===
-    preferResponsive: false, // Canvas 렌더링에서는 고정 크기 필요
-    enableLiveBBox: false, // getBBox() 호출로 인한 테스트 환경 타임아웃 방지
-    enableHeuristicBBox: true, // Node.js 환경 대응
+    // === Performance Optimization ===
+    preferResponsive: false, // Fixed size needed for Canvas rendering
+    enableLiveBBox: false, // Prevent test environment timeout from getBBox() calls
+    enableHeuristicBBox: true, // Support Node.js environment
   });
   return enhancedSvg;
 }

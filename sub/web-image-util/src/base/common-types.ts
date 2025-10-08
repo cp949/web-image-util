@@ -1,12 +1,12 @@
-// ImageSource는 통합 타입 시스템에서 import
+// ImageSource imported from unified type system
 import type { ImageSource } from '../types';
 
 export type { ImageSource };
 
 /**
- * 이미지 소스 변환 옵션
+ * Image source conversion options
  *
- * @description 이미지 소스를 HTMLImageElement로 변환할 때 사용되는 옵션
+ * @description Options used when converting image source to HTMLImageElement
  */
 export interface ImageSourceConvertOptions {
   crossOrigin?: string;
@@ -14,39 +14,39 @@ export interface ImageSourceConvertOptions {
 }
 
 /**
- * 이미지 문자열 소스 타입
+ * Image string source type
  *
- * @description 문자열로 표현된 이미지 소스의 종류를 나타내는 타입
+ * @description Type representing the kind of image source expressed as string
  */
 export type ImageStringSourceType = 'SVG_XML' | 'DATA_URL' | 'HTTP_URL' | 'PATH';
 
 /**
- * 이미지 파일 확장자
+ * Image file extensions
  *
- * @description 지원되는 이미지 파일 확장자 목록
+ * @description List of supported image file extensions
  */
 export type ImageFileExt = 'jpg' | 'png' | 'svg' | 'bmp' | 'tiff' | 'webp' | 'gif' | 'ico';
 
-// ImageFormat, OutputFormat는 통합 타입 시스템에서 import
+// ImageFormat, OutputFormat imported from unified type system
 import type { ImageFormat, OutputFormat } from '../types';
 
 export interface ModernConversionOptions {
   format?: OutputFormat;
   quality?: number;
   fallbackFormat?: OutputFormat;
-  autoOptimize?: boolean; // 자동 포맷 선택
+  autoOptimize?: boolean; // Automatic format selection
 }
 
-// 포맷별 메타데이터
+// Format-specific metadata
 export interface FormatInfo {
   format: ImageFormat;
   mimeType: string;
   supportsTransparency: boolean;
   supportsAnimation: boolean;
-  averageCompression: number; // 대략적인 압축률 (%)
+  averageCompression: number; // Approximate compression ratio (%)
 }
 
-// processImage API 전용 타입 정의
+// Type definitions specific to processImage API
 
 export type DataUrlWithSize = {
   dataUrl: string;
@@ -54,7 +54,7 @@ export type DataUrlWithSize = {
   height: number;
 };
 
-// 특화된 에러 클래스들 export (기본 에러 타입은 통합 시스템에서 가져옴)
+// Export specialized error classes (basic error types imported from unified system)
 export { ImageSourceError, ImageConversionError, ImageCanvasError, ImageResizeError } from './errors';
 
 export type BlobWithSize = {

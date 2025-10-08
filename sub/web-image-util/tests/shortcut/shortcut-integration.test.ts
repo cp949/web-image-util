@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { processImage } from '../../src/index';
 
 describe('Shortcut API Integration Tests', () => {
-  // Base64로 인코딩된 100x100 파란 사각형 SVG
+  // Base64 encoded 100x100 blue square SVG
   const testImageUrl =
     'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNzNkYyIvPjwvc3ZnPg==';
 
   describe('Group 1: Direct Mapping Operations', () => {
-    // Vitest 모범 사례: describe.each를 사용하여 반복적인 테스트를 간결하게 표현
+    // Vitest best practice: use describe.each to express repetitive tests concisely
     describe.each([
       {
         method: 'coverBox',
@@ -83,19 +83,19 @@ describe('Shortcut API Integration Tests', () => {
   });
 
   describe('Group 2: Lazy Operations', () => {
-    // Vitest 모범 사례: describe.each로 lazy 연산 테스트를 체계적으로 구조화
+    // Vitest best practice: systematically structure lazy operation tests with describe.each
     describe.each([
       {
         method: 'exactWidth',
         args: [100],
         description: 'resize to specific width maintaining aspect ratio',
-        expectedScale: { sx: 1, sy: 1 }, // 100x100 원본 -> 100x100
+        expectedScale: { sx: 1, sy: 1 }, // 100x100 original -> 100x100
       },
       {
         method: 'exactHeight',
         args: [200],
         description: 'resize to specific height maintaining aspect ratio',
-        expectedScale: { sx: 2, sy: 2 }, // 100x100 원본 -> 200x200
+        expectedScale: { sx: 2, sy: 2 }, // 100x100 original -> 200x200
       },
       {
         method: 'scale',
@@ -150,7 +150,7 @@ describe('Shortcut API Integration Tests', () => {
         const processor = (shortcutBuilder as any)[method](...args);
         const creationTime = performance.now() - startTime;
 
-        // Lazy 연산은 즉시 실행되지 않으므로 생성 시간이 매우 짧아야 함 (< 5ms)
+        // Lazy operations should not execute immediately, so creation time should be very short (< 5ms)
         expect(creationTime, `${method} should create processor instantly without processing`).toBeLessThan(5);
         expect(processor, 'processor should be ready for future execution').toBeDefined();
       });

@@ -1,23 +1,23 @@
 /**
- * Resize Config 타입 시스템
+ * Resize Config type system
  *
  * @description
- * Discriminated Union 기반의 타입 안전한 리사이징 설정 시스템
- * - fit 필드를 통한 타입 좁히기 (type narrowing)
- * - 컴파일 타임 타입 안전성 보장
- * - 각 fit 모드별 필수/선택 옵션 강제
+ * Type-safe resizing configuration system based on Discriminated Union
+ * - Type narrowing through fit field
+ * - Compile-time type safety guarantee
+ * - Enforces required/optional options for each fit mode
  */
 
 import { ImageProcessError } from './index';
 
 // ============================================================================
-// BASE TYPES - 기본 타입들
+// BASE TYPES - Base types
 // ============================================================================
 
 /**
- * 리사이즈 결과물에 적용할 padding 정의
- * - 숫자 하나면 4방향 동일
- * - 객체면 필요한 방향만 선택적으로 지정
+ * Padding definition to apply to resize result
+ * - Single number for uniform padding on all sides
+ * - Object for selective padding on specific sides
  */
 export type Padding =
   | number
@@ -29,22 +29,22 @@ export type Padding =
     };
 
 /**
- * 모든 ResizeConfig에 공통으로 적용되는 기본 설정
+ * Base configuration applied to all ResizeConfig
  */
 export interface BaseResizeConfig {
-  /** 리사이즈 결과물 주변 패딩 (픽셀) */
+  /** Padding around resize result (pixels) */
   padding?: Padding;
-  /** 배경색 (CSS 색상 문자열, 기본: 투명한 검정) */
+  /** Background color (CSS color string, default: transparent black) */
   background?: string;
 }
 
 // ============================================================================
-// FIT MODE CONFIGS - 각 fit 모드별 개별 설정
+// FIT MODE CONFIGS - Individual configurations for each fit mode
 // ============================================================================
 
 /**
- * Cover 모드: 이미지를 지정된 크기에 맞춰 꽉 채움 (일부 잘릴 수 있음)
- * CSS object-fit: cover와 동일한 동작
+ * Cover mode: Fill image to specified size completely (may crop)
+ * Same behavior as CSS object-fit: cover
  */
 export interface CoverConfig extends BaseResizeConfig {
   fit: 'cover';
@@ -53,22 +53,22 @@ export interface CoverConfig extends BaseResizeConfig {
 }
 
 /**
- * Contain 모드: 이미지를 지정된 크기 안에 전체가 들어가도록 맞춤 (여백 생김)
- * CSS object-fit: contain과 동일한 동작
+ * Contain mode: Fit entire image within specified size (may have empty space)
+ * Same behavior as CSS object-fit: contain
  */
 export interface ContainConfig extends BaseResizeConfig {
   fit: 'contain';
   width: number;
   height: number;
-  /** 여백 제거 여부 (기본: false) - 배경색과 동일한 색상의 여백을 자동으로 제거 */
+  /** Whether to trim empty space (default: false) - automatically removes padding with same color as background */
   trimEmpty?: boolean;
-  /** 확대 방지 여부 (기본: false) - true면 작은 이미지를 확대하지 않음 */
+  /** Whether to prevent enlargement (default: false) - if true, small images won't be enlarged */
   withoutEnlargement?: boolean;
 }
 
 /**
- * Fill 모드: 이미지를 지정된 크기에 정확히 맞춤 (비율 무시, 늘어나거나 압축됨)
- * CSS object-fit: fill과 동일한 동작
+ * Fill mode: Fit image to exact specified size (ignore aspect ratio, may stretch or compress)
+ * Same behavior as CSS object-fit: fill
  */
 export interface FillConfig extends BaseResizeConfig {
   fit: 'fill';
@@ -77,10 +77,10 @@ export interface FillConfig extends BaseResizeConfig {
 }
 
 /**
- * MaxFit 모드: 최대 크기 제한 (축소만, 확대 안함)
- * - 이미지가 지정된 크기보다 크면 축소
- * - 이미지가 지정된 크기보다 작으면 원본 크기 유지
- * - width 또는 height 중 최소 하나는 필수
+ * MaxFit mode: Maximum size limit (shrink only, no enlargement)
+ * - If image is larger than specified size, shrink it
+ * - If image is smaller than specified size, keep original size
+ * - At least one of width or height is required
  */
 export type MaxFitConfig =
   | (BaseResizeConfig & {
@@ -100,10 +100,10 @@ export type MaxFitConfig =
     });
 
 /**
- * MinFit 모드: 최소 크기 보장 (확대만, 축소 안함)
- * - 이미지가 지정된 크기보다 작으면 확대
- * - 이미지가 지정된 크기보다 크면 원본 크기 유지
- * - width 또는 height 중 최소 하나는 필수
+ * MinFit mode: Minimum size guarantee (enlarge only, no shrinking)
+ * - If image is smaller than specified size, enlarge it
+ * - If image is larger than specified size, keep original size
+ * - At least one of width or height is required
  */
 export type MinFitConfig =
   | (BaseResizeConfig & {
@@ -123,106 +123,106 @@ export type MinFitConfig =
     });
 
 // ============================================================================
-// DISCRIMINATED UNION - 메인 타입 정의
+// DISCRIMINATED UNION - Main type definition
 // ============================================================================
 
 /**
- * ResizeConfig Discriminated Union 타입
+ * ResizeConfig Discriminated Union type
  *
  * @description
- * 5가지 fit 모드를 지원하는 리사이징 설정 타입:
- * - cover: 영역을 가득 채움 (잘림 가능)
- * - contain: 전체 이미지가 들어가도록 맞춤 (여백 생성)
- * - fill: 정확한 크기로 맞춤 (비율 무시)
- * - maxFit: 축소만 허용 (확대 안함)
- * - minFit: 확대만 허용 (축소 안함)
+ * Resizing configuration type supporting 5 fit modes:
+ * - cover: Fill entire area (may crop)
+ * - contain: Fit entire image (may create empty space)
+ * - fill: Exact size fit (ignore aspect ratio)
+ * - maxFit: Only allow shrinking (no enlargement)
+ * - minFit: Only allow enlargement (no shrinking)
  *
- * TypeScript의 Discriminated Union을 활용하여
- * fit 필드로 타입을 좁히고 각 모드별 필수/선택 속성을 강제합니다.
+ * Utilizes TypeScript's Discriminated Union to
+ * narrow types by fit field and enforce required/optional properties for each mode.
  */
 export type ResizeConfig = CoverConfig | ContainConfig | FillConfig | MaxFitConfig | MinFitConfig;
 
 // ============================================================================
-// TYPE GUARDS - 타입 가드 함수들
+// TYPE GUARDS - Type guard functions
 // ============================================================================
 
 /**
- * CoverConfig 타입 가드
+ * CoverConfig type guard
  */
 export function isCoverConfig(config: ResizeConfig): config is CoverConfig {
   return config.fit === 'cover';
 }
 
 /**
- * ContainConfig 타입 가드
+ * ContainConfig type guard
  */
 export function isContainConfig(config: ResizeConfig): config is ContainConfig {
   return config.fit === 'contain';
 }
 
 /**
- * FillConfig 타입 가드
+ * FillConfig type guard
  */
 export function isFillConfig(config: ResizeConfig): config is FillConfig {
   return config.fit === 'fill';
 }
 
 /**
- * MaxFitConfig 타입 가드
+ * MaxFitConfig type guard
  */
 export function isMaxFitConfig(config: ResizeConfig): config is MaxFitConfig {
   return config.fit === 'maxFit';
 }
 
 /**
- * MinFitConfig 타입 가드
+ * MinFitConfig type guard
  */
 export function isMinFitConfig(config: ResizeConfig): config is MinFitConfig {
   return config.fit === 'minFit';
 }
 
 // ============================================================================
-// RUNTIME VALIDATION - 런타임 검증 함수
+// RUNTIME VALIDATION - Runtime validation function
 // ============================================================================
 
 /**
- * ResizeConfig 런타임 검증 함수
- * - maxFit/minFit: width 또는 height 중 하나는 필수
- * - cover/contain/fill: width와 height 모두 필수
- * @throws {ImageProcessError} 유효하지 않은 설정일 경우
+ * ResizeConfig runtime validation function
+ * - maxFit/minFit: Either width or height is required
+ * - cover/contain/fill: Both width and height are required
+ * @throws {ImageProcessError} If configuration is invalid
  */
 export function validateResizeConfig(config: ResizeConfig): void {
-  // maxFit과 minFit은 width나 height 중 하나는 필수
+  // maxFit and minFit require at least one of width or height
   if (config.fit === 'maxFit' || config.fit === 'minFit') {
     if (!config.width && !config.height) {
       throw new ImageProcessError(`${config.fit} requires at least width or height`, 'INVALID_DIMENSIONS');
     }
-    // width 또는 height가 음수인지 확인
+    // Check if width or height is negative
     if ((config.width && config.width <= 0) || (config.height && config.height <= 0)) {
       throw new ImageProcessError(`${config.fit} width and height must be positive numbers`, 'INVALID_DIMENSIONS');
     }
   }
 
-  // cover, contain, fill은 width와 height 모두 필수
+  // cover, contain, fill require both width and height
   if (config.fit === 'cover' || config.fit === 'contain' || config.fit === 'fill') {
-    // 먼저 undefined/null 체크 (0은 유효하지 않지만 별도로 체크)
+    // First check for undefined/null (0 is invalid but checked separately)
     if (config.width === undefined || config.width === null || config.height === undefined || config.height === null) {
       throw new ImageProcessError(`${config.fit} requires both width and height`, 'INVALID_DIMENSIONS');
     }
-    // width 또는 height가 0 이하인지 확인 (음수 또는 0)
+    // Check if width or height is 0 or negative
     if (config.width <= 0 || config.height <= 0) {
       throw new ImageProcessError(`${config.fit} width and height must be positive numbers`, 'INVALID_DIMENSIONS');
     }
   }
 
-  // padding 검증 (선택적)
+  // Padding validation (optional)
   if (config.padding !== undefined) {
     if (typeof config.padding === 'number') {
       if (config.padding < 0) {
         throw new ImageProcessError('padding must be non-negative', 'INVALID_DIMENSIONS');
       }
     } else {
-      // 객체 형태의 padding
+      // Object form padding
       const { top = 0, right = 0, bottom = 0, left = 0 } = config.padding;
       if (top < 0 || right < 0 || bottom < 0 || left < 0) {
         throw new ImageProcessError('padding values must be non-negative', 'INVALID_DIMENSIONS');

@@ -161,7 +161,7 @@ export function BatchDemo() {
         file.processingTime = Date.now() - startTime;
       } catch (error) {
         file.status = 'error';
-        file.error = error instanceof Error ? error.message : '처리 중 오류 발생';
+        file.error = error instanceof Error ? error.message : 'Error occurred during processing';
       }
 
       completedCount++;
@@ -176,7 +176,7 @@ export function BatchDemo() {
     const completedFiles = files.filter((file) => file.status === 'completed' && file.result);
 
     if (completedFiles.length === 0) {
-      console.log('다운로드할 처리 완료된 파일이 없습니다.');
+      console.log('No completed files to download.');
       return;
     }
 
@@ -229,7 +229,7 @@ export function BatchDemo() {
             : 'createSocialImage'
     } } from '@cp949/web-image-util';
 
-// 배치 처리 예제
+// Batch processing example
 const processFiles = async (files) => {
   const results = [];
 
@@ -267,7 +267,7 @@ const processFiles = async (files) => {
   return results;
 };
 
-// Promise.all로 병렬 처리 (더 빠름)
+// Parallel processing with Promise.all (faster)
 const processFilesParallel = async (files) => {
   const promises = files.map(async (file) => {
     try {
@@ -285,7 +285,7 @@ const processFilesParallel = async (files) => {
   return Promise.all(promises);
 };
 
-// JSZip을 사용한 다운로드
+// Download using JSZip
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -304,7 +304,7 @@ const downloadAsZip = async (results) => {
 
     return [
       {
-        title: '배치 처리 코드',
+        title: 'Batch Processing Code',
         code,
         language: 'typescript',
       },
@@ -317,20 +317,20 @@ const downloadAsZip = async (results) => {
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        배치 처리
+        Batch Processing
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        여러 이미지를 동일한 설정으로 한 번에 처리할 수 있습니다.
+        Process multiple images at once with the same settings.
       </Typography>
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
-            {/* 파일 업로드 */}
+            {/* File Upload */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  이미지 파일 추가
+                  Add Image Files
                 </Typography>
 
                 <Box
@@ -350,38 +350,38 @@ const downloadAsZip = async (results) => {
                   <input {...getInputProps()} />
                   <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
                   <Typography variant="body1" gutterBottom>
-                    {isDragActive ? '파일을 여기에 놓으세요' : '여러 이미지를 드래그하거나 클릭하여 선택'}
+                    {isDragActive ? 'Drop files here' : 'Drag multiple images or click to select'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    JPEG, PNG, WebP 파일 지원
+                    Supports JPEG, PNG, WebP files
                   </Typography>
                 </Box>
 
                 {files.length > 0 && (
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2" color="text.secondary">
-                      {files.length}개 파일 선택됨
+                      {files.length} files selected
                     </Typography>
                     <Button size="small" onClick={clearAll} color="error">
-                      모두 제거
+                      Clear All
                     </Button>
                   </Box>
                 )}
               </CardContent>
             </Card>
 
-            {/* 처리 옵션 */}
+            {/* Processing Options */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  처리 옵션
+                  Processing Options
                 </Typography>
 
                 <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>작업 유형</InputLabel>
+                  <InputLabel>Operation Type</InputLabel>
                   <Select
                     value={options.operation}
-                    label="작업 유형"
+                    label="Operation Type"
                     onChange={(e) =>
                       setOptions((prev) => ({
                         ...prev,
@@ -389,21 +389,21 @@ const downloadAsZip = async (results) => {
                       }))
                     }
                   >
-                    <MenuItem value="resize">리사이징</MenuItem>
-                    <MenuItem value="thumbnail">썸네일</MenuItem>
-                    <MenuItem value="avatar">아바타</MenuItem>
-                    <MenuItem value="social">소셜 이미지</MenuItem>
+                    <MenuItem value="resize">Resize</MenuItem>
+                    <MenuItem value="thumbnail">Thumbnail</MenuItem>
+                    <MenuItem value="avatar">Avatar</MenuItem>
+                    <MenuItem value="social">Social Image</MenuItem>
                   </Select>
                 </FormControl>
 
-                {/* 리사이징 옵션 */}
+                {/* Resize Options */}
                 {options.operation === 'resize' && (
                   <Box>
                     <Grid container spacing={2} sx={{ mb: 2 }}>
                       <Grid size={{ xs: 6 }}>
                         <TextField
                           fullWidth
-                          label="너비"
+                          label="Width"
                           type="number"
                           value={options.width}
                           onChange={(e) =>
@@ -417,7 +417,7 @@ const downloadAsZip = async (results) => {
                       <Grid size={{ xs: 6 }}>
                         <TextField
                           fullWidth
-                          label="높이"
+                          label="Height"
                           type="number"
                           value={options.height}
                           onChange={(e) =>
@@ -432,11 +432,11 @@ const downloadAsZip = async (results) => {
                   </Box>
                 )}
 
-                {/* 썸네일/아바타 옵션 */}
+                {/* Thumbnail/Avatar Options */}
                 {(options.operation === 'thumbnail' || options.operation === 'avatar') && (
                   <TextField
                     fullWidth
-                    label="크기 (px)"
+                    label="Size (px)"
                     type="number"
                     value={options.size || (options.operation === 'thumbnail' ? 150 : 128)}
                     onChange={(e) =>
@@ -449,13 +449,13 @@ const downloadAsZip = async (results) => {
                   />
                 )}
 
-                {/* 소셜 이미지 옵션 */}
+                {/* Social Image Options */}
                 {options.operation === 'social' && (
                   <FormControl fullWidth sx={{ mb: 2 }}>
-                    <InputLabel>플랫폼</InputLabel>
+                    <InputLabel>Platform</InputLabel>
                     <Select
                       value={options.socialPlatform || 'instagram'}
-                      label="플랫폼"
+                      label="Platform"
                       onChange={(e) =>
                         setOptions((prev) => ({
                           ...prev,
@@ -470,12 +470,12 @@ const downloadAsZip = async (results) => {
                   </FormControl>
                 )}
 
-                {/* 공통 옵션 */}
+                {/* Common Options */}
                 <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>출력 포맷</InputLabel>
+                  <InputLabel>Output Format</InputLabel>
                   <Select
                     value={options.format}
-                    label="출력 포맷"
+                    label="Output Format"
                     onChange={(e) =>
                       setOptions((prev) => ({
                         ...prev,
@@ -491,7 +491,7 @@ const downloadAsZip = async (results) => {
 
                 <TextField
                   fullWidth
-                  label="품질 (%)"
+                  label="Quality (%)"
                   type="number"
                   value={options.quality}
                   onChange={(e) =>
@@ -512,7 +512,7 @@ const downloadAsZip = async (results) => {
                   disabled={files.length === 0 || processing}
                   size="large"
                 >
-                  {processing ? '처리 중...' : `배치 처리 시작 (${files.length}개 파일)`}
+                  {processing ? 'Processing...' : `Start Batch Processing (${files.length} files)`}
                 </Button>
               </CardContent>
             </Card>
@@ -521,15 +521,15 @@ const downloadAsZip = async (results) => {
 
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* 처리 현황 */}
+            {/* Processing Status */}
             {files.length > 0 && (
               <Card>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6">처리 현황</Typography>
+                    <Typography variant="h6">Processing Status</Typography>
                     <Stack direction="row" spacing={1}>
-                      <Chip label={`완료 ${completedCount}`} color="success" size="small" />
-                      {errorCount > 0 && <Chip label={`실패 ${errorCount}`} color="error" size="small" />}
+                      <Chip label={`Completed ${completedCount}`} color="success" size="small" />
+                      {errorCount > 0 && <Chip label={`Failed ${errorCount}`} color="error" size="small" />}
                     </Stack>
                   </Box>
 
@@ -537,7 +537,7 @@ const downloadAsZip = async (results) => {
                     <Box sx={{ mb: 2 }}>
                       <LinearProgress variant="determinate" value={progress} />
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        진행률: {Math.round(progress)}%
+                        Progress: {Math.round(progress)}%
                       </Typography>
                     </Box>
                   )}
@@ -552,10 +552,10 @@ const downloadAsZip = async (results) => {
                             file.status === 'error'
                               ? file.error
                               : file.status === 'completed'
-                                ? `처리 완료 (${file.processingTime}ms)`
+                                ? `Completed (${file.processingTime}ms)`
                                 : file.status === 'processing'
-                                  ? '처리 중...'
-                                  : '대기 중'
+                                  ? 'Processing...'
+                                  : 'Pending'
                           }
                         />
                         <ListItemSecondaryAction>
@@ -583,7 +583,7 @@ const downloadAsZip = async (results) => {
                         onClick={downloadResults}
                         color="success"
                       >
-                        처리된 이미지 다운로드 (ZIP)
+                        Download Processed Images (ZIP)
                       </Button>
                     </Box>
                   )}
@@ -591,23 +591,23 @@ const downloadAsZip = async (results) => {
               </Card>
             )}
 
-            {/* 처리 통계 */}
+            {/* Processing Statistics */}
             {completedCount > 0 && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    처리 통계
+                    Processing Statistics
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 6, sm: 3 }}>
                       <Typography variant="body2" color="text.secondary">
-                        총 처리 파일
+                        Total Processed Files
                       </Typography>
-                      <Typography variant="h6">{completedCount}개</Typography>
+                      <Typography variant="h6">{completedCount} files</Typography>
                     </Grid>
                     <Grid size={{ xs: 6, sm: 3 }}>
                       <Typography variant="body2" color="text.secondary">
-                        평균 처리 시간
+                        Average Processing Time
                       </Typography>
                       <Typography variant="h6">
                         {Math.round(
@@ -620,13 +620,13 @@ const downloadAsZip = async (results) => {
                     </Grid>
                     <Grid size={{ xs: 6, sm: 3 }}>
                       <Typography variant="body2" color="text.secondary">
-                        성공률
+                        Success Rate
                       </Typography>
                       <Typography variant="h6">{Math.round((completedCount / files.length) * 100)}%</Typography>
                     </Grid>
                     <Grid size={{ xs: 6, sm: 3 }}>
                       <Typography variant="body2" color="text.secondary">
-                        총 처리된 용량
+                        Total Processed Size
                       </Typography>
                       <Typography variant="h6">
                         {Math.round(
@@ -645,18 +645,18 @@ const downloadAsZip = async (results) => {
               </Card>
             )}
 
-            {/* 코드 예제 */}
-            <CodeSnippet title="배치 처리 코드 예제" examples={generateCodeExample()} />
+            {/* Code Example */}
+            <CodeSnippet title="Batch Processing Code Example" examples={generateCodeExample()} />
 
-            {/* 팁 */}
+            {/* Tips */}
             <Alert severity="info">
               <Typography variant="body2">
-                <strong>성능 팁:</strong>
+                <strong>Performance Tips:</strong>
                 <br />
-                • 대용량 파일이 많은 경우 작은 배치로 나누어 처리하세요
+                • For large files, split them into smaller batches for processing
                 <br />
-                • Promise.all을 사용하면 병렬 처리로 더 빠르게 처리할 수 있습니다
-                <br />• 메모리 사용량을 고려하여 한 번에 너무 많은 파일을 처리하지 마세요
+                • Use Promise.all for faster parallel processing
+                <br />• Consider memory usage and avoid processing too many files at once
               </Typography>
             </Alert>
           </Stack>

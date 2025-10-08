@@ -1,11 +1,11 @@
 /**
- * 고해상도 이미지 처리 전략 열거형
+ * High-resolution image processing strategy enum
  */
 export type ProcessingStrategy =
-  | 'direct' // 직접 처리 (소용량)
-  | 'chunked' // 청크 단위 처리 (중용량)
-  | 'stepped' // 단계적 축소 (대용량)
-  | 'tiled'; // 타일 기반 처리 (초대용량)
+  | 'direct' // Direct processing (small size)
+  | 'chunked' // Chunk-based processing (medium size)
+  | 'stepped' // Stepped reduction (large size)
+  | 'tiled'; // Tile-based processing (ultra-large size)
 
 export const ProcessingStrategy = {
   DIRECT: 'direct' as const,
@@ -15,7 +15,7 @@ export const ProcessingStrategy = {
 } as const;
 
 /**
- * 이미지 분석 결과 인터페이스
+ * Image analysis result interface
  */
 export interface ImageAnalysis {
   width: number;
@@ -30,34 +30,34 @@ export interface ImageAnalysis {
 }
 
 /**
- * 고해상도 이미지 분석기
- * 이미지 크기와 브라우저 환경을 분석하여 최적의 처리 전략을 결정합니다.
+ * High-resolution image analyzer
+ * Analyzes image size and browser environment to determine optimal processing strategy.
  */
 export class HighResolutionDetector {
-  // 메모리 임계값 (바이트)
+  // Memory thresholds (bytes)
   private static readonly MEMORY_THRESHOLDS = {
-    SMALL: 16 * 1024 * 1024, // 16MB - 직접 처리
-    MEDIUM: 64 * 1024 * 1024, // 64MB - 청크 처리
-    LARGE: 256 * 1024 * 1024, // 256MB - 단계적 처리
+    SMALL: 16 * 1024 * 1024, // 16MB - direct processing
+    MEDIUM: 64 * 1024 * 1024, // 64MB - chunk processing
+    LARGE: 256 * 1024 * 1024, // 256MB - stepped processing
   };
 
-  // Canvas 최대 크기 (브라우저별)
+  // Maximum Canvas size (by browser)
   private static readonly MAX_CANVAS_SIZE = {
     chrome: 32767,
     firefox: 32767,
     safari: 16384,
     edge: 32767,
-    default: 16384, // 가장 보수적인 값을 기본값으로
+    default: 16384, // Most conservative value as default
   };
 
-  // 픽셀당 메모리 사용량 (RGBA 4바이트)
+  // Memory usage per pixel (RGBA 4 bytes)
   private static readonly BYTES_PER_PIXEL = 4;
 
   /**
-   * 이미지 분석 및 최적 전략 결정
+   * Image analysis and optimal strategy determination
    *
-   * @param img - 분석할 이미지 요소
-   * @returns 상세한 분석 결과와 권장 전략
+   * @param img - Image element to analyze
+   * @returns Detailed analysis results and recommended strategy
    */
   static analyzeImage(img: HTMLImageElement): ImageAnalysis {
     const { width, height } = img;
@@ -65,10 +65,10 @@ export class HighResolutionDetector {
     const estimatedMemory = pixelCount * this.BYTES_PER_PIXEL;
     const estimatedMemoryMB = estimatedMemory / (1024 * 1024);
 
-    // 처리 전략 결정
+    // Determine processing strategy
     const strategy = this.determineStrategy(estimatedMemory, width, height);
 
-    // 처리 복잡도 계산
+    // Calculate processing complexity
     const processingComplexity = this.calculateComplexity(pixelCount, strategy);
 
     return {
@@ -85,18 +85,18 @@ export class HighResolutionDetector {
   }
 
   /**
-   * 처리 전략 결정
+   * Determine processing strategy
    * @private
    */
   private static determineStrategy(estimatedMemory: number, width: number, height: number): ProcessingStrategy {
     const maxDimension = this.getMaxSafeDimension();
 
-    // Canvas 크기 제한 초과 시 타일 처리 강제
+    // Force tile processing when Canvas size limit is exceeded
     if (width > maxDimension || height > maxDimension) {
       return ProcessingStrategy.TILED;
     }
 
-    // 메모리 사용량에 따른 전략 결정
+    // Determine strategy based on memory usage
     if (estimatedMemory <= this.MEMORY_THRESHOLDS.SMALL) {
       return ProcessingStrategy.DIRECT;
     } else if (estimatedMemory <= this.MEMORY_THRESHOLDS.MEDIUM) {
@@ -109,7 +109,7 @@ export class HighResolutionDetector {
   }
 
   /**
-   * 처리 복잡도 계산
+   * Calculate processing complexity
    * @private
    */
   private static calculateComplexity(
@@ -133,9 +133,9 @@ export class HighResolutionDetector {
   }
 
   /**
-   * 브라우저별 최대 안전 Canvas 크기 반환
+   * Return maximum safe Canvas size by browser
    *
-   * @returns 최대 안전 Canvas 크기 (픽셀)
+   * @returns Maximum safe Canvas size (pixels)
    */
   static getMaxSafeDimension(): number {
     const userAgent = navigator.userAgent.toLowerCase();
@@ -154,24 +154,24 @@ export class HighResolutionDetector {
   }
 
   /**
-   * 권장 청크 크기 계산
-   * 메모리 사용량과 처리 효율성을 고려하여 최적의 청크 크기를 결정합니다.
+   * Calculate recommended chunk size
+   * Determines optimal chunk size considering memory usage and processing efficiency.
    *
-   * @param totalPixels - 전체 픽셀 수
-   * @returns 권장 청크 크기 (한 변의 길이)
+   * @param totalPixels - Total pixel count
+   * @returns Recommended chunk size (side length)
    */
   static getOptimalChunkSize(totalPixels: number): number {
-    // 청크 하나당 최대 16MB 메모리 사용하도록 제한
+    // Limit to maximum 16MB memory usage per chunk
     const maxChunkPixels = this.MEMORY_THRESHOLDS.SMALL / this.BYTES_PER_PIXEL;
     const theoreticalChunkSize = Math.floor(Math.sqrt(maxChunkPixels));
 
-    // 실용적인 범위로 제한 (512px ~ 2048px)
+    // Limit to practical range (512px ~ 2048px)
     const minChunkSize = 512;
     const maxChunkSize = 2048;
 
     let chunkSize = Math.max(minChunkSize, Math.min(maxChunkSize, theoreticalChunkSize));
 
-    // 2의 거듭제곱에 가까운 값으로 조정 (처리 효율성을 위해)
+    // Adjust to value close to power of 2 (for processing efficiency)
     const powerOfTwo = Math.pow(2, Math.round(Math.log2(chunkSize)));
     chunkSize = Math.max(minChunkSize, Math.min(maxChunkSize, powerOfTwo));
 
@@ -179,10 +179,10 @@ export class HighResolutionDetector {
   }
 
   /**
-   * 이미지 처리 가능 여부 검사
+   * Check image processing capability
    *
-   * @param img - 검사할 이미지
-   * @returns 처리 가능 여부와 상세 정보
+   * @param img - Image to check
+   * @returns Processing capability status and detailed information
    */
   static validateProcessingCapability(img: HTMLImageElement): {
     canProcess: boolean;
@@ -195,32 +195,32 @@ export class HighResolutionDetector {
     const recommendations: string[] = [];
     let canProcess = true;
 
-    // Canvas 크기 제한 검사
+    // Check Canvas size limitation
     if (img.width > analysis.maxSafeDimension || img.height > analysis.maxSafeDimension) {
-      limitations.push(`이미지 크기가 브라우저 Canvas 한계를 초과합니다. 최대: ${analysis.maxSafeDimension}px`);
-      recommendations.push('타일 기반 처리를 사용하여 분할 처리하는 것을 권장합니다.');
+      limitations.push(`Image size exceeds browser Canvas limit. Maximum: ${analysis.maxSafeDimension}px`);
+      recommendations.push('Recommend using tile-based processing for segmented processing.');
     }
 
-    // 메모리 사용량 검사
+    // Check memory usage
     if (analysis.estimatedMemoryMB > 512) {
-      limitations.push(`높은 메모리 사용량: ${analysis.estimatedMemoryMB}MB`);
-      recommendations.push('메모리 효율적인 처리 방식을 사용하거나 이미지 크기를 줄이는 것을 권장합니다.');
+      limitations.push(`High memory usage: ${analysis.estimatedMemoryMB}MB`);
+      recommendations.push('Recommend using memory-efficient processing or reducing image size.');
     }
 
-    // 처리 복잡도 검사
+    // Check processing complexity
     if (analysis.processingComplexity === 'extreme') {
-      limitations.push('매우 복잡한 처리가 예상되어 시간이 오래 걸릴 수 있습니다.');
-      recommendations.push('처리 진행 상황을 모니터링하고 필요시 중간에 중단할 수 있도록 준비하세요.');
+      limitations.push('Very complex processing is expected and may take a long time.');
+      recommendations.push('Monitor processing progress and be prepared to cancel if necessary.');
     }
 
-    // 전체적인 처리 가능 여부 결정
+    // Determine overall processing feasibility
     const hasBlockingLimitations =
       analysis.estimatedMemoryMB > 1024 || Math.max(img.width, img.height) > analysis.maxSafeDimension * 2;
 
     if (hasBlockingLimitations) {
       canProcess = false;
       recommendations.push(
-        '이미지를 더 작은 크기로 사전 처리하거나 전문적인 이미지 처리 도구를 사용하는 것을 권장합니다.'
+        'Recommend pre-processing the image to a smaller size or using professional image processing tools.'
       );
     }
 
@@ -233,10 +233,10 @@ export class HighResolutionDetector {
   }
 
   /**
-   * 처리 시간 추정
+   * Estimate processing time
    *
-   * @param analysis - 이미지 분석 결과
-   * @returns 예상 처리 시간 (초)
+   * @param analysis - Image analysis result
+   * @returns Expected processing time (seconds)
    */
   static estimateProcessingTime(analysis: ImageAnalysis): {
     estimatedSeconds: number;
@@ -251,38 +251,38 @@ export class HighResolutionDetector {
 
     switch (analysis.strategy) {
       case ProcessingStrategy.DIRECT:
-        baseTime = megaPixels * 0.1; // 메가픽셀당 0.1초
-        factors.push('직접 처리 - 가장 빠름');
+        baseTime = megaPixels * 0.1; // 0.1 seconds per megapixel
+        factors.push('Direct processing - fastest');
         break;
 
       case ProcessingStrategy.CHUNKED:
         baseTime = megaPixels * 0.2;
-        multiplier = 1.2; // 청크 오버헤드
-        factors.push('청크 처리 - 메모리 효율적');
+        multiplier = 1.2; // Chunk overhead
+        factors.push('Chunk processing - memory efficient');
         break;
 
       case ProcessingStrategy.STEPPED:
         baseTime = megaPixels * 0.3;
-        multiplier = 1.5; // 단계별 처리 오버헤드
-        factors.push('단계별 처리 - 고품질');
+        multiplier = 1.5; // Stepped processing overhead
+        factors.push('Stepped processing - high quality');
         break;
 
       case ProcessingStrategy.TILED:
         baseTime = megaPixels * 0.5;
-        multiplier = 2.0; // 타일 처리 오버헤드
-        factors.push('타일 처리 - 초대용량 이미지');
+        multiplier = 2.0; // Tile processing overhead
+        factors.push('Tile processing - ultra-large images');
         break;
     }
 
-    // 복잡도에 따른 추가 시간
+    // Additional time based on complexity
     switch (analysis.processingComplexity) {
       case 'high':
         multiplier *= 1.3;
-        factors.push('높은 복잡도');
+        factors.push('High complexity');
         break;
       case 'extreme':
         multiplier *= 2.0;
-        factors.push('극도로 높은 복잡도');
+        factors.push('Extremely high complexity');
         break;
     }
 
@@ -299,10 +299,10 @@ export class HighResolutionDetector {
   }
 
   /**
-   * 처리 전략별 설명 반환
+   * Return description by processing strategy
    *
-   * @param strategy - 처리 전략
-   * @returns 전략에 대한 상세 설명
+   * @param strategy - Processing strategy
+   * @returns Detailed description of the strategy
    */
   static getStrategyDescription(strategy: ProcessingStrategy): {
     name: string;
@@ -313,40 +313,40 @@ export class HighResolutionDetector {
     switch (strategy) {
       case ProcessingStrategy.DIRECT:
         return {
-          name: '직접 처리',
-          description: '이미지를 한 번에 메모리로 로드하여 처리합니다.',
-          advantages: ['가장 빠른 처리 속도', '단순한 구현', '높은 품질'],
-          disadvantages: ['높은 메모리 사용량', '대용량 이미지에 부적합'],
+          name: 'Direct Processing',
+          description: 'Loads the entire image into memory at once for processing.',
+          advantages: ['Fastest processing speed', 'Simple implementation', 'High quality'],
+          disadvantages: ['High memory usage', 'Unsuitable for large images'],
         };
 
       case ProcessingStrategy.CHUNKED:
         return {
-          name: '청크 처리',
-          description: '이미지를 작은 블록으로 나누어 순차적으로 처리합니다.',
-          advantages: ['메모리 효율적', '안정적 처리', '중간 크기 이미지에 적합'],
-          disadvantages: ['처리 시간 증가', '경계 부분 처리 필요'],
+          name: 'Chunk Processing',
+          description: 'Divides the image into small blocks for sequential processing.',
+          advantages: ['Memory efficient', 'Stable processing', 'Suitable for medium-sized images'],
+          disadvantages: ['Increased processing time', 'Boundary processing required'],
         };
 
       case ProcessingStrategy.STEPPED:
         return {
-          name: '단계적 축소',
-          description: '이미지를 여러 단계에 걸쳐 점진적으로 축소합니다.',
-          advantages: ['고품질 결과', '앨리어싱 최소화', '부드러운 그라데이션'],
-          disadvantages: ['긴 처리 시간', '높은 CPU 사용량', '복잡한 구현'],
+          name: 'Stepped Reduction',
+          description: 'Gradually reduces the image over multiple steps.',
+          advantages: ['High-quality results', 'Minimized aliasing', 'Smooth gradation'],
+          disadvantages: ['Long processing time', 'High CPU usage', 'Complex implementation'],
         };
 
       case ProcessingStrategy.TILED:
         return {
-          name: '타일 처리',
-          description: '이미지를 타일 단위로 분할하여 개별적으로 처리합니다.',
-          advantages: ['초대용량 이미지 처리 가능', '메모리 사용량 제한', '확장성'],
-          disadvantages: ['가장 긴 처리 시간', '타일 경계 처리 복잡', '높은 구현 복잡도'],
+          name: 'Tile Processing',
+          description: 'Divides the image into tiles for individual processing.',
+          advantages: ['Can process ultra-large images', 'Limited memory usage', 'Scalability'],
+          disadvantages: ['Longest processing time', 'Complex tile boundary processing', 'High implementation complexity'],
         };
 
       default:
         return {
-          name: '알 수 없음',
-          description: '정의되지 않은 처리 전략입니다.',
+          name: 'Unknown',
+          description: 'Undefined processing strategy.',
           advantages: [],
           disadvantages: [],
         };

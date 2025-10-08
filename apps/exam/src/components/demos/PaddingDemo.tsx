@@ -34,9 +34,9 @@ import { ProcessingStatus } from '../ui/ProcessingStatus';
 import type { ProcessingOptions } from './types';
 
 /**
- * 패딩 기능 전용 데모 컴포넌트
- * 숫자 패딩과 객체 패딩을 모두 시연
- * Phase 4.2: useDebounce로 렌더링 최적화
+ * Dedicated demo component for padding functionality
+ * Demonstrates both numeric and object padding
+ * Phase 4.2: Rendering optimization with useDebounce
  */
 export function PaddingDemo() {
   const {
@@ -51,19 +51,19 @@ export function PaddingDemo() {
     canRetry,
   } = useImageProcessing();
 
-  // 실시간 미리보기 기능 (깜빡임 방지를 위해 비활성화)
+  // Real-time preview feature (disabled to prevent flickering)
   const realtimePreview = useRealtimePreview(originalImage, {
     debounceMs: 300,
-    enabled: false, // 깜빡임 방지를 위해 비활성화
+    enabled: false, // Disabled to prevent flickering
   });
 
-  // 패딩 모드 (숫자 vs 객체)
+  // Padding mode (number vs object)
   const [paddingMode, setPaddingMode] = useState<'number' | 'object'>('object');
 
-  // 숫자 패딩
+  // Numeric padding
   const [numberPadding, setNumberPadding] = useState(20);
 
-  // 객체 패딩
+  // Object padding
   const [objectPadding, setObjectPadding] = useState({
     top: 10,
     right: 20,
@@ -71,7 +71,7 @@ export function PaddingDemo() {
     left: 40,
   });
 
-  // 기본 처리 옵션
+  // Basic processing options
   const [options, setOptions] = useState<ProcessingOptions>({
     width: 400,
     height: 300,
@@ -82,22 +82,22 @@ export function PaddingDemo() {
     withoutEnlargement: false,
   });
 
-  // 최신 처리된 이미지 (수동 처리 결과만 사용) - useMemo로 메모이제이션
+  // Latest processed image (manual processing results only) - memoized with useMemo
   const processedImage = useMemo(() => {
-    return processedImages[processedImages.length - 1] || null; // 실시간 preview 제거
+    return processedImages[processedImages.length - 1] || null; // Remove real-time preview
   }, [processedImages]);
 
-  // 🎯 ProcessingStatus 깜빡임 방지를 위한 안정적인 처리 상태 (수동 처리만 사용)
+  // 🎯 Stable processing state to prevent ProcessingStatus flickering (manual processing only)
   const [stableProcessing, setStableProcessing] = useState(false);
   useDebounce(
     () => {
-      setStableProcessing(processing); // 실시간 처리 상태 제거
+      setStableProcessing(processing); // Remove real-time processing state
     },
-    100, // 100ms 디바운스로 깜빡임 방지
+    100, // 100ms debounce to prevent flickering
     [processing]
   );
 
-  // 처리 옵션 준비 (패딩 포함) - useMemo로 메모이제이션
+  // Prepare processing options (including padding) - memoized with useMemo
   const processingOptions = useMemo((): ProcessingOptions => {
     return {
       ...options,
@@ -105,38 +105,38 @@ export function PaddingDemo() {
     };
   }, [options, paddingMode, numberPadding, objectPadding]);
 
-  // useDebounce로 옵션 변경 디바운싱 (수동 처리만 사용)
+  // Debounce option changes with useDebounce (manual processing only)
   useDebounce(
     async () => {
       if (originalImage && processingOptions) {
-        // 수동 처리만 사용 (실시간 처리 비활성화로 깜빡임 방지)
+        // Use manual processing only (disable real-time processing to prevent flickering)
         await handleProcess(processingOptions);
       }
     },
-    600, // 600ms 디바운스 (더 안정적)
+    600, // 600ms debounce (more stable)
     [originalImage, processingOptions, handleProcess]
   );
 
-  // 이미지 선택 시 크기 설정
+  // Set size when image is selected
   useEffect(() => {
     if (originalImage) {
-      // 선택된 이미지의 실제 크기로 옵션 업데이트
+      // Update options with actual size of selected image
       setOptions((prev) => ({
         ...prev,
         width: originalImage.width,
         height: originalImage.height,
       }));
 
-      // 처리는 useDebounce가 자동으로 처리함
+      // Processing is automatically handled by useDebounce
     }
   }, [originalImage]);
 
-  // 재시도
+  // Retry
   const handleRetryClick = useCallback(async () => {
     await retry(processingOptions);
   }, [retry, processingOptions]);
 
-  // 코드 예제 생성
+  // Generate code examples
   const generateCodeExamples = useCallback(() => {
     const padding = paddingMode === 'number' ? numberPadding : objectPadding;
     const paddingStr =
@@ -146,34 +146,34 @@ export function PaddingDemo() {
 
     const basicCode = `import { processImage } from '@cp949/web-image-util';
 
-// 패딩 적용 이미지 처리
+// Image processing with padding applied
 const result = await processImage(source)
   .resize({
     fit: '${options.fit}',
     width: ${options.width},
     height: ${options.height},
-    padding: ${paddingStr},  // 🎯 패딩 설정
-    background: '${options.background}',  // 패딩 영역 배경색
+    padding: ${paddingStr},  // 🎯 Padding configuration
+    background: '${options.background}',  // Padding area background color
   })
   .toBlob('${options.format}');
 
-// 결과 이미지는 원본 이미지 + 패딩을 합친 크기
-console.log('결과 크기:', result.width, 'x', result.height);`;
+// Result image is original image + padding combined size
+console.log('Result size:', result.width, 'x', result.height);`;
 
-    const patternCode = `// 🎨 패딩 사용 패턴들
+    const patternCode = `// 🎨 Padding Usage Patterns
 
-// 1️⃣ 숫자 패딩 - 모든 방향 동일
+// 1️⃣ Numeric padding - same for all directions
 const uniform = await processImage(source)
   .resize({
     fit: 'contain',
     width: 300,
     height: 200,
-    padding: 20,  // 상하좌우 모두 20px
+    padding: 20,  // 20px on all sides
     background: '#ffffff',
   })
   .toBlob();
 
-// 2️⃣ 객체 패딩 - 각 방향별 개별 설정
+// 2️⃣ Object padding - individual settings per direction
 const custom = await processImage(source)
   .resize({
     fit: 'contain',
@@ -184,7 +184,7 @@ const custom = await processImage(source)
   })
   .toBlob();
 
-// 3️⃣ 일부 방향만 패딩 (나머지는 0)
+// 3️⃣ Partial direction padding (others are 0)
 const partial = await processImage(source)
   .resize({
     fit: 'cover',
@@ -193,20 +193,20 @@ const partial = await processImage(source)
     padding: {
       top: 20,
       bottom: 20,
-      // left, right는 0
+      // left, right are 0
     },
     background: 'transparent',
   })
-  .toBlob('png');  // 투명도 지원 위해 PNG`;
+  .toBlob('png');  // PNG for transparency support`;
 
     return [
       {
-        title: '기본 사용법',
+        title: 'Basic Usage',
         code: basicCode,
         language: 'typescript',
       },
       {
-        title: '패딩 패턴들',
+        title: 'Padding Patterns',
         code: patternCode,
         language: 'typescript',
       },
@@ -217,28 +217,28 @@ const partial = await processImage(source)
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
         <PaddingIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-        패딩 기능
+        Padding Feature
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        이미지 주변에 여백(패딩)을 추가하여 액자 효과, 안전 영역 확보, SNS 업로드 최적화 등을 구현할 수 있습니다.
+        Add margin (padding) around images to achieve frame effects, secure safe areas, optimize for social media uploads, and more.
       </Typography>
 
       <Alert severity="info" sx={{ mb: 3 }}>
         <Typography variant="subtitle2" gutterBottom>
-          📐 패딩 작동 원리
+          📐 How Padding Works
         </Typography>
         <Typography variant="body2">
-          <strong>결과 크기 = 이미지 크기 + 패딩</strong>
+          <strong>Result Size = Image Size + Padding</strong>
           <br />
-          예: 300×200 이미지에 20px 패딩 → 결과는 340×240 (좌우 +40, 상하 +40)
+          Example: 300×200 image with 20px padding → Result is 340×240 (left/right +40, top/bottom +40)
         </Typography>
       </Alert>
 
       <Grid container spacing={4}>
-        {/* 좌측: 이미지 업로더 및 옵션 */}
+        {/* Left: Image uploader and options */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
-            {/* 이미지 업로더 */}
+            {/* Image uploader */}
             <ImageUploader
               onImageSelect={(source) => {
                 handleImageSelect(source);
@@ -246,7 +246,7 @@ const partial = await processImage(source)
               recommendedSamplesFor="padding"
             />
 
-            {/* 에러 표시 (실시간 에러 제거) */}
+            {/* Error display (real-time errors removed) */}
             {error && (
               <ErrorDisplay
                 error={error}
@@ -256,20 +256,20 @@ const partial = await processImage(source)
               />
             )}
 
-            {/* 처리 상태 (깜빡임 방지된 안정 상태 사용) */}
-            <ProcessingStatus processing={stableProcessing} message="패딩을 적용하고 있습니다..." />
+            {/* Processing status (using flicker-free stable state) */}
+            <ProcessingStatus processing={stableProcessing} message="Applying padding..." />
 
-            {/* 패딩 설정 */}
+            {/* Padding settings */}
             <Card>
               <CardContent>
                 <Typography variant="h6" sx={{ mb: 2 }}>
-                  패딩 설정
+                  Padding Settings
                 </Typography>
 
-                {/* 패딩 모드 선택 */}
+                {/* Padding mode selection */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    패딩 모드
+                    Padding Mode
                   </Typography>
                   <ToggleButtonGroup
                     value={paddingMode}
@@ -279,28 +279,28 @@ const partial = await processImage(source)
                     size="small"
                   >
                     <ToggleButton value="number">
-                      숫자
+                      Number
                       <Typography variant="caption" sx={{ ml: 1 }}>
-                        (모든 방향 동일)
+                        (all sides same)
                       </Typography>
                     </ToggleButton>
                     <ToggleButton value="object">
-                      객체
+                      Object
                       <Typography variant="caption" sx={{ ml: 1 }}>
-                        (각 방향별)
+                        (per side)
                       </Typography>
                     </ToggleButton>
                   </ToggleButtonGroup>
                 </Box>
 
-                {/* 숫자 패딩 UI */}
+                {/* Numeric padding UI */}
                 {paddingMode === 'number' && (
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="subtitle2" gutterBottom>
-                      패딩 크기: {numberPadding}px (상하좌우 모두)
+                      Padding Size: {numberPadding}px (all sides)
                     </Typography>
 
-                    {/* 프리셋 패딩 버튼들 */}
+                    {/* Preset padding buttons */}
                     <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
                       {[0, 10, 20, 30, 50].map((preset) => (
                         <Button
@@ -330,42 +330,42 @@ const partial = await processImage(source)
                   </Box>
                 )}
 
-                {/* 객체 패딩 UI */}
+                {/* Object padding UI */}
                 {paddingMode === 'object' && (
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="subtitle2" gutterBottom>
-                      각 방향별 패딩 크기
+                      Padding Size by Direction
                     </Typography>
 
-                    {/* 객체 패딩 프리셋 */}
+                    {/* Object padding presets */}
                     <Stack direction="column" spacing={1} sx={{ mb: 2 }}>
                       <Button
                         size="small"
                         variant="outlined"
                         onClick={() => setObjectPadding({ top: 10, right: 10, bottom: 10, left: 10 })}
                       >
-                        균일 (10px 전체)
+                        Uniform (10px all)
                       </Button>
                       <Button
                         size="small"
                         variant="outlined"
                         onClick={() => setObjectPadding({ top: 0, right: 8, bottom: 8, left: 0 })}
                       >
-                        그림자용 (우하단)
+                        Shadow (bottom-right)
                       </Button>
                       <Button
                         size="small"
                         variant="outlined"
                         onClick={() => setObjectPadding({ top: 20, right: 20, bottom: 40, left: 20 })}
                       >
-                        캡션용 (하단 여백)
+                        Caption (bottom space)
                       </Button>
                       <Button
                         size="small"
                         variant="outlined"
                         onClick={() => setObjectPadding({ top: 30, right: 30, bottom: 30, left: 30 })}
                       >
-                        액자 (30px 전체)
+                        Frame (30px all)
                       </Button>
                     </Stack>
 
@@ -415,36 +415,36 @@ const partial = await processImage(source)
                   </Box>
                 )}
 
-                {/* 배경색 */}
+                {/* Background color */}
                 <TextField
                   fullWidth
-                  label="패딩 배경색"
+                  label="Padding Background Color"
                   value={options.background}
                   onChange={(e) => setOptions((prev) => ({ ...prev, background: e.target.value }))}
                   placeholder="#f0f0f0"
                   sx={{ mb: 3 }}
-                  helperText="CSS 색상 (예: #ffffff, rgb(255,0,0), transparent)"
+                  helperText="CSS colors (e.g., #ffffff, rgb(255,0,0), transparent)"
                 />
               </CardContent>
             </Card>
           </Stack>
         </Grid>
 
-        {/* 우측: 이미지 비교 및 메타데이터 */}
+        {/* Right: Image comparison and metadata */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* 처리 설정 */}
+            {/* Processing settings */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  처리 설정
+                  Processing Settings
                 </Typography>
                 <Grid container spacing={3}>
-                  {/* Fit 모드 */}
+                  {/* Fit mode */}
                   <Grid size={6}>
                     <FormControl>
                       <FormLabel component="legend" sx={{ mb: 1 }}>
-                        Fit 모드
+                        Fit Mode
                       </FormLabel>
                       <RadioGroup
                         value={options.fit}
@@ -458,21 +458,21 @@ const partial = await processImage(source)
                         <FormControlLabel
                           value="contain"
                           control={<Radio size="small" />}
-                          label="Contain (전체 포함) ⭐"
+                          label="Contain (fit entirely) ⭐"
                         />
-                        <FormControlLabel value="cover" control={<Radio size="small" />} label="Cover (가득 채우기)" />
-                        <FormControlLabel value="fill" control={<Radio size="small" />} label="Fill (늘려서 채우기)" />
-                        <FormControlLabel value="maxFit" control={<Radio size="small" />} label="MaxFit (축소만)" />
-                        <FormControlLabel value="minFit" control={<Radio size="small" />} label="MinFit (확대만)" />
+                        <FormControlLabel value="cover" control={<Radio size="small" />} label="Cover (fill completely)" />
+                        <FormControlLabel value="fill" control={<Radio size="small" />} label="Fill (stretch to fill)" />
+                        <FormControlLabel value="maxFit" control={<Radio size="small" />} label="MaxFit (shrink only)" />
+                        <FormControlLabel value="minFit" control={<Radio size="small" />} label="MinFit (enlarge only)" />
                       </RadioGroup>
                     </FormControl>
                   </Grid>
 
-                  {/* 포맷 선택 */}
+                  {/* Format selection */}
                   <Grid size={6}>
                     <FormControl>
                       <FormLabel component="legend" sx={{ mb: 1 }}>
-                        출력 포맷
+                        Output Format
                       </FormLabel>
                       <RadioGroup
                         value={options.format}
@@ -483,7 +483,7 @@ const partial = await processImage(source)
                           }))
                         }
                       >
-                        <FormControlLabel value="png" control={<Radio size="small" />} label="PNG (투명도 지원) ⭐" />
+                        <FormControlLabel value="png" control={<Radio size="small" />} label="PNG (transparency support) ⭐" />
                         <FormControlLabel value="jpeg" control={<Radio size="small" />} label="JPEG" />
                         <FormControlLabel value="webp" control={<Radio size="small" />} label="WebP" />
                       </RadioGroup>
@@ -493,27 +493,27 @@ const partial = await processImage(source)
               </CardContent>
             </Card>
 
-            {/* Before/After 뷰어 (props memoization으로 리렌더링 최적화) */}
+            {/* Before/After viewer (optimized re-rendering with props memoization) */}
             <BeforeAfterView
               before={useMemo(() => originalImage, [originalImage])}
               after={useMemo(() => processedImage, [processedImage])}
             />
 
-            {/* 메타데이터 */}
+            {/* Metadata */}
             <ImageMetadata original={originalImage} processed={processedImage} />
 
-            {/* 크기 계산 미리보기 (이미지 선택 후 항상 표시) */}
+            {/* Size calculation preview (always shown after image selection) */}
             {originalImage && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     <AspectRatio sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    {processedImage ? '크기 변화 분석' : '예상 크기 계산'}
+                    {processedImage ? 'Size Change Analysis' : 'Expected Size Calculation'}
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid size={6}>
                       <Typography variant="subtitle2" color="primary">
-                        원본 크기
+                        Original Size
                       </Typography>
                       <Typography variant="body2">
                         {originalImage.width} × {originalImage.height}
@@ -521,7 +521,7 @@ const partial = await processImage(source)
                     </Grid>
                     <Grid size={6}>
                       <Typography variant="subtitle2" color={processedImage ? 'success.main' : 'warning.main'}>
-                        {processedImage ? '결과 크기' : '예상 크기'} (패딩 포함)
+                        {processedImage ? 'Result Size' : 'Expected Size'} (with padding)
                       </Typography>
                       <Typography variant="body2">
                         {processedImage ? (
@@ -531,7 +531,7 @@ const partial = await processImage(source)
                         ) : (
                           <>
                             {(() => {
-                              // 예상 크기 계산
+                              // Calculate expected size
                               const targetWidth = options.width || originalImage.width;
                               const targetHeight = options.height || originalImage.height;
                               const paddingH =
@@ -549,13 +549,13 @@ const partial = await processImage(source)
                         <Typography variant="body2">
                           {paddingMode === 'number' ? (
                             <>
-                              <strong>패딩 {numberPadding}px</strong> 적용 시 → 너비 +{numberPadding * 2}px, 높이 +
+                              <strong>Padding {numberPadding}px</strong> applied → width +{numberPadding * 2}px, height +
                               {numberPadding * 2}px
                             </>
                           ) : (
                             <>
-                              <strong>비대칭 패딩</strong> 적용 시 → 너비 +{objectPadding.left + objectPadding.right}px
-                              (L:{objectPadding.left} + R:{objectPadding.right}), 높이 +
+                              <strong>Asymmetric padding</strong> applied → width +{objectPadding.left + objectPadding.right}px
+                              (L:{objectPadding.left} + R:{objectPadding.right}), height +
                               {objectPadding.top + objectPadding.bottom}px (T:{objectPadding.top} + B:
                               {objectPadding.bottom})
                             </>
@@ -568,8 +568,8 @@ const partial = await processImage(source)
               </Card>
             )}
 
-            {/* 코드 스니펫 */}
-            {originalImage && <CodeSnippet title="패딩 사용 예제" examples={generateCodeExamples()} />}
+            {/* Code snippet */}
+            {originalImage && <CodeSnippet title="Padding Usage Examples" examples={generateCodeExamples()} />}
           </Stack>
         </Grid>
       </Grid>

@@ -1,60 +1,60 @@
 /**
  * trim-empty.ts
- * Canvas에서 빈 공간(배경색 또는 투명)을 자동으로 제거하는 유틸리티
+ * Utility for automatically removing empty space (background color or transparent) from Canvas
  */
 
 /**
- * 트림 경계 정보를 나타내는 인터페이스
+ * Interface representing trim boundary information
  */
 export interface TrimBounds {
-  /** 콘텐츠 영역의 왼쪽 경계 (x좌표) */
+  /** Left boundary of content area (x coordinate) */
   left: number;
-  /** 콘텐츠 영역의 위쪽 경계 (y좌표) */
+  /** Top boundary of content area (y coordinate) */
   top: number;
-  /** 콘텐츠 영역의 오른쪽 경계 (x좌표) */
+  /** Right boundary of content area (x coordinate) */
   right: number;
-  /** 콘텐츠 영역의 아래쪽 경계 (y좌표) */
+  /** Bottom boundary of content area (y coordinate) */
   bottom: number;
-  /** 콘텐츠 영역의 너비 */
+  /** Width of content area */
   width: number;
-  /** 콘텐츠 영역의 높이 */
+  /** Height of content area */
   height: number;
 }
 
 /**
- * RGBA 색상 값을 나타내는 인터페이스
+ * Interface representing RGBA color values
  */
 export interface RGBA {
-  /** Red 채널 (0-255) */
+  /** Red channel (0-255) */
   r: number;
-  /** Green 채널 (0-255) */
+  /** Green channel (0-255) */
   g: number;
-  /** Blue 채널 (0-255) */
+  /** Blue channel (0-255) */
   b: number;
-  /** Alpha 채널 (0-255) */
+  /** Alpha channel (0-255) */
   a: number;
 }
 
 /**
- * 배경색 문자열을 RGBA 객체로 파싱합니다.
- * 지원 형식: hex (#RGB, #RRGGBB), rgb/rgba, named colors
+ * Parse background color string to RGBA object.
+ * Supported formats: hex (#RGB, #RRGGBB), rgb/rgba, named colors
  *
- * @param backgroundColor 배경색 문자열 (CSS color, hex 등)
- * @returns RGBA 색상 객체 (기본값: 투명 검정)
+ * @param backgroundColor Background color string (CSS color, hex, etc.)
+ * @returns RGBA color object (default: transparent black)
  */
 export function parseBackgroundColor(backgroundColor?: string): RGBA {
-  // 기본값: 투명 검정 (alpha = 0)
+  // Default: transparent black (alpha = 0)
   if (!backgroundColor) {
     return { r: 0, g: 0, b: 0, a: 0 };
   }
 
   const color = backgroundColor.trim().toLowerCase();
 
-  // Hex 형식: #RGB, #RRGGBB, #RRGGBBAA
+  // Hex format: #RGB, #RRGGBB, #RRGGBBAA
   if (color.startsWith('#')) {
     const hex = color.substring(1);
 
-    // #RGB 형식 (짧은 형식)
+    // #RGB format (short format)
     if (hex.length === 3) {
       const r = parseInt(hex[0] + hex[0], 16);
       const g = parseInt(hex[1] + hex[1], 16);
@@ -62,7 +62,7 @@ export function parseBackgroundColor(backgroundColor?: string): RGBA {
       return { r, g, b, a: 255 };
     }
 
-    // #RRGGBB 형식
+    // #RRGGBB format
     if (hex.length === 6) {
       const r = parseInt(hex.substring(0, 2), 16);
       const g = parseInt(hex.substring(2, 4), 16);
@@ -70,7 +70,7 @@ export function parseBackgroundColor(backgroundColor?: string): RGBA {
       return { r, g, b, a: 255 };
     }
 
-    // #RRGGBBAA 형식
+    // #RRGGBBAA format
     if (hex.length === 8) {
       const r = parseInt(hex.substring(0, 2), 16);
       const g = parseInt(hex.substring(2, 4), 16);
@@ -80,7 +80,7 @@ export function parseBackgroundColor(backgroundColor?: string): RGBA {
     }
   }
 
-  // rgba() 또는 rgb() 형식
+  // rgba() or rgb() format
   const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
   if (rgbaMatch) {
     const r = parseInt(rgbaMatch[1], 10);
@@ -90,7 +90,7 @@ export function parseBackgroundColor(backgroundColor?: string): RGBA {
     return { r, g, b, a };
   }
 
-  // Named colors: 자주 쓰이는 색상들만 지원
+  // Named colors: support only commonly used colors
   const namedColors: Record<string, RGBA> = {
     transparent: { r: 0, g: 0, b: 0, a: 0 },
     white: { r: 255, g: 255, b: 255, a: 255 },
@@ -104,8 +104,8 @@ export function parseBackgroundColor(backgroundColor?: string): RGBA {
     return namedColors[color];
   }
 
-  // Canvas를 사용한 fallback 파싱
-  // 브라우저가 알아서 파싱해주도록 함
+  // Fallback parsing using Canvas
+  // Let the browser parse it automatically
   if (typeof document !== 'undefined') {
     const canvas = document.createElement('canvas');
     canvas.width = 1;
@@ -125,21 +125,21 @@ export function parseBackgroundColor(backgroundColor?: string): RGBA {
     }
   }
 
-  // 파싱 실패 시 기본값 반환
+  // Return default value on parsing failure
   return { r: 0, g: 0, b: 0, a: 0 };
 }
 
 /**
- * 주어진 픽셀이 배경색인지 판단합니다.
- * 허용 오차를 적용하여 비교합니다.
+ * Determine if given pixel is background color.
+ * Compare with applied tolerance.
  *
- * @param r Red 채널 값
- * @param g Green 채널 값
- * @param b Blue 채널 값
- * @param a Alpha 채널 값
- * @param bgColor 배경색 RGBA 객체
- * @param tolerance 허용 오차 (기본값: 5)
- * @returns 배경색과 일치하면 true
+ * @param r Red channel value
+ * @param g Green channel value
+ * @param b Blue channel value
+ * @param a Alpha channel value
+ * @param bgColor Background color RGBA object
+ * @param tolerance Allowed tolerance (default: 5)
+ * @returns true if matches background color
  */
 export function isBackgroundPixel(r: number, g: number, b: number, a: number, bgColor: RGBA, tolerance = 5): boolean {
   return (
@@ -151,12 +151,12 @@ export function isBackgroundPixel(r: number, g: number, b: number, a: number, bg
 }
 
 /**
- * Canvas에서 비어있지 않은 영역의 경계를 찾습니다.
- * 픽셀별로 스캔하여 배경색이 아닌 픽셀들의 최소/최대 좌표를 찾습니다.
+ * Find boundaries of non-empty area in Canvas.
+ * Scan pixel by pixel to find min/max coordinates of non-background pixels.
  *
- * @param canvas 분석할 캔버스
- * @param backgroundColor 배경색 (투명도 포함)
- * @returns 비어있지 않은 영역의 경계 정보
+ * @param canvas Canvas to analyze
+ * @param backgroundColor Background color (including transparency)
+ * @returns Boundary information of non-empty area
  */
 export function findContentBounds(canvas: HTMLCanvasElement, backgroundColor?: string): TrimBounds {
   const ctx = canvas.getContext('2d');
@@ -173,7 +173,7 @@ export function findContentBounds(canvas: HTMLCanvasElement, backgroundColor?: s
   let maxX = 0;
   let maxY = 0;
 
-  // 픽셀별로 스캔하여 콘텐츠 영역 찾기
+  // Scan pixel by pixel to find content area
   for (let y = 0; y < canvas.height; y++) {
     for (let x = 0; x < canvas.width; x++) {
       const idx = (y * canvas.width + x) * 4;
@@ -182,7 +182,7 @@ export function findContentBounds(canvas: HTMLCanvasElement, backgroundColor?: s
       const b = data[idx + 2];
       const a = data[idx + 3];
 
-      // 배경색이나 투명 픽셀이 아닌 경우
+      // If not background color or transparent pixel
       if (!isBackgroundPixel(r, g, b, a, bgColor)) {
         minX = Math.min(minX, x);
         minY = Math.min(minY, y);
@@ -192,7 +192,7 @@ export function findContentBounds(canvas: HTMLCanvasElement, backgroundColor?: s
     }
   }
 
-  // 콘텐츠가 없는 경우 전체 영역 반환
+  // Return entire area if no content found
   if (minX >= maxX || minY >= maxY) {
     return {
       left: 0,
@@ -215,11 +215,11 @@ export function findContentBounds(canvas: HTMLCanvasElement, backgroundColor?: s
 }
 
 /**
- * 지정된 영역으로 캔버스를 크롭합니다.
+ * Crop canvas to specified area.
  *
- * @param canvas 원본 캔버스
- * @param bounds 크롭할 영역
- * @returns 크롭된 새 캔버스
+ * @param canvas Original canvas
+ * @param bounds Area to crop
+ * @returns New cropped canvas
  */
 export function cropCanvas(canvas: HTMLCanvasElement, bounds: TrimBounds): HTMLCanvasElement {
   const newCanvas = document.createElement('canvas');
@@ -231,24 +231,24 @@ export function cropCanvas(canvas: HTMLCanvasElement, bounds: TrimBounds): HTMLC
     throw new Error('Cannot create new canvas context');
   }
 
-  // 원본 캔버스에서 지정된 영역을 새 캔버스로 복사
+  // Copy specified area from original canvas to new canvas
   ctx.drawImage(canvas, bounds.left, bounds.top, bounds.width, bounds.height, 0, 0, bounds.width, bounds.height);
 
   return newCanvas;
 }
 
 /**
- * trimEmpty 기능 통합 함수
- * Canvas에서 빈 공간(배경색 또는 투명)을 자동으로 제거합니다.
+ * Integrated trimEmpty functionality
+ * Automatically remove empty space (background color or transparent) from Canvas.
  *
- * @param canvas 처리할 캔버스
- * @param backgroundColor 배경색 (지정하지 않으면 투명 영역을 기준으로 트림)
- * @returns 트림된 캔버스 (트림할 공간이 없으면 원본 반환)
+ * @param canvas Canvas to process
+ * @param backgroundColor Background color (if not specified, trim based on transparent area)
+ * @returns Trimmed canvas (return original if no space to trim)
  */
 export function trimEmptySpace(canvas: HTMLCanvasElement, backgroundColor?: string): HTMLCanvasElement {
   const bounds = findContentBounds(canvas, backgroundColor);
 
-  // 트림할 공간이 없으면 원본 반환
+  // Return original if no space to trim
   if (bounds.left === 0 && bounds.top === 0 && bounds.width === canvas.width && bounds.height === canvas.height) {
     return canvas;
   }

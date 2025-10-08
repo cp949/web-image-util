@@ -1,18 +1,18 @@
 /**
- * 중앙집중식 에러 핸들러 - Node.js 베스트 프랙티스
+ * Centralized error handler - Node.js best practices
  *
- * @description 모든 에러를 일관되게 처리하는 간단한 핸들러
+ * @description Simple handler that processes all errors consistently
  */
 
 import type { ErrorContext } from '../base/error-helpers';
 import type { ImageErrorCodeType } from '../types';
 import { ImageProcessError } from '../types';
 
-// ImageProcessError 클래스를 다시 export
+// Re-export ImageProcessError class
 export { ImageProcessError };
 
 /**
- * 간단한 에러 통계
+ * Simple error statistics
  */
 export interface ErrorStats {
   totalErrors: number;
@@ -21,9 +21,9 @@ export interface ErrorStats {
 }
 
 /**
- * 중앙집중식 에러 핸들러
+ * Centralized error handler
  *
- * @description Node.js 베스트 프랙티스를 따른 간단한 에러 관리
+ * @description Simple error management following Node.js best practices
  */
 export class ImageErrorHandler {
   private static instance: ImageErrorHandler;
@@ -41,34 +41,34 @@ export class ImageErrorHandler {
   }
 
   /**
-   * 에러 처리 - 로깅과 통계 수집
+   * Error handling - logging and statistics collection
    */
   async handleError(error: ImageProcessError, context?: ErrorContext): Promise<void> {
-    // 통계 업데이트
+    // Update statistics
     this.updateStats(error);
 
-    // 개발 환경에서 상세 로깅
+    // Detailed logging in development environment
     if (this.isDevelopmentMode()) {
       this.logDeveloperError(error, context);
     }
 
-    // 치명적 에러 감지 및 대응
+    // Critical error detection and response
     if (this.isCriticalError(error)) {
       await this.handleCriticalError(error);
     }
   }
 
   /**
-   * 향상된 컨텍스트 정보 수집
+   * Enhanced context information collection
    */
   collectEnhancedContext(operation: string, additionalContext: Partial<ErrorContext> = {}): ErrorContext {
     const context: ErrorContext = {
       ...additionalContext,
-      // 메모리 정보
+      // Memory information
       ...this.getMemoryInfo(),
-      // 성능 정보
+      // Performance information
       timestamp: Date.now(),
-      // 브라우저 정보
+      // Browser information
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
     };
 
@@ -76,7 +76,7 @@ export class ImageErrorHandler {
   }
 
   /**
-   * 에러 심각도 분석
+   * Error severity analysis
    */
   private isCriticalError(error: ImageProcessError): boolean {
     const criticalCodes: ImageErrorCodeType[] = [
@@ -89,7 +89,7 @@ export class ImageErrorHandler {
   }
 
   /**
-   * 개발자 친화적 에러 로깅
+   * Developer-friendly error logging
    */
   private logDeveloperError(error: ImageProcessError, context?: ErrorContext): void {
     console.group(`🚨 ${error.name} [${error.code}]`);
@@ -108,7 +108,7 @@ export class ImageErrorHandler {
   }
 
   /**
-   * 컨텍스트 정보 포맷팅
+   * Context information formatting
    */
   private formatContext(context: any): string {
     const filtered = Object.entries(context)
@@ -119,21 +119,21 @@ export class ImageErrorHandler {
   }
 
   /**
-   * 치명적 에러 처리
+   * Critical error handling
    */
   private async handleCriticalError(error: ImageProcessError): Promise<void> {
     console.error('🔥 Critical error detected:', error.code);
 
-    // Canvas Pool 정리 (있는 경우)
+    // Clean up Canvas Pool (if available)
     try {
       const { CanvasPool } = await import('../base/canvas-pool');
       CanvasPool.getInstance().clear();
       console.info('Canvas pool cleared due to critical error');
     } catch {
-      // Canvas Pool이 없어도 무시
+      // Ignore even if Canvas Pool doesn't exist
     }
 
-    // 메모리 정리 시도
+    // Attempt memory cleanup
     if (typeof global !== 'undefined' && global.gc) {
       global.gc();
       console.info('Garbage collection triggered');
@@ -141,7 +141,7 @@ export class ImageErrorHandler {
   }
 
   /**
-   * 통계 업데이트
+   * Update statistics
    */
   private updateStats(error: ImageProcessError): void {
     this.stats.totalErrors++;
@@ -150,7 +150,7 @@ export class ImageErrorHandler {
   }
 
   /**
-   * 메모리 정보 수집
+   * Memory information collection
    */
   private getMemoryInfo(): Partial<ErrorContext> {
     if (typeof performance !== 'undefined' && 'memory' in performance) {
@@ -167,7 +167,7 @@ export class ImageErrorHandler {
   }
 
   /**
-   * 개발 모드 감지
+   * Development mode detection
    */
   private isDevelopmentMode(): boolean {
     return (
@@ -177,14 +177,14 @@ export class ImageErrorHandler {
   }
 
   /**
-   * 에러 통계 조회
+   * Query error statistics
    */
   getStats(): ErrorStats {
     return { ...this.stats };
   }
 
   /**
-   * 통계 초기화
+   * Reset statistics
    */
   resetStats(): void {
     this.stats = {
@@ -196,6 +196,6 @@ export class ImageErrorHandler {
 }
 
 /**
- * 전역 에러 핸들러 인스턴스
+ * Global error handler instance
  */
 export const globalErrorHandler = ImageErrorHandler.getInstance();

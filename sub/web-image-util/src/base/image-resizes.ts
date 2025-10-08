@@ -1,19 +1,19 @@
 /**
- * 이미지 리사이징 핵심 로직
- * 이미지 리사이징 핵심 함수들
+ * Core image resizing logic
+ * Core image resizing functions
  */
 
-// Canvas 풀링은 pipeline.ts에서 처리됨
+// Canvas pooling is handled in pipeline.ts
 
-// 유틸리티 함수들은 processor pipeline에서 처리됨
+// Utility functions are handled in processor pipeline
 
 /**
- * Canvas를 Blob으로 변환
+ * Convert Canvas to Blob
  *
- * @param canvas - 변환할 Canvas 요소
- * @param format - MIME 타입 (예: 'image/jpeg', 'image/png')
- * @param quality - 품질 (0.0 - 1.0, 손실 압축 포맷에만 적용)
- * @returns Blob 객체를 반환하는 Promise
+ * @param canvas - Canvas element to convert
+ * @param format - MIME type (e.g., 'image/jpeg', 'image/png')
+ * @param quality - Quality (0.0 - 1.0, applies only to lossy compression formats)
+ * @returns Promise that returns Blob object
  *
  * @example
  * ```typescript
@@ -27,7 +27,7 @@ export function canvasToBlob(canvas: HTMLCanvasElement, format: string, quality:
         if (blob) {
           resolve(blob);
         } else {
-          reject(new Error('Canvas to Blob 변환 실패'));
+          reject(new Error('Canvas to Blob conversion failed'));
         }
       },
       format,
@@ -37,12 +37,12 @@ export function canvasToBlob(canvas: HTMLCanvasElement, format: string, quality:
 }
 
 /**
- * Canvas를 Data URL로 변환
+ * Convert Canvas to Data URL
  *
- * @param canvas - 변환할 Canvas 요소
- * @param format - MIME 타입 (예: 'image/jpeg', 'image/png')
- * @param quality - 품질 (0.0 - 1.0, 손실 압축 포맷에만 적용)
- * @returns Base64 인코딩된 Data URL 문자열
+ * @param canvas - Canvas element to convert
+ * @param format - MIME type (e.g., 'image/jpeg', 'image/png')
+ * @param quality - Quality (0.0 - 1.0, applies only to lossy compression formats)
+ * @returns Base64 encoded Data URL string
  *
  * @example
  * ```typescript
@@ -54,6 +54,6 @@ export function canvasToDataUrl(canvas: HTMLCanvasElement, format: string, quali
   return canvas.toDataURL(format, quality);
 }
 
-// 브라우저 Canvas API 기반 리사이징 구현
-// toCenterCrop, toCenterInside, toFill, toFit 등은 더 이상 사용하지 않음
-// 새로운 processor.ts의 pipeline 시스템 사용
+// Browser Canvas API based resizing implementation
+// toCenterCrop, toCenterInside, toFill, toFit etc. are no longer used
+// Uses new processor.ts pipeline system

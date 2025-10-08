@@ -1,4 +1,4 @@
-// 처리 상태 표시 컴포넌트
+// Processing status display component
 
 'use client';
 
@@ -17,7 +17,7 @@ export function ProcessingStatus({ processing, progress, message }: ProcessingSt
     <Box sx={{ width: '100%', p: 2 }}>
       <Stack spacing={2}>
         <Typography variant="body2" color="text.secondary">
-          {message || '이미지 처리 중...'}
+          {message || 'Processing image...'}
         </Typography>
         <LinearProgress variant={progress !== undefined ? 'determinate' : 'indeterminate'} value={progress} />
       </Stack>

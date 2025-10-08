@@ -1,10 +1,10 @@
 /**
- * 단일 렌더링 함수 - 모든 연산을 한 번에 처리
+ * Single rendering function - processes all operations at once
  *
- * 핵심 개념: "계산은 미리, 렌더링은 한 번"
- * - 모든 연산(resize, blur, filter 등)을 분석하여 최종 레이아웃 계산
- * - 계산 완료 후 단 한 번의 drawImage로 모든 처리 완료
- * - 중간 Canvas 생성 없이 최종 결과만 생성
+ * Core concept: "Calculate first, render once"
+ * - Analyzes all operations (resize, blur, filter, etc.) to calculate final layout
+ * - After calculation, completes all processing with a single drawImage call
+ * - Generates only final result without creating intermediate Canvas objects
  */
 
 import type { LazyOperation, FinalLayout } from './lazy-render-pipeline';
@@ -14,16 +14,16 @@ import { ResizeCalculator } from './resize-calculator';
 import { debugLog } from '../utils/debug';
 
 /**
- * 모든 연산을 분석하여 최종 레이아웃 계산
+ * Analyze all operations to calculate final layout
  *
- * 이 함수가 복잡한 수학적 계산을 모두 처리하고,
- * renderAllOperationsOnce()는 순수하게 렌더링만 담당
+ * This function handles all complex mathematical calculations,
+ * while renderAllOperationsOnce() is purely responsible for rendering
  */
 export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: LazyOperation[]): FinalLayout {
   const sourceWidth = sourceImage.naturalWidth;
   const sourceHeight = sourceImage.naturalHeight;
 
-  // 기본 레이아웃 (원본 크기)
+  // Default layout (original size)
   let layout: FinalLayout = {
     width: sourceWidth,
     height: sourceHeight,
@@ -33,7 +33,7 @@ export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: 
     filters: [],
   };
 
-  // 각 연산을 순차적으로 분석
+  // Analyze each operation sequentially
   for (const operation of operations) {
     switch (operation.type) {
       case 'resize':
@@ -52,12 +52,12 @@ export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: 
 }
 
 /**
- * 리사이즈 연산 분석 - ResizeCalculator 활용
+ * Analyze resize operation - utilizing ResizeCalculator
  */
 function analyzeResizeOperation(sourceImage: HTMLImageElement, layout: FinalLayout, config: ResizeConfig): FinalLayout {
   const calculator = new ResizeCalculator();
 
-  // ResizeCalculator를 사용하여 정확한 레이아웃 계산
+  // Calculate precise layout using ResizeCalculator
   const result = calculator.calculateFinalLayout(sourceImage.naturalWidth, sourceImage.naturalHeight, config);
 
   return {
@@ -72,12 +72,12 @@ function analyzeResizeOperation(sourceImage: HTMLImageElement, layout: FinalLayo
       height: result.imageSize.height,
     },
     background: config.background || 'transparent',
-    filters: layout.filters, // 기존 필터 유지
+    filters: layout.filters, // Maintain existing filters
   };
 }
 
 /**
- * 블러 연산 분석
+ * Analyze blur operation
  */
 function analyzeBlurOperation(layout: FinalLayout, options: any): void {
   const radius = options.radius || 2;
@@ -85,7 +85,7 @@ function analyzeBlurOperation(layout: FinalLayout, options: any): void {
 }
 
 /**
- * 기타 필터 연산 분석
+ * Analyze other filter operations
  */
 function analyzeFilterOperation(layout: FinalLayout, options: any): void {
   if (options.brightness !== undefined) {
@@ -103,7 +103,7 @@ function analyzeFilterOperation(layout: FinalLayout, options: any): void {
 }
 
 /**
- * 모든 필터를 하나의 문자열로 결합
+ * Combine all filters into a single string
  */
 export function calculateAllFilters(operations: LazyOperation[]): string {
   const filters: string[] = [];
@@ -133,43 +133,43 @@ export function calculateAllFilters(operations: LazyOperation[]): string {
 }
 
 /**
- * 🚀 핵심 함수: 모든 연산을 한 번에 렌더링
+ * 🚀 Core function: Render all operations at once
  *
- * 이 함수가 SVG 화질 개선의 핵심입니다.
- * - 배경을 먼저 그리고
- * - 모든 필터를 한 번에 적용하고
- * - 단 한 번의 drawImage로 모든 처리 완료
+ * This function is the key to SVG quality improvement.
+ * - Draw background first
+ * - Apply all filters at once
+ * - Complete all processing with a single drawImage call
  */
 export function renderAllOperationsOnce(sourceImage: HTMLImageElement, operations: LazyOperation[]): HTMLCanvasElement {
-  // 1. 모든 연산을 분석하여 최종 레이아웃 계산
+  // 1. Analyze all operations to calculate final layout
   const layout = analyzeAllOperations(sourceImage, operations);
 
-  // 2. 최종 Canvas 생성
+  // 2. Create final Canvas
   const canvas = document.createElement('canvas');
   canvas.width = layout.width;
   canvas.height = layout.height;
 
   const ctx = canvas.getContext('2d');
   if (!ctx) {
-    throw new ImageProcessError('Canvas 2D context를 생성할 수 없습니다', 'CANVAS_CONTEXT_ERROR');
+    throw new ImageProcessError('Cannot create Canvas 2D context', 'CANVAS_CONTEXT_ERROR');
   }
 
-  // 3. 고품질 렌더링 설정
+  // 3. Set up high-quality rendering
   setupHighQualityRendering(ctx);
 
-  // 4. 배경 그리기 (필요한 경우)
+  // 4. Draw background (if needed)
   if (layout.background !== 'transparent') {
     ctx.fillStyle = layout.background;
     ctx.fillRect(0, 0, layout.width, layout.height);
   }
 
-  // 5. 모든 필터 효과를 한 번에 적용
+  // 5. Apply all filter effects at once
   if (layout.filters.length > 0) {
     ctx.filter = layout.filters.join(' ');
   }
 
-  // 6. 🎯 단 한 번의 drawImage로 모든 처리 완료
-  // 이것이 SVG 화질 보존의 핵심입니다
+  // 6. 🎯 Complete all processing with a single drawImage call
+  // This is the key to SVG quality preservation
   ctx.drawImage(
     sourceImage,
     Math.round(layout.position.x),
@@ -178,30 +178,30 @@ export function renderAllOperationsOnce(sourceImage: HTMLImageElement, operation
     Math.round(layout.imageSize.height)
   );
 
-  // 7. 필터 리셋 (다음 사용을 위해)
+  // 7. Reset filter (for next use)
   ctx.filter = 'none';
 
   return canvas;
 }
 
 /**
- * 고품질 렌더링 설정
- * SVG 벡터 특성을 최대한 활용하는 설정
+ * High-quality rendering setup
+ * Settings that maximize SVG vector characteristics
  */
 function setupHighQualityRendering(ctx: CanvasRenderingContext2D): void {
-  // SVG는 벡터이므로 브라우저가 자동으로 최적 품질 제공
+  // SVG is vector, so browser automatically provides optimal quality
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  // scaleFactor나 복잡한 계산 없이 브라우저에 위임
-  // 이것이 SVG 화질 보존의 핵심 아이디어
+  // Delegate to browser without scaleFactor or complex calculations
+  // This is the core idea of SVG quality preservation
 }
 
 /**
- * 디버깅용: 레이아웃 정보 출력
+ * For debugging: Output layout information
  */
 export function debugLayout(layout: FinalLayout, operationCount: number): void {
-  debugLog.log('🎯 단일 렌더링 레이아웃:', {
+  debugLog.log('🎯 Single rendering layout:', {
     canvasSize: `${layout.width}x${layout.height}`,
     imagePosition: `(${layout.position.x}, ${layout.position.y})`,
     imageSize: `${layout.imageSize.width}x${layout.imageSize.height}`,

@@ -1,5 +1,5 @@
 /**
- * 이미지 공통 유틸리티 - 브라우저 환경에서 이미지 변환 및 처리 지원
+ * Image common utilities - Support for image conversion and processing in browser environment
  */
 
 import type { ImageFileExt, ImageSource, ImageSourceConvertOptions, ImageStringSourceType } from './common-types';
@@ -26,11 +26,11 @@ const IMAGE_TYPE_TO_EXTENSION: Record<string, string> = {
 };
 
 /**
- * Base64 데이터를 Uint8Array로 변환
+ * Convert Base64 data to Uint8Array
  *
- * @description Base64 문자열을 바이너리 데이터로 변환합니다. 대용량 데이터 처리에 최적화되어 있습니다.
- * @param base64 Base64 인코딩된 문자열
- * @returns Uint8Array로 변환된 바이너리 데이터
+ * @description Converts Base64 string to binary data. Optimized for large data processing.
+ * @param base64 Base64 encoded string
+ * @returns Binary data converted to Uint8Array
  */
 export function base64ToBuffer(base64: string): Promise<Uint8Array> {
   const dataUrl = 'data:application/octet-binary;base64,' + base64;
@@ -41,11 +41,11 @@ export function base64ToBuffer(base64: string): Promise<Uint8Array> {
 }
 
 /**
- * Blob을 파일로 다운로드
+ * Download Blob as file
  *
- * @description 브라우저에서 Blob 객체를 파일로 다운로드합니다. iOS Safari 등 호환성 이슈를 자동으로 처리합니다.
- * @param blob 다운로드할 Blob 객체
- * @param fileName 다운로드할 파일명
+ * @description Downloads Blob object as file in browser. Automatically handles compatibility issues like iOS Safari.
+ * @param blob Blob object to download
+ * @param fileName File name for download
  */
 export function downloadBlob(blob: Blob, fileName: string) {
   if ('download' in HTMLAnchorElement.prototype) {
@@ -60,7 +60,7 @@ export function downloadBlob(blob: Blob, fileName: string) {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(downloadLink);
   } else {
-    // iOS Safari 호환성 - 새 탭에서 데이터 URL로 열기
+    // iOS Safari compatibility - open with data URL in new tab
     let popup: Window | null = window.open('', '_blank');
     if (popup) {
       const reader = new FileReader();
@@ -86,7 +86,7 @@ export function downloadLink(href: string) {
     downloadLink.click();
     document.body.removeChild(downloadLink);
   } else {
-    // iOS Safari 호환성 - 새 탭에서 데이터 URL로 열기
+    // iOS Safari compatibility - open with data URL in new tab
     const popup: Window | null = window.open('', '_blank');
     if (popup) {
       popup.location.href = href;
@@ -147,7 +147,7 @@ export async function urlToDataUrl(url: string): Promise<string> {
     .then(blobToDataUrl);
 }
 
-// HTTP URL과 Data URL을 HTMLImageElement로 변환
+// Convert HTTP URL and Data URL to HTMLImageElement
 export function urlToElement(
   url: string,
   opts?: {
@@ -223,17 +223,17 @@ export function sourceTypeFromString(str: string): ImageStringSourceType | undef
   if (str.indexOf('<svg') >= 0) return 'SVG_XML';
   if (str.startsWith('/')) return 'PATH';
 
-  // undefined인 경우 기본적으로 파일 경로로 처리
+  // If undefined, default to handling as file path
   return undefined;
 }
 
 /**
- * 다양한 이미지 소스를 HTMLImageElement로 변환하는 범용 함수
+ * Universal function to convert various image sources to HTMLImageElement
  *
- * @description Blob, ArrayBuffer, Uint8Array, 문자열(URL, SVG, Data URL) 등 다양한 소스를 HTMLImageElement로 변환합니다.
- * @param source 변환할 이미지 소스
- * @param opts 변환 옵션 (CORS 설정, 요소 크기 등)
- * @returns HTMLImageElement 객체
+ * @description Converts various sources like Blob, ArrayBuffer, Uint8Array, strings (URL, SVG, Data URL) to HTMLImageElement.
+ * @param source Image source to convert
+ * @param opts Conversion options (CORS settings, element size, etc.)
+ * @returns HTMLImageElement object
  */
 export async function convertImageSourceToElement(
   source: ImageSource,
@@ -262,7 +262,7 @@ export async function convertImageSourceToElement(
       return urlToElement(dataUrl, opts);
     }
 
-    // 상대경로 및 절대경로 처리 (예: myimg/xxx, /myimg/xxx, ./myimg/xxx)
+    // Handle relative and absolute paths (e.g., myimg/xxx, /myimg/xxx, ./myimg/xxx)
     return urlToElement(source, opts);
   }
 
@@ -303,7 +303,7 @@ export async function stringToFile(str: string, fileName: string): Promise<File 
       return new File([blob], fixBlobFileExt(blob, fileName), { type: blob.type });
     })
     .catch((err) => {
-      debugLog.warn('파일 변환 실패:', err);
+      debugLog.warn('File conversion failed:', err);
       return undefined;
     });
 }
@@ -333,16 +333,16 @@ export async function checkImageFormatFromString(image: string): Promise<
     if (format) {
       return { format, src: image };
     }
-    debugLog.warn('알 수 없는 이미지 data URL:', image.substring(0, 100) + '...');
+    debugLog.warn('Unknown image data URL:', image.substring(0, 100) + '...');
     return undefined;
   }
   const dataUrl = await stringToDataUrl(image).catch((err) => {
-    debugLog.warn('stringToDataUrl() 실패:', err);
+    debugLog.warn('stringToDataUrl() failed:', err);
     return undefined;
   });
 
   if (!dataUrl) {
-    debugLog.warn('stringToDataUrl() 결과가 null');
+    debugLog.warn('stringToDataUrl() result is null');
     return undefined;
   }
   const format = imageFormatFromDataUrl(dataUrl);

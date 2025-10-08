@@ -1,7 +1,7 @@
 /**
- * Canvas API Mock for Node.js 테스트 환경
+ * Canvas API Mock for Node.js test environment
  *
- * happy-dom의 Canvas API가 불완전하므로 간단한 mock으로 대체
+ * Replace with simple mock as happy-dom's Canvas API is incomplete
  */
 
 import { vi } from 'vitest';
@@ -91,13 +91,13 @@ class MockHTMLCanvasElement {
   }
 
   toBlob(callback: (blob: Blob | null) => void, type?: string, quality?: number) {
-    // 캔버스 크기에 기반한 현실적인 이미지 데이터 크기 생성
+    // Generate realistic image data size based on canvas dimensions
     const width = this._width;
     const height = this._height;
     const pixelCount = width * height;
 
-    // 이미지 타입에 따른 대략적인 압축률 적용
-    let compressionRatio = 0.1; // 기본값 (10%)
+    // Apply approximate compression ratio based on image type
+    let compressionRatio = 0.1; // Default (10%)
     const imageType = type || 'image/png';
 
     if (imageType.includes('jpeg') || imageType.includes('jpg')) {
@@ -110,25 +110,25 @@ class MockHTMLCanvasElement {
       compressionRatio = 0.5; // PNG: ~50%
     }
 
-    // 실제 이미지와 유사한 크기 계산 (4 bytes per pixel * compression ratio)
+    // Calculate size similar to actual images (4 bytes per pixel * compression ratio)
     const estimatedSize = Math.max(1000, Math.floor(pixelCount * 4 * compressionRatio));
 
-    // PNG 헤더 + 현실적인 크기의 데이터
+    // PNG header + realistic size data
     const headerSize = 8;
     const dataSize = estimatedSize - headerSize;
     const buffer = new Uint8Array(estimatedSize);
 
-    // PNG 시그니처
+    // PNG signature
     buffer.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
 
-    // 나머지는 임의 데이터로 채움 (실제 이미지 데이터 시뮬레이션)
+    // Fill the rest with random data (simulate actual image data)
     for (let i = headerSize; i < estimatedSize; i++) {
       buffer[i] = Math.floor(Math.random() * 256);
     }
 
     const blob = new Blob([buffer.buffer], { type: imageType });
 
-    // 동기식으로 변경 (테스트 환경에서 즉시 실행)
+    // Changed to synchronous execution (immediate execution in test environment)
     try {
       callback(blob);
     } catch (error) {
@@ -153,7 +153,7 @@ class MockHTMLImageElement {
   onerror: ((this: HTMLImageElement, ev: Event) => any) | null = null;
 
   constructor() {
-    // 생성자에서는 아무것도 하지 않음
+    // Constructor does nothing
   }
 
   // src getter/setter
@@ -164,10 +164,10 @@ class MockHTMLImageElement {
   set src(value: string) {
     this._src = value;
 
-    // src가 설정되면 즉시 로드 완료 처리 (동기식으로 변경)
-    // blob URL이나 data URL인 경우 크기 정보 설정
+    // When src is set, immediately mark as loaded (synchronous execution)
+    // Set size information for blob URLs or data URLs
     if (value.startsWith('blob:') || value.startsWith('data:')) {
-      // 기본 크기 유지 또는 이미 설정된 크기 사용
+      // Keep default size or use already set size
       if (!this.naturalWidth || this.naturalWidth === 0) this.naturalWidth = 100;
       if (!this.naturalHeight || this.naturalHeight === 0) this.naturalHeight = 100;
       this.width = this.naturalWidth;
@@ -176,7 +176,7 @@ class MockHTMLImageElement {
 
     this.complete = true;
 
-    // onload 콜백이 설정된 경우 즉시 호출
+    // If onload callback is set, call it immediately
     const callback = this.onload;
     if (callback) {
       try {
@@ -188,27 +188,27 @@ class MockHTMLImageElement {
   }
 }
 
-// Global mock 설정
-// 프로토타입 체인을 설정하여 instanceof 검사가 작동하도록 함
+// Global mock setup
+// Set up prototype chain to make instanceof checks work
 if (typeof HTMLCanvasElement === 'undefined') {
-  // @ts-expect-error - global 타입 확장
+  // @ts-expect-error - global type extension
   global.HTMLCanvasElement = MockHTMLCanvasElement;
 } else {
-  // HTMLCanvasElement가 이미 있으면 Mock의 프로토타입을 설정
+  // If HTMLCanvasElement already exists, set up Mock's prototype
   Object.setPrototypeOf(MockHTMLCanvasElement.prototype, HTMLCanvasElement.prototype);
 }
 
 if (typeof HTMLImageElement === 'undefined') {
-  // @ts-expect-error - global 타입 확장
+  // @ts-expect-error - global type extension
   global.HTMLImageElement = MockHTMLImageElement;
-  // @ts-expect-error - global 타입 확장
+  // @ts-expect-error - global type extension
   global.Image = MockHTMLImageElement;
 } else {
-  // HTMLImageElement가 이미 있으면 Mock의 프로토타입을 설정
+  // If HTMLImageElement already exists, set up Mock's prototype
   Object.setPrototypeOf(MockHTMLImageElement.prototype, HTMLImageElement.prototype);
 }
 
-// document.createElement mock (Node.js 환경 지원)
+// document.createElement mock (Node.js environment support)
 if (typeof document !== 'undefined') {
   const originalCreateElement = document.createElement.bind(document);
 
@@ -224,7 +224,7 @@ if (typeof document !== 'undefined') {
     return originalCreateElement(tagName, options);
   }) as typeof document.createElement;
 } else {
-  // Node.js 환경에서 document mock 생성
+  // Create document mock in Node.js environment
   globalThis.document = {
     createElement: vi.fn((tagName: string) => {
       if (tagName === 'canvas') {
@@ -251,7 +251,7 @@ if (typeof document !== 'undefined') {
   } as any;
 }
 
-// Node.js 환경에서 추가 전역 객체 mock
+// Additional global object mocks in Node.js environment
 if (typeof globalThis.window === 'undefined') {
   globalThis.window = globalThis as any;
 }
@@ -389,12 +389,12 @@ if (typeof FileReader === 'undefined') {
   } as any;
 }
 
-// SVG 처리 우회를 위한 convertSvgToElement mock
+// convertSvgToElement mock to bypass SVG processing
 if (typeof window !== 'undefined') {
-  // SVG 처리에서 타임아웃이 발생하므로 테스트 환경에서 우회
+  // Bypass SVG processing in test environment as it causes timeouts
   const originalFetch = globalThis.fetch;
 
-  // 특정 SVG Data URL에 대해 간단한 처리를 위한 플래그
+  // Flag for simple handling of specific SVG Data URLs
   (globalThis as any)._SVG_MOCK_MODE = true;
 }
 

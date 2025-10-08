@@ -34,8 +34,8 @@ interface ProcessResult {
   dimensions: { width: number; height: number };
   fit: string;
   actualDimensions?: { width: number; height: number };
-  scaleFactor: number; // 원본 대비 확대/축소 비율
-  originalDimensions?: { width: number; height: number }; // SVG 원본 크기
+  scaleFactor: number; // Scale factor compared to original
+  originalDimensions?: { width: number; height: number }; // Original SVG dimensions
 }
 
 interface ComparisonState {
@@ -57,28 +57,28 @@ export function FitModeComparisonDemo() {
   const [showQualityComparison, setShowQualityComparison] = useState(false);
 
   const fitModes = [
-    { key: 'cover', name: 'Cover', color: '#f44336', description: '이미지가 영역을 가득 채움 (잘림 가능)' },
-    { key: 'contain', name: 'Contain', color: '#2196f3', description: '이미지 전체가 영역에 맞춤 (여백 가능)' },
-    { key: 'fill', name: 'Fill', color: '#ff9800', description: '비율 무시하고 영역에 맞춤' },
-    { key: 'maxFit', name: 'MaxFit', color: '#4caf50', description: '축소만, 확대 안함' },
-    { key: 'minFit', name: 'MinFit', color: '#9c27b0', description: '확대만, 축소 안함' },
+    { key: 'cover', name: 'Cover', color: '#f44336', description: 'Image fills the area completely (may crop)' },
+    { key: 'contain', name: 'Contain', color: '#2196f3', description: 'Entire image fits within area (may have padding)' },
+    { key: 'fill', name: 'Fill', color: '#ff9800', description: 'Fits area ignoring aspect ratio' },
+    { key: 'maxFit', name: 'MaxFit', color: '#4caf50', description: 'Scale down only, no enlargement' },
+    { key: 'minFit', name: 'MinFit', color: '#9c27b0', description: 'Scale up only, no reduction' },
   ];
 
-  // 품질 비교용 크기들 (SVG의 해상도 독립성 시연)
+  // Quality comparison sizes (demonstrating SVG resolution independence)
   const qualityTestSizes = [
-    { width: 100, height: 75, label: '소형' },
-    { width: 400, height: 300, label: '중형' },
-    { width: 800, height: 600, label: '대형' },
-    { width: 1200, height: 900, label: '초대형' },
+    { width: 100, height: 75, label: 'Small' },
+    { width: 400, height: 300, label: 'Medium' },
+    { width: 800, height: 600, label: 'Large' },
+    { width: 1200, height: 900, label: 'Extra Large' },
   ];
 
-  // UTF-8 안전한 SVG Data URL 생성 함수
+  // UTF-8 safe SVG Data URL creation function
   const createSvgDataUrl = useCallback((svgString: string) => {
-    // Base64 대신 직접 URL 인코딩 사용 (UTF-8 안전)
+    // Use direct URL encoding instead of Base64 (UTF-8 safe)
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
   }, []);
 
-  // SVG 원본 크기 추출 함수
+  // Function to extract original SVG dimensions
   const extractSvgDimensions = useCallback((svgString: string) => {
     try {
       const parser = new DOMParser();
@@ -87,7 +87,7 @@ export function FitModeComparisonDemo() {
 
       if (!svgElement) return null;
 
-      // width, height 속성에서 추출
+      // Extract from width, height attributes
       const widthAttr = svgElement.getAttribute('width');
       const heightAttr = svgElement.getAttribute('height');
 
@@ -99,7 +99,7 @@ export function FitModeComparisonDemo() {
         }
       }
 
-      // viewBox에서 추출
+      // Extract from viewBox
       const viewBox = svgElement.getAttribute('viewBox');
       if (viewBox) {
         const values = viewBox.split(/\s+/).map((v) => parseFloat(v));
@@ -108,14 +108,14 @@ export function FitModeComparisonDemo() {
         }
       }
 
-      // 기본값 반환 (SVG 표준 기본 크기)
+      // Return default values (SVG standard default size)
       return { width: 300, height: 150 };
     } catch (error) {
       return { width: 300, height: 150 };
     }
   }, []);
 
-  // SVG fit 모드 처리
+  // SVG fit mode processing
   const handleSvgProcessing = useCallback(async () => {
     if (!selectedImage || comparisonState.isProcessing) return;
 
@@ -123,21 +123,21 @@ export function FitModeComparisonDemo() {
     setError('');
 
     try {
-      // SVG 소스 준비
+      // Prepare SVG source
       let svgSource: string;
       if (typeof selectedImage === 'string') {
         if (selectedImage.endsWith('.svg')) {
           const response = await fetch(selectedImage);
           svgSource = await response.text();
         } else {
-          setError('SVG 파일만 지원됩니다. SVG 샘플을 선택해주세요.');
+          setError('Only SVG files are supported. Please select an SVG sample.');
           return;
         }
       } else {
         if (selectedImage.type === 'image/svg+xml' || selectedImage.name?.endsWith('.svg')) {
           svgSource = await selectedImage.text();
         } else {
-          setError('SVG 파일만 지원됩니다. SVG 파일을 업로드해주세요.');
+          setError('Only SVG files are supported. Please upload an SVG file.');
           return;
         }
       }
@@ -147,11 +147,11 @@ export function FitModeComparisonDemo() {
 
       const results: Record<string, ProcessResult> = {};
 
-      // SVG 원본 크기 추출
+      // Extract original SVG dimensions
       const originalDimensions = extractSvgDimensions(svgSource) ?? undefined;
 
       if (showQualityComparison) {
-        // 품질 비교 모드: 다양한 크기에서 동일한 SVG 처리
+        // Quality comparison mode: process same SVG at various sizes
         for (const size of qualityTestSizes) {
           for (const mode of fitModes) {
             try {
@@ -160,7 +160,7 @@ export function FitModeComparisonDemo() {
                 .resize({ fit: mode.key as ResizeFit, width: size.width, height: size.height })
                 .toBlob({ format: selectedFormat, quality: 0.9 });
 
-              const scaleFactor = Math.max(size.width / 400, size.height / 300); // 기준 크기 대비
+              const scaleFactor = Math.max(size.width / 400, size.height / 300); // Compared to reference size
 
               results[`${size.label}-${mode.key}`] = {
                 originalUrl: createSvgDataUrl(svgSource),
@@ -181,12 +181,12 @@ export function FitModeComparisonDemo() {
                 results: { ...prev.results, [`${size.label}-${mode.key}`]: results[`${size.label}-${mode.key}`] },
               }));
             } catch (err) {
-              console.error(`처리 오류 (${size.label} ${mode.name}):`, err);
+              console.error(`Processing error (${size.label} ${mode.name}):`, err);
             }
           }
         }
       } else {
-        // 일반 모드: 단일 크기에서 fit 모드 비교
+        // Normal mode: compare fit modes at single size
         for (const mode of fitModes) {
           try {
             const startTime = Date.now();
@@ -194,7 +194,7 @@ export function FitModeComparisonDemo() {
               .resize({ fit: mode.key as ResizeFit, width: targetSize.width, height: targetSize.height })
               .toBlob({ format: selectedFormat, quality: 0.9 });
 
-            const scaleFactor = Math.max(targetSize.width / 400, targetSize.height / 300); // 기준 크기 대비
+            const scaleFactor = Math.max(targetSize.width / 400, targetSize.height / 300); // Compared to reference size
 
             results[mode.key] = {
               originalUrl: createSvgDataUrl(svgSource),
@@ -215,12 +215,12 @@ export function FitModeComparisonDemo() {
               results: { ...prev.results, [mode.key]: results[mode.key] },
             }));
           } catch (err) {
-            console.error(`처리 오류 (${mode.name}):`, err);
+            console.error(`Processing error (${mode.name}):`, err);
           }
         }
       }
     } catch (err) {
-      setError('이미지 처리 중 오류가 발생했습니다: ' + (err instanceof Error ? err.message : err));
+      setError('An error occurred during image processing: ' + (err instanceof Error ? err.message : err));
     } finally {
       setComparisonState((prev) => ({ ...prev, isProcessing: false }));
     }
@@ -234,23 +234,23 @@ export function FitModeComparisonDemo() {
     comparisonState.isProcessing,
   ]);
 
-  // 타겟 크기 변경 시 1초 debounce로 자동 재실행
+  // Auto re-run with 1-second debounce when target size changes
   useDebounce(
     () => {
       if (selectedImage && !comparisonState.isProcessing && !showQualityComparison) {
         handleSvgProcessing();
       }
     },
-    1000, // 1초 debounce
+    1000, // 1-second debounce
     [targetSize.width, targetSize.height, selectedImage]
   );
 
-  // 타겟 크기 변경 핸들러
+  // Target size change handler
   const handleTargetSizeChange = useCallback((dimension: 'width' | 'height', value: number) => {
     setTargetSize((prev) => ({ ...prev, [dimension]: value }));
   }, []);
 
-  // 이미지 선택 핸들러 - 즉시 처리 시작
+  // Image selection handler - start processing immediately
   const handleImageSelect = useCallback(
     async (source: File | string) => {
       setError('');
@@ -261,7 +261,7 @@ export function FitModeComparisonDemo() {
         isProcessing: false,
       });
 
-      // 이미지 선택 시 즉시 처리 시작
+      // Start processing immediately when image is selected
       setTimeout(() => {
         handleSvgProcessing();
       }, 100);
@@ -269,7 +269,7 @@ export function FitModeComparisonDemo() {
     [handleSvgProcessing]
   );
 
-  // 품질 비교 모드 토글
+  // Quality comparison mode toggle
   const handleQualityComparisonToggle = useCallback(
     (checked: boolean) => {
       setShowQualityComparison(checked);
@@ -288,7 +288,7 @@ export function FitModeComparisonDemo() {
     [selectedImage, handleSvgProcessing]
   );
 
-  // 결과 다운로드
+  // Download result
   const handleDownload = useCallback(
     (resultKey: string) => {
       const result = comparisonState.results[resultKey];
@@ -319,21 +319,21 @@ export function FitModeComparisonDemo() {
   return (
     <Container maxWidth="xl">
       <Typography variant="h3" component="h1" gutterBottom>
-        SVG Fit 모드: 화질 저하 없는 벡터 처리
+        SVG Fit Modes: Vector Processing Without Quality Loss
       </Typography>
       <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-        SVG의 해상도 독립적 특성을 활용한 고품질 fit 모드 처리를 확인하세요. 어떤 크기로 처리해도 벡터 품질이
-        유지됩니다.
+        Experience high-quality fit mode processing using SVG's resolution-independent characteristics. Vector quality is
+        maintained at any size.
       </Typography>
 
       <Grid container spacing={4}>
-        {/* 좌측: 설정 */}
+        {/* Left: Settings */}
         <Grid size={{ xs: 12, md: 3 }}>
           <Stack spacing={3}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  SVG 이미지 선택
+                  Select SVG Image
                 </Typography>
                 <ImageUploader
                   onImageSelect={handleImageSelect}
@@ -347,7 +347,7 @@ export function FitModeComparisonDemo() {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  처리 모드
+                  Processing Mode
                 </Typography>
                 <FormControlLabel
                   control={
@@ -356,10 +356,10 @@ export function FitModeComparisonDemo() {
                       onChange={(e) => handleQualityComparisonToggle(e.target.checked)}
                     />
                   }
-                  label="품질 비교 모드"
+                  label="Quality Comparison Mode"
                 />
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                  {showQualityComparison ? '다양한 크기에서 SVG 품질 비교' : 'Fit 모드별 비교 (크기 조정 가능)'}
+                  {showQualityComparison ? 'Compare SVG quality at various sizes' : 'Compare fit modes (adjustable size)'}
                 </Typography>
               </CardContent>
             </Card>
@@ -368,15 +368,15 @@ export function FitModeComparisonDemo() {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    타겟 크기 설정
+                    Target Size Settings
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    슬라이더 변경 시 1초 후 자동으로 재처리됩니다
+                    Automatically reprocessed 1 second after slider changes
                   </Typography>
                   <Stack spacing={3}>
                     <Box>
                       <Typography variant="body2" gutterBottom>
-                        너비: {targetSize.width}px
+                        Width: {targetSize.width}px
                       </Typography>
                       <Slider
                         value={targetSize.width}
@@ -393,7 +393,7 @@ export function FitModeComparisonDemo() {
                     </Box>
                     <Box>
                       <Typography variant="body2" gutterBottom>
-                        높이: {targetSize.height}px
+                        Height: {targetSize.height}px
                       </Typography>
                       <Slider
                         value={targetSize.height}
@@ -416,13 +416,13 @@ export function FitModeComparisonDemo() {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  출력 설정
+                  Output Settings
                 </Typography>
                 <FormControl fullWidth>
-                  <InputLabel>출력 포맷</InputLabel>
+                  <InputLabel>Output Format</InputLabel>
                   <Select value={selectedFormat} onChange={(e) => setSelectedFormat(e.target.value as 'png' | 'jpeg')}>
-                    <MenuItem value="png">PNG (무손실)</MenuItem>
-                    <MenuItem value="jpeg">JPEG (손실)</MenuItem>
+                    <MenuItem value="png">PNG (Lossless)</MenuItem>
+                    <MenuItem value="jpeg">JPEG (Lossy)</MenuItem>
                   </Select>
                 </FormControl>
               </CardContent>
@@ -432,17 +432,17 @@ export function FitModeComparisonDemo() {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    선택된 SVG
+                    Selected SVG
                   </Typography>
                   <Stack spacing={1}>
                     <Typography variant="body2">
-                      파일: {typeof selectedImage === 'string' ? selectedImage.split('/').pop() : selectedImage.name}
+                      File: {typeof selectedImage === 'string' ? selectedImage.split('/').pop() : selectedImage.name}
                     </Typography>
                     <Typography variant="body2" color="success.main">
-                      ✨ 벡터 이미지 (해상도 독립적)
+                      ✨ Vector Image (Resolution Independent)
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      자동 처리됨
+                      Processed Automatically
                     </Typography>
                   </Stack>
                 </CardContent>
@@ -451,48 +451,48 @@ export function FitModeComparisonDemo() {
           </Stack>
         </Grid>
 
-        {/* 우측: 결과 */}
+        {/* Right: Results */}
         <Grid size={{ xs: 12, md: 9 }}>
           <Stack spacing={3}>
-            {/* 진행률 */}
+            {/* Progress */}
             {comparisonState.isProcessing && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    SVG 처리 중... ({comparisonState.processingProgress.toFixed(0)}%)
+                    Processing SVG... ({comparisonState.processingProgress.toFixed(0)}%)
                   </Typography>
                   <LinearProgress variant="determinate" value={comparisonState.processingProgress} />
                 </CardContent>
               </Card>
             )}
 
-            {/* 에러 표시 */}
+            {/* Error Display */}
             {error && <Alert severity="error">{error}</Alert>}
 
-            {/* SVG 품질 정보 */}
+            {/* SVG Quality Information */}
             {selectedImage && (
               <Alert severity="info" icon={<ZoomIn />}>
                 <Typography variant="subtitle2" gutterBottom>
-                  🎯 SVG 벡터 처리의 장점
+                  🎯 Advantages of SVG Vector Processing
                 </Typography>
                 <Typography variant="body2">
-                  • 해상도 독립적: 어떤 크기든 픽셀화 없음
+                  • Resolution Independent: No pixelation at any size
                   <br />
-                  • 선명한 곡선: 벡터 기반 렌더링으로 매끄러운 선<br />
-                  • 확대/축소 자유: 품질 저하 없이 무한 확대 가능
-                  <br />• 파일 효율성: 복잡한 이미지도 작은 용량
+                  • Sharp Curves: Smooth lines with vector-based rendering<br />
+                  • Free Scaling: Infinite zoom without quality degradation
+                  <br />• File Efficiency: Small file size even for complex images
                 </Typography>
               </Alert>
             )}
 
-            {/* Fit 모드별 결과 */}
+            {/* Results by Fit Mode */}
             {Object.keys(comparisonState.results).length > 0 && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     {showQualityComparison
-                      ? 'SVG 품질 비교 결과'
-                      : `Fit 모드별 결과 (${targetSize.width}×${targetSize.height})`}
+                      ? 'SVG Quality Comparison Results'
+                      : `Results by Fit Mode (${targetSize.width}×${targetSize.height})`}
                   </Typography>
 
                   <Grid container spacing={3}>
@@ -539,7 +539,7 @@ export function FitModeComparisonDemo() {
                               >
                                 <img
                                   src={result.processedUrl}
-                                  alt={`SVG ${mode.name} 결과`}
+                                  alt={`SVG ${mode.name} Result`}
                                   style={{
                                     maxWidth: '100%',
                                     maxHeight: '100%',
@@ -552,7 +552,7 @@ export function FitModeComparisonDemo() {
                                 {result.originalDimensions && (
                                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <Typography variant="caption" color="text.secondary">
-                                      원본 크기:
+                                      Original Size:
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
                                       {result.originalDimensions.width}×{result.originalDimensions.height}
@@ -560,25 +560,25 @@ export function FitModeComparisonDemo() {
                                   </Box>
                                 )}
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <Typography variant="caption">타겟 크기:</Typography>
+                                  <Typography variant="caption">Target Size:</Typography>
                                   <Typography variant="caption">
                                     {result.dimensions.width}×{result.dimensions.height}
                                   </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                   <Typography variant="caption" fontWeight="bold">
-                                    실제 크기:
+                                    Actual Size:
                                   </Typography>
                                   <Typography variant="caption" fontWeight="bold" color="primary.main">
                                     {result.actualDimensions?.width}×{result.actualDimensions?.height}
                                   </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <Typography variant="caption">처리 시간:</Typography>
+                                  <Typography variant="caption">Processing Time:</Typography>
                                   <Typography variant="caption">{result.processingTime}ms</Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <Typography variant="caption">파일 크기:</Typography>
+                                  <Typography variant="caption">File Size:</Typography>
                                   <Typography variant="caption">{(result.fileSize / 1024).toFixed(1)} KB</Typography>
                                 </Box>
                               </Stack>
@@ -591,7 +591,7 @@ export function FitModeComparisonDemo() {
                                 onClick={() => handleDownload(key)}
                                 sx={{ mt: 2 }}
                               >
-                                다운로드
+                                Download
                               </Button>
                             </CardContent>
                           </Card>

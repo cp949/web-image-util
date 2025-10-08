@@ -1,4 +1,4 @@
-// 성능 모니터링 훅
+// Performance monitoring hook
 
 'use client';
 
@@ -6,7 +6,7 @@ import { useState, useCallback } from 'react';
 import type { PerformanceMetrics } from '../components/demos/types';
 
 /**
- * 성능 측정 및 모니터링 훅
+ * Performance measurement and monitoring hook
  */
 export function usePerformanceMonitor() {
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
@@ -16,7 +16,7 @@ export function usePerformanceMonitor() {
   });
 
   /**
-   * 비동기 작업의 성능 측정
+   * Performance measurement for async operations
    */
   const measurePerformance = useCallback(async <T,>(operation: () => Promise<T>): Promise<T> => {
     const startTime = performance.now();
@@ -31,7 +31,7 @@ export function usePerformanceMonitor() {
       const processingTime = endTime - startTime;
       const memoryUsage = endMemory - startMemory;
 
-      // Throughput 계산 (blob이 있는 경우)
+      // Calculate throughput (if blob exists)
       let throughput = 0;
       if (result && typeof result === 'object' && 'blob' in result && result.blob instanceof Blob) {
         throughput = (result.blob.size / processingTime) * 1000; // bytes per second
@@ -50,7 +50,7 @@ export function usePerformanceMonitor() {
   }, []);
 
   /**
-   * 메트릭 초기화
+   * Reset metrics
    */
   const resetMetrics = useCallback(() => {
     setMetrics({
@@ -61,7 +61,7 @@ export function usePerformanceMonitor() {
   }, []);
 
   /**
-   * 메트릭 포맷팅
+   * Format metrics
    */
   const formatMetrics = useCallback(() => {
     return {
@@ -80,7 +80,7 @@ export function usePerformanceMonitor() {
 }
 
 /**
- * 바이트 단위를 사람이 읽기 쉬운 형식으로 변환
+ * Convert bytes to human-readable format
  */
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';

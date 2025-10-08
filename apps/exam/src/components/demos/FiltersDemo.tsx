@@ -93,11 +93,11 @@ export function FiltersDemo() {
   const applyFilters = async () => {
     if (!originalImage) return;
 
-    // 모든 필터가 구현되어 있으므로 지원되지 않는 필터 없음
-    // 빈티지 필터도 세피아 조합으로 구현됨
+    // All filters are implemented, no unsupported filters
+    // Vintage filter is also implemented using sepia combination
     const unsupported: string[] = [];
     if (unsupported.length > 0) {
-      console.log(`다음 필터들은 추후 추가될 예정입니다: ${unsupported.join(', ')}`);
+      console.log(`The following filters will be added later: ${unsupported.join(', ')}`);
       return;
     }
 
@@ -105,15 +105,15 @@ export function FiltersDemo() {
     const startTime = Date.now();
 
     try {
-      // processImage API를 사용하여 기본 처리
+      // Basic processing using processImage API
       let processor = processImage(originalImage.src);
 
-      // 블러 필터 적용 (processImage의 내장 메서드)
+      // Apply blur filter (processImage built-in method)
       if (filters.blur > 0) {
         processor = processor.blur(filters.blur);
       }
 
-      // Canvas로 변환하여 다른 필터 적용
+      // Convert to Canvas for other filter applications
       const canvasResult = await processor.toCanvas();
       const canvas = canvasResult.canvas;
       const ctx = canvas.getContext('2d')!;
@@ -121,7 +121,7 @@ export function FiltersDemo() {
 
       let filteredImageData = imageData;
 
-      // 밝기 필터 적용
+      // Apply brightness filter
       if (filters.brightness !== 100) {
         filteredImageData = filterManager.applyFilter(filteredImageData, {
           name: 'brightness',
@@ -129,7 +129,7 @@ export function FiltersDemo() {
         });
       }
 
-      // 대비 필터 적용
+      // Apply contrast filter
       if (filters.contrast !== 100) {
         filteredImageData = filterManager.applyFilter(filteredImageData, {
           name: 'contrast',
@@ -137,7 +137,7 @@ export function FiltersDemo() {
         });
       }
 
-      // 채도 필터 적용
+      // Apply saturation filter
       if (filters.saturation !== 100) {
         filteredImageData = filterManager.applyFilter(filteredImageData, {
           name: 'saturation',
@@ -145,7 +145,7 @@ export function FiltersDemo() {
         });
       }
 
-      // 그레이스케일 필터 적용
+      // Apply grayscale filter
       if (filters.grayscale) {
         filteredImageData = filterManager.applyFilter(filteredImageData, {
           name: 'grayscale',
@@ -153,7 +153,7 @@ export function FiltersDemo() {
         });
       }
 
-      // 세피아 필터 적용
+      // Apply sepia filter
       if (filters.sepia) {
         filteredImageData = filterManager.applyFilter(filteredImageData, {
           name: 'sepia',
@@ -161,7 +161,7 @@ export function FiltersDemo() {
         });
       }
 
-      // 반전 필터 적용
+      // Apply invert filter
       if (filters.invert) {
         filteredImageData = filterManager.applyFilter(filteredImageData, {
           name: 'invert',
@@ -169,10 +169,10 @@ export function FiltersDemo() {
         });
       }
 
-      // 필터 적용된 이미지 데이터를 Canvas에 다시 그리기
+      // Redraw filtered image data to Canvas
       ctx.putImageData(filteredImageData, 0, 0);
 
-      // Canvas를 Blob으로 변환
+      // Convert Canvas to Blob
       const blob = await new Promise<Blob>((resolve) => {
         canvas.toBlob((blob: Blob | null) => resolve(blob!), 'image/png');
       });
@@ -190,7 +190,7 @@ export function FiltersDemo() {
       });
     } catch (error) {
       console.error('Filter application failed:', error);
-      console.error('필터 적용 중 오류가 발생했습니다.');
+      console.error('Error occurred while applying filters.');
     } finally {
       setProcessing(false);
     }
@@ -219,7 +219,7 @@ export function FiltersDemo() {
         brightness: 110,
         contrast: 120,
         saturation: 80,
-        sepia: true, // 세피아 효과로 빈티지 느낌 구현
+        sepia: true, // Implement vintage feel with sepia effect
         grayscale: false,
         invert: false,
       })),
@@ -278,33 +278,33 @@ export function FiltersDemo() {
     const basicCode = `import { processImage } from '@cp949/web-image-util';
 import { filterManager } from '@cp949/web-image-util/advanced';
 
-// 1. 기본 이미지 처리 (블러)
+// 1. Basic image processing (blur)
 const processor = processImage(source)${blurCode};
 const canvasResult = await processor.toCanvas();
 
-// 2. 고급 필터 적용
+// 2. Apply advanced filters
 const imageData = canvasResult.canvas.getContext('2d')!
   .getImageData(0, 0, canvasResult.width, canvasResult.height);
 
 ${filterCodes.map((filter) => `const filtered = filterManager.applyFilter(imageData, { name: '${filter.split(':')[0]}', params: ${filter.split(': ')[1]} });`).join('\n')}
 
-console.log('처리된 이미지 크기:', canvasResult.width, 'x', canvasResult.height);`;
+console.log('Processed image size:', canvasResult.width, 'x', canvasResult.height);`;
 
-    const advancedCode = `// 🎨 사용 가능한 모든 필터들
+    const advancedCode = `// 🎨 All available filters
 
 import { filterManager } from '@cp949/web-image-util/advanced';
 
-// 색상 조정 필터
+// Color adjustment filters
 const brightened = filterManager.applyFilter(imageData, { name: 'brightness', params: { value: 20 } });
 const contrasted = filterManager.applyFilter(imageData, { name: 'contrast', params: { value: 30 } });
 const desaturated = filterManager.applyFilter(imageData, { name: 'saturation', params: { factor: 0.8 } });
 
-// 특수 효과 필터
+// Special effects filters
 const grayscale = filterManager.applyFilter(imageData, { name: 'grayscale', params: {} });
 const sepia = filterManager.applyFilter(imageData, { name: 'sepia', params: { intensity: 80 } });
 const inverted = filterManager.applyFilter(imageData, { name: 'invert', params: {} });
 
-// 여러 필터 체인으로 적용
+// Apply multiple filters as chain
 const filterChain = {
   filters: [
     { name: 'brightness', params: { value: 10 } },
@@ -316,12 +316,12 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
 
     return [
       {
-        title: '현재 필터 설정 코드',
+        title: 'Current Filter Settings Code',
         code: basicCode,
         language: 'typescript',
       },
       {
-        title: '고급 필터 사용법',
+        title: 'Advanced Filter Usage',
         code: advancedCode,
         language: 'typescript',
       },
@@ -331,10 +331,10 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        필터 효과
+        Filter Effects
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        다양한 필터 효과를 적용하여 이미지의 분위기를 변화시켜보세요.
+        Apply various filter effects to change the mood and atmosphere of your images.
       </Typography>
 
       <Grid container spacing={4}>
@@ -345,31 +345,31 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  필터 프리셋
+                  Filter Presets
                 </Typography>
                 <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
                   <Button variant="outlined" size="small" onClick={presetFilters.vintage}>
-                    빈티지
+                    Vintage
                   </Button>
                   <Button variant="outlined" size="small" onClick={presetFilters.bw}>
-                    흑백
+                    Black & White
                   </Button>
                   <Button variant="outlined" size="small" onClick={presetFilters.dramatic}>
-                    드라마틱
+                    Dramatic
                   </Button>
                   <Button variant="outlined" size="small" onClick={presetFilters.soft}>
-                    소프트
+                    Soft
                   </Button>
                 </Stack>
 
                 <Typography variant="h6" gutterBottom>
-                  세부 조정
+                  Fine Tuning
                 </Typography>
 
-                {/* 블러 효과 */}
+                {/* Blur effect */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    블러: {filters.blur}px
+                    Blur: {filters.blur}px
                   </Typography>
                   <Slider
                     value={filters.blur}
@@ -390,10 +390,10 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                   />
                 </Box>
 
-                {/* 밝기 */}
+                {/* Brightness */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    밝기: {filters.brightness}%
+                    Brightness: {filters.brightness}%
                   </Typography>
                   <Slider
                     value={filters.brightness}
@@ -414,10 +414,10 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                   />
                 </Box>
 
-                {/* 대비 */}
+                {/* Contrast */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    대비: {filters.contrast}%
+                    Contrast: {filters.contrast}%
                   </Typography>
                   <Slider
                     value={filters.contrast}
@@ -438,10 +438,10 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                   />
                 </Box>
 
-                {/* 채도 */}
+                {/* Saturation */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    채도: {filters.saturation}%
+                    Saturation: {filters.saturation}%
                   </Typography>
                   <Slider
                     value={filters.saturation}
@@ -462,10 +462,10 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                   />
                 </Box>
 
-                {/* 색조 */}
+                {/* Hue */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    색조: {filters.hue}°
+                    Hue: {filters.hue}°
                   </Typography>
                   <Slider
                     value={filters.hue}
@@ -486,9 +486,9 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                   />
                 </Box>
 
-                {/* 특수 효과 */}
+                {/* Special effects */}
                 <Typography variant="h6" gutterBottom>
-                  특수 효과
+                  Special Effects
                 </Typography>
                 <Stack spacing={1} sx={{ mb: 3 }}>
                   <FormControlLabel
@@ -503,7 +503,7 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                         }
                       />
                     }
-                    label="그레이스케일"
+                    label="Grayscale"
                   />
                   <FormControlLabel
                     control={
@@ -517,7 +517,7 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                         }
                       />
                     }
-                    label="세피아"
+                    label="Sepia"
                   />
                   <FormControlLabel
                     control={
@@ -531,7 +531,7 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                         }
                       />
                     }
-                    label="색상 반전"
+                    label="Invert Colors"
                   />
                   <FormControlLabel
                     control={
@@ -545,7 +545,7 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                         }
                       />
                     }
-                    label="빈티지 효과"
+                    label="Vintage Effect"
                   />
                 </Stack>
 
@@ -556,10 +556,10 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                     disabled={!originalImage || processing}
                     sx={{ flex: 1 }}
                   >
-                    {processing ? '적용 중...' : '필터 적용'}
+                    {processing ? 'Applying...' : 'Apply Filters'}
                   </Button>
                   <Button variant="outlined" onClick={resetFilters}>
-                    초기화
+                    Reset
                   </Button>
                 </Stack>
               </CardContent>
@@ -571,54 +571,54 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
           <Stack spacing={3}>
             <BeforeAfterView before={originalImage} after={processedImage} />
 
-            {originalImage && <CodeSnippet title="현재 필터 설정의 코드" examples={generateCodeExample()} />}
+            {originalImage && <CodeSnippet title="Code for Current Filter Settings" examples={generateCodeExample()} />}
 
-            {/* 필터 설명 */}
+            {/* Filter descriptions */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  필터 효과 설명
+                  Filter Effects Description
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Stack spacing={1}>
-                      <Chip label="블러" color="primary" variant="outlined" />
-                      <Typography variant="body2">이미지를 부드럽게 만드는 블러 효과</Typography>
+                      <Chip label="Blur" color="primary" variant="outlined" />
+                      <Typography variant="body2">Blur effect that softens the image</Typography>
                     </Stack>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Stack spacing={1}>
-                      <Chip label="밝기" color="primary" variant="outlined" />
-                      <Typography variant="body2">이미지의 전체적인 밝기 조정</Typography>
+                      <Chip label="Brightness" color="primary" variant="outlined" />
+                      <Typography variant="body2">Adjusts the overall brightness of the image</Typography>
                     </Stack>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Stack spacing={1}>
-                      <Chip label="대비" color="primary" variant="outlined" />
-                      <Typography variant="body2">명암의 차이를 조정하여 선명도 변경</Typography>
+                      <Chip label="Contrast" color="primary" variant="outlined" />
+                      <Typography variant="body2">Adjusts the difference between light and dark areas for sharpness</Typography>
                     </Stack>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Stack spacing={1}>
-                      <Chip label="채도" color="primary" variant="outlined" />
-                      <Typography variant="body2">색상의 생생함과 강도 조정</Typography>
+                      <Chip label="Saturation" color="primary" variant="outlined" />
+                      <Typography variant="body2">Adjusts the vividness and intensity of colors</Typography>
                     </Stack>
                   </Grid>
                 </Grid>
               </CardContent>
             </Card>
 
-            {/* 필터 시스템 안내 */}
+            {/* Filter system guide */}
             <Alert severity="success">
               <Typography variant="body2">
-                <strong>✅ 모든 필터가 구현되어 있습니다!</strong>
+                <strong>✅ All filters are fully implemented!</strong>
                 <br />
-                • 블러: processImage 내장 API 사용
+                • Blur: Uses processImage built-in API
                 <br />
-                • 색상 조정: filterManager 플러그인 시스템 사용
+                • Color Adjustment: Uses filterManager plugin system
                 <br />
-                • 특수 효과: 그레이스케일, 세피아, 반전 등 지원
-                <br />• 실시간 처리: 모든 필터를 조합하여 즉시 적용 가능
+                • Special Effects: Supports grayscale, sepia, invert, and more
+                <br />• Real-time Processing: All filters can be combined and applied instantly
               </Typography>
             </Alert>
           </Stack>

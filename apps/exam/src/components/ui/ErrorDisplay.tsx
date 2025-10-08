@@ -1,4 +1,4 @@
-// 에러 표시 컴포넌트
+// Error display component
 
 'use client';
 
@@ -25,12 +25,12 @@ export function ErrorDisplay({ error, onRetry, onClear, canRetry }: ErrorDisplay
         <Stack direction="row" spacing={1}>
           {canRetry && onRetry && (
             <Button size="small" onClick={onRetry} color="inherit">
-              다시 시도
+              Retry
             </Button>
           )}
           {onClear && (
             <Button size="small" onClick={onClear} color="inherit">
-              닫기
+              Close
             </Button>
           )}
         </Stack>

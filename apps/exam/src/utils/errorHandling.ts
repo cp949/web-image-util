@@ -1,46 +1,46 @@
-// 에러 처리 유틸리티 - ImageProcessError 활용
+// Error handling utility - leverages ImageProcessError
 
 import { ImageProcessError } from '@cp949/web-image-util';
 
 /**
- * 에러를 사용자 친화적 메시지로 변환
+ * Convert errors to user-friendly messages
  */
 export function getErrorMessage(error: unknown): string {
   if (error instanceof ImageProcessError) {
     switch (error.code) {
       case 'INVALID_SOURCE':
-        return '지원하지 않는 이미지 형식입니다. JPG, PNG, WebP, SVG 파일을 사용해주세요.';
+        return 'Unsupported image format. Please use JPG, PNG, WebP, or SVG files.';
       case 'SOURCE_LOAD_FAILED':
-        return '이미지를 불러올 수 없습니다. 파일이 손상되었거나 접근할 수 없습니다.';
+        return 'Failed to load image. The file may be corrupted or inaccessible.';
       case 'CANVAS_CREATION_FAILED':
-        return '이미지 처리 중 오류가 발생했습니다. 브라우저를 새로고침해주세요.';
+        return 'An error occurred during image processing. Please refresh your browser.';
       case 'OUTPUT_FAILED':
-        return '결과 이미지 생성에 실패했습니다. 다른 형식으로 시도해보세요.';
+        return 'Failed to generate result image. Please try a different format.';
       default:
-        return `이미지 처리 오류: ${error.message}`;
+        return `Image processing error: ${error.message}`;
     }
   }
 
   if (error instanceof Error) {
-    return `오류: ${error.message}`;
+    return `Error: ${error.message}`;
   }
 
-  return '알 수 없는 오류가 발생했습니다.';
+  return 'An unknown error occurred.';
 }
 
 /**
- * 복구 가능한 에러인지 확인
+ * Check if error is recoverable
  */
 export function isRecoverableError(error: unknown): boolean {
   if (error instanceof ImageProcessError) {
-    // OUTPUT_FAILED는 옵션 변경으로 복구 가능
+    // OUTPUT_FAILED can be recovered by changing options
     return error.code === 'OUTPUT_FAILED';
   }
   return false;
 }
 
 /**
- * 에러 심각도 확인
+ * Check error severity
  */
 export function getErrorSeverity(error: unknown): 'error' | 'warning' | 'info' {
   if (error instanceof ImageProcessError) {
@@ -58,7 +58,7 @@ export function getErrorSeverity(error: unknown): 'error' | 'warning' | 'info' {
 }
 
 /**
- * 에러 로깅 (개발 환경에서만)
+ * Error logging (development environment only)
  */
 export function logError(error: unknown, context?: string): void {
   if (process.env.NODE_ENV === 'development') {
@@ -73,7 +73,7 @@ export function logError(error: unknown, context?: string): void {
 }
 
 /**
- * 파일 크기 포맷팅
+ * Format file size
  */
 export function formatFileSize(bytes?: number): string {
   if (!bytes) return 'Unknown';
@@ -91,7 +91,7 @@ export function formatFileSize(bytes?: number): string {
 }
 
 /**
- * 처리 시간 포맷팅
+ * Format processing time
  */
 export function formatProcessingTime(ms: number): string {
   if (ms < 1000) {

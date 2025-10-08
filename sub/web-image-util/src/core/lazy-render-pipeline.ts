@@ -1,10 +1,10 @@
 /**
- * 지연 렌더링 파이프라인 - 모든 연산을 계산으로만 처리하고 최종에 한 번만 렌더링
+ * Lazy rendering pipeline - Handle all operations as calculations only and render once at the end
  *
- * 핵심 철학: "계산은 미리, 렌더링은 한 번"
- * - 모든 resize, blur 등 연산을 메모리에 누적
- * - toBlob(), toCanvas() 호출 시에만 실제 렌더링 수행
- * - 중간 Canvas 생성 없이 최종 결과만 생성
+ * Core philosophy: "Calculate first, render once"
+ * - Accumulate all resize, blur operations in memory
+ * - Perform actual rendering only when toBlob(), toCanvas() is called
+ * - Generate final result only without creating intermediate Canvas
  */
 
 import type { BlurOptions, ResultMetadata } from '../types';
@@ -14,7 +14,7 @@ import type { ResizeOperation, ScaleOperation } from '../types/shortcut-types';
 import { analyzeAllOperations, debugLayout, renderAllOperationsOnce } from './single-renderer';
 
 /**
- * 지연 실행용 연산 정의
+ * Operation definition for lazy execution
  */
 export type LazyOperation =
   | { type: 'resize'; config: ResizeConfig }
@@ -22,7 +22,7 @@ export type LazyOperation =
   | { type: 'filter'; options: any };
 
 /**
- * 최종 레이아웃 정보 - 모든 연산 분석 결과
+ * Final layout information - Result of analyzing all operations
  */
 export interface FinalLayout {
   width: number;
@@ -34,7 +34,7 @@ export interface FinalLayout {
 }
 
 /**
- * 크기 정보 인터페이스
+ * Size information interface
  */
 export interface Size {
   width: number;
@@ -42,10 +42,10 @@ export interface Size {
 }
 
 /**
- * 지연 렌더링 파이프라인
+ * Lazy rendering pipeline
  *
- * 기존 파이프라인과 달리 각 연산마다 즉시 Canvas에 그리지 않고,
- * 모든 계산을 완료한 후 최종에 한 번만 렌더링
+ * Unlike traditional pipelines that draw to Canvas immediately for each operation,
+ * this completes all calculations first and renders only once at the end
  */
 export class LazyRenderPipeline {
   private operations: LazyOperation[] = [];
@@ -58,13 +58,13 @@ export class LazyRenderPipeline {
   }
 
   /**
-   * 리사이징 연산 추가 (계산만, 렌더링 안함)
-   * 한 번만 호출 가능하도록 제약
+   * Add resize operation (calculation only, no rendering)
+   * Constraint to allow only one call
    */
   addResize(config: ResizeConfig): this {
     if (this.resizeCalled) {
       throw new ImageProcessError(
-        'resize()는 한 번만 호출할 수 있습니다. 여러 resize를 원한다면 새로운 processImage()를 사용하세요.',
+        'resize() can only be called once. If you need multiple resizes, use a new processImage()',
         'MULTIPLE_RESIZE_NOT_ALLOWED'
       );
     }
@@ -74,8 +74,8 @@ export class LazyRenderPipeline {
   }
 
   /**
-   * 블러 연산 추가 (계산만, 렌더링 안함)
-   * 여러 번 호출 가능
+   * Add blur operation (calculation only, no rendering)
+   * Multiple calls allowed
    */
   addBlur(options: BlurOptions): this {
     this.operations.push({ type: 'blur', options });
@@ -83,10 +83,10 @@ export class LazyRenderPipeline {
   }
 
   /**
-   * Lazy 리사이즈 연산 추가 (Shortcut API용 내부 메서드)
+   * Add lazy resize operation (Internal method for Shortcut API)
    *
-   * @description 소스 크기가 필요한 연산을 pending 상태로 저장합니다.
-   * 최종 출력 시점에 convertToResizeConfig를 통해 ResizeConfig로 변환됩니다.
+   * @description Store operations that require source size in pending state.
+   * Converts to ResizeConfig via convertToResizeConfig at final output.
    *
    * @param operation ResizeOperation (scale, toWidth, toHeight)
    * @internal
@@ -96,7 +96,7 @@ export class LazyRenderPipeline {
   }
 
   /**
-   * 필터 연산 추가 (계산만, 렌더링 안함)
+   * Add filter operation (calculation only, no rendering)
    */
   addFilter(options: any): this {
     this.operations.push({ type: 'filter', options });
@@ -104,24 +104,24 @@ export class LazyRenderPipeline {
   }
 
   /**
-   * 모든 연산을 분석하여 최종 레이아웃 계산
-   * single-renderer의 analyzeAllOperations 사용
+   * Analyze all operations and calculate final layout
+   * Uses analyzeAllOperations from single-renderer
    */
   private calculateFinalLayout(): FinalLayout {
     return analyzeAllOperations(this.sourceImage, this.operations);
   }
 
   /**
-   * 🚀 핵심: 모든 계산 결과를 바탕으로 단 한 번만 렌더링
-   * single-renderer의 renderAllOperationsOnce 사용
+   * 🚀 Core: Render only once based on all calculation results
+   * Uses renderAllOperationsOnce from single-renderer
    */
   private renderOnce(): HTMLCanvasElement {
     return renderAllOperationsOnce(this.sourceImage, this.operations);
   }
 
   /**
-   * Blob 형태로 최종 결과 출력
-   * 이 시점에서 실제 렌더링 수행
+   * Output final result as Blob
+   * Actual rendering performed at this point
    */
   async toBlob(format: string = 'image/png', quality?: number): Promise<{ blob: Blob; metadata: ResultMetadata }> {
     const startTime = performance.now();
@@ -131,7 +131,7 @@ export class LazyRenderPipeline {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            reject(new ImageProcessError('Blob 생성 실패', 'BLOB_CONVERSION_ERROR'));
+            reject(new ImageProcessError('Blob creation failed', 'BLOB_CONVERSION_ERROR'));
             return;
           }
 
@@ -144,7 +144,7 @@ export class LazyRenderPipeline {
             operations: this.operations.length,
           };
 
-          // 디버깅 정보 출력
+          // Output debugging information
           const layout = this.calculateFinalLayout();
           debugLayout(layout, this.operations.length);
 
@@ -157,17 +157,17 @@ export class LazyRenderPipeline {
   }
 
   /**
-   * Canvas 형태로 최종 결과 출력
-   * 이 시점에서 실제 렌더링 수행
+   * Output final result as Canvas
+   * Actual rendering performed at this point
    */
   toCanvas(): { canvas: HTMLCanvasElement; metadata: ResultMetadata } {
     const startTime = performance.now();
 
-    // 🎯 철학 구현: 최종 출력 시점에만 연산 수행
+    // 🎯 Philosophy implementation: Perform operations only at final output
     if (this.pendingResizeOperation) {
       const resizeConfig = this.convertToResizeConfig(this.pendingResizeOperation);
-      this.addResize(resizeConfig); // 기존 시스템 활용
-      this.pendingResizeOperation = undefined; // 처리 완료 후 정리
+      this.addResize(resizeConfig); // Utilize existing system
+      this.pendingResizeOperation = undefined; // Clean up after processing
     }
 
     const canvas = this.renderOnce();
@@ -176,12 +176,12 @@ export class LazyRenderPipeline {
       width: canvas.width,
       height: canvas.height,
       format: 'canvas' as any,
-      size: canvas.width * canvas.height * 4, // RGBA 추정
+      size: canvas.width * canvas.height * 4, // RGBA estimation
       processingTime: performance.now() - startTime,
       operations: this.operations.length,
     };
 
-    // 디버깅 정보 출력
+    // Output debugging information
     const layout = this.calculateFinalLayout();
     debugLayout(layout, this.operations.length);
 
@@ -189,21 +189,21 @@ export class LazyRenderPipeline {
   }
 
   /**
-   * 연산 개수 반환 (디버깅용)
+   * Get operation count (for debugging)
    */
   getOperationCount(): number {
     return this.operations.length;
   }
 
   /**
-   * 연산 목록 반환 (디버깅용)
+   * Get operations list (for debugging)
    */
   getOperations(): LazyOperation[] {
     return [...this.operations];
   }
 
   /**
-   * 소스 이미지 크기 조회
+   * Get source image size
    * @private
    */
   private getSourceSize(): Size {
@@ -214,25 +214,25 @@ export class LazyRenderPipeline {
   }
 
   /**
-   * ResizeOperation을 ResizeConfig로 변환
+   * Convert ResizeOperation to ResizeConfig
    *
-   * @description 이 시점에서만 소스 크기를 조회하여 최종 ResizeConfig를 생성합니다.
-   * Discriminated Union 패턴을 사용하여 타입 안전성을 보장합니다.
+   * @description Source size is queried only at this point to generate the final ResizeConfig.
+   * Discriminated Union pattern is used to ensure type safety.
    *
-   * TypeScript 모범 사례 (Context7):
-   * - switch 문으로 Discriminated Union 타입 narrowing
-   * - 각 case 블록에서 타입이 자동으로 좁혀짐
-   * - exhaustive checking으로 모든 케이스 처리 보장
+   * TypeScript best practices (Context7):
+   * - Use switch statement for Discriminated Union type narrowing
+   * - Types are automatically narrowed in each case block
+   * - Exhaustive checking ensures all cases are handled
    *
-   * @param operation 변환할 ResizeOperation
+   * @param operation ResizeOperation to convert
    * @returns ResizeConfig
    * @private
    */
   private convertToResizeConfig(operation: ResizeOperation): ResizeConfig {
-    const sourceSize = this.getSourceSize(); // 이 시점에서만 크기 조회!
+    const sourceSize = this.getSourceSize(); // Query size only at this point!
 
-    // TypeScript 모범 사례: switch 문으로 Discriminated Union 처리
-    // 각 case에서 operation.type에 따라 타입이 자동으로 narrowing됨
+    // TypeScript best practice: Handle Discriminated Union with switch statement
+    // Type is automatically narrowed according to operation.type in each case
     switch (operation.type) {
       case 'scale':
         // operation: { type: 'scale'; value: ScaleOperation }
@@ -259,31 +259,31 @@ export class LazyRenderPipeline {
       }
 
       // TypeScript exhaustive checking:
-      // 모든 케이스를 처리했으므로 default는 도달 불가능
-      // 새로운 타입 추가 시 컴파일 에러 발생으로 안전성 보장
+      // Default is unreachable since all cases are handled
+      // Compile error will occur when new types are added, ensuring safety
     }
   }
 
   /**
-   * ScaleOperation을 ResizeConfig로 변환
+   * Convert ScaleOperation to ResizeConfig
    *
-   * @description ScaleOperation의 4가지 형태를 모두 처리합니다:
-   * - number: 균등 배율
-   * - { sx }: X축만 배율
-   * - { sy }: Y축만 배율
-   * - { sx, sy }: X/Y 축 개별 배율
+   * @description Handles all 4 forms of ScaleOperation:
+   * - number: uniform scale
+   * - { sx }: X-axis only scale
+   * - { sy }: Y-axis only scale
+   * - { sx, sy }: individual X/Y axis scale
    *
-   * TypeScript 모범 사례:
-   * - Discriminated Union 타입 narrowing을 위해 명시적 타입 가드 사용
-   * - 타입 안전성을 위한 exhaustive checking 패턴 적용
+   * TypeScript best practices:
+   * - Use explicit type guards for Discriminated Union type narrowing
+   * - Apply exhaustive checking pattern for type safety
    *
-   * @param source 소스 이미지 크기
+   * @param source Source image size
    * @param scale ScaleOperation
    * @returns ResizeConfig
    * @private
    */
   private handleScale(source: Size, scale: ScaleOperation): ResizeConfig {
-    // 균등 배율인 경우 (타입: number)
+    // Case for uniform scale (type: number)
     if (typeof scale === 'number') {
       return {
         fit: 'fill',
@@ -292,9 +292,9 @@ export class LazyRenderPipeline {
       };
     }
 
-    // 객체 형태인 경우: { sx?, sy? }
-    // TypeScript 모범 사례: 'in' 연산자로 타입 narrowing
-    // sx와 sy의 존재 여부에 따라 적절한 기본값 적용
+    // Case for object form: { sx?, sy? }
+    // TypeScript best practice: Type narrowing with 'in' operator
+    // Apply appropriate default values based on presence of sx and sy
     const sx = 'sx' in scale ? scale.sx : 1;
     const sy = 'sy' in scale ? scale.sy : 1;
 

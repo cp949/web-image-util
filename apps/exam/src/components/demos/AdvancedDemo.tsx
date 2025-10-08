@@ -80,7 +80,7 @@ export function AdvancedDemo() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // 텍스트 워터마크 옵션
+  // Text watermark options
   const [textOptions, setTextOptions] = useState<TextWatermarkOptions>({
     text: 'Copyright © 2024',
     position: 'bottom-right',
@@ -95,7 +95,7 @@ export function AdvancedDemo() {
     strokeWidth: 2,
   });
 
-  // 이미지 워터마크 옵션
+  // Image watermark options
   const [imageOptions, setImageOptions] = useState<ImageWatermarkOptions>({
     position: 'bottom-right',
     opacity: 0.7,
@@ -105,15 +105,15 @@ export function AdvancedDemo() {
   });
 
   const positionOptions = [
-    { value: 'top-left', label: '좌상단' },
-    { value: 'top-center', label: '상단 중앙' },
-    { value: 'top-right', label: '우상단' },
-    { value: 'center-left', label: '좌측 중앙' },
-    { value: 'center', label: '중앙' },
-    { value: 'center-right', label: '우측 중앙' },
-    { value: 'bottom-left', label: '좌하단' },
-    { value: 'bottom-center', label: '하단 중앙' },
-    { value: 'bottom-right', label: '우하단' },
+    { value: 'top-left', label: 'Top Left' },
+    { value: 'top-center', label: 'Top Center' },
+    { value: 'top-right', label: 'Top Right' },
+    { value: 'center-left', label: 'Center Left' },
+    { value: 'center', label: 'Center' },
+    { value: 'center-right', label: 'Center Right' },
+    { value: 'bottom-left', label: 'Bottom Left' },
+    { value: 'bottom-center', label: 'Bottom Center' },
+    { value: 'bottom-right', label: 'Bottom Right' },
   ];
 
   const handleImageSelect = (source: File | string) => {
@@ -169,11 +169,11 @@ export function AdvancedDemo() {
     setProcessing(true);
     setError(null);
     try {
-      // 먼저 기본 이미지를 Canvas로 변환
+      // First convert the base image to Canvas
       const processor = processImage(originalImage.src);
       const canvasResult = await processor.toCanvas();
 
-      // 텍스트 워터마크 추가
+      // Add text watermark
       const watermarkedCanvas = SimpleWatermark.addText(canvasResult.canvas, {
         text: textOptions.text,
         position: textOptions.position,
@@ -187,15 +187,15 @@ export function AdvancedDemo() {
           fontWeight: textOptions.fontWeight,
         },
         rotation: textOptions.rotation,
-        margin: { x: 5, y: 5 }, // 작은 마진으로 설정
+        margin: { x: 5, y: 5 }, // Set small margin
       });
 
-      // 결과를 Blob으로 변환
+      // Convert result to Blob
       const blob = await new Promise<Blob>((resolve, reject) => {
         watermarkedCanvas.toBlob(
           (blob: Blob | null) => {
             if (blob) resolve(blob);
-            else reject(new Error('Blob 생성 실패'));
+            else reject(new Error('Failed to create Blob'));
           },
           'image/png',
           0.9
@@ -210,8 +210,8 @@ export function AdvancedDemo() {
         format: 'png',
       });
     } catch (err) {
-      console.error('텍스트 워터마크 처리 중 오류:', err);
-      setError(err instanceof Error ? err : new Error('텍스트 워터마크 처리 중 오류가 발생했습니다.'));
+      console.error('Error processing text watermark:', err);
+      setError(err instanceof Error ? err : new Error('An error occurred while processing text watermark.'));
     } finally {
       setProcessing(false);
     }
@@ -223,11 +223,11 @@ export function AdvancedDemo() {
     setProcessing(true);
     setError(null);
     try {
-      // 먼저 기본 이미지를 Canvas로 변환
+      // First convert the base image to Canvas
       const processor = processImage(originalImage.src);
       const canvasResult = await processor.toCanvas();
 
-      // 워터마크 이미지 로드
+      // Load watermark image
       const watermarkImg = new Image();
       watermarkImg.crossOrigin = 'anonymous';
 
@@ -237,7 +237,7 @@ export function AdvancedDemo() {
         watermarkImg.src = watermarkImage.src;
       });
 
-      // 이미지 워터마크 추가
+      // Add image watermark
       const watermarkedCanvas = SimpleWatermark.addImage(canvasResult.canvas, {
         image: watermarkImg,
         position: imageOptions.position,
@@ -247,12 +247,12 @@ export function AdvancedDemo() {
         blendMode: imageOptions.blendMode,
       });
 
-      // 결과를 Blob으로 변환
+      // Convert result to Blob
       const blob = await new Promise<Blob>((resolve, reject) => {
         watermarkedCanvas.toBlob(
           (blob: Blob | null) => {
             if (blob) resolve(blob);
-            else reject(new Error('Blob 생성 실패'));
+            else reject(new Error('Failed to create Blob'));
           },
           'image/png',
           0.9
@@ -267,8 +267,8 @@ export function AdvancedDemo() {
         format: 'png',
       });
     } catch (err) {
-      console.error('이미지 워터마크 처리 중 오류:', err);
-      setError(err instanceof Error ? err : new Error('이미지 워터마크 처리 중 오류가 발생했습니다.'));
+      console.error('Error processing image watermark:', err);
+      setError(err instanceof Error ? err : new Error('An error occurred while processing image watermark.'));
     } finally {
       setProcessing(false);
     }
@@ -276,18 +276,18 @@ export function AdvancedDemo() {
 
   const generateCodeExamples = () => {
     switch (activeTab) {
-      case 0: // 텍스트 워터마크
+      case 0: // Text watermark
         return [
           {
-            title: '텍스트 워터마크',
+            title: 'Text Watermark',
             code: `import { processImage } from '@cp949/web-image-util';
 import { SimpleWatermark } from '@cp949/web-image-util/advanced';
 
-// 기본 이미지 처리
+// Basic image processing
 const processor = processImage(source);
 const canvasResult = await processor.toCanvas();
 
-// 텍스트 워터마크 추가
+// Add text watermark
 const watermarkedCanvas = SimpleWatermark.addText(canvasResult, {
   text: '${textOptions.text}',
   position: '${textOptions.position}',
@@ -305,10 +305,10 @@ const watermarkedCanvas = SimpleWatermark.addText(canvasResult, {
     }
   },
   rotation: ${textOptions.rotation},
-  margin: { x: 5, y: 5 } // 작은 마진으로 설정
+  margin: { x: 5, y: 5 } // Set small margin
 });
 
-// Blob으로 변환
+// Convert to Blob
 const blob = await new Promise(resolve => {
   watermarkedCanvas.toBlob(resolve, 'image/png', 0.9);
 });`,
@@ -316,23 +316,23 @@ const blob = await new Promise(resolve => {
           },
         ];
 
-      case 1: // 이미지 워터마크
+      case 1: // Image watermark
         return [
           {
-            title: '이미지 워터마크',
+            title: 'Image Watermark',
             code: `import { processImage } from '@cp949/web-image-util';
 import { SimpleWatermark } from '@cp949/web-image-util/advanced';
 
-// 기본 이미지 처리
+// Basic image processing
 const processor = processImage(source);
 const canvasResult = await processor.toCanvas();
 
-// 워터마크 이미지 로드
+// Load watermark image
 const watermarkImg = new Image();
 watermarkImg.src = watermarkImageSrc;
 await new Promise(resolve => watermarkImg.onload = resolve);
 
-// 이미지 워터마크 추가
+// Add image watermark
 const watermarkedCanvas = SimpleWatermark.addImage(canvasResult, {
   image: watermarkImg,
   position: '${imageOptions.position}',
@@ -342,7 +342,7 @@ const watermarkedCanvas = SimpleWatermark.addImage(canvasResult, {
   blendMode: '${imageOptions.blendMode}'
 });
 
-// Blob으로 변환
+// Convert to Blob
 const blob = await new Promise(resolve => {
   watermarkedCanvas.toBlob(resolve, 'image/png', 0.9);
 });`,
@@ -350,31 +350,31 @@ const blob = await new Promise(resolve => {
           },
         ];
 
-      case 2: // 이미지 합성
+      case 2: // Image composition
         return [
           {
-            title: '이미지 합성',
+            title: 'Image Composition',
             code: `import { processImage } from '@cp949/web-image-util';
 import { SimpleWatermark } from '@cp949/web-image-util/advanced';
 
-// 다중 워터마크 합성 예제
+// Multiple watermark composition example
 const processor = processImage(source);
 const canvasResult = await processor.resize({ fit: 'cover', width: 800, height: 600 }).toCanvas();
 
-// 로고 추가
+// Add logo
 const logoCanvas = SimpleWatermark.addLogo(canvasResult, logoImage, {
   position: 'top-right',
   maxSize: 0.15,
   opacity: 0.8
 });
 
-// 저작권 텍스트 추가
+// Add copyright text
 const finalCanvas = SimpleWatermark.addCopyright(logoCanvas, '© 2024 Company Name', {
   position: 'bottom-right',
   style: 'light'
 });
 
-// Blob으로 변환
+// Convert to Blob
 const blob = await new Promise(resolve => {
   finalCanvas.toBlob(resolve, 'image/png', 0.9);
 });`,
@@ -390,50 +390,50 @@ const blob = await new Promise(resolve => {
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        고급 기능
+        Advanced Features
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        워터마크 추가, 이미지 합성, 다중 레이어 처리 등 고급 이미지 처리 기능을 확인해보세요.
+        Experience advanced image processing features including watermark addition, image composition, and multi-layer processing.
       </Typography>
 
-      {/* 에러 표시 */}
+      {/* Error display */}
       {error && <ErrorDisplay error={error} onClear={() => setError(null)} />}
 
-      {/* 처리 상태 */}
-      <ProcessingStatus processing={processing} message="워터마크 처리 중..." />
+      {/* Processing status */}
+      <ProcessingStatus processing={processing} message="Processing watermark..." />
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
-            {/* 메인 이미지 업로더 */}
+            {/* Main image uploader */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  메인 이미지
+                  Main Image
                 </Typography>
                 <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="advanced" />
               </CardContent>
             </Card>
 
-            {/* 기능 선택 탭 */}
+            {/* Feature selection tabs */}
             <Card>
               <CardContent>
                 <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)} variant="fullWidth" sx={{ mb: 3 }}>
-                  <Tab label="텍스트" />
-                  <Tab label="이미지" />
-                  <Tab label="합성" />
+                  <Tab label="Text" />
+                  <Tab label="Image" />
+                  <Tab label="Composite" />
                 </Tabs>
 
-                {/* 텍스트 워터마크 옵션 */}
+                {/* Text watermark options */}
                 {activeTab === 0 && (
                   <Box>
                     <Typography variant="h6" gutterBottom>
-                      텍스트 워터마크
+                      Text Watermark
                     </Typography>
 
                     <TextField
                       fullWidth
-                      label="워터마크 텍스트"
+                      label="Watermark Text"
                       value={textOptions.text}
                       onChange={(e) =>
                         setTextOptions((prev) => ({
@@ -445,10 +445,10 @@ const blob = await new Promise(resolve => {
                     />
 
                     <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>위치</InputLabel>
+                      <InputLabel>Position</InputLabel>
                       <Select
                         value={textOptions.position}
-                        label="위치"
+                        label="Position"
                         onChange={(e) =>
                           setTextOptions((prev) => ({
                             ...prev,
@@ -466,7 +466,7 @@ const blob = await new Promise(resolve => {
 
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" gutterBottom>
-                        폰트 크기: {textOptions.fontSize}px
+                        Font Size: {textOptions.fontSize}px
                       </Typography>
                       <Slider
                         value={textOptions.fontSize}
@@ -488,7 +488,7 @@ const blob = await new Promise(resolve => {
 
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" gutterBottom>
-                        투명도: {Math.round(textOptions.opacity * 100)}%
+                        Opacity: {Math.round(textOptions.opacity * 100)}%
                       </Typography>
                       <Slider
                         value={textOptions.opacity}
@@ -511,7 +511,7 @@ const blob = await new Promise(resolve => {
 
                     <TextField
                       fullWidth
-                      label="텍스트 색상"
+                      label="Text Color"
                       type="color"
                       value={textOptions.color}
                       onChange={(e) =>
@@ -540,14 +540,14 @@ const blob = await new Promise(resolve => {
                           }
                         />
                       }
-                      label="외곽선 사용"
+                      label="Use Outline"
                       sx={{ mb: 2 }}
                     />
 
                     {textOptions.stroke && (
                       <TextField
                         fullWidth
-                        label="외곽선 색상"
+                        label="Outline Color"
                         type="color"
                         value={textOptions.strokeColor}
                         onChange={(e) =>
@@ -571,31 +571,31 @@ const blob = await new Promise(resolve => {
                       onClick={processTextWatermark}
                       disabled={!originalImage || processing}
                     >
-                      {processing ? '처리 중...' : '텍스트 워터마크 적용'}
+                      {processing ? 'Processing...' : 'Apply Text Watermark'}
                     </Button>
                   </Box>
                 )}
 
-                {/* 이미지 워터마크 옵션 */}
+                {/* Image watermark options */}
                 {activeTab === 1 && (
                   <Box>
                     <Typography variant="h6" gutterBottom>
-                      이미지 워터마크
+                      Image Watermark
                     </Typography>
 
-                    {/* 워터마크 이미지 업로더 */}
+                    {/* Watermark image uploader */}
                     <Box sx={{ mb: 3 }}>
                       <Typography variant="subtitle2" gutterBottom>
-                        워터마크 이미지
+                        Watermark Image
                       </Typography>
                       <ImageUploader onImageSelect={handleWatermarkImageSelect} />
                     </Box>
 
                     <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>위치</InputLabel>
+                      <InputLabel>Position</InputLabel>
                       <Select
                         value={imageOptions.position}
-                        label="위치"
+                        label="Position"
                         onChange={(e) =>
                           setImageOptions((prev) => ({
                             ...prev,
@@ -613,7 +613,7 @@ const blob = await new Promise(resolve => {
 
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" gutterBottom>
-                        크기: {Math.round(imageOptions.scale * 100)}%
+                        Size: {Math.round(imageOptions.scale * 100)}%
                       </Typography>
                       <Slider
                         value={imageOptions.scale}
@@ -636,7 +636,7 @@ const blob = await new Promise(resolve => {
 
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" gutterBottom>
-                        투명도: {Math.round(imageOptions.opacity * 100)}%
+                        Opacity: {Math.round(imageOptions.opacity * 100)}%
                       </Typography>
                       <Slider
                         value={imageOptions.opacity}
@@ -653,10 +653,10 @@ const blob = await new Promise(resolve => {
                     </Box>
 
                     <FormControl fullWidth sx={{ mb: 3 }}>
-                      <InputLabel>블렌드 모드</InputLabel>
+                      <InputLabel>Blend Mode</InputLabel>
                       <Select
                         value={imageOptions.blendMode}
-                        label="블렌드 모드"
+                        label="Blend Mode"
                         onChange={(e) =>
                           setImageOptions((prev) => ({
                             ...prev,
@@ -677,32 +677,31 @@ const blob = await new Promise(resolve => {
                       onClick={processImageWatermark}
                       disabled={!originalImage || !watermarkImage || processing}
                     >
-                      {processing ? '처리 중...' : '이미지 워터마크 적용'}
+                      {processing ? 'Processing...' : 'Apply Image Watermark'}
                     </Button>
                   </Box>
                 )}
 
-                {/* 이미지 합성 옵션 */}
+                {/* Image Composition Options */}
                 {activeTab === 2 && (
                   <Box>
                     <Typography variant="h6" gutterBottom>
-                      이미지 합성
+                      Image Composition
                     </Typography>
 
                     <Stack spacing={1} sx={{ mb: 3 }}>
-                      <Chip label="✅ 텍스트 워터마크" color="success" />
-                      <Chip label="✅ 이미지 워터마크" color="success" />
-                      <Chip label="✅ 로고 워터마크" color="success" />
-                      <Chip label="✅ 저작권 워터마크" color="success" />
-                      <Chip label="✅ 다중 워터마크 합성" color="success" />
-                      <Chip label="🚧 그리드 레이아웃" variant="outlined" />
-                      <Chip label="🚧 콜라주 생성" variant="outlined" />
-                      <Chip label="🚧 마스킹" variant="outlined" />
+                      <Chip label="✅ Text Watermark" color="success" />
+                      <Chip label="✅ Image Watermark" color="success" />
+                      <Chip label="✅ Logo Watermark" color="success" />
+                      <Chip label="✅ Copyright Watermark" color="success" />
+                      <Chip label="✅ Multiple Watermark Composition" color="success" />
+                      <Chip label="🚧 Grid Layout" variant="outlined" />
+                      <Chip label="🚧 Collage Generation" variant="outlined" />
+                      <Chip label="🚧 Masking" variant="outlined" />
                     </Stack>
 
                     <Alert severity="info" sx={{ mb: 2 }}>
-                      위의 텍스트 및 이미지 탭에서 워터마크 합성 기능을 체험해보세요. 여러 워터마크를 차례로 적용하여
-                      복합적인 합성 효과를 만들 수 있습니다.
+                      Try the watermark composition features in the Text and Image tabs above. You can apply multiple watermarks sequentially to create complex composition effects.
                     </Alert>
                   </Box>
                 )}
@@ -713,15 +712,15 @@ const blob = await new Promise(resolve => {
 
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* Before/After 뷰어 */}
+            {/* Before/After Viewer */}
             <BeforeAfterView before={originalImage} after={processedImage} />
 
-            {/* 워터마크 이미지 미리보기 (이미지 워터마크 탭일 때만) */}
+            {/* Watermark Image Preview (Image Watermark tab only) */}
             {activeTab === 1 && watermarkImage && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    워터마크 이미지
+                    Watermark Image
                   </Typography>
                   <Box
                     sx={{
@@ -739,7 +738,7 @@ const blob = await new Promise(resolve => {
                   >
                     <img
                       src={watermarkImage.src}
-                      alt="워터마크"
+                      alt="Watermark"
                       style={{
                         maxWidth: '100%',
                         maxHeight: '100%',
@@ -751,8 +750,8 @@ const blob = await new Promise(resolve => {
               </Card>
             )}
 
-            {/* 코드 예제 */}
-            {originalImage && <CodeSnippet title="현재 설정의 코드 예제" examples={generateCodeExamples()} />}
+            {/* Code Examples */}
+            {originalImage && <CodeSnippet title="Code Examples for Current Settings" examples={generateCodeExamples()} />}
           </Stack>
         </Grid>
       </Grid>

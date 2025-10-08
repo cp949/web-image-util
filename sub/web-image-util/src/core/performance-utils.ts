@@ -1,7 +1,7 @@
 /**
- * 성능 유틸리티 - 사용자 친화적 API
+ * Performance utilities - user-friendly API
  *
- * @description 간단한 성능 제어 함수들 제공
+ * @description Provides simple performance control functions
  */
 
 import { BatchResizer } from './batch-resizer';
@@ -9,49 +9,49 @@ import { getPerformanceConfig, type ResizeProfile } from './performance-config';
 import { SmartProcessor } from './smart-processor';
 
 /**
- * 전역 성능 설정
+ * Global performance configuration
  */
 let globalPerformanceProfile: ResizeProfile = 'balanced';
 
 /**
- * 성능 제어 유틸리티
+ * Performance control utilities
  *
  * @example
  * ```typescript
- * // 전역 성능 프로파일 설정
+ * // Set global performance profile
  * ResizePerformance.setProfile('fast');
  *
- * // 고속 배치 처리
+ * // Fast batch processing
  * const results = await ResizePerformance.fastBatch(images, 300, 200);
  *
- * // 메모리 사용량 확인
+ * // Check memory usage
  * const info = ResizePerformance.getMemoryInfo();
  * ```
  */
 export class ResizePerformance {
   /**
-   * 전역 성능 프로파일 설정
+   * Set global performance profile
    */
   static setProfile(profile: ResizeProfile): void {
     globalPerformanceProfile = profile;
   }
 
   /**
-   * 현재 성능 프로파일 조회
+   * Get current performance profile
    */
   static getProfile(): ResizeProfile {
     return globalPerformanceProfile;
   }
 
   /**
-   * 성능 프로파일별 설정 조회
+   * Get configuration by performance profile
    */
   static getConfig(profile?: ResizeProfile) {
     return getPerformanceConfig(profile || globalPerformanceProfile);
   }
 
   /**
-   * 고속 배치 처리 - fast 프로파일 사용
+   * Fast batch processing - uses fast profile
    */
   static async fastBatch(images: HTMLImageElement[], width: number, height: number): Promise<HTMLCanvasElement[]> {
     return SmartProcessor.resizeBatch(images, width, height, {
@@ -61,7 +61,7 @@ export class ResizePerformance {
   }
 
   /**
-   * 고품질 배치 처리 - quality 프로파일 사용
+   * High-quality batch processing - uses quality profile
    */
   static async qualityBatch(images: HTMLImageElement[], width: number, height: number): Promise<HTMLCanvasElement[]> {
     return SmartProcessor.resizeBatch(images, width, height, {
@@ -71,7 +71,7 @@ export class ResizePerformance {
   }
 
   /**
-   * 메모리 효율적 배치 처리
+   * Memory-efficient batch processing
    */
   static async memoryEfficientBatch(
     images: HTMLImageElement[],
@@ -79,10 +79,10 @@ export class ResizePerformance {
     height: number
   ): Promise<HTMLCanvasElement[]> {
     const batcher = new BatchResizer({
-      concurrency: 1, // 하나씩 처리
-      useCanvasPool: false, // 풀 비활성화
-      memoryLimitMB: 64, // 낮은 메모리 제한
-      timeout: 120, // 긴 타임아웃
+      concurrency: 1, // Process one at a time
+      useCanvasPool: false, // Disable pooling
+      memoryLimitMB: 64, // Low memory limit
+      timeout: 120, // Long timeout
     });
 
     const jobs = images.map((img, index) => ({
@@ -97,7 +97,7 @@ export class ResizePerformance {
   }
 
   /**
-   * 간단한 메모리 정보 조회
+   * Get simple memory information
    */
   static getMemoryInfo(): {
     usedMB: number;
@@ -122,7 +122,7 @@ export class ResizePerformance {
   }
 
   /**
-   * 성능 권장사항 제공
+   * Provide performance recommendations
    */
   static getRecommendation(
     imageCount: number,
@@ -133,43 +133,43 @@ export class ResizePerformance {
   } {
     const memoryInfo = this.getMemoryInfo();
 
-    // 메모리 압박 상황
+    // High memory pressure situation
     if (memoryInfo.pressureLevel === 'high') {
       return {
         profile: 'balanced',
-        reason: '높은 메모리 사용량으로 인해 balanced 프로파일 권장',
+        reason: 'Balanced profile recommended due to high memory usage',
       };
     }
 
-    // 대량 이미지 + 고해상도
+    // Large volume of high-resolution images
     if (imageCount > 10 && avgImageSize > 2_000_000) {
       return {
         profile: 'fast',
-        reason: '대량 고해상도 이미지로 fast 프로파일 권장',
+        reason: 'Fast profile recommended for large volume of high-resolution images',
       };
     }
 
-    // 소량 이미지 + 품질 중시
+    // Small volume of images + quality focus
     if (imageCount <= 5) {
       return {
         profile: 'quality',
-        reason: '소량 이미지로 quality 프로파일 권장',
+        reason: 'Quality profile recommended for small volume of images',
       };
     }
 
     return {
       profile: 'balanced',
-      reason: '일반적인 상황으로 balanced 프로파일 권장',
+      reason: 'Balanced profile recommended for general situations',
     };
   }
 }
 
 /**
- * 간편 함수들
+ * Convenience functions
  */
 
 /**
- * 고속 리사이징
+ * Fast resizing
  */
 export async function fastResize(img: HTMLImageElement, width: number, height: number): Promise<HTMLCanvasElement> {
   return SmartProcessor.process(img, width, height, {
@@ -179,7 +179,7 @@ export async function fastResize(img: HTMLImageElement, width: number, height: n
 }
 
 /**
- * 고품질 리사이징
+ * High-quality resizing
  */
 export async function qualityResize(img: HTMLImageElement, width: number, height: number): Promise<HTMLCanvasElement> {
   return SmartProcessor.process(img, width, height, {
@@ -189,7 +189,7 @@ export async function qualityResize(img: HTMLImageElement, width: number, height
 }
 
 /**
- * 자동 최적화 리사이징
+ * Auto-optimized resizing
  */
 export async function autoResize(img: HTMLImageElement, width: number, height: number): Promise<HTMLCanvasElement> {
   const recommendation = ResizePerformance.getRecommendation(1, img.width * img.height);

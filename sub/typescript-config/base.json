@@ -1,18 +1,18 @@
 {
   "compilerOptions": {
-    /* 기본 옵션 */
+    /* Basic Options */
     "target": "ES2020",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
 
-    /* Emit 옵션 */
+    /* Emit Options */
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "removeComments": false,
 
-    /* 타입 체킹 옵션 */
+    /* Type Checking Options */
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
@@ -22,19 +22,19 @@
     "exactOptionalPropertyTypes": false,
     "noUncheckedIndexedAccess": false,
 
-    /* 모듈 해석 옵션 */
+    /* Module Resolution Options */
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
 
-    /* 기타 옵션 */
+    /* Other Options */
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "allowJs": false,
     "checkJs": false,
 
-    /* 고급 옵션 */
+    /* Advanced Options */
     "verbatimModuleSyntax": false,
     "useUnknownInCatchVariables": false,
     "noPropertyAccessFromIndexSignature": false,

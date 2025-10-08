@@ -1,62 +1,62 @@
 /**
- * SVG 벡터 최적화 알고리즘
- * SVG 렌더링 품질 향상을 위한 전처리 최적화 시스템
+ * SVG vector optimization algorithm
+ * Preprocessing optimization system for improving SVG rendering quality
  */
 
 import { productionLog } from './debug';
 
 export interface SvgOptimizationOptions {
-  /** 메타데이터(주석, 불필요한 속성) 제거 */
+  /** Remove metadata (comments, unnecessary attributes) */
   removeMetadata: boolean;
-  /** 패스 데이터 단순화 (소수점 자릿수 줄이기, 공백 정리) */
+  /** Simplify path data (reduce decimal places, clean whitespace) */
   simplifyPaths: boolean;
-  /** 중복 그라데이션 병합 및 최적화 */
+  /** Merge and optimize duplicate gradients */
   optimizeGradients: boolean;
-  /** 유사한 요소 병합 */
+  /** Merge similar elements */
   mergeElements: boolean;
-  /** 사용하지 않는 정의(defs) 제거 */
+  /** Remove unused definitions (defs) */
   removeUnusedDefs: boolean;
-  /** 수치 정밀도 (소수점 자릿수) */
+  /** Numerical precision (decimal places) */
   precision: number;
 }
 
 export interface OptimizationResult {
-  /** 원본 SVG 크기 (문자열 길이) */
+  /** Original SVG size (string length) */
   originalSize: number;
-  /** 최적화된 SVG 크기 */
+  /** Optimized SVG size */
   optimizedSize: number;
-  /** 압축률 (0-1) */
+  /** Compression ratio (0-1) */
   compressionRatio: number;
-  /** 적용된 최적화 목록 */
+  /** List of applied optimizations */
   optimizations: string[];
-  /** 처리 시간 (밀리초) */
+  /** Processing time (milliseconds) */
   processingTimeMs: number;
 }
 
 /**
- * SVG 최적화 엔진
- * 벡터 그래픽의 렌더링 품질 향상을 위한 전처리 최적화
+ * SVG optimization engine
+ * Preprocessing optimization for improving vector graphics rendering quality
  */
 export class SvgOptimizer {
   /**
-   * 기본 최적화 옵션
+   * Default optimization options
    */
   static getDefaultOptions(): SvgOptimizationOptions {
     return {
       removeMetadata: true,
       simplifyPaths: true,
       optimizeGradients: true,
-      mergeElements: false, // 안전을 위해 기본값은 false
+      mergeElements: false, // Default to false for safety
       removeUnusedDefs: true,
-      precision: 3, // 3자리 소수점 유지
+      precision: 3, // Keep 3 decimal places
     };
   }
 
   /**
-   * SVG 최적화 실행
-   * @param svgString 원본 SVG 문자열
-   * @param options 최적화 옵션
-   * @returns 최적화된 SVG와 결과 정보
+   * Execute SVG optimization
+   * @param svgString Original SVG string
+   * @param options Optimization options
+   * @returns Optimized SVG and result information
    */
   static optimize(
     svgString: string,
@@ -68,33 +68,33 @@ export class SvgOptimizer {
     const optimizations: string[] = [];
 
     try {
-      // 1. 메타데이터 제거
+      // 1. Remove metadata
       if (options.removeMetadata) {
         optimizedSvg = this.removeMetadata(optimizedSvg);
-        optimizations.push('메타데이터 제거');
+        optimizations.push('metadata removal');
       }
 
-      // 2. 패스 단순화
+      // 2. Simplify paths
       if (options.simplifyPaths) {
         optimizedSvg = this.simplifyPaths(optimizedSvg, options.precision);
-        optimizations.push('패스 단순화');
+        optimizations.push('path simplification');
       }
 
-      // 3. 그라데이션 최적화
+      // 3. Optimize gradients
       if (options.optimizeGradients) {
         optimizedSvg = this.optimizeGradients(optimizedSvg);
-        optimizations.push('그라데이션 최적화');
+        optimizations.push('gradient optimization');
       }
 
-      // 4. 사용하지 않는 정의 제거
+      // 4. Remove unused definitions
       if (options.removeUnusedDefs) {
         optimizedSvg = this.removeUnusedDefs(optimizedSvg);
-        optimizations.push('미사용 정의 제거');
+        optimizations.push('unused definitions removal');
       }
 
-      // 5. 전체 공백 정리
+      // 5. Clean up whitespace
       optimizedSvg = this.cleanupWhitespace(optimizedSvg);
-      optimizations.push('공백 정리');
+      optimizations.push('whitespace cleanup');
 
       const optimizedSize = optimizedSvg.length;
       const processingTimeMs = performance.now() - startTime;
@@ -110,8 +110,8 @@ export class SvgOptimizer {
         },
       };
     } catch (error) {
-      // 최적화 실패 시 원본 반환
-      productionLog.warn('SVG 최적화 중 오류 발생:', error);
+      // Return original on optimization failure
+      productionLog.warn('Error occurred during SVG optimization:', error);
       const processingTimeMs = performance.now() - startTime;
 
       return {
@@ -120,7 +120,7 @@ export class SvgOptimizer {
           originalSize,
           optimizedSize: originalSize,
           compressionRatio: 0,
-          optimizations: ['최적화 실패 - 원본 반환'],
+          optimizations: ['optimization failed - returned original'],
           processingTimeMs,
         },
       };
@@ -128,21 +128,21 @@ export class SvgOptimizer {
   }
 
   /**
-   * 메타데이터 제거 (XML 주석, 불필요한 속성)
+   * Remove metadata (XML comments, unnecessary attributes)
    */
   private static removeMetadata(svgString: string): string {
     let cleaned = svgString;
 
-    // XML 주석 제거
+    // Remove XML comments
     cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
 
-    // DOCTYPE 선언 제거
+    // Remove DOCTYPE declaration
     cleaned = cleaned.replace(/<!DOCTYPE[^>]*>/gi, '');
 
-    // XML 프로세싱 지시문 제거
+    // Remove XML processing instructions
     cleaned = cleaned.replace(/<\?xml[^>]*\?>/gi, '');
 
-    // 불필요한 네임스페이스 속성 제거 (기본 svg, xlink 제외)
+    // Remove unnecessary namespace attributes (excluding default svg, xlink)
     const unnecessaryNamespaces = [
       /xmlns:dc="[^"]*"/g,
       /xmlns:cc="[^"]*"/g,
@@ -156,7 +156,7 @@ export class SvgOptimizer {
       cleaned = cleaned.replace(regex, '');
     });
 
-    // 메타데이터 요소들 제거
+    // Remove metadata elements
     const metadataElements = [
       /<metadata[\s\S]*?<\/metadata>/gi,
       /<title[\s\S]*?<\/title>/gi,
@@ -169,13 +169,13 @@ export class SvgOptimizer {
       cleaned = cleaned.replace(regex, '');
     });
 
-    // 불필요한 속성 제거
+    // Remove unnecessary attributes
     const unnecessaryAttrs = [
       /xml:space="[^"]*"/g,
       /data-[^=]*="[^"]*"/g,
-      /id="[^"]*"/g, // ID 속성도 렌더링에 불필요하면 제거
-      /style=""/g, // 빈 스타일 속성
-      /transform=""/g, // 빈 트랜스폼 속성
+      /id="[^"]*"/g, // Remove ID attributes if unnecessary for rendering
+      /style=""/g, // Empty style attributes
+      /transform=""/g, // Empty transform attributes
     ];
 
     unnecessaryAttrs.forEach((regex) => {
@@ -186,38 +186,38 @@ export class SvgOptimizer {
   }
 
   /**
-   * 패스 데이터 단순화
+   * Simplify path data
    */
   private static simplifyPaths(svgString: string, precision: number): string {
     return svgString.replace(/d="([^"]+)"/g, (match, pathData) => {
-      // 패스 데이터 단순화
+      // Simplify path data
       let simplified = pathData;
 
-      // 소수점 자릿수 제한
+      // Limit decimal places
       const precisionRegex = new RegExp(`(\\d+\\.\\d{${precision + 1},})`, 'g');
       simplified = simplified.replace(precisionRegex, (numMatch: string) => {
         return parseFloat(numMatch).toFixed(precision);
       });
 
-      // 불필요한 소수점 0 제거 (1.000 → 1)
+      // Remove unnecessary trailing zeros (1.000 → 1)
       simplified = simplified.replace(/\.0+\b/g, '');
 
-      // 연속 공백을 단일 공백으로 변경
+      // Convert consecutive spaces to single space
       simplified = simplified.replace(/\s+/g, ' ');
 
-      // 숫자 사이에 쉼표 추가 (공백을 쉼표로 변경)
+      // Add commas between numbers (change spaces to commas)
       simplified = simplified.replace(/(\d)\s+(\d)/g, '$1,$2');
 
-      // 명령어 뒤의 공백 제거 (더 강력한 패턴)
+      // Remove spaces after commands (more robust pattern)
       simplified = simplified.replace(/([MmLlHhVvCcSsQqTtAaZz])\s+/g, '$1');
 
-      // 명령어 앞의 공백도 제거
+      // Remove spaces before commands too
       simplified = simplified.replace(/\s+([MmLlHhVvCcSsQqTtAaZz])/g, '$1');
 
-      // 쉼표 주변 공백 정리
+      // Clean spaces around commas
       simplified = simplified.replace(/\s*,\s*/g, ',');
 
-      // 시작과 끝 공백 제거
+      // Trim start and end spaces
       simplified = simplified.trim();
 
       return `d="${simplified}"`;
@@ -225,31 +225,31 @@ export class SvgOptimizer {
   }
 
   /**
-   * 그라데이션 최적화 (중복 제거 및 병합)
+   * Gradient optimization (duplicate removal and merging)
    */
   private static optimizeGradients(svgString: string): string {
     try {
-      // Node.js 환경에서 DOMParser 사용 가능 여부 확인
+      // Check DOMParser availability in Node.js environment
       if (typeof DOMParser === 'undefined') {
-        productionLog.warn('DOMParser가 사용할 수 없는 환경입니다. 그라데이션 최적화를 건너뜁니다.');
+        productionLog.warn('DOMParser is not available in this environment. Skipping gradient optimization.');
         return svgString;
       }
 
-      // DOM 파서를 사용해 SVG 파싱
+      // Parse SVG using DOM parser
       const parser = new DOMParser();
       const doc = parser.parseFromString(svgString, 'image/svg+xml');
 
-      // 파싱 에러 체크
+      // Check for parsing errors
       const errorNode = doc.querySelector('parsererror');
       if (errorNode) {
-        return svgString; // 파싱 실패 시 원본 반환
+        return svgString; // Return original on parsing failure
       }
 
       const gradients = doc.querySelectorAll('linearGradient, radialGradient');
       const gradientMap = new Map<string, Element>();
       const replacementMap = new Map<string, string>();
 
-      // 중복 그라데이션 감지 및 매핑
+      // Detect and map duplicate gradients
       gradients.forEach((gradient) => {
         const hash = this.hashGradient(gradient);
         const currentId = gradient.getAttribute('id');
@@ -259,18 +259,18 @@ export class SvgOptimizer {
         if (!gradientMap.has(hash)) {
           gradientMap.set(hash, gradient);
         } else {
-          // 중복 그라데이션 발견
+          // Found duplicate gradient
           const originalGradient = gradientMap.get(hash)!;
           const originalId = originalGradient.getAttribute('id');
 
           if (originalId) {
             replacementMap.set(currentId, originalId);
-            gradient.remove(); // 중복 제거
+            gradient.remove(); // Remove duplicate
           }
         }
       });
 
-      // 참조 업데이트
+      // Update references
       replacementMap.forEach((newId, oldId) => {
         const elements = doc.querySelectorAll(`[fill="url(#${oldId})"], [stroke="url(#${oldId})"]`);
         elements.forEach((element) => {
@@ -285,13 +285,13 @@ export class SvgOptimizer {
 
       return new XMLSerializer().serializeToString(doc);
     } catch (error) {
-      productionLog.warn('그라데이션 최적화 실패:', error);
-      return svgString; // 실패 시 원본 반환
+      productionLog.warn('Gradient optimization failed:', error);
+      return svgString; // Return original on failure
     }
   }
 
   /**
-   * 그라데이션 해시 생성 (중복 감지용)
+   * Generate gradient hash (for duplicate detection)
    */
   private static hashGradient(gradient: Element): string {
     const type = gradient.tagName;
@@ -304,7 +304,7 @@ export class SvgOptimizer {
       })
       .join(',');
 
-    // 그라데이션 특성 (방향, 크기 등)
+    // Gradient properties (direction, size, etc.)
     const attrs = ['x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'fx', 'fy']
       .map((attr) => gradient.getAttribute(attr) || '')
       .filter((val) => val !== '')
@@ -314,13 +314,13 @@ export class SvgOptimizer {
   }
 
   /**
-   * 사용하지 않는 정의(defs) 제거
+   * Remove unused definitions (defs)
    */
   private static removeUnusedDefs(svgString: string): string {
     try {
-      // Node.js 환경에서 DOMParser 사용 가능 여부 확인
+      // Check DOMParser availability in Node.js environment
       if (typeof DOMParser === 'undefined') {
-        productionLog.warn('DOMParser가 사용할 수 없는 환경입니다. 미사용 정의 제거를 건너뜁니다.');
+        productionLog.warn('DOMParser is not available in this environment. Skipping unused definitions removal.');
         return svgString;
       }
 
@@ -337,14 +337,14 @@ export class SvgOptimizer {
         return svgString;
       }
 
-      // defs 내의 모든 요소 ID 수집
+      // Collect all element IDs within defs
       const definedIds = new Set<string>();
       defs.querySelectorAll('[id]').forEach((element) => {
         const id = element.getAttribute('id');
         if (id) definedIds.add(id);
       });
 
-      // 사용되는 ID 찾기
+      // Find used IDs
       const usedIds = new Set<string>();
       const svgContent = doc.documentElement;
 
@@ -360,7 +360,7 @@ export class SvgOptimizer {
         }
       });
 
-      // 사용하지 않는 정의 제거
+      // Remove unused definitions
       definedIds.forEach((id) => {
         if (!usedIds.has(id)) {
           const unusedElement = defs.querySelector(`[id="${id}"]`);
@@ -370,33 +370,33 @@ export class SvgOptimizer {
         }
       });
 
-      // defs가 비었으면 defs 자체도 제거
+      // Remove defs itself if it's empty
       if (defs.children.length === 0) {
         defs.remove();
       }
 
       return new XMLSerializer().serializeToString(doc);
     } catch (error) {
-      productionLog.warn('미사용 정의 제거 실패:', error);
+      productionLog.warn('Unused definitions removal failed:', error);
       return svgString;
     }
   }
 
   /**
-   * 전체 공백 정리
+   * Clean up whitespace
    */
   private static cleanupWhitespace(svgString: string): string {
     return (
       svgString
-        // 태그 사이의 불필요한 공백 제거
+        // Remove unnecessary spaces between tags
         .replace(/>\s+</g, '><')
-        // 연속된 공백을 하나로 통합 (속성값 내부 제외)
+        // Merge consecutive spaces into one (excluding inside attribute values)
         .replace(/(\s)\s+/g, '$1')
-        // 속성 주변 공백 정리 (등호 주변)
+        // Clean spaces around attributes (around equal signs)
         .replace(/\s*=\s*/g, '=')
-        // 속성 간 공백 정리
+        // Clean spaces between attributes
         .replace(/"\s+([a-zA-Z-])/g, '" $1')
-        // 시작과 끝 공백 제거
+        // Remove leading and trailing spaces
         .trim()
     );
   }

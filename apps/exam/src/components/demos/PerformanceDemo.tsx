@@ -74,30 +74,30 @@ export function PerformanceDemo() {
     testAllSizes: false,
   });
 
-  // 샘플 이미지 설정 (실제 존재하는 파일들)
+  // Sample image settings (actual existing files)
   const sampleImages = {
     small: { src: '/sample-images/sample3.png', width: 300, height: 300 },
     medium: { src: '/sample-images/sample1.jpg', width: 1920, height: 1080 },
     large: { src: '/sample-images/sample2.jpg', width: 4000, height: 3000 },
   };
 
-  // 성능 테스트 케이스들
+  // Performance test cases
   const performanceTests: PerformanceTest[] = [
     {
-      name: '기본 리사이징',
-      description: '300x200으로 리사이징',
+      name: 'Basic Resize',
+      description: 'Resize to 300x200',
       category: 'resize',
       operation: () => processImage(sampleImages[testConfig.sampleImage].src).resize({ fit: 'cover', width: 300, height: 200 }).toBlob(),
     },
     {
-      name: 'JPEG 변환',
-      description: 'JPEG 포맷으로 변환',
+      name: 'JPEG Conversion',
+      description: 'Convert to JPEG format',
       category: 'format',
       operation: () => processImage(sampleImages[testConfig.sampleImage].src).toBlob({ format: 'jpeg', quality: 0.8 }),
     },
     {
-      name: 'WebP 변환',
-      description: 'WebP 포맷으로 변환',
+      name: 'WebP Conversion',
+      description: 'Convert to WebP format',
       category: 'format',
       operation: () => processImage(sampleImages[testConfig.sampleImage].src).toBlob({ format: 'webp', quality: 0.8 }),
     },
@@ -145,7 +145,7 @@ export function PerformanceDemo() {
     setChartData([]);
 
     try {
-      // 메모리 사용량 측정 시작
+      // Start memory usage measurement
       const performanceExt = performance as ExtendedPerformance;
       const initialMemory = performanceExt.memory
         ? {
@@ -165,7 +165,7 @@ export function PerformanceDemo() {
           const result = await runBenchmark(test, testConfig.iterations);
           newResults.push(result);
 
-          // 차트 데이터 업데이트
+          // Update chart data
           newChartData.push({
             name: test.name,
             avgTime: Math.round(result.avgTime),
@@ -180,7 +180,7 @@ export function PerformanceDemo() {
         }
       }
 
-      // 최종 메모리 사용량 측정
+      // Final memory usage measurement
       if (initialMemory && performanceExt.memory) {
         const finalMemory = {
           used: performanceExt.memory.usedJSHeapSize,
@@ -221,7 +221,7 @@ export function PerformanceDemo() {
   };
 
   const generateCodeExample = () => {
-    const code = `// 성능 측정 예제
+    const code = `// Performance measurement example
 async function measurePerformance(operation, iterations = 10) {
   const times = [];
 
@@ -246,7 +246,7 @@ async function measurePerformance(operation, iterations = 10) {
   };
 }
 
-// 사용 예시
+// Usage example
 const resizePerf = await measurePerformance(
   () => processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob()
 );
@@ -254,7 +254,7 @@ const resizePerf = await measurePerformance(
 console.log(\`Average: \${resizePerf.avgTime.toFixed(2)}ms\`);
 console.log(\`Throughput: \${resizePerf.throughput.toFixed(2)} ops/sec\`);
 
-// 메모리 사용량 모니터링
+// Memory usage monitoring
 const memoryBefore = performance.memory.usedJSHeapSize;
 await heavyImageProcessing();
 const memoryAfter = performance.memory.usedJSHeapSize;
@@ -264,7 +264,7 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
 
     return [
       {
-        title: '성능 측정 코드',
+        title: 'Performance Measurement Code',
         code,
         language: 'typescript' as const,
       },
@@ -274,27 +274,27 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        성능 테스트
+        Performance Test
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        다양한 이미지 처리 작업의 성능을 측정하고 최적화 포인트를 찾아보세요.
+        Measure the performance of various image processing operations and identify optimization points.
       </Typography>
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
-            {/* 테스트 설정 */}
+            {/* Test settings */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  테스트 설정
+                  Test Settings
                 </Typography>
 
                 <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>샘플 이미지 크기</InputLabel>
+                  <InputLabel>Sample Image Size</InputLabel>
                   <Select
                     value={testConfig.sampleImage}
-                    label="샘플 이미지 크기"
+                    label="Sample Image Size"
                     onChange={(e) =>
                       setTestConfig((prev) => ({
                         ...prev,
@@ -309,10 +309,10 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                 </FormControl>
 
                 <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>반복 횟수</InputLabel>
+                  <InputLabel>Iterations</InputLabel>
                   <Select
                     value={testConfig.iterations}
-                    label="반복 횟수"
+                    label="Iterations"
                     onChange={(e) =>
                       setTestConfig((prev) => ({
                         ...prev,
@@ -320,10 +320,10 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                       }))
                     }
                   >
-                    <MenuItem value={5}>5회 (빠름)</MenuItem>
-                    <MenuItem value={10}>10회 (권장)</MenuItem>
-                    <MenuItem value={20}>20회 (정확)</MenuItem>
-                    <MenuItem value={50}>50회 (매우 정확)</MenuItem>
+                    <MenuItem value={5}>5 times (Fast)</MenuItem>
+                    <MenuItem value={10}>10 times (Recommended)</MenuItem>
+                    <MenuItem value={20}>20 times (Accurate)</MenuItem>
+                    <MenuItem value={50}>50 times (Very Accurate)</MenuItem>
                   </Select>
                 </FormControl>
 
@@ -339,7 +339,7 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                       }
                     />
                   }
-                  label="Web Worker 사용"
+                  label="Use Web Worker"
                   sx={{ mb: 2 }}
                 />
 
@@ -351,31 +351,31 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                   disabled={running}
                   size="large"
                 >
-                  {running ? '테스트 실행 중...' : '벤치마크 시작'}
+                  {running ? 'Running Tests...' : 'Start Benchmark'}
                 </Button>
 
                 {running && (
                   <Box sx={{ mt: 2 }}>
                     <LinearProgress />
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      성능 측정 중...
+                      Measuring performance...
                     </Typography>
                   </Box>
                 )}
               </CardContent>
             </Card>
 
-            {/* 시스템 정보 */}
+            {/* System information */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   <SpeedIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  시스템 정보
+                  System Information
                 </Typography>
 
                 <Stack spacing={1}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">브라우저</Typography>
+                    <Typography variant="body2">Browser</Typography>
                     <Typography variant="body2">
                       {navigator.userAgent.includes('Chrome')
                         ? 'Chrome'
@@ -388,12 +388,12 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">CPU 코어</Typography>
+                    <Typography variant="body2">CPU Cores</Typography>
                     <Typography variant="body2">{navigator.hardwareConcurrency || 'Unknown'}</Typography>
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">WebP 지원</Typography>
+                    <Typography variant="body2">WebP Support</Typography>
                     <Chip
                       label={features.webp ? 'Yes' : 'No'}
                       size="small"
@@ -411,7 +411,7 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">AVIF 지원</Typography>
+                    <Typography variant="body2">AVIF Support</Typography>
                     <Chip
                       label={features.avif ? 'Yes' : 'No'}
                       size="small"
@@ -431,18 +431,18 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                   {memoryStats && (
                     <>
                       <Typography variant="subtitle2" sx={{ mt: 2 }}>
-                        메모리 사용량
+                        Memory Usage
                       </Typography>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2">시작</Typography>
+                        <Typography variant="body2">Initial</Typography>
                         <Typography variant="body2">{formatMemory(memoryStats.initial.used)}</Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2">종료</Typography>
+                        <Typography variant="body2">Final</Typography>
                         <Typography variant="body2">{formatMemory(memoryStats.final.used)}</Typography>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2">증가량</Typography>
+                        <Typography variant="body2">Increase</Typography>
                         <Typography variant="body2" color={memoryStats.delta.used > 0 ? 'error' : 'success'}>
                           {memoryStats.delta.used > 0 ? '+' : ''}
                           {formatMemory(memoryStats.delta.used)}
@@ -458,18 +458,18 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
 
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* 성능 차트 */}
+            {/* Performance chart */}
             {chartData.length > 0 && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     <TimelineIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    성능 차트
+                    Performance Chart
                   </Typography>
 
                   <Box sx={{ height: 300, mb: 3 }}>
                     <Typography variant="subtitle2" gutterBottom>
-                      평균 처리 시간 (ms)
+                      Average Processing Time (ms)
                     </Typography>
                     <ResponsiveContainer width="100%" height={250}>
                       <BarChart data={chartData}>
@@ -477,14 +477,14 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                         <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={12} />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="avgTime" fill="#1976d2" name="처리 시간 (ms)" />
+                        <Bar dataKey="avgTime" fill="#1976d2" name="Processing Time (ms)" />
                       </BarChart>
                     </ResponsiveContainer>
                   </Box>
 
                   <Box sx={{ height: 300 }}>
                     <Typography variant="subtitle2" gutterBottom>
-                      처리량 (ops/sec)
+                      Throughput (ops/sec)
                     </Typography>
                     <ResponsiveContainer width="100%" height={250}>
                       <BarChart data={chartData}>
@@ -492,7 +492,7 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                         <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={12} />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="throughput" fill="#2e7d32" name="처리량 (ops/sec)" />
+                        <Bar dataKey="throughput" fill="#2e7d32" name="Throughput (ops/sec)" />
                       </BarChart>
                     </ResponsiveContainer>
                   </Box>
@@ -500,24 +500,24 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
               </Card>
             )}
 
-            {/* 벤치마크 결과 테이블 */}
+            {/* Benchmark results table */}
             {results.length > 0 && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    벤치마크 결과
+                    Benchmark Results
                   </Typography>
 
                   <TableContainer component={Paper} variant="outlined">
                     <Table>
                       <TableHead>
                         <TableRow>
-                          <TableCell>작업</TableCell>
-                          <TableCell align="right">평균 시간</TableCell>
-                          <TableCell align="right">최소/최대</TableCell>
-                          <TableCell align="right">처리량</TableCell>
-                          <TableCell align="center">성능 등급</TableCell>
-                          <TableCell align="right">에러</TableCell>
+                          <TableCell>Operation</TableCell>
+                          <TableCell align="right">Avg Time</TableCell>
+                          <TableCell align="right">Min/Max</TableCell>
+                          <TableCell align="right">Throughput</TableCell>
+                          <TableCell align="center">Rating</TableCell>
+                          <TableCell align="right">Errors</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -549,44 +549,43 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
               </Card>
             )}
 
-            {/* 최적화 추천 */}
+            {/* Optimization recommendations */}
             {results.length > 0 && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    성능 최적화 추천
+                    Performance Optimization Recommendations
                   </Typography>
 
                   <Stack spacing={2}>
                     {results.some((r) => r.avgTime > 200) && (
                       <Alert severity="warning">
-                        일부 작업의 처리 시간이 200ms를 초과합니다. Web Worker 사용이나 배치 처리를 고려해보세요.
+                        Some operations exceed 200ms processing time. Consider using Web Workers or batch processing.
                       </Alert>
                     )}
 
                     {results.some((r) => r.errors > 0) && (
                       <Alert severity="error">
-                        일부 작업에서 에러가 발생했습니다. 에러 처리 로직과 입력 검증을 강화해보세요.
+                        Some operations encountered errors. Consider strengthening error handling logic and input validation.
                       </Alert>
                     )}
 
                     {memoryStats && memoryStats.delta.used > 50 * 1024 * 1024 && (
                       <Alert severity="info">
-                        메모리 사용량이 {formatMemory(memoryStats.delta.used)} 증가했습니다. 처리 후 리소스 정리를
-                        확인해보세요.
+                        Memory usage increased by {formatMemory(memoryStats.delta.used)}. Check resource cleanup after processing.
                       </Alert>
                     )}
 
                     <Alert severity="success">
                       <Typography variant="body2">
-                        <strong>성능 개선 팁:</strong>
+                        <strong>Performance Improvement Tips:</strong>
                         <br />
-                        • 대용량 이미지는 단계적으로 처리하세요
+                        • Process large images in stages
                         <br />
-                        • Web Worker를 사용하여 메인 스레드 블로킹을 방지하세요
+                        • Use Web Workers to prevent main thread blocking
                         <br />
-                        • 배치 처리 시 Promise.all 대신 순차 처리를 고려하세요
-                        <br />• Canvas 객체를 재사용하여 GC 부담을 줄이세요
+                        • Consider sequential processing instead of Promise.all for batch operations
+                        <br />• Reuse Canvas objects to reduce GC pressure
                       </Typography>
                     </Alert>
                   </Stack>
@@ -594,8 +593,8 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
               </Card>
             )}
 
-            {/* 코드 예제 */}
-            <CodeSnippet title="성능 측정 코드" examples={generateCodeExample()} />
+            {/* Code examples */}
+            <CodeSnippet title="Performance Measurement Code" examples={generateCodeExample()} />
           </Stack>
         </Grid>
       </Grid>

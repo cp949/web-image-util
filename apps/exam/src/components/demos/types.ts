@@ -1,9 +1,9 @@
-// 공통 타입 정의 - v2.0 API 완전 활용
+// Common type definitions - Full utilization of v2.0 API
 
 import type { ResizeFit, ImageSource, ResultBlob, ResultDataURL, ResultFile, ImageProcessError, Padding } from '@cp949/web-image-util';
 
 /**
- * 데모 애플리케이션 전체 상태
+ * Demo application global state
  */
 export interface DemoState {
   originalImage: ImageInfo | null;
@@ -13,7 +13,7 @@ export interface DemoState {
 }
 
 /**
- * 이미지 기본 정보
+ * Basic image information
  */
 export interface ImageInfo {
   src: string;
@@ -25,7 +25,7 @@ export interface ImageInfo {
 }
 
 /**
- * 처리된 이미지 정보 (메타데이터 포함)
+ * Processed image information (including metadata)
  */
 export interface ProcessedImageInfo extends ImageInfo {
   processingTime: number;
@@ -35,21 +35,21 @@ export interface ProcessedImageInfo extends ImageInfo {
 }
 
 /**
- * 이미지 처리 옵션
+ * Image processing options
  */
 export interface ProcessingOptions {
   width?: number;
   height?: number;
   fit: ResizeFit;
   quality: number;
-  format: 'jpeg' | 'png' | 'webp'; // OutputFormat 대신 직접 정의
+  format: 'jpeg' | 'png' | 'webp'; // Direct definition instead of OutputFormat
   background?: string;
   withoutEnlargement?: boolean;
-  padding?: Padding; // 🆕 Phase 1: 패딩 옵션 추가
+  padding?: Padding; // 🆕 Phase 1: Added padding option
 }
 
 /**
- * 배치 처리 결과
+ * Batch processing results
  */
 export interface BatchProcessResult {
   success: ProcessedImageInfo[];
@@ -61,7 +61,7 @@ export interface BatchProcessResult {
 }
 
 /**
- * 성능 메트릭
+ * Performance metrics
  */
 export interface PerformanceMetrics {
   processingTime: number;

@@ -1,7 +1,7 @@
 /**
- * 필터 플러그인 export
+ * Filter plugin exports
  *
- * 이 파일은 모든 필터 플러그인들을 등록하고 내보내는 중앙 집중식 관리 파일입니다.
+ * This file is a centralized management file for registering and exporting all filter plugins.
  */
 
 import { filterManager, registerFilter } from '../plugin-system';
@@ -11,21 +11,21 @@ import { EffectFilterPlugins } from './effect-plugins';
 import { debugLog, productionLog } from '../../utils/debug';
 
 /**
- * 모든 기본 필터 플러그인들
+ * All default filter plugins
  *
- * @description 색상, 효과, 블러 카테고리의 모든 기본 필터 플러그인들을 포함하는 배열
- * 라이브러리 초기화 시 자동으로 등록됩니다.
+ * @description Array containing all default filter plugins from color, effect, and blur categories
+ * Automatically registered during library initialization.
  */
 export const AllFilterPlugins = [...ColorFilterPlugins, ...EffectFilterPlugins, ...BlurFilterPlugins];
 
 /**
- * 모든 기본 필터 플러그인들을 자동으로 등록
+ * Automatically register all default filter plugins
  *
- * @description 라이브러리 초기화 시 한 번 호출되어 모든 기본 필터를 filterManager에 등록합니다.
- * 등록 성공/실패 통계를 콘솔에 출력합니다.
+ * @description Called once during library initialization to register all default filters to filterManager.
+ * Outputs registration success/failure statistics to console.
  */
 export function registerDefaultFilters(): void {
-  debugLog.debug('기본 필터 플러그인들을 등록 중...');
+  debugLog.debug('Registering default filter plugins...');
 
   let registeredCount = 0;
   let failedCount = 0;
@@ -35,33 +35,33 @@ export function registerDefaultFilters(): void {
       registerFilter(plugin);
       registeredCount++;
     } catch (error) {
-      productionLog.error(`필터 플러그인 '${plugin.name}' 등록 실패:`, error);
+      productionLog.error(`Filter plugin '${plugin.name}' registration failed:`, error);
       failedCount++;
     }
   }
 
-  debugLog.debug(`필터 플러그인 등록 완료: ${registeredCount}개 성공, ${failedCount}개 실패`);
+  debugLog.debug(`Filter plugin registration completed: ${registeredCount} successful, ${failedCount} failed`);
 
-  // 시스템 정보 출력 (개발 모드에서만)
+  // Output system information (development mode only)
   if (process.env.NODE_ENV === 'development') {
     const systemInfo = filterManager.getSystemInfo();
-    debugLog.debug('필터 시스템 정보:', systemInfo);
+    debugLog.debug('Filter system information:', systemInfo);
   }
 }
 
 /**
- * 플러그인 시스템 초기화
+ * Initialize plugin system
  *
- * @description 라이브러리가 로드될 때 자동으로 호출되어 필터 시스템을 초기화합니다.
- * 기본 필터들을 등록하고 전역 객체에 필터 API를 노출합니다.
+ * @description Automatically called when library loads to initialize filter system.
+ * Registers default filters and exposes filter API to global object.
  */
 export function initializeFilterSystem(): void {
-  // 기본 필터들 등록
+  // Register default filters
   registerDefaultFilters();
 
-  // 개발자가 추가 플러그인을 등록할 수 있도록 전역 객체에 등록 함수 노출
+  // Expose registration functions to global object for developers to register additional plugins
   if (typeof window !== 'undefined') {
-    // 브라우저 환경
+    // Browser environment
     (window as any).WebImageUtil = {
       ...((window as any).WebImageUtil || {}),
       filters: {
@@ -70,7 +70,7 @@ export function initializeFilterSystem(): void {
       },
     };
   } else if (typeof global !== 'undefined') {
-    // Node.js 환경
+    // Node.js environment
     (global as any).WebImageUtil = {
       ...((global as any).WebImageUtil || {}),
       filters: {
@@ -81,15 +81,15 @@ export function initializeFilterSystem(): void {
   }
 }
 
-// 라이브러리 로드 시 자동 초기화
+// Automatic initialization on library load
 initializeFilterSystem();
 
-// 편의를 위해 개별 플러그인 카테고리들도 내보냄
+// Export individual plugin categories for convenience
 export { BlurFilterPlugins } from './blur-plugins';
 export { ColorFilterPlugins } from './color-plugins';
 export { EffectFilterPlugins } from './effect-plugins';
 
-// 플러그인 시스템의 핵심 요소들 재내보내기
+// Re-export core elements of plugin system
 export { applyFilter, applyFilterChain, filterManager, getAvailableFilters, registerFilter } from '../plugin-system';
 export type {
   BlendMode,

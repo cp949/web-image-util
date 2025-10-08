@@ -5,7 +5,7 @@ import { createTestImageBlob } from '../utils/image-helper';
 describe('Resize Performance Benchmarks', () => {
 	describe('single image processing', () => {
 		it('should resize large images within acceptable time limits', async () => {
-			const largeImageBlob = await createTestImageBlob(2000, 1500, 'red'); // 2MP 이미지
+			const largeImageBlob = await createTestImageBlob(2000, 1500, 'red'); // 2MP image
 
 			const startTime = performance.now();
 
@@ -14,9 +14,9 @@ describe('Resize Performance Benchmarks', () => {
 			const endTime = performance.now();
 			const processingTime = endTime - startTime;
 
-			// 2MP → 400x300 리사이징이 1초 이내에 완료되어야 함
+			// 2MP → 400x300 resizing should complete within 1 second
 			expect(processingTime).toBeLessThan(1000);
-		}, 2000); // 2초 타임아웃
+		}, 2000); // 2 second timeout
 
 		it('should handle medium-sized images efficiently', async () => {
 			const mediumImageBlob = await createTestImageBlob(800, 600, 'blue');
@@ -28,7 +28,7 @@ describe('Resize Performance Benchmarks', () => {
 			const endTime = performance.now();
 			const processingTime = endTime - startTime;
 
-			// 800x600 → 200x200 리사이징이 500ms 이내에 완료되어야 함
+			// 800x600 → 200x200 resizing should complete within 500ms
 			expect(processingTime).toBeLessThan(500);
 		});
 
@@ -42,7 +42,7 @@ describe('Resize Performance Benchmarks', () => {
 			const endTime = performance.now();
 			const processingTime = endTime - startTime;
 
-			// 작은 이미지는 100ms 이내에 처리
+			// Small images should be processed within 100ms
 			expect(processingTime).toBeLessThan(100);
 		});
 	});
@@ -66,9 +66,9 @@ describe('Resize Performance Benchmarks', () => {
 			const endTime = performance.now();
 			const totalTime = endTime - startTime;
 
-			// 10개 동시 처리가 3초 이내에 완료되어야 함
+			// Processing 10 images concurrently should complete within 3 seconds
 			expect(totalTime).toBeLessThan(3000);
-		}, 4000); // 4초 타임아웃
+		}, 4000); // 4 second timeout
 	});
 
 	describe('different fit modes performance', () => {
@@ -77,34 +77,34 @@ describe('Resize Performance Benchmarks', () => {
 
 			const times: Record<string, number> = {};
 
-			// cover 모드
+			// cover mode
 			let start = performance.now();
 			await processImage(testBlob).resize({ fit: 'cover', width: 300, height: 300 }).toBlob();
 			times.cover = performance.now() - start;
 
-			// contain 모드
+			// contain mode
 			start = performance.now();
 			await processImage(testBlob).resize({ fit: 'contain', width: 300, height: 300 }).toBlob();
 			times.contain = performance.now() - start;
 
-			// fill 모드
+			// fill mode
 			start = performance.now();
 			await processImage(testBlob).resize({ fit: 'fill', width: 300, height: 300 }).toBlob();
 			times.fill = performance.now() - start;
 
-			// maxFit 모드
+			// maxFit mode
 			start = performance.now();
 			await processImage(testBlob).resize({ fit: 'maxFit', width: 300 }).toBlob();
 			times.maxFit = performance.now() - start;
 
-			// minFit 모드
+			// minFit mode
 			start = performance.now();
 			await processImage(testBlob).resize({ fit: 'minFit', width: 1500 }).toBlob();
 			times.minFit = performance.now() - start;
 
-			// 모든 fit 모드가 합리적인 시간 내에 완료
+			// All fit modes should complete within reasonable time
 			Object.entries(times).forEach(([mode, time]) => {
-				expect(time).toBeLessThan(500); // 각각 500ms 이내
+				expect(time).toBeLessThan(500); // Each within 500ms
 			});
 		});
 	});
@@ -127,7 +127,7 @@ describe('Resize Performance Benchmarks', () => {
 			const endTime = performance.now();
 			const processingTime = endTime - startTime;
 
-			// trimEmpty 포함 처리가 1초 이내
+			// Processing with trimEmpty should complete within 1 second
 			expect(processingTime).toBeLessThan(1000);
 		});
 	});
@@ -146,7 +146,7 @@ describe('Resize Performance Benchmarks', () => {
 			const endTime = performance.now();
 			const processingTime = endTime - startTime;
 
-			// 체인 연산이 1.5초 이내
+			// Chained operations should complete within 1.5 seconds
 			expect(processingTime).toBeLessThan(1500);
 		});
 
@@ -155,12 +155,12 @@ describe('Resize Performance Benchmarks', () => {
 
 			const startTime = performance.now();
 
-			// 첫 번째 리사이즈: 800px 최대 크기
+			// First resize: max width of 800px
 			const firstResult = await processImage(testBlob)
 				.resize({ fit: 'maxFit', width: 800 })
 				.toBlob();
 
-			// 두 번째 리사이즈: 첫 번째 결과를 400x400으로
+			// Second resize: first result to 400x400
 			await processImage(firstResult.blob)
 				.resize({ fit: 'cover', width: 400, height: 400 })
 				.toBlob();
@@ -168,7 +168,7 @@ describe('Resize Performance Benchmarks', () => {
 			const endTime = performance.now();
 			const processingTime = endTime - startTime;
 
-			// 순차적 리사이즈가 1초 이내
+			// Sequential resizing should complete within 1 second
 			expect(processingTime).toBeLessThan(1000);
 		});
 	});
@@ -184,7 +184,7 @@ describe('Resize Performance Benchmarks', () => {
 			const endTime = performance.now();
 			const processingTime = endTime - startTime;
 
-			// 20배 확대가 800ms 이내
+			// 20x upscaling should complete within 800ms
 			expect(processingTime).toBeLessThan(800);
 		});
 
@@ -198,7 +198,7 @@ describe('Resize Performance Benchmarks', () => {
 			const endTime = performance.now();
 			const processingTime = endTime - startTime;
 
-			// 20배 축소가 600ms 이내
+			// 20x downscaling should complete within 600ms
 			expect(processingTime).toBeLessThan(600);
 		});
 
@@ -212,7 +212,7 @@ describe('Resize Performance Benchmarks', () => {
 			const endTime = performance.now();
 			const processingTime = endTime - startTime;
 
-			// 극단적인 비율 변경이 1초 이내
+			// Extreme aspect ratio change should complete within 1 second
 			expect(processingTime).toBeLessThan(1000);
 		});
 	});
@@ -221,19 +221,19 @@ describe('Resize Performance Benchmarks', () => {
 		it('should not leak memory during sequential operations', async () => {
 			const testBlob = await createTestImageBlob(500, 500, 'red');
 
-			// 20번 연속 처리
+			// Process 20 times consecutively
 			for (let i = 0; i < 20; i++) {
 				await processImage(testBlob).resize({ fit: 'cover', width: 200, height: 200 }).toBlob();
 			}
 
-			// 메모리 누수가 없으면 여기까지 도달
+			// Reaching here means no memory leak
 			expect(true).toBe(true);
 		});
 
 		it('should handle large batch without memory overflow', async () => {
 			const testBlob = await createTestImageBlob(400, 400, 'blue');
 
-			// 50개 이미지 배치 처리
+			// Batch process 50 images
 			const promises = Array(50)
 				.fill(null)
 				.map(() =>
@@ -244,13 +244,13 @@ describe('Resize Performance Benchmarks', () => {
 
 			const results = await Promise.all(promises);
 
-			// 모든 결과가 정상적으로 생성됨
+			// All results should be successfully generated
 			expect(results).toHaveLength(50);
 			results.forEach((result) => {
 				expect(result.blob).toBeInstanceOf(Blob);
 				expect(result.width).toBe(150);
 				expect(result.height).toBe(150);
 			});
-		}, 10000); // 10초 타임아웃
+		}, 10000); // 10 second timeout
 	});
 });

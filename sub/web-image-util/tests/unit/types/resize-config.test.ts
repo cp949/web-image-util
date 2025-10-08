@@ -244,7 +244,7 @@ describe('ResizeConfig Types', () => {
       const config: ResizeConfig = { fit: 'contain', width: 300, height: 200, trimEmpty: true };
 
       if (isContainConfig(config)) {
-        // TypeScript는 여기서 config.trimEmpty를 인식해야 함
+        // TypeScript should recognize config.trimEmpty here
         expect(config.trimEmpty).toBe(true);
       } else {
         throw new Error('Type guard should work');
@@ -252,10 +252,10 @@ describe('ResizeConfig Types', () => {
     });
 
     it('should prevent invalid config combinations at type level', () => {
-      // 이 테스트는 컴파일 타임에 타입 체킹을 확인하기 위한 것
-      // 실제로 잘못된 타입은 TypeScript 컴파일러가 막음
+      // This test is to verify type checking at compile time
+      // Invalid types are blocked by the TypeScript compiler
 
-      // ✅ 올바른 config들
+      // ✅ Valid configs
       const validCover: ResizeConfig = { fit: 'cover', width: 300, height: 200 };
       const validContain: ResizeConfig = { fit: 'contain', width: 300, height: 200, trimEmpty: true };
       const validMaxFit: ResizeConfig = { fit: 'maxFit', width: 300 };
@@ -264,9 +264,9 @@ describe('ResizeConfig Types', () => {
       expect(validContain.fit).toBe('contain');
       expect(validMaxFit.fit).toBe('maxFit');
 
-      // ❌ 잘못된 config는 타입 에러 발생 (컴파일 타임)
-      // const invalidCover: ResizeConfig = { fit: 'cover', width: 300 }; // height 누락
-      // const invalidMaxFit: ResizeConfig = { fit: 'maxFit' }; // width/height 둘 다 누락
+      // ❌ Invalid configs would cause type errors (at compile time)
+      // const invalidCover: ResizeConfig = { fit: 'cover', width: 300 }; // missing height
+      // const invalidMaxFit: ResizeConfig = { fit: 'maxFit' }; // missing both width/height
     });
   });
 });

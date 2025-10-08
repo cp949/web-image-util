@@ -1,11 +1,11 @@
 /**
- * @cp949/web-image-util - 고급 기능 API
+ * @cp949/web-image-util - Advanced Features API
  *
- * 고급 기능들을 제공하는 서브 엔트리포인트
+ * Sub-entry point providing advanced features
  *
- * @example 사용법
+ * @example Usage
  * ```typescript
- * // 고급 이미지 처리
+ * // Advanced image processing
  * import { AdvancedImageProcessor } from '@cp949/web-image-util/advanced';
  *
  * const result = await AdvancedImageProcessor.processImage(image, {
@@ -22,12 +22,12 @@
  *   format: 'auto'
  * });
  *
- * // 또는 개별 기능 사용
+ * // Or use individual features
  * import { smartResize, addTextWatermark, autoOptimize } from '@cp949/web-image-util/advanced';
  * ```
  */
 
-// ===== 이미지 처리 시스템 =====
+// ===== Image Processing System =====
 export {
   addWatermarkAndOptimize,
   AdvancedImageProcessor,
@@ -36,11 +36,11 @@ export {
 } from './core/advanced-processor';
 export type { AdvancedProcessingOptions, AdvancedProcessingResult } from './core/advanced-processor';
 
-// ===== 필터 플러그인 시스템 =====
+// ===== Filter Plugin System =====
 export {
   applyFilter,
   applyFilterChain,
-  // 플러그인 매니저
+  // Plugin manager
   filterManager,
   getAvailableFilters,
   registerFilter,
@@ -54,10 +54,10 @@ export type {
   FilterValidationResult,
 } from './filters/plugin-system';
 
-// 기본 필터 플러그인들
+// Default filter plugins
 export { AllFilterPlugins, BlurFilterPlugins, ColorFilterPlugins, EffectFilterPlugins } from './filters/plugins';
 
-// ===== 간소화된 워터마크 시스템 =====
+// ===== Simplified Watermark System =====
 export { addCopyright, addImageWatermark, addTextWatermark, SimpleWatermark } from './composition/simple-watermark';
 export type {
   PresetTextStyle,
@@ -66,11 +66,11 @@ export type {
   SimpleTextWatermarkOptions,
 } from './composition/simple-watermark';
 
-// ===== 자동 고해상도 처리 =====
+// ===== Automatic High Resolution Processing =====
 export { AutoHighResProcessor, smartResize as autoSmartResize, smartResizeWithProgress } from './core/auto-high-res';
 export type { AutoProcessingResult } from './core/auto-high-res';
 
-// ===== 스마트 포맷 최적화 =====
+// ===== Smart Format Optimization =====
 export {
   autoOptimize,
   ImagePurpose,
@@ -80,46 +80,46 @@ export {
 } from './core/smart-format';
 export type { FormatOptimizationResult, SmartFormatOptions } from './core/smart-format';
 
-// ===== 성능 최적화 시스템 =====
+// ===== Performance Optimization System =====
 export { autoResize, fastResize, qualityResize, ResizePerformance } from './core/performance-utils';
 export { BatchResizer } from './core/batch-resizer';
 export { getPerformanceConfig, RESIZE_PROFILES } from './core/performance-config';
 export type { ResizePerformanceOptions, ResizeProfile } from './core/performance-config';
 
-// ===== 향상된 에러 처리 시스템 =====
+// ===== Enhanced Error Handling System =====
 export { createAndHandleError, createQuickError, getErrorStats, withErrorHandling } from './base/error-helpers';
 export { globalErrorHandler, ImageErrorHandler } from './core/error-handler';
 export type { ErrorStats } from './core/error-handler';
 
-// ===== 고급 기능들 =====
+// ===== Advanced Features =====
 
-// 필터 시스템 - 플러그인 기반 아키텍처
-// 사용법: filterManager.applyFilter(imageData, { name: 'brightness', params: { value: 10 } })
+// Filter system - plugin-based architecture
+// Usage: filterManager.applyFilter(imageData, { name: 'brightness', params: { value: 10 } })
 
-// 워터마크 시스템 (세밀한 제어)
+// Watermark system (fine-grained control)
 export type { ImageWatermarkOptions, TextWatermarkOptions } from './composition';
 export { ImageWatermark } from './composition/image-watermark';
 export { TextWatermark } from './composition/text-watermark';
 
-// 고해상도 처리 (수동 제어)
+// High-resolution processing (manual control)
 export { HighResolutionManager } from './base/high-res-manager';
 export type { HighResolutionOptions, ProcessingResult } from './base/high-res-manager';
 
-// 포맷 관련
+// Format related
 export { FORMAT_MIME_MAP, FormatDetector } from './base/format-detector';
 export type { ImageFormat } from './base/format-detector';
 
-// ===== 편의 함수들 =====
+// ===== Convenience Functions =====
 
 /**
- * 빠른 썸네일 생성 (가장 일반적인 사용 사례)
+ * Quick thumbnail generation (most common use case)
  *
- * @description 고급 옵션을 사용하여 최적화된 썸네일을 생성합니다.
- * 워터마크, 필터, 자동 포맷 선택 등의 기능을 포함합니다.
- * @param image 원본 이미지 엘리먼트
- * @param size 썸네일 크기 (정사각형)
- * @param options 썸네일 생성 옵션
- * @returns 생성된 썸네일과 통계 정보
+ * @description Creates optimized thumbnails using advanced options.
+ * Includes features like watermarks, filters, and automatic format selection.
+ * @param image Original image element
+ * @param size Thumbnail size (square)
+ * @param options Thumbnail generation options
+ * @returns Generated thumbnail and statistics information
  */
 export async function createAdvancedThumbnail(
   image: HTMLImageElement,
@@ -157,13 +157,13 @@ export async function createAdvancedThumbnail(
     format: options.format || 'auto',
   });
 
-  // Blob이 없는 경우 기본 생성
+  // Default creation if Blob is missing
   if (!result.blob) {
     result.blob = await new Promise<Blob>((resolve, reject) => {
       result.canvas.toBlob(
         (blob) => {
           if (blob) resolve(blob);
-          else reject(new Error('Blob 생성 실패'));
+          else reject(new Error('Blob creation failed'));
         },
         'image/jpeg',
         0.8
@@ -179,14 +179,14 @@ export async function createAdvancedThumbnail(
 }
 
 /**
- * 소셜 미디어용 이미지 최적화
+ * Social media image optimization
  *
- * @description 각 소셜 미디어 플랫폼의 권장 사이즈와 포맷에 맞춰 이미지를 최적화합니다.
- * 플랫폼별 최적 크기와 품질 설정을 자동으로 적용합니다.
- * @param image 원본 이미지 엘리먼트
- * @param platform 최적화할 소셜 미디어 플랫폼
- * @param options 추가 옵션 (워터마크, 필터 등)
- * @returns 최적화된 이미지 Canvas와 Blob
+ * @description Optimizes images for each social media platform's recommended size and format.
+ * Automatically applies platform-specific optimal size and quality settings.
+ * @param image Original image element
+ * @param platform Social media platform to optimize for
+ * @param options Additional options (watermark, filters, etc.)
+ * @returns Optimized image Canvas and Blob
  */
 export async function optimizeForSocial(
   image: HTMLImageElement,
@@ -233,7 +233,7 @@ export async function optimizeForSocial(
       result.canvas.toBlob(
         (blob) => {
           if (blob) resolve(blob);
-          else reject(new Error('Blob 생성 실패'));
+          else reject(new Error('Blob creation failed'));
         },
         'image/jpeg',
         0.8
@@ -248,13 +248,13 @@ export async function optimizeForSocial(
 }
 
 /**
- * 배치 최적화 - 여러 이미지를 한 번에 처리
+ * Batch optimization - process multiple images at once
  *
- * @description 여러 이미지를 동시에 처리하여 효율성을 높입니다.
- * 동시성 제어와 진행률 콜백을 통해 대용량 배치 작업을 안정적으로 수행합니다.
- * @param images 처리할 이미지 배열 (이미지와 옵션 포함)
- * @param options 배치 처리 옵션 (동시성, 진행률 콜백 등)
- * @returns 처리 결과 배열 (이름과 결과 포함)
+ * @description Processes multiple images simultaneously to improve efficiency.
+ * Performs large batch operations reliably through concurrency control and progress callbacks.
+ * @param images Array of images to process (including images and options)
+ * @param options Batch processing options (concurrency, progress callback, etc.)
+ * @returns Array of processing results (including names and results)
  */
 export async function batchOptimize(
   images: Array<{
@@ -285,11 +285,11 @@ export async function batchOptimize(
 }
 
 /**
- * 고급 기능 사용 통계 및 정보
+ * Advanced feature usage statistics and information
  *
- * @description 현재 환경에서 사용 가능한 고급 기능들의 상태와 정보를 반환합니다.
- * 브라우저 지원 여부, 등록된 플러그인 수, 성능 정보 등을 포함합니다.
- * @returns 고급 기능 정보 객체 (버전, 기능, 플러그인, 성능 정보)
+ * @description Returns status and information of advanced features available in the current environment.
+ * Includes browser support status, number of registered plugins, performance information, etc.
+ * @returns Advanced feature information object (version, features, plugins, performance info)
  */
 export function getAdvancedFeatureInfo() {
   return {
@@ -313,16 +313,16 @@ export function getAdvancedFeatureInfo() {
   };
 }
 
-// ===== 플러그인 개발자를 위한 유틸리티 =====
+// ===== Utilities for Plugin Developers =====
 
 /**
- * 커스텀 필터 플러그인 생성 도우미
+ * Custom filter plugin creation helper
  *
- * @description 개발자가 쉽게 커스텀 필터 플러그인을 만들 수 있도록 도와주는 팩토리 함수입니다.
- * 타입 안전성을 보장하면서 필터 플러그인의 필수 구조를 제공합니다.
- * @template TParams 필터 매개변수의 타입
- * @param config 필터 플러그인 설정 객체
- * @returns 생성된 필터 플러그인 객체
+ * @description Factory function that helps developers easily create custom filter plugins.
+ * Provides essential filter plugin structure while ensuring type safety.
+ * @template TParams Type of filter parameters
+ * @param config Filter plugin configuration object
+ * @returns Created filter plugin object
  */
 export function createFilterPlugin<TParams>(config: {
   name: string;
@@ -334,6 +334,6 @@ export function createFilterPlugin<TParams>(config: {
 }): any {
   return {
     ...config,
-    preview: config.apply, // 기본적으로 전체 적용과 동일
+    preview: config.apply, // Default to same as full application
   };
 }

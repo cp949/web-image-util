@@ -48,14 +48,14 @@ interface NavigationItem {
 }
 
 const navigationItems: NavigationItem[] = [
-  { path: '/', label: '홈', icon: <HomeIcon />, primary: true },
-  { path: '/basic', label: '기본처리', icon: <ProcessIcon />, primary: true },
-  { path: '/presets', label: '프리셋', icon: <PresetsIcon />, primary: true },
-  { path: '/advanced', label: '고급기능', icon: <AdvancedIcon /> },
-  { path: '/filters', label: '필터', icon: <FiltersIcon /> },
-  { path: '/converters', label: '변환도구', icon: <ConvertersIcon /> },
-  { path: '/performance', label: '성능테스트', icon: <PerformanceIcon /> },
-  { path: '/dev-tools', label: '개발자도구', icon: <DevToolsIcon /> },
+  { path: '/', label: 'Home', icon: <HomeIcon />, primary: true },
+  { path: '/basic', label: 'Basic', icon: <ProcessIcon />, primary: true },
+  { path: '/presets', label: 'Presets', icon: <PresetsIcon />, primary: true },
+  { path: '/advanced', label: 'Advanced', icon: <AdvancedIcon /> },
+  { path: '/filters', label: 'Filters', icon: <FiltersIcon /> },
+  { path: '/converters', label: 'Converters', icon: <ConvertersIcon /> },
+  { path: '/performance', label: 'Performance', icon: <PerformanceIcon /> },
+  { path: '/dev-tools', label: 'Dev Tools', icon: <DevToolsIcon /> },
 ]
 
 export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) {
@@ -67,7 +67,7 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [showFab, setShowFab] = useState(true)
 
-  // 현재 경로에 맞는 네비게이션 값 찾기
+  // Find navigation value matching current path
   const getCurrentNavValue = () => {
     const primaryItems = navigationItems.filter(item => item.primary)
     const currentIndex = primaryItems.findIndex(item => item.path === pathname)
@@ -93,10 +93,10 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
     setDrawerOpen(false)
   }
 
-  // 스크롤 감지로 FAB 숨김/표시
+  // Hide/show FAB on scroll detection
   React.useEffect(() => {
     let lastScrollY = window.scrollY
-    
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY
       setShowFab(currentScrollY < lastScrollY || currentScrollY < 100)
@@ -108,7 +108,7 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
   }, [])
 
   if (!isMobile) {
-    return <>{children}</> // 데스크톱에서는 기본 레이아웃 사용
+    return <>{children}</> // Use default layout on desktop
   }
 
   const primaryItems = navigationItems.filter(item => item.primary)
@@ -118,21 +118,21 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
     <Box sx={{ pb: 7, minHeight: '100vh' }}>
       {children}
 
-      {/* 모바일 하단 네비게이션 */}
-      <Paper 
-        sx={{ 
-          position: 'fixed', 
-          bottom: 0, 
-          left: 0, 
-          right: 0, 
-          zIndex: 1000 
-        }} 
+      {/* Mobile bottom navigation */}
+      <Paper
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000
+        }}
         elevation={8}
       >
         <BottomNavigation
           value={bottomNavValue}
           onChange={handleBottomNavChange}
-          sx={{ 
+          sx={{
             height: 64,
             '& .MuiBottomNavigationAction-root': {
               minWidth: 0,
@@ -148,7 +148,7 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
               key={item.path}
               label={item.label}
               icon={item.icon}
-              sx={{ 
+              sx={{
                 fontSize: '0.75rem',
                 '& .MuiBottomNavigationAction-label': {
                   fontSize: '0.65rem',
@@ -160,10 +160,10 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
             />
           ))}
           <BottomNavigationAction
-            label="더보기"
+            label="More"
             icon={<MoreIcon />}
             onClick={() => setDrawerOpen(true)}
-            sx={{ 
+            sx={{
               fontSize: '0.75rem',
               '& .MuiBottomNavigationAction-label': {
                 fontSize: '0.65rem'
@@ -173,7 +173,7 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
         </BottomNavigation>
       </Paper>
 
-      {/* 더보기 Drawer */}
+      {/* More drawer */}
       <SwipeableDrawer
         anchor="bottom"
         open={drawerOpen}
@@ -181,7 +181,7 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
         onOpen={() => setDrawerOpen(true)}
         disableSwipeToOpen={false}
         ModalProps={{
-          keepMounted: true, // 성능 최적화
+          keepMounted: true, // Performance optimization
         }}
         PaperProps={{
           sx: {
@@ -203,21 +203,21 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
         }}
       >
         <Box sx={{ pt: 3 }}>
-          {/* Drawer 헤더 */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          {/* Drawer header */}
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'space-between',
             px: 2,
             pb: 1
           }}>
             <Typography variant="h6" component="h2">
-              더 많은 기능
+              More Features
             </Typography>
-            <IconButton 
+            <IconButton
               onClick={() => setDrawerOpen(false)}
               size="small"
-              aria-label="닫기"
+              aria-label="Close"
             >
               <CloseIcon />
             </IconButton>
@@ -225,7 +225,7 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
 
           <Divider />
 
-          {/* 네비게이션 아이템들 */}
+          {/* Navigation items */}
           <List>
             {drawerItems.map((item) => {
               const isCurrentPath = pathname === item.path
@@ -273,11 +273,11 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
         </Box>
       </SwipeableDrawer>
 
-      {/* 플로팅 액션 버튼 - 이미지 업로드 */}
+      {/* Floating action button - Image upload */}
       <Zoom in={showFab} timeout={200}>
         <Fab
           color="primary"
-          aria-label="이미지 업로드"
+          aria-label="Upload image"
           sx={{
             position: 'fixed',
             bottom: 80,
@@ -285,14 +285,14 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
             zIndex: 999
           }}
           onClick={() => {
-            // 파일 선택 다이얼로그 열기
+            // Open file selection dialog
             const input = document.createElement('input')
             input.type = 'file'
             input.accept = 'image/*'
             input.onchange = (e) => {
               const file = (e.target as HTMLInputElement).files?.[0]
               if (file) {
-                // 이미지가 선택되면 기본 처리 페이지로 이동
+                // Navigate to basic processing page when image is selected
                 router.push('/basic')
               }
             }

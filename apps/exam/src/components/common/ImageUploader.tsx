@@ -8,13 +8,13 @@ interface ImageUploaderProps {
   onImageSelect: (source: File | string) => void;
   supportedFormats?: string[];
   maxSize?: number; // MB
-  /** 샘플 이미지 선택기 표시 여부 (기본값: true) */
+  /** Whether to show sample image selector (default: true) */
   showSampleSelector?: boolean;
-  /** 샘플 선택기 타입 필터 */
+  /** Sample selector type filter */
   sampleSelectorType?: 'all' | 'jpg' | 'png' | 'svg';
-  /** 샘플 선택기 컴팩트 모드 */
+  /** Sample selector compact mode */
   sampleSelectorCompact?: boolean;
-  /** 추천 샘플 데모 타입 */
+  /** Recommended sample demo type */
   recommendedSamplesFor?: string;
 }
 
@@ -36,9 +36,9 @@ export function ImageUploader({
       if (acceptedFiles.length > 0) {
         const file = acceptedFiles[0];
 
-        // 파일 크기 체크
+        // Check file size
         if (file.size > maxSize * 1024 * 1024) {
-          setError(`파일 크기는 ${maxSize}MB 이하여야 합니다.`);
+          setError(`File size must be ${maxSize}MB or less.`);
           return;
         }
 
@@ -48,7 +48,7 @@ export function ImageUploader({
         try {
           onImageSelect(file);
         } catch {
-          setError('이미지 로드 중 오류가 발생했습니다.');
+          setError('An error occurred while loading the image.');
         } finally {
           setLoading(false);
         }
@@ -68,7 +68,7 @@ export function ImageUploader({
   });
 
   const handleUrlInput = () => {
-    const url = prompt('이미지 URL을 입력하세요:');
+    const url = prompt('Enter image URL:');
     if (url) {
       setError(null);
       onImageSelect(url);
@@ -77,14 +77,14 @@ export function ImageUploader({
 
   return (
     <Stack spacing={3}>
-      {/* 기존 파일 업로드 UI */}
+      {/* File upload UI */}
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            이미지 선택
+            Select Image
           </Typography>
 
-          {/* 드래그앤드롭 영역 */}
+          {/* Drag and drop area */}
           <Box
             {...getRootProps()}
             sx={{
@@ -107,41 +107,41 @@ export function ImageUploader({
             <input {...getInputProps()} />
             <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
             <Typography variant="h6" gutterBottom>
-              {isDragActive ? '이미지를 여기에 놓으세요' : '이미지를 드래그하거나 클릭하여 선택'}
+              {isDragActive ? 'Drop image here' : 'Drag image or click to select'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              지원 포맷: {supportedFormats.join(', ').toUpperCase()} (최대 {maxSize}MB)
+              Supported formats: {supportedFormats.join(', ').toUpperCase()} (max {maxSize}MB)
             </Typography>
           </Box>
 
-          {/* 추가 옵션 버튼들 */}
+          {/* Additional option buttons */}
           <Stack direction="row" spacing={1} justifyContent="center">
             <Button variant="outlined" startIcon={<LinkIcon />} onClick={handleUrlInput}>
-              URL로 불러오기
+              Load from URL
             </Button>
           </Stack>
 
-          {/* 로딩 상태 */}
+          {/* Loading state */}
           {loading && (
             <Box sx={{ mt: 2 }}>
               <LinearProgress />
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                이미지 로드 중...
+                Loading image...
               </Typography>
             </Box>
           )}
 
-          {/* 에러 메시지 */}
+          {/* Error message */}
           {error && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {error}
             </Alert>
           )}
 
-          {/* 포맷 지원 정보 */}
+          {/* Format support information */}
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-              지원 포맷:
+              Supported formats:
             </Typography>
             <Stack direction="row" spacing={0.5} flexWrap="wrap">
               {supportedFormats.map((format) => (
@@ -152,7 +152,7 @@ export function ImageUploader({
         </CardContent>
       </Card>
 
-      {/* 샘플 이미지 선택기 */}
+      {/* Sample image selector */}
       {showSampleSelector && (
         <SampleImageSelector
           onImageSelect={onImageSelect}

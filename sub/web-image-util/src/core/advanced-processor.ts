@@ -1,6 +1,6 @@
 /**
- * 고급 이미지 프로세서 - 모든 고급 기능들의 인터페이스
- * 고급 기능들을 하나의 일관된 API로 제공
+ * Advanced image processor - Interface for all advanced features
+ * Provides advanced features through a unified, consistent API
  */
 
 import type { ImageFormat } from '../base/format-detector';
@@ -15,46 +15,46 @@ import type { SmartFormatOptions } from './smart-format';
 import { ImagePurpose, SmartFormatSelector } from './smart-format';
 
 /**
- * 고급 이미지 처리 옵션
+ * Advanced image processing options
  */
 export interface AdvancedProcessingOptions {
-  /** 리사이징 옵션 */
+  /** Resize options */
   resize?: {
     width: number;
     height: number;
     priority?: 'speed' | 'balanced' | 'quality';
   };
 
-  /** 필터 체인 */
+  /** Filter chain */
   filters?: FilterChain;
 
-  /** 워터마크 옵션 */
+  /** Watermark options */
   watermark?: {
     text?: SimpleTextWatermarkOptions;
     image?: SimpleImageWatermarkOptions;
   };
 
-  /** 포맷 최적화 옵션 */
+  /** Format optimization options */
   format?: SmartFormatOptions | 'auto' | ImageFormat;
 
-  /** 진행률 콜백 */
+  /** Progress callback */
   onProgress?: (stage: string, progress: number, message: string) => void;
 
-  /** 메모리 경고 콜백 */
+  /** Memory warning callback */
   onMemoryWarning?: (message: string) => void;
 }
 
 /**
- * 처리 결과
+ * Processing result
  */
 export interface AdvancedProcessingResult {
-  /** 처리된 캔버스 */
+  /** Processed canvas */
   canvas: HTMLCanvasElement;
 
-  /** 최종 Blob (포맷 최적화 적용 시) */
+  /** Final blob (when format optimization is applied) */
   blob?: Blob;
 
-  /** 적용된 처리 정보 */
+  /** Applied processing information */
   processing: {
     resizing?: AutoProcessingResult['optimizations'];
     filtersApplied: number;
@@ -67,27 +67,27 @@ export interface AdvancedProcessingResult {
     };
   };
 
-  /** 성능 통계 */
+  /** Performance statistics */
   stats: {
     totalProcessingTime: number;
     memoryPeakUsage: number;
     finalFileSize?: number;
   };
 
-  /** 사용자 메시지 */
+  /** User messages */
   messages: string[];
 }
 
 /**
- * 고급 이미지 프로세서 클래스
+ * Advanced image processor class
  */
 export class AdvancedImageProcessor {
   /**
-   * 고급 이미지 처리 - 모든 기능을 한 번에 적용
+   * Advanced image processing - Apply all features at once
    *
-   * @param source - 소스 이미지
-   * @param options - 처리 옵션
-   * @returns 처리 결과
+   * @param source - Source image
+   * @param options - Processing options
+   * @returns Processing result
    */
   static async processImage(
     source: HTMLImageElement,
@@ -102,9 +102,9 @@ export class AdvancedImageProcessor {
     let filtersApplied = 0;
     let watermarkApplied = false;
 
-    // 1. 리사이징 (고해상도 자동 최적화)
+    // 1. Resizing (automatic high-resolution optimization)
     if (options.resize) {
-      onProgress?.('resizing', 10, '이미지 리사이징 중...');
+      onProgress?.('resizing', 10, 'Resizing image...');
 
       resizingResult = await AutoHighResProcessor.smartResize(source, options.resize.width, options.resize.height, {
         priority: options.resize.priority,
@@ -120,7 +120,7 @@ export class AdvancedImageProcessor {
         messages.push(resizingResult.userMessage);
       }
     } else {
-      // 리사이징하지 않는 경우 캔버스 생성
+      // Create canvas when not resizing
       canvas = document.createElement('canvas');
       canvas.width = source.width;
       canvas.height = source.height;
@@ -128,9 +128,9 @@ export class AdvancedImageProcessor {
       ctx.drawImage(source, 0, 0);
     }
 
-    onProgress?.('filtering', 50, '필터 적용 중...');
+    onProgress?.('filtering', 50, 'Applying filters...');
 
-    // 2. 필터 적용 (새로운 플러그인 시스템)
+    // 2. Apply filters (new plugin system)
     if (options.filters && options.filters.filters.length > 0) {
       try {
         const imageData = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
@@ -138,16 +138,16 @@ export class AdvancedImageProcessor {
         canvas.getContext('2d')!.putImageData(filteredData, 0, 0);
 
         filtersApplied = options.filters.filters.filter((f) => f.enabled !== false).length;
-        messages.push(`${filtersApplied}개의 필터가 적용되었습니다.`);
+        messages.push(`Applied ${filtersApplied} filter(s).`);
       } catch (error) {
-        productionLog.error('필터 적용 실패:', error);
-        messages.push('일부 필터 적용에 실패했습니다.');
+        productionLog.error('Filter application failed:', error);
+        messages.push('Some filters failed to apply.');
       }
     }
 
-    onProgress?.('watermarking', 70, '워터마크 적용 중...');
+    onProgress?.('watermarking', 70, 'Applying watermark...');
 
-    // 3. 워터마크 적용 (간소화된 API)
+    // 3. Apply watermark (simplified API)
     if (options.watermark) {
       if (options.watermark.text) {
         SimpleWatermark.addText(canvas, options.watermark.text);
@@ -160,20 +160,20 @@ export class AdvancedImageProcessor {
       }
 
       if (watermarkApplied) {
-        messages.push('워터마크가 적용되었습니다.');
+        messages.push('Watermark applied.');
       }
     }
 
-    onProgress?.('optimizing', 85, '포맷 최적화 중...');
+    onProgress?.('optimizing', 85, 'Optimizing format...');
 
-    // 4. 포맷 최적화 (스마트 포맷 선택)
+    // 4. Format optimization (smart format selection)
     let blob: Blob | undefined;
     let formatOptimization: AdvancedProcessingResult['processing']['formatOptimization'];
 
     if (options.format) {
       try {
         if (options.format === 'auto') {
-          // 자동 최적화
+          // Auto optimization
           const formatResult = await SmartFormatSelector.selectOptimalFormat(canvas, {
             purpose: ImagePurpose.WEB,
           });
@@ -182,7 +182,7 @@ export class AdvancedImageProcessor {
             canvas.toBlob(
               (blob) => {
                 if (blob) resolve(blob);
-                else reject(new Error('Blob 생성 실패'));
+                else reject(new Error('Failed to create Blob'));
               },
               formatResult.mimeType,
               formatResult.quality
@@ -195,15 +195,15 @@ export class AdvancedImageProcessor {
             estimatedSavings: formatResult.estimatedSavings || 0,
           };
 
-          messages.push(`포맷 최적화: ${formatResult.format.toUpperCase()} (${formatResult.reason})`);
+          messages.push(`Format optimization: ${formatResult.format.toUpperCase()} (${formatResult.reason})`);
         } else if (typeof options.format === 'string') {
-          // 특정 포맷 지정
+          // Specific format specified
           const mimeType = `image/${options.format}`;
           blob = await new Promise<Blob>((resolve, reject) => {
             canvas.toBlob(
               (blob) => {
                 if (blob) resolve(blob);
-                else reject(new Error('Blob 생성 실패'));
+                else reject(new Error('Failed to create Blob'));
               },
               mimeType,
               0.8
@@ -216,14 +216,14 @@ export class AdvancedImageProcessor {
             estimatedSavings: 0,
           };
         } else {
-          // SmartFormatOptions 사용
+          // Using SmartFormatOptions
           const formatResult = await SmartFormatSelector.selectOptimalFormat(canvas, options.format);
 
           blob = await new Promise<Blob>((resolve, reject) => {
             canvas.toBlob(
               (blob) => {
                 if (blob) resolve(blob);
-                else reject(new Error('Blob 생성 실패'));
+                else reject(new Error('Failed to create Blob'));
               },
               formatResult.mimeType,
               formatResult.quality
@@ -236,15 +236,15 @@ export class AdvancedImageProcessor {
             estimatedSavings: formatResult.estimatedSavings || 0,
           };
 
-          messages.push(`포맷 최적화: ${formatResult.reason}`);
+          messages.push(`Format optimization: ${formatResult.reason}`);
         }
       } catch (error) {
-        productionLog.error('포맷 최적화 실패:', error);
-        messages.push('포맷 최적화에 실패했습니다.');
+        productionLog.error('Format optimization failed:', error);
+        messages.push('Format optimization failed.');
       }
     }
 
-    onProgress?.('finalizing', 100, '처리 완료');
+    onProgress?.('finalizing', 100, 'Processing complete');
 
     const totalTime = (Date.now() - startTime) / 1000;
 
@@ -267,7 +267,7 @@ export class AdvancedImageProcessor {
   }
 
   /**
-   * 빠른 썸네일 생성 - 가장 자주 사용되는 패턴
+   * Quick thumbnail generation - most commonly used pattern
    */
   static async createThumbnail(
     source: HTMLImageElement,
@@ -302,12 +302,12 @@ export class AdvancedImageProcessor {
     });
 
     if (!result.blob) {
-      // Blob이 생성되지 않은 경우 기본 JPEG로 생성
+      // Generate as default JPEG when Blob is not created
       const blob = await new Promise<Blob>((resolve, reject) => {
         result.canvas.toBlob(
           (blob) => {
             if (blob) resolve(blob);
-            else reject(new Error('Blob 생성 실패'));
+            else reject(new Error('Blob creation failed'));
           },
           'image/jpeg',
           0.8
@@ -323,7 +323,7 @@ export class AdvancedImageProcessor {
   }
 
   /**
-   * 배치 처리 - 여러 이미지를 효율적으로 처리
+   * Batch processing - efficiently process multiple images
    */
   static async batchProcess(
     sources: Array<{
@@ -342,7 +342,7 @@ export class AdvancedImageProcessor {
     const results: AdvancedProcessingResult[] = new Array(sources.length);
     let completed = 0;
 
-    // 청크로 나누어 병렬 처리
+    // Divide into chunks for parallel processing
     const chunks: (typeof sources)[] = [];
     for (let i = 0; i < sources.length; i += concurrency) {
       chunks.push(sources.slice(i, i + concurrency));
@@ -363,7 +363,7 @@ export class AdvancedImageProcessor {
 
           return result;
         } catch (error) {
-          productionLog.error(`이미지 처리 실패 (${item.name || globalIndex}):`, error);
+          productionLog.error(`Image processing failed (${item.name || globalIndex}):`, error);
           throw error;
         }
       });
@@ -375,7 +375,7 @@ export class AdvancedImageProcessor {
   }
 
   /**
-   * 처리 미리보기 - 실제 처리 전 결과 예상
+   * Processing preview - estimate results before actual processing
    */
   static async previewProcessing(
     source: HTMLImageElement,
@@ -391,10 +391,10 @@ export class AdvancedImageProcessor {
     const warnings: string[] = [];
     const recommendations: string[] = [];
 
-    let estimatedTime = 1; // 기본 1초
-    let estimatedMemory = 50; // 기본 50MB
+    let estimatedTime = 1; // Default 1 second
+    let estimatedMemory = 50; // Default 50MB
 
-    // 리사이징 검증
+    // Resizing validation
     if (options.resize) {
       const validation = AutoHighResProcessor.validateProcessing(source, options.resize.width, options.resize.height);
 
@@ -404,7 +404,7 @@ export class AdvancedImageProcessor {
       estimatedMemory = Math.max(estimatedMemory, validation.estimatedMemory);
     }
 
-    // 필터 검증
+    // Filter validation
     if (options.filters) {
       const filterValidation = filterManager.validateFilterChain(options.filters);
       if (!filterValidation.valid) {
@@ -414,17 +414,17 @@ export class AdvancedImageProcessor {
         warnings.push(...filterValidation.warnings);
       }
 
-      estimatedTime += options.filters.filters.length * 0.5; // 필터당 0.5초
+      estimatedTime += options.filters.filters.length * 0.5; // 0.5 seconds per filter
     }
 
-    // 파일 크기 예상 (rough estimate)
+    // File size estimation (rough estimate)
     let estimatedFileSize: number | undefined;
     if (options.format && options.resize) {
       const pixels = options.resize.width * options.resize.height;
-      const baseSize = pixels * 0.5; // 픽셀당 0.5바이트 기준
+      const baseSize = pixels * 0.5; // Based on 0.5 bytes per pixel
 
       if (options.format === 'auto' || typeof options.format === 'object') {
-        estimatedFileSize = baseSize * 0.3; // 자동 최적화로 30% 예상
+        estimatedFileSize = baseSize * 0.3; // 30% expected with auto optimization
       } else {
         const formatMultiplier = {
           jpeg: 0.3,
@@ -441,18 +441,18 @@ export class AdvancedImageProcessor {
       warnings,
       estimatedTime: Math.round(estimatedTime * 10) / 10,
       estimatedMemory: Math.round(estimatedMemory),
-      estimatedFileSize: estimatedFileSize ? Math.round(estimatedFileSize / 1024) : undefined, // KB 단위
+      estimatedFileSize: estimatedFileSize ? Math.round(estimatedFileSize / 1024) : undefined, // KB units
       recommendations,
     };
   }
 }
 
 /**
- * 편의 함수들 - 가장 일반적인 사용 사례들
+ * Convenience functions - most common use cases
  */
 
 /**
- * 스마트 리사이징 (자동 최적화 적용)
+ * Smart resizing (auto optimization applied)
  */
 export async function smartResize(
   image: HTMLImageElement,
@@ -473,7 +473,7 @@ export async function smartResize(
 }
 
 /**
- * 필터와 함께 처리
+ * Process with filters
  */
 export async function processWithFilters(
   image: HTMLImageElement,
@@ -489,7 +489,7 @@ export async function processWithFilters(
 }
 
 /**
- * 워터마크 추가
+ * Add watermark
  */
 export async function addWatermarkAndOptimize(
   image: HTMLImageElement,

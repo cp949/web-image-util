@@ -1,5 +1,5 @@
-// 배치 처리 훅 - Phase 4.2
-// 여러 설정으로 동시에 이미지 처리 및 결과 비교
+// Batch processing hook - Phase 4.2
+// Process images simultaneously with multiple settings and compare results
 
 import { useState, useCallback, useRef } from 'react';
 import { processImage, ImageProcessError } from '@cp949/web-image-util';
@@ -8,7 +8,7 @@ import type { ProcessingOptions, ImageInfo, ProcessedImageInfo, ResultBlob } fro
 import { logError } from '../utils/errorHandling';
 
 /**
- * 배치 처리 아이템
+ * Batch processing item
  */
 export interface BatchItem {
   id: string;
@@ -17,7 +17,7 @@ export interface BatchItem {
 }
 
 /**
- * 배치 처리 결과
+ * Batch processing result
  */
 export interface BatchResult extends BatchItem {
   result?: ProcessedImageInfo;
@@ -27,17 +27,17 @@ export interface BatchResult extends BatchItem {
 }
 
 /**
- * 배치 처리 훅 옵션
+ * Batch processing hook options
  */
 export interface UseBatchProcessingOptions {
-  /** 동시 처리 개수 제한 (기본: 3) */
+  /** Limit for concurrent processing (default: 3) */
   concurrency?: number;
-  /** 진행 상황 콜백 */
+  /** Progress callback */
   onProgress?: (completed: number, total: number) => void;
 }
 
 /**
- * ProcessingOptions를 ResizeConfig로 변환
+ * Convert ProcessingOptions to ResizeConfig
  */
 function toResizeConfig(options: ProcessingOptions): ResizeConfig {
   const baseConfig = {
@@ -102,7 +102,7 @@ function toResizeConfig(options: ProcessingOptions): ResizeConfig {
 }
 
 /**
- * 단일 이미지 처리 함수
+ * Single image processing function
  */
 async function processSingleImage(
   imageSource: string,
@@ -135,7 +135,7 @@ async function processSingleImage(
 }
 
 /**
- * 병렬 처리 함수 (동시성 제한 포함)
+ * Parallel processing function (with concurrency limit)
  */
 async function processWithConcurrency<T, R>(
   items: T[],
@@ -147,7 +147,7 @@ async function processWithConcurrency<T, R>(
   let completed = 0;
   const total = items.length;
 
-  // 청크로 나누어 처리
+  // Process in chunks
   for (let i = 0; i < total; i += concurrency) {
     const chunk = items.slice(i, Math.min(i + concurrency, total));
     const chunkResults = await Promise.all(chunk.map((item, chunkIndex) => processor(item, i + chunkIndex)));
@@ -161,9 +161,9 @@ async function processWithConcurrency<T, R>(
 }
 
 /**
- * 배치 처리 훅
+ * Batch processing hook
  *
- * 여러 설정으로 동시에 이미지를 처리하고 결과를 비교합니다.
+ * Process images simultaneously with multiple settings and compare results.
  *
  * @example
  * ```tsx
@@ -189,9 +189,9 @@ export function useBatchProcessing(originalImage: ImageInfo | null, hookOptions?
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [error, setError] = useState<Error | null>(null);
 
-  // 진행 중인 작업 취소를 위한 ref
+  // Ref for canceling ongoing operations
   const abortControllerRef = useRef<AbortController | null>(null);
-  // onProgress 콜백을 ref로 관리하여 deps 안정화
+  // Manage onProgress callback with ref to stabilize dependencies
   const onProgressRef = useRef(hookOptions?.onProgress);
   onProgressRef.current = hookOptions?.onProgress;
 
@@ -200,16 +200,16 @@ export function useBatchProcessing(originalImage: ImageInfo | null, hookOptions?
   }, []);
 
   /**
-   * 배치 처리 실행
+   * Execute batch processing
    */
   const processBatch = useCallback(
     async (items: BatchItem[]) => {
       if (!originalImage) {
-        setError(new Error('원본 이미지가 없습니다'));
+        setError(new Error('No original image available'));
         return;
       }
 
-      // 이전 작업 취소
+      // Cancel previous operation
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -221,7 +221,7 @@ export function useBatchProcessing(originalImage: ImageInfo | null, hookOptions?
       setError(null);
       setProgress({ completed: 0, total: items.length });
 
-      // 초기 결과 상태 설정
+      // Set initial result state
       const initialResults: BatchResult[] = items.map((item) => ({
         ...item,
         status: 'pending' as const,
@@ -229,16 +229,16 @@ export function useBatchProcessing(originalImage: ImageInfo | null, hookOptions?
       setResults(initialResults);
 
       try {
-        // 병렬 처리 (동시성 제한 포함)
+        // Parallel processing (with concurrency limit)
         const processedResults = await processWithConcurrency(
           items,
           async (item, index) => {
-            // 작업이 취소되었는지 확인
+            // Check if operation was cancelled
             if (abortController.signal.aborted) {
-              throw new Error('작업이 취소되었습니다');
+              throw new Error('Operation was cancelled');
             }
 
-            // 상태 업데이트: processing
+            // Update status: processing
             setResults((prev) => prev.map((r, i) => (i === index ? { ...r, status: 'processing' as const } : r)));
 
             try {
@@ -253,18 +253,18 @@ export function useBatchProcessing(originalImage: ImageInfo | null, hookOptions?
                 status: 'completed',
               };
 
-              // 상태 업데이트: completed
+              // Update status: completed
               setResults((prev) => prev.map((r, i) => (i === index ? batchResult : r)));
 
               return batchResult;
             } catch (err) {
               const batchResult: BatchResult = {
                 ...item,
-                error: err instanceof ImageProcessError ? err : new Error('처리 실패'),
+                error: err instanceof ImageProcessError ? err : new Error('Processing failed'),
                 status: 'failed',
               };
 
-              // 상태 업데이트: failed
+              // Update status: failed
               setResults((prev) => prev.map((r, i) => (i === index ? batchResult : r)));
 
               logError(err, `useBatchProcessing.processBatch[${item.id}]`);
@@ -280,13 +280,13 @@ export function useBatchProcessing(originalImage: ImageInfo | null, hookOptions?
 
         setResults(processedResults);
       } catch (err) {
-        // 취소된 경우는 에러로 처리하지 않음
-        if (err instanceof Error && err.message.includes('취소')) {
+        // Don't treat cancellation as an error
+        if (err instanceof Error && err.message.includes('cancelled')) {
           return;
         }
 
         logError(err, 'useBatchProcessing.processBatch');
-        setError(err instanceof Error ? err : new Error('배치 처리 실패'));
+        setError(err instanceof Error ? err : new Error('Batch processing failed'));
       } finally {
         setProcessing(false);
         abortControllerRef.current = null;
@@ -296,7 +296,7 @@ export function useBatchProcessing(originalImage: ImageInfo | null, hookOptions?
   );
 
   /**
-   * 배치 처리 취소
+   * Cancel batch processing
    */
   const cancel = useCallback(() => {
     if (abortControllerRef.current) {
@@ -305,10 +305,10 @@ export function useBatchProcessing(originalImage: ImageInfo | null, hookOptions?
   }, []);
 
   /**
-   * 결과 초기화
+   * Reset results
    */
   const reset = useCallback(() => {
-    // 이전 URL 정리
+    // Clean up previous URLs
     results.forEach((result) => {
       if (result.result?.src.startsWith('blob:')) {
         URL.revokeObjectURL(result.result.src);
@@ -322,17 +322,17 @@ export function useBatchProcessing(originalImage: ImageInfo | null, hookOptions?
   }, [results]);
 
   /**
-   * 성공한 결과만 필터링
+   * Filter successful results only
    */
   const successfulResults = results.filter((r) => r.status === 'completed' && r.result);
 
   /**
-   * 실패한 결과만 필터링
+   * Filter failed results only
    */
   const failedResults = results.filter((r) => r.status === 'failed');
 
   return {
-    // 상태
+    // State
     results,
     processing,
     progress,
@@ -340,12 +340,12 @@ export function useBatchProcessing(originalImage: ImageInfo | null, hookOptions?
     successfulResults,
     failedResults,
 
-    // 액션
+    // Actions
     processBatch,
     cancel,
     reset,
 
-    // 통계
+    // Statistics
     stats: {
       total: results.length,
       completed: results.filter((r) => r.status === 'completed').length,

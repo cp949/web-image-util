@@ -1,20 +1,20 @@
 /**
- * 특수 효과 필터 플러그인들
- * 이미지 효과 필터 플러그인 모음 (그레이스케일, 세피아, 반전)
+ * Special effect filter plugins
+ * Collection of image effect filter plugins (grayscale, sepia, invert)
  */
 
 import type { FilterPlugin, FilterValidationResult } from '../plugin-system';
 import { FilterCategory } from '../plugin-system';
 
 /**
- * 그레이스케일 변환 플러그인
+ * Grayscale conversion plugin
  *
- * @description 이미지를 흑백으로 변환하는 필터 플러그인입니다.
- * 표준 휘도 공식(Y = 0.299*R + 0.587*G + 0.114*B)을 사용하여 자연스러운 그레이스케일 변환을 수행합니다.
+ * @description Filter plugin that converts images to black and white.
+ * Performs natural grayscale conversion using standard luminance formula (Y = 0.299*R + 0.587*G + 0.114*B).
  */
 export const GrayscaleFilterPlugin: FilterPlugin<Record<string, never>> = {
   name: 'grayscale',
-  description: '이미지를 흑백으로 변환합니다',
+  description: 'Converts images to black and white',
   category: FilterCategory.EFFECT,
   defaultParams: {},
 
@@ -23,7 +23,7 @@ export const GrayscaleFilterPlugin: FilterPlugin<Record<string, never>> = {
     const data = result.data;
 
     for (let i = 0; i < data.length; i += 4) {
-      // 휘도 공식을 사용한 그레이스케일 변환
+      // Grayscale conversion using luminance formula
       const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
       data[i] = gray;
       data[i + 1] = gray;
@@ -34,25 +34,25 @@ export const GrayscaleFilterPlugin: FilterPlugin<Record<string, never>> = {
   },
 
   validate(): FilterValidationResult {
-    // 매개변수가 없으므로 항상 유효
+    // Always valid since no parameters
     return { valid: true };
   },
 
   preview(imageData: ImageData): ImageData {
-    // 미리보기는 전체 적용과 동일
+    // Preview is same as full application
     return this.apply(imageData, {});
   },
 };
 
 /**
- * 세피아 효과 플러그인
+ * Sepia effect plugin
  *
- * @description 빈티지한 세피아 톤 효과를 적용하는 필터 플러그인입니다.
- * 강도를 조절할 수 있으며, 표준 세피아 변환 매트릭스를 사용합니다.
+ * @description Filter plugin that applies vintage sepia tone effects.
+ * Intensity can be adjusted and uses standard sepia transformation matrix.
  */
 export const SepiaFilterPlugin: FilterPlugin<{ intensity: number }> = {
   name: 'sepia',
-  description: '빈티지한 세피아 효과를 적용합니다',
+  description: 'Applies vintage sepia effects',
   category: FilterCategory.EFFECT,
   defaultParams: { intensity: 100 },
 
@@ -66,12 +66,12 @@ export const SepiaFilterPlugin: FilterPlugin<{ intensity: number }> = {
       const g = data[i + 1];
       const b = data[i + 2];
 
-      // 세피아 변환 매트릭스 적용
+      // Apply sepia transformation matrix
       const newR = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189);
       const newG = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168);
       const newB = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131);
 
-      // 원본과 세피아 효과를 블렌딩
+      // Blend original and sepia effect
       data[i] = r + factor * (newR - r);
       data[i + 1] = g + factor * (newG - g);
       data[i + 2] = b + factor * (newB - b);
@@ -84,9 +84,9 @@ export const SepiaFilterPlugin: FilterPlugin<{ intensity: number }> = {
     const errors: string[] = [];
 
     if (typeof params.intensity !== 'number') {
-      errors.push('intensity는 숫자여야 합니다');
+      errors.push('intensity must be a number');
     } else if (params.intensity < 0 || params.intensity > 100) {
-      errors.push('intensity는 0에서 100 사이여야 합니다');
+      errors.push('intensity must be between 0 and 100');
     }
 
     return {
@@ -97,14 +97,14 @@ export const SepiaFilterPlugin: FilterPlugin<{ intensity: number }> = {
 };
 
 /**
- * 색상 반전 플러그인
+ * Color invert plugin
  *
- * @description 이미지의 모든 픽셀 색상을 반전시키는 필터 플러그인입니다.
- * 각 RGB 채널에서 255에서 현재 값을 뺀 결과를 적용합니다.
+ * @description Filter plugin that inverts all pixel colors in an image.
+ * Applies the result of subtracting current value from 255 for each RGB channel.
  */
 export const InvertFilterPlugin: FilterPlugin<Record<string, never>> = {
   name: 'invert',
-  description: '이미지의 색상을 반전시킵니다',
+  description: 'Inverts image colors',
   category: FilterCategory.EFFECT,
   defaultParams: {},
 
@@ -116,7 +116,7 @@ export const InvertFilterPlugin: FilterPlugin<Record<string, never>> = {
       data[i] = 255 - data[i]; // R
       data[i + 1] = 255 - data[i + 1]; // G
       data[i + 2] = 255 - data[i + 2]; // B
-      // A는 변경하지 않음
+      // Alpha remains unchanged
     }
 
     return result;
@@ -128,14 +128,14 @@ export const InvertFilterPlugin: FilterPlugin<Record<string, never>> = {
 };
 
 /**
- * 노이즈 추가 플러그인
+ * Noise addition plugin
  *
- * @description 이미지에 랜덤 노이즈를 추가하는 필터 플러그인입니다.
- * 강도를 조절할 수 있으며, 각 픽셀에 무작위 값을 더하거나 뺍니다.
+ * @description Filter plugin that adds random noise to images.
+ * Intensity can be adjusted and adds or subtracts random values to each pixel.
  */
 export const NoiseFilterPlugin: FilterPlugin<{ intensity: number }> = {
   name: 'noise',
-  description: '이미지에 노이즈를 추가합니다',
+  description: 'Adds noise to images',
   category: FilterCategory.EFFECT,
   defaultParams: { intensity: 10 },
 
@@ -160,11 +160,11 @@ export const NoiseFilterPlugin: FilterPlugin<{ intensity: number }> = {
     const warnings: string[] = [];
 
     if (typeof params.intensity !== 'number') {
-      errors.push('intensity는 숫자여야 합니다');
+      errors.push('intensity must be a number');
     } else if (params.intensity < 0 || params.intensity > 100) {
-      errors.push('intensity는 0에서 100 사이여야 합니다');
+      errors.push('intensity must be between 0 and 100');
     } else if (params.intensity > 50) {
-      warnings.push('높은 노이즈 강도는 이미지 품질을 크게 저하시킬 수 있습니다');
+      warnings.push('High noise intensity can significantly degrade image quality');
     }
 
     return {
@@ -176,14 +176,14 @@ export const NoiseFilterPlugin: FilterPlugin<{ intensity: number }> = {
 };
 
 /**
- * 비네팅 효과 플러그인
+ * Vignette effect plugin
  *
- * @description 이미지 가장자리가 어두워지는 비네팅 효과를 적용하는 필터 플러그인입니다.
- * 중심에서의 거리에 따라 어둡게 처리하며, 강도, 크기, 블러를 조절할 수 있습니다.
+ * @description Filter plugin that applies vignette effect with darkened edges.
+ * Darkens based on distance from center and allows adjustment of intensity, size, and blur.
  */
 export const VignetteFilterPlugin: FilterPlugin<{ intensity: number; size: number; blur: number }> = {
   name: 'vignette',
-  description: '가장자리가 어두워지는 비네팅 효과를 적용합니다',
+  description: 'Applies vignette effect with darkened edges',
   category: FilterCategory.EFFECT,
   defaultParams: { intensity: 0.8, size: 0.5, blur: 0.5 },
 
@@ -202,7 +202,7 @@ export const VignetteFilterPlugin: FilterPlugin<{ intensity: number; size: numbe
         const dy = y - centerY;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // 비네팅 팩터 계산
+        // Calculate vignette factor
         let vignetteFactor = 1 - (distance / maxDistance) * params.size;
         vignetteFactor = Math.pow(vignetteFactor, params.blur);
         vignetteFactor = Math.max(0, Math.min(1, vignetteFactor));
@@ -222,15 +222,15 @@ export const VignetteFilterPlugin: FilterPlugin<{ intensity: number; size: numbe
     const errors: string[] = [];
 
     if (typeof params.intensity !== 'number' || params.intensity < 0 || params.intensity > 1) {
-      errors.push('intensity는 0에서 1 사이의 숫자여야 합니다');
+      errors.push('intensity must be a number between 0 and 1');
     }
 
     if (typeof params.size !== 'number' || params.size < 0 || params.size > 1) {
-      errors.push('size는 0에서 1 사이의 숫자여야 합니다');
+      errors.push('size must be a number between 0 and 1');
     }
 
     if (typeof params.blur !== 'number' || params.blur < 0 || params.blur > 1) {
-      errors.push('blur는 0에서 1 사이의 숫자여야 합니다');
+      errors.push('blur must be a number between 0 and 1');
     }
 
     return {
@@ -241,14 +241,14 @@ export const VignetteFilterPlugin: FilterPlugin<{ intensity: number; size: numbe
 };
 
 /**
- * 픽셀화 효과 플러그인
+ * Pixelate effect plugin
  *
- * @description 이미지를 픽셀 아트 스타일로 변환하는 필터 플러그인입니다.
- * 지정된 크기의 블록으로 나누어 각 블록의 평균 색상을 적용합니다.
+ * @description Filter plugin that converts images to pixel art style.
+ * Divides image into blocks of specified size and applies average color to each block.
  */
 export const PixelateFilterPlugin: FilterPlugin<{ pixelSize: number }> = {
   name: 'pixelate',
-  description: '이미지를 픽셀화 처리합니다',
+  description: 'Pixelates images',
   category: FilterCategory.DISTORTION,
   defaultParams: { pixelSize: 8 },
 
@@ -262,7 +262,7 @@ export const PixelateFilterPlugin: FilterPlugin<{ pixelSize: number }> = {
 
     for (let y = 0; y < height; y += params.pixelSize) {
       for (let x = 0; x < width; x += params.pixelSize) {
-        // 픽셀 블록의 평균 색상 계산
+        // Calculate average color of pixel block
         let r = 0,
           g = 0,
           b = 0,
@@ -280,13 +280,13 @@ export const PixelateFilterPlugin: FilterPlugin<{ pixelSize: number }> = {
           }
         }
 
-        // 평균 색상
+        // Average color
         r = Math.round(r / count);
         g = Math.round(g / count);
         b = Math.round(b / count);
         a = Math.round(a / count);
 
-        // 픽셀 블록에 평균 색상 적용
+        // Apply average color to pixel block
         for (let py = y; py < Math.min(y + params.pixelSize, height); py++) {
           for (let px = x; px < Math.min(x + params.pixelSize, width); px++) {
             const idx = (py * width + px) * 4;
@@ -307,11 +307,11 @@ export const PixelateFilterPlugin: FilterPlugin<{ pixelSize: number }> = {
     const warnings: string[] = [];
 
     if (typeof params.pixelSize !== 'number') {
-      errors.push('pixelSize는 숫자여야 합니다');
+      errors.push('pixelSize must be a number');
     } else if (params.pixelSize < 1) {
-      errors.push('pixelSize는 1 이상이어야 합니다');
+      errors.push('pixelSize must be 1 or greater');
     } else if (params.pixelSize > 50) {
-      warnings.push('큰 픽셀 크기는 이미지 디테일을 크게 손실시킬 수 있습니다');
+      warnings.push('Large pixel sizes can significantly degrade image detail');
     }
 
     return {
@@ -323,14 +323,14 @@ export const PixelateFilterPlugin: FilterPlugin<{ pixelSize: number }> = {
 };
 
 /**
- * 포스터화 효과 플러그인
+ * Posterize effect plugin
  *
- * @description 색상 레벨을 줄여 포스터 같은 효과를 만드는 필터 플러그인입니다.
- * 각 색상 채널의 값을 지정된 레벨 수로 양자화하여 단순화된 색상을 만듭니다.
+ * @description Filter plugin that creates poster-like effects by reducing color levels.
+ * Quantizes each color channel value to specified level count to create simplified colors.
  */
 export const PosterizeFilterPlugin: FilterPlugin<{ levels: number }> = {
   name: 'posterize',
-  description: '색상 레벨을 줄여 포스터 같은 효과를 만듭니다',
+  description: 'Creates poster-like effects by reducing color levels',
   category: FilterCategory.ARTISTIC,
   defaultParams: { levels: 8 },
 
@@ -353,9 +353,9 @@ export const PosterizeFilterPlugin: FilterPlugin<{ levels: number }> = {
     const errors: string[] = [];
 
     if (typeof params.levels !== 'number') {
-      errors.push('levels는 숫자여야 합니다');
+      errors.push('levels must be a number');
     } else if (params.levels < 2 || params.levels > 256) {
-      errors.push('levels는 2에서 256 사이여야 합니다');
+      errors.push('levels must be between 2 and 256');
     }
 
     return {
@@ -366,10 +366,10 @@ export const PosterizeFilterPlugin: FilterPlugin<{ levels: number }> = {
 };
 
 /**
- * 모든 효과 필터 플러그인들
+ * All effect filter plugins
  *
- * @description 그레이스케일, 세피아, 반전, 노이즈, 비네팅, 픽셀화, 포스터화 등의
- * 특수 효과 필터 플러그인들을 모은 배열입니다.
+ * @description Array containing special effect filter plugins including grayscale, sepia, invert,
+ * noise, vignette, pixelate, and posterize effects.
  */
 export const EffectFilterPlugins = [
   GrayscaleFilterPlugin,

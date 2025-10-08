@@ -1,220 +1,220 @@
 /**
- * 에러 처리 도우미 함수들
+ * Error handling helper functions
  *
- * @description 사용자 친화적인 에러 메시지와 해결 방법을 제공
+ * @description Provides user-friendly error messages and solutions
  */
 
 import { globalErrorHandler } from '../core/error-handler';
 import { ImageProcessError, type ImageErrorCodeType } from '../types';
 
 /**
- * 에러 컨텍스트 정보
+ * Error context information
  */
 export interface ErrorContext {
-  /** 작업중이던 소스 타입 */
+  /** Source type being processed */
   sourceType?: string;
-  /** 시도한 포맷 */
+  /** Format attempted */
   format?: string;
-  /** 이미지 크기 정보 */
+  /** Image size information */
   dimensions?: { width: number; height: number };
-  /** 브라우저 정보 */
+  /** Browser information */
   userAgent?: string;
-  /** 타임스탬프 */
+  /** Timestamp */
   timestamp?: number;
-  /** 추가 디버그 정보 */
+  /** Additional debug information */
   debug?: Record<string, any>;
 }
 
 /**
- * 사용자 친화적 에러 메시지 매핑
+ * User-friendly error message mapping
  */
 const USER_FRIENDLY_MESSAGES: Record<ImageErrorCodeType, string> = {
-  // 소스 관련 에러
-  INVALID_SOURCE: '이미지 소스가 유효하지 않습니다. 올바른 이미지 파일이나 URL을 사용해주세요.',
-  UNSUPPORTED_FORMAT: '지원하지 않는 이미지 포맷입니다. JPEG, PNG, WebP 등의 표준 포맷을 사용해주세요.',
-  SOURCE_LOAD_FAILED: '이미지를 불러오는데 실패했습니다. 네트워크 연결이나 파일 경로를 확인해주세요.',
+  // Source-related errors
+  INVALID_SOURCE: 'Invalid image source. Please use a valid image file or URL.',
+  UNSUPPORTED_FORMAT: 'Unsupported image format. Please use standard formats like JPEG, PNG, WebP.',
+  SOURCE_LOAD_FAILED: 'Failed to load image. Please check your network connection or file path.',
 
-  // 처리 관련 에러
+  // Processing-related errors
   CANVAS_CREATION_FAILED:
-    '이미지 처리를 위한 Canvas를 생성할 수 없습니다. 브라우저가 Canvas를 지원하는지 확인해주세요.',
-  CANVAS_CONTEXT_FAILED: 'Canvas 2D 컨텍스트를 가져올 수 없습니다. 브라우저가 Canvas API를 지원하는지 확인해주세요.',
-  RESIZE_FAILED: '이미지 리사이징에 실패했습니다. 이미지 크기나 포맷에 문제가 있을 수 있습니다.',
-  CONVERSION_FAILED: '이미지 포맷 변환에 실패했습니다. 다른 포맷으로 시도해보세요.',
-  BLUR_FAILED: '이미지 블러 효과 적용에 실패했습니다.',
-  PROCESSING_FAILED: '이미지 처리 중 오류가 발생했습니다. 이미지 파일이나 옵션을 확인해주세요.',
-  SMART_RESIZE_FAILED: '스마트 리사이징 중 오류가 발생했습니다. 대용량 이미지인 경우 더 작은 크기로 시도해보세요.',
+    'Cannot create Canvas for image processing. Please verify that your browser supports Canvas.',
+  CANVAS_CONTEXT_FAILED: 'Cannot get Canvas 2D context. Please verify that your browser supports Canvas API.',
+  RESIZE_FAILED: 'Image resizing failed. There may be an issue with the image size or format.',
+  CONVERSION_FAILED: 'Image format conversion failed. Please try a different format.',
+  BLUR_FAILED: 'Failed to apply blur effect to image.',
+  PROCESSING_FAILED: 'An error occurred during image processing. Please check your image file or options.',
+  SMART_RESIZE_FAILED: 'An error occurred during smart resizing. For large images, try with a smaller size.',
 
-  // SVG 관련 에러
-  SVG_LOAD_FAILED: 'SVG 이미지를 불러오는데 실패했습니다. SVG 구문이 올바른지 확인해주세요.',
-  SVG_PROCESSING_FAILED: 'SVG 이미지 처리 중 오류가 발생했습니다. SVG 파일이 손상되었을 수 있습니다.',
+  // SVG-related errors
+  SVG_LOAD_FAILED: 'Failed to load SVG image. Please check if the SVG syntax is correct.',
+  SVG_PROCESSING_FAILED: 'An error occurred during SVG image processing. The SVG file may be corrupted.',
 
-  // 출력 관련 에러
-  OUTPUT_FAILED: '이미지 출력에 실패했습니다. 브라우저가 해당 포맷을 지원하는지 확인해주세요.',
-  DOWNLOAD_FAILED: '이미지 다운로드에 실패했습니다.',
-  FILE_TOO_LARGE: '이미지 파일이 너무 큽니다. 더 작은 크기로 시도해보세요.',
-  CANVAS_TO_BLOB_FAILED: 'Canvas를 Blob으로 변환하는데 실패했습니다. 브라우저가 해당 포맷을 지원하는지 확인해주세요.',
-  IMAGE_LOAD_FAILED: '이미지를 로드하는데 실패했습니다. 이미지 파일이나 네트워크 상태를 확인해주세요.',
-  BLOB_TO_ARRAYBUFFER_FAILED: 'Blob을 ArrayBuffer로 변환하는데 실패했습니다.',
-  BLOB_CONVERSION_ERROR: 'Blob 변환 중 오류가 발생했습니다. 다시 시도해주세요.',
-  MULTIPLE_RESIZE_NOT_ALLOWED: 'resize()는 한 번만 호출할 수 있습니다. 새로운 processImage() 인스턴스를 생성해주세요.',
-  CANVAS_CONTEXT_ERROR: 'Canvas 2D 컨텍스트를 생성할 수 없습니다. 브라우저 지원을 확인해주세요.',
+  // Output-related errors
+  OUTPUT_FAILED: 'Image output failed. Please check if your browser supports the format.',
+  DOWNLOAD_FAILED: 'Image download failed.',
+  FILE_TOO_LARGE: 'Image file is too large. Please try with a smaller size.',
+  CANVAS_TO_BLOB_FAILED: 'Failed to convert Canvas to Blob. Please check if your browser supports the format.',
+  IMAGE_LOAD_FAILED: 'Failed to load image. Please check your image file or network status.',
+  BLOB_TO_ARRAYBUFFER_FAILED: 'Failed to convert Blob to ArrayBuffer.',
+  BLOB_CONVERSION_ERROR: 'An error occurred during Blob conversion. Please try again.',
+  MULTIPLE_RESIZE_NOT_ALLOWED: 'resize() can only be called once. Please create a new processImage() instance.',
+  CANVAS_CONTEXT_ERROR: 'Cannot create Canvas 2D context. Please check browser support.',
 
-  // 크기/차원 관련 에러
-  INVALID_DIMENSIONS: '이미지 크기가 유효하지 않습니다. 너비와 높이는 양수여야 합니다.',
-  DIMENSION_TOO_LARGE: '이미지 크기가 너무 큽니다. 더 작은 크기로 시도해주세요.',
+  // Size/dimension-related errors
+  INVALID_DIMENSIONS: 'Invalid image dimensions. Width and height must be positive numbers.',
+  DIMENSION_TOO_LARGE: 'Image dimensions are too large. Please try with a smaller size.',
 
-  // 시스템 자원 관련 에러
-  MEMORY_ERROR: '메모리가 부족하여 이미지 처리를 완료할 수 없습니다.',
-  TIMEOUT_ERROR: '이미지 처리 시간이 너무 오래 걸립니다. 더 작은 이미지나 다른 옵션을 시도해주세요.',
+  // System resource-related errors
+  MEMORY_ERROR: 'Insufficient memory to complete image processing.',
+  TIMEOUT_ERROR: 'Image processing is taking too long. Please try with a smaller image or different options.',
 
-  // 브라우저 호환성 에러
-  BROWSER_NOT_SUPPORTED: '현재 브라우저에서는 이 기능을 지원하지 않습니다. 최신 브라우저를 사용해주세요.',
-  FEATURE_NOT_SUPPORTED: '요청한 기능이 현재 환경에서 지원되지 않습니다.',
+  // Browser compatibility errors
+  BROWSER_NOT_SUPPORTED: 'This feature is not supported in your current browser. Please use a modern browser.',
+  FEATURE_NOT_SUPPORTED: 'The requested feature is not supported in the current environment.',
 };
 
 /**
- * 해결 방법 제안
+ * Solution suggestions
  */
 const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
   INVALID_SOURCE: [
-    'HTMLImageElement, Blob, 또는 유효한 URL/Data URL을 사용하세요',
-    'CORS 문제인 경우 crossOrigin 설정을 확인하세요',
-    'Base64 Data URL인 경우 올바른 형식인지 확인하세요',
+    'Use HTMLImageElement, Blob, or valid URL/Data URL',
+    'If CORS issue, check crossOrigin settings',
+    'For Base64 Data URL, verify correct format',
   ],
 
   UNSUPPORTED_FORMAT: [
-    'JPEG, PNG, WebP 등의 표준 포맷을 사용하세요',
-    'AVIF나 HEIC 같은 최신 포맷은 브라우저 지원을 확인하세요',
-    'SVG의 경우 먼저 래스터 이미지로 변환하세요',
+    'Use standard formats like JPEG, PNG, WebP',
+    'For modern formats like AVIF or HEIC, check browser support',
+    'For SVG, convert to raster image first',
   ],
 
   SOURCE_LOAD_FAILED: [
-    '네트워크 연결 상태를 확인하세요',
-    '이미지 URL이 접근 가능한지 확인하세요',
-    'CORS 정책으로 차단된 경우 서버 설정을 확인하세요',
+    'Check your network connection status',
+    'Verify that the image URL is accessible',
+    'If blocked by CORS policy, check server configuration',
   ],
 
   CANVAS_CREATION_FAILED: [
-    'Canvas API를 지원하는 브라우저를 사용하세요',
-    '메모리가 부족할 수 있으니 더 작은 이미지로 시도하세요',
-    'private/incognito 모드에서는 일부 기능이 제한될 수 있습니다',
+    'Use a browser that supports Canvas API',
+    'Try with a smaller image if memory is insufficient',
+    'Some features may be limited in private/incognito mode',
   ],
 
   CANVAS_CONTEXT_FAILED: [
-    '브라우저를 새로고침하거나 다른 브라우저를 시도해보세요',
-    'WebGL 컨텍스트가 너무 많이 사용되었을 수 있습니다',
-    '하드웨어 가속이 비활성화되었을 수 있습니다',
+    'Try refreshing the browser or using a different browser',
+    'Too many WebGL contexts may have been used',
+    'Hardware acceleration may be disabled',
   ],
 
   PROCESSING_FAILED: [
-    '이미지 파일이 손상되었는지 확인해보세요',
-    '다른 옵션으로 시도해보세요',
-    '더 작은 이미지로 테스트해보세요',
+    'Check if the image file is corrupted',
+    'Try with different options',
+    'Test with a smaller image',
   ],
 
   SMART_RESIZE_FAILED: [
-    '대용량 이미지인 경우 더 작은 크기로 시도해보세요',
-    '메모리 제한을 늘리거나 단계적 처리를 사용하세요',
-    'strategy 옵션을 "memory-efficient"로 설정해보세요',
+    'For large images, try with a smaller size',
+    'Increase memory limits or use progressive processing',
+    'Try setting strategy option to "memory-efficient"',
   ],
 
   CONVERSION_FAILED: [
-    '다른 출력 포맷을 시도해보세요 (PNG, JPEG 등)',
-    '이미지 크기를 줄여보세요',
-    '품질 설정을 낮춰보세요 (0.1-1.0 범위)',
+    'Try a different output format (PNG, JPEG, etc.)',
+    'Reduce the image size',
+    'Lower the quality setting (0.1-1.0 range)',
   ],
 
   FILE_TOO_LARGE: [
-    '이미지 크기를 줄이거나 품질을 낮춰보세요',
-    '더 효율적인 포맷(WebP)을 사용해보세요',
-    '여러 단계로 나누어 처리해보세요',
+    'Reduce image size or lower quality',
+    'Use a more efficient format like WebP',
+    'Process in multiple steps',
   ],
 
   BROWSER_NOT_SUPPORTED: [
-    'Chrome, Firefox, Safari, Edge를 사용하세요',
-    'WebP 지원이 필요한 경우 Chrome 32+ 또는 Firefox 65+를 사용하세요',
+    'Use Chrome, Firefox, Safari, or Edge',
+    'For WebP support, use Chrome 32+ or Firefox 65+',
   ],
 
-  // 기본 해결 방법들
-  RESIZE_FAILED: ['이미지 크기를 확인하고 더 작은 값으로 시도하세요'],
-  BLUR_FAILED: ['블러 반지름을 더 작은 값으로 시도하세요'],
-  OUTPUT_FAILED: ['다른 출력 포맷으로 시도하세요'],
-  DOWNLOAD_FAILED: ['브라우저의 팝업 차단 설정을 확인하세요'],
+  // Basic solutions
+  RESIZE_FAILED: ['Check image size and try with smaller values'],
+  BLUR_FAILED: ['Try with smaller blur radius'],
+  OUTPUT_FAILED: ['Try a different output format'],
+  DOWNLOAD_FAILED: ['Check browser popup blocking settings'],
   CANVAS_TO_BLOB_FAILED: [
-    '다른 이미지 포맷을 시도해보세요 (PNG, JPEG 등)',
-    '브라우저를 새로고침하고 다시 시도하세요',
-    '품질 설정을 조정해보세요',
+    'Try a different image format (PNG, JPEG, etc.)',
+    'Refresh the browser and try again',
+    'Adjust quality settings',
   ],
   IMAGE_LOAD_FAILED: [
-    '이미지 파일이 손상되었는지 확인하세요',
-    '네트워크 연결 상태를 확인하세요',
-    'CORS 설정이나 권한 문제를 확인하세요',
+    'Check if the image file is corrupted',
+    'Check network connection status',
+    'Check CORS settings or permission issues',
   ],
   BLOB_TO_ARRAYBUFFER_FAILED: [
-    '메모리가 부족할 수 있으니 더 작은 이미지로 시도하세요',
-    '브라우저를 새로고침하고 다시 시도하세요',
+    'Try with smaller image if memory is insufficient',
+    'Refresh the browser and try again',
   ],
 
-  // SVG 관련 해결책
+  // SVG-related solutions
   SVG_LOAD_FAILED: [
-    'SVG 문법이 올바른지 확인하세요',
-    'xmlns 네임스페이스가 포함되어 있는지 확인하세요',
-    'SVG 파일이 완전한 구조를 가지고 있는지 확인하세요',
+    'Verify that SVG syntax is correct',
+    'Check if xmlns namespace is included',
+    'Verify that SVG file has complete structure',
   ],
   SVG_PROCESSING_FAILED: [
-    'SVG 내용을 정규화하여 다시 시도하세요',
-    '복잡한 SVG인 경우 간단한 구조로 변경해보세요',
-    'SVG 크기 정보(width, height, viewBox)를 명시적으로 지정하세요',
+    'Try normalizing SVG content and retry',
+    'For complex SVGs, try simplifying the structure',
+    'Explicitly specify SVG size information (width, height, viewBox)',
   ],
 
-  // 크기/차원 관련 해결책
+  // Size/dimension-related solutions
   INVALID_DIMENSIONS: [
-    '너비와 높이가 양수인지 확인하세요',
-    '크기 값이 0이거나 음수가 아닌지 확인하세요',
-    '소수점이 있는 경우 정수로 반올림하세요',
+    'Verify that width and height are positive numbers',
+    'Check that size values are not 0 or negative',
+    'Round decimal values to integers if needed',
   ],
   DIMENSION_TOO_LARGE: [
-    '이미지 크기를 줄여보세요 (권장: 4096x4096 이하)',
-    '메모리 사용량이 많은 대용량 이미지는 단계적으로 처리하세요',
-    '브라우저의 Canvas 크기 제한을 확인하세요',
+    'Reduce image size (recommended: 4096x4096 or smaller)',
+    'For large images with high memory usage, process progressively',
+    'Check browser Canvas size limitations',
   ],
 
-  // 시스템 자원 관련 해결책
+  // System resource-related solutions
   MEMORY_ERROR: [
-    '더 작은 이미지로 시도해보세요',
-    '브라우저를 새로고침하여 메모리를 정리하세요',
-    '다른 탭을 닫아 메모리를 확보하세요',
-    '이미지를 여러 단계로 나누어 처리하세요',
+    'Try with smaller image',
+    'Refresh the browser to free up memory',
+    'Close other tabs to free up memory',
+    'Process image in multiple steps',
   ],
   TIMEOUT_ERROR: [
-    '더 작은 이미지로 시도해보세요',
-    '처리 옵션을 간단하게 설정하세요',
-    '네트워크 연결 상태를 확인하세요',
-    '브라우저 성능을 확인하고 다른 작업을 일시 중단하세요',
+    'Try with smaller image',
+    'Simplify processing options',
+    'Check network connection status',
+    'Check browser performance and pause other tasks',
   ],
 
-  FEATURE_NOT_SUPPORTED: ['다른 방법이나 polyfill을 사용해보세요'],
+  FEATURE_NOT_SUPPORTED: ['Try using a different approach or polyfill'],
 
   BLOB_CONVERSION_ERROR: [
-    '브라우저를 새로고침하고 다시 시도해보세요',
-    '메모리가 부족할 수 있으니 더 작은 이미지로 시도하세요',
+    'Refresh the browser and try again',
+    'Try with smaller image if memory is insufficient',
   ],
 
   MULTIPLE_RESIZE_NOT_ALLOWED: [
-    '새로운 processImage() 인스턴스를 생성하세요',
-    '한 번의 resize() 호출로 모든 옵션을 설정하세요',
-    '여러 크기가 필요한 경우 각각 별도로 처리하세요',
+    'Create a new processImage() instance',
+    'Set all options with a single resize() call',
+    'Process each size separately if multiple sizes are needed',
   ],
 
   CANVAS_CONTEXT_ERROR: [
-    'Canvas API를 지원하는 브라우저를 사용하세요',
-    '브라우저를 새로고침하고 다시 시도해보세요',
-    '다른 브라우저나 시크릿 모드를 시도해보세요',
+    'Use a browser that supports Canvas API',
+    'Refresh the browser and try again',
+    'Try a different browser or incognito mode',
   ],
 };
 
 /**
- * 개발자 모드 감지
+ * Development mode detection
  */
 function isDevelopmentMode(): boolean {
   return (
@@ -224,9 +224,9 @@ function isDevelopmentMode(): boolean {
 }
 
 /**
- * 에러 생성 도우미
+ * Error creation helper
  *
- * @description 사용자 친화적 메시지와 해결 방법이 포함된 에러를 생성
+ * @description Creates errors with user-friendly messages and solutions
  */
 export function createImageError(
   code: ImageErrorCodeType,
@@ -236,22 +236,22 @@ export function createImageError(
   const userMessage = USER_FRIENDLY_MESSAGES[code];
   const suggestions = SOLUTION_SUGGESTIONS[code] || [];
 
-  // 개발자 모드에서는 더 상세한 정보 제공
+  // Provide more detailed information in development mode
   let message = userMessage;
   if (isDevelopmentMode() && originalError) {
-    message += `\n\n🔧 개발자 정보: ${originalError.message}`;
+    message += `\n\n🔧 Developer Info: ${originalError.message}`;
   }
 
   if (suggestions.length > 0) {
-    message += '\n\n💡 해결 방법:';
+    message += '\n\n💡 Solutions:';
     suggestions.forEach((suggestion, index) => {
       message += `\n${index + 1}. ${suggestion}`;
     });
   }
 
-  // 컨텍스트 정보 추가
+  // Add context information
   if (context && isDevelopmentMode()) {
-    message += '\n\n📋 컨텍스트:';
+    message += '\n\n📋 Context:';
     Object.entries(context).forEach(([key, value]) => {
       if (value !== undefined) {
         message += `\n- ${key}: ${JSON.stringify(value)}`;
@@ -261,7 +261,7 @@ export function createImageError(
 
   const error = new ImageProcessError(message, code, originalError);
 
-  // 컨텍스트를 에러 객체에 첨부
+  // Attach context to error object
   if (context) {
     (error as any).context = context;
   }
@@ -270,9 +270,9 @@ export function createImageError(
 }
 
 /**
- * 에러 복구 시도
+ * Error recovery attempt
  *
- * @description 실패시 fallback 함수를 시도하는 래퍼 함수
+ * @description Wrapper function that attempts fallback function on failure
  */
 export async function withErrorRecovery<T>(
   primaryFunction: () => Promise<T>,
@@ -282,13 +282,13 @@ export async function withErrorRecovery<T>(
   try {
     return await primaryFunction();
   } catch (error) {
-    // Fallback 시도
+    // Attempt fallback
     if (fallbackFunction) {
       try {
         console.warn('Primary method failed, trying fallback:', error);
         return await fallbackFunction();
       } catch (fallbackError) {
-        // 두 방법 모두 실패한 경우 더 상세한 에러 제공
+        // Provide more detailed error when both methods fail
         throw createImageError('CONVERSION_FAILED', fallbackError as Error, {
           ...context,
           debug: {
@@ -299,7 +299,7 @@ export async function withErrorRecovery<T>(
       }
     }
 
-    // ImageProcessError가 아닌 경우 래핑
+    // Wrap if not ImageProcessError
     if (!(error instanceof ImageProcessError)) {
       throw createImageError('CONVERSION_FAILED', error as Error, context);
     }
@@ -309,7 +309,7 @@ export async function withErrorRecovery<T>(
 }
 
 /**
- * 브라우저 기능 지원 확인
+ * Browser feature support check
  */
 export function checkBrowserSupport(): {
   canvas: boolean;
@@ -328,7 +328,7 @@ export function checkBrowserSupport(): {
 }
 
 /**
- * 포맷 지원 여부 확인
+ * Format support check
  */
 export async function isFormatSupported(format: string): Promise<boolean> {
   const canvas = document.createElement('canvas');
@@ -341,7 +341,7 @@ export async function isFormatSupported(format: string): Promise<boolean> {
 }
 
 /**
- * 메모리 사용량 추정
+ * Memory usage estimation
  */
 export function estimateMemoryUsage(
   width: number,
@@ -351,18 +351,18 @@ export function estimateMemoryUsage(
   megabytes: number;
   warning: boolean;
 } {
-  // RGBA 4바이트 × 너비 × 높이
+  // RGBA 4 bytes × width × height
   const bytes = width * height * 4;
   const megabytes = bytes / (1024 * 1024);
 
-  // 100MB 이상은 경고
+  // Warning for 100MB or more
   const warning = megabytes > 100;
 
   return { bytes, megabytes, warning };
 }
 
 /**
- * 에러 로깅 (개발 모드에서만)
+ * Error logging (development mode only)
  */
 export function logError(error: ImageProcessError, context?: any): void {
   if (!isDevelopmentMode()) return;
@@ -384,9 +384,9 @@ export function logError(error: ImageProcessError, context?: any): void {
 }
 
 /**
- * 향상된 에러 생성 및 처리
+ * Enhanced error creation and handling
  *
- * @description 중앙집중식 핸들러와 통합된 에러 생성
+ * @description Error creation integrated with centralized handler
  */
 export async function createAndHandleError(
   code: ImageErrorCodeType,
@@ -394,22 +394,22 @@ export async function createAndHandleError(
   operation?: string,
   context?: ErrorContext
 ): Promise<ImageProcessError> {
-  // 향상된 컨텍스트 수집
+  // Collect enhanced context
   const enhancedContext = globalErrorHandler.collectEnhancedContext(operation || 'unknown', context);
 
-  // 기존 createImageError 사용
+  // Use existing createImageError
   const error = createImageError(code, originalError, enhancedContext);
 
-  // 중앙집중식 핸들러로 처리
+  // Handle with centralized handler
   await globalErrorHandler.handleError(error, enhancedContext);
 
   return error;
 }
 
 /**
- * Node.js 베스트 프랙티스 - async 에러 처리 래퍼
+ * Node.js best practice - async error handling wrapper
  *
- * @description try-catch를 간편하게 만드는 유틸리티
+ * @description Utility to simplify try-catch handling
  */
 export async function withErrorHandling<T>(
   operation: () => Promise<T>,
@@ -419,7 +419,7 @@ export async function withErrorHandling<T>(
   try {
     return await operation();
   } catch (error) {
-    // ImageProcessError가 아닌 경우 래핑
+    // Wrap if not ImageProcessError
     if (!(error instanceof ImageProcessError)) {
       const wrappedError = await createAndHandleError(
         'PROCESSING_FAILED',
@@ -430,21 +430,21 @@ export async function withErrorHandling<T>(
       throw wrappedError;
     }
 
-    // 이미 ImageProcessError인 경우 추가 처리
+    // Additional handling for existing ImageProcessError
     await globalErrorHandler.handleError(error, context);
     throw error;
   }
 }
 
 /**
- * 간단한 에러 생성 (핸들러 없이)
+ * Simple error creation (without handler)
  */
 export function createQuickError(code: ImageErrorCodeType, originalError?: Error): ImageProcessError {
   return createImageError(code, originalError, { debug: { quickError: true } });
 }
 
 /**
- * 에러 통계 조회 함수
+ * Error statistics query function
  */
 export function getErrorStats() {
   return globalErrorHandler.getStats();

@@ -28,45 +28,45 @@ import { ImageUploader } from '../common/ImageUploader';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 
 /**
- * 프리셋 배치 아이템들
+ * Preset batch items
  */
 const BATCH_PRESETS: Record<string, BatchItem[]> = {
   sizes: [
     {
       id: 'thumbnail',
-      label: '썸네일 (150x150)',
+      label: 'Thumbnail (150x150)',
       options: { width: 150, height: 150, fit: 'cover', quality: 80, format: 'jpeg' },
     },
     {
       id: 'small',
-      label: '작음 (300x200)',
+      label: 'Small (300x200)',
       options: { width: 300, height: 200, fit: 'cover', quality: 80, format: 'jpeg' },
     },
     {
       id: 'medium',
-      label: '중간 (600x400)',
+      label: 'Medium (600x400)',
       options: { width: 600, height: 400, fit: 'cover', quality: 80, format: 'jpeg' },
     },
     {
       id: 'large',
-      label: '큼 (1200x800)',
+      label: 'Large (1200x800)',
       options: { width: 1200, height: 800, fit: 'cover', quality: 80, format: 'jpeg' },
     },
   ],
   formats: [
     {
       id: 'jpeg-high',
-      label: 'JPEG 고품질 (95%)',
+      label: 'JPEG High Quality (95%)',
       options: { width: 800, height: 600, fit: 'cover', quality: 95, format: 'jpeg' },
     },
     {
       id: 'jpeg-medium',
-      label: 'JPEG 중품질 (80%)',
+      label: 'JPEG Medium Quality (80%)',
       options: { width: 800, height: 600, fit: 'cover', quality: 80, format: 'jpeg' },
     },
     {
       id: 'jpeg-low',
-      label: 'JPEG 저품질 (60%)',
+      label: 'JPEG Low Quality (60%)',
       options: { width: 800, height: 600, fit: 'cover', quality: 60, format: 'jpeg' },
     },
     {
@@ -83,12 +83,12 @@ const BATCH_PRESETS: Record<string, BatchItem[]> = {
   fits: [
     {
       id: 'cover',
-      label: 'Cover (가득 채우기)',
+      label: 'Cover (Fill completely)',
       options: { width: 400, height: 300, fit: 'cover', quality: 85, format: 'jpeg' },
     },
     {
       id: 'contain',
-      label: 'Contain (전체 포함)',
+      label: 'Contain (Include all)',
       options: {
         width: 400,
         height: 300,
@@ -100,182 +100,182 @@ const BATCH_PRESETS: Record<string, BatchItem[]> = {
     },
     {
       id: 'fill',
-      label: 'Fill (늘려서 채우기)',
+      label: 'Fill (Stretch to fill)',
       options: { width: 400, height: 300, fit: 'fill', quality: 85, format: 'jpeg' },
     },
     {
       id: 'maxFit',
-      label: 'MaxFit (축소만)',
+      label: 'MaxFit (Scale down only)',
       options: { width: 400, height: 300, fit: 'maxFit', quality: 85, format: 'jpeg' },
     },
     {
       id: 'minFit',
-      label: 'MinFit (확대만)',
+      label: 'MinFit (Scale up only)',
       options: { width: 400, height: 300, fit: 'minFit', quality: 85, format: 'jpeg' },
     },
   ],
   qualities: [
     {
       id: 'quality-100',
-      label: '최고 품질 (100%)',
+      label: 'Highest Quality (100%)',
       options: { width: 800, height: 600, fit: 'cover', quality: 100, format: 'jpeg' },
     },
     {
       id: 'quality-90',
-      label: '고품질 (90%)',
+      label: 'High Quality (90%)',
       options: { width: 800, height: 600, fit: 'cover', quality: 90, format: 'jpeg' },
     },
     {
       id: 'quality-75',
-      label: '표준 (75%)',
+      label: 'Standard (75%)',
       options: { width: 800, height: 600, fit: 'cover', quality: 75, format: 'jpeg' },
     },
     {
       id: 'quality-60',
-      label: '저품질 (60%)',
+      label: 'Low Quality (60%)',
       options: { width: 800, height: 600, fit: 'cover', quality: 60, format: 'jpeg' },
     },
     {
       id: 'quality-40',
-      label: '최저 품질 (40%)',
+      label: 'Lowest Quality (40%)',
       options: { width: 800, height: 600, fit: 'cover', quality: 40, format: 'jpeg' },
     },
   ],
   socialMedia: [
     {
       id: 'instagram-post',
-      label: 'Instagram 게시물 (1080x1080)',
+      label: 'Instagram Post (1080x1080)',
       options: { width: 1080, height: 1080, fit: 'cover', quality: 85, format: 'jpeg' },
     },
     {
       id: 'instagram-story',
-      label: 'Instagram 스토리 (1080x1920)',
+      label: 'Instagram Story (1080x1920)',
       options: { width: 1080, height: 1920, fit: 'cover', quality: 85, format: 'jpeg' },
     },
     {
       id: 'twitter-post',
-      label: 'Twitter 게시물 (1200x675)',
+      label: 'Twitter Post (1200x675)',
       options: { width: 1200, height: 675, fit: 'cover', quality: 85, format: 'jpeg' },
     },
     {
       id: 'facebook-cover',
-      label: 'Facebook 커버 (820x312)',
+      label: 'Facebook Cover (820x312)',
       options: { width: 820, height: 312, fit: 'cover', quality: 85, format: 'jpeg' },
     },
     {
       id: 'youtube-thumbnail',
-      label: 'YouTube 썸네일 (1280x720)',
+      label: 'YouTube Thumbnail (1280x720)',
       options: { width: 1280, height: 720, fit: 'cover', quality: 90, format: 'jpeg' },
     },
   ],
   responsive: [
     {
       id: 'desktop-hd',
-      label: '데스크톱 HD (1920x1080)',
+      label: 'Desktop HD (1920x1080)',
       options: { width: 1920, height: 1080, fit: 'cover', quality: 85, format: 'jpeg' },
     },
     {
       id: 'laptop',
-      label: '노트북 (1366x768)',
+      label: 'Laptop (1366x768)',
       options: { width: 1366, height: 768, fit: 'cover', quality: 85, format: 'jpeg' },
     },
     {
       id: 'tablet',
-      label: '태블릿 (768x1024)',
+      label: 'Tablet (768x1024)',
       options: { width: 768, height: 1024, fit: 'cover', quality: 80, format: 'jpeg' },
     },
     {
       id: 'mobile',
-      label: '모바일 (375x667)',
+      label: 'Mobile (375x667)',
       options: { width: 375, height: 667, fit: 'cover', quality: 80, format: 'jpeg' },
     },
   ],
   backgrounds: [
     {
       id: 'bg-white',
-      label: '배경: 흰색',
+      label: 'Background: White',
       options: { width: 400, height: 300, fit: 'contain', quality: 85, format: 'jpeg', background: '#ffffff' },
     },
     {
       id: 'bg-black',
-      label: '배경: 검은색',
+      label: 'Background: Black',
       options: { width: 400, height: 300, fit: 'contain', quality: 85, format: 'jpeg', background: '#000000' },
     },
     {
       id: 'bg-gray',
-      label: '배경: 회색',
+      label: 'Background: Gray',
       options: { width: 400, height: 300, fit: 'contain', quality: 85, format: 'jpeg', background: '#808080' },
     },
     {
       id: 'bg-blue',
-      label: '배경: 파란색',
+      label: 'Background: Blue',
       options: { width: 400, height: 300, fit: 'contain', quality: 85, format: 'jpeg', background: '#4A90E2' },
     },
   ],
   thumbnails: [
     {
       id: 'thumb-small',
-      label: '작은 썸네일 (100x100)',
+      label: 'Small Thumbnail (100x100)',
       options: { width: 100, height: 100, fit: 'cover', quality: 80, format: 'jpeg' },
     },
     {
       id: 'thumb-medium',
-      label: '중간 썸네일 (200x200)',
+      label: 'Medium Thumbnail (200x200)',
       options: { width: 200, height: 200, fit: 'cover', quality: 80, format: 'jpeg' },
     },
     {
       id: 'thumb-large',
-      label: '큰 썸네일 (300x300)',
+      label: 'Large Thumbnail (300x300)',
       options: { width: 300, height: 300, fit: 'cover', quality: 80, format: 'jpeg' },
     },
   ],
 };
 
 /**
- * 프리셋 카테고리 구조
+ * Preset category structure
  */
 const PRESET_CATEGORIES = [
   {
-    category: '썸네일',
-    presets: [{ key: 'thumbnails', label: '썸네일 비교', count: 3, description: '다양한 썸네일 크기 비교' }],
+    category: 'Thumbnails',
+    presets: [{ key: 'thumbnails', label: 'Thumbnail Comparison', count: 3, description: 'Compare various thumbnail sizes' }],
   },
   {
-    category: '크기 및 해상도',
+    category: 'Size & Resolution',
     presets: [
-      { key: 'sizes', label: '크기 비교', count: 4, description: '다양한 크기로 비교' },
-      { key: 'responsive', label: '반응형 웹', count: 4, description: '디바이스별 최적 크기' },
+      { key: 'sizes', label: 'Size Comparison', count: 4, description: 'Compare various sizes' },
+      { key: 'responsive', label: 'Responsive Web', count: 4, description: 'Optimal sizes by device' },
     ],
   },
   {
-    category: '포맷 및 품질',
+    category: 'Format & Quality',
     presets: [
-      { key: 'formats', label: '포맷 비교', count: 5, description: 'JPEG, PNG, WebP 비교' },
-      { key: 'qualities', label: '품질 비교', count: 5, description: '압축 품질별 용량 비교' },
+      { key: 'formats', label: 'Format Comparison', count: 5, description: 'Compare JPEG, PNG, WebP' },
+      { key: 'qualities', label: 'Quality Comparison', count: 5, description: 'Compare file sizes by compression quality' },
     ],
   },
   {
-    category: 'Fit 모드',
+    category: 'Fit Modes',
     presets: [
-      { key: 'fits', label: 'Fit 모드 비교', count: 5, description: '5가지 fit 모드 비교' },
-      { key: 'backgrounds', label: '배경색 비교', count: 4, description: 'contain fit 배경색' },
+      { key: 'fits', label: 'Fit Mode Comparison', count: 5, description: 'Compare 5 different fit modes' },
+      { key: 'backgrounds', label: 'Background Color Comparison', count: 4, description: 'Contain fit background colors' },
     ],
   },
   {
-    category: '소셜 미디어',
+    category: 'Social Media',
     presets: [
       {
         key: 'socialMedia',
-        label: '플랫폼별 최적화',
+        label: 'Platform Optimization',
         count: 5,
-        description: 'Instagram, Twitter 등',
+        description: 'Instagram, Twitter, etc.',
       },
     ],
   },
 ];
 
 /**
- * 배치 처리 및 결과 비교 데모
- * Phase 4.2: 여러 설정으로 동시 처리 및 결과 비교
+ * Batch processing and result comparison demo
+ * Phase 4.2: Simultaneous processing with multiple settings and result comparison
  */
 export function BatchComparisonDemo() {
   const { originalImage, handleImageSelect } = useImageProcessing();
@@ -284,14 +284,14 @@ export function BatchComparisonDemo() {
     useBatchProcessing(originalImage, {
       concurrency: 3,
       onProgress: (completed, total) => {
-        // 진행 상황 표시용
+        // For progress display
       },
     });
 
   const [selectedPreset, setSelectedPreset] = useState<string>('thumbnails');
 
   /**
-   * 프리셋 처리
+   * Process preset
    */
   const handlePresetProcess = useCallback(
     async (presetKey: string) => {
@@ -304,7 +304,7 @@ export function BatchComparisonDemo() {
     [processBatch]
   );
 
-  // 이미지 선택 시 자동으로 디폴트 프리셋으로 배치 처리 시작
+  // Automatically start batch processing with default preset when image is selected
   useEffect(() => {
     if (originalImage && !processing && selectedPreset) {
       handlePresetProcess(selectedPreset);
@@ -312,7 +312,7 @@ export function BatchComparisonDemo() {
   }, [originalImage, selectedPreset, handlePresetProcess]);
 
   /**
-   * 개별 이미지 다운로드
+   * Download individual image
    */
   const downloadSingleImage = useCallback(async (result: (typeof results)[number]) => {
     if (!result.result?.src) return;
@@ -326,13 +326,13 @@ export function BatchComparisonDemo() {
 
       FileSaver.saveAs(blob, filename);
     } catch (err) {
-      console.error('개별 이미지 다운로드 실패:', err);
-      alert('이미지 다운로드에 실패했습니다.');
+      console.error('Individual image download failed:', err);
+      alert('Image download failed.');
     }
   }, []);
 
   /**
-   * 파일 크기 포맷
+   * Format file size
    */
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '-';
@@ -342,7 +342,7 @@ export function BatchComparisonDemo() {
   };
 
   /**
-   * 처리 시간 포맷
+   * Format processing time
    */
   const formatTime = (ms?: number) => {
     if (!ms) return '-';
@@ -350,7 +350,7 @@ export function BatchComparisonDemo() {
   };
 
   /**
-   * 상태 아이콘
+   * Status icon
    */
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -369,82 +369,82 @@ export function BatchComparisonDemo() {
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
         <CompareArrows sx={{ mr: 1, verticalAlign: 'middle' }} />
-        배치 처리 및 결과 비교
+        Batch Processing & Result Comparison
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        여러 설정으로 동시에 이미지를 처리하고 결과를 비교할 수 있습니다.
+        Process images simultaneously with multiple settings and compare results.
       </Typography>
 
       <Grid container spacing={4}>
-        {/* 좌측: 컨트롤 */}
+        {/* Left: Controls */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
-            {/* 이미지 업로더 */}
+            {/* Image uploader */}
             <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="basic" />
 
-            {/* 에러 표시 */}
+            {/* Error display */}
             {error && <ErrorDisplay error={error} onClear={reset} />}
 
-            {/* 진행 상황 */}
+            {/* Progress */}
             {processing && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    처리 중...
+                    Processing...
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {progress.completed} / {progress.total} 완료
+                    {progress.completed} / {progress.total} completed
                   </Typography>
                   <LinearProgress variant="determinate" value={(progress.completed / progress.total) * 100} />
                   <Button fullWidth variant="outlined" color="error" onClick={cancel} sx={{ mt: 2 }}>
-                    취소
+                    Cancel
                   </Button>
                 </CardContent>
               </Card>
             )}
 
-            {/* 통계 */}
+            {/* Statistics */}
             {results.length > 0 && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    통계
+                    Statistics
                   </Typography>
                   <Stack spacing={1}>
                     <Box display="flex" justifyContent="space-between">
-                      <Typography variant="body2">전체:</Typography>
+                      <Typography variant="body2">Total:</Typography>
                       <Typography variant="body2" fontWeight="bold">
-                        {stats.total}개
+                        {stats.total} items
                       </Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between">
                       <Typography variant="body2" color="success.main">
-                        완료:
+                        Completed:
                       </Typography>
                       <Typography variant="body2" fontWeight="bold" color="success.main">
-                        {stats.completed}개
+                        {stats.completed} items
                       </Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between">
                       <Typography variant="body2" color="error.main">
-                        실패:
+                        Failed:
                       </Typography>
                       <Typography variant="body2" fontWeight="bold" color="error.main">
-                        {stats.failed}개
+                        {stats.failed} items
                       </Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between">
                       <Typography variant="body2" color="info.main">
-                        진행중:
+                        In Progress:
                       </Typography>
                       <Typography variant="body2" fontWeight="bold" color="info.main">
-                        {stats.processing}개
+                        {stats.processing} items
                       </Typography>
                     </Box>
                   </Stack>
                   <Stack spacing={1} sx={{ mt: 2 }}>
                     <Button fullWidth variant="outlined" onClick={reset}>
-                      초기화
+                      Reset
                     </Button>
                   </Stack>
                 </CardContent>
@@ -453,14 +453,14 @@ export function BatchComparisonDemo() {
           </Stack>
         </Grid>
 
-        {/* 우측: 결과 */}
+        {/* Right: Results */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* 프리셋 선택 */}
+            {/* Preset selection */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  프리셋 선택
+                  Select Preset
                 </Typography>
 
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -484,16 +484,16 @@ export function BatchComparisonDemo() {
 
             {results.length === 0 ? (
               <Alert severity="info">
-                <Typography variant="body2">프리셋을 선택하여 배치 처리를 시작하세요.</Typography>
+                <Typography variant="body2">Select a preset to start batch processing.</Typography>
               </Alert>
             ) : (
               <>
-                {/* 이미지 그리드 */}
+                {/* Image grid */}
                 {successfulResults.length > 0 && (
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        이미지 미리보기
+                        Image Preview
                       </Typography>
                       <Grid container spacing={2}>
                         {successfulResults.map((result) => (
@@ -520,7 +520,7 @@ export function BatchComparisonDemo() {
                                       objectFit: 'contain',
                                     }}
                                     onError={(e) => {
-                                      console.error('이미지 로드 실패:', result.label, result.result?.src, e);
+                                      console.error('Image load failed:', result.label, result.result?.src, e);
                                     }}
                                   />
                                 ) : (
@@ -534,9 +534,9 @@ export function BatchComparisonDemo() {
                                       textAlign: 'center',
                                     }}
                                   >
-                                    이미지 없음
+                                    No Image
                                     <br />
-                                    {result.result ? '(src 없음)' : '(result 없음)'}
+                                    {result.result ? '(no src)' : '(no result)'}
                                   </div>
                                 )}
                               </Box>
@@ -564,7 +564,7 @@ export function BatchComparisonDemo() {
                                   startIcon={<Download />}
                                   onClick={() => downloadSingleImage(result)}
                                 >
-                                  다운로드
+                                  Download
                                 </Button>
                               </CardContent>
                             </Card>
@@ -575,12 +575,12 @@ export function BatchComparisonDemo() {
                   </Card>
                 )}
 
-                {/* 실패 목록 */}
+                {/* Failed results */}
                 {failedResults.length > 0 && (
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom color="error">
-                        실패한 처리
+                        Failed Processing
                       </Typography>
                       <Stack spacing={1}>
                         {failedResults.map((result) => (
@@ -595,21 +595,21 @@ export function BatchComparisonDemo() {
                   </Card>
                 )}
 
-                {/* 결과 테이블 */}
+                {/* Results table */}
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
-                      처리 결과
+                      Processing Results
                     </Typography>
                     <TableContainer component={Paper} variant="outlined">
                       <Table size="small">
                         <TableHead>
                           <TableRow>
-                            <TableCell>상태</TableCell>
-                            <TableCell>이름</TableCell>
-                            <TableCell align="right">크기</TableCell>
-                            <TableCell align="right">용량</TableCell>
-                            <TableCell align="right">처리시간</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell>Name</TableCell>
+                            <TableCell align="right">Size</TableCell>
+                            <TableCell align="right">File Size</TableCell>
+                            <TableCell align="right">Processing Time</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>

@@ -3,7 +3,7 @@ import { ClientThemeProvider } from '../components/providers/ThemeProvider'
 
 export const metadata: Metadata = {
   title: 'Web Image Util Examples',
-  description: '@cp949/web-image-util 라이브러리 예제 모음',
+  description: '@cp949/web-image-util library examples collection',
 }
 
 export default function RootLayout({

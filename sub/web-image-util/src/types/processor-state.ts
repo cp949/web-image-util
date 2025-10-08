@@ -1,58 +1,58 @@
 /**
- * 프로세서 상태 타입 정의
+ * Processor state type definitions
  *
- * @description resize() 호출 상태를 TypeScript 타입 레벨에서 추적하여
- * 컴파일 타임에 잘못된 사용법을 감지할 수 있습니다.
+ * @description Track resize() call state at TypeScript type level to
+ * detect incorrect usage at compile time.
  */
 
 /**
- * 프로세서 상태를 나타내는 브랜드 타입
+ * Brand type representing processor state
  */
 export interface ProcessorState {
   readonly __brand: 'ProcessorState';
 }
 
 /**
- * resize() 호출 전 상태
- * 이 상태에서는 resize() 메서드 호출이 가능합니다.
+ * State before resize() call
+ * In this state, resize() method can be called.
  */
 export interface BeforeResize extends ProcessorState {
   readonly __resizeState: 'before';
 }
 
 /**
- * resize() 호출 후 상태
- * 이 상태에서는 resize() 메서드 재호출이 불가능합니다.
+ * State after resize() call
+ * In this state, resize() method cannot be called again.
  */
 export interface AfterResize extends ProcessorState {
   readonly __resizeState: 'after';
 }
 
 /**
- * 상태 타입 유틸리티
+ * State type utilities
  */
 export type ProcessorStateType = BeforeResize | AfterResize;
 
 /**
- * 타입 가드: resize() 호출 가능 여부 확인
+ * Type guard: Check if resize() can be called
  */
 export type CanResize<T extends ProcessorState> = T extends BeforeResize ? true : false;
 
 /**
- * 조건부 타입: resize() 호출 후 상태 전환
+ * Conditional type: State transition after resize() call
  */
 export type AfterResizeCall<T extends ProcessorState> = T extends BeforeResize ? AfterResize : never;
 
 /**
- * 컴파일 타임 에러 메시지 타입
+ * Compile-time error message type
  */
 export type ResizeAlreadyCalledError = {
-  error: 'resize() 메서드는 한 번만 호출할 수 있습니다. 최종 크기를 직접 지정하세요.';
-  solution: '올바른 사용법: .resize({ fit: "cover", width: 300, height: 200 })';
-  avoid: '잘못된 사용법: .resize(...).resize(...)';
+  error: 'resize() method can only be called once. Specify final size directly.';
+  solution: 'Correct usage: .resize({ fit: "cover", width: 300, height: 200 })';
+  avoid: 'Incorrect usage: .resize(...).resize(...)';
 };
 
 /**
- * 타입 레벨 제약 조건 검사
+ * Type-level constraint check
  */
 export type EnsureCanResize<T extends ProcessorState> = CanResize<T> extends true ? void : ResizeAlreadyCalledError;

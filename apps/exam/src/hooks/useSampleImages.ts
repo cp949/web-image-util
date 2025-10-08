@@ -1,232 +1,232 @@
 import { useCallback } from 'react';
 
 /**
- * 샘플 이미지 정보 타입
+ * Sample image information type
  */
 export interface SampleImage {
-  /** 이미지 이름 */
+  /** Image name */
   name: string;
-  /** 이미지 경로 */
+  /** Image path */
   path: string;
-  /** 이미지 타입 */
+  /** Image type */
   type: 'jpg' | 'png' | 'svg';
-  /** 이미지 크기 카테고리 */
+  /** Image size category */
   size: 'small' | 'medium' | 'large';
-  /** 설명 */
+  /** Description */
   description: string;
-  /** 미리보기 경로 */
+  /** Preview path */
   preview: string;
 }
 
 /**
- * 샘플 이미지 목록
+ * Sample image list
  */
 const SAMPLE_IMAGES: SampleImage[] = [
-  // Sample 1 - 고화질 사진
+  // Sample 1 - High quality photos
   {
-    name: 'Sample 1 - 고화질 사진',
+    name: 'Sample 1 - High Quality Photo',
     path: '/sample-images/sample1.jpg',
     type: 'jpg',
     size: 'large',
-    description: '고화질 풍경 사진 (JPEG, ~800KB)',
+    description: 'High quality landscape photo (JPEG, ~800KB)',
     preview: '/sample-images/sample1.jpg',
   },
   {
-    name: 'Sample 1 - 투명 그래픽',
+    name: 'Sample 1 - Transparent Graphic',
     path: '/sample-images/sample1.png',
     type: 'png',
     size: 'medium',
-    description: '투명도 포함 그래픽 (PNG, ~220KB)',
+    description: 'Graphic with transparency (PNG, ~220KB)',
     preview: '/sample-images/sample1.png',
   },
   {
-    name: 'Sample 1 - 간단한 벡터',
+    name: 'Sample 1 - Simple Vector',
     path: '/sample-images/sample1.svg',
     type: 'svg',
     size: 'small',
-    description: '간단한 벡터 이미지 (SVG, ~5KB)',
+    description: 'Simple vector image (SVG, ~5KB)',
     preview: '/sample-images/sample1.svg',
   },
-  // Sample 2 - 대용량 이미지
+  // Sample 2 - Large images
   {
-    name: 'Sample 2 - 대용량 사진',
+    name: 'Sample 2 - Large Photo',
     path: '/sample-images/sample2.jpg',
     type: 'jpg',
     size: 'large',
-    description: '대용량 고해상도 사진 (JPEG, ~2MB)',
+    description: 'Large high-resolution photo (JPEG, ~2MB)',
     preview: '/sample-images/sample2.jpg',
   },
   {
-    name: 'Sample 2 - 작은 그래픽',
+    name: 'Sample 2 - Small Graphic',
     path: '/sample-images/sample2.png',
     type: 'png',
     size: 'small',
-    description: '작은 그래픽 이미지 (PNG, ~4KB)',
+    description: 'Small graphic image (PNG, ~4KB)',
     preview: '/sample-images/sample2.png',
   },
   {
-    name: 'Sample 2 - 중간 벡터',
+    name: 'Sample 2 - Medium Vector',
     path: '/sample-images/sample2.svg',
     type: 'svg',
     size: 'medium',
-    description: '중간 복잡도 벡터 (SVG, ~23KB)',
+    description: 'Medium complexity vector (SVG, ~23KB)',
     preview: '/sample-images/sample2.svg',
   },
-  // Sample 3 - 작은 이미지
+  // Sample 3 - Small images
   {
-    name: 'Sample 3 - 작은 사진',
+    name: 'Sample 3 - Small Photo',
     path: '/sample-images/sample3.jpg',
     type: 'jpg',
     size: 'small',
-    description: '작은 사진 (JPEG, ~9KB)',
+    description: 'Small photo (JPEG, ~9KB)',
     preview: '/sample-images/sample3.jpg',
   },
   {
-    name: 'Sample 3 - 작은 PNG',
+    name: 'Sample 3 - Small PNG',
     path: '/sample-images/sample3.png',
     type: 'png',
     size: 'small',
-    description: '작은 PNG 이미지 (~11KB)',
+    description: 'Small PNG image (~11KB)',
     preview: '/sample-images/sample3.png',
   },
   {
-    name: 'Sample 3 - 복잡한 벡터',
+    name: 'Sample 3 - Complex Vector',
     path: '/sample-images/sample3.svg',
     type: 'svg',
     size: 'large',
-    description: '복잡한 벡터 이미지 (SVG, ~155KB)',
+    description: 'Complex vector image (SVG, ~155KB)',
     preview: '/sample-images/sample3.svg',
   },
-  // Sample 4 - 중간 크기 이미지
+  // Sample 4 - Medium size images
   {
-    name: 'Sample 4 - 중간 사진',
+    name: 'Sample 4 - Medium Photo',
     path: '/sample-images/sample4.jpg',
     type: 'jpg',
     size: 'medium',
-    description: '중간 크기 사진 (JPEG, ~34KB)',
+    description: 'Medium size photo (JPEG, ~34KB)',
     preview: '/sample-images/sample4.jpg',
   },
   {
-    name: 'Sample 4 - 중간 PNG',
+    name: 'Sample 4 - Medium PNG',
     path: '/sample-images/sample4.png',
     type: 'png',
     size: 'medium',
-    description: '중간 PNG 이미지 (~24KB)',
+    description: 'Medium PNG image (~24KB)',
     preview: '/sample-images/sample4.png',
   },
   {
-    name: 'Sample 4 - 초대형 벡터',
+    name: 'Sample 4 - Extra Large Vector',
     path: '/sample-images/sample4.svg',
     type: 'svg',
     size: 'large',
-    description: '초대형 복잡 벡터 (SVG, ~305KB)',
+    description: 'Extra large complex vector (SVG, ~305KB)',
     preview: '/sample-images/sample4.svg',
   },
 ];
 
 /**
- * 샘플 이미지 관리 훅
+ * Sample image management hook
  */
 export function useSampleImages() {
   /**
-   * 타입별 이미지 필터링
+   * Filter images by type
    */
   const getImagesByType = useCallback((type: 'jpg' | 'png' | 'svg') => {
     return SAMPLE_IMAGES.filter((img) => img.type === type);
   }, []);
 
   /**
-   * 크기별 이미지 필터링
+   * Filter images by size
    */
   const getImagesBySize = useCallback((size: 'small' | 'medium' | 'large') => {
     return SAMPLE_IMAGES.filter((img) => img.size === size);
   }, []);
 
   /**
-   * 추천 이미지 가져오기 - Phase 3: 확장된 추천 시스템
+   * Get recommended images - Phase 3: Extended recommendation system
    */
   const getRecommendedImages = useCallback((demoType: string): SampleImage[] => {
     const recommendations: Record<string, { images: string[]; reason: string }> = {
-      // 기본 데모들
+      // Basic demos
       basic: {
         images: ['sample1.jpg', 'sample2.png', 'sample3.jpg'],
-        reason: '다양한 크기와 포맷으로 기본 기능 테스트에 최적',
+        reason: 'Optimal for basic functionality testing with various sizes and formats',
       },
       padding: {
         images: ['sample1.jpg', 'sample2.png', 'sample1.svg'],
-        reason: '패딩 효과가 명확히 보이는 이미지들',
+        reason: 'Images where padding effects are clearly visible',
       },
       'quick-preview': {
         images: ['sample3.jpg', 'sample4.jpg', 'sample2.png'],
-        reason: '빠른 미리보기에 적합한 중간 크기 이미지',
+        reason: 'Medium-sized images suitable for quick previews',
       },
 
-      // 고급 기능
+      // Advanced features
       presets: {
         images: ['sample1.jpg', 'sample3.png', 'sample4.jpg'],
-        reason: '프리셋 기능 시연에 적합한 다양한 이미지',
+        reason: 'Diverse images suitable for demonstrating preset functions',
       },
       advanced: {
         images: ['sample4.svg', 'sample2.png', 'sample3.svg'],
-        reason: '고급 처리 기능 테스트에 적합',
+        reason: 'Suitable for advanced processing feature testing',
       },
       filters: {
         images: ['sample1.jpg', 'sample2.jpg', 'sample4.jpg'],
-        reason: '필터 효과가 잘 보이는 고화질 사진',
+        reason: 'High-quality photos where filter effects are clearly visible',
       },
 
-      // SVG 관련
+      // SVG related
       svg: {
         images: ['sample1.svg', 'sample2.svg', 'sample3.svg', 'sample4.svg'],
-        reason: 'SVG 처리 및 호환성 테스트용',
+        reason: 'For SVG processing and compatibility testing',
       },
       'svg-quality': {
         images: ['sample3.svg', 'sample4.svg', 'sample2.svg'],
-        reason: 'SVG 품질 테스트를 위한 복잡한 벡터 이미지',
+        reason: 'Complex vector images for SVG quality testing',
       },
 
-      // 성능 및 배치
+      // Performance and batch
       batch: {
         images: ['sample1.jpg', 'sample2.png', 'sample3.svg', 'sample4.jpg'],
-        reason: '배치 처리를 위한 다양한 포맷 혼합',
+        reason: 'Mixed formats for batch processing',
       },
       performance: {
         images: ['sample2.jpg', 'sample1.jpg', 'sample4.jpg'],
-        reason: '성능 측정을 위한 대용량 이미지',
+        reason: 'Large images for performance measurement',
       },
       'performance-benchmark': {
         images: ['sample2.jpg', 'sample4.svg'],
-        reason: '벤치마크 테스트용 고해상도 이미지',
+        reason: 'High-resolution images for benchmark testing',
       },
 
-      // 변환 및 포맷
+      // Conversion and format
       converters: {
         images: ['sample1.jpg', 'sample2.png', 'sample1.svg'],
-        reason: '다양한 포맷 변환 테스트용',
+        reason: 'For various format conversion testing',
       },
       'smart-format': {
         images: ['sample1.jpg', 'sample2.jpg', 'sample3.jpg'],
-        reason: '스마트 포맷 선택 테스트용 JPEG 이미지',
+        reason: 'JPEG images for smart format selection testing',
       },
       'image-source-converter': {
         images: ['sample1.jpg', 'sample2.png', 'sample3.svg'],
-        reason: '소스 타입 변환 테스트용',
+        reason: 'For source type conversion testing',
       },
 
-      // 비교 및 갤러리
+      // Comparison and gallery
       'fit-mode-comparison': {
         images: ['sample1.jpg', 'sample2.png'],
-        reason: 'Fit 모드 비교를 위한 일반적인 비율 이미지',
+        reason: 'Common aspect ratio images for fit mode comparison',
       },
       'preview-gallery': {
         images: ['sample1.jpg', 'sample2.png', 'sample3.jpg', 'sample4.jpg'],
-        reason: '갤러리 미리보기용 다양한 이미지',
+        reason: 'Various images for gallery preview',
       },
 
-      // 개발자 도구
+      // Developer tools
       'dev-tools': {
         images: ['sample1.jpg', 'sample2.png', 'sample3.svg'],
-        reason: '개발 도구용',
+        reason: 'For development tools',
       },
     };
 
@@ -239,13 +239,13 @@ export function useSampleImages() {
   }, []);
 
   return {
-    /** 전체 샘플 이미지 목록 */
+    /** Complete sample image list */
     sampleImages: SAMPLE_IMAGES,
-    /** 타입별 필터링 */
+    /** Filter by type */
     getImagesByType,
-    /** 크기별 필터링 */
+    /** Filter by size */
     getImagesBySize,
-    /** 추천 이미지 가져오기 */
+    /** Get recommended images */
     getRecommendedImages,
   };
 }

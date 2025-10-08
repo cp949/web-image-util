@@ -1,13 +1,13 @@
 /**
- * OnehotRenderer 통합 테스트
+ * OnehotRenderer Integration Test
  *
- * Phase 2 Step 2 검증:
- * 1. ResizeCalculator + OnehotRenderer 통합 동작
- * 2. 단일 drawImage 호출로 리사이징 + 배치 동시 처리
- * 3. 배경색 적용 (transparent, 흰색, 반투명)
- * 4. 부동소수점 좌표 처리 (Math.round)
- * 5. 에러 처리 (validateLayout)
- * 6. 5가지 fit 모드에서 정상 작동
+ * Phase 2 Step 2 Validation:
+ * 1. ResizeCalculator + OnehotRenderer integration
+ * 2. Single drawImage call for simultaneous resizing + placement
+ * 3. Background color application (transparent, white, translucent)
+ * 4. Floating point coordinate handling (Math.round)
+ * 5. Error handling (validateLayout)
+ * 6. Proper operation in 5 fit modes
  */
 
 import { describe, expect, it } from 'vitest';
@@ -16,7 +16,7 @@ import { ResizeCalculator } from '../../../src/core/resize-calculator';
 import type { ResizeConfig } from '../../../src/types/resize-config';
 
 // ============================================================================
-// 테스트 유틸리티
+// Test Utilities
 // ============================================================================
 
 function createMockCanvas(width: number, height: number): HTMLCanvasElement {
@@ -27,15 +27,15 @@ function createMockCanvas(width: number, height: number): HTMLCanvasElement {
 }
 
 // ============================================================================
-// 테스트 케이스
+// Test Cases
 // ============================================================================
 
 describe('OnehotRenderer - Phase 2 Step 2', () => {
   const calculator = new ResizeCalculator();
   const renderer = new OnehotRenderer();
 
-  describe('기본 렌더링', () => {
-    it('cover fit으로 기본 렌더링', () => {
+  describe('Basic Rendering', () => {
+    it('should render with cover fit', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const config: ResizeConfig = { fit: 'cover', width: 200, height: 200 };
       const layout = calculator.calculateFinalLayout(100, 100, config);
@@ -46,19 +46,19 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
       expect(result.height).toBe(200);
     });
 
-    it('contain fit + 패딩 적용', () => {
+    it('should apply contain fit + padding', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const config: ResizeConfig = { fit: 'contain', width: 200, height: 200, padding: 20 };
       const layout = calculator.calculateFinalLayout(100, 100, config);
 
       const result = renderer.render(sourceCanvas, layout, config, { background: '#ffffff' });
 
-      // padding 20 포함 → 240x240
+      // Including padding 20 → 240x240
       expect(result.width).toBe(240);
       expect(result.height).toBe(240);
     });
 
-    it('fill fit (비율 무시)', () => {
+    it('should apply fill fit (ignore aspect ratio)', () => {
       const sourceCanvas = createMockCanvas(100, 200);
       const config: ResizeConfig = { fit: 'fill', width: 300, height: 150 };
       const layout = calculator.calculateFinalLayout(100, 200, config);
@@ -70,8 +70,8 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
     });
   });
 
-  describe('fit 모드별 동작', () => {
-    it('maxFit: 작은 이미지는 확대 안함', () => {
+  describe('Fit Mode Operations', () => {
+    it('maxFit: should not enlarge small images', () => {
       const smallCanvas = createMockCanvas(91, 114);
       const config: ResizeConfig = { fit: 'maxFit', width: 300, height: 200 };
       const layout = calculator.calculateFinalLayout(91, 114, config);
@@ -82,19 +82,19 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
       expect(result.height).toBeCloseTo(114, 1);
     });
 
-    it('maxFit: 큰 이미지는 축소됨', () => {
+    it('maxFit: should shrink large images', () => {
       const largeCanvas = createMockCanvas(800, 600);
       const config: ResizeConfig = { fit: 'maxFit', width: 300, height: 200 };
       const layout = calculator.calculateFinalLayout(800, 600, config);
 
       const result = renderer.render(largeCanvas, layout, config);
 
-      // 800x600 (4:3) → maxFit 300x200 → height 기준으로 축소 → 267x200
+      // 800x600 (4:3) → maxFit 300x200 → shrink by height → 267x200
       expect(result.width).toBeCloseTo(267, 1);
       expect(result.height).toBeCloseTo(200, 1);
     });
 
-    it('minFit: 작은 이미지는 확대됨', () => {
+    it('minFit: should enlarge small images', () => {
       const smallCanvas = createMockCanvas(50, 50);
       const config: ResizeConfig = { fit: 'minFit', width: 200, height: 200 };
       const layout = calculator.calculateFinalLayout(50, 50, config);
@@ -105,7 +105,7 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
       expect(result.height).toBeCloseTo(200, 1);
     });
 
-    it('minFit: 큰 이미지는 축소 안함', () => {
+    it('minFit: should not shrink large images', () => {
       const largeCanvas = createMockCanvas(800, 600);
       const config: ResizeConfig = { fit: 'minFit', width: 300, height: 200 };
       const layout = calculator.calculateFinalLayout(800, 600, config);
@@ -117,8 +117,8 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
     });
   });
 
-  describe('배경색 처리', () => {
-    it('transparent 배경', () => {
+  describe('Background Color Handling', () => {
+    it('should apply transparent background', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const config: ResizeConfig = { fit: 'contain', width: 200, height: 200 };
       const layout = calculator.calculateFinalLayout(100, 100, config);
@@ -129,7 +129,7 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
       expect(result.height).toBe(200);
     });
 
-    it('흰색 배경', () => {
+    it('should apply white background', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const config: ResizeConfig = { fit: 'contain', width: 200, height: 200 };
       const layout = calculator.calculateFinalLayout(100, 100, config);
@@ -140,7 +140,7 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
       expect(result.height).toBe(200);
     });
 
-    it('반투명 배경', () => {
+    it('should apply translucent background', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const config: ResizeConfig = { fit: 'contain', width: 200, height: 200 };
       const layout = calculator.calculateFinalLayout(100, 100, config);
@@ -154,8 +154,8 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
     });
   });
 
-  describe('품질 옵션', () => {
-    it('high 품질', () => {
+  describe('Quality Options', () => {
+    it('should apply high quality', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const config: ResizeConfig = { fit: 'cover', width: 200, height: 200 };
       const layout = calculator.calculateFinalLayout(100, 100, config);
@@ -165,7 +165,7 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
       expect(result.width).toBe(200);
     });
 
-    it('medium 품질', () => {
+    it('should apply medium quality', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const config: ResizeConfig = { fit: 'cover', width: 200, height: 200 };
       const layout = calculator.calculateFinalLayout(100, 100, config);
@@ -175,7 +175,7 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
       expect(result.width).toBe(200);
     });
 
-    it('low 품질', () => {
+    it('should apply low quality', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const config: ResizeConfig = { fit: 'cover', width: 200, height: 200 };
       const layout = calculator.calculateFinalLayout(100, 100, config);
@@ -186,8 +186,8 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
     });
   });
 
-  describe('에러 처리', () => {
-    it('잘못된 Canvas 크기 검증', () => {
+  describe('Error Handling', () => {
+    it('should validate invalid Canvas size', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const badLayout = {
         canvasSize: { width: 0, height: 0 },
@@ -200,7 +200,7 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
       }).toThrow('Invalid canvas size');
     });
 
-    it('NaN 좌표 검증', () => {
+    it('should validate NaN coordinates', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const badLayout = {
         canvasSize: { width: 200, height: 200 },
@@ -214,24 +214,24 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
     });
   });
 
-  describe('부동소수점 처리', () => {
-    it('부동소수점 좌표가 정수로 변환됨', () => {
+  describe('Floating Point Handling', () => {
+    it('should convert floating point coordinates to integers', () => {
       const sourceCanvas = createMockCanvas(100, 100);
       const config: ResizeConfig = { fit: 'contain', width: 333, height: 333 };
       const layout = calculator.calculateFinalLayout(100, 100, config);
 
       const result = renderer.render(sourceCanvas, layout, config);
 
-      // Math.round로 정수 좌표로 변환되어야 함
+      // Should be converted to integer coordinates by Math.round
       expect(result.width).toBe(333);
       expect(result.height).toBe(333);
     });
   });
 
-  describe('큰 Canvas 경고', () => {
-    it('매우 큰 Canvas는 경고만 출력, 에러는 아님 (스킵 - 메모리 문제)', () => {
-      // 주의: happy-dom에서 매우 큰 Canvas 생성 시 타임아웃 발생 가능
-      // 이 테스트는 실제 브라우저 환경에서만 실행하는 것이 안전함
+  describe('Large Canvas Warning', () => {
+    it('should only warn for very large Canvas, not error (skip - memory issue)', () => {
+      // Note: Creating very large Canvas in happy-dom may cause timeout
+      // This test is safe only in actual browser environment
       expect(true).toBe(true);
     });
   });

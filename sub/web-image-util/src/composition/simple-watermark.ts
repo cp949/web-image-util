@@ -1,6 +1,6 @@
 /**
- * 간소화된 워터마크 API
- * 사용하기 쉬운 워터마크 인터페이스
+ * Simplified watermark API
+ * Easy-to-use watermark interface
  */
 
 import type { ImageWatermarkOptions } from './image-watermark';
@@ -10,7 +10,7 @@ import type { TextStyle, TextWatermarkOptions } from './text-watermark';
 import { TextWatermark } from './text-watermark';
 
 /**
- * 간단한 위치 타입 (사용자 친화적)
+ * Simple position type (user-friendly)
  */
 export type SimplePosition =
   | 'top-left'
@@ -24,19 +24,19 @@ export type SimplePosition =
   | 'bottom-right';
 
 /**
- * 사전 정의된 텍스트 스타일
+ * Predefined text styles
  */
 export type PresetTextStyle =
-  | 'default' // 검은색, 16px, 투명도 80%
-  | 'white-shadow' // 흰색 텍스트, 검은 그림자
-  | 'black-shadow' // 검은색 텍스트, 흰 그림자
-  | 'bold-white' // 굵은 흰색 텍스트
-  | 'bold-black' // 굵은 검은색 텍스트
-  | 'outline' // 흰색 텍스트, 검은 테두리
-  | 'subtle'; // 회색, 투명도 60%
+  | 'default' // black, 16px, 80% opacity
+  | 'white-shadow' // white text, black shadow
+  | 'black-shadow' // black text, white shadow
+  | 'bold-white' // bold white text
+  | 'bold-black' // bold black text
+  | 'outline' // white text, black border
+  | 'subtle'; // gray, 60% opacity
 
 /**
- * 간단한 텍스트 워터마크 옵션
+ * Simple text watermark options
  */
 export interface SimpleTextWatermarkOptions {
   text: string;
@@ -45,30 +45,30 @@ export interface SimpleTextWatermarkOptions {
   size?: 'small' | 'medium' | 'large' | number;
   opacity?: number; // 0-1
   rotation?: number; // degrees
-  margin?: { x: number; y: number }; // 기본값: { x: 10, y: 10 }
+  margin?: { x: number; y: number }; // default: { x: 10, y: 10 }
 }
 
 /**
- * 간단한 이미지 워터마크 옵션
+ * Simple image watermark options
  */
 export interface SimpleImageWatermarkOptions {
   image: HTMLImageElement;
   position?: SimplePosition;
-  size?: 'small' | 'medium' | 'large' | number; // number는 scale 값 (0-1)
+  size?: 'small' | 'medium' | 'large' | number; // number is scale value (0-1)
   opacity?: number; // 0-1
   rotation?: number; // degrees
-  blendMode?: 'normal' | 'multiply' | 'overlay' | 'soft-light'; // 블렌드 모드
+  blendMode?: 'normal' | 'multiply' | 'overlay' | 'soft-light'; // blend mode
 }
 
 /**
- * 간소화된 워터마크 클래스
+ * Simplified watermark class
  */
 export class SimpleWatermark {
   /**
-   * 간단한 텍스트 워터마크 추가
-   * @param canvas - 대상 캔버스
-   * @param options - 워터마크 옵션
-   * @returns 워터마크가 추가된 캔버스
+   * Add simple text watermark
+   * @param canvas - target canvas
+   * @param options - watermark options
+   * @returns canvas with watermark added
    */
   static addText(canvas: HTMLCanvasElement, options: SimpleTextWatermarkOptions): HTMLCanvasElement {
     const {
@@ -81,16 +81,16 @@ export class SimpleWatermark {
       margin = { x: 10, y: 10 },
     } = options;
 
-    // 간단한 위치를 내부 Position으로 변환
+    // Convert simple position to internal Position
     const internalPosition = this.convertSimplePosition(position);
 
-    // 스타일 해석
+    // Resolve style
     const textStyle = this.resolveTextStyle(style, size);
     if (opacity !== undefined) {
       textStyle.opacity = opacity;
     }
 
-    // TextWatermark 설정
+    // TextWatermark configuration
     const watermarkOptions: TextWatermarkOptions = {
       text,
       position: internalPosition,
@@ -103,10 +103,10 @@ export class SimpleWatermark {
   }
 
   /**
-   * 간단한 이미지 워터마크 추가
-   * @param canvas - 대상 캔버스
-   * @param options - 워터마크 옵션
-   * @returns 워터마크가 추가된 캔버스
+   * Add simple image watermark
+   * @param canvas - target canvas
+   * @param options - watermark options
+   * @returns canvas with watermark added
    */
   static addImage(canvas: HTMLCanvasElement, options: SimpleImageWatermarkOptions): HTMLCanvasElement {
     const {
@@ -118,16 +118,16 @@ export class SimpleWatermark {
       blendMode = 'normal',
     } = options;
 
-    // 간단한 위치를 내부 Position으로 변환
+    // Convert simple position to internal Position
     const internalPosition = this.convertSimplePosition(position);
 
-    // 크기 해석
+    // Resolve size
     const scale = this.resolveImageSize(size, canvas, image);
 
-    // 블렌드 모드 매핑
+    // Map blend mode
     const globalCompositeOperation = this.mapBlendMode(blendMode);
 
-    // ImageWatermark 설정
+    // ImageWatermark configuration
     const watermarkOptions: ImageWatermarkOptions = {
       watermarkImage: image,
       position: internalPosition,
@@ -142,27 +142,27 @@ export class SimpleWatermark {
   }
 
   /**
-   * 로고 스타일 워터마크 (자동 크기 조정)
-   * @param canvas - 대상 캔버스
-   * @param image - 로고 이미지
-   * @param options - 추가 옵션
+   * Logo-style watermark (automatic size adjustment)
+   * @param canvas - target canvas
+   * @param image - logo image
+   * @param options - additional options
    */
   static addLogo(
     canvas: HTMLCanvasElement,
     image: HTMLImageElement,
     options: {
       position?: SimplePosition;
-      maxSize?: number; // 캔버스 크기의 백분율 (0-1)
+      maxSize?: number; // percentage of canvas size (0-1)
       opacity?: number;
     } = {}
   ): HTMLCanvasElement {
     const {
       position = 'bottom-right',
-      maxSize = 0.15, // 캔버스 크기의 15%
+      maxSize = 0.15, // 15% of canvas size
       opacity = 0.7,
     } = options;
 
-    // 적응형 크기 조정
+    // Adaptive size adjustment
     return ImageWatermark.addWithAdaptiveSize(canvas, {
       watermarkImage: image,
       position: this.convertSimplePosition(position),
@@ -174,10 +174,10 @@ export class SimpleWatermark {
   }
 
   /**
-   * 저작권 텍스트 워터마크 (자주 사용되는 패턴)
-   * @param canvas - 대상 캔버스
-   * @param copyright - 저작권 텍스트 (예: "© 2024 Company Name")
-   * @param options - 추가 옵션
+   * Copyright text watermark (commonly used pattern)
+   * @param canvas - target canvas
+   * @param copyright - copyright text (e.g., "© 2024 Company Name")
+   * @param options - additional options
    */
   static addCopyright(
     canvas: HTMLCanvasElement,
@@ -205,19 +205,19 @@ export class SimpleWatermark {
   }
 
   /**
-   * 반복 패턴 워터마크 (보안용)
-   * @param canvas - 대상 캔버스
-   * @param text - 반복할 텍스트
-   * @param options - 패턴 옵션
+   * Repeating pattern watermark (for security)
+   * @param canvas - target canvas
+   * @param text - text to repeat
+   * @param options - pattern options
    */
   static addPattern(
     canvas: HTMLCanvasElement,
     text: string,
     options: {
-      spacing?: number; // 픽셀 단위 간격
+      spacing?: number; // spacing in pixels
       opacity?: number;
       rotation?: number;
-      stagger?: boolean; // 엇갈림 배치
+      stagger?: boolean; // staggered arrangement
     } = {}
   ): HTMLCanvasElement {
     const { spacing = 200, opacity = 0.1, rotation = -45, stagger = true } = options;
@@ -227,7 +227,7 @@ export class SimpleWatermark {
 
     return TextWatermark.addRepeatingPattern(canvas, {
       text,
-      position: this.convertSimplePosition('center'), // 패턴에서는 위치 무시됨
+      position: this.convertSimplePosition('center'), // position ignored in pattern
       style: textStyle,
       rotation,
       spacing: { x: spacing, y: spacing },
@@ -236,7 +236,7 @@ export class SimpleWatermark {
   }
 
   /**
-   * 간단한 위치를 내부 Position enum으로 변환
+   * Convert simple position to internal Position enum
    */
   private static convertSimplePosition(position: SimplePosition): Position {
     const positionMap: Record<SimplePosition, Position> = {
@@ -255,13 +255,13 @@ export class SimpleWatermark {
   }
 
   /**
-   * 텍스트 스타일 해석
+   * Resolve text style
    */
   private static resolveTextStyle(
     style: PresetTextStyle | TextStyle,
     size: 'small' | 'medium' | 'large' | number
   ): TextStyle {
-    // 이미 TextStyle 객체인 경우 크기만 적용하고 반환
+    // If already a TextStyle object, apply size only and return
     if (typeof style === 'object') {
       const resolvedSize = this.resolveTextSize(size);
       return { ...style, fontSize: resolvedSize };
@@ -329,7 +329,7 @@ export class SimpleWatermark {
   }
 
   /**
-   * 텍스트 크기 해석
+   * Resolve text size
    */
   private static resolveTextSize(size: 'small' | 'medium' | 'large' | number): number {
     if (typeof size === 'number') {
@@ -346,7 +346,7 @@ export class SimpleWatermark {
   }
 
   /**
-   * 이미지 크기 해석
+   * Resolve image size
    */
   private static resolveImageSize(
     size: 'small' | 'medium' | 'large' | number,
@@ -357,14 +357,14 @@ export class SimpleWatermark {
       return size;
     }
 
-    // 캔버스 크기에 상대적인 크기 계산
+    // Calculate size relative to canvas
     const canvasSize = Math.min(canvas.width, canvas.height);
     const imageSize = Math.max(image.width, image.height);
 
     const relativeSizes = {
-      small: 0.05, // 캔버스의 5%
-      medium: 0.1, // 캔버스의 10%
-      large: 0.2, // 캔버스의 20%
+      small: 0.05, // 5% of canvas
+      medium: 0.1, // 10% of canvas
+      large: 0.2, // 20% of canvas
     };
 
     const targetSize = canvasSize * relativeSizes[size];
@@ -372,7 +372,7 @@ export class SimpleWatermark {
   }
 
   /**
-   * 블렌드 모드 매핑
+   * Map blend mode
    */
   private static mapBlendMode(blendMode: 'normal' | 'multiply' | 'overlay' | 'soft-light'): GlobalCompositeOperation {
     const blendModeMap: Record<string, GlobalCompositeOperation> = {
@@ -387,11 +387,11 @@ export class SimpleWatermark {
 }
 
 /**
- * 편의 함수들 - 더 간단한 사용법 제공
+ * Convenience functions - provide simpler usage
  */
 
 /**
- * 간단한 텍스트 워터마크 추가
+ * Add simple text watermark
  */
 export function addTextWatermark(
   canvas: HTMLCanvasElement,
@@ -402,7 +402,7 @@ export function addTextWatermark(
 }
 
 /**
- * 간단한 이미지 워터마크 추가
+ * Add simple image watermark
  */
 export function addImageWatermark(
   canvas: HTMLCanvasElement,
@@ -413,7 +413,7 @@ export function addImageWatermark(
 }
 
 /**
- * 저작권 워터마크 추가
+ * Add copyright watermark
  */
 export function addCopyright(canvas: HTMLCanvasElement, copyrightText: string): HTMLCanvasElement {
   return SimpleWatermark.addCopyright(canvas, copyrightText);

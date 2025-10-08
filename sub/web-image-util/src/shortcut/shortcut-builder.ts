@@ -1,27 +1,27 @@
 /**
- * ShortcutBuilder - 간편 리사이징 메서드 모음
+ * ShortcutBuilder - Collection of convenient resizing methods
  *
  * @description
- * 복잡한 ResizeConfig 객체 대신 직관적인 메서드 이름으로 리사이징을 수행할 수 있는
- * Shortcut API를 제공합니다.
+ * Provides a Shortcut API that allows you to perform resizing with intuitive method names
+ * instead of complex ResizeConfig objects.
  *
- * **장점:**
- * - 더 짧고 읽기 쉬운 코드
- * - 메서드 이름만으로 의도 파악 가능
- * - IDE 자동완성으로 빠른 작성
+ * **Benefits:**
+ * - Shorter and more readable code
+ * - Method names clearly convey intent
+ * - Fast coding with IDE autocomplete
  *
  * @example
  * ```typescript
- * // 기본 방식
+ * // Standard approach
  * processImage(src).resize({ fit: 'cover', width: 300, height: 200 });
  *
- * // Shortcut API (더 간결함)
+ * // Shortcut API (more concise)
  * processImage(src).shortcut.coverBox(300, 200);
  *
- * // 다양한 shortcut 메서드
- * processImage(src).shortcut.maxWidth(500);                 // 최대 너비 제한
- * processImage(src).shortcut.scale(1.5);                    // 1.5배 확대
- * processImage(src).shortcut.exactSize(400, 300);           // 정확한 크기
+ * // Various shortcut methods
+ * processImage(src).shortcut.maxWidth(500);                 // Maximum width constraint
+ * processImage(src).shortcut.scale(1.5);                    // 1.5x scale up
+ * processImage(src).shortcut.exactSize(400, 300);           // Exact size
  * ```
  */
 
@@ -31,37 +31,37 @@ import type { ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig } from '../
 import type { ScaleOperation } from '../types/shortcut-types';
 
 /**
- * ShortcutBuilder 클래스
+ * ShortcutBuilder class
  *
- * @template TState 현재 프로세서 상태 (BeforeResize | AfterResize)
+ * @template TState Current processor state (BeforeResize | AfterResize)
  */
 export class ShortcutBuilder<TState extends ProcessorState> implements IShortcutBuilder<TState> {
   constructor(private processor: IImageProcessor<TState>) {}
 
   // ============================================================================
-  // 🎯 Group 1: 직접 매핑 (Direct Mapping)
-  // ResizeConfig로 즉시 변환 가능한 메서드들
+  // 🎯 Group 1: Direct Mapping
+  // Methods that can be immediately converted to ResizeConfig
   // ============================================================================
 
   /**
-   * Cover 모드 리사이징 (이미지를 박스에 꽉 채움, 일부 잘릴 수 있음)
+   * Cover mode resizing (fills the box completely, may crop parts of the image)
    *
    * @description
-   * CSS object-fit: cover와 동일한 동작을 합니다.
-   * 이미지의 비율을 유지하면서 지정된 박스를 완전히 채웁니다.
-   * 이미지가 박스보다 크면 잘리고, 작으면 확대됩니다.
+   * Behaves identically to CSS object-fit: cover.
+   * Maintains the image's aspect ratio while completely filling the specified box.
+   * Images larger than the box will be cropped, smaller images will be enlarged.
    *
-   * @param width 출력 너비 (픽셀)
-   * @param height 출력 높이 (픽셀)
-   * @param options 추가 옵션 (padding, background)
-   * @returns AfterResize 상태의 IImageProcessor (체이닝 가능)
+   * @param width Output width (pixels)
+   * @param height Output height (pixels)
+   * @param options Additional options (padding, background)
+   * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
    * ```typescript
-   * // 기본 사용
+   * // Basic usage
    * await processImage(src).shortcut.coverBox(300, 200).toBlob();
    *
-   * // 옵션과 함께 사용
+   * // With options
    * await processImage(src).shortcut.coverBox(300, 200, {
    *   padding: 10,
    *   background: '#ffffff'
@@ -82,29 +82,29 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * Contain 모드 리사이징 (이미지 전체를 박스 안에 맞춤, 여백 생김)
+   * Contain mode resizing (fits entire image within the box, may create margins)
    *
    * @description
-   * CSS object-fit: contain과 동일한 동작을 합니다.
-   * 이미지의 비율을 유지하면서 전체 이미지가 박스 안에 들어가도록 합니다.
-   * 이미지가 박스보다 작을 때 확대할지 여부를 withoutEnlargement로 제어합니다.
+   * Behaves identically to CSS object-fit: contain.
+   * Maintains the image's aspect ratio while ensuring the entire image fits within the box.
+   * Use withoutEnlargement to control whether to enlarge images smaller than the box.
    *
-   * @param width 출력 너비 (픽셀)
-   * @param height 출력 높이 (픽셀)
-   * @param options 추가 옵션 (trimEmpty, withoutEnlargement, padding, background)
-   * @returns AfterResize 상태의 IImageProcessor (체이닝 가능)
+   * @param width Output width (pixels)
+   * @param height Output height (pixels)
+   * @param options Additional options (trimEmpty, withoutEnlargement, padding, background)
+   * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
    * ```typescript
-   * // 기본 사용 (확대/축소 모두 수행)
+   * // Basic usage (both enlargement and reduction)
    * await processImage(src).shortcut.containBox(300, 200).toBlob();
    *
-   * // 확대 방지 (축소만)
+   * // Prevent enlargement (reduction only)
    * await processImage(src).shortcut.containBox(300, 200, {
    *   withoutEnlargement: true
    * }).toBlob();
    *
-   * // 여백 자동 제거
+   * // Auto-trim empty space
    * await processImage(src).shortcut.containBox(300, 200, {
    *   trimEmpty: true,
    *   background: '#ffffff'
@@ -125,20 +125,20 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * Fill 모드 리사이징 (이미지를 정확한 크기로 늘림/압축, 비율 무시)
+   * Fill mode resizing (stretches/compresses image to exact size, ignores aspect ratio)
    *
    * @description
-   * CSS object-fit: fill과 동일한 동작을 합니다.
-   * 이미지의 비율을 무시하고 정확히 지정된 크기로 맞춥니다.
-   * 이미지가 늘어나거나 압축될 수 있습니다.
+   * Behaves identically to CSS object-fit: fill.
+   * Ignores the image's aspect ratio and fits exactly to the specified size.
+   * The image may be stretched or compressed.
    *
-   * @param width 출력 너비 (픽셀)
-   * @param height 출력 높이 (픽셀)
-   * @returns AfterResize 상태의 IImageProcessor (체이닝 가능)
+   * @param width Output width (pixels)
+   * @param height Output height (pixels)
+   * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
    * ```typescript
-   * // 정확히 300x200 크기로 변환 (비율 무시)
+   * // Convert to exactly 300x200 size (ignoring aspect ratio)
    * await processImage(src).shortcut.exactSize(300, 200).toBlob();
    * ```
    */
@@ -151,20 +151,20 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * 최대 너비 제한 (축소만, 확대 안함)
+   * Maximum width constraint (reduction only, no enlargement)
    *
    * @description
-   * 이미지의 너비가 지정된 값보다 크면 축소합니다.
-   * 이미지가 지정된 값보다 작으면 원본 크기를 유지합니다.
-   * 비율은 항상 유지됩니다.
+   * Reduces the image if its width exceeds the specified value.
+   * Maintains original size if the image is smaller than the specified value.
+   * Aspect ratio is always preserved.
    *
-   * @param width 최대 너비 (픽셀)
-   * @param options 추가 옵션 (padding, background)
-   * @returns AfterResize 상태의 IImageProcessor (체이닝 가능)
+   * @param width Maximum width (pixels)
+   * @param options Additional options (padding, background)
+   * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
    * ```typescript
-   * // 너비가 500px을 넘지 않도록 제한 (비율 유지, 축소만)
+   * // Limit width to not exceed 500px (maintains aspect ratio, reduction only)
    * await processImage(src).shortcut.maxWidth(500).toBlob();
    * ```
    */
@@ -177,20 +177,20 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * 최대 높이 제한 (축소만, 확대 안함)
+   * Maximum height constraint (reduction only, no enlargement)
    *
    * @description
-   * 이미지의 높이가 지정된 값보다 크면 축소합니다.
-   * 이미지가 지정된 값보다 작으면 원본 크기를 유지합니다.
-   * 비율은 항상 유지됩니다.
+   * Reduces the image if its height exceeds the specified value.
+   * Maintains original size if the image is smaller than the specified value.
+   * Aspect ratio is always preserved.
    *
-   * @param height 최대 높이 (픽셀)
-   * @param options 추가 옵션 (padding, background)
-   * @returns AfterResize 상태의 IImageProcessor (체이닝 가능)
+   * @param height Maximum height (pixels)
+   * @param options Additional options (padding, background)
+   * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
    * ```typescript
-   * // 높이가 400px을 넘지 않도록 제한 (비율 유지, 축소만)
+   * // Limit height to not exceed 400px (maintains aspect ratio, reduction only)
    * await processImage(src).shortcut.maxHeight(400).toBlob();
    * ```
    */
@@ -203,21 +203,21 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * 최대 크기 제한 (축소만, 확대 안함)
+   * Maximum size constraint (reduction only, no enlargement)
    *
    * @description
-   * 이미지의 너비 또는 높이가 지정된 값보다 크면 축소합니다.
-   * 이미지가 지정된 값보다 작으면 원본 크기를 유지합니다.
-   * 비율은 항상 유지됩니다.
-   * 너비와 높이 중 더 큰 비율에 맞춰 축소됩니다.
+   * Reduces the image if its width or height exceeds the specified values.
+   * Maintains original size if the image is smaller than the specified values.
+   * Aspect ratio is always preserved.
+   * Reduction is based on the larger scaling ratio between width and height.
    *
-   * @param size 최대 크기 ({ width, height })
-   * @param options 추가 옵션 (padding, background)
-   * @returns AfterResize 상태의 IImageProcessor (체이닝 가능)
+   * @param size Maximum size ({ width, height })
+   * @param options Additional options (padding, background)
+   * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
    * ```typescript
-   * // 800x600 박스 안에 들어가도록 제한 (비율 유지, 축소만)
+   * // Limit to fit within 800x600 box (maintains aspect ratio, reduction only)
    * await processImage(src).shortcut.maxSize({ width: 800, height: 600 }).toBlob();
    * ```
    */
@@ -233,20 +233,20 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * 최소 너비 보장 (확대만, 축소 안함)
+   * Minimum width guarantee (enlargement only, no reduction)
    *
    * @description
-   * 이미지의 너비가 지정된 값보다 작으면 확대합니다.
-   * 이미지가 지정된 값보다 크면 원본 크기를 유지합니다.
-   * 비율은 항상 유지됩니다.
+   * Enlarges the image if its width is smaller than the specified value.
+   * Maintains original size if the image is larger than the specified value.
+   * Aspect ratio is always preserved.
    *
-   * @param width 최소 너비 (픽셀)
-   * @param options 추가 옵션 (padding, background)
-   * @returns AfterResize 상태의 IImageProcessor (체이닝 가능)
+   * @param width Minimum width (pixels)
+   * @param options Additional options (padding, background)
+   * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
    * ```typescript
-   * // 너비가 최소 300px이 되도록 보장 (비율 유지, 확대만)
+   * // Ensure width is at least 300px (maintains aspect ratio, enlargement only)
    * await processImage(src).shortcut.minWidth(300).toBlob();
    * ```
    */
@@ -259,20 +259,20 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * 최소 높이 보장 (확대만, 축소 안함)
+   * Minimum height guarantee (enlargement only, no reduction)
    *
    * @description
-   * 이미지의 높이가 지정된 값보다 작으면 확대합니다.
-   * 이미지가 지정된 값보다 크면 원본 크기를 유지합니다.
-   * 비율은 항상 유지됩니다.
+   * Enlarges the image if its height is smaller than the specified value.
+   * Maintains original size if the image is larger than the specified value.
+   * Aspect ratio is always preserved.
    *
-   * @param height 최소 높이 (픽셀)
-   * @param options 추가 옵션 (padding, background)
-   * @returns AfterResize 상태의 IImageProcessor (체이닝 가능)
+   * @param height Minimum height (pixels)
+   * @param options Additional options (padding, background)
+   * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
    * ```typescript
-   * // 높이가 최소 200px이 되도록 보장 (비율 유지, 확대만)
+   * // Ensure height is at least 200px (maintains aspect ratio, enlargement only)
    * await processImage(src).shortcut.minHeight(200).toBlob();
    * ```
    */
@@ -285,21 +285,21 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * 최소 크기 보장 (확대만, 축소 안함)
+   * Minimum size guarantee (enlargement only, no reduction)
    *
    * @description
-   * 이미지의 너비 또는 높이가 지정된 값보다 작으면 확대합니다.
-   * 이미지가 지정된 값보다 크면 원본 크기를 유지합니다.
-   * 비율은 항상 유지됩니다.
-   * 너비와 높이 중 더 작은 비율에 맞춰 확대됩니다.
+   * Enlarges the image if its width or height is smaller than the specified values.
+   * Maintains original size if the image is larger than the specified values.
+   * Aspect ratio is always preserved.
+   * Enlargement is based on the smaller scaling ratio between width and height.
    *
-   * @param size 최소 크기 ({ width, height })
-   * @param options 추가 옵션 (padding, background)
-   * @returns AfterResize 상태의 IImageProcessor (체이닝 가능)
+   * @param size Minimum size ({ width, height })
+   * @param options Additional options (padding, background)
+   * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
    * ```typescript
-   * // 400x300 박스를 완전히 채우도록 보장 (비율 유지, 확대만)
+   * // Ensure image completely fills 400x300 box (maintains aspect ratio, enlargement only)
    * await processImage(src).shortcut.minSize({ width: 400, height: 300 }).toBlob();
    * ```
    */
@@ -315,26 +315,26 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   // ============================================================================
-  // 🔄 Group 2: Lazy 연산 (Lazy Operations)
-  // 소스 크기가 필요한 연산들 - 최종 출력 시점에 계산
+  // 🔄 Group 2: Lazy Operations
+  // Operations requiring source dimensions - calculated at final output time
   // ============================================================================
 
   // ============================================================================
-  // 배율 및 정확한 크기 조정 메서드
+  // Scale and exact size adjustment methods
   // ============================================================================
 
   /**
-   * 정확한 너비로 리사이징 (높이는 비율 유지)
+   * Resize to exact width (height maintains aspect ratio)
    *
    * @description
-   * 지정된 너비로 리사이징하고, 높이는 비율을 유지합니다.
+   * Resizes to the specified width while maintaining aspect ratio for height.
    *
-   * @param width 목표 너비 (픽셀)
-   * @returns AfterResize 상태의 IImageProcessor
+   * @param width Target width (pixels)
+   * @returns IImageProcessor in AfterResize state
    *
    * @example
    * ```typescript
-   * // 너비 800px, 높이는 자동 계산
+   * // Width 800px, height auto-calculated
    * await processImage(src).shortcut.exactWidth(800).toBlob();
    * ```
    */
@@ -344,17 +344,17 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * 정확한 높이로 리사이징 (너비는 비율 유지)
+   * Resize to exact height (width maintains aspect ratio)
    *
    * @description
-   * 지정된 높이로 리사이징하고, 너비는 비율을 유지합니다.
+   * Resizes to the specified height while maintaining aspect ratio for width.
    *
-   * @param height 목표 높이 (픽셀)
-   * @returns AfterResize 상태의 IImageProcessor
+   * @param height Target height (pixels)
+   * @returns IImageProcessor in AfterResize state
    *
    * @example
    * ```typescript
-   * // 높이 600px, 너비는 자동 계산
+   * // Height 600px, width auto-calculated
    * await processImage(src).shortcut.exactHeight(600).toBlob();
    * ```
    */
@@ -364,25 +364,25 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * 배율 기반 리사이징
+   * Scale-based resizing
    *
    * @description
-   * 배율을 지정하여 이미지를 확대 또는 축소합니다.
-   * 숫자 하나로 균등 배율, 객체로 축별 배율 지정 가능합니다.
+   * Enlarges or reduces the image by specifying a scale factor.
+   * Use a single number for uniform scaling, or an object for axis-specific scaling.
    *
-   * @param scale 배율 (숫자 또는 { sx?, sy? } 객체)
-   * @returns AfterResize 상태의 IImageProcessor
+   * @param scale Scale factor (number or { sx?, sy? } object)
+   * @returns IImageProcessor in AfterResize state
    *
    * @example
    * ```typescript
-   * // 균등 배율
-   * await processImage(src).shortcut.scale(1.5).toBlob();           // 1.5배 확대
-   * await processImage(src).shortcut.scale(0.5).toBlob();           // 0.5배 축소
+   * // Uniform scaling
+   * await processImage(src).shortcut.scale(1.5).toBlob();           // 1.5x enlargement
+   * await processImage(src).shortcut.scale(0.5).toBlob();           // 0.5x reduction
    *
-   * // 축별 배율
-   * await processImage(src).shortcut.scale({ sx: 2 }).toBlob();     // X축만 2배
-   * await processImage(src).shortcut.scale({ sy: 1.5 }).toBlob();   // Y축만 1.5배
-   * await processImage(src).shortcut.scale({ sx: 2, sy: 0.75 }).toBlob(); // X축 2배, Y축 0.75배
+   * // Axis-specific scaling
+   * await processImage(src).shortcut.scale({ sx: 2 }).toBlob();     // X-axis only 2x
+   * await processImage(src).shortcut.scale({ sy: 1.5 }).toBlob();   // Y-axis only 1.5x
+   * await processImage(src).shortcut.scale({ sx: 2, sy: 0.75 }).toBlob(); // X-axis 2x, Y-axis 0.75x
    * ```
    */
   scale(scale: ScaleOperation): IImageProcessor<AfterResize> {
@@ -391,17 +391,17 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * X축 배율 리사이징
+   * X-axis scale resizing
    *
    * @description
-   * X축(너비)만 배율을 적용합니다. 높이는 원본 유지됩니다.
+   * Applies scaling only to the X-axis (width). Height remains original.
    *
-   * @param scaleX X축 배율
-   * @returns AfterResize 상태의 IImageProcessor
+   * @param scaleX X-axis scale factor
+   * @returns IImageProcessor in AfterResize state
    *
    * @example
    * ```typescript
-   * // 너비만 2배 확대
+   * // Enlarge width only by 2x
    * await processImage(src).shortcut.scaleX(2).toBlob();
    * ```
    */
@@ -411,17 +411,17 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * Y축 배율 리사이징
+   * Y-axis scale resizing
    *
    * @description
-   * Y축(높이)만 배율을 적용합니다. 너비는 원본 유지됩니다.
+   * Applies scaling only to the Y-axis (height). Width remains original.
    *
-   * @param scaleY Y축 배율
-   * @returns AfterResize 상태의 IImageProcessor
+   * @param scaleY Y-axis scale factor
+   * @returns IImageProcessor in AfterResize state
    *
    * @example
    * ```typescript
-   * // 높이만 0.5배 축소
+   * // Reduce height only by 0.5x
    * await processImage(src).shortcut.scaleY(0.5).toBlob();
    * ```
    */
@@ -431,18 +431,18 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
   }
 
   /**
-   * X/Y축 개별 배율 리사이징
+   * Individual X/Y axis scale resizing
    *
    * @description
-   * X축과 Y축에 각각 다른 배율을 적용합니다.
+   * Applies different scale factors to the X-axis and Y-axis individually.
    *
-   * @param scaleX X축 배율
-   * @param scaleY Y축 배율
-   * @returns AfterResize 상태의 IImageProcessor
+   * @param scaleX X-axis scale factor
+   * @param scaleY Y-axis scale factor
+   * @returns IImageProcessor in AfterResize state
    *
    * @example
    * ```typescript
-   * // 너비 2배, 높이 1.5배
+   * // Width 2x, height 1.5x
    * await processImage(src).shortcut.scaleXY(2, 1.5).toBlob();
    * ```
    */

@@ -1,10 +1,10 @@
 /**
- * web-image-util 통합 타입 시스템
- * 웹 브라우저용 이미지 처리 라이브러리의 타입 정의
+ * web-image-util unified type system
+ * Type definitions for web browser image processing library
  */
 
 // ============================================================================
-// BASE TYPES - 기본 타입들 (base.ts에서 re-export)
+// BASE TYPES - Basic types (re-exported from base.ts)
 // ============================================================================
 
 export type {
@@ -21,18 +21,18 @@ export type {
 } from './base';
 
 // ============================================================================
-// INTERNAL TYPES - 라이브러리 내부 구현용 타입들 (공개 API에서 제외)
+// INTERNAL TYPES - Library internal implementation types (excluded from public API)
 // ============================================================================
 //
-// 다음 타입들은 라이브러리 내부에서만 사용되며, 사용자가 직접 사용할 필요가 없습니다:
-// - ProcessorState, BeforeResize, AfterResize: 내부 상태 머신
-// - EnsureCanResize, CanResize, AfterResizeCall: TypeScript 컴파일러 제약
-// - TypedImageProcessor, InitialProcessor, ResizedProcessor: 내부 구현 타입
+// The following types are used only internally by the library and users don't need to use them directly:
+// - ProcessorState, BeforeResize, AfterResize: Internal state machine
+// - EnsureCanResize, CanResize, AfterResizeCall: TypeScript compiler constraints
+// - TypedImageProcessor, InitialProcessor, ResizedProcessor: Internal implementation types
 //
-// 사용자는 ImageProcessor 인터페이스만 사용하면 됩니다.
+// Users only need to use the ImageProcessor interface.
 // ============================================================================
 
-// 내부 구현에서만 import 가능하도록 주석 처리
+// Commented out to allow import only from internal implementation
 // export type {
 //   AfterResize,
 //   AfterResizeCall,
@@ -55,19 +55,19 @@ export type {
 
 export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstants } from './base';
 
-// base.ts에서 가져온 타입들을 다시 사용 가능하도록 import
+// Re-import types from base.ts to make them available
 import type { GeometrySize, ImageErrorCodeType, OutputFormat, ResizeBackground } from './base';
 
-// ResizeConfig 타입을 ImageProcessor에서 사용하기 위해 import
+// Import ResizeConfig type for use in ImageProcessor
 import type { ResizeConfig } from './resize-config';
 
 import { ImageErrorCodeConstants, ImageFormats, OutputFormats } from './base';
 
 // ============================================================================
-// RESIZE TYPES - 리사이징 관련 타입들
+// RESIZE TYPES - Resize-related types
 // ============================================================================
 
-// 새로운 ResizeConfig 타입 시스템 (Discriminated Union)
+// New ResizeConfig type system (Discriminated Union)
 export type {
   BaseResizeConfig,
   ContainConfig,
@@ -89,89 +89,89 @@ export {
 } from './resize-config';
 
 /**
- * 스마트 리사이징 옵션 (고급 처리용)
- * ResizeConfig와 함께 사용
+ * Smart resize options (for advanced processing)
+ * Used together with ResizeConfig
  */
 export interface SmartResizeOptions {
-  /** 대상 너비 (픽셀) */
+  /** Target width (pixels) */
   width?: number;
-  /** 대상 높이 (픽셀) */
+  /** Target height (pixels) */
   height?: number;
 
   /**
-   * 처리 전략 - 대부분의 경우 'auto'면 충분
+   * Processing strategy - 'auto' is sufficient in most cases
    * @default 'auto'
    */
   strategy?: 'auto' | 'fast' | 'quality' | 'memory-efficient';
 
   /**
-   * 성능 프로파일 - 간단한 3가지 선택지
+   * Performance profile - simple 3 choices
    * @default 'balanced'
    */
   performance?: 'fast' | 'balanced' | 'quality';
 
   /**
-   * 진행률 콜백 - 0-100 단순 진행률만 제공
-   * @param progress 0-100 진행률
+   * Progress callback - provides simple 0-100 progress only
+   * @param progress 0-100 progress
    */
   onProgress?: (progress: number) => void;
 
   /**
-   * 메모리 제한 (MB) - 기본값: 자동 감지
+   * Memory limit (MB) - default: auto-detect
    */
   maxMemoryMB?: number;
 }
 
 // ============================================================================
-// BLUR NAMESPACE - 블러 관련 타입들
+// BLUR NAMESPACE - Blur-related types
 // ============================================================================
 
 // ============================================================================
-// BLUR TYPES - 블러 관련 타입들 (ES2015 모듈 구문으로 변경)
+// BLUR TYPES - Blur-related types (changed to ES2015 module syntax)
 // ============================================================================
 
 /**
- * 블러 옵션 (Canvas CSS filter 제한)
+ * Blur options (Canvas CSS filter limitations)
  */
 export interface BlurOptions {
-  /** 블러 반지름 (기본: 2) */
+  /** Blur radius (default: 2) */
   radius?: number;
-  // Canvas는 CSS filter blur()만 지원하므로 고급 옵션들 제거
+  // Canvas only supports CSS filter blur(), so advanced options are removed
 }
 
 // =================================
-// OUTPUT TYPES - 출력 관련 타입들
+// OUTPUT TYPES - Output-related types
 // =================================
 
 /**
- * 각 포맷별 최적 품질 설정
+ * Optimal quality settings for each format
  */
 export const OutputOptimalQuality: Record<OutputFormat, number> = {
-  png: 1.0, // 무손실 압축
-  jpeg: 0.85, // 품질과 크기의 균형
-  jpg: 0.85, // JPEG와 동일
-  webp: 0.8, // 고효율 압축
-  avif: 0.75, // 최고 압축률
+  png: 1.0, // Lossless compression
+  jpeg: 0.85, // Balance of quality and size
+  jpg: 0.85, // Same as JPEG
+  webp: 0.8, // High-efficiency compression
+  avif: 0.75, // Best compression ratio
 } as const;
 
 /**
- * 출력 옵션
+ * Output options
  */
 export interface OutputOptions {
-  /** 출력 포맷 (기본: WebP 지원시 'webp', 미지원시 'png') */
+  /** Output format (default: 'webp' if supported, 'png' if not) */
   format?: OutputFormat;
-  /** 압축 품질 0.0-1.0 (기본: 포맷별 최적값) */
+  /** Compression quality 0.0-1.0 (default: optimal value per format) */
   quality?: number;
-  /** 포맷 미지원시 대체 포맷 (기본: 'png') */
+  /** Fallback format when format not supported (default: 'png') */
   fallbackFormat?: OutputFormat;
 }
 
 // ============================================================================
-// IMAGE ERROR TYPES - 이미지 에러 관련 타입들
+// IMAGE ERROR TYPES - Image error-related types
 // ============================================================================
 
 /**
- * 이미지 처리 에러 클래스 (통합 정의)
+ * Image processing error class (unified definition)
  */
 export class ImageProcessError extends globalThis.Error {
   public name: string = 'ImageProcessError';
@@ -186,53 +186,53 @@ export class ImageProcessError extends globalThis.Error {
     super(message);
     this.suggestions = suggestions;
 
-    // 스택 추적 설정
+    // Set up stack trace
     if ((globalThis.Error as any).captureStackTrace) {
       (globalThis.Error as any).captureStackTrace(this, ImageProcessError);
     }
   }
 }
 
-// Canvas API에는 Sharp.js의 extend 기능과 같은 마진/패딩 개념이 없음
-// 필요시 사용자가 Canvas 크기를 직접 조정해야 함
+// Canvas API does not have margin/padding concepts like Sharp.js's extend feature
+// Users must directly adjust Canvas size if needed
 
 // ============================================================================
-// RESULT NAMESPACE - 결과 관련 타입들
+// RESULT NAMESPACE - Result-related types
 // ============================================================================
 
 /**
- * 기본 처리 결과 메타데이터
+ * Basic processing result metadata
  */
 export interface ResultMetadata {
-  /** 결과 너비 */
+  /** Result width */
   width: number;
-  /** 결과 높이 */
+  /** Result height */
   height: number;
-  /** 처리 시간 (밀리초) */
+  /** Processing time (milliseconds) */
   processingTime: number;
-  /** 원본 크기 */
+  /** Original size */
   originalSize?: GeometrySize;
-  /** 사용된 포맷 */
+  /** Format used */
   format?: OutputFormat;
-  /** 결과물 크기 (바이트) */
+  /** Result size (bytes) */
   size?: number;
-  /** 적용된 연산 개수 */
+  /** Number of operations applied */
   operations?: number;
 }
 
 /**
- * Blob 결과 (메타데이터 포함)
+ * Blob result (includes metadata)
  */
 export interface ResultBlob extends ResultMetadata {
   blob: globalThis.Blob;
 
-  // 🆕 추가 메타데이터 (테스트 호환성)
-  /** 배경색 정보 (옵션) */
+  // 🆕 Additional metadata (test compatibility)
+  /** Background color information (optional) */
   background?: string;
-  /** 사용된 품질 설정 (옵션) */
+  /** Used quality setting (optional) */
   quality?: number;
 
-  // 🆕 직접 변환 메서드들 (성능 최적화)
+  // 🆕 Direct conversion methods (performance optimization)
   toCanvas(): Promise<HTMLCanvasElement>;
   toDataURL(options?: OutputOptions): Promise<string>;
   toFile(filename: string, options?: OutputOptions): Promise<globalThis.File>;
@@ -242,12 +242,12 @@ export interface ResultBlob extends ResultMetadata {
 }
 
 /**
- * DataURL 결과 (메타데이터 포함)
+ * DataURL result (includes metadata)
  */
 export interface ResultDataURL extends ResultMetadata {
   dataURL: string;
 
-  // 🆕 직접 변환 메서드들 (크기 정보 재사용으로 성능 최적화)
+  // 🆕 Direct conversion methods (performance optimization through size info reuse)
   toCanvas(): Promise<HTMLCanvasElement>;
   toBlob(options?: OutputOptions): Promise<globalThis.Blob>;
   toFile(filename: string, options?: OutputOptions): Promise<globalThis.File>;
@@ -257,12 +257,12 @@ export interface ResultDataURL extends ResultMetadata {
 }
 
 /**
- * File 결과 (메타데이터 포함)
+ * File result (includes metadata)
  */
 export interface ResultFile extends ResultMetadata {
   file: globalThis.File;
 
-  // 🆕 직접 변환 메서드들
+  // 🆕 Direct conversion methods
   toCanvas(): Promise<HTMLCanvasElement>;
   toDataURL(options?: OutputOptions): Promise<string>;
   toBlob(options?: OutputOptions): Promise<globalThis.Blob>;
@@ -272,12 +272,12 @@ export interface ResultFile extends ResultMetadata {
 }
 
 /**
- * Canvas 결과 (메타데이터 포함)
+ * Canvas result (includes metadata)
  */
 export interface ResultCanvas extends ResultMetadata {
   canvas: HTMLCanvasElement;
 
-  // 직접 변환 메서드들
+  // Direct conversion methods
   toBlob(options?: OutputOptions): Promise<globalThis.Blob>;
   toDataURL(options?: OutputOptions): Promise<string>;
   toFile(filename: string, options?: OutputOptions): Promise<globalThis.File>;
@@ -287,28 +287,28 @@ export interface ResultCanvas extends ResultMetadata {
 }
 
 // ============================================================================
-// PROCESSOR NAMESPACE - 프로세서 관련 타입들
+// PROCESSOR NAMESPACE - Processor-related types
 // ============================================================================
 
 /**
- * 프로세서 전역 옵션
+ * Processor global options
  */
 export interface ProcessorOptions {
-  /** CORS 설정 (기본: 'anonymous') */
+  /** CORS setting (default: 'anonymous') */
   crossOrigin?: string;
-  /** 기본 품질 설정 (기본: 0.8) */
+  /** Default quality setting (default: 0.8) */
   defaultQuality?: number;
-  /** 기본 배경색 (기본: 투명 검정) */
+  /** Default background color (default: transparent black) */
   defaultBackground?: ResizeBackground;
-  /** 기본 포맷 (기본: 'auto') */
+  /** Default format (default: 'auto') */
   defaultFormat?: OutputFormat | 'auto';
-  /** 타임아웃 (밀리초, 기본: 30초) */
+  /** Timeout (milliseconds, default: 30 seconds) */
   timeout?: number;
-  // 브라우저에서 메모리 제한을 명시적으로 설정할 수 없음
+  // Cannot explicitly set memory limits in browser
 }
 
 /**
- * 이미지 프로세서 인터페이스
+ * Image processor interface
  */
 export interface ImageProcessor {
   resize(config: ResizeConfig): ImageProcessor;
@@ -320,42 +320,42 @@ export interface ImageProcessor {
 }
 
 /**
- * 소스 변환 옵션
+ * Source conversion options
  */
 export interface ProcessorSourceOptions {
-  /** CORS 설정 */
+  /** CORS setting */
   crossOrigin?: string;
-  /** 엘리먼트 크기 */
+  /** Element size */
   elementSize?: GeometrySize;
-  // Canvas API는 DPI 제어나 애니메이션 처리를 지원하지 않음
+  // Canvas API does not support DPI control or animation processing
 }
 
 // ============================================================================
-// CONSTANTS - 상수 정의
+// CONSTANTS - Constant definitions
 // ============================================================================
 
 /**
- * 포맷별 최적 품질 설정
+ * Optimal quality settings by format
  */
 export const OPTIMAL_QUALITY_BY_FORMAT = OutputOptimalQuality;
 
 /**
- * 에러 코드 상수 (테스트 호환성)
+ * Error code constants (test compatibility)
  */
 export const ImageErrorCode = ImageErrorCodeConstants;
 
 // ============================================================================
-// EXPORTS - 타입 가드 및 기타 유틸리티
+// EXPORTS - Type guards and other utilities
 // ============================================================================
 
-// 타입 가드 함수들 export
+// Export type guard functions
 export * from './guards';
 
-// 주요 포맷 정보 제공
-// Canvas API에서 직접 얻을 수 없는 포맷 메타데이터는 제거
-// 필요시 브라우저의 Image 객체나 별도 라이브러리 사용
+// Provide main format information
+// Remove format metadata that cannot be obtained directly from Canvas API
+// Use browser's Image object or separate library when needed
 export const FORMAT_INFO = {
-  // 기본적인 MIME 타입만 제공 (Canvas toBlob에서 사용)
+  // Provide only basic MIME types (used in Canvas toBlob)
   [ImageFormats.JPEG]: { mimeType: 'image/jpeg' },
   [ImageFormats.JPG]: { mimeType: 'image/jpeg' },
   [ImageFormats.PNG]: { mimeType: 'image/png' },
@@ -365,7 +365,7 @@ export const FORMAT_INFO = {
   [ImageFormats.SVG]: { mimeType: 'image/svg+xml' },
 } as const;
 
-// 출력 포맷 정보
+// Output format information
 export const OUTPUT_FORMAT_INFO = {
   [OutputFormats.JPEG]: { mimeType: 'image/jpeg' },
   [OutputFormats.JPG]: { mimeType: 'image/jpeg' },
@@ -375,13 +375,13 @@ export const OUTPUT_FORMAT_INFO = {
 } as const;
 
 // ============================================================================
-// PRESET TYPES - 프리셋 관련 타입들 re-export
+// PRESET TYPES - Preset-related types re-export
 // ============================================================================
 
 export type { AvatarOptions, SocialImageOptions, SocialPlatform, ThumbnailOptions } from '../presets';
 
 // ============================================================================
-// SHORTCUT API TYPES - Shortcut API 관련 타입들
+// SHORTCUT API TYPES - Shortcut API-related types
 // ============================================================================
 
 export { isScaleX, isScaleXY, isScaleY, isUniformScale } from './shortcut-types';
@@ -389,20 +389,20 @@ export type { DirectResizeConfig, ResizeOperation, ScaleOperation } from './shor
 
 export type { IImageProcessor, InitialProcessorInterface, ResizedProcessorInterface } from './processor-interface';
 
-// LazyRenderPipeline에서 정의된 Size 타입 re-export
+// Re-export Size type defined in LazyRenderPipeline
 export type { Size } from '../core/lazy-render-pipeline';
 
 // ============================================================================
-// ADDITIONAL TYPES - 테스트 호환성을 위한 추가 타입들
+// ADDITIONAL TYPES - Additional types for test compatibility
 // ============================================================================
 
 /**
- * MIME 타입
+ * MIME type
  */
 export type MimeType = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' | 'image/svg+xml' | 'image/avif';
 
 /**
- * 스마트 포맷 옵션
+ * Smart format options
  */
 export interface SmartFormatOptions {
   enableWebP?: boolean;
@@ -412,7 +412,7 @@ export interface SmartFormatOptions {
 }
 
 /**
- * 성능 설정
+ * Performance configuration
  */
 export interface PerformanceConfig {
   maxMemoryMB?: number;
@@ -422,46 +422,46 @@ export interface PerformanceConfig {
 }
 
 // ============================================================================
-// SVG QUALITY ENHANCEMENT TYPES - SVG 품질 향상 관련 타입들
+// SVG QUALITY ENHANCEMENT TYPES - SVG quality enhancement related types
 // ============================================================================
 
-// SVG 크기 정보 및 Canvas 고품질 설정 타입 re-export
+// Re-export SVG size information and Canvas high-quality setting types
 export type { HighQualityCanvasOptions } from '../base/canvas-utils';
 export type { SvgDimensions } from '../utils/svg-dimensions';
 
-// SVG 복잡도 분석 및 품질 시스템 타입들
+// SVG complexity analysis and quality system types
 export type { ComplexityAnalysisResult, QualityLevel, SvgComplexityMetrics } from '../core/svg-complexity-analyzer';
 
-// (제거됨: SvgProcessingOptions, SvgProcessingResult - 불필요)
+// (Removed: SvgProcessingOptions, SvgProcessingResult - unnecessary)
 
-// 브라우저 기능 감지 시스템 타입들
+// Browser capability detection system types
 export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from '../utils/browser-capabilities';
 
-// OffscreenCanvas + Web Worker 고성능 처리 타입들
-// (OffscreenSVGProcessor에서 사용하는 타입들은 해당 모듈에서 정의되어 있음)
+// OffscreenCanvas + Web Worker high-performance processing types
+// (Types used by OffscreenSVGProcessor are defined in that module)
 
 // ============================================================================
-// ADVANCED PROCESSING TYPES - 고급 처리 관련 통합 타입들
+// ADVANCED PROCESSING TYPES - Advanced processing related unified types
 // ============================================================================
 
 /**
- * 고급 SVG 처리 모드
+ * Advanced SVG processing mode
  */
 export type AdvancedProcessingMode = 'standard' | 'offscreen' | 'auto';
 
 /**
- * 성능 벤치마크 결과
+ * Performance benchmark result
  */
 export interface PerformanceBenchmark {
-  /** 표준 처리 시간 (밀리초) */
+  /** Standard processing time (milliseconds) */
   standardTime: number;
-  /** OffscreenCanvas 처리 시간 (밀리초, 지원 시에만) */
+  /** OffscreenCanvas processing time (milliseconds, when supported) */
   offscreenTime?: number;
-  /** OffscreenCanvas가 더 빠른지 여부 */
+  /** Whether OffscreenCanvas is faster */
   isOffscreenFaster: boolean;
-  /** 권장 처리 방식 */
+  /** Recommended processing method */
   recommendation: 'standard' | 'offscreen';
 }
 
-// SystemPerformanceProfile은 advanced/index.ts에서 직접 정의
-// 여기서는 re-export만 수행하여 타입 의존성 문제 해결
+// SystemPerformanceProfile is directly defined in advanced/index.ts
+// Only re-export is performed here to resolve type dependency issues

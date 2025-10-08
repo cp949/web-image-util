@@ -41,9 +41,9 @@ interface FormatResult {
 }
 
 const FORMAT_LABELS: Record<FormatType, string> = {
-  jpeg: 'JPEG (손실 압축)',
-  png: 'PNG (무손실)',
-  webp: 'WebP (모던)',
+  jpeg: 'JPEG (Lossy)',
+  png: 'PNG (Lossless)',
+  webp: 'WebP (Modern)',
 };
 
 export function SmartFormatDemo() {
@@ -57,7 +57,7 @@ export function SmartFormatDemo() {
     avif: false,
   });
 
-  // 브라우저 포맷 지원 감지
+  // Detect browser format support
   const checkFormatSupport = async () => {
     const canvas = document.createElement('canvas');
     canvas.width = 1;
@@ -83,11 +83,11 @@ export function SmartFormatDemo() {
       setFormatResults([]);
       await checkFormatSupport();
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('이미지 선택 실패'));
+      setError(err instanceof Error ? err : new Error('Failed to select image'));
     }
   };
 
-  // 이미지 선택 시 자동으로 포맷 비교 실행
+  // Automatically run format comparison when image is selected
   useEffect(() => {
     if (selectedImage && !processing) {
       handleFormatComparison();
@@ -103,14 +103,14 @@ export function SmartFormatDemo() {
 
     const formats: FormatType[] = ['jpeg', 'png', 'webp'];
     const results: FormatResult[] = [];
-    const quality = 0.8; // 80% 품질
+    const quality = 0.8; // 80% quality
 
     try {
       for (let i = 0; i < formats.length; i++) {
         const format = formats[i];
         setProgress(((i + 1) / formats.length) * 100);
 
-        // 브라우저 지원 체크
+        // Check browser support
         const supported =
           format === 'webp' ? browserSupport.webp : true;
 
@@ -144,7 +144,7 @@ export function SmartFormatDemo() {
 
       setFormatResults(results);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('포맷 비교 실패'));
+      setError(err instanceof Error ? err : new Error('Failed to compare formats'));
     } finally {
       setProcessing(false);
       setProgress(0);
@@ -164,26 +164,26 @@ export function SmartFormatDemo() {
     return savings > 0 ? `-${savings.toFixed(1)}%` : `+${Math.abs(savings).toFixed(1)}%`;
   };
 
-  // PNG를 기준으로 절감율 계산
+  // Calculate savings based on PNG
   const pngResult = formatResults.find((r) => r.format === 'png');
   const baselineSize = pngResult?.size || 0;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom>
-        스마트 포맷 비교 데모
+        Smart Format Comparison Demo
       </Typography>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        JPEG, PNG, WebP 포맷을 비교하고 브라우저 지원 여부를 확인해보세요.
-        최적의 포맷을 자동으로 추천받을 수 있습니다.
+        Compare JPEG, PNG, and WebP formats and check browser support.
+        Get automatic recommendations for the optimal format.
       </Alert>
 
-      {/* 브라우저 지원 정보 */}
+      {/* Browser Support Information */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            현재 브라우저 포맷 지원
+            Current Browser Format Support
           </Typography>
           <Stack direction="row" spacing={2}>
             <Chip
@@ -223,7 +223,7 @@ export function SmartFormatDemo() {
 
           {selectedImage && processing && (
             <Alert severity="info" sx={{ mt: 2 }}>
-              이미지가 선택되었습니다. 자동으로 포맷 비교를 시작합니다.
+              Image selected. Automatically starting format comparison.
             </Alert>
           )}
         </Grid>
@@ -234,7 +234,7 @@ export function SmartFormatDemo() {
               <ProcessingStatus
                 processing={true}
                 progress={progress}
-                message={`포맷 비교 진행 중... ${Math.round(progress)}%`}
+                message={`Comparing formats... ${Math.round(progress)}%`}
               />
             </Box>
           )}
@@ -273,29 +273,29 @@ export function SmartFormatDemo() {
                             {FORMAT_LABELS[result.format]}
                           </Typography>
                           {!result.supported && (
-                            <Chip label="미지원" color="default" size="small" />
+                            <Chip label="Unsupported" color="default" size="small" />
                           )}
                         </Box>
                         {result.supported ? (
                           <Stack spacing={0.5}>
                             <Typography variant="body2" color="text.secondary">
-                              처리 시간: {result.processingTime.toFixed(0)}ms
+                              Processing Time: {result.processingTime.toFixed(0)}ms
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              파일 크기: {formatFileSize(result.size)}
+                              File Size: {formatFileSize(result.size)}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              품질: {(result.quality * 100).toFixed(0)}%
+                              Quality: {(result.quality * 100).toFixed(0)}%
                             </Typography>
                             {baselineSize > 0 && (
                               <Typography variant="body2" color="primary">
-                                PNG 대비: {calculateSavings(baselineSize, result.size)}
+                                vs PNG: {calculateSavings(baselineSize, result.size)}
                               </Typography>
                             )}
                           </Stack>
                         ) : (
                           <Typography variant="body2" color="text.secondary">
-                            현재 브라우저에서 지원하지 않습니다.
+                            Not supported in current browser.
                           </Typography>
                         )}
                       </CardContent>
@@ -307,18 +307,18 @@ export function SmartFormatDemo() {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    상세 비교 표
+                    Detailed Comparison Table
                   </Typography>
                   <TableContainer component={Paper} variant="outlined">
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell>포맷</TableCell>
-                          <TableCell align="right">처리 시간</TableCell>
-                          <TableCell align="right">파일 크기</TableCell>
-                          <TableCell align="right">PNG 대비</TableCell>
-                          <TableCell align="right">품질</TableCell>
-                          <TableCell align="center">브라우저 지원</TableCell>
+                          <TableCell>Format</TableCell>
+                          <TableCell align="right">Processing Time</TableCell>
+                          <TableCell align="right">File Size</TableCell>
+                          <TableCell align="right">vs PNG</TableCell>
+                          <TableCell align="right">Quality</TableCell>
+                          <TableCell align="center">Browser Support</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -352,20 +352,20 @@ export function SmartFormatDemo() {
                 </CardContent>
               </Card>
 
-              {/* 추천 포맷 */}
+              {/* Recommended Format */}
               {formatResults.length > 0 && (
                 <Alert severity="success">
                   <Typography variant="subtitle2" gutterBottom>
-                    추천 포맷
+                    Recommended Format
                   </Typography>
                   <Typography variant="body2">
                     {browserSupport.webp
-                      ? '• WebP: 최고의 압축률과 품질을 제공합니다 (모던 브라우저)'
-                      : '• JPEG: 사진에 적합한 손실 압축 포맷'}
+                      ? '• WebP: Offers best compression ratio and quality (modern browsers)'
+                      : '• JPEG: Lossy compression format suitable for photos'}
                     <br />
                     {baselineSize > 0 && formatResults.find((r) => r.format === 'webp')?.size && (
                       <>
-                        • WebP는 PNG보다 약{' '}
+                        • WebP is approximately{' '}
                         {Math.abs(
                           parseFloat(
                             calculateSavings(
@@ -374,7 +374,7 @@ export function SmartFormatDemo() {
                             )
                           )
                         ).toFixed(0)}
-                        % 작습니다
+                        % smaller than PNG
                       </>
                     )}
                   </Typography>
@@ -385,7 +385,7 @@ export function SmartFormatDemo() {
 
           {!processing && !error && formatResults.length === 0 && !selectedImage && (
             <Alert severity="info">
-              이미지를 선택하면 자동으로 포맷 비교가 시작됩니다.
+              Format comparison will start automatically when you select an image.
             </Alert>
           )}
         </Grid>

@@ -1,29 +1,29 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * WSL 환경 전용 Vitest 설정
+ * WSL Environment-Specific Vitest Configuration
  *
- * @description Canvas API 제약이 있는 WSL 환경에서 실행 가능한 테스트들만 포함
- * - 타입 시스템 테스트
- * - 순수 함수 테스트
- * - API 계약 테스트 (모킹 사용)
+ * @description Includes only tests that can run in WSL environment with Canvas API constraints
+ * - Type system tests
+ * - Pure function tests
+ * - API contract tests (using mocks)
  *
  * @excludes
- * - 실제 Canvas 2D rendering 테스트
- * - 브라우저 전용 API 테스트
- * - 통합 테스트
+ * - Actual Canvas 2D rendering tests
+ * - Browser-only API tests
+ * - Integration tests
  */
 export default defineConfig({
   test: {
     name: 'wsl-environment',
-    environment: 'node', // Context7 MCP 베스트 프랙티스: WSL 환경에서는 node 환경 사용
+    environment: 'node', // Context7 MCP best practice: use node environment in WSL
     setupFiles: ['./tests/setup/wsl-mocks.ts'],
 
     include: [
       'tests/unit/**/*.test.ts',
       'tests/contract/**/*.test.ts',
       'tests/performance/**/*.test.ts',
-      'tests/integration/**/*.test.ts', // Phase 3-2: 통합 테스트 포함
+      'tests/integration/**/*.test.ts', // Phase 3-2: Include integration tests
     ],
 
     exclude: [
@@ -40,25 +40,25 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/**/*.test.ts',
         'src/**/*.spec.ts',
-        // Canvas 의존적인 코드는 WSL에서 제외
-        'src/core/pipeline.ts', // 실제 Canvas 실행 부분
-        'src/base/canvas-*.ts', // Canvas 관련 유틸리티
+        // Exclude Canvas-dependent code in WSL
+        'src/core/pipeline.ts', // Actual Canvas execution part
+        'src/base/canvas-*.ts', // Canvas-related utilities
       ],
       thresholds: {
         statements: 60,
         branches: 50,
         functions: 70,
         lines: 60,
-        // 타입 관련 코드는 높은 커버리지 목표
+        // Higher coverage target for type-related code
       },
     },
 
-    // WSL 환경 최적화
+    // WSL environment optimization
     testTimeout: 10000,
     hookTimeout: 5000,
-    threads: false, // WSL에서 안정성을 위해 단일 스레드
+    threads: false, // Single-threaded for stability in WSL
 
-    // 상세한 에러 리포팅
+    // Detailed error reporting
     reporter: ['verbose', 'json'],
     outputFile: {
       json: './test-results/wsl-results.json',

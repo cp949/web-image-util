@@ -96,7 +96,7 @@ export function DevToolsDemo() {
     includeComments: true,
   });
 
-  // 로그 추가 함수
+  // Log entry function
   const addLog = (level: LogEntry['level'], message: string, data?: unknown, operation?: string) => {
     const logEntry: LogEntry = {
       id: Date.now().toString(),
@@ -106,10 +106,10 @@ export function DevToolsDemo() {
       data,
       operation,
     };
-    setLogs((prev) => [logEntry, ...prev].slice(0, 100)); // 최대 100개 로그 유지
+    setLogs((prev) => [logEntry, ...prev].slice(0, 100)); // Keep maximum 100 logs
   };
 
-  // 브라우저 호환성 검사
+  // Browser compatibility check
   const getBrowserInfo = (): BrowserInfo => {
     const performanceExt = performance as ExtendedPerformance;
     const memory = performanceExt.memory;
@@ -332,10 +332,10 @@ export function DevToolsDemo() {
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        개발자 도구
+        Developer Tools
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        디버깅, 코드 생성, 브라우저 호환성 확인 등 개발에 도움이 되는 도구들입니다.
+        Tools for development assistance including debugging, code generation, and browser compatibility checking.
       </Typography>
 
       <Grid container spacing={4}>
@@ -346,7 +346,7 @@ export function DevToolsDemo() {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  개발자 설정
+                  Developer Settings
                 </Typography>
 
                 <FormControlLabel
@@ -359,31 +359,31 @@ export function DevToolsDemo() {
                       }}
                     />
                   }
-                  label="디버그 모드"
+                  label="Debug Mode"
                   sx={{ mb: 2 }}
                 />
 
                 <Stack spacing={2}>
                   <Button variant="outlined" onClick={clearLogs} startIcon={<BugIcon />}>
-                    로그 지우기
+                    Clear Logs
                   </Button>
                   <Button variant="outlined" onClick={exportLogs} startIcon={<DevIcon />}>
-                    로그 내보내기
+                    Export Logs
                   </Button>
                 </Stack>
               </CardContent>
             </Card>
 
-            {/* 브라우저 호환성 */}
+            {/* Browser Compatibility */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  브라우저 호환성
+                  Browser Compatibility
                 </Typography>
 
                 <Stack spacing={1}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2">WebP 지원</Typography>
+                    <Typography variant="body2">WebP Support</Typography>
                     <Chip
                       label={browserInfo.webpSupport ? 'Yes' : 'No'}
                       color={browserInfo.webpSupport ? 'success' : 'error'}
@@ -392,7 +392,7 @@ export function DevToolsDemo() {
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2">AVIF 지원</Typography>
+                    <Typography variant="body2">AVIF Support</Typography>
                     <Chip
                       label={browserInfo.avifSupport ? 'Yes' : 'No'}
                       color={browserInfo.avifSupport ? 'success' : 'warning'}
@@ -421,7 +421,7 @@ export function DevToolsDemo() {
                   {browserInfo.memory && (
                     <Box>
                       <Typography variant="body2" gutterBottom sx={{ mt: 2 }}>
-                        메모리 사용량
+                        Memory Usage
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {Math.round(browserInfo.memory.used / 1024 / 1024)}MB /
@@ -439,34 +439,34 @@ export function DevToolsDemo() {
           <Card>
             <CardContent>
               <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)} sx={{ mb: 3 }}>
-                <Tab label="API 응답" icon={<InfoIcon />} />
-                <Tab label="로그" icon={<BugIcon />} />
-                <Tab label="코드 생성기" icon={<CodeIcon />} />
-                <Tab label="브라우저 정보" icon={<DevIcon />} />
+                <Tab label="API Response" icon={<InfoIcon />} />
+                <Tab label="Logs" icon={<BugIcon />} />
+                <Tab label="Code Generator" icon={<CodeIcon />} />
+                <Tab label="Browser Info" icon={<DevIcon />} />
               </Tabs>
 
-              {/* API 응답 탭 */}
+              {/* API Response Tab */}
               {activeTab === 0 && (
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    API 응답 JSON 뷰어
+                    API Response JSON Viewer
                   </Typography>
 
                   {apiResponse ? (
                     <JsonViewer data={apiResponse} />
                   ) : (
-                    <Alert severity="info">이미지를 업로드하면 API 응답을 확인할 수 있습니다.</Alert>
+                    <Alert severity="info">Upload an image to view the API response.</Alert>
                   )}
                 </Box>
               )}
 
-              {/* 로그 탭 */}
+              {/* Logs Tab */}
               {activeTab === 1 && (
                 <Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6">실시간 로그 ({logs.length})</Typography>
+                    <Typography variant="h6">Real-time Logs ({logs.length})</Typography>
                     <Button size="small" onClick={clearLogs}>
-                      모두 지우기
+                      Clear All
                     </Button>
                   </Box>
 
@@ -498,7 +498,7 @@ export function DevToolsDemo() {
                                   {log.data !== undefined && debugMode && (
                                     <Accordion sx={{ mt: 1 }}>
                                       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                        <Typography variant="caption">데이터 보기</Typography>
+                                        <Typography variant="caption">View Data</Typography>
                                       </AccordionSummary>
                                       <AccordionDetails>
                                         <Box sx={{ fontSize: '0.75rem' }}>
@@ -516,24 +516,24 @@ export function DevToolsDemo() {
                         ))}
                       </List>
                     ) : (
-                      <Alert severity="info">로그가 없습니다. 이미지 처리를 시도해보세요.</Alert>
+                      <Alert severity="info">No logs available. Try processing an image.</Alert>
                     )}
                   </Box>
                 </Box>
               )}
 
-              {/* 코드 생성기 탭 */}
+              {/* Code Generator Tab */}
               {activeTab === 2 && (
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    코드 생성기
+                    Code Generator
                   </Typography>
 
                   <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
-                        label="작업 유형"
+                        label="Operation Type"
                         select
                         value={codeGenOptions.operation}
                         onChange={(e) =>
@@ -543,16 +543,16 @@ export function DevToolsDemo() {
                           }))
                         }
                       >
-                        <MenuItem value="resize">리사이징</MenuItem>
-                        <MenuItem value="thumbnail">썸네일</MenuItem>
-                        <MenuItem value="blur">블러</MenuItem>
+                        <MenuItem value="resize">Resize</MenuItem>
+                        <MenuItem value="thumbnail">Thumbnail</MenuItem>
+                        <MenuItem value="blur">Blur</MenuItem>
                       </TextField>
                     </Grid>
 
                     <Grid size={{ xs: 6, sm: 3 }}>
                       <TextField
                         fullWidth
-                        label="너비"
+                        label="Width"
                         type="number"
                         value={codeGenOptions.width}
                         onChange={(e) =>
@@ -567,7 +567,7 @@ export function DevToolsDemo() {
                     <Grid size={{ xs: 6, sm: 3 }}>
                       <TextField
                         fullWidth
-                        label="높이"
+                        label="Height"
                         type="number"
                         value={codeGenOptions.height}
                         onChange={(e) =>
@@ -607,7 +607,7 @@ export function DevToolsDemo() {
                           }
                         />
                       }
-                      label="에러 처리"
+                      label="Error Handling"
                     />
                     <FormControlLabel
                       control={
@@ -621,17 +621,17 @@ export function DevToolsDemo() {
                           }
                         />
                       }
-                      label="주석"
+                      label="Comments"
                     />
                   </Stack>
 
                   <Button variant="contained" onClick={generateCode} startIcon={<CodeIcon />} sx={{ mb: 3 }}>
-                    코드 생성
+                    Generate Code
                   </Button>
 
                   {generatedCode && (
                     <CodeSnippet
-                      title="생성된 코드"
+                      title="Generated Code"
                       examples={[
                         {
                           title: 'Generated Code',
@@ -646,18 +646,17 @@ export function DevToolsDemo() {
                 </Box>
               )}
 
-              {/* 브라우저 정보 탭 */}
+              {/* Browser Info Tab */}
               {activeTab === 3 && (
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    브라우저 상세 정보
+                    Browser Detailed Information
                   </Typography>
 
                   <JsonViewer data={browserInfo} />
 
                   <Alert severity="info" sx={{ mt: 2 }}>
-                    이 정보는 웹 이미지 유틸리티가 사용자 브라우저에서 어떤 기능을 사용할 수 있는지 확인하는 데 도움이
-                    됩니다.
+                    This information helps identify which features the web image utility can use in your browser.
                   </Alert>
                 </Box>
               )}

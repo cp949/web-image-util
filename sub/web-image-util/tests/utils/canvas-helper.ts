@@ -1,13 +1,13 @@
 /**
- * 테스트용 Canvas 생성 및 픽셀 데이터 검증 유틸리티
+ * Canvas creation and pixel data validation utilities for testing
  */
 
 /**
- * 테스트용 Canvas 생성 유틸리티
- * @param width Canvas 너비
- * @param height Canvas 높이
- * @param fillColor 채울 색상 (기본: 'red')
- * @returns 생성된 HTMLCanvasElement
+ * Canvas creation utility for testing
+ * @param width Canvas width
+ * @param height Canvas height
+ * @param fillColor Fill color (default: 'red')
+ * @returns Generated HTMLCanvasElement
  */
 export function createTestCanvas(
 	width: number,
@@ -30,11 +30,11 @@ export function createTestCanvas(
 }
 
 /**
- * Canvas에서 특정 위치의 픽셀 데이터 가져오기
- * @param canvas 대상 Canvas
- * @param x X 좌표
- * @param y Y 좌표
- * @returns RGBA 값 객체
+ * Get pixel data at specific position from Canvas
+ * @param canvas Target Canvas
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @returns RGBA values object
  */
 export function getCanvasPixelData(
 	canvas: HTMLCanvasElement,
@@ -53,11 +53,11 @@ export function getCanvasPixelData(
 }
 
 /**
- * 두 Canvas가 시각적으로 동일한지 확인
- * @param canvas1 첫 번째 Canvas
- * @param canvas2 두 번째 Canvas
- * @param tolerance 허용 오차 (기본: 5)
- * @returns 동일 여부
+ * Check if two Canvases are visually identical
+ * @param canvas1 First Canvas
+ * @param canvas2 Second Canvas
+ * @param tolerance Tolerance threshold (default: 5)
+ * @returns Whether they are identical
  */
 export function compareCanvases(
 	canvas1: HTMLCanvasElement,
@@ -88,12 +88,12 @@ export function compareCanvases(
 }
 
 /**
- * 그라디언트가 있는 테스트용 Canvas 생성
- * @param width Canvas 너비
- * @param height Canvas 높이
- * @param startColor 시작 색상
- * @param endColor 끝 색상
- * @returns 생성된 HTMLCanvasElement
+ * Create test Canvas with gradient
+ * @param width Canvas width
+ * @param height Canvas height
+ * @param startColor Starting color
+ * @param endColor Ending color
+ * @returns Generated HTMLCanvasElement
  */
 export function createGradientCanvas(
 	width: number,
@@ -121,13 +121,13 @@ export function createGradientCanvas(
 }
 
 /**
- * 패턴이 있는 테스트용 Canvas 생성 (체커보드 패턴)
- * @param width Canvas 너비
- * @param height Canvas 높이
- * @param color1 첫 번째 색상
- * @param color2 두 번째 색상
- * @param squareSize 사각형 크기
- * @returns 생성된 HTMLCanvasElement
+ * Create test Canvas with checkerboard pattern
+ * @param width Canvas width
+ * @param height Canvas height
+ * @param color1 First color
+ * @param color2 Second color
+ * @param squareSize Square size
+ * @returns Generated HTMLCanvasElement
  */
 export function createCheckerboardCanvas(
 	width: number,
@@ -158,10 +158,10 @@ export function createCheckerboardCanvas(
 }
 
 /**
- * Canvas를 Blob으로 변환
- * @param canvas 대상 Canvas
- * @param type 이미지 타입 (기본: 'image/png')
- * @param quality 품질 (0-1)
+ * Convert Canvas to Blob
+ * @param canvas Target Canvas
+ * @param type Image type (default: 'image/png')
+ * @param quality Quality (0-1)
  * @returns Blob Promise
  */
 export async function canvasToBlob(

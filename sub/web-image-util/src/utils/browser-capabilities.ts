@@ -1,75 +1,75 @@
 /**
- * 브라우저 기능 감지 시스템
+ * Browser capability detection system
  *
- * @description OffscreenCanvas + Web Worker 성능 최적화를 위한
- * 브라우저 기능 감지 및 최적 처리 모드 선택 시스템
+ * @description Browser capability detection and optimal processing mode selection system
+ * for OffscreenCanvas + Web Worker performance optimization
  */
 
 // ============================================================================
-// TYPES - 브라우저 기능 및 성능 관련 타입들
+// TYPES - Browser capability and performance related types
 // ============================================================================
 
 /**
- * 브라우저 기능 감지 결과
+ * Browser capability detection results
  */
 export interface BrowserCapabilities {
-  /** OffscreenCanvas 지원 여부 */
+  /** OffscreenCanvas support */
   offscreenCanvas: boolean;
-  /** Web Workers 지원 여부 */
+  /** Web Workers support */
   webWorkers: boolean;
-  /** ImageBitmap 지원 여부 */
+  /** ImageBitmap support */
   imageBitmap: boolean;
-  /** WebP 포맷 지원 여부 */
+  /** WebP format support */
   webp: boolean;
-  /** AVIF 포맷 지원 여부 */
+  /** AVIF format support */
   avif: boolean;
-  /** Transferable Objects 지원 여부 */
+  /** Transferable Objects support */
   transferableObjects: boolean;
-  /** SharedArrayBuffer 지원 여부 */
+  /** SharedArrayBuffer support */
   sharedArrayBuffer: boolean;
-  /** 장치 픽셀 비율 */
+  /** Device pixel ratio */
   devicePixelRatio: number;
 }
 
 /**
- * 성능 기능 분석 결과
+ * Performance features analysis result
  */
 export interface PerformanceFeatures {
-  /** OffscreenCanvas 사용 가능 여부 */
+  /** Whether OffscreenCanvas can be used */
   canUseOffscreenCanvas: boolean;
-  /** Web Workers 사용 가능 여부 */
+  /** Whether Web Workers can be used */
   canUseWebWorkers: boolean;
-  /** ImageBitmap 사용 가능 여부 */
+  /** Whether ImageBitmap can be used */
   canUseImageBitmap: boolean;
-  /** 권장 처리 모드 */
+  /** Recommended processing mode */
   recommendedProcessingMode: 'main-thread' | 'web-worker' | 'offscreen';
 }
 
 /**
- * 감지 옵션
+ * Detection options
  */
 export interface DetectionOptions {
-  /** 캐시 사용 여부 (기본: true) */
+  /** Whether to use cache (default: true) */
   useCache?: boolean;
-  /** 타임아웃 시간 (밀리초, 기본: 5000) */
+  /** Timeout duration in milliseconds (default: 5000) */
   timeout?: number;
-  /** 디버그 모드 (기본: false) */
+  /** Debug mode (default: false) */
   debug?: boolean;
 }
 
 // ============================================================================
-// CACHE SYSTEM - 감지 결과 캐싱 시스템
+// CACHE SYSTEM - Detection result caching system
 // ============================================================================
 
 /**
- * 감지 결과 캐시
+ * Capability detection result cache
  */
 class CapabilityCache {
   private cache = new Map<string, any>();
   private isSSR = typeof window === 'undefined' && typeof globalThis.document === 'undefined';
 
   /**
-   * 캐시에서 값 가져오기
+   * Get value from cache
    */
   get<T>(key: string): T | undefined {
     if (this.isSSR) return undefined;
@@ -77,7 +77,7 @@ class CapabilityCache {
   }
 
   /**
-   * 캐시에 값 저장하기
+   * Store value in cache
    */
   set<T>(key: string, value: T): void {
     if (this.isSSR) return;
@@ -85,14 +85,14 @@ class CapabilityCache {
   }
 
   /**
-   * 캐시 초기화
+   * Clear cache
    */
   clear(): void {
     this.cache.clear();
   }
 
   /**
-   * SSR 환경 여부
+   * Whether SSR environment
    */
   get isServerSide(): boolean {
     return this.isSSR;
@@ -102,11 +102,11 @@ class CapabilityCache {
 const capabilityCache = new CapabilityCache();
 
 // ============================================================================
-// FEATURE DETECTION FUNCTIONS - 개별 기능 감지 함수들
+// FEATURE DETECTION FUNCTIONS - Individual feature detection functions
 // ============================================================================
 
 /**
- * OffscreenCanvas 지원 여부 감지
+ * Detect OffscreenCanvas support
  */
 function detectOffscreenCanvas(): boolean {
   if (capabilityCache.isServerSide) return false;
@@ -119,7 +119,7 @@ function detectOffscreenCanvas(): boolean {
 }
 
 /**
- * Web Workers 지원 여부 감지
+ * Detect Web Workers support
  */
 function detectWebWorkers(): boolean {
   if (capabilityCache.isServerSide) return false;
@@ -132,7 +132,7 @@ function detectWebWorkers(): boolean {
 }
 
 /**
- * ImageBitmap 지원 여부 감지
+ * Detect ImageBitmap support
  */
 function detectImageBitmap(): boolean {
   if (capabilityCache.isServerSide) return false;
@@ -145,17 +145,17 @@ function detectImageBitmap(): boolean {
 }
 
 /**
- * Transferable Objects 지원 여부 감지
+ * Detect Transferable Objects support
  */
 function detectTransferableObjects(): boolean {
   if (capabilityCache.isServerSide) return false;
 
   try {
-    // MessageChannel을 사용한 테스트
+    // Test using MessageChannel
     const channel = new MessageChannel();
     const buffer = new ArrayBuffer(8);
 
-    // 동기적으로 transferable 여부만 확인
+    // Check transferable capability synchronously
     return typeof channel.port1.postMessage === 'function' && buffer instanceof ArrayBuffer;
   } catch {
     return false;
@@ -163,7 +163,7 @@ function detectTransferableObjects(): boolean {
 }
 
 /**
- * SharedArrayBuffer 지원 여부 감지
+ * Detect SharedArrayBuffer support
  */
 function detectSharedArrayBuffer(): boolean {
   if (capabilityCache.isServerSide) return false;
@@ -176,7 +176,7 @@ function detectSharedArrayBuffer(): boolean {
 }
 
 /**
- * 장치 픽셀 비율 가져오기
+ * Get device pixel ratio
  */
 function getDevicePixelRatio(): number {
   if (capabilityCache.isServerSide) return 1;
@@ -189,11 +189,11 @@ function getDevicePixelRatio(): number {
 }
 
 // ============================================================================
-// ASYNC FORMAT DETECTION - 비동기 포맷 지원 감지
+// ASYNC FORMAT DETECTION - Asynchronous format support detection
 // ============================================================================
 
 /**
- * WebP 지원 여부 비동기 감지
+ * Detect WebP support asynchronously
  */
 async function detectWebPSupport(timeout: number = 5000): Promise<boolean> {
   if (capabilityCache.isServerSide) return false;
@@ -220,7 +220,7 @@ async function detectWebPSupport(timeout: number = 5000): Promise<boolean> {
         resolve(false);
       };
 
-      // 1x1 WebP 이미지 (투명)
+      // 1x1 WebP image (transparent)
       img.src = 'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA';
     } catch {
       clearTimeout(timeoutId);
@@ -231,7 +231,7 @@ async function detectWebPSupport(timeout: number = 5000): Promise<boolean> {
 }
 
 /**
- * AVIF 지원 여부 비동기 감지
+ * Detect AVIF support asynchronously
  */
 async function detectAVIFSupport(timeout: number = 5000): Promise<boolean> {
   if (capabilityCache.isServerSide) return false;
@@ -258,7 +258,7 @@ async function detectAVIFSupport(timeout: number = 5000): Promise<boolean> {
         resolve(false);
       };
 
-      // 1x1 AVIF 이미지 (투명)
+      // 1x1 AVIF image (transparent)
       img.src =
         'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEAwgMg8f8D///8WfhwB8+ErK42A=';
     } catch {
@@ -270,16 +270,16 @@ async function detectAVIFSupport(timeout: number = 5000): Promise<boolean> {
 }
 
 // ============================================================================
-// PROCESSING MODE SELECTION - 최적 처리 모드 선택 알고리즘
+// PROCESSING MODE SELECTION - Optimal processing mode selection algorithm
 // ============================================================================
 
 /**
- * 브라우저 기능을 바탕으로 최적 처리 모드 결정
+ * Determine optimal processing mode based on browser capabilities
  */
 function determineOptimalProcessingMode(capabilities: BrowserCapabilities): 'main-thread' | 'web-worker' | 'offscreen' {
-  // 우선순위: offscreen > web-worker > main-thread
+  // Priority: offscreen > web-worker > main-thread
 
-  // 1. OffscreenCanvas + Web Workers + ImageBitmap = 최고 성능
+  // 1. OffscreenCanvas + Web Workers + ImageBitmap = Best performance
   if (
     capabilities.offscreenCanvas &&
     capabilities.webWorkers &&
@@ -289,17 +289,17 @@ function determineOptimalProcessingMode(capabilities: BrowserCapabilities): 'mai
     return 'offscreen';
   }
 
-  // 2. Web Workers + Transferable Objects = 중간 성능
+  // 2. Web Workers + Transferable Objects = Medium performance
   if (capabilities.webWorkers && capabilities.transferableObjects) {
     return 'web-worker';
   }
 
-  // 3. 메인 스레드 처리 (기본)
+  // 3. Main thread processing (default)
   return 'main-thread';
 }
 
 /**
- * 성능 기능 분석 (내부 함수)
+ * Analyze performance features (internal function)
  */
 function analyzePerformanceFeaturesInternal(capabilities: BrowserCapabilities): PerformanceFeatures {
   return {
@@ -311,17 +311,17 @@ function analyzePerformanceFeaturesInternal(capabilities: BrowserCapabilities): 
 }
 
 // ============================================================================
-// MAIN DETECTOR CLASS - 메인 브라우저 기능 감지 클래스
+// MAIN DETECTOR CLASS - Main browser capability detection class
 // ============================================================================
 
 /**
- * 브라우저 기능 감지기
+ * Browser capability detector
  */
 export class BrowserCapabilityDetector {
   private static instance: BrowserCapabilityDetector;
 
   /**
-   * 싱글톤 인스턴스 가져오기
+   * Get singleton instance
    */
   static getInstance(): BrowserCapabilityDetector {
     if (!BrowserCapabilityDetector.instance) {
@@ -331,25 +331,25 @@ export class BrowserCapabilityDetector {
   }
 
   /**
-   * 전체 브라우저 기능 감지 (비동기)
+   * Detect all browser capabilities (asynchronous)
    */
   async detectCapabilities(options: DetectionOptions = {}): Promise<BrowserCapabilities> {
     const { useCache = true, timeout = 5000, debug = false } = options;
 
     const cacheKey = 'browser-capabilities';
 
-    // 캐시된 결과 확인
+    // Check cached results
     if (useCache) {
       const cached = capabilityCache.get<BrowserCapabilities>(cacheKey);
       if (cached) {
-        if (debug) console.log('[BrowserCapabilities] 캐시된 결과 사용:', cached);
+        if (debug) console.log('[BrowserCapabilities] Using cached results:', cached);
         return cached;
       }
     }
 
-    if (debug) console.log('[BrowserCapabilities] 새로운 감지 시작...');
+    if (debug) console.log('[BrowserCapabilities] Starting new detection...');
 
-    // 동기 기능들 먼저 감지
+    // Detect synchronous capabilities first
     const syncCapabilities = {
       offscreenCanvas: detectOffscreenCanvas(),
       webWorkers: detectWebWorkers(),
@@ -359,9 +359,9 @@ export class BrowserCapabilityDetector {
       devicePixelRatio: getDevicePixelRatio(),
     };
 
-    if (debug) console.log('[BrowserCapabilities] 동기 기능 감지 완료:', syncCapabilities);
+    if (debug) console.log('[BrowserCapabilities] Synchronous capabilities detected:', syncCapabilities);
 
-    // 비동기 포맷 지원 감지
+    // Detect asynchronous format support
     const [webp, avif] = await Promise.all([detectWebPSupport(timeout), detectAVIFSupport(timeout)]);
 
     const capabilities: BrowserCapabilities = {
@@ -370,9 +370,9 @@ export class BrowserCapabilityDetector {
       avif,
     };
 
-    if (debug) console.log('[BrowserCapabilities] 전체 감지 완료:', capabilities);
+    if (debug) console.log('[BrowserCapabilities] All capabilities detected:', capabilities);
 
-    // 캐시에 저장
+    // Store in cache
     if (useCache) {
       capabilityCache.set(cacheKey, capabilities);
     }
@@ -381,7 +381,7 @@ export class BrowserCapabilityDetector {
   }
 
   /**
-   * 성능 기능 분석
+   * Analyze performance features
    */
   async analyzePerformance(options: DetectionOptions = {}): Promise<PerformanceFeatures> {
     const capabilities = await this.detectCapabilities(options);
@@ -389,7 +389,7 @@ export class BrowserCapabilityDetector {
   }
 
   /**
-   * 개별 기능 감지 (동기)
+   * Detect individual features (synchronous)
    */
   detectSyncFeatures(): Omit<BrowserCapabilities, 'webp' | 'avif'> {
     return {
@@ -403,7 +403,7 @@ export class BrowserCapabilityDetector {
   }
 
   /**
-   * 포맷 지원 감지 (비동기)
+   * Detect format support (asynchronous)
    */
   async detectFormatSupport(timeout: number = 5000): Promise<{ webp: boolean; avif: boolean }> {
     const [webp, avif] = await Promise.all([detectWebPSupport(timeout), detectAVIFSupport(timeout)]);
@@ -412,14 +412,14 @@ export class BrowserCapabilityDetector {
   }
 
   /**
-   * 캐시 초기화
+   * Clear cache
    */
   clearCache(): void {
     capabilityCache.clear();
   }
 
   /**
-   * SSR 환경 여부
+   * Whether SSR environment
    */
   get isServerSide(): boolean {
     return capabilityCache.isServerSide;
@@ -427,11 +427,11 @@ export class BrowserCapabilityDetector {
 }
 
 // ============================================================================
-// CONVENIENCE FUNCTIONS - 편의 함수들
+// CONVENIENCE FUNCTIONS - Convenience functions
 // ============================================================================
 
 /**
- * 빠른 브라우저 기능 감지 (싱글톤 사용)
+ * Quick browser capability detection (using singleton)
  */
 export async function detectBrowserCapabilities(options?: DetectionOptions): Promise<BrowserCapabilities> {
   const detector = BrowserCapabilityDetector.getInstance();
@@ -439,7 +439,7 @@ export async function detectBrowserCapabilities(options?: DetectionOptions): Pro
 }
 
 /**
- * 빠른 성능 기능 분석 (싱글톤 사용)
+ * Quick performance feature analysis (using singleton)
  */
 export async function analyzePerformanceFeatures(options?: DetectionOptions): Promise<PerformanceFeatures> {
   const detector = BrowserCapabilityDetector.getInstance();
@@ -447,7 +447,7 @@ export async function analyzePerformanceFeatures(options?: DetectionOptions): Pr
 }
 
 /**
- * 동기 기능만 빠르게 감지
+ * Quickly detect synchronous features only
  */
 export function detectSyncCapabilities(): Omit<BrowserCapabilities, 'webp' | 'avif'> {
   const detector = BrowserCapabilityDetector.getInstance();
@@ -455,7 +455,7 @@ export function detectSyncCapabilities(): Omit<BrowserCapabilities, 'webp' | 'av
 }
 
 /**
- * 포맷 지원만 빠르게 감지
+ * Quickly detect format support only
  */
 export async function detectFormatSupport(timeout?: number): Promise<{ webp: boolean; avif: boolean }> {
   const detector = BrowserCapabilityDetector.getInstance();
@@ -463,7 +463,7 @@ export async function detectFormatSupport(timeout?: number): Promise<{ webp: boo
 }
 
 /**
- * 최적 처리 모드 빠른 결정
+ * Quick determination of optimal processing mode
  */
 export async function getOptimalProcessingMode(
   options?: DetectionOptions
@@ -473,11 +473,11 @@ export async function getOptimalProcessingMode(
 }
 
 // ============================================================================
-// CONSTANTS - 상수 정의
+// CONSTANTS - Constant definitions
 // ============================================================================
 
 /**
- * 기본 감지 옵션
+ * Default detection options
  */
 export const DEFAULT_DETECTION_OPTIONS: Required<DetectionOptions> = {
   useCache: true,
@@ -486,22 +486,22 @@ export const DEFAULT_DETECTION_OPTIONS: Required<DetectionOptions> = {
 } as const;
 
 /**
- * 처리 모드별 설명
+ * Processing mode descriptions
  */
 export const PROCESSING_MODE_DESCRIPTIONS = {
-  offscreen: 'OffscreenCanvas + Web Worker를 사용한 최고 성능 처리',
-  'web-worker': 'Web Worker를 사용한 멀티스레드 처리',
-  'main-thread': '메인 스레드에서 처리 (기본, 호환성 최우선)',
+  offscreen: 'Highest performance processing using OffscreenCanvas + Web Worker',
+  'web-worker': 'Multi-threaded processing using Web Worker',
+  'main-thread': 'Processing on main thread (default, compatibility first)',
 } as const;
 
 /**
- * 기능별 성능 임팩트 가중치
+ * Performance impact weights by feature
  */
 export const FEATURE_PERFORMANCE_WEIGHTS = {
-  offscreenCanvas: 0.4, // 40% - 가장 큰 성능 향상
-  webWorkers: 0.3, // 30% - 멀티스레드 처리
-  imageBitmap: 0.15, // 15% - 효율적인 이미지 처리
-  transferableObjects: 0.1, // 10% - 데이터 전송 최적화
-  webp: 0.03, // 3% - 작은 파일 크기
-  avif: 0.02, // 2% - 더 작은 파일 크기
+  offscreenCanvas: 0.4, // 40% - Largest performance improvement
+  webWorkers: 0.3, // 30% - Multi-threaded processing
+  imageBitmap: 0.15, // 15% - Efficient image processing
+  transferableObjects: 0.1, // 10% - Data transfer optimization
+  webp: 0.03, // 3% - Small file size
+  avif: 0.02, // 2% - Smaller file size
 } as const;

@@ -1,15 +1,15 @@
 /**
- * 테스트용 이미지 생성 유틸리티
+ * Image creation utilities for testing
  */
 
 import { createTestCanvas, canvasToBlob } from './canvas-helper';
 
 /**
- * 테스트용 이미지 Blob 생성
- * @param width 이미지 너비
- * @param height 이미지 높이
- * @param color 배경 색상 (기본: 'red')
- * @param type 이미지 타입 (기본: 'image/png')
+ * Create test image Blob
+ * @param width Image width
+ * @param height Image height
+ * @param color Background color (default: 'red')
+ * @param type Image type (default: 'image/png')
  * @returns Blob Promise
  */
 export async function createTestImageBlob(
@@ -23,10 +23,10 @@ export async function createTestImageBlob(
 }
 
 /**
- * 테스트용 이미지 HTMLImageElement 생성
- * @param width 이미지 너비
- * @param height 이미지 높이
- * @param color 배경 색상 (기본: 'red')
+ * Create test image HTMLImageElement
+ * @param width Image width
+ * @param height Image height
+ * @param color Background color (default: 'red')
  * @returns HTMLImageElement Promise
  */
 export async function createTestImageElement(
@@ -53,12 +53,12 @@ export async function createTestImageElement(
 }
 
 /**
- * 테스트용 이미지 Data URL 생성
- * @param width 이미지 너비
- * @param height 이미지 높이
- * @param color 배경 색상 (기본: 'red')
- * @param type 이미지 타입 (기본: 'image/png')
- * @returns Data URL 문자열
+ * Create test image Data URL
+ * @param width Image width
+ * @param height Image height
+ * @param color Background color (default: 'red')
+ * @param type Image type (default: 'image/png')
+ * @returns Data URL string
  */
 export function createTestImageDataUrl(
 	width: number,
@@ -71,8 +71,8 @@ export function createTestImageDataUrl(
 }
 
 /**
- * 이미지 Blob의 실제 크기 측정
- * @param blob 이미지 Blob
+ * Measure actual dimensions of image Blob
+ * @param blob Image Blob
  * @returns { width, height } Promise
  */
 export async function getImageDimensions(
@@ -95,7 +95,7 @@ export async function getImageDimensions(
 }
 
 /**
- * Canvas의 실제 크기 측정
+ * Measure actual dimensions of Canvas
  * @param canvas HTMLCanvasElement
  * @returns { width, height }
  */
@@ -109,11 +109,11 @@ export function getCanvasDimensions(
 }
 
 /**
- * 두 이미지 Blob의 크기 비교 (허용 오차 포함)
- * @param blob1 첫 번째 Blob
- * @param blob2 두 번째 Blob
- * @param tolerance 허용 오차 비율 (기본: 0.01 = 1%)
- * @returns 유사 여부
+ * Compare sizes of two image Blobs (with tolerance)
+ * @param blob1 First Blob
+ * @param blob2 Second Blob
+ * @param tolerance Tolerance ratio (default: 0.01 = 1%)
+ * @returns Whether sizes are similar
  */
 export function compareBlobSizes(
 	blob1: Blob,

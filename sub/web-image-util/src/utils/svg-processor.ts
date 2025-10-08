@@ -1,14 +1,14 @@
 /**
- * SVG 처리 전용 클래스
+ * Dedicated SVG processing class
  *
- * @description SVG 문자열의 정규화, 크기 추출, 브라우저 호환성 처리를 담당
+ * @description Handles SVG string normalization, dimension extraction, and browser compatibility processing
  */
 
 import { ImageProcessError } from '../types';
 import { normalizeSvgBasics } from './svg-compatibility';
 
 /**
- * SVG 크기 정보
+ * SVG dimension information
  */
 export interface SVGDimensions {
   width: number;
@@ -16,40 +16,40 @@ export interface SVGDimensions {
 }
 
 /**
- * SVG 처리 옵션
+ * SVG processing options
  */
 export interface SVGProcessOptions {
-  /** 기본 크기 (크기 정보가 없는 경우) */
+  /** Default size (when size information is not available) */
   defaultWidth?: number;
   defaultHeight?: number;
-  /** SVG 정규화 여부 (기본: true) */
+  /** Whether to normalize SVG (default: true) */
   normalize?: boolean;
-  /** CORS 설정 */
+  /** CORS settings */
   crossOrigin?: string;
 }
 
 /**
- * SVG 전용 처리기
+ * Dedicated SVG processor
  *
- * @description SVG 문자열을 HTMLImageElement로 안전하게 변환하고
- * 크기 정보 추출, 정규화 등의 고급 기능을 제공
+ * @description Safely converts SVG strings to HTMLImageElement and
+ * provides advanced features like dimension extraction and normalization
  */
 export class SVGProcessor {
   /**
-   * SVG 문자열을 HTMLImageElement로 변환
+   * Convert SVG string to HTMLImageElement
    *
-   * @param svgString SVG XML 문자열
-   * @param options 처리 옵션
+   * @param svgString SVG XML string
+   * @param options Processing options
    * @returns HTMLImageElement
    */
   static async processSVGString(svgString: string, options: SVGProcessOptions = {}): Promise<HTMLImageElement> {
     const { normalize = true, crossOrigin } = options;
 
     try {
-      // SVG 정규화 적용
+      // Apply SVG normalization
       const processedSvg = normalize ? normalizeSvgBasics(svgString) : svgString;
 
-      // 크기 정보 추출 및 기본값 적용
+      // Extract dimension information and apply defaults
       const dimensions = this.extractSVGDimensions(processedSvg);
       let finalSvg = processedSvg;
 
@@ -59,7 +59,7 @@ export class SVGProcessor {
         finalSvg = this.addDimensionsToSVG(processedSvg, width, height);
       }
 
-      // Blob 생성 및 Object URL로 변환
+      // Create Blob and convert to Object URL
       const blob = new Blob([finalSvg], { type: 'image/svg+xml;charset=utf-8' });
       const objectUrl = URL.createObjectURL(blob);
 
@@ -70,16 +70,16 @@ export class SVGProcessor {
           img.crossOrigin = crossOrigin;
         }
 
-        // Promise 기반 이미지 로딩
+        // Promise-based image loading
         await new Promise<void>((resolve, reject) => {
           img.onload = () => resolve();
-          img.onerror = () => reject(new ImageProcessError('SVG 로딩에 실패했습니다', 'SVG_LOAD_FAILED'));
+          img.onerror = () => reject(new ImageProcessError('SVG loading failed', 'SVG_LOAD_FAILED'));
           img.src = objectUrl;
         });
 
         return img;
       } finally {
-        // Object URL 정리 (메모리 누수 방지)
+        // Clean up Object URL (prevent memory leaks)
         URL.revokeObjectURL(objectUrl);
       }
     } catch (error) {
@@ -87,17 +87,17 @@ export class SVGProcessor {
         throw error;
       }
       throw new ImageProcessError(
-        `SVG 처리 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
+        `Error occurred during SVG processing: ${error instanceof Error ? error.message : String(error)}`,
         'SVG_PROCESSING_FAILED'
       );
     }
   }
 
   /**
-   * SVG 문자열에서 크기 정보를 추출
+   * Extract dimension information from SVG string
    *
-   * @param svgString SVG XML 문자열
-   * @returns 크기 정보 또는 null
+   * @param svgString SVG XML string
+   * @returns Dimension information or null
    */
   static extractSVGDimensions(svgString: string): SVGDimensions | null {
     try {
@@ -109,7 +109,7 @@ export class SVGProcessor {
         return null;
       }
 
-      // 1. width/height 속성에서 직접 추출
+      // 1. Direct extraction from width/height attributes
       const widthAttr = svgElement.getAttribute('width');
       const heightAttr = svgElement.getAttribute('height');
 
@@ -122,19 +122,19 @@ export class SVGProcessor {
         }
       }
 
-      // 2. viewBox에서 추출
+      // 2. Extract from viewBox
       const viewBox = svgElement.getAttribute('viewBox');
       if (viewBox) {
         const values = viewBox.trim().split(/\s+/).map(Number);
         if (values.length === 4 && values[2] > 0 && values[3] > 0) {
           return {
-            width: values[2], // viewBox의 width
-            height: values[3], // viewBox의 height
+            width: values[2], // viewBox width
+            height: values[3], // viewBox height
           };
         }
       }
 
-      // 3. style 속성에서 추출
+      // 3. Extract from style attribute
       const style = svgElement.getAttribute('style');
       if (style) {
         const widthMatch = style.match(/width\s*:\s*([^;]+)/);
@@ -152,18 +152,18 @@ export class SVGProcessor {
 
       return null;
     } catch (error) {
-      // 파싱 에러 시 null 반환
+      // Return null on parsing error
       return null;
     }
   }
 
   /**
-   * SVG에 크기 정보를 추가
+   * Add dimension information to SVG
    *
-   * @param svgString 원본 SVG 문자열
-   * @param width 폭
-   * @param height 높이
-   * @returns 크기 정보가 추가된 SVG 문자열
+   * @param svgString Original SVG string
+   * @param width Width
+   * @param height Height
+   * @returns SVG string with dimension information added
    */
   static addDimensionsToSVG(svgString: string, width: number, height: number): string {
     try {
@@ -172,11 +172,11 @@ export class SVGProcessor {
       const svgElement = doc.querySelector('svg');
 
       if (!svgElement) {
-        // SVG 요소가 없는 경우 래퍼 추가
+        // Add wrapper when SVG element is not found
         return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${svgString}</svg>`;
       }
 
-      // 기존 크기 정보가 없는 경우에만 추가
+      // Only add if existing size information is not present
       if (!svgElement.getAttribute('width')) {
         svgElement.setAttribute('width', String(width));
       }
@@ -189,61 +189,61 @@ export class SVGProcessor {
 
       return new XMLSerializer().serializeToString(doc);
     } catch (error) {
-      // 파싱 실패 시 간단한 래퍼 추가
+      // Add simple wrapper on parsing failure
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${svgString}</svg>`;
     }
   }
 
   /**
-   * CSS 크기 값을 픽셀 단위 숫자로 변환
+   * Convert CSS size value to pixel unit number
    *
-   * @param value CSS 크기 값 (예: "100px", "50%", "2em")
-   * @returns 픽셀 단위 숫자 또는 0
+   * @param value CSS size value (e.g., "100px", "50%", "2em")
+   * @returns Pixel unit number or 0
    */
   private static parseNumericValue(value: string): number {
     if (!value) return 0;
 
-    // 숫자만 있는 경우
+    // When only numbers are present
     const numOnly = parseFloat(value);
     if (!isNaN(numOnly) && isFinite(numOnly)) {
       return numOnly;
     }
 
-    // px 단위 제거
+    // Remove px unit
     const pxMatch = value.match(/^([0-9.]+)px$/i);
     if (pxMatch) {
       const num = parseFloat(pxMatch[1]);
       return !isNaN(num) && isFinite(num) ? num : 0;
     }
 
-    // % 단위는 기본값으로 처리 (정확한 계산 불가)
+    // Handle % unit as default (accurate calculation not possible)
     const percentMatch = value.match(/^([0-9.]+)%$/i);
     if (percentMatch) {
-      return 0; // 상대적 크기는 처리하지 않음
+      return 0; // Do not process relative sizes
     }
 
-    // em, rem, pt 등 다른 단위는 기본값 처리
+    // Handle other units like em, rem, pt as default
     return 0;
   }
 
   /**
-   * SVG 문자열 유효성 검사
+   * Validate SVG string
    *
-   * @param svgString 검사할 SVG 문자열
-   * @returns 유효한 SVG인지 여부
+   * @param svgString SVG string to validate
+   * @returns Whether it is a valid SVG
    */
   static isValidSVG(svgString: string): boolean {
     try {
       const parser = new DOMParser();
       const doc = parser.parseFromString(svgString, 'image/svg+xml');
 
-      // 파싱 에러 확인
+      // Check for parsing errors
       const parserError = doc.querySelector('parsererror');
       if (parserError) {
         return false;
       }
 
-      // SVG 요소 존재 확인
+      // Check for SVG element existence
       const svgElement = doc.querySelector('svg');
       return svgElement !== null;
     } catch (error) {
@@ -252,10 +252,10 @@ export class SVGProcessor {
   }
 
   /**
-   * SVG 정규화 및 호환성 처리 (기존 함수 래퍼)
+   * SVG normalization and compatibility processing (existing function wrapper)
    *
-   * @param svgString 원본 SVG 문자열
-   * @returns 정규화된 SVG 문자열
+   * @param svgString Original SVG string
+   * @returns Normalized SVG string
    */
   static normalizeSVG(svgString: string): string {
     return normalizeSvgBasics(svgString);

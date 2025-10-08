@@ -57,7 +57,7 @@ describe('Processor Resize Integration Tests', () => {
     it('should process all fit modes in parallel', async () => {
       const testBlob = await createTestImageBlob(400, 300, 'cyan');
 
-      // 모든 fit 모드 동시 실행
+      // Execute all fit modes concurrently
       const results = await Promise.all([
         processImage(testBlob).resize({ fit: 'cover', width: 200, height: 200 }).toBlob(),
         processImage(testBlob).resize({ fit: 'contain', width: 200, height: 200 }).toBlob(),
@@ -83,7 +83,7 @@ describe('Processor Resize Integration Tests', () => {
         .resize({ fit: 'contain', width: 200, height: 400, trimEmpty: true })
         .toCanvas();
 
-      // trimEmpty 적용 시 크기가 다를 수 있음
+      // Size may differ when trimEmpty is applied
       expect(withTrim.width).toBeLessThanOrEqual(withoutTrim.width);
       expect(withTrim.height).toBeLessThanOrEqual(withoutTrim.height);
     });
@@ -101,7 +101,7 @@ describe('Processor Resize Integration Tests', () => {
         })
         .toCanvas();
 
-      // 트림 후에도 캔버스 생성 성공
+      // Canvas creation should succeed even after trimming
       expect(result.canvas).toBeInstanceOf(HTMLCanvasElement);
       expect(result.width).toBeGreaterThan(0);
       expect(result.height).toBeGreaterThan(0);
@@ -121,7 +121,7 @@ describe('Processor Resize Integration Tests', () => {
         })
         .toCanvas();
 
-      // 확대하지 않음
+      // Should not enlarge
       expect(result.width).toBeLessThanOrEqual(400);
       expect(result.height).toBeLessThanOrEqual(400);
     });
@@ -141,7 +141,7 @@ describe('Processor Resize Integration Tests', () => {
 
       for (const config of configs) {
         const result = await processImage(testBlob).resize(config).toCanvas();
-        expect(result.width).toBeGreaterThan(100); // 패딩 포함
+        expect(result.width).toBeGreaterThan(100); // Including padding
         expect(result.height).toBeGreaterThan(100);
       }
     });
@@ -243,7 +243,7 @@ describe('Processor Resize Integration Tests', () => {
     });
 
     it('should resize to final size directly', async () => {
-      // ✅ 올바른 방법: 최종 크기를 직접 지정
+      // ✅ Correct approach: Specify the final size directly
       const testBlob = await createTestImageBlob(800, 600, 'orange');
       const result = await processImage(testBlob).resize({ fit: 'cover', width: 200, height: 200 }).toCanvas();
 
@@ -289,10 +289,10 @@ describe('Processor Resize Integration Tests', () => {
       const testBlob = await createTestImageBlob(400, 300, 'blue');
       const processor = processImage(testBlob);
 
-      // 첫 번째 resize는 성공
+      // First resize should succeed
       processor.resize({ fit: 'cover', width: 200, height: 200 });
 
-      // 두 번째 resize는 에러 발생
+      // Second resize should throw error
       expect(() => {
         processor.resize({ fit: 'cover', width: 100, height: 100 });
       }).toThrow(ImageProcessError);
@@ -311,10 +311,10 @@ describe('Processor Resize Integration Tests', () => {
         expect(error).toBeInstanceOf(ImageProcessError);
         if (error instanceof ImageProcessError) {
           expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
-          expect(error.message).toContain('resize()는 한 번만 호출할 수 있습니다');
+          expect(error.message).toContain('resize() can only be called once');
           expect(error.suggestions).toBeInstanceOf(Array);
           expect(error.suggestions.length).toBeGreaterThan(0);
-          expect(error.suggestions[0]).toContain('모든 리사이징 옵션을 하나의 resize() 호출에 포함');
+          expect(error.suggestions[0]).toContain('Include all resizing options in a single resize() call');
         }
       }
     });
@@ -322,11 +322,11 @@ describe('Processor Resize Integration Tests', () => {
     it('should allow separate processors to resize independently', async () => {
       const testBlob = await createTestImageBlob(400, 300, 'blue');
 
-      // 각각 별도의 프로세서 인스턴스 생성
+      // Create separate processor instances
       const processor1 = processImage(testBlob);
       const processor2 = processImage(testBlob);
 
-      // 각각 독립적으로 resize 가능
+      // Each can resize independently
       const result1 = await processor1.resize({ fit: 'cover', width: 200, height: 200 }).toBlob();
       const result2 = await processor2.resize({ fit: 'cover', width: 100, height: 100 }).toBlob();
 
@@ -338,7 +338,7 @@ describe('Processor Resize Integration Tests', () => {
       const testBlob = await createTestImageBlob(400, 300, 'blue');
       const processor = processImage(testBlob);
 
-      // resize 후 blur는 허용되어야 함
+      // Blur should be allowed after resize
       const result = await processor.resize({ fit: 'cover', width: 200, height: 200 }).blur(5).toBlob();
 
       expect(result.blob).toBeInstanceOf(Blob);
@@ -357,12 +357,12 @@ describe('Processor Resize Integration Tests', () => {
         expect.fail('Should have thrown error');
       } catch (error) {
         if (error instanceof ImageProcessError) {
-          // 에러 코드로 프로그래밍적 처리 가능
+          // Error code allows programmatic handling
           expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
 
-          // 제안 사항이 실제로 도움이 되는지 확인
-          const hasSeparateInstance = error.suggestions.some((s) => s.includes('별도'));
-          const hasDirectSize = error.suggestions.some((s) => s.includes('직접 지정'));
+          // Verify suggestions are actually helpful
+          const hasSeparateInstance = error.suggestions.some((s) => s.includes('separate'));
+          const hasDirectSize = error.suggestions.some((s) => s.includes('directly'));
           expect(hasSeparateInstance || hasDirectSize).toBe(true);
         }
       }

@@ -3,12 +3,12 @@ import { createImageError } from './error-helpers';
 import { productionLog } from '../utils/debug';
 import type { ImageAnalysis } from './high-res-detector';
 import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector';
-// 브라우저 환경에 최적화된 메모리 관리
+// Memory management optimized for browser environment
 import { SteppedProcessor } from './stepped-processor';
 import { TiledProcessor } from './tiled-processor';
 
 /**
- * 고해상도 처리 옵션
+ * High-resolution processing options
  */
 export interface HighResolutionOptions {
   quality?: 'fast' | 'balanced' | 'high';
@@ -20,20 +20,20 @@ export interface HighResolutionOptions {
 }
 
 /**
- * 고해상도 처리 진행 상황
+ * High-resolution processing progress
  */
 export interface HighResolutionProgress {
   stage: 'analyzing' | 'processing' | 'finalizing' | 'completed';
   progress: number; // 0-100
   currentStrategy: ProcessingStrategy;
-  timeElapsed: number; // 초
-  estimatedTimeRemaining: number; // 초
+  timeElapsed: number; // seconds
+  estimatedTimeRemaining: number; // seconds
   memoryUsageMB: number;
   details?: string;
 }
 
 /**
- * 처리 결과 정보
+ * Processing result information
  */
 export interface ProcessingResult {
   canvas: HTMLCanvasElement;
@@ -45,8 +45,8 @@ export interface ProcessingResult {
 }
 
 /**
- * 고해상도 이미지 처리 관리자
- * 다양한 처리 전략을 조합하여 최적의 결과를 제공합니다.
+ * High-resolution image processing manager
+ * Provides optimal results by combining various processing strategies.
  */
 export class HighResolutionManager {
   private static readonly DEFAULT_OPTIONS = {
@@ -56,13 +56,13 @@ export class HighResolutionManager {
   };
 
   /**
-   * 최적 전략으로 이미지 리사이징
+   * Resize image with optimal strategy
    *
-   * @param img - 소스 이미지
-   * @param targetWidth - 목표 너비
-   * @param targetHeight - 목표 높이
-   * @param options - 처리 옵션
-   * @returns 처리 결과
+   * @param img - Source image
+   * @param targetWidth - Target width
+   * @param targetHeight - Target height
+   * @param options - Processing options
+   * @returns Processing result
    */
   static async smartResize(
     img: HTMLImageElement,
@@ -74,31 +74,31 @@ export class HighResolutionManager {
     const startTime = Date.now();
     let memoryPeakUsage = 0;
 
-    // 진행 상황 추적 초기화
+    // Initialize progress tracking
     const progressTracker = opts.enableProgressTracking ? this.createProgressTracker(opts.onProgress) : null;
 
     try {
-      // 1. 이미지 분석
+      // 1. Image analysis
       progressTracker?.update('analyzing', 10, 'Analyzing image...');
       const analysis = HighResolutionDetector.analyzeImage(img);
 
-      // 2. 처리 전략 결정
+      // 2. Determine processing strategy
       const strategy = this.selectOptimalStrategy(analysis, opts, img, targetWidth, targetHeight);
       progressTracker?.update('analyzing', 20, `Strategy selected: ${strategy}`);
 
-      // 3. 메모리 상황 확인 및 조정
+      // 3. Check and manage memory situation
       await this.checkAndManageMemory(opts, analysis);
       progressTracker?.update('analyzing', 30, 'Memory check completed');
 
-      // 4. 실제 처리 수행
+      // 4. Execute actual processing
       progressTracker?.update('processing', 40, 'Starting image processing...');
       const canvas = await this.executeProcessing(img, targetWidth, targetHeight, strategy, opts, progressTracker);
 
-      // 5. 후처리 및 최적화
+      // 5. Post-processing and optimization
       progressTracker?.update('finalizing', 90, 'Finalizing...');
       const optimizedCanvas = await this.postProcess(canvas, opts);
 
-      // 6. 결과 생성
+      // 6. Generate result
       const processingTime = (Date.now() - startTime) / 1000;
       memoryPeakUsage = this.getCurrentMemoryUsage();
 
@@ -113,12 +113,12 @@ export class HighResolutionManager {
         quality: opts.quality,
       };
     } catch (error) {
-      throw createImageError('RESIZE_FAILED', error as Error, { debug: { stage: '고해상도 처리' } });
+      throw createImageError('RESIZE_FAILED', error as Error, { debug: { stage: 'High-resolution processing' } });
     }
   }
 
   /**
-   * 최적 처리 전략 선택
+   * Select optimal processing strategy
    * @private
    */
   private static selectOptimalStrategy(
@@ -128,32 +128,32 @@ export class HighResolutionManager {
     targetWidth: number,
     targetHeight: number
   ): ProcessingStrategy {
-    // 강제 전략이 지정된 경우
+    // If force strategy is specified
     if (opts.forceStrategy) {
       return opts.forceStrategy;
     }
 
-    // 메모리 제약이 심각한 경우
-    // 간단한 메모리 체크
+    // If memory constraints are severe
+    // Simple memory check
     const memoryCheck = this.isMemoryLow();
     if (memoryCheck) {
       productionLog.warn('Low memory detected, selecting memory-efficient strategy');
       return this.selectMemoryEfficientStrategy(analysis);
     }
 
-    // 품질 설정에 따른 전략 조정
+    // Strategy adjustment based on quality settings
     if (opts.quality === 'fast') {
       return this.selectFastStrategy(analysis);
     } else if (opts.quality === 'high') {
       return this.selectHighQualityStrategy(analysis, img, targetWidth, targetHeight);
     }
 
-    // 균형잡힌 전략 선택 (기본)
+    // Select balanced strategy (default)
     return analysis.strategy;
   }
 
   /**
-   * 메모리 효율적 전략 선택
+   * Select memory efficient strategy
    * @private
    */
   private static selectMemoryEfficientStrategy(analysis: ImageAnalysis): ProcessingStrategy {
@@ -166,11 +166,11 @@ export class HighResolutionManager {
   }
 
   /**
-   * 빠른 처리 전략 선택
+   * Select fast processing strategy
    * @private
    */
   private static selectFastStrategy(analysis: ImageAnalysis): ProcessingStrategy {
-    // 빠른 처리를 위해 가장 간단한 전략 우선 선택
+    // Select simplest strategy first for fast processing
     if (analysis.estimatedMemoryMB <= 64) {
       return ProcessingStrategy.DIRECT;
     } else if (analysis.estimatedMemoryMB <= 128) {
@@ -180,7 +180,7 @@ export class HighResolutionManager {
   }
 
   /**
-   * 고품질 처리 전략 선택
+   * Select high-quality processing strategy
    * @private
    */
   private static selectHighQualityStrategy(
@@ -189,14 +189,14 @@ export class HighResolutionManager {
     targetWidth: number,
     targetHeight: number
   ): ProcessingStrategy {
-    // 큰 축소가 필요한 경우 단계적 축소가 품질상 유리
+    // Stepped reduction is advantageous for quality when large reduction is needed
     const scaleRatio = Math.min(targetWidth / img.width, targetHeight / img.height);
 
     if (scaleRatio < 0.3 && analysis.estimatedMemoryMB <= 256) {
       return ProcessingStrategy.STEPPED;
     }
 
-    // 매우 큰 이미지는 타일 처리
+    // Very large images use tile processing
     if (analysis.estimatedMemoryMB > 256) {
       return ProcessingStrategy.TILED;
     }
@@ -205,7 +205,7 @@ export class HighResolutionManager {
   }
 
   /**
-   * 실제 처리 수행
+   * Perform actual processing
    * @private
    */
   private static async executeProcessing(
@@ -218,7 +218,7 @@ export class HighResolutionManager {
   ): Promise<HTMLCanvasElement> {
     const progressCallback = progressTracker
       ? (current: number, total: number) => {
-          const progress = 40 + (current / total) * 40; // 40-80% 범위
+          const progress = 40 + (current / total) * 40; // 40-80% range
           progressTracker.update('processing', progress, `Processing ${current}/${total}...`);
         }
       : undefined;
@@ -250,7 +250,7 @@ export class HighResolutionManager {
   }
 
   /**
-   * 직접 리사이징
+   * Direct resizing
    * @private
    */
   private static async directResize(
@@ -260,7 +260,7 @@ export class HighResolutionManager {
     quality: 'fast' | 'balanced' | 'high'
   ): Promise<HTMLCanvasElement> {
     return withManagedCanvas(targetWidth, targetHeight, (canvas, ctx) => {
-      // 품질 설정
+      // Quality settings
       switch (quality) {
         case 'fast':
           ctx.imageSmoothingEnabled = false;
@@ -280,7 +280,7 @@ export class HighResolutionManager {
   }
 
   /**
-   * 청크 기반 리사이징
+   * Chunk-based resizing
    * @private
    */
   private static async chunkedResize(
@@ -302,14 +302,14 @@ export class HighResolutionManager {
   }
 
   /**
-   * 메모리 상황 확인 및 관리
+   * Check and manage memory situation
    * @private
    */
   private static async checkAndManageMemory(opts: HighResolutionOptions, analysis: ImageAnalysis): Promise<void> {
     const memoryInfo = this.getEstimatedUsage();
     const availableMB = (memoryInfo.limit - memoryInfo.used) / (1024 * 1024);
 
-    // 메모리 경고 발생
+    // Memory warning occurred
     if (opts.onMemoryWarning && availableMB < (opts.maxMemoryUsageMB || 256)) {
       opts.onMemoryWarning({
         usageRatio: memoryInfo.used / memoryInfo.limit,
@@ -317,7 +317,7 @@ export class HighResolutionManager {
       });
     }
 
-    // 메모리 부족 시 가비지 컬렉션 유도
+    // Trigger garbage collection when memory is low
     if (this.isMemoryLow()) {
       if (typeof global !== 'undefined' && global.gc) {
         global.gc();
@@ -326,22 +326,22 @@ export class HighResolutionManager {
   }
 
   /**
-   * 후처리 및 최적화
+   * Post-processing and optimization
    * @private
    */
   private static async postProcess(canvas: HTMLCanvasElement, opts: HighResolutionOptions): Promise<HTMLCanvasElement> {
-    // 품질에 따른 후처리
+    // Post-processing based on quality
     if (opts.quality === 'high') {
-      // 고품질 모드에서는 추가 최적화 없음
+      // No additional optimization in high-quality mode
       return canvas;
     }
 
-    // 필요시 추가 최적화 로직 구현 가능
+    // Additional optimization logic can be implemented if needed
     return canvas;
   }
 
   /**
-   * 진행 상황 추적기 생성
+   * Create progress tracker
    * @private
    */
   private static createProgressTracker(onProgress?: (progress: HighResolutionProgress) => void) {
@@ -358,7 +358,7 @@ export class HighResolutionManager {
         onProgress({
           stage,
           progress: Math.min(100, Math.max(0, progress)),
-          currentStrategy: ProcessingStrategy.DIRECT, // 실제 전략으로 업데이트 필요
+          currentStrategy: ProcessingStrategy.DIRECT, // Needs to be updated with actual strategy
           timeElapsed: Math.round(timeElapsed * 10) / 10,
           estimatedTimeRemaining: Math.round(estimatedRemaining * 10) / 10,
           memoryUsageMB: HighResolutionManager.getCurrentMemoryUsage(),
@@ -369,7 +369,7 @@ export class HighResolutionManager {
   }
 
   /**
-   * 현재 메모리 사용량 반환 (MB)
+   * Return current memory usage (MB)
    * @private
    */
   private static getCurrentMemoryUsage(): number {
@@ -378,13 +378,13 @@ export class HighResolutionManager {
   }
 
   /**
-   * 처리 가능 여부 사전 검사
+   * Pre-check processing capability
    *
-   * @param img - 검사할 이미지
-   * @param targetWidth - 목표 너비
-   * @param targetHeight - 목표 높이
-   * @param options - 처리 옵션
-   * @returns 검사 결과
+   * @param img - image to check
+   * @param targetWidth - target width
+   * @param targetHeight - target height
+   * @param options - processing options
+   * @returns check result
    */
   static validateProcessingCapability(
     img: HTMLImageElement,
@@ -402,32 +402,32 @@ export class HighResolutionManager {
     const analysis = HighResolutionDetector.analyzeImage(img);
     const warnings: string[] = [];
 
-    // 기본 검사
+    // Basic checks
     const validation = HighResolutionDetector.validateProcessingCapability(img);
     warnings.push(...validation.limitations);
 
-    // 메모리 검사
+    // Memory check
     if (analysis.estimatedMemoryMB > opts.maxMemoryUsageMB) {
       warnings.push(
-        `예상 메모리 사용량이 제한을 초과합니다: ${analysis.estimatedMemoryMB}MB > ${opts.maxMemoryUsageMB}MB`
+        `Expected memory usage exceeds limit: ${analysis.estimatedMemoryMB}MB > ${opts.maxMemoryUsageMB}MB`
       );
     }
 
-    // 타겟 크기 검사
+    // Target size check
     const targetPixels = targetWidth * targetHeight;
     const maxSafePixels = analysis.maxSafeDimension * analysis.maxSafeDimension;
     if (targetPixels > maxSafePixels) {
-      warnings.push('목표 이미지 크기가 브라우저 한계를 초과할 수 있습니다.');
+      warnings.push('Target image size may exceed browser limits.');
     }
 
-    // 권장 전략 결정
+    // Determine recommended strategy
     const recommendedStrategy = this.selectOptimalStrategy(analysis, opts as any, img, targetWidth, targetHeight);
 
-    // 예상 처리 시간 계산
+    // Calculate estimated processing time
     const timeEstimate = HighResolutionDetector.estimateProcessingTime(analysis);
     let estimatedTime = timeEstimate.estimatedSeconds;
 
-    // 전략에 따른 시간 조정
+    // Time adjustment based on strategy
     switch (recommendedStrategy) {
       case ProcessingStrategy.STEPPED:
         estimatedTime *= 1.5;
@@ -447,13 +447,13 @@ export class HighResolutionManager {
   }
 
   /**
-   * 배치 이미지 처리
+   * Batch image processing
    *
-   * @param images - 처리할 이미지 배열
-   * @param targetWidth - 목표 너비
-   * @param targetHeight - 목표 높이
-   * @param options - 처리 옵션
-   * @returns 처리 결과 배열
+   * @param images - array of images to process
+   * @param targetWidth - target width
+   * @param targetHeight - target height
+   * @param options - processing options
+   * @returns array of processing results
    */
   static async batchSmartResize(
     images: HTMLImageElement[],
@@ -468,7 +468,7 @@ export class HighResolutionManager {
     const results: ProcessingResult[] = new Array(images.length);
     let completed = 0;
 
-    // 이미지를 청크로 나누어 병렬 처리
+    // Divide images into chunks for parallel processing
     const chunks: HTMLImageElement[][] = [];
     for (let i = 0; i < images.length; i += concurrency) {
       chunks.push(images.slice(i, i + concurrency));
@@ -488,7 +488,7 @@ export class HighResolutionManager {
           return result;
         } catch (error) {
           throw createImageError('RESIZE_FAILED', error as Error, {
-            debug: { stage: '배치 처리', index: globalIndex },
+            debug: { stage: 'Batch processing', index: globalIndex },
           });
         }
       });
@@ -500,7 +500,7 @@ export class HighResolutionManager {
   }
 
   /**
-   * 간단한 메모리 부족 체크
+   * Simple memory shortage check
    * @private
    */
   private static isMemoryLow(): boolean {
@@ -513,7 +513,7 @@ export class HighResolutionManager {
   }
 
   /**
-   * 메모리 사용량 추정
+   * Estimate memory usage
    * @private
    */
   private static getEstimatedUsage(): { used: number; limit: number } {
@@ -525,7 +525,7 @@ export class HighResolutionManager {
       };
     }
 
-    // 기본값 (추정치)
+    // Default values (estimated)
     return {
       used: 64 * 1024 * 1024, // 64MB
       limit: 512 * 1024 * 1024, // 512MB

@@ -69,19 +69,19 @@ export function ImageSourceConverterDemo() {
     if (file) {
       setSourceFile(file);
 
-      // 미리보기 생성
+      // Generate preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setSourcePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
 
-      // 결과 초기화
+      // Initialize results
       setResults([]);
     }
   }, []);
 
-  // 샘플 이미지 선택 핸들러
+  // Sample image selection handler
   const handleSampleImageSelect = useCallback(async (imagePath: string) => {
     try {
       const response = await fetch(imagePath);
@@ -92,7 +92,7 @@ export function ImageSourceConverterDemo() {
       setSourcePreview(imagePath);
       setResults([]);
     } catch (error) {
-      console.error('샘플 이미지 로드 실패:', error);
+      console.error('Sample image load failed:', error);
     }
   }, []);
 
@@ -112,7 +112,7 @@ export function ImageSourceConverterDemo() {
 
     const conversionTasks = [];
 
-    // 선택된 변환 작업들 준비
+    // Prepare selected conversion tasks
     if (options.toCanvas) {
       conversionTasks.push({
         type: 'Canvas',
@@ -144,7 +144,7 @@ export function ImageSourceConverterDemo() {
       conversionTasks.push({
         type: 'Element',
         task: async () => {
-          // HTMLImageElement 생성 (Result 객체의 toElement() 메서드 사용)
+          // Create HTMLImageElement (using Result object's toElement() method)
           const result = await processImage(sourceFile).toDataURL();
           const img = new Image();
           img.src = result.dataURL;
@@ -170,7 +170,7 @@ export function ImageSourceConverterDemo() {
       conversionTasks.push({
         type: 'ArrayBuffer',
         task: async () => {
-          // ArrayBuffer 변환 (ResultBlob의 toArrayBuffer() 메서드 사용)
+          // ArrayBuffer conversion (using ResultBlob's toArrayBuffer() method)
           const result = await processImage(sourceFile).toBlob();
           return await result.toArrayBuffer();
         },
@@ -181,14 +181,14 @@ export function ImageSourceConverterDemo() {
       conversionTasks.push({
         type: 'Uint8Array',
         task: async () => {
-          // Uint8Array 변환 (ResultBlob의 toUint8Array() 메서드 사용)
+          // Uint8Array conversion (using ResultBlob's toUint8Array() method)
           const result = await processImage(sourceFile).toBlob();
           return await result.toUint8Array();
         },
       });
     }
 
-    // 모든 변환 작업 실행
+    // Execute all conversion tasks
     const newResults: ConversionResult[] = [];
 
     for (const conversionTask of conversionTasks) {
@@ -206,7 +206,7 @@ export function ImageSourceConverterDemo() {
         } else if (result instanceof Uint8Array) {
           size = result.length;
         } else if (result instanceof HTMLImageElement) {
-          // HTMLImageElement의 경우 크기 정보를 가져올 수 없음
+          // Cannot get size information for HTMLImageElement
           size = undefined;
         } else if (typeof result === 'string') {
           size = new Blob([result]).size;
@@ -230,14 +230,14 @@ export function ImageSourceConverterDemo() {
         });
       }
 
-      // 실시간 결과 업데이트
+      // Real-time result updates
       setResults([...newResults]);
     }
 
     setConverting(false);
   };
 
-  // 이미지 선택 시 자동으로 변환 시작
+  // Automatically start conversion when image is selected
   useEffect(() => {
     if (sourceFile && !converting && Object.values(options).some(Boolean)) {
       handleConvert();
@@ -259,7 +259,7 @@ export function ImageSourceConverterDemo() {
         const blob = new Blob([new Uint8Array(result.result)]);
         saveAs(blob, `${fileName}.bin`);
       } else if (result.result instanceof HTMLImageElement) {
-        // HTMLImageElement를 라이브러리 API로 변환하여 다운로드
+        // Convert HTMLImageElement using library API for download
         try {
           const processed = await processImage(result.result).toBlob();
           saveAs(processed.blob, `${fileName}.png`);
@@ -268,7 +268,7 @@ export function ImageSourceConverterDemo() {
         }
       } else if (typeof result.result === 'string') {
         if (result.type === 'DataURL') {
-          // DataURL을 이미지로 다운로드
+          // Download DataURL as image
           const link = document.createElement('a');
           link.href = result.result;
           link.download = `${fileName}.png`;
@@ -280,7 +280,7 @@ export function ImageSourceConverterDemo() {
       }
     } catch (error) {
       console.error('Download failed:', error);
-      console.error('다운로드 중 오류가 발생했습니다.');
+      console.error('An error occurred during download.');
     }
   };
 
@@ -291,9 +291,9 @@ export function ImageSourceConverterDemo() {
 
     const code = `import { convertToBlob, convertToDataURL, convertToFile, convertToElement } from '@cp949/web-image-util';
 
-// 기본 사용법 - 함수 기반 API
+// Basic usage - Function-based API
 
-// 체이닝 변환 예제
+// Chaining conversion examples
 ${selectedConversions
   .map((type) => {
     switch (type) {
@@ -317,17 +317,17 @@ ${selectedConversions
   })
   .join('\n')}
 
-// 빌더 패턴 API - 더 간결한 문법
+// Builder pattern API - more concise syntax
 const canvas = await from(imageSource).to.canvas();
 const blob = await from(canvas).to.blob({ format: 'image/webp', quality: 0.9 });
 const file = await from(blob).to.file('converted-image.webp', { format: 'image/webp' });
 
-// 연속 변환 예제
+// Sequential conversion examples
 const canvas = await converter.toCanvas();
 const blob = await ImageSourceConverter.from(canvas).toBlob();
 const dataURL = await ImageSourceConverter.from(blob).toDataURL();
 
-// 다양한 입력 소스 타입 지원
+// Support for various input source types
 const fromFile = ImageSourceConverter.from(file);           // File
 const fromBlob = ImageSourceConverter.from(blob);           // Blob
 const fromDataURL = ImageSourceConverter.from(dataURL);     // DataURL string
@@ -340,7 +340,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
 
     return [
       {
-        title: 'convertTo 함수들 사용 예제',
+        title: 'convertTo functions usage examples',
         code,
         language: 'typescript' as const,
       },
@@ -408,22 +408,21 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        이미지 변환 함수들 테스트
+        Image Conversion Functions Test
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-        새로운 convertTo 변환 함수들의 모든 기능을 테스트해보세요. 다양한 입력 형태에서 여러 출력 형태로의 변환을
-        지원합니다.
+        Test all features of the new convertTo conversion functions. Supports conversion from various input formats to multiple output formats.
       </Typography>
 
       <Grid container spacing={4}>
-        {/* 좌측: 설정 및 입력 */}
+        {/* Left: Settings and input */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
-            {/* 파일 업로드 */}
+            {/* File upload */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  이미지 업로드
+                  Image Upload
                 </Typography>
 
                 <Box
@@ -443,17 +442,17 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
                   <input {...getInputProps()} />
                   <UploadIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
                   <Typography variant="body1" gutterBottom>
-                    {isDragActive ? '파일을 여기에 놓으세요' : '이미지를 드래그하거나 클릭하여 선택'}
+                    {isDragActive ? 'Drop files here' : 'Drag and drop images or click to select'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    JPEG, PNG, GIF, BMP, WebP, SVG 지원
+                    Supports JPEG, PNG, GIF, BMP, WebP, SVG
                   </Typography>
                 </Box>
 
                 {sourcePreview && (
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="subtitle2" gutterBottom>
-                      원본 미리보기
+                      Original Preview
                     </Typography>
                     <img
                       src={sourcePreview}
@@ -475,21 +474,21 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
               </CardContent>
             </Card>
 
-            {/* 샘플 이미지 */}
+            {/* Sample images */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  샘플 이미지
+                  Sample Images
                 </Typography>
                 <SampleImageSelector onImageSelect={handleSampleImageSelect} recommendedFor="image-source-converter" />
               </CardContent>
             </Card>
 
-            {/* 변환 옵션 */}
+            {/* Conversion options */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  변환 옵션
+                  Conversion Options
                 </Typography>
 
                 <FormGroup>
@@ -562,7 +561,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
                   <Box sx={{ mt: 2 }}>
                     <LinearProgress />
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      변환 진행 중... ({results.length} / {Object.values(options).filter(Boolean).length})
+                      Converting... ({results.length} / {Object.values(options).filter(Boolean).length})
                     </Typography>
                   </Box>
                 )}
@@ -571,15 +570,15 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
           </Stack>
         </Grid>
 
-        {/* 우측: 결과 */}
+        {/* Right: Results */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* 변환 결과 */}
+            {/* Conversion results */}
             {results.length > 0 && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    변환 결과
+                    Conversion Results
                   </Typography>
 
                   <Grid container spacing={2}>
@@ -607,11 +606,11 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
                           {result.success ? (
                             <>
                               <Typography variant="body2" color="text.secondary">
-                                처리 시간: {formatTime(result.processingTime)}
+                                Processing time: {formatTime(result.processingTime)}
                               </Typography>
                               {result.size && (
                                 <Typography variant="body2" color="text.secondary">
-                                  크기: {formatFileSize(result.size)}
+                                  Size: {formatFileSize(result.size)}
                                 </Typography>
                               )}
 
@@ -625,16 +624,16 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
                                 sx={{ mt: 2 }}
                                 size="small"
                               >
-                                다운로드
+                                Download
                               </Button>
                             </>
                           ) : (
                             <>
                               <Typography variant="body2" color="error.main">
-                                오류: {result.error}
+                                Error: {result.error}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                처리 시간: {formatTime(result.processingTime)}
+                                Processing time: {formatTime(result.processingTime)}
                               </Typography>
                             </>
                           )}
@@ -646,18 +645,18 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
               </Card>
             )}
 
-            {/* 성능 통계 */}
+            {/* Performance statistics */}
             {results.length > 0 && results.some((r) => r.success) && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    성능 통계
+                    Performance Statistics
                   </Typography>
 
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 6, md: 3 }}>
                       <Typography variant="body2" color="text.secondary">
-                        성공한 변환
+                        Successful Conversions
                       </Typography>
                       <Typography variant="h6">
                         {results.filter((r) => r.success).length} / {results.length}
@@ -665,7 +664,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
                       <Typography variant="body2" color="text.secondary">
-                        평균 처리 시간
+                        Average Processing Time
                       </Typography>
                       <Typography variant="h6">
                         {formatTime(
@@ -676,7 +675,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
                       <Typography variant="body2" color="text.secondary">
-                        가장 빠른 변환
+                        Fastest Conversion
                       </Typography>
                       <Typography variant="h6">
                         {results.filter((r) => r.success).length > 0
@@ -688,7 +687,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
                       <Typography variant="body2" color="text.secondary">
-                        총 출력 크기
+                        Total Output Size
                       </Typography>
                       <Typography variant="h6">
                         {formatFileSize(
@@ -701,22 +700,22 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
               </Card>
             )}
 
-            {/* 사용 팁 */}
+            {/* Usage tips */}
             <Alert severity="info">
               <Typography variant="body2">
-                <strong>convertTo 함수들 특징:</strong>
+                <strong>convertTo Functions Features:</strong>
                 <br />
-                • 타입 안전한 변환: 각 메서드는 정확한 타입을 반환합니다
+                • Type-safe conversion: Each method returns the exact type
                 <br />
-                • 체이닝 가능: 결과를 다른 변환의 입력으로 사용할 수 있습니다
+                • Chainable: Results can be used as input for other conversions
                 <br />
-                • 다양한 입력 지원: File, Blob, Canvas, Image, DataURL, SVG, URL 모두 지원
-                <br />• 성능 최적화: 메타데이터 주입을 통한 최적화된 변환 경로 제공
+                • Diverse input support: Supports File, Blob, Canvas, Image, DataURL, SVG, URL
+                <br />• Performance optimization: Provides optimized conversion paths through metadata injection
               </Typography>
             </Alert>
 
-            {/* 코드 예제 */}
-            <CodeSnippet title="convertTo 함수들 사용법" examples={generateCodeExample()} />
+            {/* Code examples */}
+            <CodeSnippet title="convertTo Functions Usage" examples={generateCodeExample()} />
           </Stack>
         </Grid>
       </Grid>

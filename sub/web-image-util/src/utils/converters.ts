@@ -1,7 +1,7 @@
 /**
- * 이미지 변환 유틸리티 함수들
+ * Image conversion utility functions
  *
- * @description 단순하고 직관적인 이미지 변환 함수들을 제공
+ * @description Provides simple and intuitive image conversion functions
  */
 
 import { convertToImageElement } from '../core/source-converter';
@@ -10,71 +10,71 @@ import { ImageProcessError } from '../types';
 import { DataURLResultImpl, BlobResultImpl, FileResultImpl } from '../types/result-implementations';
 
 /**
- * 기본 Blob 변환 옵션
+ * Basic Blob conversion options
  */
 export interface ConvertToBlobOptions extends OutputOptions {
-  // includeMetadata 옵션 제거 - 별도 함수로 분리
+  // includeMetadata option removed - separated into dedicated function
 }
 
 /**
- * 상세 정보 포함 Blob 변환 옵션
+ * Detailed Blob conversion options with metadata
  */
 export interface ConvertToBlobDetailedOptions extends OutputOptions {
-  // 상세 정보는 항상 포함됨
+  // Detailed information is always included
 }
 
 /**
- * 기본 DataURL 변환 옵션
+ * Basic DataURL conversion options
  */
 export interface ConvertToDataURLOptions extends OutputOptions {
-  // includeMetadata 옵션 제거 - 별도 함수로 분리
+  // includeMetadata option removed - separated into dedicated function
 }
 
 /**
- * 상세 정보 포함 DataURL 변환 옵션
+ * Detailed DataURL conversion options with metadata
  */
 export interface ConvertToDataURLDetailedOptions extends OutputOptions {
-  // 상세 정보는 항상 포함됨
+  // Detailed information is always included
 }
 
 /**
- * 기본 File 변환 옵션
+ * Basic File conversion options
  */
 export interface ConvertToFileOptions extends OutputOptions {
-  /** 파일 확장자 자동 수정 여부 (기본: true) */
+  /** Whether to automatically adjust file extension (default: true) */
   autoExtension?: boolean;
 }
 
 /**
- * 상세 정보 포함 File 변환 옵션
+ * Detailed File conversion options with metadata
  */
 export interface ConvertToFileDetailedOptions extends OutputOptions {
-  /** 파일 확장자 자동 수정 여부 (기본: true) */
+  /** Whether to automatically adjust file extension (default: true) */
   autoExtension?: boolean;
 }
 
 /**
- * 다양한 이미지 소스를 Blob으로 변환 (간단한 결과)
+ * Convert various image sources to Blob (simple result)
  *
- * @description 이미지를 Blob으로 변환하여 반환합니다.
- * 메타데이터가 필요한 경우 `toBlobDetailed()` 함수를 사용하세요.
+ * @description Converts images to Blob and returns them.
+ * Use `toBlobDetailed()` function when metadata is needed.
  *
- * @param source 이미지 소스 (HTMLImageElement, HTMLCanvasElement, Blob, 또는 문자열)
- * @param options 변환 옵션
- * @returns Blob 객체
+ * @param source Image source (HTMLImageElement, HTMLCanvasElement, Blob, or string)
+ * @param options Conversion options
+ * @returns Blob object
  *
  * @example
  * ```typescript
- * // 기본 사용법
+ * // Basic usage
  * const blob = await convertToBlob(imageElement);
  *
- * // 포맷과 품질 지정
+ * // Specify format and quality
  * const blob = await convertToBlob(canvasElement, {
  *   format: 'webp',
  *   quality: 0.8
  * });
  *
- * // Blob을 다시 Blob으로 (포맷 변환)
+ * // Blob to Blob (format conversion)
  * const webpBlob = await convertToBlob(jpegBlob, { format: 'webp' });
  * ```
  */
@@ -83,14 +83,14 @@ export async function convertToBlob(
   options: ConvertToBlobOptions = {}
 ): Promise<Blob> {
   try {
-    // Canvas인 경우 직접 변환
+    // Direct conversion for Canvas
     if (source instanceof HTMLCanvasElement) {
       return await canvasToBlob(source, options);
     }
 
-    // Blob인 경우 포맷 변환이 필요한지 확인
+    // For Blob, check if format conversion is needed
     if (source instanceof Blob) {
-      // 동일한 포맷이고 품질 변경이 없으면 그대로 반환
+      // Return as-is if same format and no quality change
       if (
         !options.format ||
         source.type === `image/${options.format}` ||
@@ -100,32 +100,32 @@ export async function convertToBlob(
       }
     }
 
-    // HTMLImageElement로 변환 후 Canvas를 통해 Blob 생성
+    // Convert to HTMLImageElement then generate Blob through Canvas
     const imageElement = await convertToImageElement(source);
     const canvas = await imageElementToCanvas(imageElement);
     return await canvasToBlob(canvas, options);
   } catch (error) {
-    throw new ImageProcessError('Blob 변환 중 오류가 발생했습니다', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during Blob conversion', 'CONVERSION_FAILED', error as Error);
   }
 }
 
 /**
- * 다양한 이미지 소스를 Blob으로 변환 (상세 정보 포함)
+ * Convert various image sources to Blob (with detailed information)
  *
- * @description 이미지를 Blob으로 변환하고 메타데이터를 포함하여 반환합니다.
+ * @description Converts images to Blob and returns them with metadata.
  *
- * @param source 이미지 소스 (HTMLImageElement, HTMLCanvasElement, Blob, 또는 문자열)
- * @param options 변환 옵션
- * @returns BlobResult 객체 (Blob과 메타데이터 포함)
+ * @param source Image source (HTMLImageElement, HTMLCanvasElement, Blob, or string)
+ * @param options Conversion options
+ * @returns BlobResult object (Blob with metadata)
  *
  * @example
  * ```typescript
- * // 상세 정보 포함
+ * // With detailed information
  * const result = await toBlobDetailed(imageElement);
- * // 크기와 처리 시간 확인 가능
+ * // Can check size and processing time
  * // result.width, result.height, result.processingTime
  *
- * // 포맷과 품질 지정
+ * // Specify format and quality
  * const result = await toBlobDetailed(canvasElement, {
  *   format: 'webp',
  *   quality: 0.8
@@ -139,15 +139,15 @@ export async function convertToBlobDetailed(
   const startTime = Date.now();
 
   try {
-    // Canvas인 경우 직접 변환
+    // Direct conversion for Canvas
     if (source instanceof HTMLCanvasElement) {
       const blob = await canvasToBlob(source, options);
       return new BlobResultImpl(blob, source.width, source.height, Date.now() - startTime);
     }
 
-    // Blob인 경우
+    // For Blob
     if (source instanceof Blob) {
-      // 포맷 변환이 필요한지 확인
+      // Check if format conversion is needed
       if (
         !options.format ||
         source.type === `image/${options.format}` ||
@@ -158,7 +158,7 @@ export async function convertToBlobDetailed(
       }
     }
 
-    // HTMLImageElement로 변환 후 Canvas를 통해 Blob 생성
+    // Convert to HTMLImageElement then generate Blob through Canvas
     const imageElement = await convertToImageElement(source);
     const canvas = await imageElementToCanvas(imageElement);
     const blob = await canvasToBlob(canvas, options);
@@ -168,28 +168,28 @@ export async function convertToBlobDetailed(
       height: imageElement.height,
     });
   } catch (error) {
-    throw new ImageProcessError('Blob 변환 중 오류가 발생했습니다', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during Blob conversion', 'CONVERSION_FAILED', error as Error);
   }
 }
 
 /**
- * 다양한 이미지 소스를 Data URL로 변환
+ * Convert various image sources to Data URL
  *
- * @description 이미지를 Base64 인코딩된 Data URL로 변환
- * HTML img 태그의 src에 직접 사용 가능
- * 메타데이터가 필요한 경우 `toDataURLDetailed()` 함수를 사용하세요.
+ * @description Convert images to Base64-encoded Data URL
+ * Can be used directly in HTML img tag src
+ * Use `toDataURLDetailed()` function when metadata is needed.
  *
- * @param source 이미지 소스
- * @param options 변환 옵션
- * @returns Data URL 문자열
+ * @param source Image source
+ * @param options Conversion options
+ * @returns Data URL string
  *
  * @example
  * ```typescript
- * // 기본 사용법
+ * // Basic usage
  * const dataURL = await convertToDataURL(imageElement);
  * imgTag.src = dataURL;
  *
- * // 고품질 JPEG로 변환
+ * // Convert to high-quality JPEG
  * const dataURL = await convertToDataURL(blob, {
  *   format: 'jpeg',
  *   quality: 0.95
@@ -201,52 +201,52 @@ export async function convertToDataURL(
   options: ConvertToDataURLOptions = {}
 ): Promise<string> {
   try {
-    // Canvas인 경우 직접 변환
+    // Direct conversion for Canvas
     if (source instanceof HTMLCanvasElement) {
       return canvasToDataURL(source, options);
     }
 
-    // Blob인 경우
+    // For Blob
     if (source instanceof Blob) {
       return await blobToDataURL(source);
     }
 
-    // HTMLImageElement인 경우 Canvas를 거쳐서 변환 (포맷/품질 옵션 적용)
+    // For HTMLImageElement, convert through Canvas (apply format/quality options)
     const imageElement = await convertToImageElement(source);
 
-    // 옵션이 없으면 직접 변환 (더 빠름)
+    // Direct conversion if no options (faster)
     if (!options.format && !options.quality) {
-      // 이미 Data URL인 경우 그대로 반환
+      // Return as-is if already Data URL
       if (typeof source === 'string' && source.startsWith('data:')) {
         return source;
       }
     }
 
-    // Canvas를 통한 변환
+    // Conversion through Canvas
     const canvas = await imageElementToCanvas(imageElement);
     return canvasToDataURL(canvas, options);
   } catch (error) {
-    throw new ImageProcessError('Data URL 변환 중 오류가 발생했습니다', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during Data URL conversion', 'CONVERSION_FAILED', error as Error);
   }
 }
 
 /**
- * 다양한 이미지 소스를 Data URL로 변환 (상세 정보 포함)
+ * Convert various image sources to Data URL (with detailed information)
  *
- * @description 이미지를 Base64 인코딩된 Data URL로 변환하고 메타데이터를 포함하여 반환합니다.
+ * @description Convert images to Base64-encoded Data URL and return them with metadata.
  *
- * @param source 이미지 소스
- * @param options 변환 옵션
- * @returns DataURLResult 객체 (Data URL과 메타데이터 포함)
+ * @param source Image source
+ * @param options Conversion options
+ * @returns DataURLResult object (Data URL with metadata)
  *
  * @example
  * ```typescript
- * // 상세 정보 포함
+ * // With detailed information
  * const result = await toDataURLDetailed(imageElement);
- * // Data URL 길이와 크기 확인 가능
+ * // Can check Data URL length and size
  * // result.dataURL.length, result.width, result.height
  *
- * // 고품질 JPEG로 변환
+ * // Convert to high-quality JPEG
  * const result = await toDataURLDetailed(blob, {
  *   format: 'jpeg',
  *   quality: 0.95
@@ -260,31 +260,31 @@ export async function convertToDataURLDetailed(
   const startTime = Date.now();
 
   try {
-    // Canvas인 경우 직접 변환
+    // Direct conversion for Canvas
     if (source instanceof HTMLCanvasElement) {
       const dataURL = canvasToDataURL(source, options);
       return new DataURLResultImpl(dataURL, source.width, source.height, Date.now() - startTime);
     }
 
-    // Blob인 경우
+    // For Blob
     if (source instanceof Blob) {
       const dataURL = await blobToDataURL(source);
       const { width, height } = await getBlobDimensions(source);
       return new DataURLResultImpl(dataURL, width, height, Date.now() - startTime);
     }
 
-    // HTMLImageElement인 경우 Canvas를 거쳐서 변환 (포맷/품질 옵션 적용)
+    // For HTMLImageElement, convert through Canvas (apply format/quality options)
     const imageElement = await convertToImageElement(source);
 
-    // 옵션이 없으면 직접 변환 (더 빠름)
+    // Direct conversion if no options (faster)
     if (!options.format && !options.quality) {
-      // 이미 Data URL인 경우 그대로 반환
+      // Return as-is if already Data URL
       if (typeof source === 'string' && source.startsWith('data:')) {
         return new DataURLResultImpl(source, imageElement.width, imageElement.height, Date.now() - startTime);
       }
     }
 
-    // Canvas를 통한 변환
+    // Conversion through Canvas
     const canvas = await imageElementToCanvas(imageElement);
     const dataURL = canvasToDataURL(canvas, options);
 
@@ -293,40 +293,40 @@ export async function convertToDataURLDetailed(
       height: imageElement.height,
     });
   } catch (error) {
-    throw new ImageProcessError('Data URL 변환 중 오류가 발생했습니다', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during Data URL conversion', 'CONVERSION_FAILED', error as Error);
   }
 }
 
 /**
- * 다양한 이미지 소스를 File 객체로 변환
+ * Convert various image sources to File object
  *
- * @description FormData에 추가하여 서버로 업로드할 수 있는 File 객체 생성
- * 파일명의 확장자는 지정된 포맷에 맞게 자동으로 조정됨
- * 메타데이터가 필요한 경우 `toFileDetailed()` 함수를 사용하세요.
+ * @description Create File object that can be added to FormData and uploaded to server
+ * File extension is automatically adjusted to match the specified format
+ * Use `toFileDetailed()` function when metadata is needed.
  *
- * @param source 이미지 소스
- * @param filename 파일명
- * @param options 변환 옵션
- * @returns File 객체
+ * @param source Image source
+ * @param filename Filename
+ * @param options Conversion options
+ * @returns File object
  *
  * @example
  * ```typescript
- * // 기본 사용법
+ * // Basic usage
  * const file = await convertToFile(imageElement, 'photo.jpg');
  *
- * // WebP로 변환하여 파일 생성
+ * // Convert to WebP and create file
  * const file = await convertToFile(blob, 'image.webp', {
  *   format: 'webp',
  *   quality: 0.8
  * });
  *
- * // 확장자 자동 수정
+ * // Automatic extension correction
  * const file = await convertToFile(source, 'image.png', {
- *   format: 'jpeg', // 파일명이 자동으로 'image.jpeg'로 변경됨
+ *   format: 'jpeg', // Filename automatically changed to 'image.jpeg'
  *   autoExtension: true
  * });
  *
- * // FormData에 추가하여 업로드
+ * // Add to FormData and upload
  * const formData = new FormData();
  * formData.append('image', file);
  * await fetch('/upload', { method: 'POST', body: formData });
@@ -338,44 +338,44 @@ export async function convertToFile(
   options: ConvertToFileOptions = {}
 ): Promise<File> {
   try {
-    // Blob 생성
+    // Generate Blob
     const blob = await convertToBlob(source, options);
 
-    // 파일명 확장자 자동 수정
+    // Automatic filename extension correction
     let finalFilename = filename;
     if (options.autoExtension !== false && options.format) {
       finalFilename = adjustFileExtension(filename, options.format);
     }
 
-    // File 객체 생성
+    // Create File object
     return new File([blob], finalFilename, {
       type: blob.type,
       lastModified: Date.now(),
     });
   } catch (error) {
-    throw new ImageProcessError('File 객체 생성 중 오류가 발생했습니다', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during File object creation', 'CONVERSION_FAILED', error as Error);
   }
 }
 
 /**
- * 다양한 이미지 소스를 File 객체로 변환 (상세 정보 포함)
+ * Convert various image sources to File object (with detailed information)
  *
- * @description FormData에 추가하여 서버로 업로드할 수 있는 File 객체 생성하고 메타데이터를 포함하여 반환합니다.
- * 파일명의 확장자는 지정된 포맷에 맞게 자동으로 조정됩니다.
+ * @description Create File object that can be added to FormData and uploaded to server, and return with metadata.
+ * File extension is automatically adjusted to match the specified format.
  *
- * @param source 이미지 소스
- * @param filename 파일명
- * @param options 변환 옵션
- * @returns FileResult 객체 (File과 메타데이터 포함)
+ * @param source Image source
+ * @param filename Filename
+ * @param options Conversion options
+ * @returns FileResult object (File with metadata)
  *
  * @example
  * ```typescript
- * // 상세 정보 포함
+ * // With detailed information
  * const result = await toFileDetailed(imageElement, 'photo.jpg');
- * // 파일 크기와 이미지 크기 확인 가능
+ * // Can check file size and image size
  * // result.file.size, result.width, result.height
  *
- * // WebP로 변환하여 파일 생성
+ * // Convert to WebP and create file
  * const result = await toFileDetailed(blob, 'image.webp', {
  *   format: 'webp',
  *   quality: 0.8
@@ -390,16 +390,16 @@ export async function convertToFileDetailed(
   const startTime = Date.now();
 
   try {
-    // Blob 생성 (상세 정보 포함)
+    // Generate Blob (with detailed information)
     const blobResult = await convertToBlobDetailed(source, options);
 
-    // 파일명 확장자 자동 수정
+    // Automatic filename extension correction
     let finalFilename = filename;
     if (options.autoExtension !== false && options.format) {
       finalFilename = adjustFileExtension(filename, options.format);
     }
 
-    // File 객체 생성
+    // Create File object
     const file = new File([blobResult.blob], finalFilename, {
       type: blobResult.blob.type,
       lastModified: Date.now(),
@@ -413,14 +413,14 @@ export async function convertToFileDetailed(
       blobResult.originalSize
     );
   } catch (error) {
-    throw new ImageProcessError('File 객체 생성 중 오류가 발생했습니다', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during File object creation', 'CONVERSION_FAILED', error as Error);
   }
 }
 
-// === 내부 유틸리티 함수들 ===
+// === Internal utility functions ===
 
 /**
- * Canvas를 Blob으로 변환
+ * Convert Canvas to Blob
  */
 async function canvasToBlob(canvas: HTMLCanvasElement, options: OutputOptions): Promise<Blob> {
   const mimeType = formatToMimeType(options.format || 'png');
@@ -432,14 +432,14 @@ async function canvasToBlob(canvas: HTMLCanvasElement, options: OutputOptions): 
         if (blob) {
           resolve(blob);
         } else {
-          // 대체 포맷으로 재시도
+          // Retry with fallback format
           const fallbackMimeType = formatToMimeType(options.fallbackFormat || 'png');
           canvas.toBlob(
             (fallbackBlob) => {
               if (fallbackBlob) {
                 resolve(fallbackBlob);
               } else {
-                reject(new Error('Canvas to Blob 변환 실패'));
+                reject(new Error('Canvas to Blob conversion failed'));
               }
             },
             fallbackMimeType,
@@ -454,7 +454,7 @@ async function canvasToBlob(canvas: HTMLCanvasElement, options: OutputOptions): 
 }
 
 /**
- * Canvas를 Data URL로 변환
+ * Convert Canvas to Data URL
  */
 function canvasToDataURL(canvas: HTMLCanvasElement, options: OutputOptions): string {
   const mimeType = formatToMimeType(options.format || 'png');
@@ -464,21 +464,21 @@ function canvasToDataURL(canvas: HTMLCanvasElement, options: OutputOptions): str
 }
 
 /**
- * Blob을 Data URL로 변환
+ * Convert Blob to Data URL
  */
 async function blobToDataURL(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error('Blob to Data URL 변환 실패'));
+    reader.onerror = () => reject(new Error('Blob to Data URL conversion failed'));
     reader.readAsDataURL(blob);
   });
 }
 
 /**
- * 이미지 소스를 HTMLImageElement로 변환
+ * Convert image source to HTMLImageElement
  *
- * @param source 이미지 소스 (HTMLImageElement, Blob, URL, Data URL, SVG XML, ArrayBuffer 등)
+ * @param source Image source (HTMLImageElement, Blob, URL, Data URL, SVG XML, ArrayBuffer, etc.)
  * @returns HTMLImageElement Promise
  *
  * @example
@@ -495,14 +495,14 @@ export async function convertToElement(source: ImageSource): Promise<HTMLImageEl
 }
 
 /**
- * HTMLImageElement를 Canvas로 변환
+ * Convert HTMLImageElement to Canvas
  */
 async function imageElementToCanvas(imageElement: HTMLImageElement): Promise<HTMLCanvasElement> {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
   if (!ctx) {
-    throw new ImageProcessError('Canvas 2D context를 생성할 수 없습니다', 'CANVAS_CREATION_FAILED');
+    throw new ImageProcessError('Unable to create Canvas 2D context', 'CANVAS_CREATION_FAILED');
   }
 
   canvas.width = imageElement.width;
@@ -514,7 +514,7 @@ async function imageElementToCanvas(imageElement: HTMLImageElement): Promise<HTM
 }
 
 /**
- * Blob의 크기 정보 얻기
+ * Get Blob dimension information
  */
 async function getBlobDimensions(blob: Blob): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
@@ -531,7 +531,7 @@ async function getBlobDimensions(blob: Blob): Promise<{ width: number; height: n
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Blob 크기 정보를 읽을 수 없습니다'));
+      reject(new Error('Unable to read Blob size information'));
     };
 
     img.src = url;
@@ -539,7 +539,7 @@ async function getBlobDimensions(blob: Blob): Promise<{ width: number; height: n
 }
 
 /**
- * 포맷을 MIME 타입으로 변환
+ * Convert format to MIME type
  */
 function formatToMimeType(format: string): string {
   const mimeTypes: Record<string, string> = {
@@ -557,13 +557,13 @@ function formatToMimeType(format: string): string {
 }
 
 /**
- * 파일명 확장자 조정
+ * Adjust filename extension
  */
 function adjustFileExtension(filename: string, format: string): string {
   const lastDotIndex = filename.lastIndexOf('.');
   const nameWithoutExt = lastDotIndex > -1 ? filename.substring(0, lastDotIndex) : filename;
 
-  // JPEG는 jpg로 통일
+  // Unify JPEG to jpg
   const extension = format === 'jpeg' ? 'jpg' : format;
 
   return `${nameWithoutExt}.${extension}`;

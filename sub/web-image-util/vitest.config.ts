@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    // Browser Mode 설정
+    // Browser Mode configuration
     browser: {
       enabled: false,
       provider: 'playwright',
@@ -21,29 +21,29 @@ export default defineConfig({
           name: 'webkit',
         },
       ],
-      // 브라우저 테스트 UI 설정
-      ui: false, // CI에서는 비활성화
-      // 파일별 격리
+      // Browser test UI configuration
+      ui: false, // Disabled in CI
+      // File isolation
       isolate: true,
-      // 병렬 실행
+      // Parallel execution
       fileParallelism: true,
-      // 연결 타임아웃
+      // Connection timeout
       connectTimeout: 60000,
     },
 
-    // 테스트 환경 설정
-    environment: 'node', // Node.js 환경으로 고정
+    // Test environment configuration
+    environment: 'node', // Fixed to Node.js environment
 
-    // 테스트 파일 패턴
+    // Test file patterns
     include: ['tests/**/*.{test,spec}.{js,ts}', 'src/**/*.{test,spec}.{js,ts}'],
 
-    // 제외할 파일들
+    // Files to exclude
     exclude: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/*.d.ts'],
 
-    // 글로벌 설정
+    // Global configuration
     globals: true,
 
-    // 커버리지 설정
+    // Coverage configuration
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -59,21 +59,21 @@ export default defineConfig({
       },
     },
 
-    // 타임아웃 설정
-    testTimeout: 30000, // 30초 (이미지 처리 시간 고려)
-    hookTimeout: 10000, // 10초
+    // Timeout configuration
+    testTimeout: 30000, // 30 seconds (considering image processing time)
+    hookTimeout: 10000, // 10 seconds
 
-    // 재시도 설정
-    retry: 2, // 실패시 2번 재시도 (브라우저 불안정성 대응)
+    // Retry configuration
+    retry: 2, // Retry 2 times on failure (handling browser instability)
 
-    // 리포터 설정
+    // Reporter configuration
     reporters: process.env.CI ? ['junit', 'github-actions'] : ['verbose'],
 
-    // 셋업 파일
+    // Setup files
     setupFiles: ['./tests/setup.ts'],
   },
 
-  // Vite 설정
+  // Vite configuration
   resolve: {
     alias: {
       '@': '/src',

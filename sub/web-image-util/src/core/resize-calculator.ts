@@ -1,72 +1,72 @@
 /**
- * ResizeCalculator: 리사이즈 계산 로직 전담 클래스
+ * ResizeCalculator: Dedicated class for resize calculation logic
  *
  * @description
- * - 새로운 ResizeConfig API의 계산 로직을 담당
- * - 각 fit 모드별로 최적화된 계산 메서드 제공
- * - Sharp 라이브러리의 계산 방식을 참고하여 구현
- * - 단일 책임: 레이아웃 계산만 수행, 렌더링은 OnehotRenderer가 담당
+ * - Handles calculation logic for the new ResizeConfig API
+ * - Provides optimized calculation methods for each fit mode
+ * - Implemented based on Sharp library's calculation approach
+ * - Single responsibility: Only performs layout calculations, rendering is handled by OnehotRenderer
  */
 
 import type { ResizeConfig, Padding } from '../types/resize-config';
 import type { GeometryPoint, GeometrySize } from '../types/base';
 
 // ============================================================================
-// INTERFACES - 인터페이스 정의
+// INTERFACES - Interface definitions
 // ============================================================================
 
 /**
- * 정규화된 패딩 값
+ * Normalized padding value
  *
  * @description
- * 모든 패딩 값을 명시적으로 포함하는 객체
- * - top, right, bottom, left 모두 숫자로 명시
- * - 음수가 아닌 값 보장
+ * Object that explicitly includes all padding values
+ * - All top, right, bottom, left specified as numbers
+ * - Guarantees non-negative values
  */
 export interface NormalizedPadding {
-  /** 상단 패딩 (픽셀) */
+  /** Top padding (pixels) */
   top: number;
-  /** 우측 패딩 (픽셀) */
+  /** Right padding (pixels) */
   right: number;
-  /** 하단 패딩 (픽셀) */
+  /** Bottom padding (pixels) */
   bottom: number;
-  /** 좌측 패딩 (픽셀) */
+  /** Left padding (pixels) */
   left: number;
 }
 
 /**
- * 리사이즈 계산 결과
+ * Resize calculation result
  *
  * @description
- * ResizeCalculator가 계산한 최종 레이아웃 정보
- * - imageSize: 실제로 그려질 이미지의 크기 (스케일 적용됨)
- * - canvasSize: 최종 캔버스의 크기 (padding 포함)
- * - position: 캔버스 내에서 이미지를 그릴 시작 좌표
+ * Final layout information calculated by ResizeCalculator
+ * - imageSize: Size of the image to be actually drawn (with scale applied)
+ * - canvasSize: Final canvas size (including padding)
+ * - position: Starting coordinates to draw the image within the canvas
  */
 export interface LayoutResult {
-  /** 실제로 그려질 이미지의 크기 (스케일 적용) */
+  /** Size of the image to be actually drawn (with scale applied) */
   imageSize: GeometrySize;
-  /** 최종 캔버스의 크기 (padding 포함) */
+  /** Final canvas size (including padding) */
   canvasSize: GeometrySize;
-  /** 캔버스 내에서 이미지를 그릴 시작 좌표 */
+  /** Starting coordinates to draw the image within the canvas */
   position: GeometryPoint;
 }
 
 // ============================================================================
-// UTILITY FUNCTIONS - 유틸리티 함수들
+// UTILITY FUNCTIONS - Utility functions
 // ============================================================================
 
 /**
- * 패딩을 정규화된 형태로 변환
+ * Convert padding to normalized form
  *
- * @param padding - 숫자 또는 객체 형태의 패딩
- * @returns 정규화된 패딩 객체
+ * @param padding - Padding in number or object form
+ * @returns Normalized padding object
  *
  * @description
- * 다양한 형태의 패딩 입력을 통일된 형태로 변환:
- * - 숫자: 4방향 모두 동일한 값 적용
- * - 객체: 명시된 값만 적용, 나머지는 0
- * - undefined: 모든 방향 0
+ * Convert various forms of padding input to unified form:
+ * - Number: Apply same value to all 4 directions
+ * - Object: Apply only specified values, others default to 0
+ * - undefined: All directions default to 0
  *
  * @example
  * ```typescript
@@ -81,7 +81,7 @@ export interface LayoutResult {
  * ```
  */
 function normalizePadding(padding?: Padding): NormalizedPadding {
-  // 패딩이 숫자인 경우: 4방향 모두 동일하게 적용
+  // If padding is a number: apply same value to all 4 directions
   if (typeof padding === 'number') {
     return {
       top: padding,
@@ -91,7 +91,7 @@ function normalizePadding(padding?: Padding): NormalizedPadding {
     };
   }
 
-  // 패딩이 객체인 경우: 명시된 값만 적용, 나머지는 0
+  // If padding is an object: apply only specified values, others default to 0
   if (typeof padding === 'object' && padding !== null) {
     return {
       top: padding.top ?? 0,
@@ -101,19 +101,19 @@ function normalizePadding(padding?: Padding): NormalizedPadding {
     };
   }
 
-  // 패딩이 undefined인 경우: 모든 방향 0
+  // If padding is undefined: all directions default to 0
   return { top: 0, right: 0, bottom: 0, left: 0 };
 }
 
 // ============================================================================
-// RESIZE CALCULATOR - 메인 클래스
+// RESIZE CALCULATOR - Main class
 // ============================================================================
 
 /**
- * ResizeCalculator 클래스
+ * ResizeCalculator class
  *
  * @description
- * 새로운 ResizeConfig API의 계산 로직을 전담하는 클래스
+ * Dedicated class for resize calculation logic of the new ResizeConfig API
  *
  * @example
  * ```typescript
@@ -131,25 +131,25 @@ function normalizePadding(padding?: Padding): NormalizedPadding {
  */
 export class ResizeCalculator {
   /**
-   * 최종 레이아웃 계산 (메인 엔트리포인트)
+   * Final layout calculation (main entry point)
    *
-   * @param originalWidth - 원본 이미지의 너비
-   * @param originalHeight - 원본 이미지의 높이
-   * @param config - ResizeConfig 설정
-   * @returns 계산된 레이아웃 정보
+   * @param originalWidth - Original image width
+   * @param originalHeight - Original image height
+   * @param config - ResizeConfig settings
+   * @returns Calculated layout information
    *
    * @description
-   * fit 모드에 따라 적절한 계산 메서드를 호출하고,
-   * padding을 적용하여 최종 레이아웃을 반환
+   * Calls appropriate calculation methods based on fit mode,
+   * applies padding and returns final layout
    */
   calculateFinalLayout(originalWidth: number, originalHeight: number, config: ResizeConfig): LayoutResult {
-    // 1. 이미지 크기 계산 (fit 모드에 따라)
+    // 1. Calculate image size (based on fit mode)
     const imageSize = this.calculateImageSize(originalWidth, originalHeight, config);
 
-    // 2. 캔버스 크기 계산 (padding 적용)
+    // 2. Calculate canvas size (apply padding)
     const canvasSize = this.calculateCanvasSize(imageSize, config);
 
-    // 3. 이미지 위치 계산 (중앙 정렬 + padding)
+    // 3. Calculate image position (center alignment + padding)
     const position = this.calculatePosition(imageSize, canvasSize, config);
 
     return {
@@ -160,20 +160,20 @@ export class ResizeCalculator {
   }
 
   /**
-   * 이미지 크기 계산
+   * Calculate image size
    *
-   * @param originalWidth - 원본 이미지의 너비
-   * @param originalHeight - 원본 이미지의 높이
-   * @param config - ResizeConfig 설정
-   * @returns 스케일이 적용된 이미지 크기
+   * @param originalWidth - Original image width
+   * @param originalHeight - Original image height
+   * @param config - ResizeConfig settings
+   * @returns Image size with scale applied
    *
    * @description
-   * fit 모드에 따라 이미지가 실제로 그려질 크기를 계산
-   * - cover: 캔버스를 가득 채우도록 확대/축소
-   * - contain: 캔버스 안에 들어가도록 축소
-   * - fill: 캔버스 크기에 정확히 맞춤
-   * - maxFit: 축소만 허용
-   * - minFit: 확대만 허용
+   * Calculate the actual size the image will be drawn based on fit mode
+   * - cover: Scale to fill canvas completely
+   * - contain: Scale to fit within canvas
+   * - fill: Fit exactly to canvas size
+   * - maxFit: Only allow shrinking
+   * - minFit: Only allow enlarging
    */
   private calculateImageSize(originalWidth: number, originalHeight: number, config: ResizeConfig): GeometrySize {
     switch (config.fit) {
@@ -193,52 +193,52 @@ export class ResizeCalculator {
   }
 
   /**
-   * 캔버스 크기 계산
+   * Calculate canvas size
    *
-   * @param imageSize - 계산된 이미지 크기
-   * @param config - ResizeConfig 설정
-   * @returns padding이 적용된 최종 캔버스 크기
+   * @param imageSize - Calculated image size
+   * @param config - ResizeConfig settings
+   * @returns Final canvas size with padding applied
    *
    * @description
-   * fit 모드에 따라 캔버스 크기를 계산
-   * - cover/contain/fill: target width/height가 캔버스 크기 (고정)
-   * - maxFit/minFit: 이미지 크기가 캔버스 크기 (가변)
-   * - padding이 있으면 추가로 적용
+   * Calculate canvas size based on fit mode
+   * - cover/contain/fill: target width/height is canvas size (fixed)
+   * - maxFit/minFit: image size is canvas size (variable)
+   * - Apply additional padding if present
    *
    * @example
    * ```typescript
-   * // cover: 캔버스는 target 크기 고정
+   * // cover: Canvas is fixed to target size
    * calculateCanvasSize({ width: 1422, height: 800 }, { fit: 'cover', width: 800, height: 800 });
    * // → { width: 800, height: 800 }
    *
-   * // maxFit: 이미지 크기가 캔버스 크기
+   * // maxFit: Image size becomes canvas size
    * calculateCanvasSize({ width: 100, height: 100 }, { fit: 'maxFit', width: 300, height: 200 });
    * // → { width: 100, height: 100 }
    *
-   * // 패딩 적용
+   * // Apply padding
    * calculateCanvasSize({ width: 800, height: 450 }, { fit: 'contain', width: 800, height: 800, padding: 20 });
    * // → { width: 840, height: 840 }
    * ```
    */
   private calculateCanvasSize(imageSize: GeometrySize, config: ResizeConfig): GeometrySize {
-    // 패딩 정규화
+    // Normalize padding
     const padding = normalizePadding(config.padding);
 
-    // fit 모드에 따라 기본 캔버스 크기 결정
+    // Determine base canvas size based on fit mode
     let baseWidth: number;
     let baseHeight: number;
 
     if (config.fit === 'cover' || config.fit === 'contain' || config.fit === 'fill') {
-      // cover/contain/fill: target 크기가 캔버스 크기
+      // cover/contain/fill: target size is canvas size
       baseWidth = config.width;
       baseHeight = config.height;
     } else {
-      // maxFit/minFit: 이미지 크기가 캔버스 크기
+      // maxFit/minFit: image size is canvas size
       baseWidth = imageSize.width;
       baseHeight = imageSize.height;
     }
 
-    // 패딩 적용
+    // Apply padding
     return {
       width: baseWidth + padding.left + padding.right,
       height: baseHeight + padding.top + padding.bottom,
@@ -246,46 +246,46 @@ export class ResizeCalculator {
   }
 
   /**
-   * 이미지 위치 계산
+   * Calculate image position
    *
-   * @param imageSize - 계산된 이미지 크기
-   * @param canvasSize - 계산된 캔버스 크기
-   * @param config - ResizeConfig 설정
-   * @returns 캔버스 내에서 이미지를 그릴 시작 좌표
+   * @param imageSize - Calculated image size
+   * @param canvasSize - Calculated canvas size
+   * @param config - ResizeConfig settings
+   * @returns Starting coordinates to draw the image within the canvas
    *
    * @description
-   * 캔버스 내에서 이미지를 그릴 시작 좌표를 계산
-   * - cover: 중앙 정렬, 음수 좌표 가능 (잘림)
-   * - contain: 중앙 정렬, 여백 생김
-   * - fill: (0, 0) 좌표에서 시작
-   * - padding 고려
+   * Calculate starting coordinates to draw image within canvas
+   * - cover: Center alignment, negative coordinates possible (clipped)
+   * - contain: Center alignment, margins created
+   * - fill: Start at (0, 0) coordinates
+   * - Consider padding
    *
    * @example
    * ```typescript
-   * // 패딩 없는 경우 (중앙 정렬)
+   * // Without padding (center alignment)
    * calculatePosition({ width: 100, height: 100 }, { width: 200, height: 200 }, config);
    * // → { x: 50, y: 50 }
    *
-   * // 숫자 패딩이 있는 경우
+   * // With numeric padding
    * calculatePosition({ width: 100, height: 100 }, { width: 140, height: 140 }, { ...config, padding: 20 });
-   * // → { x: 20, y: 20 } (패딩 만큼 이동)
+   * // → { x: 20, y: 20 } (shifted by padding amount)
    *
-   * // 객체 패딩이 있는 경우
+   * // With object padding
    * calculatePosition({ width: 100, height: 100 }, { width: 120, height: 110 }, { ...config, padding: { top: 10, left: 20 } });
-   * // → { x: 20, y: 10 } (각 방향의 패딩 만큼 이동)
+   * // → { x: 20, y: 10 } (shifted by padding in each direction)
    * ```
    */
   private calculatePosition(imageSize: GeometrySize, canvasSize: GeometrySize, config: ResizeConfig): GeometryPoint {
-    // 패딩 정규화
+    // Normalize padding
     const padding = normalizePadding(config.padding);
 
-    // 패딩을 제외한 실제 배치 영역 크기 계산
+    // Calculate actual placement area size excluding padding
     const availableWidth = canvasSize.width - padding.left - padding.right;
     const availableHeight = canvasSize.height - padding.top - padding.bottom;
 
-    // 중앙 정렬: 여백을 절반씩 나누어 배치
-    // - cover: 이미지가 더 크면 음수 좌표 (잘림)
-    // - contain: 이미지가 더 작으면 양수 좌표 (여백)
+    // Center alignment: divide margins in half for placement
+    // - cover: negative coordinates if image is larger (clipped)
+    // - contain: positive coordinates if image is smaller (margins)
     const x = padding.left + Math.round((availableWidth - imageSize.width) / 2);
     const y = padding.top + Math.round((availableHeight - imageSize.height) / 2);
 
@@ -293,17 +293,17 @@ export class ResizeCalculator {
   }
 
   // ============================================================================
-  // FIT MODE CALCULATIONS - fit 모드별 계산 메서드
+  // FIT MODE CALCULATIONS - Calculation methods by fit mode
   // ============================================================================
 
   /**
-   * Cover fit 크기 계산
+   * Calculate cover fit size
    *
    * @description
-   * 비율 유지하며 영역을 가득 채우는 로직
-   * - 이미지가 캔버스를 완전히 덮도록 스케일링
-   * - 초과 부분은 잘림
-   * - CSS object-fit: cover와 동일
+   * Logic to fill area while maintaining aspect ratio
+   * - Scale image to completely cover canvas
+   * - Excess parts are clipped
+   * - Same as CSS object-fit: cover
    */
   private calculateCoverSize(
     originalWidth: number,
@@ -312,7 +312,7 @@ export class ResizeCalculator {
   ): GeometrySize {
     const { width: targetW, height: targetH } = config;
 
-    // 가로/세로 비율 중 더 큰 것을 선택하여 캔버스를 완전히 덮음
+    // Choose larger of horizontal/vertical ratios to completely cover canvas
     const scaleX = targetW / originalWidth;
     const scaleY = targetH / originalHeight;
     const scale = Math.max(scaleX, scaleY);
@@ -324,13 +324,13 @@ export class ResizeCalculator {
   }
 
   /**
-   * Contain fit 크기 계산
+   * Calculate contain fit size
    *
    * @description
-   * 비율 유지하며 전체 이미지가 들어가는 로직
-   * - 이미지 전체가 캔버스 안에 들어가도록 스케일링
-   * - 여백이 생길 수 있음
-   * - CSS object-fit: contain과 동일
+   * Logic to fit entire image while maintaining aspect ratio
+   * - Scale image to fit entirely within canvas
+   * - Margins may be created
+   * - Same as CSS object-fit: contain
    */
   private calculateContainSize(
     originalWidth: number,
@@ -339,7 +339,7 @@ export class ResizeCalculator {
   ): GeometrySize {
     const { width: targetW, height: targetH } = config;
 
-    // 가로/세로 비율 중 더 작은 것을 선택하여 전체가 들어가도록 함
+    // Choose smaller of horizontal/vertical ratios to fit entire image
     const scaleX = targetW / originalWidth;
     const scaleY = targetH / originalHeight;
     const scale = Math.min(scaleX, scaleY);
@@ -351,12 +351,12 @@ export class ResizeCalculator {
   }
 
   /**
-   * Fill fit 크기 계산
+   * Calculate fill fit size
    *
    * @description
-   * 비율 무시하고 정확히 맞추는 로직
-   * - 이미지가 늘어나거나 압축될 수 있음
-   * - CSS object-fit: fill과 동일
+   * Logic to fit exactly while ignoring aspect ratio
+   * - Image may be stretched or compressed
+   * - Same as CSS object-fit: fill
    */
   private calculateFillSize(
     originalWidth: number,
@@ -365,7 +365,7 @@ export class ResizeCalculator {
   ): GeometrySize {
     const { width: targetW, height: targetH } = config;
 
-    // 타겟 크기를 그대로 반환 (비율 무시)
+    // Return target size as is (ignore aspect ratio)
     return {
       width: targetW,
       height: targetH,
@@ -373,13 +373,13 @@ export class ResizeCalculator {
   }
 
   /**
-   * MaxFit 크기 계산
+   * Calculate MaxFit size
    *
    * @description
-   * 최대 크기 제한 로직 (확대 안함)
-   * - 작은 이미지는 크기 변경 없음
-   * - 큰 이미지는 축소
-   * - 비율 유지
+   * Maximum size constraint logic (no enlargement)
+   * - Small images remain unchanged
+   * - Large images are shrunk
+   * - Maintains aspect ratio
    */
   private calculateMaxFitSize(
     originalWidth: number,
@@ -388,10 +388,10 @@ export class ResizeCalculator {
   ): GeometrySize {
     const { width: maxW, height: maxH } = config;
 
-    // 최소 1배 스케일 (확대 안함)
+    // Minimum 1x scale (no enlargement)
     let scale = 1;
 
-    // 각 차원의 최대값 제한 적용
+    // Apply maximum value constraints for each dimension
     if (maxW) scale = Math.min(scale, maxW / originalWidth);
     if (maxH) scale = Math.min(scale, maxH / originalHeight);
 
@@ -402,13 +402,13 @@ export class ResizeCalculator {
   }
 
   /**
-   * MinFit 크기 계산
+   * Calculate MinFit size
    *
    * @description
-   * 최소 크기 보장 로직 (축소 안함)
-   * - 작은 이미지는 확대
-   * - 큰 이미지는 크기 변경 없음
-   * - 비율 유지
+   * Minimum size guarantee logic (no shrinking)
+   * - Small images are enlarged
+   * - Large images remain unchanged
+   * - Maintains aspect ratio
    */
   private calculateMinFitSize(
     originalWidth: number,
@@ -417,10 +417,10 @@ export class ResizeCalculator {
   ): GeometrySize {
     const { width: minW, height: minH } = config;
 
-    // 최소 1배 스케일 (축소 안함)
+    // Minimum 1x scale (no shrinking)
     let scale = 1;
 
-    // 각 차원의 최소값 보장
+    // Guarantee minimum values for each dimension
     if (minW) scale = Math.max(scale, minW / originalWidth);
     if (minH) scale = Math.max(scale, minH / originalHeight);
 

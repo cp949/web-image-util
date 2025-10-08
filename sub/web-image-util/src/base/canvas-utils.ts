@@ -2,8 +2,8 @@ import { CanvasPool } from './canvas-pool';
 import { createImageError } from './error-helpers';
 
 /**
- * Canvas 작업을 자동으로 관리하는 래퍼 클래스
- * Canvas의 생명주기를 관리하고 자동으로 풀에 반환합니다.
+ * Wrapper class that automatically manages Canvas operations
+ * Manages Canvas lifecycle and automatically returns to pool.
  */
 export class ManagedCanvas {
   private canvas: HTMLCanvasElement;
@@ -18,14 +18,14 @@ export class ManagedCanvas {
     const ctx = this.canvas.getContext('2d');
     if (!ctx) {
       this.pool.release(this.canvas);
-      throw createImageError('CANVAS_CREATION_FAILED', new Error('CanvasRenderingContext2D 생성 실패'));
+      throw createImageError('CANVAS_CREATION_FAILED', new Error('Failed to create CanvasRenderingContext2D'));
     }
 
     this.ctx = ctx;
   }
 
   /**
-   * Canvas 요소 반환
+   * Return Canvas element
    * @returns HTMLCanvasElement
    */
   getCanvas(): HTMLCanvasElement {
@@ -34,7 +34,7 @@ export class ManagedCanvas {
   }
 
   /**
-   * Canvas 2D Context 반환
+   * Return Canvas 2D Context
    * @returns CanvasRenderingContext2D
    */
   getContext(): CanvasRenderingContext2D {
@@ -43,9 +43,9 @@ export class ManagedCanvas {
   }
 
   /**
-   * Canvas 크기 설정
-   * @param width - 너비
-   * @param height - 높이
+   * Set Canvas size
+   * @param width - Width
+   * @param height - Height
    */
   setSize(width: number, height: number): void {
     this.checkDisposed();
@@ -54,7 +54,7 @@ export class ManagedCanvas {
   }
 
   /**
-   * Canvas 초기화 (모든 픽셀을 투명하게)
+   * Clear Canvas (make all pixels transparent)
    */
   clear(): void {
     this.checkDisposed();
@@ -62,8 +62,8 @@ export class ManagedCanvas {
   }
 
   /**
-   * Canvas에 배경색 설정
-   * @param color - 배경색 (CSS 색상 문자열)
+   * Set background color on Canvas
+   * @param color - Background color (CSS color string)
    */
   setBackgroundColor(color: string): void {
     this.checkDisposed();
@@ -72,14 +72,14 @@ export class ManagedCanvas {
   }
 
   /**
-   * Canvas가 이미 해제되었는지 확인
+   * Check if Canvas has already been disposed
    */
   isDisposed(): boolean {
     return this.disposed;
   }
 
   /**
-   * 리소스 정리 (자동으로 풀에 반환)
+   * Clean up resources (automatically return to pool)
    */
   dispose(): void {
     if (!this.disposed) {
@@ -89,23 +89,23 @@ export class ManagedCanvas {
   }
 
   /**
-   * 해제 상태 확인
+   * Check disposal state
    */
   private checkDisposed(): void {
     if (this.disposed) {
-      throw new Error('이미 해제된 ManagedCanvas입니다.');
+      throw new Error('ManagedCanvas has already been disposed.');
     }
   }
 }
 
 /**
- * Canvas 작업을 자동으로 관리하는 헬퍼 함수
- * 작업 완료 후 자동으로 Canvas를 풀에 반환합니다.
+ * Helper function that automatically manages Canvas operations
+ * Automatically returns Canvas to pool after operation completion.
  *
- * @param width - Canvas 너비
- * @param height - Canvas 높이
- * @param operation - 수행할 Canvas 작업
- * @returns 작업 결과
+ * @param width - Canvas width
+ * @param height - Canvas height
+ * @param operation - Canvas operation to perform
+ * @returns Operation result
  */
 export async function withManagedCanvas<T>(
   width: number,
@@ -122,12 +122,12 @@ export async function withManagedCanvas<T>(
 }
 
 /**
- * 다중 Canvas 작업을 관리하는 헬퍼 함수
- * 여러 Canvas를 동시에 사용하는 작업에 적합합니다.
+ * Helper function that manages multiple Canvas operations
+ * Suitable for operations that use multiple Canvas simultaneously.
  *
- * @param canvasSizes - 각 Canvas의 크기 배열
- * @param operation - 수행할 작업
- * @returns 작업 결과
+ * @param canvasSizes - Array of sizes for each Canvas
+ * @param operation - Operation to perform
+ * @returns Operation result
  */
 export async function withMultipleManagedCanvas<T>(
   canvasSizes: Array<{ width: number; height: number }>,
@@ -148,13 +148,13 @@ export async function withMultipleManagedCanvas<T>(
 }
 
 /**
- * Canvas 복사 유틸리티
- * 한 Canvas의 내용을 다른 Canvas로 복사합니다.
+ * Canvas copy utility
+ * Copies content from one Canvas to another Canvas.
  *
- * @param source - 소스 Canvas
- * @param targetWidth - 대상 Canvas 너비
- * @param targetHeight - 대상 Canvas 높이
- * @returns 복사된 새 Canvas
+ * @param source - Source Canvas
+ * @param targetWidth - Target Canvas width
+ * @param targetHeight - Target Canvas height
+ * @returns New copied Canvas
  */
 export async function copyCanvas(
   source: HTMLCanvasElement,
@@ -166,10 +166,10 @@ export async function copyCanvas(
 
   return withManagedCanvas(width, height, (canvas, ctx) => {
     if (targetWidth && targetHeight && (targetWidth !== source.width || targetHeight !== source.height)) {
-      // 크기가 다르면 스케일링하여 복사
+      // If size is different, copy with scaling
       ctx.drawImage(source, 0, 0, targetWidth, targetHeight);
     } else {
-      // 같은 크기면 그대로 복사
+      // If same size, copy as is
       ctx.drawImage(source, 0, 0);
     }
     return canvas;
@@ -177,11 +177,11 @@ export async function copyCanvas(
 }
 
 /**
- * Canvas를 Blob으로 변환 (관리되는 Canvas용)
+ * Convert Canvas to Blob (for managed Canvas)
  *
- * @param canvas - 변환할 Canvas
- * @param type - MIME 타입
- * @param quality - 품질 (0-1)
+ * @param canvas - Canvas to convert
+ * @param type - MIME type
+ * @param quality - Quality (0-1)
  * @returns Blob Promise
  */
 export function canvasToBlob(canvas: HTMLCanvasElement, type: string = 'image/png', quality?: number): Promise<Blob> {
@@ -201,45 +201,45 @@ export function canvasToBlob(canvas: HTMLCanvasElement, type: string = 'image/pn
 }
 
 /**
- * Canvas Pool 상태 정보 조회
- * @returns 풀 상태 정보
+ * Query Canvas Pool status information
+ * @returns Pool status information
  */
 export function getCanvasPoolStats() {
   return CanvasPool.getInstance().getStats();
 }
 
 /**
- * Canvas Pool 정리
- * 메모리 정리가 필요할 때 호출
+ * Clean up Canvas Pool
+ * Call when memory cleanup is needed
  */
 export function clearCanvasPool(): void {
   CanvasPool.getInstance().clear();
 }
 
 /**
- * Canvas Pool 최대 크기 설정
- * @param size - 최대 풀 크기
+ * Set Canvas Pool maximum size
+ * @param size - Maximum pool size
  */
 export function setCanvasPoolMaxSize(size: number): void {
   CanvasPool.getInstance().setMaxPoolSize(size);
 }
 
-// SVG 고품질 렌더링을 위한 Canvas 옵션
+// Canvas options for SVG high-quality rendering
 export interface HighQualityCanvasOptions {
-  scale?: number; // 사용자 정의 스케일 배율
-  imageSmoothingQuality?: 'low' | 'medium' | 'high'; // 이미지 스무딩 품질
-  willReadFrequently?: boolean; // 빈번한 픽셀 읽기 여부
-  useDevicePixelRatio?: boolean; // devicePixelRatio 사용 여부 (기본값: false)
+  scale?: number; // Custom scale factor
+  imageSmoothingQuality?: 'low' | 'medium' | 'high'; // Image smoothing quality
+  willReadFrequently?: boolean; // Whether to read pixels frequently
+  useDevicePixelRatio?: boolean; // Whether to use devicePixelRatio (default: false)
 }
 
 /**
- * 고품질 렌더링을 위한 Canvas 설정 함수
- * DevicePixelRatio와 사용자 설정을 고려한 고해상도 Canvas를 생성합니다.
+ * Canvas setup function for high-quality rendering
+ * Creates high-resolution Canvas considering DevicePixelRatio and user settings.
  *
- * @param width - 논리적 너비
- * @param height - 논리적 높이
- * @param options - 고품질 옵션
- * @returns Canvas와 Context 객체
+ * @param width - Logical width
+ * @param height - Logical height
+ * @param options - High-quality options
+ * @returns Canvas and Context objects
  */
 export function setupHighQualityCanvas(
   width: number,
@@ -248,20 +248,20 @@ export function setupHighQualityCanvas(
 ): { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D } {
   const canvas = document.createElement('canvas');
 
-  // DevicePixelRatio 고려한 스케일 계산 - 옵션으로 제어 가능
+  // Calculate scale considering DevicePixelRatio - controllable via options
   const deviceScale = options.useDevicePixelRatio ? window.devicePixelRatio || 1 : 1;
   const userScale = options.scale || 1;
   const totalScale = Math.min(4, Math.max(1, deviceScale * userScale));
 
-  // Canvas 실제 크기 설정 (고해상도)
+  // Set actual Canvas size (high-resolution)
   canvas.width = width * totalScale;
   canvas.height = height * totalScale;
 
-  // CSS 크기는 논리적 크기로 설정
+  // Set CSS size to logical size
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
 
-  // Context 설정
+  // Context setup
   const context = canvas.getContext('2d', {
     willReadFrequently: options.willReadFrequently || false,
   });
@@ -270,10 +270,10 @@ export function setupHighQualityCanvas(
     throw new Error('Could not get 2D context from canvas');
   }
 
-  // 스케일 적용
+  // Apply scale
   context.scale(totalScale, totalScale);
 
-  // 고품질 렌더링 설정
+  // High-quality rendering settings
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = options.imageSmoothingQuality || 'high';
 

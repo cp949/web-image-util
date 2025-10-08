@@ -1,4 +1,4 @@
-// 강화된 이미지 처리 훅 - v2.0 API 완전 활용
+// Enhanced image processing hook - Full utilization of v2.0 API
 
 import { useState, useCallback, useEffect } from 'react';
 import { processImage, ImageProcessError } from '@cp949/web-image-util';
@@ -13,7 +13,7 @@ import type {
 import { getErrorMessage, isRecoverableError, logError, formatFileSize } from '../utils/errorHandling';
 
 /**
- * 이미지 정보 추출 헬퍼
+ * Image information extraction helper
  */
 async function extractImageInfo(source: File | string): Promise<ImageInfo> {
   return new Promise((resolve, reject) => {
@@ -41,7 +41,7 @@ async function extractImageInfo(source: File | string): Promise<ImageInfo> {
     };
 
     img.onerror = () => {
-      reject(new Error('이미지를 불러올 수 없습니다'));
+      reject(new Error('Unable to load image'));
     };
 
     if (typeof source === 'string') {
@@ -54,17 +54,17 @@ async function extractImageInfo(source: File | string): Promise<ImageInfo> {
 }
 
 /**
- * 이미지 처리 훅 옵션
+ * Image processing hook options
  */
 export interface UseImageProcessingOptions {
-  /** 이미지 선택 시 자동으로 기본 설정으로 처리할지 여부 (기본: false) */
+  /** Whether to automatically process with default settings when image is selected (default: false) */
   autoProcess?: boolean;
-  /** 자동 처리 시 사용할 기본 옵션 */
+  /** Default options to use for auto processing */
   defaultOptions?: ProcessingOptions;
 }
 
 /**
- * 기본 처리 옵션
+ * Default processing options
  */
 const DEFAULT_PROCESSING_OPTIONS: ProcessingOptions = {
   fit: 'cover',
@@ -75,8 +75,8 @@ const DEFAULT_PROCESSING_OPTIONS: ProcessingOptions = {
 };
 
 /**
- * ProcessingOptions를 ResizeConfig로 변환하는 타입 안전한 헬퍼
- * 각 fit 모드에 맞는 정확한 ResizeConfig 타입을 생성
+ * Type-safe helper to convert ProcessingOptions to ResizeConfig
+ * Generate exact ResizeConfig types for each fit mode
  */
 function toResizeConfig(options: ProcessingOptions): ResizeConfig {
   const baseConfig = {
@@ -111,7 +111,7 @@ function toResizeConfig(options: ProcessingOptions): ResizeConfig {
       };
 
     case 'maxFit':
-      // maxFit은 width나 height 중 최소 하나는 필요
+      // maxFit requires at least one of width or height
       if (options.width && options.height) {
         return { fit: 'maxFit', width: options.width, height: options.height, ...baseConfig };
       } else if (options.width) {
@@ -119,11 +119,11 @@ function toResizeConfig(options: ProcessingOptions): ResizeConfig {
       } else if (options.height) {
         return { fit: 'maxFit', height: options.height, ...baseConfig };
       }
-      // 둘 다 없으면 기본값 사용
+      // Use default values if both are missing
       return { fit: 'maxFit', width: 800, height: 600, ...baseConfig };
 
     case 'minFit':
-      // minFit도 width나 height 중 최소 하나는 필요
+      // minFit also requires at least one of width or height
       if (options.width && options.height) {
         return { fit: 'minFit', width: options.width, height: options.height, ...baseConfig };
       } else if (options.width) {
@@ -131,11 +131,11 @@ function toResizeConfig(options: ProcessingOptions): ResizeConfig {
       } else if (options.height) {
         return { fit: 'minFit', height: options.height, ...baseConfig };
       }
-      // 둘 다 없으면 기본값 사용
+      // Use default values if both are missing
       return { fit: 'minFit', width: 800, height: 600, ...baseConfig };
 
     default:
-      // 기본값: cover 모드
+      // Default: cover mode
       return {
         fit: 'cover',
         width: options.width ?? 800,
@@ -146,7 +146,7 @@ function toResizeConfig(options: ProcessingOptions): ResizeConfig {
 }
 
 /**
- * 공통 이미지 처리 로직 (중복 제거, 타입 안전성 강화)
+ * Common image processing logic (deduplication, enhanced type safety)
  */
 async function processImageWithOptions(
   imageSource: string,
@@ -155,7 +155,7 @@ async function processImageWithOptions(
 ): Promise<ProcessedImageInfo> {
   const startTime = performance.now();
 
-  // 타입 안전한 ResizeConfig 생성
+  // Generate type-safe ResizeConfig
   const resizeConfig = toResizeConfig(processingOptions);
 
   const result: ResultBlob = await processImage(imageSource)
@@ -181,10 +181,10 @@ async function processImageWithOptions(
 }
 
 /**
- * 강화된 이미지 처리 훅
- * @param options - 훅 설정 옵션
- * @param options.autoProcess - 이미지 선택 시 자동 처리 여부 (기본: false)
- * @param options.defaultOptions - 자동 처리 시 사용할 기본 옵션
+ * Enhanced image processing hook
+ * @param options - Hook configuration options
+ * @param options.autoProcess - Whether to automatically process when image is selected (default: false)
+ * @param options.defaultOptions - Default options to use for auto processing
  */
 export function useImageProcessing(options?: UseImageProcessingOptions) {
   const [state, setState] = useState<DemoState>({
@@ -194,7 +194,7 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
     error: null,
   });
 
-  // ObjectURL 메모리 정리
+  // ObjectURL memory cleanup
   useEffect(() => {
     return () => {
       state.processedImages.forEach((img) => {
@@ -210,7 +210,7 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
   }, [state.originalImage, state.processedImages]);
 
   /**
-   * 이미지 처리 핸들러 (공통 로직 활용)
+   * Image processing handler (utilizing common logic)
    */
   const handleProcess = useCallback(
     async (processingOptions: ProcessingOptions) => {
@@ -235,7 +235,7 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
         setState((prev) => ({
           ...prev,
           processing: false,
-          error: error instanceof ImageProcessError ? error : new Error('이미지 처리 실패'),
+          error: error instanceof ImageProcessError ? error : new Error('Image processing failed'),
         }));
       }
     },
@@ -243,7 +243,7 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
   );
 
   /**
-   * 이미지 선택 핸들러 (🆕 Phase 1: autoProcess 지원, 공통 로직 활용)
+   * Image selection handler (🆕 Phase 1: autoProcess support, utilizing common logic)
    */
   const handleImageSelect = useCallback(
     async (source: File | string) => {
@@ -253,13 +253,13 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
         const imageInfo = await extractImageInfo(source);
         setState((prev) => ({ ...prev, originalImage: imageInfo }));
 
-        // 🆕 Phase 1: 자동 처리 옵션이 활성화된 경우
+        // 🆕 Phase 1: When auto processing option is enabled
         if (options?.autoProcess) {
           const processingOptions = options.defaultOptions || DEFAULT_PROCESSING_OPTIONS;
           setState((prev) => ({ ...prev, processing: true, error: null }));
 
           try {
-            // 공통 처리 함수 활용
+            // Utilize common processing function
             const processedInfo = await processImageWithOptions(
               imageInfo.src,
               processingOptions,
@@ -276,7 +276,7 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
             setState((prev) => ({
               ...prev,
               processing: false,
-              error: error instanceof ImageProcessError ? error : new Error('자동 이미지 처리 실패'),
+              error: error instanceof ImageProcessError ? error : new Error('Auto image processing failed'),
             }));
           }
         }
@@ -284,7 +284,7 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
         logError(error, 'handleImageSelect');
         setState((prev) => ({
           ...prev,
-          error: error instanceof ImageProcessError ? error : new Error('이미지 정보 추출 실패'),
+          error: error instanceof ImageProcessError ? error : new Error('Image information extraction failed'),
         }));
       }
     },
@@ -293,14 +293,14 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
 
 
   /**
-   * 에러 클리어
+   * Clear error
    */
   const clearError = useCallback(() => {
     setState((prev) => ({ ...prev, error: null }));
   }, []);
 
   /**
-   * 재시도 (복구 가능한 에러만)
+   * Retry (recoverable errors only)
    */
   const retry = useCallback(
     async (options: ProcessingOptions) => {
@@ -313,7 +313,7 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
   );
 
   /**
-   * 처리 결과 초기화
+   * Reset processing results
    */
   const reset = useCallback(() => {
     setState({
@@ -325,20 +325,20 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
   }, []);
 
   return {
-    // 상태
+    // State
     originalImage: state.originalImage,
     processedImages: state.processedImages,
     processing: state.processing,
     error: state.error,
 
-    // 액션
+    // Actions
     handleImageSelect,
     handleProcess,
     clearError,
     retry,
     reset,
 
-    // 유틸리티
+    // Utilities
     getErrorMessage: () => (state.error ? getErrorMessage(state.error) : null),
     canRetry: isRecoverableError(state.error),
   };

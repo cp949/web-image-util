@@ -52,13 +52,13 @@ export function BasicDemo() {
     withoutEnlargement: false,
   });
 
-  // UI 전용 상태
+  // UI-only state
   const [useWidth, setUseWidth] = useState(true);
   const [useHeight, setUseHeight] = useState(true);
   const [usePadding, setUsePadding] = useState(false);
   const [paddingValue, setPaddingValue] = useState(20);
 
-  // 자동 처리를 위한 memoized 옵션
+  // Memoized options for automatic processing
   const processingOptions = useMemo(() => {
     return {
       ...options,
@@ -68,30 +68,30 @@ export function BasicDemo() {
     };
   }, [options, useWidth, useHeight, usePadding, paddingValue]);
 
-  // 최신 처리된 이미지
+  // Latest processed image
   const processedImage = useMemo(() => {
     return processedImages[processedImages.length - 1] || null;
   }, [processedImages]);
 
-  // useDebounce를 사용한 자동 처리 (깜빡임 방지)
+  // Automatic processing with useDebounce (prevents flickering)
   const [, cancelDebounce] = useDebounce(
     async () => {
       if (originalImage && processingOptions) {
         await handleProcess(processingOptions);
       }
     },
-    500, // 500ms 디바운스
+    500, // 500ms debounce
     [originalImage, processingOptions, handleProcess]
   );
 
-  // 재시도
+  // Retry
   const handleRetryClick = async () => {
     await retry(processingOptions);
   };
 
-  // 코드 예제 생성
+  // Generate code examples
   const generateCodeExamples = () => {
-    // ResizeConfig API 사용
+    // Using ResizeConfig API
     const resizeConfig = `{
     fit: '${options.fit}',${useWidth ? `\n    width: ${options.width},` : ''}${useHeight ? `\n    height: ${options.height},` : ''}${options.withoutEnlargement ? '\n    withoutEnlargement: true,' : ''}${usePadding ? `\n    padding: ${paddingValue},` : ''}${options.background !== '#ffffff' ? `\n    background: '${options.background}',` : ''}
   }`;
@@ -103,14 +103,14 @@ const result = await processImage(source)
   .resize(${resizeConfig})
   .toBlob('${options.format}');
 
-// ResultBlob 타입의 메타데이터 활용
-console.log('처리 시간:', result.processingTime, 'ms');
-console.log('원본 크기:', result.originalSize);
-console.log('결과 크기:', result.width, 'x', result.height);`;
+// Utilize ResultBlob type metadata
+console.log('Processing time:', result.processingTime, 'ms');
+console.log('Original size:', result.originalSize);
+console.log('Result size:', result.width, 'x', result.height);`;
 
     return [
       {
-        title: '기본 사용법',
+        title: 'Basic Usage',
         code: basicCode,
         language: 'typescript',
       },
@@ -120,21 +120,20 @@ console.log('결과 크기:', result.width, 'x', result.height);`;
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        기본 이미지 처리
+        Basic Image Processing
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        processImage API의 혁신적인 기능을 체험해보세요. ResizeConfig API, resize() 단일 호출 제약, "계산은 미리,
-        렌더링은 한 번" 철학으로 더 나은 성능과 품질을 제공합니다.
+        Experience the innovative features of the processImage API. The ResizeConfig API with single resize() call constraint and "calculate ahead, render once" philosophy provides better performance and quality.
       </Typography>
 
       <Grid container spacing={4}>
-        {/* 좌측: 이미지 업로더 및 옵션 */}
+        {/* Left: Image uploader and options */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
-            {/* 이미지 업로더 */}
+            {/* Image uploader */}
             <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="basic" />
 
-            {/* 에러 표시 */}
+            {/* Error display */}
             {error && (
               <ErrorDisplay
                 error={error}
@@ -144,32 +143,32 @@ console.log('결과 크기:', result.width, 'x', result.height);`;
               />
             )}
 
-            {/* 처리 상태 */}
-            <ProcessingStatus processing={processing} message="이미지를 처리하고 있습니다..." />
+            {/* Processing status */}
+            <ProcessingStatus processing={processing} message="Processing image..." />
 
-            {/* 처리 옵션 */}
+            {/* Processing options */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  처리 옵션
+                  Processing Options
                 </Typography>
 
-                {/* 크기 설정 */}
+                {/* Size settings */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    출력 크기
+                    Output Size
                   </Typography>
 
-                  {/* 너비 */}
+                  {/* Width */}
                   <Box sx={{ mb: 2 }}>
                     <FormControlLabel
                       control={<Checkbox checked={useWidth} onChange={(e) => setUseWidth(e.target.checked)} />}
-                      label="너비 사용"
+                      label="Use Width"
                     />
                     {useWidth && (
                       <Box sx={{ mt: 2 }}>
                         <Typography variant="caption" gutterBottom>
-                          너비: {options.width || 300}px
+                          Width: {options.width || 300}px
                         </Typography>
                         <Slider
                           value={options.width || 300}
@@ -189,16 +188,16 @@ console.log('결과 크기:', result.width, 'x', result.height);`;
                     )}
                   </Box>
 
-                  {/* 높이 */}
+                  {/* Height */}
                   <Box>
                     <FormControlLabel
                       control={<Checkbox checked={useHeight} onChange={(e) => setUseHeight(e.target.checked)} />}
-                      label="높이 사용"
+                      label="Use Height"
                     />
                     {useHeight && (
                       <Box sx={{ mt: 2 }}>
                         <Typography variant="caption" gutterBottom>
-                          높이: {options.height || 200}px
+                          Height: {options.height || 200}px
                         </Typography>
                         <Slider
                           value={options.height || 200}
@@ -219,10 +218,10 @@ console.log('결과 크기:', result.width, 'x', result.height);`;
                   </Box>
                 </Box>
 
-                {/* 크기 제한 옵션 */}
+                {/* Size constraint options */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    크기 제한 옵션
+                    Size Constraint Options
                   </Typography>
 
                   <FormControlLabel
@@ -232,32 +231,32 @@ console.log('결과 크기:', result.width, 'x', result.height);`;
                         onChange={(e) => setOptions((prev) => ({ ...prev, withoutEnlargement: e.target.checked }))}
                       />
                     }
-                    label="확대 금지 (withoutEnlargement)"
+                    label="Prevent Enlargement (withoutEnlargement)"
                     sx={{ display: 'block', mb: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, ml: 4 }}>
-                    원본보다 큰 크기로 확대하지 않습니다.
+                    Does not enlarge to a size larger than the original.
                   </Typography>
                 </Box>
 
-                {/* 패딩 옵션 */}
+                {/* Padding options */}
                 <Box sx={{ mb: 3 }}>
                   <FormControlLabel
                     control={<Checkbox checked={usePadding} onChange={(e) => setUsePadding(e.target.checked)} />}
-                    label="패딩 추가 (padding)"
+                    label="Add Padding (padding)"
                     sx={{ display: 'block', mb: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, ml: 4 }}>
-                    이미지 주변에 여백을 추가합니다.
+                    Adds margin around the image.
                   </Typography>
 
                   {usePadding && (
                     <Box sx={{ ml: 4, mt: 2 }}>
                       <Typography variant="caption" gutterBottom>
-                        패딩 크기: {paddingValue}px (상하좌우)
+                        Padding Size: {paddingValue}px (all sides)
                       </Typography>
 
-                      {/* 프리셋 패딩 버튼들 */}
+                      {/* Preset padding buttons */}
                       <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
                         {[10, 20, 30, 50].map((preset) => (
                           <Button
@@ -288,10 +287,10 @@ console.log('결과 크기:', result.width, 'x', result.height);`;
                   )}
                 </Box>
 
-                {/* 품질 슬라이더 */}
+                {/* Quality slider */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    품질: {options.quality}%
+                    Quality: {options.quality}%
                   </Typography>
                   <Slider
                     value={options.quality}
@@ -307,10 +306,10 @@ console.log('결과 크기:', result.width, 'x', result.height);`;
                   />
                 </Box>
 
-                {/* 배경색 */}
+                {/* Background color */}
                 <TextField
                   fullWidth
-                  label="배경색 (투명 영역)"
+                  label="Background Color (transparent areas)"
                   value={options.background}
                   onChange={(e) => setOptions((prev) => ({ ...prev, background: e.target.value }))}
                   placeholder="#ffffff"
@@ -321,36 +320,36 @@ console.log('결과 크기:', result.width, 'x', result.height);`;
           </Stack>
         </Grid>
 
-        {/* 우측: 상단 옵션, 이미지 비교 및 메타데이터 */}
+        {/* Right: Top options, image comparison and metadata */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* 상단: Fit 모드와 출력 포맷 옵션 */}
+            {/* Top: Fit mode and output format options */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  빠른 설정
+                  Quick Settings
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    {/* Fit 모드 - RadioGroup */}
+                    {/* Fit mode - RadioGroup */}
                     <FormControl>
-                      <FormLabel component="legend">Fit 모드</FormLabel>
+                      <FormLabel component="legend">Fit Mode</FormLabel>
                       <RadioGroup
                         value={options.fit}
                         onChange={(e) => setOptions((prev) => ({ ...prev, fit: e.target.value as ResizeFit }))}
                       >
-                        <FormControlLabel value="cover" control={<Radio />} label="Cover (가득 채우기, 잘림)" />
-                        <FormControlLabel value="contain" control={<Radio />} label="Contain (전체 포함, 여백)" />
-                        <FormControlLabel value="fill" control={<Radio />} label="Fill (늘려서 채우기)" />
-                        <FormControlLabel value="maxFit" control={<Radio />} label="MaxFit (축소만, 확대 안함)" />
-                        <FormControlLabel value="minFit" control={<Radio />} label="MinFit (확대만, 축소 안함)" />
+                        <FormControlLabel value="cover" control={<Radio />} label="Cover (fill completely, may crop)" />
+                        <FormControlLabel value="contain" control={<Radio />} label="Contain (fit entirely, with padding)" />
+                        <FormControlLabel value="fill" control={<Radio />} label="Fill (stretch to fill)" />
+                        <FormControlLabel value="maxFit" control={<Radio />} label="MaxFit (shrink only, no enlargement)" />
+                        <FormControlLabel value="minFit" control={<Radio />} label="MinFit (enlarge only, no shrinking)" />
                       </RadioGroup>
                     </FormControl>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    {/* 출력 포맷 - RadioGroup */}
+                    {/* Output format - RadioGroup */}
                     <FormControl>
-                      <FormLabel component="legend">출력 포맷</FormLabel>
+                      <FormLabel component="legend">Output Format</FormLabel>
                       <RadioGroup
                         value={options.format}
                         onChange={(e) => setOptions((prev) => ({ ...prev, format: e.target.value as OutputFormat }))}
@@ -365,14 +364,14 @@ console.log('결과 크기:', result.width, 'x', result.height);`;
               </CardContent>
             </Card>
 
-            {/* Before/After 뷰어 */}
+            {/* Before/After viewer */}
             <BeforeAfterView before={originalImage} after={processedImage} />
 
-            {/* 메타데이터 */}
+            {/* Metadata */}
             <ImageMetadata original={originalImage} processed={processedImage} />
 
-            {/* 코드 스니펫 */}
-            {originalImage && <CodeSnippet title="현재 설정의 코드 예제" examples={generateCodeExamples()} />}
+            {/* Code snippet */}
+            {originalImage && <CodeSnippet title="Code Examples for Current Settings" examples={generateCodeExamples()} />}
           </Stack>
         </Grid>
       </Grid>

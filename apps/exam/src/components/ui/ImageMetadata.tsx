@@ -1,4 +1,4 @@
-// 이미지 메타데이터 표시 컴포넌트 - Phase 3: 강화된 메타데이터 표시
+// Image metadata display component - Phase 3: Enhanced metadata display
 
 'use client';
 
@@ -31,16 +31,16 @@ interface ImageMetadataProps {
 export function ImageMetadata({ original, processed }: ImageMetadataProps) {
   if (!original && !processed) return null;
 
-  // 처리 효율성 계산
+  // Calculate processing efficiency
   const calculateEfficiency = () => {
     if (!original || !processed || !original.size || !processed.size) return null;
 
     const sizeReduction = 1 - processed.compressionRatio!;
     const processingSpeed = processed.processingTime;
 
-    // 효율성 점수 (크기 감소 + 처리 속도)
-    // 크기 감소: 50% 이상 = 우수, 20-50% = 양호, 20% 미만 = 보통
-    // 처리 시간: 100ms 미만 = 우수, 100-500ms = 양호, 500ms 이상 = 보통
+    // Efficiency score (size reduction + processing speed)
+    // Size reduction: ≥50% = Excellent, 20-50% = Good, <20% = Fair
+    // Processing time: <100ms = Excellent, 100-500ms = Good, ≥500ms = Fair
     let score = 0;
     if (sizeReduction >= 0.5) score += 50;
     else if (sizeReduction >= 0.2) score += 30;
@@ -52,7 +52,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
 
     return {
       score,
-      level: score >= 80 ? '우수' : score >= 50 ? '양호' : '보통',
+      level: score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Fair',
       color: score >= 80 ? 'success' : score >= 50 ? 'info' : 'warning',
     };
   };
@@ -64,11 +64,11 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
       <CardContent>
         <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Info color="primary" />
-          이미지 정보
+          Image Information
         </Typography>
 
         <Grid container spacing={3}>
-          {/* 원본 정보 */}
+          {/* Original image info */}
           <Grid size={{ xs: 12, sm: 6 }}>
             <Box
               sx={{
@@ -85,25 +85,25 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                 sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}
               >
                 <PhotoSizeSelectActual fontSize="small" color="action" />
-                원본 이미지
+                Original Image
               </Typography>
               {original ? (
                 <Stack spacing={1.5}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" display="block">
-                      해상도
+                      Resolution
                     </Typography>
                     <Typography variant="h6" color="primary">
                       {original.width} × {original.height}px
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      총 {(original.width * original.height / 1_000_000).toFixed(2)}MP
+                      Total {(original.width * original.height / 1_000_000).toFixed(2)}MP
                     </Typography>
                   </Box>
                   {original.size && (
                     <Box>
                       <Typography variant="caption" color="text.secondary" display="block">
-                        파일 크기
+                        File Size
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
                         {formatFileSize(original.size)}
@@ -113,7 +113,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                   {original.format && (
                     <Box>
                       <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-                        포맷
+                        Format
                       </Typography>
                       <Chip label={original.format.toUpperCase()} size="small" color="default" />
                     </Box>
@@ -121,13 +121,13 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                 </Stack>
               ) : (
                 <Typography variant="body2" color="text.secondary">
-                  이미지를 선택해주세요
+                  Please select an image
                 </Typography>
               )}
             </Box>
           </Grid>
 
-          {/* 처리 결과 정보 */}
+          {/* Processed image info */}
           <Grid size={{ xs: 12, sm: 6 }}>
             <Box
               sx={{
@@ -144,13 +144,13 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                 sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}
               >
                 <CheckCircle fontSize="small" color={processed ? 'success' : 'action'} />
-                처리 결과
+                Processed Result
               </Typography>
               {processed ? (
                 <Stack spacing={1.5}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" display="block">
-                      해상도
+                      Resolution
                     </Typography>
                     <Typography variant="h6" color="success.main">
                       {processed.width} × {processed.height}px
@@ -158,15 +158,15 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                     {original && (
                       <Typography variant="caption" color="text.secondary">
                         {processed.width === original.width && processed.height === original.height
-                          ? '크기 유지'
-                          : `${((processed.width * processed.height) / (original.width * original.height) * 100).toFixed(0)}% 크기`}
+                          ? 'Size maintained'
+                          : `${((processed.width * processed.height) / (original.width * original.height) * 100).toFixed(0)}% of original`}
                       </Typography>
                     )}
                   </Box>
                   {processed.size && (
                     <Box>
                       <Typography variant="caption" color="text.secondary" display="block">
-                        파일 크기
+                        File Size
                       </Typography>
                       <Typography variant="body1" fontWeight="medium" color="success.main">
                         {formatFileSize(processed.size)}
@@ -175,7 +175,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                   )}
                   <Box>
                     <Typography variant="caption" color="text.secondary" display="block">
-                      처리 시간
+                      Processing Time
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Speed fontSize="small" color="primary" />
@@ -187,7 +187,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                   {processed.compressionRatio && (
                     <Box>
                       <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-                        압축 효율
+                        Compression Efficiency
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <CompareArrows fontSize="small" color="success" />
@@ -209,7 +209,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                       )}
                       {processed.compressionRatio < 1 && (
                         <Typography variant="caption" color="success.main" sx={{ mt: 0.5, display: 'block' }}>
-                          {((1 - processed.compressionRatio) * 100).toFixed(0)}% 파일 크기 감소
+                          {((1 - processed.compressionRatio) * 100).toFixed(0)}% file size reduction
                         </Typography>
                       )}
                     </Box>
@@ -217,7 +217,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                   {processed.format && (
                     <Box>
                       <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-                        포맷
+                        Format
                       </Typography>
                       <Chip label={processed.format.toUpperCase()} size="small" color="success" />
                     </Box>
@@ -225,13 +225,13 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                 </Stack>
               ) : (
                 <Typography variant="body2" color="text.secondary">
-                  처리된 이미지 없음
+                  No processed image
                 </Typography>
               )}
             </Box>
           </Grid>
 
-          {/* 처리 효율성 요약 (처리 완료 시에만 표시) */}
+          {/* Processing efficiency summary (shown only after processing) */}
           {efficiency && (
             <Grid size={12}>
               <Alert
@@ -240,7 +240,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
               >
                 <Box sx={{ width: '100%' }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    처리 효율성: <strong>{efficiency.level}</strong> (점수: {efficiency.score}/100)
+                    Processing Efficiency: <strong>{efficiency.level}</strong> (Score: {efficiency.score}/100)
                   </Typography>
                   <LinearProgress
                     variant="determinate"
@@ -249,9 +249,9 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                     sx={{ height: 8, borderRadius: 1 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    {efficiency.score >= 80 && '최적의 압축률과 빠른 처리 속도를 달성했습니다.'}
-                    {efficiency.score >= 50 && efficiency.score < 80 && '양호한 성능을 보여줍니다.'}
-                    {efficiency.score < 50 && '성능 개선 여지가 있습니다. 옵션을 조정해보세요.'}
+                    {efficiency.score >= 80 && 'Achieved optimal compression ratio and fast processing speed.'}
+                    {efficiency.score >= 50 && efficiency.score < 80 && 'Showing good performance.'}
+                    {efficiency.score < 50 && 'There is room for performance improvement. Try adjusting the options.'}
                   </Typography>
                 </Box>
               </Alert>

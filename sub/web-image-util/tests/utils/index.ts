@@ -1,5 +1,5 @@
 /**
- * 테스트 유틸리티 모듈 export
+ * Test utility module exports
  */
 
 export {

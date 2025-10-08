@@ -1,19 +1,19 @@
 /**
  * @cp949/web-image-util
  *
- * 브라우저에서 이미지 처리를 위한 TypeScript 라이브러리
- * Canvas 2D API를 사용하여 고성능 이미지 변환 제공
+ * TypeScript library for image processing in browsers
+ * Provides high-performance image conversion using Canvas 2D API
  *
- * @example 기본 사용법
+ * @example Basic usage
  * ```typescript
  * import { processImage } from '@cp949/web-image-util';
  *
- * // 간단한 리사이징
+ * // Simple resizing
  * const thumbnail = await processImage(source)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .toBlob();
  *
- * // 고급 처리
+ * // Advanced processing
  * const result = await processImage(source)
  *   .resize({ fit: 'contain', width: 300, height: 200, background: '#ffffff' })
  *   .blur(2)
@@ -21,17 +21,17 @@
  * ```
  */
 
-// 핵심 API
+// Core API
 export { processImage, ImageProcessor } from './processor';
 
 // Shortcut API
 export { ShortcutBuilder } from './shortcut';
 
-// 편의성 기능들
+// Convenience features
 export { createThumbnail, createAvatar, createSocialImage } from './presets';
 export type { ThumbnailOptions, AvatarOptions, SocialImageOptions, SocialPlatform } from './presets';
 
-// 유틸리티 함수들
+// Utility functions
 export {
   convertToBlob,
   convertToBlobDetailed,
@@ -50,24 +50,24 @@ export type {
   ConvertToFileDetailedOptions,
 } from './utils';
 
-// SVG 호환성 함수들
+// SVG compatibility functions
 export { enhanceBrowserCompatibility, normalizeSvgBasics } from './utils/svg-compatibility';
 export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility';
 
-// SVG 복잡도 분석
+// SVG complexity analysis
 export { analyzeSvgComplexity } from './core/svg-complexity-analyzer';
 
-// SVG 유틸리티 함수들
+// SVG utility functions
 export { extractSvgDimensions } from './utils/svg-dimensions';
 
-// 타입 정의
+// Type definitions
 export type {
-  // 입력 타입
+  // Input types
   ImageSource,
 
-  // 옵션 타입
+  // Option types
   ResizeConfig,
-  // ResizeConfig 서브 타입들 (명시적 타입 지정용)
+  // ResizeConfig sub-types (for explicit type specification)
   CoverConfig,
   ContainConfig,
   FillConfig,
@@ -79,41 +79,41 @@ export type {
   ProcessorOptions,
   Padding,
 
-  // 결과 타입
+  // Result types
   ResultBlob,
   ResultCanvas,
   ResultDataURL,
   ResultFile,
   ResultMetadata,
 
-  // 유틸리티 타입
-  OutputFormat, // 추가: 출력 포맷 명시적 지정용
+  // Utility types
+  OutputFormat, // Added: for explicit output format specification
   ResizeFit,
   ResizePosition,
   ResizeBackground,
   ImageFormat,
   ImageErrorCodeType,
 
-  // SVG 품질 시스템 타입들
+  // SVG quality system types
   QualityLevel,
   SvgComplexityMetrics,
   ComplexityAnalysisResult,
 
-  // SVG 유틸리티 타입들
+  // SVG utility types
   SvgDimensions,
 } from './types';
 
-// 에러 클래스
+// Error classes
 export { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
 
 /**
- * 브라우저 기능 지원 여부 확인
+ * Browser feature support detection
  *
- * @description 현재 브라우저에서 지원하는 이미지 처리 기능들을 동적으로 감지합니다.
- * 런타임에 기능 가용성을 확인하여 최적의 처리 방식을 선택할 수 있습니다.
+ * @description Dynamically detects image processing features supported by the current browser.
+ * Enables selection of optimal processing methods by checking feature availability at runtime.
  */
 export const features = {
-  /** WebP 지원 여부 */
+  /** WebP support */
   webp: (() => {
     try {
       const canvas = document.createElement('canvas');
@@ -123,7 +123,7 @@ export const features = {
     }
   })(),
 
-  /** AVIF 지원 여부 */
+  /** AVIF support */
   avif: (() => {
     try {
       const canvas = document.createElement('canvas');
@@ -133,9 +133,9 @@ export const features = {
     }
   })(),
 
-  /** OffscreenCanvas 지원 여부 */
+  /** OffscreenCanvas support */
   offscreenCanvas: typeof OffscreenCanvas !== 'undefined',
 
-  /** ImageBitmap 지원 여부 */
+  /** ImageBitmap support */
   imageBitmap: typeof createImageBitmap !== 'undefined',
 } as const;

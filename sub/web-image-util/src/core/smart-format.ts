@@ -1,6 +1,6 @@
 /**
- * 스마트 포맷 선택 및 최적화 시스템
- * 이미지 특성과 브라우저 지원을 고려한 자동 포맷 최적화
+ * Smart format selection and optimization system
+ * Automatic format optimization considering image characteristics and browser support
  */
 
 import type { ImageFormat } from '../base/format-detector';
@@ -8,71 +8,71 @@ import { FORMAT_MIME_MAP, FormatDetector } from '../base/format-detector';
 import { ImageFormats } from '../types';
 
 /**
- * 이미지 용도별 최적화 프리셋
+ * Image purpose-based optimization presets
  *
- * @description 이미지의 사용 용도에 따른 최적화 전략을 정의하는 enum
- * 각 용도별로 품질, 크기, 호환성 등의 최적화 기준이 달라집니다.
+ * @description Enum defining optimization strategies based on image usage purpose
+ * Optimization criteria such as quality, size, and compatibility vary by purpose.
  */
 export enum ImagePurpose {
-  WEB = 'web', // 웹 페이지 (일반적인 웹 사용)
-  THUMBNAIL = 'thumbnail', // 썸네일 (작은 크기, 빠른 로딩)
-  PRINT = 'print', // 인쇄용 (고품질 유지)
-  SOCIAL = 'social', // 소셜 미디어 (플랫폼별 최적화)
-  ICON = 'icon', // 아이콘 (선명함 우선)
-  ARCHIVE = 'archive', // 보관용 (무손실 우선)
+  WEB = 'web', // Web pages (general web usage)
+  THUMBNAIL = 'thumbnail', // Thumbnails (small size, fast loading)
+  PRINT = 'print', // Print use (maintain high quality)
+  SOCIAL = 'social', // Social media (platform-specific optimization)
+  ICON = 'icon', // Icons (clarity priority)
+  ARCHIVE = 'archive', // Archive use (lossless priority)
 }
 
 /**
- * 스마트 포맷 옵션
+ * Smart format options
  */
 export interface SmartFormatOptions {
-  /** 이미지 용도 (자동 최적화에 영향) */
+  /** Image purpose (affects automatic optimization) */
   purpose?: ImagePurpose;
 
-  /** 최대 파일 크기 (KB 단위) */
+  /** Maximum file size (in KB) */
   maxSizeKB?: number;
 
-  /** 품질 우선순위 (0: 압축률 우선, 1: 품질 우선) */
+  /** Quality priority (0: compression priority, 1: quality priority) */
   qualityPriority?: number; // 0-1
 
-  /** 브라우저 호환성 우선 여부 */
+  /** Whether to prioritize browser compatibility */
   legacyCompatible?: boolean;
 
-  /** 투명도 보존 여부 (자동 감지 가능) */
+  /** Whether to preserve transparency (auto-detectable) */
   preserveTransparency?: boolean;
 
-  /** 허용할 포맷들 (제한하고 싶은 경우) */
+  /** Allowed formats (if you want to restrict) */
   allowedFormats?: ImageFormat[];
 }
 
 /**
- * 포맷 최적화 결과
+ * Format optimization result
  */
 export interface FormatOptimizationResult {
-  /** 선택된 최적 포맷 */
+  /** Selected optimal format */
   format: ImageFormat;
 
-  /** MIME 타입 */
+  /** MIME type */
   mimeType: string;
 
-  /** 권장 품질 설정 */
+  /** Recommended quality setting */
   quality: number;
 
-  /** 최적화 이유 */
+  /** Optimization reason */
   reason: string;
 
-  /** 대체 포맷들 (우선순위 순) */
+  /** Alternative formats (in priority order) */
   alternatives: Array<{ format: ImageFormat; quality: number; reason: string }>;
 
-  /** 예상 파일 크기 개선율 */
-  estimatedSavings?: number; // 0-1 (백분율)
+  /** Expected file size improvement rate */
+  estimatedSavings?: number; // 0-1 (percentage)
 }
 
 /**
- * 스마트 포맷 선택기 클래스
+ * Smart format selector class
  *
- * @description 이미지 특성과 브라우저 지원을 분석하여 최적의 포맷을 자동으로 선택하는 클래스
- * 색상 복잡도, 투명도, 이미지 용도 등을 종합적으로 고려합니다.
+ * @description Class that automatically selects optimal format by analyzing image characteristics and browser support
+ * Comprehensively considers color complexity, transparency, image purpose, etc.
  */
 export class SmartFormatSelector {
   private static purposeSettings: Record<ImagePurpose, Partial<SmartFormatOptions>> = {
@@ -108,15 +108,15 @@ export class SmartFormatSelector {
   };
 
   /**
-   * 최적 포맷 자동 선택
-   * @param canvas - 분석할 캔버스
-   * @param options - 최적화 옵션
+   * Automatic optimal format selection
+   * @param canvas - Canvas to analyze
+   * @param options - Optimization options
    */
   static async selectOptimalFormat(
     canvas: HTMLCanvasElement,
     options: SmartFormatOptions = {}
   ): Promise<FormatOptimizationResult> {
-    // 용도별 기본 설정 적용
+    // Apply default settings by purpose
     const purposeDefaults = options.purpose ? this.purposeSettings[options.purpose] : {};
 
     const mergedOptions: Required<SmartFormatOptions> = {
@@ -130,19 +130,19 @@ export class SmartFormatSelector {
       ...options,
     };
 
-    // 이미지 특성 분석
+    // Analyze image characteristics
     const analysis = await this.analyzeImage(canvas);
 
-    // 투명도 감지 (옵션으로 지정되지 않은 경우)
+    // Detect transparency (if not specified in options)
     const hasTransparency = options.preserveTransparency ?? analysis.hasTransparency;
 
-    // 지원 가능한 포맷들 확인
+    // Check supported formats
     const supportedFormats = await this.getSupportedFormats(mergedOptions);
 
-    // 각 포맷별 점수 계산
+    // Calculate scores for each format
     const formatScores = await this.scoreFormats(supportedFormats, analysis, hasTransparency, mergedOptions);
 
-    // 최고 점수 포맷 선택
+    // Select format with highest score
     const bestFormat = formatScores[0];
 
     return {
@@ -150,13 +150,13 @@ export class SmartFormatSelector {
       mimeType: FORMAT_MIME_MAP[bestFormat.format],
       quality: bestFormat.quality,
       reason: bestFormat.reason,
-      alternatives: formatScores.slice(1, 4), // 상위 3개 대안
+      alternatives: formatScores.slice(1, 4), // Top 3 alternatives
       estimatedSavings: bestFormat.estimatedSavings,
     };
   }
 
   /**
-   * 이미지 특성 분석
+   * Analyze image characteristics
    */
   private static async analyzeImage(canvas: HTMLCanvasElement): Promise<{
     hasTransparency: boolean;
@@ -174,8 +174,8 @@ export class SmartFormatSelector {
     const colorSet = new Set<string>();
     let edgePixels = 0;
 
-    // 샘플링으로 성능 최적화 (큰 이미지의 경우)
-    const sampleStep = Math.max(1, Math.floor(data.length / 40000)); // 최대 10,000 픽셀 샘플링
+    // Performance optimization through sampling (for large images)
+    const sampleStep = Math.max(1, Math.floor(data.length / 40000)); // Sample up to 10,000 pixels
 
     for (let i = 0; i < data.length; i += 4 * sampleStep) {
       const r = data[i];
@@ -183,20 +183,20 @@ export class SmartFormatSelector {
       const b = data[i + 2];
       const a = data[i + 3];
 
-      // 투명도 검사
+      // Transparency check
       if (a < 255) {
         hasTransparency = true;
       } else {
         nonTransparentPixels++;
       }
 
-      // 색상 복잡도 (고유 색상 수)
+      // Color complexity (unique color count)
       if (colorSet.size < 1000) {
-        // 메모리 절약을 위해 제한
+        // Limited to save memory
         colorSet.add(`${r}-${g}-${b}`);
       }
 
-      // 에지 검출 (간단한 방법)
+      // Edge detection (simple method)
       if (i > 0 && i < data.length - 4) {
         const prevR = data[i - 4] || r;
         const nextR = data[i + 4] || r;
@@ -207,7 +207,7 @@ export class SmartFormatSelector {
     }
 
     const totalSampledPixels = Math.floor(data.length / 4 / sampleStep);
-    const colorComplexity = Math.min(colorSet.size / 256, 1); // 0-1 정규화
+    const colorComplexity = Math.min(colorSet.size / 256, 1); // 0-1 normalization
     const edgeRatio = edgePixels / totalSampledPixels;
 
     return {
@@ -220,17 +220,17 @@ export class SmartFormatSelector {
   }
 
   /**
-   * 지원 가능한 포맷 목록 반환
+   * Return list of supported formats
    */
   private static async getSupportedFormats(options: SmartFormatOptions): Promise<ImageFormat[]> {
     let formats = await FormatDetector.getSupportedFormats();
 
-    // 허용된 포맷으로 필터링
+    // Filter by allowed formats
     if (options.allowedFormats) {
       formats = formats.filter((format) => options.allowedFormats!.includes(format));
     }
 
-    // 구형 브라우저 호환성이 필요한 경우 모던 포맷 제외
+    // Exclude modern formats if legacy browser compatibility is needed
     if (options.legacyCompatible) {
       formats = formats.filter((format) => !['webp'].includes(format));
     }
@@ -239,7 +239,7 @@ export class SmartFormatSelector {
   }
 
   /**
-   * 포맷별 점수 계산
+   * Calculate scores by format
    */
   private static async scoreFormats(
     formats: ImageFormat[],
@@ -263,72 +263,72 @@ export class SmartFormatSelector {
       let reason = '';
       let estimatedSavings = 0;
 
-      // 포맷별 기본 점수
+      // Basic score by format
       switch (format) {
         case ImageFormats.AVIF:
           score += 90;
           estimatedSavings = 0.6;
-          reason = 'AVIF: 최고 압축률과 품질';
+          reason = 'AVIF: Best compression ratio and quality';
           break;
         case ImageFormats.WEBP:
           score += 80;
-          estimatedSavings = 0.3; // 30% 크기 감소
-          reason = 'WebP: 우수한 압축률';
+          estimatedSavings = 0.3; // 30% size reduction
+          reason = 'WebP: Excellent compression ratio';
           break;
         case ImageFormats.JPEG:
           score += 60;
           estimatedSavings = 0.1;
-          reason = 'JPEG: 사진에 최적화';
+          reason = 'JPEG: Optimized for photos';
           break;
         case ImageFormats.PNG:
           score += 50;
-          estimatedSavings = -0.2; // 20% 크기 증가 (무손실)
-          reason = 'PNG: 무손실 압축';
+          estimatedSavings = -0.2; // 20% size increase (lossless)
+          reason = 'PNG: Lossless compression';
           break;
       }
 
-      // 투명도 지원 보너스/페널티
+      // Transparency support bonus/penalty
       if (hasTransparency) {
         if (format === ImageFormats.PNG || format === ImageFormats.WEBP || format === ImageFormats.AVIF) {
           score += 20;
-          reason += ' + 투명도 지원';
+          reason += ' + transparency support';
         } else {
-          score -= 30; // JPEG는 투명도 미지원
+          score -= 30; // JPEG does not support transparency
         }
       }
 
-      // 이미지 특성에 따른 조정
+      // Adjustment based on image characteristics
       if (analysis.hasPhotographicContent) {
         if (format === ImageFormats.JPEG || format === ImageFormats.WEBP || format === ImageFormats.AVIF) {
           score += 15;
-          reason += ' + 사진 최적화';
+          reason += ' + photo optimization';
         }
       } else {
-        // 그래픽/일러스트
+        // Graphics/illustration
         if (format === ImageFormats.PNG || format === ImageFormats.WEBP || format === ImageFormats.AVIF) {
           score += 10;
-          reason += ' + 그래픽 최적화';
+          reason += ' + graphics optimization';
         }
       }
 
-      // 색상 복잡도에 따른 조정
+      // Adjustment based on color complexity
       if (analysis.colorComplexity > 0.8) {
-        // 복잡한 색상
+        // Complex colors
         if (format === ImageFormats.JPEG || format === ImageFormats.AVIF) {
           score += 5;
         }
       } else {
-        // 단순한 색상
+        // Simple colors
         if (format === ImageFormats.PNG || format === ImageFormats.WEBP || format === ImageFormats.AVIF) {
           score += 5;
         }
       }
 
-      // 품질 우선순위 적용
+      // Apply quality priority
       const qualityBonus = this.calculateQualityBonus(format, options.qualityPriority);
       score += qualityBonus;
 
-      // 파일 크기 제한 고려
+      // Consider file size limit
       const sizeScore = this.calculateSizeScore(format, options.maxSizeKB, estimatedSavings);
       score += sizeScore;
 
@@ -341,12 +341,12 @@ export class SmartFormatSelector {
       });
     }
 
-    // 점수 순으로 정렬
+    // Sort by score
     return formatScores.sort((a, b) => b.score - a.score);
   }
 
   /**
-   * 포맷별 권장 품질 설정
+   * Recommended quality settings by format
    */
   private static getRecommendedQuality(format: ImageFormat, options: SmartFormatOptions): number {
     const baseQuality = {
@@ -354,14 +354,14 @@ export class SmartFormatSelector {
       [ImageFormats.JPG]: 0.8,
       [ImageFormats.WEBP]: 0.8,
       [ImageFormats.AVIF]: 0.75,
-      [ImageFormats.PNG]: 1.0, // 무손실
+      [ImageFormats.PNG]: 1.0, // Lossless
       [ImageFormats.GIF]: 1.0,
       [ImageFormats.SVG]: 1.0,
     };
 
     let quality = baseQuality[format] || 0.8;
 
-    // 용도별 조정
+    // Adjustment by purpose
     switch (options.purpose) {
       case ImagePurpose.THUMBNAIL:
         quality = Math.max(0.6, quality - 0.2);
@@ -374,7 +374,7 @@ export class SmartFormatSelector {
         break;
     }
 
-    // 품질 우선순위에 따른 조정
+    // Adjustment based on quality priority
     if (options.qualityPriority) {
       quality = quality + (1 - quality) * options.qualityPriority;
     }
@@ -383,7 +383,7 @@ export class SmartFormatSelector {
   }
 
   /**
-   * 품질 우선순위 보너스 계산
+   * Calculate quality priority bonus
    */
   private static calculateQualityBonus(format: ImageFormat, qualityPriority: number): number {
     const qualityRanking = {
@@ -400,12 +400,12 @@ export class SmartFormatSelector {
   }
 
   /**
-   * 파일 크기 점수 계산
+   * Calculate file size score
    */
   private static calculateSizeScore(format: ImageFormat, maxSizeKB: number, estimatedSavings: number): number {
     if (maxSizeKB === Infinity) return 0;
 
-    // 크기 제한이 있는 경우 압축률 높은 포맷 선호
+    // Prefer formats with high compression ratio when size limit exists
     const compressionRanking = {
       [ImageFormats.AVIF]: 10,
       [ImageFormats.WEBP]: 8,
@@ -418,14 +418,14 @@ export class SmartFormatSelector {
 
     const sizeScore = (compressionRanking[format] || 5) + estimatedSavings * 10;
 
-    // 파일 크기 제한이 엄격할수록 압축률 중요
+    // The stricter the file size limit, the more important compression ratio becomes
     const strictnessMultiplier = Math.max(0.5, Math.min(2.0, 1000 / maxSizeKB));
 
     return sizeScore * strictnessMultiplier;
   }
 
   /**
-   * 배치 최적화 - 여러 이미지의 최적 포맷을 한 번에 결정
+   * Batch optimization - determine optimal formats for multiple images at once
    */
   static async batchOptimize(
     canvases: Array<{ canvas: HTMLCanvasElement; name?: string; options?: SmartFormatOptions }>,
@@ -445,16 +445,16 @@ export class SmartFormatSelector {
 }
 
 /**
- * 편의 함수들
+ * Convenience functions
  */
 
 /**
- * 웹용 최적화
+ * Web optimization
  *
- * @description 웹 페이지에서 사용할 이미지를 위한 최적화를 수행합니다.
- * 로딩 속도와 품질의 균형을 맞춘 설정을 사용합니다.
- * @param canvas 최적화할 Canvas 요소
- * @returns 최적화 결과 (포맷, 품질, 이유 등)
+ * @description Performs optimization for images to be used on web pages.
+ * Uses settings that balance loading speed and quality.
+ * @param canvas Canvas element to optimize
+ * @returns Optimization result (format, quality, reason, etc.)
  */
 export async function optimizeForWeb(canvas: HTMLCanvasElement): Promise<FormatOptimizationResult> {
   return SmartFormatSelector.selectOptimalFormat(canvas, {
@@ -463,12 +463,12 @@ export async function optimizeForWeb(canvas: HTMLCanvasElement): Promise<FormatO
 }
 
 /**
- * 썸네일용 최적화
+ * Thumbnail optimization
  *
- * @description 썸네일 이미지를 위한 최적화를 수행합니다.
- * 작은 파일 크기와 빠른 로딩에 중점을 둔 설정을 사용합니다.
- * @param canvas 최적화할 Canvas 요소
- * @returns 최적화 결과 (포맷, 품질, 이유 등)
+ * @description Performs optimization for thumbnail images.
+ * Uses settings that focus on small file size and fast loading.
+ * @param canvas Canvas element to optimize
+ * @returns Optimization result (format, quality, reason, etc.)
  */
 export async function optimizeForThumbnail(canvas: HTMLCanvasElement): Promise<FormatOptimizationResult> {
   return SmartFormatSelector.selectOptimalFormat(canvas, {
@@ -477,13 +477,13 @@ export async function optimizeForThumbnail(canvas: HTMLCanvasElement): Promise<F
 }
 
 /**
- * 간단한 자동 최적화
+ * Simple automatic optimization
  *
- * @description 이미지를 자동으로 분석하여 최적의 포맷과 품질을 선택합니다.
- * 가장 간단한 형태의 최적화로, 웹 용도에 적합한 설정을 자동 적용합니다.
- * @param canvas 최적화할 Canvas 요소
- * @param maxSizeKB 최대 파일 크기 제한 (KB 단위, 선택사항)
- * @returns 최적화된 포맷, 품질, MIME 타입 정보
+ * @description Automatically analyzes image and selects optimal format and quality.
+ * The simplest form of optimization that automatically applies web-appropriate settings.
+ * @param canvas Canvas element to optimize
+ * @param maxSizeKB Maximum file size limit (in KB, optional)
+ * @returns Optimized format, quality, and MIME type information
  */
 export async function autoOptimize(
   canvas: HTMLCanvasElement,

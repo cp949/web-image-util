@@ -16,24 +16,24 @@ import { useState } from 'react';
 import { useSampleImages, type SampleImage } from '../../hooks/useSampleImages';
 
 /**
- * SampleImageSelector 컴포넌트 Props
+ * SampleImageSelector Component Props
  */
 interface SampleImageSelectorProps {
-  /** 이미지 선택 시 호출되는 콜백 */
+  /** Callback invoked when an image is selected */
   onImageSelect: (imagePath: string) => void;
-  /** 선택된 타입 (기본값: 'all') */
+  /** Selected type (default: 'all') */
   selectedType?: 'all' | 'jpg' | 'png' | 'svg';
-  /** 컴팩트 모드 여부 (기본값: false) */
+  /** Whether to use compact mode (default: false) */
   compact?: boolean;
-  /** 추천 샘플 타입 (지정 시 해당 데모 타입에 맞는 샘플만 표시) */
+  /** Recommended sample type (when specified, shows only samples for the demo type) */
   recommendedFor?: string;
 }
 
 /**
- * 샘플 이미지 선택기 컴포넌트
+ * Sample Image Selector Component
  *
- * 미리 준비된 샘플 이미지들을 갤러리 형태로 표시하고
- * 사용자가 클릭하여 즉시 선택할 수 있는 UI 제공
+ * Displays prepared sample images in gallery format
+ * with UI allowing users to immediately select by clicking
  */
 export function SampleImageSelector({
   onImageSelect,
@@ -47,12 +47,12 @@ export function SampleImageSelector({
     'all' | 'jpg' | 'png' | 'svg'
   >(selectedType);
 
-  // 모든 샘플 이미지 표시 (추천 이미지 제한 제거)
+  // Display all sample images (recommendation filter removed)
   const displayImages: SampleImage[] = selectedCategory === 'all'
     ? sampleImages
     : getImagesByType(selectedCategory);
 
-  // 추천 이미지 정보 (표시용)
+  // Recommended images info (for display)
   const recommendedImages = recommendedFor ? getRecommendedImages(recommendedFor) : [];
 
   return (
@@ -67,7 +67,7 @@ export function SampleImageSelector({
             }}
           >
             <Typography variant="h6">
-              샘플 이미지 선택
+              Select Sample Image
             </Typography>
 
             {!compact && (
@@ -79,7 +79,7 @@ export function SampleImageSelector({
                 }
                 size="small"
               >
-                <ToggleButton value="all">전체</ToggleButton>
+                <ToggleButton value="all">All</ToggleButton>
                 <ToggleButton value="jpg">JPG</ToggleButton>
                 <ToggleButton value="png">PNG</ToggleButton>
                 <ToggleButton value="svg">SVG</ToggleButton>
@@ -87,10 +87,10 @@ export function SampleImageSelector({
             )}
           </Box>
 
-          {/* 성능 비교 안내 문구 */}
+          {/* Performance comparison notice */}
           {recommendedFor === 'performance' && (
             <Typography variant="subtitle2" color="primary" sx={{ mt: 1, mb: 1 }}>
-              📊 성능 비교를 위해 큰 이미지를 선택하세요
+              📊 Select large images for performance comparison
             </Typography>
           )}
 
@@ -162,12 +162,12 @@ export function SampleImageSelector({
 
           {displayImages.length === 0 && (
             <Typography variant="body2" color="text.secondary" align="center">
-              선택한 카테고리에 샘플 이미지가 없습니다.
+              No sample images available in the selected category.
             </Typography>
           )}
 
           <Typography variant="caption" color="text.secondary">
-            💡 클릭하여 즉시 이미지를 선택할 수 있습니다
+            💡 Click to select an image immediately
           </Typography>
         </Stack>
       </CardContent>

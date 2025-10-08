@@ -2,16 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { processImage } from '../../src/index';
 
 describe('Shortcut API Performance', () => {
-  // Base64로 인코딩된 100x100 파란 사각형 SVG
+  // Base64 encoded 100x100 blue square SVG
   const testImageUrl =
     'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNzNkYyIvPjwvc3ZnPg==';
 
-  // Vitest 모범 사례: 성능 테스트를 위한 헬퍼 함수
+  // Vitest best practice: Helper function for performance testing
   /**
-   * 주어진 함수를 여러 번 실행하여 평균 실행 시간을 계산
-   * @param fn 측정할 함수
-   * @param iterations 반복 횟수
-   * @returns 평균 실행 시간 (ms), 최소 시간, 최대 시간
+   * Execute given function multiple times and calculate average execution time
+   * @param fn Function to measure
+   * @param iterations Number of iterations
+   * @returns Average execution time (ms), minimum time, maximum time
    */
   function measurePerformance(fn: () => void, iterations: number) {
     const times: number[] = [];
@@ -32,12 +32,12 @@ describe('Shortcut API Performance', () => {
   }
 
   describe('Shortcut Creation Performance', () => {
-    // Vitest 모범 사례: describe.each로 여러 시나리오의 성능 테스트를 일관되게 측정
+    // Vitest best practice: consistently measure performance tests for multiple scenarios with describe.each
     describe.each([
       {
         name: 'Direct Mapping - coverBox',
         factory: () => processImage(testImageUrl).shortcut.coverBox(300, 200),
-        threshold: 100, // 1000번 생성에 대한 최대 허용 시간 (ms)
+        threshold: 100, // Maximum allowed time for 1000 creations (ms)
       },
       {
         name: 'Direct Mapping - containBox',
@@ -65,12 +65,12 @@ describe('Shortcut API Performance', () => {
           - Max: ${stats.max.toFixed(3)}ms
           - Total: ${(stats.avg * 1000).toFixed(2)}ms`);
 
-        // 전체 실행 시간이 threshold 이내여야 함
+        // Total execution time should be within threshold
         expect(stats.avg * 1000, `1000 creations should complete within ${threshold}ms`).toBeLessThan(threshold);
       });
 
       it('should have consistent performance (low variance)', () => {
-        // Node.js 환경에서는 성능 일관성 테스트를 스킵
+        // Skip performance consistency test in Node.js environment
         if (typeof process !== 'undefined' && process.versions && process.versions.node) {
           console.log('Performance consistency test skipped in Node.js environment');
           return;
@@ -83,7 +83,7 @@ describe('Shortcut API Performance', () => {
           `Variance: ${variance.toFixed(3)}ms (max: ${stats.max.toFixed(3)}ms, min: ${stats.min.toFixed(3)}ms)`
         );
 
-        // 브라우저 환경에서만 성능 일관성 검증
+        // Verify performance consistency only in browser environment
         expect(variance, 'performance should be consistent').toBeLessThan(stats.median * 5);
       });
     });
@@ -100,7 +100,7 @@ describe('Shortcut API Performance', () => {
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      // 100번 체이닝이 50ms 이내에 완료되어야 함
+      // 100 chaining operations should complete within 50ms
       expect(duration).toBeLessThan(50);
       console.log(`100 chained operations: ${duration.toFixed(2)}ms`);
     });
@@ -135,7 +135,7 @@ describe('Shortcut API Performance', () => {
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      // 2500개 직접 매핑 연산이 200ms 이내
+      // 2500 direct mapping operations should complete within 200ms
       expect(duration).toBeLessThan(200);
       console.log(`2500 direct mapping operations: ${duration.toFixed(2)}ms`);
     });
@@ -154,7 +154,7 @@ describe('Shortcut API Performance', () => {
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      // 2500개 lazy 연산이 200ms 이내
+      // 2500 lazy operations should complete within 200ms
       expect(duration).toBeLessThan(200);
       console.log(`2500 lazy operations: ${duration.toFixed(2)}ms`);
     });
@@ -162,20 +162,20 @@ describe('Shortcut API Performance', () => {
 
   describe('Memory Efficiency', () => {
     it('should not leak memory on repeated shortcut creation', () => {
-      // 메모리 누수 테스트: 많은 수의 shortcut을 생성하고 버림
+      // Memory leak test: create and discard many shortcuts
       const iterations = 10000;
 
       const startTime = performance.now();
 
       for (let i = 0; i < iterations; i++) {
-        // 생성 후 즉시 버림
+        // Create and immediately discard
         processImage(testImageUrl).shortcut.coverBox(300, 200);
       }
 
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      // 10000번 생성/버림이 500ms 이내
+      // 10000 creations/disposals should complete within 500ms
       expect(duration).toBeLessThan(500);
       console.log(`${iterations} shortcut creations and disposals: ${duration.toFixed(2)}ms`);
     });
@@ -184,13 +184,13 @@ describe('Shortcut API Performance', () => {
       const startTime = performance.now();
 
       for (let i = 0; i < 100; i++) {
-        processImage(testImageUrl).shortcut.scale(1.5).blur(2).blur(1); // 추가 체이닝
+        processImage(testImageUrl).shortcut.scale(1.5).blur(2).blur(1); // Additional chaining
       }
 
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      // 복잡한 체이닝도 100ms 이내
+      // Even complex chaining should complete within 100ms
       expect(duration).toBeLessThan(100);
       console.log(`100 complex chains: ${duration.toFixed(2)}ms`);
     });
@@ -218,7 +218,7 @@ describe('Shortcut API Performance', () => {
         `Overhead: ${(shortcutDuration - directDuration).toFixed(2)}ms (${((shortcutDuration / directDuration - 1) * 100).toFixed(1)}%)`
       );
 
-      // Shortcut의 오버헤드가 직접 API 대비 50% 이내여야 함
+      // Shortcut API overhead should be within 50% compared to direct API
       expect(shortcutDuration).toBeLessThan(directDuration * 1.5);
     });
   });

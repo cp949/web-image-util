@@ -1,6 +1,6 @@
 /**
- * 자동 고해상도 이미지 처리 시스템
- * 고해상도 이미지를 자동으로 처리하는 투명한 시스템
+ * Automatic high-resolution image processing system
+ * Transparent system that automatically processes high-resolution images
  */
 
 import { HighResolutionDetector } from '../base/high-res-detector';
@@ -9,38 +9,38 @@ import { HighResolutionManager } from '../base/high-res-manager';
 import { productionLog } from '../utils/debug';
 
 /**
- * 자동 처리 임계값
+ * Automatic processing thresholds
  */
 interface AutoProcessingThresholds {
-  /** 4K 이상 이미지로 간주하는 픽셀 수 (기본: 8MP) */
+  /** Pixel count considered 4K+ image (default: 8MP) */
   highResPixelThreshold: number;
 
-  /** 메모리 사용량 경고 임계값 (MB) */
+  /** Memory usage warning threshold (MB) */
   memoryWarningThreshold: number;
 
-  /** 자동 타일링 적용 임계값 (MB) */
+  /** Auto-tiling application threshold (MB) */
   autoTileThreshold: number;
 
-  /** 처리 시간 경고 임계값 (초) */
+  /** Processing time warning threshold (seconds) */
   timeWarningThreshold: number;
 }
 
 /**
- * 자동 처리 결과
+ * Automatic processing result
  */
 export interface AutoProcessingResult {
-  /** 처리된 캔버스 */
+  /** Processed canvas */
   canvas: HTMLCanvasElement;
 
-  /** 자동으로 적용된 최적화 정보 */
+  /** Automatically applied optimization information */
   optimizations: {
     strategy: string;
     memoryOptimized: boolean;
     tileProcessing: boolean;
-    estimatedTimeSaved: number; // 초
+    estimatedTimeSaved: number; // seconds
   };
 
-  /** 처리 통계 */
+  /** Processing statistics */
   stats: {
     originalSize: { width: number; height: number };
     finalSize: { width: number; height: number };
@@ -49,72 +49,72 @@ export interface AutoProcessingResult {
     qualityLevel: 'fast' | 'balanced' | 'high';
   };
 
-  /** 사용자에게 표시할 메시지 (선택적) */
+  /** Message to display to user (optional) */
   userMessage?: string;
 }
 
 /**
- * 자동 고해상도 처리 클래스
+ * Automatic high-resolution processing class
  */
 export class AutoHighResProcessor {
   private static defaultThresholds: AutoProcessingThresholds = {
-    highResPixelThreshold: 8_000_000, // 8MP (약 4K)
+    highResPixelThreshold: 8_000_000, // 8MP (approx 4K)
     memoryWarningThreshold: 200, // 200MB
     autoTileThreshold: 300, // 300MB
-    timeWarningThreshold: 10, // 10초
+    timeWarningThreshold: 10, // 10 seconds
   };
 
   /**
-   * 자동 최적화된 이미지 리사이징
-   * 사용자는 복잡한 설정 없이 간단하게 호출 가능
+   * Automatically optimized image resizing
+   * Users can call simply without complex settings
    *
-   * @param img - 소스 이미지
-   * @param targetWidth - 목표 너비
-   * @param targetHeight - 목표 높이
-   * @param options - 선택적 옵션
-   * @returns 최적화된 처리 결과
+   * @param img - Source image
+   * @param targetWidth - Target width
+   * @param targetHeight - Target height
+   * @param options - Optional options
+   * @returns Optimized processing result
    */
   static async smartResize(
     img: HTMLImageElement,
     targetWidth: number,
     targetHeight: number,
     options: {
-      /** 품질 우선순위: 'speed' (빠름), 'balanced' (기본), 'quality' (품질) */
+      /** Quality priority: 'speed' (fast), 'balanced' (default), 'quality' (high quality) */
       priority?: 'speed' | 'balanced' | 'quality';
 
-      /** 진행률 콜백 */
+      /** Progress callback */
       onProgress?: (progress: number, message: string) => void;
 
-      /** 메모리 경고 콜백 */
+      /** Memory warning callback */
       onMemoryWarning?: (message: string) => void;
 
-      /** 커스텀 임계값 */
+      /** Custom thresholds */
       thresholds?: Partial<AutoProcessingThresholds>;
     } = {}
   ): Promise<AutoProcessingResult> {
     const { priority = 'balanced', onProgress, onMemoryWarning, thresholds: customThresholds } = options;
 
-    // 임계값 설정
+    // Set thresholds
     const thresholds = { ...this.defaultThresholds, ...customThresholds };
 
-    // 이미지 분석
+    // Analyze image
     const analysis = HighResolutionDetector.analyzeImage(img);
     const isHighRes = analysis.totalPixels > thresholds.highResPixelThreshold;
 
-    onProgress?.(10, '이미지 분석 중...');
+    onProgress?.(10, 'Analyzing image...');
 
-    // 자동 최적화 전략 결정
+    // Determine automatic optimization strategy
     const strategy = this.determineOptimalStrategy(analysis, priority, thresholds);
 
-    onProgress?.(20, `최적화 전략: ${strategy.name}`);
+    onProgress?.(20, `Optimization strategy: ${strategy.name}`);
 
-    // 메모리 경고 확인
+    // Check memory warning
     if (analysis.estimatedMemoryMB > thresholds.memoryWarningThreshold) {
-      const warningMessage = `대용량 이미지 처리로 인해 메모리 사용량이 ${Math.round(analysis.estimatedMemoryMB)}MB까지 증가할 수 있습니다.`;
+      const warningMessage = `Memory usage may increase up to ${Math.round(analysis.estimatedMemoryMB)}MB due to large image processing.`;
       onMemoryWarning?.(warningMessage);
     }
 
-    // 고해상도 처리 옵션 구성
+    // Configure high-resolution processing options
     const highResOptions: HighResolutionOptions = {
       quality: strategy.quality,
       forceStrategy: strategy.processingStrategy,
@@ -122,30 +122,30 @@ export class AutoHighResProcessor {
       enableProgressTracking: !!onProgress,
       onProgress: onProgress
         ? (progress) => {
-            onProgress(20 + progress.progress * 0.6, progress.details || '처리 중...');
+            onProgress(20 + progress.progress * 0.6, progress.details || 'Processing...');
           }
         : undefined,
     };
 
-    // 실제 처리 수행
+    // Perform actual processing
     let processingResult: ProcessingResult;
     try {
       if (isHighRes) {
         processingResult = await HighResolutionManager.smartResize(img, targetWidth, targetHeight, highResOptions);
       } else {
-        // 일반 해상도는 직접 처리
+        // Direct processing for standard resolution
         processingResult = await this.standardResize(img, targetWidth, targetHeight, strategy.quality);
       }
     } catch (error) {
-      // 실패 시 fallback 처리
-      productionLog.warn('고해상도 처리 실패, 표준 처리로 전환:', error);
-      onProgress?.(50, '처리 방식을 변경 중...');
+      // Fallback processing on failure
+      productionLog.warn('High-resolution processing failed, switching to standard processing:', error);
+      onProgress?.(50, 'Changing processing method...');
       processingResult = await this.standardResize(img, targetWidth, targetHeight, 'balanced');
     }
 
-    onProgress?.(100, '처리 완료');
+    onProgress?.(100, 'Processing complete');
 
-    // 결과 구성
+    // Configure result
     const autoResult: AutoProcessingResult = {
       canvas: processingResult.canvas,
       optimizations: {
@@ -163,17 +163,17 @@ export class AutoHighResProcessor {
       },
     };
 
-    // 사용자 메시지 생성
+    // Generate user message
     if (isHighRes && strategy.memoryOptimized) {
-      autoResult.userMessage = `고해상도 이미지가 메모리 효율적으로 처리되었습니다. (${strategy.name} 적용)`;
+      autoResult.userMessage = `High-resolution image processed memory-efficiently. (${strategy.name} applied)`;
     }
 
     return autoResult;
   }
 
   /**
-   * 이미지 처리 전 사전 검증
-   * 처리 가능 여부와 예상 리소스 사용량을 미리 확인
+   * Pre-validation before image processing
+   * Check processing capability and estimated resource usage in advance
    */
   static validateProcessing(
     img: HTMLImageElement,
@@ -190,7 +190,7 @@ export class AutoHighResProcessor {
   } {
     const thresholds = { ...this.defaultThresholds, ...options.thresholds };
 
-    // 기본 유효성 검사
+    // Basic validation
     const validation = HighResolutionManager.validateProcessingCapability(img, targetWidth, targetHeight);
     const analysis = HighResolutionDetector.analyzeImage(img);
     const strategy = this.determineOptimalStrategy(analysis, 'balanced', thresholds);
@@ -198,21 +198,21 @@ export class AutoHighResProcessor {
     const warnings: string[] = [...validation.warnings];
     const recommendations: string[] = [];
 
-    // 메모리 경고
+    // Memory warning
     if (analysis.estimatedMemoryMB > thresholds.memoryWarningThreshold) {
-      warnings.push(`높은 메모리 사용량 예상: ${Math.round(analysis.estimatedMemoryMB)}MB`);
-      recommendations.push('메모리 사용량을 줄이려면 더 작은 크기로 리사이징하세요.');
+      warnings.push(`High memory usage expected: ${Math.round(analysis.estimatedMemoryMB)}MB`);
+      recommendations.push('To reduce memory usage, resize to a smaller size.');
     }
 
-    // 처리 시간 경고
+    // Processing time warning
     if (validation.estimatedTime > thresholds.timeWarningThreshold) {
-      warnings.push(`긴 처리 시간 예상: ${Math.round(validation.estimatedTime)}초`);
-      recommendations.push('빠른 처리를 위해 priority를 "speed"로 설정하세요.');
+      warnings.push(`Long processing time expected: ${Math.round(validation.estimatedTime)} seconds`);
+      recommendations.push('For faster processing, set priority to "speed".');
     }
 
-    // 권장사항
+    // Recommendations
     if (analysis.totalPixels > thresholds.highResPixelThreshold) {
-      recommendations.push('고해상도 이미지입니다. 자동 최적화가 적용됩니다.');
+      recommendations.push('This is a high-resolution image. Automatic optimization will be applied.');
     }
 
     return {
@@ -226,13 +226,13 @@ export class AutoHighResProcessor {
   }
 
   /**
-   * 배치 처리 - 여러 이미지를 효율적으로 처리
+   * Batch processing - efficiently process multiple images
    */
   static async batchSmartResize(
     images: { img: HTMLImageElement; targetWidth: number; targetHeight: number; name?: string }[],
     options: {
       priority?: 'speed' | 'balanced' | 'quality';
-      concurrency?: number; // 동시 처리할 이미지 수
+      concurrency?: number; // Number of images to process simultaneously
       onProgress?: (completed: number, total: number, currentImage?: string) => void;
       onImageComplete?: (index: number, result: AutoProcessingResult) => void;
     } = {}
@@ -242,7 +242,7 @@ export class AutoHighResProcessor {
     const results: AutoProcessingResult[] = new Array(images.length);
     let completed = 0;
 
-    // 청크로 나누어 병렬 처리
+    // Divide into chunks for parallel processing
     const chunks: (typeof images)[] = [];
     for (let i = 0; i < images.length; i += concurrency) {
       chunks.push(images.slice(i, i + concurrency));
@@ -257,7 +257,7 @@ export class AutoHighResProcessor {
           const result = await this.smartResize(img, targetWidth, targetHeight, {
             priority,
             onProgress: (progress, message) => {
-              // 개별 이미지 진행률은 전체에 반영하지 않음 (너무 복잡)
+              // Individual image progress is not reflected in overall (too complex)
             },
           });
 
@@ -269,7 +269,7 @@ export class AutoHighResProcessor {
 
           return result;
         } catch (error) {
-          productionLog.error(`이미지 처리 실패 (${name || globalIndex}):`, error);
+          productionLog.error(`Image processing failed (${name || globalIndex}):`, error);
           throw error;
         }
       });
@@ -281,7 +281,7 @@ export class AutoHighResProcessor {
   }
 
   /**
-   * 최적 전략 결정 (내부 메서드)
+   * Determine optimal strategy (internal method)
    */
   private static determineOptimalStrategy(
     analysis: any,
@@ -290,11 +290,11 @@ export class AutoHighResProcessor {
   ) {
     const isHighMem = analysis.estimatedMemoryMB > thresholds.autoTileThreshold;
 
-    // 우선순위별 전략 결정
+    // Determine strategy by priority
     switch (priority) {
       case 'speed':
         return {
-          name: '고속 처리',
+          name: 'High-speed Processing',
           quality: 'fast' as const,
           processingStrategy: isHighMem ? analysis.strategy : undefined,
           memoryOptimized: isHighMem,
@@ -304,7 +304,7 @@ export class AutoHighResProcessor {
 
       case 'quality':
         return {
-          name: '고품질 처리',
+          name: 'High-quality Processing',
           quality: 'high' as const,
           processingStrategy: analysis.strategy,
           memoryOptimized: true,
@@ -314,7 +314,7 @@ export class AutoHighResProcessor {
 
       default: // balanced
         return {
-          name: '균형 최적화',
+          name: 'Balanced Optimization',
           quality: 'balanced' as const,
           processingStrategy: analysis.strategy,
           memoryOptimized: isHighMem,
@@ -325,7 +325,7 @@ export class AutoHighResProcessor {
   }
 
   /**
-   * 표준 리사이징 (고해상도가 아닌 경우)
+   * Standard resizing (for non-high-resolution cases)
    */
   private static async standardResize(
     img: HTMLImageElement,
@@ -341,7 +341,7 @@ export class AutoHighResProcessor {
 
     const ctx = canvas.getContext('2d')!;
 
-    // 품질 설정
+    // Quality settings
     switch (quality) {
       case 'fast':
         ctx.imageSmoothingEnabled = false;
@@ -370,18 +370,18 @@ export class AutoHighResProcessor {
   }
 
   /**
-   * 시간 절약 계산 (추정)
+   * Time saved calculation (estimation)
    */
   private static calculateTimeSaved(analysis: any, strategy: any): number {
-    // 단순한 추정 로직
-    const baseTime = analysis.totalPixels / 1_000_000; // 메가픽셀당 1초 기준
+    // Simple estimation logic
+    const baseTime = analysis.totalPixels / 1_000_000; // 1 second per megapixel baseline
 
     let timeSaved = 0;
     if (strategy.memoryOptimized) {
-      timeSaved += baseTime * 0.3; // 30% 시간 절약
+      timeSaved += baseTime * 0.3; // 30% time saved
     }
     if (strategy.tileProcessing) {
-      timeSaved += baseTime * 0.2; // 20% 추가 절약
+      timeSaved += baseTime * 0.2; // 20% additional savings
     }
 
     return Math.round(timeSaved * 10) / 10;
@@ -389,12 +389,12 @@ export class AutoHighResProcessor {
 }
 
 /**
- * 편의 함수들
+ * Convenience functions
  */
 
 /**
- * 가장 간단한 고해상도 리사이징
- * 모든 최적화가 자동으로 적용됨
+ * Simplest high-resolution resizing
+ * All optimizations are applied automatically
  */
 export async function smartResize(
   img: HTMLImageElement,
@@ -406,7 +406,7 @@ export async function smartResize(
 }
 
 /**
- * 진행률과 함께 고해상도 리사이징
+ * High-resolution resizing with progress
  */
 export async function smartResizeWithProgress(
   img: HTMLImageElement,

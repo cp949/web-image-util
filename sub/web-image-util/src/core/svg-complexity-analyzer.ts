@@ -1,92 +1,92 @@
 /**
- * SVG 복잡도 분석 시스템
+ * SVG Complexity Analysis System
  *
  * @description
- * SVG의 구조와 내용을 분석하여 렌더링 복잡도를 계산하고
- * 최적의 품질 레벨을 자동으로 결정하는 지능형 분석 시스템
+ * Intelligent analysis system that analyzes SVG structure and content to calculate
+ * rendering complexity and automatically determines optimal quality levels
  *
- * **핵심 기능:**
- * - 다양한 SVG 요소별 복잡도 가중치 적용
- * - 파일 크기, 고급 기능 사용 여부 종합 분석
- * - 브라우저 렌더링 성능을 고려한 품질 레벨 추천
- * - 분석 실패 시 안전한 폴백 제공
+ * **Core Features:**
+ * - Complexity weighting for various SVG elements
+ * - Comprehensive analysis of file size and advanced feature usage
+ * - Quality level recommendations considering browser rendering performance
+ * - Safe fallback when analysis fails
  */
 
 /**
- * SVG 복잡도 메트릭 인터페이스
+ * SVG complexity metrics interface
  *
- * @description SVG 분석을 통해 수집되는 다양한 복잡도 지표들
+ * @description Various complexity indicators collected through SVG analysis
  */
 export interface SvgComplexityMetrics {
-  /** path 요소 개수 - 벡터 경로의 복잡성 지표 */
+  /** Number of path elements - indicator of vector path complexity */
   pathCount: number;
-  /** 그라데이션 개수 - 색상 보간 계산 복잡도 */
+  /** Number of gradients - color interpolation calculation complexity */
   gradientCount: number;
-  /** 필터 효과 개수 - 가장 높은 렌더링 비용 */
+  /** Number of filter effects - highest rendering cost */
   filterCount: number;
-  /** 애니메이션 요소 개수 - 동적 처리 복잡도 */
+  /** Number of animation elements - dynamic processing complexity */
   animationCount: number;
-  /** 텍스트 요소 개수 - 폰트 렌더링 복잡도 */
+  /** Number of text elements - font rendering complexity */
   textElementCount: number;
-  /** 전체 요소 개수 - 전반적인 DOM 복잡도 */
+  /** Total element count - overall DOM complexity */
   totalElementCount: number;
-  /** 클리핑 패스 사용 여부 - 고급 마스킹 기능 */
+  /** Whether clipping paths are used - advanced masking features */
   hasClipPath: boolean;
-  /** 마스크 사용 여부 - 고급 투명도 처리 */
+  /** Whether masks are used - advanced transparency processing */
   hasMask: boolean;
-  /** 파일 크기 (bytes) - 메모리 사용량 지표 */
+  /** File size in bytes - memory usage indicator */
   fileSize: number;
 }
 
 /**
- * 복잡도 분석 결과 인터페이스
+ * Complexity analysis result interface
  *
- * @description SVG 복잡도 분석의 최종 결과를 담는 종합 보고서
+ * @description Comprehensive report containing the final results of SVG complexity analysis
  */
 export interface ComplexityAnalysisResult {
-  /** 수집된 메트릭 정보 */
+  /** Collected metrics information */
   metrics: SvgComplexityMetrics;
-  /** 0.0 ~ 1.0 범위의 정규화된 복잡도 점수 */
+  /** Normalized complexity score in 0.0 ~ 1.0 range */
   complexityScore: number;
-  /** 분석 결과에 기반한 권장 품질 레벨 */
+  /** Recommended quality level based on analysis results */
   recommendedQuality: QualityLevel;
-  /** 추천 근거가 되는 구체적인 이유들 */
+  /** Specific reasons behind the recommendation */
   reasoning: string[];
 }
 
 /**
- * SVG 렌더링 품질 레벨
+ * SVG rendering quality levels
  *
- * @description 복잡도에 따른 4단계 품질 레벨
- * - low: 단순한 SVG, 기본 렌더링
- * - medium: 보통 복잡도, 표준 품질
- * - high: 복잡한 SVG, 고품질 렌더링
- * - ultra: 매우 복잡하거나 대용량 SVG, 최고 품질
+ * @description 4-tier quality levels based on complexity
+ * - low: Simple SVG, basic rendering
+ * - medium: Moderate complexity, standard quality
+ * - high: Complex SVG, high-quality rendering
+ * - ultra: Very complex or large SVG, highest quality
  */
 export type QualityLevel = 'low' | 'medium' | 'high' | 'ultra';
 
 /**
- * SVG 복잡도 분석 메인 함수
+ * Main SVG complexity analysis function
  *
  * @description
- * SVG 문자열을 파싱하여 복잡도를 종합적으로 분석하고
- * 최적의 렌더링 품질 레벨을 추천하는 핵심 함수
+ * Core function that parses SVG strings to comprehensively analyze complexity
+ * and recommend optimal rendering quality levels
  *
- * **분석 과정:**
- * 1. XML 파싱 및 유효성 검증
- * 2. 다양한 복잡도 메트릭 수집
- * 3. 가중치 기반 복잡도 점수 계산
- * 4. 품질 레벨 결정 및 추천 근거 생성
+ * **Analysis Process:**
+ * 1. XML parsing and validation
+ * 2. Collection of various complexity metrics
+ * 3. Weight-based complexity score calculation
+ * 4. Quality level determination and recommendation reasoning generation
  *
- * @param svgString 분석할 SVG XML 문자열
- * @returns 복잡도 분석 결과 (메트릭, 점수, 권장 품질, 근거)
+ * @param svgString SVG XML string to analyze
+ * @returns Complexity analysis result (metrics, score, recommended quality, reasoning)
  *
  * @example
  * ```typescript
  * const result = analyzeSvgComplexity('<svg>...</svg>');
- * console.log(`복잡도: ${result.complexityScore}`);
- * console.log(`권장 품질: ${result.recommendedQuality}`);
- * console.log(`근거: ${result.reasoning.join(', ')}`);
+ * console.log(`Complexity: ${result.complexityScore}`);
+ * console.log(`Recommended quality: ${result.recommendedQuality}`);
+ * console.log(`Reasoning: ${result.reasoning.join(', ')}`);
  * ```
  */
 export function analyzeSvgComplexity(svgString: string): ComplexityAnalysisResult {
@@ -94,22 +94,22 @@ export function analyzeSvgComplexity(svgString: string): ComplexityAnalysisResul
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgString, 'image/svg+xml');
 
-    // 파싱 에러 확인
+    // Check for parsing errors
     const parserError = doc.querySelector('parsererror');
     if (parserError) {
-      throw new Error('SVG 파싱 실패');
+      throw new Error('SVG parsing failed');
     }
 
-    // 메트릭 수집
+    // Collect metrics
     const metrics = collectMetrics(doc, svgString);
 
-    // 복잡도 점수 계산 (0.0 ~ 1.0)
+    // Calculate complexity score (0.0 ~ 1.0)
     const complexityScore = calculateComplexityScore(metrics);
 
-    // 품질 레벨 결정
+    // Determine quality level
     const recommendedQuality = determineQualityLevel(complexityScore, metrics);
 
-    // 추천 이유 생성
+    // Generate recommendation reasoning
     const reasoning = generateRecommendationReasoning(metrics, complexityScore);
 
     return {
@@ -119,17 +119,17 @@ export function analyzeSvgComplexity(svgString: string): ComplexityAnalysisResul
       reasoning,
     };
   } catch (error) {
-    // 에러 발생 시 기본값 반환
-    return createFallbackAnalysisResult(svgString, error instanceof Error ? error.message : '알 수 없는 오류');
+    // Return fallback values on error
+    return createFallbackAnalysisResult(svgString, error instanceof Error ? error.message : 'Unknown error');
   }
 }
 
 /**
- * SVG 문서에서 복잡도 메트릭을 수집
+ * Collect complexity metrics from SVG document
  *
- * @param doc 파싱된 SVG 문서
- * @param svgString 원본 SVG 문자열 (파일 크기 계산용)
- * @returns 수집된 메트릭
+ * @param doc Parsed SVG document
+ * @param svgString Original SVG string (for file size calculation)
+ * @returns Collected metrics
  */
 function collectMetrics(doc: Document, svgString: string): SvgComplexityMetrics {
   return {
@@ -146,37 +146,37 @@ function collectMetrics(doc: Document, svgString: string): SvgComplexityMetrics 
 }
 
 /**
- * 복잡도 점수 계산 알고리즘
+ * Complexity score calculation algorithm
  *
- * 각 요소에 가중치를 적용하여 전체 복잡도를 0.0~1.0 범위로 계산
+ * Calculates overall complexity in 0.0~1.0 range by applying weights to each element
  *
- * @param metrics 수집된 메트릭
- * @returns 복잡도 점수 (0.0 ~ 1.0)
+ * @param metrics Collected metrics
+ * @returns Complexity score (0.0 ~ 1.0)
  */
 function calculateComplexityScore(metrics: SvgComplexityMetrics): number {
   let score = 0;
 
-  // 경로 복잡도 (최대 0.3점)
-  // 경로가 많을수록 렌더링이 복잡해짐
+  // Path complexity (max 0.3 points)
+  // More paths make rendering more complex
   score += Math.min(0.3, metrics.pathCount * 0.02);
 
-  // 그라데이션 복잡도 (최대 0.2점)
-  // 그라데이션은 픽셀 단위 계산이 필요해 복잡도 높음
+  // Gradient complexity (max 0.2 points)
+  // Gradients require pixel-level calculations with high complexity
   score += Math.min(0.2, metrics.gradientCount * 0.05);
 
-  // 필터 복잡도 (최대 0.2점)
-  // 필터 효과는 가장 계산 비용이 높음
+  // Filter complexity (max 0.2 points)
+  // Filter effects have the highest computational cost
   score += Math.min(0.2, metrics.filterCount * 0.1);
 
-  // 애니메이션 복잡도 (최대 0.1점)
-  // 애니메이션 요소는 정적 렌더링에서는 영향 적음
+  // Animation complexity (max 0.1 points)
+  // Animation elements have minimal impact on static rendering
   score += Math.min(0.1, metrics.animationCount * 0.02);
 
-  // 텍스트 복잡도 (최대 0.1점)
-  // 텍스트 렌더링은 폰트에 따라 복잡도 다름
+  // Text complexity (max 0.1 points)
+  // Text rendering complexity varies by font
   score += Math.min(0.1, metrics.textElementCount * 0.02);
 
-  // 고급 기능 복잡도 (최대 0.1점)
+  // Advanced feature complexity (max 0.1 points)
   if (metrics.hasClipPath) score += 0.05;
   if (metrics.hasMask) score += 0.05;
 
@@ -184,20 +184,20 @@ function calculateComplexityScore(metrics: SvgComplexityMetrics): number {
 }
 
 /**
- * 복잡도 점수와 메트릭을 기반으로 품질 레벨 결정
+ * Determine quality level based on complexity score and metrics
  *
- * @param complexityScore 복잡도 점수
- * @param metrics 메트릭 정보
- * @returns 권장 품질 레벨
+ * @param complexityScore Complexity score
+ * @param metrics Metrics information
+ * @returns Recommended quality level
  */
 function determineQualityLevel(complexityScore: number, metrics: SvgComplexityMetrics): QualityLevel {
-  // 파일 크기 고려 (50KB 이상은 대용량으로 간주)
+  // Consider file size (50KB+ considered large)
   const isLargeFile = metrics.fileSize > 50000;
 
-  // 고급 기능 사용 여부
+  // Whether advanced features are used
   const hasAdvancedFeatures = metrics.hasClipPath || metrics.hasMask || metrics.filterCount > 0;
 
-  // 복잡도와 특수 조건에 따른 품질 레벨 결정
+  // Quality level determination based on complexity and special conditions
   if (complexityScore >= 0.8 || isLargeFile || (hasAdvancedFeatures && complexityScore >= 0.6)) {
     return 'ultra';
   }
@@ -214,64 +214,64 @@ function determineQualityLevel(complexityScore: number, metrics: SvgComplexityMe
 }
 
 /**
- * 추천 이유 텍스트 생성
+ * Generate recommendation reasoning text
  *
- * @param metrics 메트릭 정보
- * @param complexityScore 복잡도 점수
- * @returns 추천 이유 목록
+ * @param metrics Metrics information
+ * @param complexityScore Complexity score
+ * @returns List of recommendation reasons
  */
 function generateRecommendationReasoning(metrics: SvgComplexityMetrics, complexityScore: number): string[] {
   const reasoning: string[] = [];
 
-  // 전체 복잡도 평가
+  // Overall complexity assessment
   if (complexityScore >= 0.8) {
-    reasoning.push('전체 복잡도가 매우 높음 (고해상도 렌더링 필요)');
+    reasoning.push('Very high overall complexity (high-resolution rendering required)');
   } else if (complexityScore >= 0.6) {
-    reasoning.push('전체 복잡도가 높음');
+    reasoning.push('High overall complexity');
   } else if (complexityScore >= 0.3) {
-    reasoning.push('중간 수준의 복잡도');
+    reasoning.push('Moderate complexity level');
   } else {
-    reasoning.push('단순한 구조');
+    reasoning.push('Simple structure');
   }
 
-  // 구체적인 복잡도 요인들
+  // Specific complexity factors
   if (metrics.pathCount > 10) {
-    reasoning.push(`다수의 경로 요소 (${metrics.pathCount}개)`);
+    reasoning.push(`Multiple path elements (${metrics.pathCount} paths)`);
   }
 
   if (metrics.gradientCount > 0) {
-    reasoning.push(`그라데이션 효과 사용 (${metrics.gradientCount}개)`);
+    reasoning.push(`Gradient effects used (${metrics.gradientCount} gradients)`);
   }
 
   if (metrics.filterCount > 0) {
-    reasoning.push(`필터 효과 사용 (${metrics.filterCount}개)`);
+    reasoning.push(`Filter effects used (${metrics.filterCount} filters)`);
   }
 
   if (metrics.hasClipPath) {
-    reasoning.push('클리핑 패스 사용');
+    reasoning.push('Clipping paths used');
   }
 
   if (metrics.hasMask) {
-    reasoning.push('마스크 사용');
+    reasoning.push('Masks used');
   }
 
   if (metrics.fileSize > 50000) {
-    reasoning.push(`대용량 파일 (${Math.round(metrics.fileSize / 1024)}KB)`);
+    reasoning.push(`Large file size (${Math.round(metrics.fileSize / 1024)}KB)`);
   }
 
   if (metrics.animationCount > 0) {
-    reasoning.push(`애니메이션 요소 포함 (${metrics.animationCount}개)`);
+    reasoning.push(`Animation elements included (${metrics.animationCount} animations)`);
   }
 
   return reasoning;
 }
 
 /**
- * 분석 실패 시 폴백 결과 생성
+ * Generate fallback result when analysis fails
  *
- * @param svgString 원본 SVG 문자열
- * @param errorMessage 에러 메시지
- * @returns 기본 분석 결과
+ * @param svgString Original SVG string
+ * @param errorMessage Error message
+ * @returns Default analysis result
  */
 function createFallbackAnalysisResult(svgString: string, errorMessage: string): ComplexityAnalysisResult {
   const fileSize = new Blob([svgString]).size;
@@ -288,12 +288,12 @@ function createFallbackAnalysisResult(svgString: string, errorMessage: string): 
       hasMask: false,
       fileSize,
     },
-    complexityScore: 0.5, // 중간 복잡도로 가정
-    recommendedQuality: fileSize > 50000 ? 'high' : 'medium', // 파일 크기 기반 결정
+    complexityScore: 0.5, // Assume moderate complexity
+    recommendedQuality: fileSize > 50000 ? 'high' : 'medium', // Decision based on file size
     reasoning: [
-      '분석 실패로 기본값 사용',
-      `오류: ${errorMessage}`,
-      fileSize > 50000 ? '파일 크기 기반 high 품질 추천' : '중간 품질 추천',
+      'Using default values due to analysis failure',
+      `Error: ${errorMessage}`,
+      fileSize > 50000 ? 'High quality recommended based on file size' : 'Medium quality recommended',
     ],
   };
 }

@@ -1,6 +1,6 @@
 /**
- * 결과 객체 구현 클래스들
- * 크기 정보를 재사용하여 성능을 최적화하는 직접 변환 메서드들 제공
+ * Result object implementation classes
+ * Provides direct conversion methods that optimize performance by reusing size information
  */
 
 import { ImageProcessError } from './index';
@@ -15,8 +15,8 @@ import type {
 } from './index';
 
 /**
- * DataURL 결과 구현 클래스
- * 크기 정보를 이미 알고 있으므로 효율적인 변환이 가능
+ * DataURL result implementation class
+ * Enables efficient conversion since size information is already known
  */
 export class DataURLResultImpl implements ResultDataURL {
   constructor(
@@ -29,20 +29,20 @@ export class DataURLResultImpl implements ResultDataURL {
   ) {}
 
   /**
-   * Canvas로 변환 (크기 정보 재사용으로 최적화)
+   * Convert to Canvas (optimized by reusing size information)
    */
   async toCanvas(): Promise<HTMLCanvasElement> {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
 
-    // 🎯 크기 정보를 이미 알고 있으므로 미리 설정
+    // 🎯 Pre-set canvas dimensions since we already know the size information
     canvas.width = this.width;
     canvas.height = this.height;
 
     const img = new Image();
     await new Promise((resolve, reject) => {
       img.onload = resolve;
-      img.onerror = () => reject(new ImageProcessError('이미지 로딩 실패', 'IMAGE_LOAD_FAILED'));
+      img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
       img.src = this.dataURL;
     });
 
@@ -51,7 +51,7 @@ export class DataURLResultImpl implements ResultDataURL {
   }
 
   /**
-   * Blob으로 변환
+   * Convert to Blob
    */
   async toBlob(options?: OutputOptions): Promise<globalThis.Blob> {
     const canvas = await this.toCanvas();
@@ -62,7 +62,7 @@ export class DataURLResultImpl implements ResultDataURL {
           if (blob) {
             resolve(blob);
           } else {
-            reject(new ImageProcessError('Blob 변환 실패', 'CANVAS_TO_BLOB_FAILED'));
+            reject(new ImageProcessError('Blob conversion failed', 'CANVAS_TO_BLOB_FAILED'));
           }
         },
         mimeType,
@@ -72,7 +72,7 @@ export class DataURLResultImpl implements ResultDataURL {
   }
 
   /**
-   * File 객체로 변환
+   * Convert to File object
    */
   async toFile(filename: string, options?: OutputOptions): Promise<globalThis.File> {
     const blob = await this.toBlob(options);
@@ -83,20 +83,20 @@ export class DataURLResultImpl implements ResultDataURL {
   }
 
   /**
-   * HTMLImageElement로 변환
+   * Convert to HTMLImageElement
    */
   async toElement(): Promise<HTMLImageElement> {
     const img = new Image();
     await new Promise((resolve, reject) => {
       img.onload = resolve;
-      img.onerror = () => reject(new ImageProcessError('이미지 로딩 실패', 'IMAGE_LOAD_FAILED'));
+      img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
       img.src = this.dataURL;
     });
     return img;
   }
 
   /**
-   * ArrayBuffer로 변환
+   * Convert to ArrayBuffer
    */
   async toArrayBuffer(): Promise<ArrayBuffer> {
     const blob = await this.toBlob();
@@ -104,7 +104,7 @@ export class DataURLResultImpl implements ResultDataURL {
   }
 
   /**
-   * Uint8Array로 변환
+   * Convert to Uint8Array
    */
   async toUint8Array(): Promise<Uint8Array> {
     const arrayBuffer = await this.toArrayBuffer();
@@ -113,7 +113,7 @@ export class DataURLResultImpl implements ResultDataURL {
 }
 
 /**
- * Blob 결과 구현 클래스
+ * Blob result implementation class
  */
 export class BlobResultImpl implements ResultBlob {
   constructor(
@@ -126,7 +126,7 @@ export class BlobResultImpl implements ResultBlob {
   ) {}
 
   /**
-   * Canvas로 변환
+   * Convert to Canvas
    */
   async toCanvas(): Promise<HTMLCanvasElement> {
     const objectUrl = URL.createObjectURL(this.blob);
@@ -135,26 +135,26 @@ export class BlobResultImpl implements ResultBlob {
       const img = new Image();
       await new Promise((resolve, reject) => {
         img.onload = resolve;
-        img.onerror = () => reject(new ImageProcessError('이미지 로딩 실패', 'IMAGE_LOAD_FAILED'));
+        img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
         img.src = objectUrl;
       });
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
 
-      // 🎯 크기 정보 재사용
+      // 🎯 Reuse size information
       canvas.width = this.width;
       canvas.height = this.height;
 
       ctx.drawImage(img, 0, 0);
       return canvas;
     } finally {
-      URL.revokeObjectURL(objectUrl); // 즉시 정리
+      URL.revokeObjectURL(objectUrl); // Immediate cleanup
     }
   }
 
   /**
-   * DataURL로 변환
+   * Convert to DataURL
    */
   async toDataURL(options?: OutputOptions): Promise<string> {
     const canvas = await this.toCanvas();
@@ -163,18 +163,18 @@ export class BlobResultImpl implements ResultBlob {
   }
 
   /**
-   * File 객체로 변환
+   * Convert to File object
    */
   async toFile(filename: string, options?: OutputOptions): Promise<globalThis.File> {
     if (!options) {
-      // 옵션이 없으면 기존 Blob을 그대로 사용
+      // Use existing Blob as-is if no options provided
       return new File([this.blob], filename, {
         type: this.blob.type,
         lastModified: Date.now(),
       });
     }
 
-    // 옵션이 있으면 재변환
+    // Re-convert if options are provided
     const newBlob = await this.toBlob(options);
     return new File([newBlob], filename, {
       type: newBlob.type,
@@ -183,11 +183,11 @@ export class BlobResultImpl implements ResultBlob {
   }
 
   /**
-   * Blob으로 변환 (옵션에 따라 재변환)
+   * Convert to Blob (re-convert based on options)
    */
   async toBlob(options?: OutputOptions): Promise<globalThis.Blob> {
     if (!options) {
-      return this.blob; // 옵션이 없으면 기존 Blob 반환
+      return this.blob; // Return existing Blob if no options provided
     }
 
     const canvas = await this.toCanvas();
@@ -198,7 +198,7 @@ export class BlobResultImpl implements ResultBlob {
           if (blob) {
             resolve(blob);
           } else {
-            reject(new ImageProcessError('Blob 변환 실패', 'CANVAS_TO_BLOB_FAILED'));
+            reject(new ImageProcessError('Blob conversion failed', 'CANVAS_TO_BLOB_FAILED'));
           }
         },
         mimeType,
@@ -208,7 +208,7 @@ export class BlobResultImpl implements ResultBlob {
   }
 
   /**
-   * HTMLImageElement로 변환
+   * Convert to HTMLImageElement
    */
   async toElement(): Promise<HTMLImageElement> {
     const objectUrl = URL.createObjectURL(this.blob);
@@ -217,24 +217,24 @@ export class BlobResultImpl implements ResultBlob {
       const img = new Image();
       await new Promise((resolve, reject) => {
         img.onload = resolve;
-        img.onerror = () => reject(new ImageProcessError('이미지 로딩 실패', 'IMAGE_LOAD_FAILED'));
+        img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
         img.src = objectUrl;
       });
       return img;
     } finally {
-      URL.revokeObjectURL(objectUrl); // 즉시 정리
+      URL.revokeObjectURL(objectUrl); // Immediate cleanup
     }
   }
 
   /**
-   * ArrayBuffer로 변환
+   * Convert to ArrayBuffer
    */
   async toArrayBuffer(): Promise<ArrayBuffer> {
     return await this.blob.arrayBuffer();
   }
 
   /**
-   * Uint8Array로 변환
+   * Convert to Uint8Array
    */
   async toUint8Array(): Promise<Uint8Array> {
     const arrayBuffer = await this.toArrayBuffer();
@@ -243,7 +243,7 @@ export class BlobResultImpl implements ResultBlob {
 }
 
 /**
- * File 결과 구현 클래스
+ * File result implementation class
  */
 export class FileResultImpl implements ResultFile {
   constructor(
@@ -256,7 +256,7 @@ export class FileResultImpl implements ResultFile {
   ) {}
 
   /**
-   * Canvas로 변환
+   * Convert to Canvas
    */
   async toCanvas(): Promise<HTMLCanvasElement> {
     const objectUrl = URL.createObjectURL(this.file);
@@ -265,26 +265,26 @@ export class FileResultImpl implements ResultFile {
       const img = new Image();
       await new Promise((resolve, reject) => {
         img.onload = resolve;
-        img.onerror = () => reject(new ImageProcessError('이미지 로딩 실패', 'IMAGE_LOAD_FAILED'));
+        img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
         img.src = objectUrl;
       });
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
 
-      // 🎯 크기 정보 재사용
+      // 🎯 Reuse size information
       canvas.width = this.width;
       canvas.height = this.height;
 
       ctx.drawImage(img, 0, 0);
       return canvas;
     } finally {
-      URL.revokeObjectURL(objectUrl); // 즉시 정리
+      URL.revokeObjectURL(objectUrl); // Immediate cleanup
     }
   }
 
   /**
-   * DataURL로 변환
+   * Convert to DataURL
    */
   async toDataURL(options?: OutputOptions): Promise<string> {
     const canvas = await this.toCanvas();
@@ -293,11 +293,11 @@ export class FileResultImpl implements ResultFile {
   }
 
   /**
-   * Blob으로 변환
+   * Convert to Blob
    */
   async toBlob(options?: OutputOptions): Promise<globalThis.Blob> {
     if (!options) {
-      return this.file; // 옵션이 없으면 기존 File을 Blob으로 반환
+      return this.file; // Return existing File as Blob if no options provided
     }
 
     const canvas = await this.toCanvas();
@@ -308,7 +308,7 @@ export class FileResultImpl implements ResultFile {
           if (blob) {
             resolve(blob);
           } else {
-            reject(new ImageProcessError('Blob 변환 실패', 'CANVAS_TO_BLOB_FAILED'));
+            reject(new ImageProcessError('Blob conversion failed', 'CANVAS_TO_BLOB_FAILED'));
           }
         },
         mimeType,
@@ -318,7 +318,7 @@ export class FileResultImpl implements ResultFile {
   }
 
   /**
-   * HTMLImageElement로 변환
+   * Convert to HTMLImageElement
    */
   async toElement(): Promise<HTMLImageElement> {
     const objectUrl = URL.createObjectURL(this.file);
@@ -327,24 +327,24 @@ export class FileResultImpl implements ResultFile {
       const img = new Image();
       await new Promise((resolve, reject) => {
         img.onload = resolve;
-        img.onerror = () => reject(new ImageProcessError('이미지 로딩 실패', 'IMAGE_LOAD_FAILED'));
+        img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
         img.src = objectUrl;
       });
       return img;
     } finally {
-      URL.revokeObjectURL(objectUrl); // 즉시 정리
+      URL.revokeObjectURL(objectUrl); // Immediate cleanup
     }
   }
 
   /**
-   * ArrayBuffer로 변환
+   * Convert to ArrayBuffer
    */
   async toArrayBuffer(): Promise<ArrayBuffer> {
     return await this.file.arrayBuffer();
   }
 
   /**
-   * Uint8Array로 변환
+   * Convert to Uint8Array
    */
   async toUint8Array(): Promise<Uint8Array> {
     const arrayBuffer = await this.toArrayBuffer();
@@ -353,7 +353,7 @@ export class FileResultImpl implements ResultFile {
 }
 
 /**
- * Canvas 결과 구현 클래스
+ * Canvas result implementation class
  */
 export class CanvasResultImpl implements ResultCanvas {
   constructor(
@@ -366,7 +366,7 @@ export class CanvasResultImpl implements ResultCanvas {
   ) {}
 
   /**
-   * DataURL로 변환
+   * Convert to DataURL
    */
   async toDataURL(options?: OutputOptions): Promise<string> {
     const mimeType = options?.format ? `image/${options.format}` : 'image/png';
@@ -374,7 +374,7 @@ export class CanvasResultImpl implements ResultCanvas {
   }
 
   /**
-   * Blob으로 변환
+   * Convert to Blob
    */
   async toBlob(options?: OutputOptions): Promise<globalThis.Blob> {
     return new Promise((resolve, reject) => {
@@ -384,7 +384,7 @@ export class CanvasResultImpl implements ResultCanvas {
           if (blob) {
             resolve(blob);
           } else {
-            reject(new ImageProcessError('Blob 변환 실패', 'CANVAS_TO_BLOB_FAILED'));
+            reject(new ImageProcessError('Blob conversion failed', 'CANVAS_TO_BLOB_FAILED'));
           }
         },
         mimeType,
@@ -394,7 +394,7 @@ export class CanvasResultImpl implements ResultCanvas {
   }
 
   /**
-   * File 객체로 변환
+   * Convert to File object
    */
   async toFile(filename: string, options?: OutputOptions): Promise<globalThis.File> {
     const blob = await this.toBlob(options);
@@ -405,21 +405,21 @@ export class CanvasResultImpl implements ResultCanvas {
   }
 
   /**
-   * HTMLImageElement로 변환
+   * Convert to HTMLImageElement
    */
   async toElement(): Promise<HTMLImageElement> {
     const dataURL = await this.toDataURL();
     const img = new Image();
     await new Promise((resolve, reject) => {
       img.onload = resolve;
-      img.onerror = () => reject(new ImageProcessError('이미지 로딩 실패', 'IMAGE_LOAD_FAILED'));
+      img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
       img.src = dataURL;
     });
     return img;
   }
 
   /**
-   * ArrayBuffer로 변환
+   * Convert to ArrayBuffer
    */
   async toArrayBuffer(): Promise<ArrayBuffer> {
     const blob = await this.toBlob();
@@ -427,7 +427,7 @@ export class CanvasResultImpl implements ResultCanvas {
   }
 
   /**
-   * Uint8Array로 변환
+   * Convert to Uint8Array
    */
   async toUint8Array(): Promise<Uint8Array> {
     const arrayBuffer = await this.toArrayBuffer();

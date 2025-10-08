@@ -26,7 +26,7 @@ interface CodeSnippetProps {
   title?: string
 }
 
-export function CodeSnippet({ examples, title = "코드 예제" }: CodeSnippetProps) {
+export function CodeSnippet({ examples, title = "Code Example" }: CodeSnippetProps) {
   const [activeTab, setActiveTab] = useState(0)
   const [copied, setCopied] = useState(false)
 
@@ -47,7 +47,7 @@ export function CodeSnippet({ examples, title = "코드 예제" }: CodeSnippetPr
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6">{title}</Typography>
-          <Tooltip title={copied ? "복사됨!" : "코드 복사"}>
+          <Tooltip title={copied ? "Copied!" : "Copy code"}>
             <IconButton
               onClick={() => copyToClipboard(currentExample.code)}
               color={copied ? "success" : "default"}
@@ -70,7 +70,7 @@ export function CodeSnippet({ examples, title = "코드 예제" }: CodeSnippetPr
         )}
 
         <Box sx={{ position: 'relative' }}>
-          {/* 간단한 코드 표시 - syntax highlighting 없이 */}
+          {/* Simple code display - without syntax highlighting */}
           <Box
             component="pre"
             sx={{
@@ -90,7 +90,7 @@ export function CodeSnippet({ examples, title = "코드 예제" }: CodeSnippetPr
 
         {copied && (
           <Alert severity="success" sx={{ mt: 2 }}>
-            코드가 클립보드에 복사되었습니다!
+            Code has been copied to clipboard!
           </Alert>
         )}
       </CardContent>

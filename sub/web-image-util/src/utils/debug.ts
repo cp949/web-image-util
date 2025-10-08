@@ -1,22 +1,22 @@
 /**
- * 개발 및 디버그 모드 관련 유틸리티
+ * Development and debug mode related utilities
  */
 
 /**
- * 개발 모드 여부를 확인
+ * Check if development mode is enabled
  *
- * 다음 조건 중 하나라도 만족하면 개발 모드로 판단:
- * - NODE_ENV가 'development'
- * - URL에 debug=true 파라미터 존재 (브라우저 환경)
- * - localStorage에 'web-image-util-debug' 키 존재 (브라우저 환경)
+ * Development mode is determined if any of the following conditions are met:
+ * - NODE_ENV is 'development'
+ * - URL contains debug=true parameter (browser environment)
+ * - localStorage has 'web-image-util-debug' key (browser environment)
  */
 export function isDevelopmentMode(): boolean {
-  // Node.js 환경에서 NODE_ENV 확인
+  // Check NODE_ENV in Node.js environment
   if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
     return true;
   }
 
-  // 브라우저 환경에서 URL 파라미터 확인
+  // Check URL parameters in browser environment
   if (typeof window !== 'undefined' && typeof URLSearchParams !== 'undefined') {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -24,16 +24,16 @@ export function isDevelopmentMode(): boolean {
         return true;
       }
     } catch {
-      // URLSearchParams 사용 실패 시 무시
+      // Ignore URLSearchParams usage failure
     }
   }
 
-  // 브라우저 환경에서 localStorage 확인
+  // Check localStorage in browser environment
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
     try {
       return localStorage.getItem('web-image-util-debug') !== null;
     } catch {
-      // localStorage 접근 실패 시 무시
+      // Ignore localStorage access failure
     }
   }
 
@@ -41,7 +41,7 @@ export function isDevelopmentMode(): boolean {
 }
 
 /**
- * 디버그 모드에서만 콘솔 출력
+ * Console output only in debug mode
  */
 export const debugLog = {
   log: (...args: any[]) => {
@@ -72,7 +72,7 @@ export const debugLog = {
 };
 
 /**
- * 에러나 경고는 항상 출력하지만, 개발 모드에서는 더 자세한 정보 출력
+ * Always output errors and warnings, but provide more detailed information in development mode
  */
 export const productionLog = {
   warn: (...args: any[]) => {

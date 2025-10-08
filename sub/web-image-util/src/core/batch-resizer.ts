@@ -1,7 +1,7 @@
 /**
- * 간단한 배치 리사이저 -
+ * Simple batch resizer
  *
- * @description 복잡한 모니터링 없이 여러 이미지를 효율적으로 처리
+ * @description Efficiently processes multiple images without complex monitoring
  */
 
 import { AutoMemoryManager } from './auto-memory-manager';
@@ -9,17 +9,17 @@ import type { ResizePerformanceOptions } from './performance-config';
 import { getPerformanceConfig, type ResizeProfile } from './performance-config';
 
 /**
- * 배치 처리용 간단한 작업 정의
+ * Simple job definition for batch processing
  */
 export interface BatchResizeJob<T = any> {
-  /** 처리할 함수 */
+  /** Function to process */
   operation: () => Promise<T>;
-  /** 작업 ID (선택사항) */
+  /** Job ID (optional) */
   id?: string;
 }
 
 /**
- * 간소화된 배치 리사이저
+ * Simplified batch resizer
  *
  * @example
  * ```typescript
@@ -39,20 +39,20 @@ export class BatchResizer {
   }
 
   /**
-   * 모든 작업을 배치로 처리
+   * Process all jobs in batches
    */
   async processAll<T>(jobs: BatchResizeJob<T>[]): Promise<T[]> {
     const { concurrency, timeout } = this.config;
     const results: T[] = [];
 
-    // 청크 단위로 나누어 처리
+    // Process in chunks
     for (let i = 0; i < jobs.length; i += concurrency!) {
       const chunk = jobs.slice(i, i + concurrency!);
 
-      // 메모리 체크
+      // Memory check
       await this.memoryManager.checkAndOptimize();
 
-      // 동시 처리 (타임아웃 적용)
+      // Concurrent processing (with timeout)
       const chunkResults = await Promise.all(chunk.map((job) => this.runWithTimeout(job.operation, timeout! * 1000)));
 
       results.push(...chunkResults);
@@ -62,7 +62,7 @@ export class BatchResizer {
   }
 
   /**
-   * 타임아웃이 있는 작업 실행
+   * Execute operation with timeout
    */
   private async runWithTimeout<T>(operation: () => Promise<T>, timeoutMs: number): Promise<T> {
     return new Promise((resolve, reject) => {
@@ -83,7 +83,7 @@ export class BatchResizer {
   }
 
   /**
-   * 현재 설정 조회
+   * Get current configuration
    */
   getConfig(): ResizePerformanceOptions {
     return { ...this.config };

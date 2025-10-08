@@ -1,10 +1,10 @@
 import { ImageProcessError } from '../../../src/types';
 import { LazyRenderPipeline } from '../../../src/core/lazy-render-pipeline';
 
-// 테스트용 가상 이미지 생성
+// Create mock image for testing
 function createMockImage(width = 800, height = 600): HTMLImageElement {
   const img = new Image();
-  // naturalWidth/Height는 읽기 전용이므로 Object.defineProperty 사용
+  // naturalWidth/Height are read-only, so use Object.defineProperty
   Object.defineProperty(img, 'naturalWidth', { value: width, writable: false });
   Object.defineProperty(img, 'naturalHeight', { value: height, writable: false });
   return img;
@@ -19,13 +19,13 @@ describe('LazyRenderPipeline', () => {
     pipeline = new LazyRenderPipeline(mockImage);
   });
 
-  describe('기본 기능', () => {
-    it('LazyRenderPipeline 인스턴스를 생성할 수 있어야 함', () => {
+  describe('Basic Functionality', () => {
+    it('should be able to create LazyRenderPipeline instance', () => {
       expect(pipeline).toBeInstanceOf(LazyRenderPipeline);
       expect(pipeline.getOperationCount()).toBe(0);
     });
 
-    it('연산들을 누적할 수 있어야 함', () => {
+    it('should be able to accumulate operations', () => {
       pipeline.addResize({ fit: 'cover', width: 300, height: 200 });
       pipeline.addBlur({ radius: 2 });
 
@@ -38,14 +38,14 @@ describe('LazyRenderPipeline', () => {
     });
   });
 
-  describe('resize() 단일 호출 제약', () => {
-    it('resize()를 한 번 호출하는 것은 성공해야 함', () => {
+  describe('Single resize() Call Constraint', () => {
+    it('should succeed when calling resize() once', () => {
       expect(() => {
         pipeline.addResize({ fit: 'cover', width: 300, height: 200 });
       }).not.toThrow();
     });
 
-    it('resize()를 두 번 호출하면 에러가 발생해야 함', () => {
+    it('should throw error when calling resize() twice', () => {
       pipeline.addResize({ fit: 'cover', width: 300, height: 200 });
 
       expect(() => {
@@ -54,10 +54,10 @@ describe('LazyRenderPipeline', () => {
 
       expect(() => {
         pipeline.addResize({ fit: 'contain', width: 150, height: 150 });
-      }).toThrow(/resize\(\)는 한 번만 호출할 수 있습니다/);
+      }).toThrow(/resize\(\) can only be called once/);
     });
 
-    it('blur()는 여러 번 호출할 수 있어야 함', () => {
+    it('should allow multiple blur() calls', () => {
       expect(() => {
         pipeline.addBlur({ radius: 2 });
         pipeline.addBlur({ radius: 5 });
@@ -68,8 +68,8 @@ describe('LazyRenderPipeline', () => {
     });
   });
 
-  describe('체이닝 API', () => {
-    it('메서드 체이닝이 가능해야 함', () => {
+  describe('Chaining API', () => {
+    it('should support method chaining', () => {
       const result = pipeline
         .addResize({ fit: 'cover', width: 300, height: 200 })
         .addBlur({ radius: 2 })
@@ -80,11 +80,11 @@ describe('LazyRenderPipeline', () => {
     });
   });
 
-  describe('지연 렌더링 개념', () => {
-    it('연산 추가 후 toCanvas() 호출 시 렌더링이 수행되어야 함', () => {
+  describe('Lazy Rendering Concept', () => {
+    it('should perform rendering when toCanvas() is called after adding operations', () => {
       pipeline.addResize({ fit: 'cover', width: 300, height: 200 });
 
-      // toCanvas() 호출 시 실제 렌더링 수행
+      // Actual rendering is performed when toCanvas() is called
       const result = pipeline.toCanvas();
 
       expect(result.canvas).toBeInstanceOf(HTMLCanvasElement);
@@ -93,8 +93,8 @@ describe('LazyRenderPipeline', () => {
     });
   });
 
-  describe('메타데이터', () => {
-    it('처리 결과와 함께 메타데이터를 반환해야 함', () => {
+  describe('Metadata', () => {
+    it('should return metadata with processing result', () => {
       pipeline.addResize({ fit: 'cover', width: 300, height: 200 });
 
       const result = pipeline.toCanvas();
@@ -109,7 +109,7 @@ describe('LazyRenderPipeline', () => {
       });
     });
 
-    it('여러 연산 후 메타데이터가 올바르게 기록되어야 함', () => {
+    it('should record metadata correctly after multiple operations', () => {
       pipeline
         .addResize({ fit: 'contain', width: 400, height: 300 })
         .addBlur({ radius: 3 })
@@ -123,28 +123,28 @@ describe('LazyRenderPipeline', () => {
     });
   });
 
-  describe('에러 처리', () => {
-    it('잘못된 resize 설정에 대해 적절한 에러를 발생시켜야 함', () => {
+  describe('Error Handling', () => {
+    it('should throw appropriate error for invalid resize configuration', () => {
       const mockImage = createMockImage(100, 100);
       const invalidPipeline = new LazyRenderPipeline(mockImage);
 
-      // LazyRenderPipeline은 지연 실행이므로, addResize는 에러를 발생시키지 않음
-      // 대신 toCanvas() 호출 시 에러가 발생해야 함
+      // LazyRenderPipeline uses lazy execution, so addResize doesn't throw error
+      // Instead, error should be thrown when toCanvas() is called
       expect(() => {
-        // @ts-expect-error 테스트를 위한 잘못된 타입
+        // @ts-expect-error Invalid type for testing
         invalidPipeline.addResize({ fit: 'invalid', width: -100 });
-        invalidPipeline.toCanvas(); // 실제 렌더링 시 에러 발생
+        invalidPipeline.toCanvas(); // Error occurs during actual rendering
       }).toThrow();
     });
   });
 });
 
-describe('단일 렌더링 개념 검증', () => {
-  it('복잡한 연산 파이프라인도 정상 동작해야 함', () => {
+describe('Single Rendering Concept Validation', () => {
+  it('should work properly even with complex operation pipeline', () => {
     const mockImage = createMockImage(1000, 800);
     const pipeline = new LazyRenderPipeline(mockImage);
 
-    // 복잡한 연산 체이닝
+    // Complex operation chaining
     const result = pipeline
       .addResize({ fit: 'cover', width: 500, height: 400 })
       .addBlur({ radius: 2 })
@@ -153,7 +153,7 @@ describe('단일 렌더링 개념 검증', () => {
       .addFilter({ contrast: 1.1 })
       .toCanvas();
 
-    // 결과가 올바르게 생성되었는지 확인
+    // Verify result is generated correctly
     expect(result.canvas).toBeInstanceOf(HTMLCanvasElement);
     expect(result.metadata.operations).toBe(5);
     expect(result.metadata.width).toBe(500);

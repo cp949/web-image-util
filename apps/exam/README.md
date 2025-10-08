@@ -144,45 +144,45 @@ pnpm start
 ### Monorepo Structure
 
 ```
-web-image-util/                    # 모노레포 루트
+web-image-util/                    # Monorepo root
 ├── apps/
-│   └── exam/                      # 예제 앱 (이 프로젝트)
+│   └── exam/                      # Example app (this project)
 │       ├── src/
-│       │   ├── app/               # Next.js 15 App Router 페이지
-│       │   │   ├── page.tsx       # 홈페이지
-│       │   │   ├── basic/         # 기본 처리
-│       │   │   ├── presets/       # 프리셋 함수
-│       │   │   ├── advanced/      # 고급 기능
-│       │   │   ├── svg-quality-comparison/  # SVG 품질 비교
-│       │   │   ├── smart-format/  # 스마트 포맷 선택
-│       │   │   └── performance-benchmark/   # 성능 벤치마크
+│       │   ├── app/               # Next.js 15 App Router pages
+│       │   │   ├── page.tsx       # Homepage
+│       │   │   ├── basic/         # Basic processing
+│       │   │   ├── presets/       # Preset functions
+│       │   │   ├── advanced/      # Advanced features
+│       │   │   ├── svg-quality-comparison/  # SVG quality comparison
+│       │   │   ├── smart-format/  # Smart format selection
+│       │   │   └── performance-benchmark/   # Performance benchmark
 │       │   ├── components/
-│       │   │   ├── demos/         # Demo 컴포넌트 (비즈니스 로직)
-│       │   │   ├── common/        # 공통 컴포넌트 (ImageUploader 등)
-│       │   │   ├── ui/            # UI 컴포넌트 (ProcessingStatus 등)
-│       │   │   └── layout/        # 레이아웃 (AppLayout)
-│       │   ├── hooks/             # React 훅
-│       │   │   ├── useImageProcessing.ts   # 이미지 처리 훅
-│       │   │   ├── usePerformanceMonitor.ts # 성능 모니터링
-│       │   │   └── useSampleImages.ts      # 샘플 이미지 관리
-│       │   ├── lib/               # 유틸리티
-│       │   │   ├── types.ts       # 공통 타입 정의
-│       │   │   └── errorHandling.ts # 에러 처리 유틸
-│       │   └── theme.ts           # Material-UI 테마
+│       │   │   ├── demos/         # Demo components (business logic)
+│       │   │   ├── common/        # Common components (ImageUploader etc)
+│       │   │   ├── ui/            # UI components (ProcessingStatus etc)
+│       │   │   └── layout/        # Layout (AppLayout)
+│       │   ├── hooks/             # React hooks
+│       │   │   ├── useImageProcessing.ts   # Image processing hook
+│       │   │   ├── usePerformanceMonitor.ts # Performance monitoring
+│       │   │   └── useSampleImages.ts      # Sample image management
+│       │   ├── lib/               # Utilities
+│       │   │   ├── types.ts       # Common type definitions
+│       │   │   └── errorHandling.ts # Error handling utilities
+│       │   └── theme.ts           # Material-UI theme
 │       ├── public/
-│       │   └── sample-images/     # 샘플 이미지 (12개)
-│       ├── docs/                  # 문서
-│       │   ├── usage-guide.md     # 사용법 가이드
-│       │   ├── best-practices.md  # 베스트 프랙티스
-│       │   ├── migration-guide.md # 마이그레이션 가이드
-│       │   ├── troubleshooting.md # 트러블슈팅
-│       │   └── performance-tips.md # 성능 최적화 팁
-│       ├── CLAUDE.md              # 개발자 가이드
-│       └── README.md              # 이 파일
+│       │   └── sample-images/     # Sample images (12 files)
+│       ├── docs/                  # Documentation
+│       │   ├── usage-guide.md     # Usage guide
+│       │   ├── best-practices.md  # Best practices
+│       │   ├── migration-guide.md # Migration guide
+│       │   ├── troubleshooting.md # Troubleshooting
+│       │   └── performance-tips.md # Performance optimization tips
+│       ├── CLAUDE.md              # Developer guide
+│       └── README.md              # This file
 ├── sub/
-│   └── web-image-util/            # 메인 라이브러리
-├── turbo.json                     # Turbo 설정
-└── pnpm-workspace.yaml            # pnpm 워크스페이스
+│   └── web-image-util/            # Main library
+├── turbo.json                     # Turbo configuration
+└── pnpm-workspace.yaml            # pnpm workspace
 ```
 
 ---
@@ -190,100 +190,100 @@ web-image-util/                    # 모노레포 루트
 ## 🔧 Technology Stack
 
 ### Core Framework
-- **Next.js 15.5.4**: App Router, Server/Client Components, React 19 지원
-- **React 19.1.1**: 최신 React (Concurrent Features, 새로운 훅)
-- **TypeScript 5.9**: 타입 안전성 보장
-- **Turbo**: 모노레포 빌드 오케스트레이션
+- **Next.js 15.5.4**: App Router, Server/Client Components, React 19 support
+- **React 19.1.1**: Latest React (Concurrent Features, new hooks)
+- **TypeScript 5.9**: Type safety guarantee
+- **Turbo**: Monorepo build orchestration
 
 ### UI/UX
-- **Material-UI (MUI) 7.3**: 모던 React 컴포넌트 라이브러리
-- **Emotion 11.14**: CSS-in-JS 스타일링
-- **Grid v2**: 반응형 레이아웃 시스템
+- **Material-UI (MUI) 7.3**: Modern React component library
+- **Emotion 11.14**: CSS-in-JS styling
+- **Grid v2**: Responsive layout system
 
-### 기능 라이브러리
-- **React Dropzone 14.3**: 드래그앤드롭 파일 업로드
-- **Chart.js 4.5**: 성능 차트 및 데이터 시각화
-- **JSZip 3.10**: 배치 처리 ZIP 다운로드
+### Feature Libraries
+- **React Dropzone 14.3**: Drag & drop file upload
+- **Chart.js 4.5**: Performance charts and data visualization
+- **JSZip 3.10**: Batch processing ZIP download
 
-### 메인 라이브러리
-- **@cp949/web-image-util**: 이미지 처리 라이브러리 (워크스페이스 연결)
-  - 메인 API: `processImage()`
-  - 고급 기능: `@cp949/web-image-util/advanced`
-  - 프리셋: `@cp949/web-image-util/presets`
-  - 유틸리티: `@cp949/web-image-util/utils`
+### Main Library
+- **@cp949/web-image-util**: Image processing library (workspace linked)
+  - Main API: `processImage()`
+  - Advanced features: `@cp949/web-image-util/advanced`
+  - Presets: `@cp949/web-image-util/presets`
+  - Utilities: `@cp949/web-image-util/utils`
 
 ---
 
 ## 📖 Key Page Guide
 
-### 1. 홈페이지 (`/`)
-- 라이브러리 소개 및 빠른 시작 가이드
-- v2.0 주요 기능 하이라이트
-- 전체 데모 페이지 링크
+### 1. Homepage (`/`)
+- Library introduction and quick start guide
+- v2.0 key feature highlights
+- Links to all demo pages
 
-### 2. 기본 처리 (`/basic`)
-- **대상**: 초보 사용자
-- **학습 내용**: 기본 API 사용법, Fit 모드, 포맷 변환
-- **샘플 이미지**: `sample1.jpg` (풍경 이미지) 권장
+### 2. Basic Processing (`/basic`)
+- **Target**: Beginner users
+- **Learning Content**: Basic API usage, Fit modes, format conversion
+- **Recommended Sample**: `sample1.jpg` (landscape image)
 
-### 3. 프리셋 (`/presets`)
-- **대상**: 일반 사용자
-- **학습 내용**: 썸네일, 아바타, 소셜 이미지 생성
-- **샘플 이미지**: `sample2.jpg` (인물 사진) 권장
+### 3. Presets (`/presets`)
+- **Target**: General users
+- **Learning Content**: Thumbnail, avatar, social image generation
+- **Recommended Sample**: `sample2.jpg` (portrait photo)
 
-### 4. 고급 기능 (`/advanced`)
-- **대상**: 고급 사용자
-- **학습 내용**: 워터마크, 필터, 배치 처리
-- **샘플 이미지**: `sample3.png` (제품 이미지, 투명 배경) 권장
+### 4. Advanced Features (`/advanced`)
+- **Target**: Advanced users
+- **Learning Content**: Watermarks, filters, batch processing
+- **Recommended Sample**: `sample3.png` (product image, transparent background)
 
-### 5. SVG 품질 비교 (`/svg-quality-comparison`)
-- **대상**: SVG 사용자
-- **학습 내용**: SVG 품질 시스템, 복잡도 기반 자동 선택
-- **샘플 이미지**: `sample4.svg` (그래픽 아트) 권장
+### 5. SVG Quality Comparison (`/svg-quality-comparison`)
+- **Target**: SVG users
+- **Learning Content**: SVG quality system, complexity-based auto selection
+- **Recommended Sample**: `sample4.svg` (graphic art)
 
-### 6. 스마트 포맷 (`/smart-format`)
-- **대상**: 웹 최적화 관심 사용자
-- **학습 내용**: 브라우저 지원 감지, 포맷별 압축률 비교
-- **샘플 이미지**: 모든 포맷 (JPEG, PNG) 가능
+### 6. Smart Format (`/smart-format`)
+- **Target**: Web optimization enthusiasts
+- **Learning Content**: Browser support detection, format-specific compression comparison
+- **Recommended Sample**: All formats (JPEG, PNG) available
 
-### 7. 성능 벤치마크 (`/performance-benchmark`)
-- **대상**: 성능 최적화 관심 개발자
-- **학습 내용**: 처리 시간 측정, 메모리 사용량, 처리량
-- **샘플 이미지**: 자동 생성 (소형/중형/대형)
+### 7. Performance Benchmark (`/performance-benchmark`)
+- **Target**: Performance optimization focused developers
+- **Learning Content**: Processing time measurement, memory usage, throughput
+- **Recommended Sample**: Auto-generated (small/medium/large)
 
 ---
 
 ## 💻 Development Commands
 
-### 개발 서버
+### Development Server
 ```bash
-pnpm dev          # 개발 서버 실행 (http://localhost:3000)
+pnpm dev          # Run development server (http://localhost:3000)
 ```
 
-### 빌드
+### Build
 ```bash
-pnpm build        # 프로덕션 빌드
-pnpm start        # 프로덕션 서버 실행
+pnpm build        # Production build
+pnpm start        # Run production server
 ```
 
-### 품질 검증
+### Quality Verification
 ```bash
-pnpm typecheck    # TypeScript 타입 체크
-pnpm lint         # ESLint 린팅
+pnpm typecheck    # TypeScript type check
+pnpm lint         # ESLint linting
 ```
 
 ---
 
 ## 🎨 Design System
 
-### Material-UI 7.3 컴포넌트
+### Material-UI 7.3 Components
 
-- **레이아웃**: Container, Grid (v2), Stack, Box
-- **입력**: TextField, Button, Switch, Slider, Select
-- **표시**: Card, Typography, Alert, CircularProgress
-- **네비게이션**: Drawer, List, ListItem, Divider
+- **Layout**: Container, Grid (v2), Stack, Box
+- **Input**: TextField, Button, Switch, Slider, Select
+- **Display**: Card, Typography, Alert, CircularProgress
+- **Navigation**: Drawer, List, ListItem, Divider
 
-### 테마 설정
+### Theme Configuration
 
 ```typescript
 // src/theme.ts
@@ -298,169 +298,169 @@ const theme = createTheme({
 });
 ```
 
-### 반응형 브레이크포인트
+### Responsive Breakpoints
 
-- **xs**: 0px (모바일)
-- **sm**: 600px (태블릿)
-- **md**: 900px (데스크톱 소형)
-- **lg**: 1200px (데스크톱 대형)
-- **xl**: 1536px (초대형)
+- **xs**: 0px (mobile)
+- **sm**: 600px (tablet)
+- **md**: 900px (small desktop)
+- **lg**: 1200px (large desktop)
+- **xl**: 1536px (extra large)
 
 ---
 
 ## 📚 Documentation
 
-### 예제 앱 전용 문서
+### Example App Documentation
 
-- **[사용법 가이드](./docs/usage-guide.md)**: 기능별 상세 사용법
-- **[베스트 프랙티스](./docs/best-practices.md)**: 권장 사항 및 최적화
-- **[마이그레이션 가이드](./docs/migration-guide.md)**: v1.x → v2.0 마이그레이션
-- **[트러블슈팅](./docs/troubleshooting.md)**: 문제 해결 가이드
-- **[성능 최적화 팁](./docs/performance-tips.md)**: 성능 개선 방법
+- **[Usage Guide](./docs/usage-guide.md)**: Detailed usage by feature
+- **[Best Practices](./docs/best-practices.md)**: Recommendations and optimization
+- **[Migration Guide](./docs/migration-guide.md)**: v1.x → v2.0 migration
+- **[Troubleshooting](./docs/troubleshooting.md)**: Problem-solving guide
+- **[Performance Tips](./docs/performance-tips.md)**: Performance improvement methods
 
-### 메인 라이브러리 문서
+### Main Library Documentation
 
-- **[메인 README](../../sub/web-image-util/README.md)**: 라이브러리 전체 문서
-- **[CLAUDE.md](./CLAUDE.md)**: 개발자 가이드 (AI 어시스턴트용)
+- **[Main README](../../sub/web-image-util/README.md)**: Complete library documentation
+- **[CLAUDE.md](./CLAUDE.md)**: Developer guide (for AI assistants)
 
 ---
 
 ## 🔒 Security Considerations
 
-### 파일 업로드 보안
-- **파일 타입 검증**: MIME type + 확장자 확인
-- **파일 크기 제한**: 기본 10MB
-- **SVG 안전 처리**: 스크립트 실행 방지 (래스터 변환)
+### File Upload Security
+- **File Type Validation**: MIME type + extension verification
+- **File Size Limits**: Default 10MB
+- **Safe SVG Processing**: Prevent script execution (raster conversion)
 
-### XSS 방지
-- **입력 검증**: 사용자 입력 데이터 검증
-- **안전한 렌더링**: React의 자동 이스케이핑 활용
-- **CSP**: Content Security Policy 적용 (프로덕션)
+### XSS Prevention
+- **Input Validation**: User input data validation
+- **Safe Rendering**: Leverage React's automatic escaping
+- **CSP**: Content Security Policy application (production)
 
 ---
 
 ## 🌐 Browser Compatibility
 
-### 지원 브라우저 (권장)
+### Supported Browsers (Recommended)
 - **Chrome**: 90+
 - **Firefox**: 88+
 - **Safari**: 14+
 - **Edge**: 90+
 
-### 브라우저 기능 감지
+### Browser Feature Detection
 ```typescript
 import { detectBrowserSupport } from '@cp949/web-image-util/utils';
 
 const support = await detectBrowserSupport();
-console.log('WebP 지원:', support.webp);
-console.log('AVIF 지원:', support.avif);
-console.log('OffscreenCanvas 지원:', support.offscreenCanvas);
+console.log('WebP support:', support.webp);
+console.log('AVIF support:', support.avif);
+console.log('OffscreenCanvas support:', support.offscreenCanvas);
 ```
 
-### 폴백 전략
-- **WebP 미지원**: JPEG로 자동 폴백
-- **OffscreenCanvas 미지원**: Canvas 2D로 폴백
-- **다운로드 속성 미지원**: window.open() 폴백
+### Fallback Strategy
+- **WebP not supported**: Automatic fallback to JPEG
+- **OffscreenCanvas not supported**: Fallback to Canvas 2D
+- **Download attribute not supported**: window.open() fallback
 
 ---
 
 ## ⚡ Performance Optimization
 
-### 1. 이미지 최적화
-- WebP 포맷 우선 사용 (브라우저 지원 시)
-- 적절한 품질 설정 (80-85%)
-- 샘플 이미지 지연 로딩
+### 1. Image Optimization
+- Prioritize WebP format (when browser supports)
+- Appropriate quality settings (80-85%)
+- Lazy loading for sample images
 
-### 2. Next.js 최적화
-- App Router의 Server Components 활용
-- 동적 import로 코드 스플리팅
-- 이미지 최적화 (next/image)
+### 2. Next.js Optimization
+- Utilize App Router's Server Components
+- Code splitting with dynamic imports
+- Image optimization (next/image)
 
-### 3. 메모리 관리
-- Canvas Pool 자동 관리 (라이브러리)
-- 순차 처리 권장 (대량 이미지)
-- URL.createObjectURL() 사용 후 cleanup
+### 3. Memory Management
+- Automatic Canvas Pool management (library)
+- Sequential processing recommended (bulk images)
+- Cleanup after URL.createObjectURL() usage
 
-### 4. 번들 최적화
+### 4. Bundle Optimization
 - Tree Shaking (ES Modules)
-- 필요한 서브패키지만 import
-- 동적 import로 초기 로딩 감소
+- Import only necessary subpackages
+- Reduce initial loading with dynamic imports
 
 ---
 
 ## 🐛 Known Issues
 
 ### 1. Next.js 15 + React 19
-- 일부 MUI 컴포넌트에서 hydration 경고 (개발 환경)
-- 프로덕션 빌드에서는 정상 작동
+- Some MUI components show hydration warnings (development environment)
+- Works normally in production builds
 
 ### 2. iOS Safari
-- WebP 지원 (Safari 14+)
-- 다운로드 속성 미지원 (폴백 구현됨)
+- WebP support (Safari 14+)
+- Download attribute not supported (fallback implemented)
 
-### 3. 대형 이미지 처리
-- 4096px 이상 이미지는 2단계 리사이징 권장
-- 메모리 부족 시 브라우저 탭 크래시 가능
+### 3. Large Image Processing
+- Recommend 2-stage resizing for images over 4096px
+- Browser tab may crash when memory insufficient
 
 ---
 
 ## 🤝 Contributing
 
-### 개발 환경 설정
+### Development Environment Setup
 
 ```bash
-# 저장소 클론
+# Clone repository
 git clone https://github.com/YOUR_REPO/web-image-util.git
 cd web-image-util
 
-# 의존성 설치
+# Install dependencies
 pnpm install
 
-# 예제 앱 개발 서버 실행
+# Run example app development server
 cd apps/exam
 pnpm dev
 ```
 
-### 새로운 데모 페이지 추가
+### Adding New Demo Pages
 
-1. `src/app/your-feature/page.tsx` 생성
-2. `src/components/demos/YourFeatureDemo.tsx` 생성
-3. `src/components/layout/AppLayout.tsx`에 네비게이션 항목 추가
-4. 샘플 이미지 선택기 통합 (권장)
-5. 문서 업데이트 (`docs/usage-guide.md`)
+1. Create `src/app/your-feature/page.tsx`
+2. Create `src/components/demos/YourFeatureDemo.tsx`
+3. Add navigation item to `src/components/layout/AppLayout.tsx`
+4. Integrate sample image selector (recommended)
+5. Update documentation (`docs/usage-guide.md`)
 
-### 코딩 규칙
-- **TypeScript Strict Mode** 준수
-- **ESLint 설정** 따르기
-- **한글 주석** 권장
-- **테스트 코드** 작성 (권장)
+### Coding Rules
+- **TypeScript Strict Mode** compliance
+- **Follow ESLint settings**
+- **Korean comments** recommended
+- **Write test code** (recommended)
 
 ---
 
-## 📝 라이센스
+## 📝 License
 
 MIT License
 
 ---
 
-## 🔗 관련 링크
+## 🔗 Related Links
 
-- **메인 라이브러리**: [@cp949/web-image-util](../../sub/web-image-util/README.md)
-- **NPM 패키지**: [https://www.npmjs.com/package/@cp949/web-image-util](https://www.npmjs.com/package/@cp949/web-image-util)
-- **GitHub 저장소**: GitHub 링크 (향후 공개)
+- **Main Library**: [@cp949/web-image-util](../../sub/web-image-util/README.md)
+- **NPM Package**: [https://www.npmjs.com/package/@cp949/web-image-util](https://www.npmjs.com/package/@cp949/web-image-util)
+- **GitHub Repository**: GitHub link (to be released)
 
 ---
 
-## 🆘 지원
+## 🆘 Support
 
-### 문서
-- [사용법 가이드](./docs/usage-guide.md)
-- [베스트 프랙티스](./docs/best-practices.md)
-- [트러블슈팅](./docs/troubleshooting.md)
+### Documentation
+- [Usage Guide](./docs/usage-guide.md)
+- [Best Practices](./docs/best-practices.md)
+- [Troubleshooting](./docs/troubleshooting.md)
 
-### 이슈 리포팅
-- GitHub Issues (향후 공개)
-- 버그 리포트 및 기능 제안
+### Issue Reporting
+- GitHub Issues (to be released)
+- Bug reports and feature suggestions
 
 ---
 

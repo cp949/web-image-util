@@ -1,68 +1,68 @@
 /**
- * 새로운 플러그인 기반 필터 시스템
+ * New plugin-based filter system
  *
- * 주요 특징:
- * - 플러그인 등록 및 동적 로딩 지원
- * - 타입 안전성 강화
- * - 필터 체인 최적화
- * - 커스텀 필터 지원
+ * Key features:
+ * - Plugin registration and dynamic loading support
+ * - Enhanced type safety
+ * - Filter chain optimization
+ * - Custom filter support
  */
 
 import { debugLog, productionLog } from '../utils/debug';
 
 /**
- * 기본 필터 플러그인 인터페이스
+ * Base filter plugin interface
  *
- * @description 모든 필터 플러그인이 구현해야 하는 인터페이스
- * 타입 안전성과 일관된 API를 보장합니다.
- * @template TParams 필터 매개변수 타입
+ * @description Interface that all filter plugins must implement
+ * Ensures type safety and consistent API.
+ * @template TParams Filter parameter type
  */
 export interface FilterPlugin<TParams = any> {
-  /** 고유한 필터 이름 */
+  /** Unique filter name */
   readonly name: string;
 
-  /** 필터 설명 */
+  /** Filter description */
   readonly description?: string;
 
-  /** 필터 카테고리 */
+  /** Filter category */
   readonly category: FilterCategory;
 
-  /** 기본 매개변수 */
+  /** Default parameters */
   readonly defaultParams: TParams;
 
   /**
-   * 필터 적용 함수
-   * @param imageData - 원본 이미지 데이터
-   * @param params - 필터 매개변수
-   * @returns 필터가 적용된 이미지 데이터
+   * Filter application function
+   * @param imageData - Original image data
+   * @param params - Filter parameters
+   * @returns Image data with filter applied
    */
   apply(imageData: ImageData, params: TParams): ImageData;
 
   /**
-   * 매개변수 유효성 검사
-   * @param params - 검사할 매개변수
-   * @returns 유효성 검사 결과
+   * Parameter validation
+   * @param params - Parameters to validate
+   * @returns Validation result
    */
   validate(params: TParams): FilterValidationResult;
 
   /**
-   * 필터 미리보기 (선택적)
-   * 작은 샘플 이미지로 빠른 미리보기 생성
+   * Filter preview (optional)
+   * Generate quick preview with small sample image
    */
   preview?(imageData: ImageData, params: TParams): ImageData;
 
   /**
-   * 필터 최적화 가능 여부
-   * 다른 필터와 결합하여 최적화할 수 있는지 확인
+   * Filter optimization compatibility
+   * Check if can be optimized by combining with other filters
    */
   canOptimizeWith?(otherFilter: FilterPlugin): boolean;
 }
 
 /**
- * 필터 카테고리
+ * Filter categories
  *
- * @description 필터를 기능별로 분류하는 카테고리 enum
- * 필터 매니저에서 카테고리별 관리에 사용됩니다.
+ * @description Enum for categorizing filters by functionality
+ * Used by filter manager for category-based management.
  */
 export enum FilterCategory {
   COLOR = 'color',
@@ -75,7 +75,7 @@ export enum FilterCategory {
 }
 
 /**
- * 필터 유효성 검사 결과
+ * Filter validation result
  */
 export interface FilterValidationResult {
   valid: boolean;
@@ -84,22 +84,22 @@ export interface FilterValidationResult {
 }
 
 /**
- * 필터 적용 옵션
+ * Filter application options
  */
 export interface FilterOptions<TParams = any> {
   name: string;
   params: TParams;
   blend?: BlendMode;
   opacity?: number; // 0 ~ 1
-  enabled?: boolean; // 필터 활성화 상태
-  id?: string; // 체인에서 필터 식별용
+  enabled?: boolean; // Filter enabled state
+  id?: string; // For filter identification in chain
 }
 
 /**
- * 블렌드 모드 (확장)
+ * Blend modes (extended)
  *
- * @description 필터 적용 시 원본 이미지와 합성하는 방식을 정의하는 enum
- * CSS blend-mode와 유사한 효과를 제공합니다.
+ * @description Enum defining how filters are composited with original images
+ * Provides effects similar to CSS blend-mode.
  */
 export enum BlendMode {
   NORMAL = 'normal',
@@ -117,20 +117,20 @@ export enum BlendMode {
 }
 
 /**
- * 필터 체인
+ * Filter chain
  */
 export interface FilterChain {
   filters: FilterOptions[];
   preview?: boolean;
-  optimize?: boolean; // 체인 최적화 여부
-  name?: string; // 체인 이름 (프리셋용)
+  optimize?: boolean; // Whether to optimize chain
+  name?: string; // Chain name (for presets)
 }
 
 /**
- * 필터 플러그인 매니저
+ * Filter plugin manager
  *
- * @description 필터 플러그인의 등록, 관리, 적용을 담당하는 중앙 관리 클래스
- * 싱글톤 패턴으로 구현되어 전역에서 일관된 필터 관리를 제공합니다.
+ * @description Central management class responsible for registration, management, and application of filter plugins
+ * Implemented as singleton pattern to provide consistent filter management globally.
  */
 export class FilterPluginManager {
   private static instance: FilterPluginManager;
@@ -140,7 +140,7 @@ export class FilterPluginManager {
   private constructor() {}
 
   /**
-   * 싱글톤 인스턴스 반환
+   * Return singleton instance
    */
   static getInstance(): FilterPluginManager {
     if (!FilterPluginManager.instance) {
@@ -150,28 +150,28 @@ export class FilterPluginManager {
   }
 
   /**
-   * 필터 플러그인 등록
-   * @param plugin - 등록할 플러그인
+   * Register filter plugin
+   * @param plugin - Plugin to register
    */
   register<TParams>(plugin: FilterPlugin<TParams>): void {
     if (this.plugins.has(plugin.name)) {
-      productionLog.warn(`필터 '${plugin.name}'가 이미 등록되어 있습니다. 새 필터로 덮어씁니다.`);
+      productionLog.warn(`Filter '${plugin.name}' is already registered. Overwriting with new filter.`);
     }
 
     this.plugins.set(plugin.name, plugin);
 
-    // 카테고리별 분류
+    // Categorize by category
     if (!this.categories.has(plugin.category)) {
       this.categories.set(plugin.category, new Set());
     }
     this.categories.get(plugin.category)!.add(plugin.name);
 
-    debugLog.debug(`필터 플러그인 '${plugin.name}' 등록 완료`);
+    debugLog.debug(`Filter plugin '${plugin.name}' registration completed`);
   }
 
   /**
-   * 플러그인 등록 해제
-   * @param name - 해제할 플러그인 이름
+   * Unregister plugin
+   * @param name - Name of plugin to unregister
    */
   unregister(name: string): boolean {
     const plugin = this.plugins.get(name);
@@ -182,28 +182,28 @@ export class FilterPluginManager {
     this.plugins.delete(name);
     this.categories.get(plugin.category)?.delete(name);
 
-    debugLog.debug(`필터 플러그인 '${name}' 등록 해제 완료`);
+    debugLog.debug(`Filter plugin '${name}' unregistration completed`);
     return true;
   }
 
   /**
-   * 등록된 플러그인 반환
-   * @param name - 플러그인 이름
+   * Return registered plugin
+   * @param name - Plugin name
    */
   getPlugin(name: string): FilterPlugin | undefined {
     return this.plugins.get(name);
   }
 
   /**
-   * 모든 등록된 플러그인 반환
+   * Return all registered plugins
    */
   getAllPlugins(): FilterPlugin[] {
     return Array.from(this.plugins.values());
   }
 
   /**
-   * 카테고리별 플러그인 반환
-   * @param category - 필터 카테고리
+   * Return plugins by category
+   * @param category - Filter category
    */
   getPluginsByCategory(category: FilterCategory): FilterPlugin[] {
     const names = this.categories.get(category) || new Set();
@@ -213,49 +213,49 @@ export class FilterPluginManager {
   }
 
   /**
-   * 사용 가능한 모든 필터 이름 반환
+   * Return all available filter names
    */
   getAvailableFilters(): string[] {
     return Array.from(this.plugins.keys());
   }
 
   /**
-   * 필터가 등록되어 있는지 확인
-   * @param name - 확인할 필터 이름
+   * Check if filter is registered
+   * @param name - Filter name to check
    */
   hasFilter(name: string): boolean {
     return this.plugins.has(name);
   }
 
   /**
-   * 단일 필터 적용
-   * @param imageData - 원본 이미지 데이터
-   * @param filterOptions - 필터 옵션
-   * @returns 필터가 적용된 이미지 데이터
+   * Apply single filter
+   * @param imageData - Original image data
+   * @param filterOptions - Filter options
+   * @returns Image data with filter applied
    */
   applyFilter(imageData: ImageData, filterOptions: FilterOptions): ImageData {
     const plugin = this.plugins.get(filterOptions.name);
     if (!plugin) {
-      throw new Error(`필터 '${filterOptions.name}'를 찾을 수 없습니다.`);
+      throw new Error(`Filter '${filterOptions.name}' not found.`);
     }
 
-    // 필터가 비활성화된 경우 원본 반환
+    // Return original if filter is disabled
     if (filterOptions.enabled === false) {
       const copiedData = new Uint8ClampedArray(imageData.data.length);
       copiedData.set(imageData.data);
       return new ImageData(copiedData, imageData.width, imageData.height);
     }
 
-    // 매개변수 유효성 검사
+    // Parameter validation
     const validation = plugin.validate(filterOptions.params);
     if (!validation.valid) {
-      throw new Error(`필터 매개변수가 유효하지 않습니다: ${validation.errors?.join(', ')}`);
+      throw new Error(`Filter parameters are invalid: ${validation.errors?.join(', ')}`);
     }
 
-    // 필터 적용
+    // Apply filter
     let result = plugin.apply(imageData, filterOptions.params);
 
-    // 블렌딩 및 투명도 적용
+    // Apply blending and opacity
     if (filterOptions.blend && filterOptions.blend !== BlendMode.NORMAL) {
       result = this.applyBlendMode(imageData, result, filterOptions.blend);
     }
@@ -268,21 +268,21 @@ export class FilterPluginManager {
   }
 
   /**
-   * 필터 체인 적용
-   * @param imageData - 원본 이미지 데이터
-   * @param filterChain - 적용할 필터 체인
-   * @returns 모든 필터가 적용된 이미지 데이터
+   * Apply filter chain
+   * @param imageData - Original image data
+   * @param filterChain - Filter chain to apply
+   * @returns Image data with all filters applied
    */
   applyFilterChain(imageData: ImageData, filterChain: FilterChain): ImageData {
-    // ImageData 복사 생성
+    // Create ImageData copy
     const copiedData = new Uint8ClampedArray(imageData.data.length);
     copiedData.set(imageData.data);
     let result = new ImageData(copiedData, imageData.width, imageData.height);
 
-    // 최적화 옵션이 활성화된 경우
+    // When optimization option is enabled
     const filters = filterChain.optimize ? this.optimizeFilterChain(filterChain.filters) : filterChain.filters;
 
-    // 활성화된 필터만 적용
+    // Apply only enabled filters
     const enabledFilters = filters.filter((filter) => filter.enabled !== false);
 
     for (const filterOption of enabledFilters) {
@@ -293,10 +293,10 @@ export class FilterPluginManager {
   }
 
   /**
-   * 필터 체인 최적화
-   * 동일한 카테고리의 필터들을 결합하거나 불필요한 필터를 제거
-   * @param filters - 최적화할 필터 배열
-   * @returns 최적화된 필터 배열
+   * Optimize filter chain
+   * Combine filters of same category or remove unnecessary filters
+   * @param filters - Filter array to optimize
+   * @returns Optimized filter array
    */
   private optimizeFilterChain(filters: FilterOptions[]): FilterOptions[] {
     const optimized: FilterOptions[] = [];
@@ -306,11 +306,11 @@ export class FilterPluginManager {
       const plugin = this.plugins.get(filter.name);
       if (!plugin) continue;
 
-      // 색상 필터들은 별도로 수집하여 결합 가능성 확인
+      // Collect color filters separately to check combination possibility
       if (plugin.category === FilterCategory.COLOR) {
         colorFilters.push(filter);
       } else {
-        // 색상 필터가 쌓여있다면 먼저 처리
+        // Process color filters first if they are accumulated
         if (colorFilters.length > 0) {
           optimized.push(...this.mergeColorFilters(colorFilters));
           colorFilters.length = 0;
@@ -319,7 +319,7 @@ export class FilterPluginManager {
       }
     }
 
-    // 남은 색상 필터들 처리
+    // Process remaining color filters
     if (colorFilters.length > 0) {
       optimized.push(...this.mergeColorFilters(colorFilters));
     }
@@ -328,21 +328,21 @@ export class FilterPluginManager {
   }
 
   /**
-   * 색상 필터들 병합
-   * @param colorFilters - 병합할 색상 필터들
-   * @returns 병합된 필터 배열
+   * Merge color filters
+   * @param colorFilters - Color filters to merge
+   * @returns Merged filter array
    */
   private mergeColorFilters(colorFilters: FilterOptions[]): FilterOptions[] {
-    // 현재는 단순한 구현, 실제로는 더 복잡한 병합 로직이 필요
+    // Currently simple implementation, more complex merge logic needed in practice
     return colorFilters;
   }
 
   /**
-   * 블렌드 모드 적용
-   * @param original - 원본 이미지 데이터
-   * @param filtered - 필터된 이미지 데이터
-   * @param blendMode - 블렌드 모드
-   * @returns 블렌딩된 이미지 데이터
+   * Apply blend mode
+   * @param original - Original image data
+   * @param filtered - Filtered image data
+   * @param blendMode - Blend mode
+   * @returns Blended image data
    */
   private applyBlendMode(original: ImageData, filtered: ImageData, blendMode: BlendMode): ImageData {
     const result = new Uint8ClampedArray(original.data.length);
@@ -371,24 +371,24 @@ export class FilterPluginManager {
           gResult = g1 < 0.5 ? 2 * g1 * g2 : 1 - 2 * (1 - g1) * (1 - g2);
           bResult = b1 < 0.5 ? 2 * b1 * b2 : 1 - 2 * (1 - b1) * (1 - b2);
           break;
-        // 다른 블렌드 모드들도 여기에 추가
+        // Add other blend modes here
       }
 
       result[i] = Math.round(rResult * 255);
       result[i + 1] = Math.round(gResult * 255);
       result[i + 2] = Math.round(bResult * 255);
-      result[i + 3] = origData[i + 3]; // 알파 유지
+      result[i + 3] = origData[i + 3]; // Preserve alpha
     }
 
     return new ImageData(result, original.width, original.height);
   }
 
   /**
-   * 투명도 적용
-   * @param original - 원본 이미지 데이터
-   * @param filtered - 필터된 이미지 데이터
-   * @param opacity - 투명도 (0 ~ 1)
-   * @returns 투명도가 적용된 이미지 데이터
+   * Apply opacity
+   * @param original - Original image data
+   * @param filtered - Filtered image data
+   * @param opacity - Opacity (0 ~ 1)
+   * @returns Image data with opacity applied
    */
   private applyOpacity(original: ImageData, filtered: ImageData, opacity: number): ImageData {
     const result = new Uint8ClampedArray(original.data.length);
@@ -396,20 +396,20 @@ export class FilterPluginManager {
     const filtData = filtered.data;
 
     for (let i = 0; i < origData.length; i += 4) {
-      // 선형 보간
+      // Linear interpolation
       result[i] = origData[i] + opacity * (filtData[i] - origData[i]);
       result[i + 1] = origData[i + 1] + opacity * (filtData[i + 1] - origData[i + 1]);
       result[i + 2] = origData[i + 2] + opacity * (filtData[i + 2] - origData[i + 2]);
-      result[i + 3] = origData[i + 3]; // 알파 유지
+      result[i + 3] = origData[i + 3]; // Preserve alpha
     }
 
     return new ImageData(result, original.width, original.height);
   }
 
   /**
-   * 필터 체인 유효성 검사
-   * @param filterChain - 검사할 필터 체인
-   * @returns 체인 전체의 유효성 검사 결과
+   * Validate filter chain
+   * @param filterChain - Filter chain to validate
+   * @returns Validation result for the entire chain
    */
   validateFilterChain(filterChain: FilterChain): FilterValidationResult {
     const errors: string[] = [];
@@ -420,13 +420,13 @@ export class FilterPluginManager {
       const plugin = this.plugins.get(filter.name);
 
       if (!plugin) {
-        errors.push(`필터 '${filter.name}'를 찾을 수 없습니다 (인덱스: ${i})`);
+        errors.push(`Filter '${filter.name}' not found (index: ${i})`);
         continue;
       }
 
       const validation = plugin.validate(filter.params);
       if (!validation.valid) {
-        errors.push(`필터 '${filter.name}' 매개변수 오류 (인덱스: ${i}): ${validation.errors?.join(', ')}`);
+        errors.push(`Filter '${filter.name}' parameter error (index: ${i}): ${validation.errors?.join(', ')}`);
       }
 
       if (validation.warnings) {
@@ -442,7 +442,7 @@ export class FilterPluginManager {
   }
 
   /**
-   * 플러그인 시스템 정보 반환
+   * Return plugin system information
    */
   getSystemInfo() {
     return {
@@ -459,8 +459,8 @@ export class FilterPluginManager {
   }
 
   /**
-   * 테스트용 인스턴스 리셋
-   * @internal 테스트 전용 메서드 - 프로덕션 코드에서 사용하지 마세요
+   * Reset instance for testing
+   * @internal Test-only method - do not use in production code
    */
   static resetForTesting(): void {
     if (FilterPluginManager.instance) {
@@ -472,55 +472,55 @@ export class FilterPluginManager {
 }
 
 /**
- * 전역 필터 매니저 인스턴스
+ * Global filter manager instance
  *
- * @description 라이브러리 전체에서 사용되는 필터 매니저의 싱글톤 인스턴스
- * 모든 필터 플러그인 관리 작업은 이 인스턴스를 통해 수행됩니다.
+ * @description Singleton instance of filter manager used throughout the library
+ * All filter plugin management operations are performed through this instance.
  */
 export const filterManager = FilterPluginManager.getInstance();
 
 /**
- * 편의 함수들
+ * Convenience functions
  */
 /**
- * 필터 플러그인 등록
+ * Register filter plugin
  *
- * @description 새로운 필터 플러그인을 전역 필터 매니저에 등록합니다.
- * @param plugin 등록할 필터 플러그인
+ * @description Register new filter plugin to global filter manager.
+ * @param plugin Filter plugin to register
  */
 export function registerFilter(plugin: FilterPlugin<any>): void {
   filterManager.register(plugin);
 }
 
 /**
- * 단일 필터 적용
+ * Apply single filter
  *
- * @description 하나의 필터를 이미지 데이터에 적용합니다.
- * @param imageData 원본 이미지 데이터
- * @param filterOptions 적용할 필터 옵션
- * @returns 필터가 적용된 이미지 데이터
+ * @description Apply one filter to image data.
+ * @param imageData Original image data
+ * @param filterOptions Filter options to apply
+ * @returns Image data with filter applied
  */
 export function applyFilter(imageData: ImageData, filterOptions: FilterOptions): ImageData {
   return filterManager.applyFilter(imageData, filterOptions);
 }
 
 /**
- * 필터 체인 적용
+ * Apply filter chain
  *
- * @description 여러 필터를 순차적으로 적용합니다.
- * @param imageData 원본 이미지 데이터
- * @param filterChain 적용할 필터 체인
- * @returns 모든 필터가 적용된 이미지 데이터
+ * @description Apply multiple filters sequentially.
+ * @param imageData Original image data
+ * @param filterChain Filter chain to apply
+ * @returns Image data with all filters applied
  */
 export function applyFilterChain(imageData: ImageData, filterChain: FilterChain): ImageData {
   return filterManager.applyFilterChain(imageData, filterChain);
 }
 
 /**
- * 사용 가능한 필터 목록 조회
+ * Get available filter list
  *
- * @description 현재 등록된 모든 필터의 이름 목록을 반환합니다.
- * @returns 등록된 필터 이름 배열
+ * @description Return list of names of all currently registered filters.
+ * @returns Array of registered filter names
  */
 export function getAvailableFilters(): string[] {
   return filterManager.getAvailableFilters();

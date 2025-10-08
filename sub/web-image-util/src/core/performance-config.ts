@@ -1,37 +1,37 @@
 /**
- * 간소화된 성능 설정 - 리사이저 전용
+ * Simplified performance settings - resizer only
  *
- * @description 최소한 성능 옵션만 제공
- * 복잡한 모니터링이나 이벤트 처리는 제거
+ * @description Provides only minimal performance options
+ * Complex monitoring and event handling removed
  */
 
 /**
- * 리사이저 성능 옵션 - 최소한으로 간소화
+ * Resizer performance options - minimally simplified
  */
 export interface ResizePerformanceOptions {
-  /** 동시 처리 가능한 이미지 수 (기본: 2) */
+  /** Number of images that can be processed simultaneously (default: 2) */
   concurrency?: number;
 
-  /** 처리 타임아웃 (초, 기본: 30) */
+  /** Processing timeout (seconds, default: 30) */
   timeout?: number;
 
-  /** Canvas 풀 사용 여부 (기본: true) */
+  /** Whether to use Canvas pool (default: true) */
   useCanvasPool?: boolean;
 
-  /** 메모리 제한 (MB, 기본: 256) */
+  /** Memory limit (MB, default: 256) */
   memoryLimitMB?: number;
 }
 
 /**
- * 3가지 간단한 성능 프로파일
+ * 3 simple performance profiles
  */
 export type ResizeProfile = 'fast' | 'balanced' | 'quality';
 
 /**
- * 프로파일별 설정 - 간단하게
+ * Profile-specific settings - simplified
  */
 export const RESIZE_PROFILES: Record<ResizeProfile, ResizePerformanceOptions> = {
-  /** 속도 우선 - 4개 동시 처리, 적은 메모리 */
+  /** Speed priority - 4 simultaneous processing, low memory */
   fast: {
     concurrency: 4,
     timeout: 15,
@@ -39,7 +39,7 @@ export const RESIZE_PROFILES: Record<ResizeProfile, ResizePerformanceOptions> = 
     memoryLimitMB: 128,
   },
 
-  /** 균형 - 기본 설정 */
+  /** Balanced - default settings */
   balanced: {
     concurrency: 2,
     timeout: 30,
@@ -47,7 +47,7 @@ export const RESIZE_PROFILES: Record<ResizeProfile, ResizePerformanceOptions> = 
     memoryLimitMB: 256,
   },
 
-  /** 품질 우선 - 1개씩 처리, 충분한 메모리 */
+  /** Quality priority - process one by one, sufficient memory */
   quality: {
     concurrency: 1,
     timeout: 60,
@@ -57,7 +57,7 @@ export const RESIZE_PROFILES: Record<ResizeProfile, ResizePerformanceOptions> = 
 };
 
 /**
- * 프로파일 적용 함수
+ * Profile application function
  */
 export function getPerformanceConfig(
   profile: ResizeProfile = 'balanced',

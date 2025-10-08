@@ -46,7 +46,7 @@ export function PresetsDemo() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<ImageProcessError | Error | null>(null);
 
-  // 썸네일 옵션
+  // Thumbnail options
   const [thumbnailOptions, setThumbnailOptions] = useState({
     size: 150,
     format: 'jpeg' as 'jpeg' | 'png' | 'webp',
@@ -54,14 +54,14 @@ export function PresetsDemo() {
     fit: 'cover' as 'cover' | 'contain',
   });
 
-  // 아바타 옵션
+  // Avatar options
   const [avatarOptions, setAvatarOptions] = useState({
     size: 128,
     format: 'png' as 'png' | 'webp',
     circle: false,
   });
 
-  // 소셜 이미지 옵션
+  // Social image options
   const [socialOptions, setSocialOptions] = useState({
     platform: 'instagram' as keyof typeof SOCIAL_PLATFORMS,
     background: '#ffffff',
@@ -85,7 +85,7 @@ export function PresetsDemo() {
         });
       };
       img.onerror = () => {
-        setError(new Error('이미지를 불러올 수 없습니다.'));
+        setError(new Error('Unable to load image.'));
       };
       img.src = source;
     } else {
@@ -102,7 +102,7 @@ export function PresetsDemo() {
         });
       };
       img.onerror = () => {
-        setError(new Error('이미지를 불러올 수 없습니다.'));
+        setError(new Error('Unable to load image.'));
       };
       img.src = url;
     }
@@ -133,7 +133,7 @@ export function PresetsDemo() {
       setProcessedImages([processedInfo]);
     } catch (err) {
       console.error('Thumbnail creation failed:', err);
-      setError(err instanceof Error ? err : new Error('썸네일 생성 중 오류가 발생했습니다.'));
+      setError(err instanceof Error ? err : new Error('Error occurred while creating thumbnail.'));
     } finally {
       setProcessing(false);
     }
@@ -164,7 +164,7 @@ export function PresetsDemo() {
       setProcessedImages([processedInfo]);
     } catch (err) {
       console.error('Avatar creation failed:', err);
-      setError(err instanceof Error ? err : new Error('아바타 생성 중 오류가 발생했습니다.'));
+      setError(err instanceof Error ? err : new Error('Error occurred while creating avatar.'));
     } finally {
       setProcessing(false);
     }
@@ -195,13 +195,13 @@ export function PresetsDemo() {
       setProcessedImages([processedInfo]);
     } catch (err) {
       console.error('Social image creation failed:', err);
-      setError(err instanceof Error ? err : new Error('소셜 이미지 생성 중 오류가 발생했습니다.'));
+      setError(err instanceof Error ? err : new Error('Error occurred while creating social image.'));
     } finally {
       setProcessing(false);
     }
   };
 
-  // 배치 처리 (여러 크기 동시 생성)
+  // Batch processing (generate multiple sizes simultaneously)
   const processBatch = async () => {
     if (!originalImage) return;
 
@@ -234,7 +234,7 @@ export function PresetsDemo() {
       setProcessedImages(processedBatch);
     } catch (err) {
       console.error('Batch processing failed:', err);
-      setError(err instanceof Error ? err : new Error('배치 처리 중 오류가 발생했습니다.'));
+      setError(err instanceof Error ? err : new Error('Error occurred during batch processing.'));
     } finally {
       setProcessing(false);
     }
@@ -242,18 +242,18 @@ export function PresetsDemo() {
 
   const generateCodeExamples = () => {
     switch (activeTab) {
-      case 0: // 썸네일
+      case 0: // Thumbnail
         return [
           {
-            title: '썸네일 생성',
+            title: 'Thumbnail Generation',
             code: `import { createThumbnail } from '@cp949/web-image-util/presets';
 
-// 기본 썸네일 (150px 정사각형)
+// Basic thumbnail (150px square)
 const thumbnail = await createThumbnail(source, {
   size: ${thumbnailOptions.size}
 });
 
-// 고급 옵션
+// Advanced options
 const thumbnail = await createThumbnail(source, {
   size: ${thumbnailOptions.size},
   format: '${thumbnailOptions.format}',
@@ -264,16 +264,16 @@ const thumbnail = await createThumbnail(source, {
           },
         ];
 
-      case 1: // 아바타
+      case 1: // Avatar
         return [
           {
-            title: '아바타 생성',
+            title: 'Avatar Generation',
             code: `import { createAvatar } from '@cp949/web-image-util/presets';
 
-// 기본 아바타 (64px)
+// Basic avatar (64px)
 const avatar = await createAvatar(source);
 
-// 커스텀 크기
+// Custom size
 const avatar = await createAvatar(source, {
   size: ${avatarOptions.size},
   format: '${avatarOptions.format}'
@@ -282,18 +282,18 @@ const avatar = await createAvatar(source, {
           },
         ];
 
-      case 2: // 소셜 이미지
+      case 2: // Social image
         return [
           {
-            title: '소셜 이미지 생성',
+            title: 'Social Image Generation',
             code: `import { createSocialImage } from '@cp949/web-image-util/presets';
 
-// 플랫폼별 권장 크기 자동 적용
+// Automatically apply platform-specific recommended sizes
 const socialImage = await createSocialImage(source, {
   platform: '${socialOptions.platform}'
 });
 
-// 커스텀 설정
+// Custom settings
 const socialImage = await createSocialImage(source, {
   platform: '${socialOptions.platform}',
   background: '${socialOptions.background}',
@@ -304,13 +304,13 @@ const socialImage = await createSocialImage(source, {
           },
         ];
 
-      case 3: // 배치 처리
+      case 3: // Batch processing
         return [
           {
-            title: '배치 처리',
+            title: 'Batch Processing',
             code: `import { createThumbnail, createSocialImage } from '@cp949/web-image-util/presets';
 
-// 여러 크기 동시 생성
+// Generate multiple sizes simultaneously
 const [small, medium, large, xlarge] = await Promise.all([
   createThumbnail(source, { size: 64 }),
   createThumbnail(source, { size: 128 }),
@@ -318,7 +318,7 @@ const [small, medium, large, xlarge] = await Promise.all([
   createThumbnail(source, { size: 512 })
 ]);
 
-// 플랫폼별 소셜 이미지 배치 생성
+// Batch generation of social images by platform
 const socialImages = await Promise.all([
   createSocialImage(source, { platform: 'instagram' }),
   createSocialImage(source, { platform: 'twitter' }),
@@ -336,17 +336,17 @@ const socialImages = await Promise.all([
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        프리셋 기능
+        Preset Functions
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        자주 사용하는 패턴들을 간단한 함수 호출로 처리할 수 있는 편의 기능들입니다.
+        Convenience functions that allow you to handle commonly used patterns with simple function calls.
       </Typography>
 
-      {/* 에러 표시 */}
+      {/* Error display */}
       {error && <ErrorDisplay error={error} onClear={() => setError(null)} />}
 
-      {/* 처리 상태 */}
-      <ProcessingStatus processing={processing} message="프리셋 처리 중..." />
+      {/* Processing status */}
+      <ProcessingStatus processing={processing} message="Processing presets..." />
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
@@ -356,22 +356,22 @@ const socialImages = await Promise.all([
             <Card>
               <CardContent>
                 <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)} variant="fullWidth" sx={{ mb: 3 }}>
-                  <Tab label="썸네일" />
-                  <Tab label="아바타" />
-                  <Tab label="소셜" />
-                  <Tab label="배치" />
+                  <Tab label="Thumbnail" />
+                  <Tab label="Avatar" />
+                  <Tab label="Social" />
+                  <Tab label="Batch" />
                 </Tabs>
 
-                {/* 썸네일 옵션 */}
+                {/* Thumbnail options */}
                 {activeTab === 0 && (
                   <Box>
                     <Typography variant="h6" gutterBottom>
-                      썸네일 설정
+                      Thumbnail Settings
                     </Typography>
 
                     <TextField
                       fullWidth
-                      label="크기 (px)"
+                      label="Size (px)"
                       type="number"
                       value={thumbnailOptions.size}
                       onChange={(e) =>
@@ -384,10 +384,10 @@ const socialImages = await Promise.all([
                     />
 
                     <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>포맷</InputLabel>
+                      <InputLabel>Format</InputLabel>
                       <Select
                         value={thumbnailOptions.format}
-                        label="포맷"
+                        label="Format"
                         onChange={(e) =>
                           setThumbnailOptions((prev) => ({
                             ...prev,
@@ -402,10 +402,10 @@ const socialImages = await Promise.all([
                     </FormControl>
 
                     <FormControl fullWidth sx={{ mb: 3 }}>
-                      <InputLabel>Fit 모드</InputLabel>
+                      <InputLabel>Fit Mode</InputLabel>
                       <Select
                         value={thumbnailOptions.fit}
-                        label="Fit 모드"
+                        label="Fit Mode"
                         onChange={(e) =>
                           setThumbnailOptions((prev) => ({
                             ...prev,
@@ -424,21 +424,21 @@ const socialImages = await Promise.all([
                       onClick={processThumbnail}
                       disabled={!originalImage || processing}
                     >
-                      {processing ? '생성 중...' : '썸네일 생성'}
+                      {processing ? 'Generating...' : 'Generate Thumbnail'}
                     </Button>
                   </Box>
                 )}
 
-                {/* 아바타 옵션 */}
+                {/* Avatar options */}
                 {activeTab === 1 && (
                   <Box>
                     <Typography variant="h6" gutterBottom>
-                      아바타 설정
+                      Avatar Settings
                     </Typography>
 
                     <TextField
                       fullWidth
-                      label="크기 (px)"
+                      label="Size (px)"
                       type="number"
                       value={avatarOptions.size}
                       onChange={(e) =>
@@ -451,10 +451,10 @@ const socialImages = await Promise.all([
                     />
 
                     <FormControl fullWidth sx={{ mb: 3 }}>
-                      <InputLabel>포맷</InputLabel>
+                      <InputLabel>Format</InputLabel>
                       <Select
                         value={avatarOptions.format}
-                        label="포맷"
+                        label="Format"
                         onChange={(e) =>
                           setAvatarOptions((prev) => ({
                             ...prev,
@@ -463,17 +463,17 @@ const socialImages = await Promise.all([
                         }
                       >
                         <MenuItem value="jpeg">JPEG</MenuItem>
-                        <MenuItem value="png">PNG (투명도 지원)</MenuItem>
+                        <MenuItem value="png">PNG (Transparency Support)</MenuItem>
                         <MenuItem value="webp">WebP</MenuItem>
                       </Select>
                     </FormControl>
 
                     <Alert severity="success" sx={{ mb: 2 }}>
-                      ✅ 정사각형 아바타 생성이 구현되어 있습니다!
+                      ✅ Square avatar generation is implemented!
                     </Alert>
 
                     <Alert severity="info" sx={{ mb: 3 }}>
-                      🚧 원형 마스킹 기능은 추후 추가될 예정입니다.
+                      🚧 Circular masking feature will be added in the future.
                     </Alert>
 
                     <Button
@@ -482,23 +482,23 @@ const socialImages = await Promise.all([
                       onClick={processAvatar}
                       disabled={!originalImage || processing}
                     >
-                      {processing ? '생성 중...' : '아바타 생성'}
+                      {processing ? 'Generating...' : 'Generate Avatar'}
                     </Button>
                   </Box>
                 )}
 
-                {/* 소셜 이미지 옵션 */}
+                {/* Social image options */}
                 {activeTab === 2 && (
                   <Box>
                     <Typography variant="h6" gutterBottom>
-                      소셜 이미지 설정
+                      Social Image Settings
                     </Typography>
 
                     <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>플랫폼</InputLabel>
+                      <InputLabel>Platform</InputLabel>
                       <Select
                         value={socialOptions.platform}
-                        label="플랫폼"
+                        label="Platform"
                         onChange={(e) =>
                           setSocialOptions((prev) => ({
                             ...prev,
@@ -514,17 +514,17 @@ const socialImages = await Promise.all([
                       </Select>
                     </FormControl>
 
-                    {/* 플랫폼 정보 표시 */}
+                    {/* Platform information display */}
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="body2" color="text.secondary">
-                        권장 크기: {SOCIAL_PLATFORMS[socialOptions.platform].width}×
+                        Recommended Size: {SOCIAL_PLATFORMS[socialOptions.platform].width}×
                         {SOCIAL_PLATFORMS[socialOptions.platform].height}
                       </Typography>
                     </Box>
 
                     <TextField
                       fullWidth
-                      label="배경색"
+                      label="Background Color"
                       value={socialOptions.background}
                       onChange={(e) =>
                         setSocialOptions((prev) => ({
@@ -541,24 +541,24 @@ const socialImages = await Promise.all([
                       onClick={processSocialImage}
                       disabled={!originalImage || processing}
                     >
-                      {processing ? '생성 중...' : '소셜 이미지 생성'}
+                      {processing ? 'Generating...' : 'Generate Social Image'}
                     </Button>
                   </Box>
                 )}
 
-                {/* 배치 처리 옵션 */}
+                {/* Batch processing options */}
                 {activeTab === 3 && (
                   <Box>
                     <Typography variant="h6" gutterBottom>
-                      배치 처리
+                      Batch Processing
                     </Typography>
                     <Typography variant="body2" color="text.secondary" paragraph>
-                      여러 크기의 썸네일을 한 번에 생성합니다.
+                      Generate multiple thumbnail sizes at once.
                     </Typography>
 
                     <Box sx={{ mb: 3 }}>
                       <Typography variant="subtitle2" gutterBottom>
-                        생성될 크기들:
+                        Sizes to be generated:
                       </Typography>
                       <Stack direction="row" spacing={1}>
                         <Chip label="64×64" size="small" />
@@ -574,7 +574,7 @@ const socialImages = await Promise.all([
                       onClick={processBatch}
                       disabled={!originalImage || processing}
                     >
-                      {processing ? '생성 중...' : '배치 처리 시작'}
+                      {processing ? 'Generating...' : 'Start Batch Processing'}
                     </Button>
                   </Box>
                 )}
@@ -585,17 +585,17 @@ const socialImages = await Promise.all([
 
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* 메타데이터 표시 */}
+            {/* Metadata display */}
             {processedImages.length === 1 && <ImageMetadata original={originalImage} processed={processedImages[0]} />}
 
-            {/* 결과 표시 */}
+            {/* Results display */}
             {processedImages.length === 1 ? (
               <BeforeAfterView before={originalImage} after={processedImages[0]} />
             ) : processedImages.length > 1 ? (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    배치 처리 결과
+                    Batch Processing Results
                   </Typography>
                   <Grid container spacing={2}>
                     {processedImages.map((image, index) => (
@@ -655,15 +655,15 @@ const socialImages = await Promise.all([
                     }}
                   >
                     <Typography variant="body2" color="text.secondary">
-                      이미지를 선택하고 프리셋 기능을 사용해보세요
+                      Select an image and try the preset functions
                     </Typography>
                   </Box>
                 </CardContent>
               </Card>
             )}
 
-            {/* 코드 예제 */}
-            {originalImage && <CodeSnippet title="현재 설정의 코드 예제" examples={generateCodeExamples()} />}
+            {/* Code examples */}
+            {originalImage && <CodeSnippet title="Code Example for Current Settings" examples={generateCodeExamples()} />}
           </Stack>
         </Grid>
       </Grid>

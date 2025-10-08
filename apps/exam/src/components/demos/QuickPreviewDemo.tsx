@@ -24,14 +24,14 @@ import { ProcessingStatus } from '../ui/ProcessingStatus';
 import type { ProcessingOptions } from './types';
 
 /**
- * 원클릭 미리보기 데모
- * autoProcess 기능을 시연하는 간단한 데모 컴포넌트
+ * One-click preview demo
+ * Simple demo component showcasing autoProcess functionality
  */
 export function QuickPreviewDemo() {
-  // 미리 정의된 프리셋 옵션
+  // Predefined preset options
   const [selectedPreset, setSelectedPreset] = useState<'thumbnail' | 'medium' | 'large'>('medium');
 
-  // 프리셋별 처리 옵션
+  // Processing options per preset
   const presets: Record<'thumbnail' | 'medium' | 'large', ProcessingOptions> = {
     thumbnail: {
       fit: 'cover',
@@ -56,9 +56,9 @@ export function QuickPreviewDemo() {
     },
   };
 
-  // autoProcess 활성화된 훅 사용
+  // Use hook with autoProcess enabled
   const imageProcessing = useImageProcessing({
-    autoProcess: true, // 🎯 원클릭 자동 처리 활성화
+    autoProcess: true, // 🎯 Enable one-click automatic processing
     defaultOptions: presets[selectedPreset],
   });
 
@@ -73,28 +73,28 @@ export function QuickPreviewDemo() {
     getErrorMessage,
   } = imageProcessing;
 
-  // 프리셋 변경 시 이미지가 있으면 재처리
+  // Reprocess if image exists when preset changes
   useEffect(() => {
     if (originalImage && !processing) {
       handleProcess(presets[selectedPreset]);
     }
-  }, [selectedPreset]); // originalImage와 processing은 의도적으로 제외 (무한 루프 방지)
+  }, [selectedPreset]); // originalImage and processing intentionally excluded (infinite loop prevention)
 
-  // 최신 처리된 이미지
+  // Latest processed image
   const processedImage = processedImages[processedImages.length - 1] || null;
 
-  // 코드 예제 생성
+  // Generate code example
   const generateCodeExample = () => {
     const preset = presets[selectedPreset];
     return `import { useImageProcessing } from '@/hooks/useImageProcessing';
 
-// 🎯 autoProcess 옵션으로 원클릭 처리 활성화
+// 🎯 Enable one-click processing with autoProcess option
 const {
   handleImageSelect,
   processedImages,
   processing
 } = useImageProcessing({
-  autoProcess: true,  // ✨ 이미지 선택 즉시 자동 처리
+  autoProcess: true,  // ✨ Automatic processing immediately upon image selection
   defaultOptions: {
     fit: '${preset.fit}',
     width: ${preset.width},
@@ -104,26 +104,26 @@ const {
   }
 });
 
-// 이미지 선택만 하면 자동으로 처리됨!
-// 별도의 "처리하기" 버튼 클릭 불필요
+// Images are automatically processed just by selecting them!
+// No need to click a separate "Process" button
 <ImageUploader onImageSelect={handleImageSelect} />`;
   };
 
   return (
     <Container maxWidth="lg">
       <Typography variant="h3" component="h1" gutterBottom>
-        원클릭 미리보기
+        One-Click Preview
       </Typography>
 
       <Grid container spacing={4}>
-        {/* 좌측: 이미지 업로더 및 정보 */}
+        {/* Left: Image uploader and information */}
         <Grid size={{ xs: 12, md: 5 }}>
           <Stack spacing={3}>
-            {/* 프리셋 선택 UI */}
+            {/* Preset selection UI */}
             <Card>
               <CardContent>
                 <Typography variant="subtitle2" gutterBottom>
-                  프리셋 선택
+                  Preset Selection
                 </Typography>
                 <ToggleButtonGroup
                   value={selectedPreset}
@@ -138,15 +138,15 @@ const {
                     component="div"
                     sx={{ display: 'inline-flex', flexDirection: 'column' }}
                   >
-                    썸네일
+                    Thumbnail
                     <Chip label="150×150" size="small" />
                   </ToggleButton>
                   <ToggleButton value="medium" component="div" sx={{ display: 'inline-flex', flexDirection: 'column' }}>
-                    중간
+                    Medium
                     <Chip label="400×300" size="small" sx={{ ml: 1 }} />
                   </ToggleButton>
                   <ToggleButton value="large" component="div" sx={{ display: 'inline-flex', flexDirection: 'column' }}>
-                    큰 크기
+                    Large
                     <Chip label="800×600" size="small" sx={{ ml: 1 }} />
                   </ToggleButton>
                 </ToggleButtonGroup>
@@ -158,24 +158,24 @@ const {
               </CardContent>
             </Card>
 
-            {/* 이미지 업로더 */}
+            {/* Image uploader */}
             <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="quick-preview" />
 
-            {/* 에러 표시 */}
+            {/* Error display */}
             {error && <ErrorDisplay error={error} onClear={clearError} canRetry={false} />}
 
-            {/* 처리 상태 */}
-            <ProcessingStatus processing={processing} message="이미지를 자동으로 처리하고 있습니다..." />
+            {/* Processing status */}
+            <ProcessingStatus processing={processing} message="Automatically processing image..." />
 
-            {/* 처리 결과 메타데이터 */}
+            {/* Processing result metadata */}
             {originalImage && processedImage && <ImageMetadata original={originalImage} processed={processedImage} />}
           </Stack>
         </Grid>
 
-        {/* 우측: 비교 뷰 및 코드 예제 */}
+        {/* Right: Comparison view and code examples */}
         <Grid size={{ xs: 12, md: 7 }}>
           <Stack spacing={3}>
-            {/* Before/After 비교 */}
+            {/* Before/After comparison */}
             {originalImage && processedImage && (
               <BeforeAfterView
                 before={{
@@ -196,84 +196,84 @@ const {
               />
             )}
 
-            {/* 안내 메시지 */}
+            {/* Instruction message */}
             {!originalImage && (
               <Card sx={{ bgcolor: 'background.default' }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    사용 방법
+                    How to Use
                   </Typography>
                   <Typography variant="body2" paragraph>
-                    1. 왼쪽에서 <strong>프리셋을 선택</strong>하세요 (썸네일/중간/큰 크기)
+                    1. <strong>Select a preset</strong> on the left (Thumbnail/Medium/Large)
                   </Typography>
                   <Typography variant="body2" paragraph>
-                    2. 샘플 이미지를 클릭하거나 파일을 업로드하세요
+                    2. Click a sample image or upload a file
                   </Typography>
                   <Typography variant="body2" paragraph>
-                    3. 이미지가 선택되면 <strong>자동으로 즉시 처리</strong>됩니다
+                    3. Images are <strong>automatically processed immediately</strong> when selected
                   </Typography>
-                  <Typography variant="body2">4. 프리셋을 변경하면 이미지가 자동으로 재처리됩니다</Typography>
+                  <Typography variant="body2">4. Images are automatically reprocessed when you change presets</Typography>
                 </CardContent>
               </Card>
             )}
 
-            {/* 코드 예제 */}
+            {/* Code examples */}
             <CodeSnippet
               examples={[
                 {
-                  title: 'autoProcess 사용법',
+                  title: 'autoProcess Usage',
                   code: generateCodeExample(),
                   language: 'typescript',
                 },
               ]}
-              title="코드 예제"
+              title="Code Examples"
             />
 
-            {/* 장점 설명 */}
+            {/* Benefits explanation */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  ✨ autoProcess의 장점
+                  ✨ Benefits of autoProcess
                 </Typography>
                 <Stack spacing={1.5}>
                   <Box>
                     <Typography variant="subtitle2" color="primary">
-                      1. 즉각적인 피드백
+                      1. Immediate Feedback
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      이미지 선택 즉시 처리 결과를 확인할 수 있어 사용자 경험이 향상됩니다.
+                      You can see processing results immediately upon image selection, improving user experience.
                     </Typography>
                   </Box>
                   <Box>
                     <Typography variant="subtitle2" color="primary">
-                      2. 단순한 사용 흐름
+                      2. Simple User Flow
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      별도의 "처리하기" 버튼 클릭이 불필요하여 UI가 단순해집니다.
+                      No need to click a separate "Process" button, making the UI simpler.
                     </Typography>
                   </Box>
                   <Box>
                     <Typography variant="subtitle2" color="primary">
-                      3. 미리보기 시스템에 최적
+                      3. Optimal for Preview Systems
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      썸네일 생성, 갤러리 미리보기 등 빠른 피드백이 필요한 경우에 유용합니다.
+                      Useful for cases requiring quick feedback like thumbnail generation and gallery previews.
                     </Typography>
                   </Box>
                   <Box>
                     <Typography variant="subtitle2" color="primary">
-                      4. 커스터마이징 가능
+                      4. Customizable
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      defaultOptions를 통해 원하는 처리 설정을 미리 정의할 수 있습니다.
+                      You can predefine desired processing settings through defaultOptions.
                     </Typography>
                   </Box>
                   <Box>
                     <Typography variant="subtitle2" color="primary">
-                      5. 실시간 프리셋 전환
+                      5. Real-time Preset Switching
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      프리셋 변경 시 이미지가 자동으로 재처리되어 다양한 크기를 빠르게 비교할 수 있습니다.
+                      Images are automatically reprocessed when presets change, allowing quick comparison of different sizes.
                     </Typography>
                   </Box>
                 </Stack>

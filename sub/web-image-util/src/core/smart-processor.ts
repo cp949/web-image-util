@@ -1,8 +1,8 @@
 /**
- * 스마트 이미지 프로세서 - 간소화된 고해상도 처리
+ * Smart image processor - Simplified high-resolution processing
  *
- * @description 복잡한 HighResolutionManager를 간단한 API로 포장합니다.
- * 사용자는 복잡한 전략을 몰라도 되고, 내부에서 자동으로 최적화됩니다.
+ * @description Wraps complex HighResolutionManager with simple API.
+ * Users don't need to know complex strategies, internal optimization is automatic.
  */
 
 import { createImageError } from '../base/error-helpers';
@@ -14,14 +14,14 @@ import { InternalHighResProcessor } from './internal/internal-high-res-processor
 import type { ResizeProfile } from './performance-config';
 
 /**
- * 스마트 프로세서 - 고해상도 이미지 처리의 복잡성을 숨기는 클래스
+ * Smart processor - Class that hides the complexity of high-resolution image processing
  *
  * @example
  * ```typescript
- * // ✅ 가장 간단한 사용 - 모든 것이 자동
+ * // ✅ Simplest usage - everything automatic
  * const result = await SmartProcessor.process(img, 800, 600);
  *
- * // ✅ 전략 지정 (여전히 간단)
+ * // ✅ Specify strategy (still simple)
  * const result = await SmartProcessor.process(img, 800, 600, {
  *   strategy: 'quality',
  *   onProgress: (progress) => console.log(`${progress}%`)
@@ -30,13 +30,13 @@ import type { ResizeProfile } from './performance-config';
  */
 export class SmartProcessor {
   /**
-   * 스마트 이미지 리사이징 - 간단한 API
+   * Smart image resizing - Simple API
    *
-   * @param img 소스 이미지
-   * @param width 목표 너비
-   * @param height 목표 높이
-   * @param options 간단한 옵션 (기본값만으로도 충분)
-   * @returns 처리된 Canvas
+   * @param img Source image
+   * @param width Target width
+   * @param height Target height
+   * @param options Simple options (default values are sufficient)
+   * @returns Processed Canvas
    */
   static async process(
     img: HTMLImageElement,
@@ -45,21 +45,21 @@ export class SmartProcessor {
     options: SmartResizeOptions = {}
   ): Promise<HTMLCanvasElement> {
     try {
-      // 기본값 설정 - 합리적인 기본값
+      // Set default values - reasonable defaults
       const strategy = options.strategy || 'auto';
 
-      // 자동 최적화 판단
+      // Determine automatic optimization
       const shouldUseHighRes = this.shouldUseHighResProcessing(img.width, img.height, width, height);
 
       if (!shouldUseHighRes) {
-        // 일반 리사이징 - 간단하고 빠름
+        // Regular resizing - simple and fast
         return this.simpleResize(img, width, height, options);
       }
 
-      // 고해상도 처리 필요 - 복잡한 옵션을 간단한 옵션으로 변환
+      // High-resolution processing needed - convert complex options to simple options
       const internalOptions = this.convertToInternalOptions(options, img.width, img.height);
 
-      // 메모리 상황 자동 체크
+      // Automatic memory status check
       const memoryManager = AutoMemoryManager.getInstance();
       await memoryManager.checkAndOptimize();
 
@@ -72,8 +72,8 @@ export class SmartProcessor {
   }
 
   /**
-   * 고해상도 처리가 필요한지 자동 판단
-   * 사용자는 이런 복잡한 로직을 몰라도 됨
+   * Automatically determine if high-resolution processing is needed
+   * Users don't need to know this complex logic
    */
   private static shouldUseHighResProcessing(
     originalWidth: number,
@@ -84,12 +84,12 @@ export class SmartProcessor {
     const originalPixels = originalWidth * originalHeight;
     const targetPixels = targetWidth * targetHeight;
 
-    // 간단한 휴리스틱: 4MP 이상이거나 큰 스케일링이 필요한 경우
+    // Simple heuristic: 4MP or more, or large scaling needed
     return originalPixels > 4_000_000 || Math.max(originalWidth / targetWidth, originalHeight / targetHeight) > 4;
   }
 
   /**
-   * 간단한 리사이징 - 일반적인 경우
+   * Simple resizing - General case
    */
   private static async simpleResize(
     img: HTMLImageElement,
@@ -107,11 +107,11 @@ export class SmartProcessor {
     canvas.width = width;
     canvas.height = height;
 
-    // 기본적인 고품질 설정
+    // Basic high-quality settings
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    // 간단한 진행률 보고
+    // Simple progress reporting
     if (options.onProgress) {
       options.onProgress(50);
     }
@@ -126,8 +126,8 @@ export class SmartProcessor {
   }
 
   /**
-   * 간단한 사용자 옵션을 복잡한 내부 옵션으로 변환
-   * 이 변환 로직을 사용자는 몰라도 됨
+   * Convert simple user options to complex internal options
+   * Users don't need to know this conversion logic
    */
   private static convertToInternalOptions(options: SmartResizeOptions, originalWidth: number, originalHeight: number) {
     const strategy = options.strategy || 'auto';
@@ -142,7 +142,7 @@ export class SmartProcessor {
   }
 
   /**
-   * 사용자 전략을 품질 설정으로 매핑
+   * Map user strategy to quality settings
    */
   private static mapStrategyToQuality(strategy: SmartResizeOptions['strategy']): 'fast' | 'balanced' | 'high' {
     switch (strategy) {
@@ -158,7 +158,7 @@ export class SmartProcessor {
   }
 
   /**
-   * 자동 전략 선택 - 내부에서 자동 최적화
+   * Automatic strategy selection - Internal automatic optimization
    */
   private static selectInternalStrategy(
     userStrategy: SmartResizeOptions['strategy'],
@@ -179,43 +179,43 @@ export class SmartProcessor {
       return 'stepped';
     }
 
-    // 'auto': 이미지 크기에 따라 자동 선택
+    // 'auto': Automatic selection based on image size
     if (pixelCount > 16_000_000) {
-      return 'tiled'; // 16MP+ : 타일 방식
+      return 'tiled'; // 16MP+: Tiled method
     } else if (pixelCount > 4_000_000) {
-      return 'chunked'; // 4-16MP: 청크 방식
+      return 'chunked'; // 4-16MP: Chunked method
     } else {
-      return 'stepped'; // 4MP-: 단계별 방식
+      return 'stepped'; // 4MP-: Stepped method
     }
   }
 
   /**
-   * 자동 메모리 제한 계산
+   * Automatic memory limit calculation
    */
   private static getAutoMemoryLimit(): number {
     if (typeof performance !== 'undefined' && 'memory' in performance) {
       const memory = (performance as any).memory;
-      // 사용 가능한 메모리의 20% 정도를 제한으로 설정
+      // Set about 20% of available memory as limit
       return Math.round(((memory.jsHeapSizeLimit - memory.usedJSHeapSize) * 0.2) / (1024 * 1024));
     }
 
-    // 기본값: 256MB
+    // Default: 256MB
     return 256;
   }
 
   /**
-   * 복잡한 진행률 콜백을 간단한 콜백으로 변환
+   * Convert complex progress callback to simple callback
    */
   private static wrapProgressCallback(simpleCallback: (progress: number) => void) {
     return (progress: any) => {
-      // 복잡한 HighResolutionProgress를 단순한 0-100 숫자로 변환
+      // Convert complex HighResolutionProgress to simple 0-100 number
       const simpleProgress = typeof progress === 'object' ? progress.progress : progress;
       simpleCallback(Math.round(simpleProgress));
     };
   }
 
   /**
-   * 배치 처리 - 여러 이미지를 효율적으로 동시 처리
+   * Batch processing - efficiently process multiple images simultaneously
    *
    * @example
    * ```typescript
@@ -232,12 +232,12 @@ export class SmartProcessor {
   }
 
   /**
-   * 같은 크기로 여러 이미지 리사이징 - 편의 메서드
+   * Resize multiple images to the same size - convenience method
    *
-   * @param images 처리할 이미지들
-   * @param width 목표 너비
-   * @param height 목표 높이
-   * @param options 리사이징 옵션
+   * @param images Images to process
+   * @param width Target width
+   * @param height Target height
+   * @param options Resizing options
    */
   static async resizeBatch(
     images: HTMLImageElement[],

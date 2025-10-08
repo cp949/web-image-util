@@ -43,27 +43,27 @@ import React, { useState } from 'react';
 const DRAWER_WIDTH = 280;
 
 const navigationItems = [
-  { path: '/', label: '홈', icon: <HomeIcon /> },
-  { path: '/quick-preview', label: '원클릭 미리보기', icon: <QuickPreviewIcon /> },
-  { path: '/basic', label: '기본 처리', icon: <BasicIcon /> },
+  { path: '/', label: 'Home', icon: <HomeIcon /> },
+  { path: '/quick-preview', label: 'Quick Preview', icon: <QuickPreviewIcon /> },
+  { path: '/basic', label: 'Basic Processing', icon: <BasicIcon /> },
   { path: '/shortcut-api', label: 'Shortcut API', icon: <ShortcutApiIcon /> },
-  { path: '/padding', label: '패딩 기능', icon: <PaddingIcon /> },
-  { path: '/preview-gallery', label: '변환 미리보기', icon: <PreviewGalleryIcon /> },
-  { path: '/presets', label: '프리셋 기능', icon: <PresetsIcon /> },
-  { path: '/advanced', label: '고급 기능', icon: <AdvancedIcon /> },
-  { path: '/filters', label: '필터 효과', icon: <FiltersIcon /> },
+  { path: '/padding', label: 'Padding', icon: <PaddingIcon /> },
+  { path: '/preview-gallery', label: 'Preview Gallery', icon: <PreviewGalleryIcon /> },
+  { path: '/presets', label: 'Presets', icon: <PresetsIcon /> },
+  { path: '/advanced', label: 'Advanced Features', icon: <AdvancedIcon /> },
+  { path: '/filters', label: 'Filter Effects', icon: <FiltersIcon /> },
   { path: '/image-source-converter', label: 'ImageSourceConverter', icon: <ConverterTestIcon /> },
-  { path: '/batch', label: '배치 처리', icon: <BatchIcon /> },
-  { path: '/batch-comparison', label: '배치 처리 비교', icon: <BatchComparisonIcon /> },
-  { path: '/performance', label: '성능 테스트', icon: <PerformanceIcon /> },
-  { path: '/dev-tools', label: '개발자 도구', icon: <DevToolsIcon /> },
+  { path: '/batch', label: 'Batch Processing', icon: <BatchIcon /> },
+  { path: '/batch-comparison', label: 'Batch Comparison', icon: <BatchComparisonIcon /> },
+  { path: '/performance', label: 'Performance Test', icon: <PerformanceIcon /> },
+  { path: '/dev-tools', label: 'Developer Tools', icon: <DevToolsIcon /> },
   // SVG Features Section
-  { path: '/svg-fit-modes', label: 'SVG Fit 모드 비교', icon: <FitModeIcon /> },
-  { path: '/svg-quality', label: 'SVG 고품질 렌더링', icon: <QualityIcon /> },
+  { path: '/svg-fit-modes', label: 'SVG Fit Mode Comparison', icon: <FitModeIcon /> },
+  { path: '/svg-quality', label: 'SVG High-Quality Rendering', icon: <QualityIcon /> },
   // v2.0 New Features
-  { path: '/svg-quality-comparison', label: 'SVG 품질 비교', icon: <QualityIcon /> },
-  { path: '/smart-format', label: '스마트 포맷 선택', icon: <FormatIcon /> },
-  { path: '/performance-benchmark', label: '성능 벤치마크', icon: <BenchmarkIcon /> },
+  { path: '/svg-quality-comparison', label: 'SVG Quality Comparison', icon: <QualityIcon /> },
+  { path: '/smart-format', label: 'Smart Format Selection', icon: <FormatIcon /> },
+  { path: '/performance-benchmark', label: 'Performance Benchmark', icon: <BenchmarkIcon /> },
 ];
 
 interface AppLayoutProps {
@@ -119,7 +119,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            {navigationItems.find((item) => item.path === pathname)?.label || '예제 앱'}
+            {navigationItems.find((item) => item.path === pathname)?.label || 'Example App'}
           </Typography>
         </Toolbar>
       </AppBar>
@@ -155,7 +155,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           flexGrow: 1,
           p: 3,
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          mt: 8, // AppBar 높이만큼 여백
+          mt: 8, // Margin for AppBar height
         }}
       >
         {children}

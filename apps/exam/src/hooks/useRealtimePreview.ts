@@ -1,5 +1,5 @@
-// 실시간 미리보기 훅 - Phase 4.2
-// react-use useDebounce로 간소화된 버전
+// Real-time preview hook - Phase 4.2
+// Simplified version using react-use useDebounce
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useDebounce } from 'react-use';
@@ -9,19 +9,19 @@ import type { ProcessingOptions, ImageInfo, ProcessedImageInfo, ResultBlob } fro
 import { logError } from '../utils/errorHandling';
 
 /**
- * 실시간 미리보기 훅 옵션
+ * Real-time preview hook options
  */
 export interface UseRealtimePreviewOptions {
-  /** 디바운스 지연 시간 (밀리초, 기본: 500ms) */
+  /** Debounce delay time (milliseconds, default: 500ms) */
   debounceMs?: number;
-  /** 자동 처리 활성화 여부 (기본: true) */
+  /** Auto processing enabled (default: true) */
   enabled?: boolean;
-  /** 최소 변경 감지 임계값 (옵션 변경이 이 값보다 클 때만 재처리) */
+  /** Minimum change detection threshold (reprocess only when option changes exceed this value) */
   changeThreshold?: number;
 }
 
 /**
- * ProcessingOptions를 ResizeConfig로 변환 (useImageProcessing과 동일)
+ * Convert ProcessingOptions to ResizeConfig (same as useImageProcessing)
  */
 function toResizeConfig(options: ProcessingOptions): ResizeConfig {
   const baseConfig = {
@@ -86,8 +86,8 @@ function toResizeConfig(options: ProcessingOptions): ResizeConfig {
 }
 
 /**
- * 옵션 해시 생성 (메모이제이션용)
- * 중요한 속성만 비교하여 불필요한 재처리 방지
+ * Generate options hash (for memoization)
+ * Compare only important properties to prevent unnecessary reprocessing
  */
 function hashOptions(options: ProcessingOptions): string {
   return JSON.stringify({
@@ -103,9 +103,9 @@ function hashOptions(options: ProcessingOptions): string {
 }
 
 /**
- * 실시간 미리보기 훅 (react-use useDebounce 간소화 버전)
+ * Real-time preview hook (simplified version using react-use useDebounce)
  *
- * 옵션 변경 시 디바운싱을 통해 자동으로 이미지를 재처리합니다.
+ * Automatically reprocess images through debouncing when options change.
  *
  * @example
  * ```tsx
@@ -114,7 +114,7 @@ function hashOptions(options: ProcessingOptions): string {
  *   { debounceMs: 300, enabled: true }
  * );
  *
- * // 옵션 변경 시 자동으로 미리보기 업데이트
+ * // Automatically update preview when options change
  * updateOptions({ width: 400, height: 300, fit: 'cover' });
  * ```
  */
@@ -126,16 +126,16 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
   const [error, setError] = useState<Error | null>(null);
   const [options, setOptions] = useState<ProcessingOptions | null>(null);
 
-  // 마지막 처리된 옵션 해시 (중복 처리 방지)
+  // Last processed options hash (prevent duplicate processing)
   const lastProcessedHashRef = useRef<string>('');
 
   /**
-   * 이미지 처리 함수 (간소화된 버전)
+   * Image processing function (simplified version)
    */
   const processImageWithOptions = useCallback(
     async (processingOptions: ProcessingOptions): Promise<ProcessedImageInfo> => {
       if (!originalImage) {
-        throw new Error('원본 이미지가 없습니다');
+        throw new Error('No original image available');
       }
 
       const startTime = performance.now();
@@ -151,7 +151,7 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
       const endTime = performance.now();
       const url = URL.createObjectURL(result.blob);
 
-      // 처리 완료
+      // Processing completed
 
       return {
         src: url,
@@ -168,7 +168,7 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
   );
 
   /**
-   * react-use useDebounce로 자동 처리
+   * Auto processing with react-use useDebounce
    */
   const [, cancelDebounce] = useDebounce(
     async () => {
@@ -178,7 +178,7 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
 
       const optionsHash = hashOptions(options);
 
-      // 동일한 옵션이면 스킵 (메모이제이션)
+      // Skip if same options (memoization)
       if (optionsHash === lastProcessedHashRef.current) {
         return;
       }
@@ -189,7 +189,7 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
       try {
         const result = await processImageWithOptions(options);
 
-        // 이전 미리보기 URL 정리
+        // Clean up previous preview URL
         if (preview?.src.startsWith('blob:')) {
           URL.revokeObjectURL(preview.src);
         }
@@ -198,7 +198,7 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
         lastProcessedHashRef.current = optionsHash;
       } catch (err) {
         logError(err, 'useRealtimePreview.debounced');
-        setError(err instanceof ImageProcessError ? err : new Error('미리보기 생성 실패'));
+        setError(err instanceof ImageProcessError ? err : new Error('Preview generation failed'));
       } finally {
         setProcessing(false);
       }
@@ -208,14 +208,14 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
   );
 
   /**
-   * 옵션 업데이트 함수 (간소화됨)
+   * Options update function (simplified)
    */
   const updateOptions = useCallback((newOptions: ProcessingOptions) => {
     setOptions(newOptions);
   }, []);
 
   /**
-   * 즉시 처리 (디바운스 없이)
+   * Process immediately (without debounce)
    */
   const processImmediately = useCallback(
     async (processingOptions?: ProcessingOptions) => {
@@ -224,7 +224,7 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
         return;
       }
 
-      // 디바운스 취소
+      // Cancel debounce
       cancelDebounce();
 
       setProcessing(true);
@@ -233,7 +233,7 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
       try {
         const result = await processImageWithOptions(optionsToUse);
 
-        // 이전 미리보기 URL 정리
+        // Clean up previous preview URL
         if (preview?.src.startsWith('blob:')) {
           URL.revokeObjectURL(preview.src);
         }
@@ -242,7 +242,7 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
         lastProcessedHashRef.current = hashOptions(optionsToUse);
       } catch (err) {
         logError(err, 'useRealtimePreview.processImmediately');
-        setError(err instanceof ImageProcessError ? err : new Error('미리보기 생성 실패'));
+        setError(err instanceof ImageProcessError ? err : new Error('Preview generation failed'));
       } finally {
         setProcessing(false);
       }
@@ -251,13 +251,13 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
   );
 
   /**
-   * 리셋 함수
+   * Reset function
    */
   const reset = useCallback(() => {
-    // 디바운스 취소
+    // Cancel debounce
     cancelDebounce();
 
-    // URL 정리
+    // Clean up URL
     if (preview?.src.startsWith('blob:')) {
       URL.revokeObjectURL(preview.src);
     }
@@ -270,14 +270,14 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
   }, [preview, cancelDebounce]);
 
   /**
-   * 원본 이미지 변경 시 리셋
+   * Reset when original image changes
    */
   useEffect(() => {
     reset();
   }, [originalImage, reset]);
 
   /**
-   * 언마운트 시 정리
+   * Cleanup on unmount
    */
   useEffect(() => {
     return () => {
@@ -289,7 +289,7 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
   }, [preview, cancelDebounce]);
 
   /**
-   * 현재 상태 요약
+   * Current status summary
    */
   const status = useMemo(
     () => ({
@@ -304,14 +304,14 @@ export function useRealtimePreview(originalImage: ImageInfo | null, hookOptions?
 
   return useMemo(
     () => ({
-      // 상태
+      // State
       preview,
       processing,
       error,
       options,
       status,
 
-      // 액션
+      // Actions
       updateOptions,
       processImmediately,
       reset,

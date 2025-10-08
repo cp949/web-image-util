@@ -2,7 +2,7 @@ import { withManagedCanvas } from './canvas-utils';
 import { createImageError } from './error-helpers';
 
 /**
- * 타일 처리 옵션
+ * Tile processing options
  */
 export interface TiledProcessingOptions {
   tileSize?: number;
@@ -14,7 +14,7 @@ export interface TiledProcessingOptions {
 }
 
 /**
- * 타일 정보 인터페이스
+ * Tile information interface
  */
 export interface TileInfo {
   x: number;
@@ -28,26 +28,26 @@ export interface TileInfo {
 }
 
 /**
- * 타일 기반 초대용량 이미지 처리기
- * 매우 큰 이미지를 작은 타일로 분할하여 메모리 효율적으로 처리합니다.
+ * Tile-based ultra-large image processor
+ * Processes very large images memory-efficiently by dividing them into small tiles.
  */
 export class TiledProcessor {
   private static readonly DEFAULT_OPTIONS: Required<Omit<TiledProcessingOptions, 'onProgress'>> = {
     tileSize: 1024,
     overlapSize: 32,
     quality: 'high',
-    maxConcurrency: 2, // 타일 처리는 메모리 집약적이므로 낮은 동시성
+    maxConcurrency: 2, // Low concurrency since tile processing is memory intensive
     enableMemoryMonitoring: true,
   };
 
   /**
-   * 타일 기반으로 이미지 리사이징
+   * Tile-based image resizing
    *
-   * @param img - 소스 이미지
-   * @param targetWidth - 목표 너비
-   * @param targetHeight - 목표 높이
-   * @param options - 처리 옵션
-   * @returns 리사이징된 Canvas
+   * @param img - Source image
+   * @param targetWidth - Target width
+   * @param targetHeight - Target height
+   * @param options - Processing options
+   * @returns Resized Canvas
    */
   static async resizeInTiles(
     img: HTMLImageElement,
@@ -57,14 +57,14 @@ export class TiledProcessor {
   ): Promise<HTMLCanvasElement> {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
 
-    // 입력 검증
+    // Input validation
     this.validateInputs(img, targetWidth, targetHeight, opts);
 
-    // 스케일 계산
+    // Calculate scale
     const scaleX = targetWidth / img.width;
     const scaleY = targetHeight / img.height;
 
-    // 타일 계획 생성
+    // Generate tile plan
     const tiles = this.generateTilePlan(
       img.width,
       img.height,
@@ -75,13 +75,13 @@ export class TiledProcessor {
     );
 
     return await withManagedCanvas(targetWidth, targetHeight, async (resultCanvas, resultCtx) => {
-      // 고품질 렌더링 설정
+      // High-quality rendering settings
       if (opts.quality === 'high') {
         resultCtx.imageSmoothingEnabled = true;
         resultCtx.imageSmoothingQuality = 'high';
       }
 
-      // 타일별 처리
+      // Process tiles
       await this.processTiles(img, tiles, scaleX, scaleY, resultCtx, opts);
 
       return resultCanvas;
@@ -89,7 +89,7 @@ export class TiledProcessor {
   }
 
   /**
-   * 타일 계획 생성
+   * Generate tile plan
    * @private
    */
   private static generateTilePlan(
@@ -104,13 +104,13 @@ export class TiledProcessor {
     const scaleX = targetWidth / sourceWidth;
     const scaleY = targetHeight / sourceHeight;
 
-    // 소스 이미지를 타일로 분할
+    // Divide source image into tiles
     for (let sourceY = 0; sourceY < sourceHeight; sourceY += tileSize - overlapSize) {
       for (let sourceX = 0; sourceX < sourceWidth; sourceX += tileSize - overlapSize) {
         const sourceTileWidth = Math.min(tileSize, sourceWidth - sourceX);
         const sourceTileHeight = Math.min(tileSize, sourceHeight - sourceY);
 
-        // 타겟 좌표 계산
+        // Calculate target coordinates
         const targetX = Math.floor(sourceX * scaleX);
         const targetY = Math.floor(sourceY * scaleY);
         const targetTileWidth = Math.ceil(sourceTileWidth * scaleX);
@@ -133,7 +133,7 @@ export class TiledProcessor {
   }
 
   /**
-   * 타일들을 처리
+   * Process tiles
    * @private
    */
   private static async processTiles(
@@ -149,7 +149,7 @@ export class TiledProcessor {
     const totalTiles = tiles.length;
     let completedTiles = 0;
 
-    // 타일을 청크로 나누어 병렬 처리
+    // Divide tiles into chunks for parallel processing
     const chunks = this.chunkArray(tiles, opts.maxConcurrency);
 
     for (const chunk of chunks) {
@@ -160,14 +160,14 @@ export class TiledProcessor {
           opts.onProgress?.(completedTiles, totalTiles);
         } catch (error) {
           throw createImageError('RESIZE_FAILED', error as Error, {
-            debug: { stage: '타일 처리', x: tile.sourceX, y: tile.sourceY },
+            debug: { stage: 'tile processing', x: tile.sourceX, y: tile.sourceY },
           });
         }
       });
 
       await Promise.all(chunkPromises);
 
-      // 청크 처리 후 간단한 메모리 정리
+      // Simple memory cleanup after chunk processing
       if (opts.enableMemoryMonitoring && typeof global !== 'undefined' && global.gc) {
         global.gc();
       }
@@ -175,7 +175,7 @@ export class TiledProcessor {
   }
 
   /**
-   * 단일 타일 처리
+   * Process single tile
    * @private
    */
   private static async processSingleTile(
@@ -185,7 +185,7 @@ export class TiledProcessor {
     quality: 'fast' | 'high'
   ): Promise<void> {
     await withManagedCanvas(tile.width, tile.height, (tileCanvas, tileCtx) => {
-      // 타일 Canvas 설정
+      // Tile Canvas setup
       if (quality === 'high') {
         tileCtx.imageSmoothingEnabled = true;
         tileCtx.imageSmoothingQuality = 'high';
@@ -193,7 +193,7 @@ export class TiledProcessor {
         tileCtx.imageSmoothingEnabled = false;
       }
 
-      // 소스 이미지의 해당 부분을 타일 Canvas에 스케일링하여 그리기
+      // Draw corresponding part of source image to tile Canvas with scaling
       tileCtx.drawImage(
         img,
         tile.sourceX,
@@ -206,7 +206,7 @@ export class TiledProcessor {
         tile.height
       );
 
-      // 처리된 타일을 결과 Canvas에 합성
+      // Composite processed tile to result Canvas
       resultCtx.drawImage(tileCanvas, tile.x, tile.y);
 
       return tileCanvas;
@@ -214,13 +214,12 @@ export class TiledProcessor {
   }
 
   /**
-   * 타일 단위로 커스텀 처리 적용
+   * Apply custom processing per tile
    *
-   * @param img - 소스 이미지
-   * @param tileSize - 타일 크기
-   * @param processor - 각 타일을 처리할 함수
-   * @param options - 처리 옵션
-   * @returns 처리된 Canvas
+   * @param img - Source image
+   * @param processor - Function to process each tile
+   * @param options - Processing options
+   * @returns Processed Canvas
    */
   static async processInTiles<T>(
     img: HTMLImageElement,
@@ -230,16 +229,16 @@ export class TiledProcessor {
     const opts = { ...this.DEFAULT_OPTIONS, ...options };
     const { width: imgWidth, height: imgHeight } = img;
 
-    // 타일 정보 생성
+    // Generate tile information
     const tiles = this.generateSimpleTilePlan(imgWidth, imgHeight, opts.tileSize, opts.overlapSize);
 
     return withManagedCanvas(imgWidth, imgHeight, async (resultCanvas, resultCtx) => {
       let processedTiles = 0;
       const totalTiles = tiles.length;
 
-      // 타일별 처리
+      // Process each tile
       for (const tile of tiles) {
-        // 타일 추출
+        // Extract tile
         const extractedTile = await withManagedCanvas(tile.sourceWidth, tile.sourceHeight, (tileCanvas, tileCtx) => {
           tileCtx.drawImage(
             img,
@@ -255,13 +254,13 @@ export class TiledProcessor {
           return tileCanvas;
         });
 
-        // 커스텀 프로세서 적용
+        // Apply custom processor
         const processedTile = await processor(extractedTile, tile);
 
-        // 결과에 병합
+        // Merge to result
         resultCtx.drawImage(processedTile, tile.sourceX, tile.sourceY);
 
-        // 메모리 정리
+        // Memory cleanup
         extractedTile.width = 0;
         extractedTile.height = 0;
         if (processedTile !== extractedTile) {
@@ -269,7 +268,7 @@ export class TiledProcessor {
           processedTile.height = 0;
         }
 
-        // 진행률 업데이트
+        // Update progress
         processedTiles++;
         opts.onProgress?.(processedTiles, totalTiles);
       }
@@ -279,7 +278,7 @@ export class TiledProcessor {
   }
 
   /**
-   * 간단한 타일 계획 생성 (리사이징 없음)
+   * Generate simple tile plan (no resizing)
    * @private
    */
   private static generateSimpleTilePlan(
@@ -312,7 +311,7 @@ export class TiledProcessor {
   }
 
   /**
-   * 배열을 청크로 분할
+   * Divide array into chunks
    * @private
    */
   private static chunkArray<T>(array: T[], chunkSize: number): T[][] {
@@ -324,7 +323,7 @@ export class TiledProcessor {
   }
 
   /**
-   * 입력값 검증
+   * Input validation
    * @private
    */
   private static validateInputs(
@@ -361,13 +360,13 @@ export class TiledProcessor {
   }
 
   /**
-   * 타일 처리 예상 시간 계산
+   * Calculate estimated tile processing time
    *
-   * @param img - 소스 이미지
-   * @param targetWidth - 목표 너비
-   * @param targetHeight - 목표 높이
-   * @param tileSize - 타일 크기
-   * @returns 예상 처리 시간 정보
+   * @param img - Source image
+   * @param targetWidth - Target width
+   * @param targetHeight - Target height
+   * @param tileSize - Tile size
+   * @returns Estimated processing time information
    */
   static estimateProcessingTime(
     img: HTMLImageElement,
@@ -381,13 +380,13 @@ export class TiledProcessor {
   } {
     const tiles = this.generateTilePlan(img.width, img.height, targetWidth, targetHeight, tileSize, 0);
 
-    // 타일당 평균 처리 시간 (경험적 값)
-    const timePerTile = 0.1; // 초
+    // Average processing time per tile (empirical value)
+    const timePerTile = 0.1; // seconds
     const estimatedSeconds = tiles.length * timePerTile;
 
-    // 타일 하나당 메모리 사용량
+    // Memory usage per tile
     const maxTilePixels = tileSize * tileSize;
-    const memoryPerTileMB = (maxTilePixels * 4) / (1024 * 1024); // RGBA 4바이트
+    const memoryPerTileMB = (maxTilePixels * 4) / (1024 * 1024); // RGBA 4 bytes
 
     return {
       estimatedSeconds: Math.round(estimatedSeconds * 10) / 10,
@@ -397,34 +396,34 @@ export class TiledProcessor {
   }
 
   /**
-   * 최적 타일 크기 추천
+   * Recommend optimal tile size
    *
-   * @param img - 소스 이미지
-   * @param maxMemoryMB - 최대 메모리 사용량 (MB)
-   * @returns 권장 타일 크기
+   * @param img - Source image
+   * @param maxMemoryMB - Maximum memory usage (MB)
+   * @returns Recommended tile size
    */
   static recommendTileSize(img: HTMLImageElement, maxMemoryMB: number = 64): number {
-    const maxPixelsPerTile = (maxMemoryMB * 1024 * 1024) / 4; // RGBA 4바이트
+    const maxPixelsPerTile = (maxMemoryMB * 1024 * 1024) / 4; // RGBA 4 bytes
     const maxTileSize = Math.floor(Math.sqrt(maxPixelsPerTile));
 
-    // 실용적인 범위로 제한
+    // Limit to practical range
     const minSize = 256;
     const maxSize = 2048;
 
     const recommendedSize = Math.max(minSize, Math.min(maxSize, maxTileSize));
 
-    // 2의 거듭제곱에 가까운 값으로 조정 (처리 효율성)
+    // Adjust to nearest power of 2 for processing efficiency
     const powerOfTwo = Math.pow(2, Math.round(Math.log2(recommendedSize)));
 
     return Math.max(minSize, Math.min(maxSize, powerOfTwo));
   }
 
   /**
-   * 타일 기반 처리 적합성 검사
+   * Assess suitability for tile-based processing
    *
-   * @param img - 검사할 이미지
-   * @param tileSize - 사용할 타일 크기
-   * @returns 적합성 검사 결과
+   * @param img - Image to assess
+   * @param tileSize - Tile size to use
+   * @returns Suitability assessment result
    */
   static assessTiledProcessingSuitability(
     img: HTMLImageElement,
@@ -441,26 +440,26 @@ export class TiledProcessor {
 
     let suitable = true;
 
-    // 이미지 크기 검사
+    // Image size check
     const megaPixels = (img.width * img.height) / (1024 * 1024);
     if (megaPixels < 4) {
       suitable = false;
-      reasons.push('이미지가 너무 작아 타일 처리가 비효율적입니다.');
+      reasons.push('Image is too small for efficient tile processing.');
     }
 
-    // 타일 수 검사
+    // Tile count check
     if (tiles.length < 4) {
       suitable = false;
-      reasons.push('타일 수가 너무 적어 오버헤드가 클 수 있습니다.');
+      reasons.push('Too few tiles may result in high overhead.');
     }
 
-    // 메모리 효율성 검사
+    // Memory efficiency check
     if (estimatedMemoryMB > 128) {
-      reasons.push('높은 메모리 사용량이 예상됩니다.');
+      reasons.push('High memory usage is expected.');
     }
 
     if (suitable) {
-      reasons.push('타일 기반 처리에 적합합니다.');
+      reasons.push('Suitable for tile-based processing.');
     }
 
     return {

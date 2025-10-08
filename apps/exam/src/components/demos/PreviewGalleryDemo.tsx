@@ -17,7 +17,7 @@ import {
 import { useCallback, useState } from 'react';
 import { ImageUploader } from '../common/ImageUploader';
 
-// 처리 옵션 프리셋 정의
+// Processing option preset definitions
 interface ProcessPreset {
   id: string;
   category: string;
@@ -31,35 +31,35 @@ interface ProcessPreset {
   };
 }
 
-// 프리셋 데이터 정의
+// Preset data definitions
 const PROCESSING_PRESETS: ProcessPreset[] = [
-  // Fit 모드 비교 (300x200 고정)
+  // Fit mode comparison (fixed 300x200)
   {
     id: 'fit-cover',
-    category: 'Fit 모드',
+    category: 'Fit Mode',
     name: 'Cover',
-    description: '비율 유지하며 전체 영역 채움, 필요시 잘림',
+    description: 'Maintain aspect ratio and fill entire area, crop if necessary',
     options: { width: 300, height: 200, fit: 'cover', quality: 80, format: 'jpeg' },
   },
   {
     id: 'fit-contain',
-    category: 'Fit 모드',
+    category: 'Fit Mode',
     name: 'Contain',
-    description: '비율 유지하며 전체 이미지가 영역에 들어감',
+    description: 'Maintain aspect ratio and fit entire image within area',
     options: { width: 300, height: 200, fit: 'contain', quality: 80, format: 'jpeg' },
   },
   {
     id: 'fit-fill',
-    category: 'Fit 모드',
+    category: 'Fit Mode',
     name: 'Fill',
-    description: '비율 무시하고 정확히 맞춤',
+    description: 'Ignore aspect ratio and fit exactly',
     options: { width: 300, height: 200, fit: 'fill', quality: 80, format: 'jpeg' },
   },
   {
     id: 'fit-maxFit',
-    category: 'Fit 모드',
-    name: 'MaxFit (축소만)',
-    description: '큰 이미지만 축소, 작은 이미지는 원본 유지',
+    category: 'Fit Mode',
+    name: 'MaxFit (Downscale Only)',
+    description: 'Only downscale large images, keep small images original',
     options: {
       width: 200,
       height: 150,
@@ -70,136 +70,136 @@ const PROCESSING_PRESETS: ProcessPreset[] = [
   },
   {
     id: 'fit-minFit',
-    category: 'Fit 모드',
-    name: 'MinFit (확대만)',
-    description: '작은 이미지만 확대, 큰 이미지는 원본 유지',
+    category: 'Fit Mode',
+    name: 'MinFit (Upscale Only)',
+    description: 'Only upscale small images, keep large images original',
     options: { width: 400, height: 300, fit: 'minFit', quality: 80, format: 'jpeg' },
   },
 
-  // MaxFit/MinFit 상세 테스트
+  // MaxFit/MinFit detailed tests
   {
     id: 'maxfit-test-small',
-    category: 'MaxFit 테스트',
-    name: 'MaxFit 작은제약 (100x80)',
-    description: '작은 이미지에는 영향없음, 큰 이미지만 축소',
+    category: 'MaxFit Test',
+    name: 'MaxFit Small Constraint (100x80)',
+    description: 'No effect on small images, only downscale large images',
     options: { width: 100, height: 80, fit: 'maxFit', quality: 80, format: 'jpeg' },
   },
   {
     id: 'minfit-test-large',
-    category: 'MinFit 테스트',
-    name: 'MinFit 큰제약 (600x400)',
-    description: '큰 이미지에는 영향없음, 작은 이미지만 확대',
+    category: 'MinFit Test',
+    name: 'MinFit Large Constraint (600x400)',
+    description: 'No effect on large images, only upscale small images',
     options: { width: 600, height: 400, fit: 'minFit', quality: 80, format: 'jpeg' },
   },
 
-  // 크기별 비교 (Cover 고정)
+  // Size comparison (Cover fixed)
   {
     id: 'size-thumbnail',
-    category: '크기 비교',
-    name: '썸네일',
-    description: '150×100 픽셀',
+    category: 'Size Comparison',
+    name: 'Thumbnail',
+    description: '150×100 pixels',
     options: { width: 150, height: 100, fit: 'cover', quality: 80, format: 'jpeg' },
   },
   {
     id: 'size-small',
-    category: '크기 비교',
-    name: '소형',
-    description: '300×200 픽셀',
+    category: 'Size Comparison',
+    name: 'Small',
+    description: '300×200 pixels',
     options: { width: 300, height: 200, fit: 'cover', quality: 80, format: 'jpeg' },
   },
   {
     id: 'size-medium',
-    category: '크기 비교',
-    name: '중형',
-    description: '600×400 픽셀',
+    category: 'Size Comparison',
+    name: 'Medium',
+    description: '600×400 pixels',
     options: { width: 600, height: 400, fit: 'cover', quality: 80, format: 'jpeg' },
   },
   {
     id: 'size-large',
-    category: '크기 비교',
-    name: '대형',
-    description: '900×600 픽셀',
+    category: 'Size Comparison',
+    name: 'Large',
+    description: '900×600 pixels',
     options: { width: 900, height: 600, fit: 'cover', quality: 80, format: 'jpeg' },
   },
 
-  // 품질별 비교 (300x200, Cover, JPEG)
+  // Quality comparison (300x200, Cover, JPEG)
   {
     id: 'quality-high',
-    category: '품질 비교',
-    name: '최고 품질',
-    description: '95% 품질',
+    category: 'Quality Comparison',
+    name: 'Highest Quality',
+    description: '95% quality',
     options: { width: 300, height: 200, fit: 'cover', quality: 95, format: 'jpeg' },
   },
   {
     id: 'quality-good',
-    category: '품질 비교',
-    name: '고품질',
-    description: '85% 품질',
+    category: 'Quality Comparison',
+    name: 'High Quality',
+    description: '85% quality',
     options: { width: 300, height: 200, fit: 'cover', quality: 85, format: 'jpeg' },
   },
   {
     id: 'quality-normal',
-    category: '품질 비교',
-    name: '보통',
-    description: '70% 품질',
+    category: 'Quality Comparison',
+    name: 'Normal',
+    description: '70% quality',
     options: { width: 300, height: 200, fit: 'cover', quality: 70, format: 'jpeg' },
   },
   {
     id: 'quality-low',
-    category: '품질 비교',
-    name: '저품질',
-    description: '50% 품질',
+    category: 'Quality Comparison',
+    name: 'Low Quality',
+    description: '50% quality',
     options: { width: 300, height: 200, fit: 'cover', quality: 50, format: 'jpeg' },
   },
 
-  // 포맷별 비교 (300x200, Cover, 80% 품질)
+  // Format comparison (300x200, Cover, 80% quality)
   {
     id: 'format-jpeg',
-    category: '포맷 비교',
+    category: 'Format Comparison',
     name: 'JPEG',
-    description: '손실 압축, 사진에 적합',
+    description: 'Lossy compression, suitable for photos',
     options: { width: 300, height: 200, fit: 'cover', quality: 80, format: 'jpeg' },
   },
   {
     id: 'format-png',
-    category: '포맷 비교',
+    category: 'Format Comparison',
     name: 'PNG',
-    description: '무손실, 투명도 지원',
+    description: 'Lossless, supports transparency',
     options: { width: 300, height: 200, fit: 'cover', quality: 80, format: 'png' },
   },
   {
     id: 'format-webp',
-    category: '포맷 비교',
+    category: 'Format Comparison',
     name: 'WebP',
-    description: '고효율 압축, 모던 포맷',
+    description: 'High-efficiency compression, modern format',
     options: { width: 300, height: 200, fit: 'cover', quality: 80, format: 'webp' },
   },
 
-  // 특수 효과 (300x200, Cover)
+  // Special effects (300x200, Cover)
   {
     id: 'effect-original',
-    category: '효과 비교',
-    name: '원본',
-    description: '효과 없음',
+    category: 'Effect Comparison',
+    name: 'Original',
+    description: 'No effects',
     options: { width: 300, height: 200, fit: 'cover', quality: 80, format: 'jpeg' },
   },
   {
     id: 'effect-blur-light',
-    category: '효과 비교',
-    name: '블러 약함',
-    description: '2px 블러 효과',
+    category: 'Effect Comparison',
+    name: 'Light Blur',
+    description: '2px blur effect',
     options: { width: 300, height: 200, fit: 'cover', quality: 80, format: 'jpeg', blur: 2 },
   },
   {
     id: 'effect-blur-strong',
-    category: '효과 비교',
-    name: '블러 강함',
-    description: '5px 블러 효과',
+    category: 'Effect Comparison',
+    name: 'Strong Blur',
+    description: '5px blur effect',
     options: { width: 300, height: 200, fit: 'cover', quality: 80, format: 'jpeg', blur: 5 },
   },
 ];
 
-// 처리 결과 타입
+// Processing result type
 interface ProcessResult {
   preset: ProcessPreset;
   imageUrl: string;
@@ -220,7 +220,7 @@ export function PreviewGalleryDemo() {
     setResults([]);
     setProcessedCount(0);
 
-    // 원본 이미지 정보 설정
+    // Set original image information
     if (typeof source === 'string') {
       const img = new Image();
       img.onload = () => {
@@ -247,7 +247,7 @@ export function PreviewGalleryDemo() {
       img.src = url;
     }
 
-    // 모든 프리셋으로 처리 시작
+    // Start processing with all presets
     await processAllPresets(source);
   }, []);
 
@@ -261,7 +261,7 @@ export function PreviewGalleryDemo() {
       try {
         const startTime = Date.now();
 
-        // 타입 안전성을 위해 기본값 제공
+        // Provide default values for type safety
         const width = preset.options.width || 300;
         const height = preset.options.height || 200;
 
@@ -301,7 +301,7 @@ export function PreviewGalleryDemo() {
         let processor = processImage(source) //
           .resize(resizeConfig);
 
-        // 블러 효과 적용
+        // Apply blur effect
         if (preset.options.blur) {
           processor = processor.blur(preset.options.blur);
         }
@@ -332,7 +332,7 @@ export function PreviewGalleryDemo() {
           height: 0,
           fileSize: 0,
           processingTime: 0,
-          error: error instanceof Error ? error.message : '처리 실패',
+          error: error instanceof Error ? error.message : 'Processing failed',
         });
       }
 
@@ -352,7 +352,7 @@ export function PreviewGalleryDemo() {
     }
   };
 
-  // 파일 크기를 읽기 쉽게 포맷팅
+  // Format file size for readability
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -361,26 +361,26 @@ export function PreviewGalleryDemo() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  // 간단한 체인 형태 코드 예제 생성 (새로운 ResizeConfig API)
+  // Generate simple chain-style code examples (new ResizeConfig API)
   const generateCodeForPreset = (preset: ProcessPreset): string => {
     const { options } = preset;
 
-    // 프리셋 헤더
-    let code = `// ${preset.name} 프리셋 예제\n`;
+    // Preset header
+    let code = `// ${preset.name} preset example\n`;
     code += `// ${preset.description}\n\n`;
 
-    // 체인 형태로 코드 생성
+    // Generate code in chain format
     let chain = 'processImage(source)';
 
-    // resize 추가 - 새로운 ResizeConfig 객체 방식
+    // Add resize - new ResizeConfig object approach
     if (options.width || options.height) {
       const resizeConfig: string[] = [];
 
-      // fit 속성 (기본값 cover)
+      // fit property (default cover)
       const fit = options.fit || 'cover';
       resizeConfig.push(`fit: '${fit}'`);
 
-      // width/height 속성
+      // width/height properties
       if (options.width) {
         resizeConfig.push(`width: ${options.width}`);
       }
@@ -388,7 +388,7 @@ export function PreviewGalleryDemo() {
         resizeConfig.push(`height: ${options.height}`);
       }
 
-      // withoutEnlargement 속성 (contain 모드에서만 유효)
+      // withoutEnlargement property (valid only in contain mode)
       if (options.withoutEnlargement && fit === 'contain') {
         resizeConfig.push('withoutEnlargement: true');
       }
@@ -396,12 +396,12 @@ export function PreviewGalleryDemo() {
       chain += `.resize({ ${resizeConfig.join(', ')} })`;
     }
 
-    // blur 추가
+    // Add blur
     if (options.blur) {
       chain += `.blur(${options.blur})`;
     }
 
-    // 출력 옵션
+    // Output options
     const outputOptions: string[] = [];
     if (options.format && options.format !== 'jpeg') {
       outputOptions.push(`format: '${options.format}'`);
@@ -410,14 +410,14 @@ export function PreviewGalleryDemo() {
       outputOptions.push(`quality: ${options.quality / 100}`);
     }
 
-    // toDataURL 체인 완성
+    // Complete toDataURL chain
     chain += '.toDataURL(';
     if (outputOptions.length > 0) {
       chain += `{ ${outputOptions.join(', ')} }`;
     }
     chain += ')';
 
-    // 멀티라인 체인 형태로 포맷팅
+    // Format as multiline chain
     const formattedChain = chain
       .replace(/processImage\(source\)/, 'processImage(source)')
       .replace(/\.resize\(([^)]+)\)/, '\n  .resize($1)')
@@ -429,7 +429,7 @@ export function PreviewGalleryDemo() {
     return code;
   };
 
-  // 카테고리별로 결과 그룹핑
+  // Group results by category
   const groupedResults = results.reduce(
     (groups, result) => {
       const category = result.preset.category;
@@ -445,31 +445,30 @@ export function PreviewGalleryDemo() {
   return (
     <Container maxWidth="xl">
       <Typography variant="h3" component="h1" gutterBottom>
-        변환 미리보기
+        Conversion Preview
       </Typography>
       <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-        이미지 하나로 모든 처리 옵션을 한눈에 비교해보세요. 다양한 크기, 품질, 포맷, 효과가 적용된 결과를 실시간으로
-        확인할 수 있습니다.
+        Compare all processing options at a glance with a single image. View results with various sizes, qualities, formats, and effects applied in real-time.
       </Typography>
 
-      {/* 이미지 업로더 */}
+      {/* Image Uploader */}
       <Box sx={{ mb: 4, maxWidth: 400 }}>
         <ImageUploader onImageSelect={handleImageSelect} />
       </Box>
 
-      {/* 원본 이미지 정보 */}
+      {/* Original Image Information */}
       {originalImage && (
         <Card sx={{ mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              원본 이미지 정보
+              Original Image Information
             </Typography>
             <Grid container spacing={2} alignItems="center">
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <PhotoSizeSelectActual color="primary" />
                   <Typography variant="caption" display="block">
-                    크기
+                    Size
                   </Typography>
                   <Typography variant="h6">
                     {originalImage.width} × {originalImage.height}
@@ -481,7 +480,7 @@ export function PreviewGalleryDemo() {
                   <Box sx={{ textAlign: 'center' }}>
                     <Storage color="primary" />
                     <Typography variant="caption" display="block">
-                      파일 크기
+                      File Size
                     </Typography>
                     <Typography variant="h6">{formatFileSize(originalImage.size)}</Typography>
                   </Box>
@@ -490,7 +489,7 @@ export function PreviewGalleryDemo() {
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="caption" display="block">
-                    포맷
+                    Format
                   </Typography>
                   <Chip label={originalImage.format?.toUpperCase() || 'Unknown'} color="primary" />
                 </Box>
@@ -500,19 +499,19 @@ export function PreviewGalleryDemo() {
         </Card>
       )}
 
-      {/* 진행률 표시 */}
+      {/* Progress Display */}
       {processing && (
         <Card sx={{ mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              처리 중... ({processedCount}/{PROCESSING_PRESETS.length})
+              Processing... ({processedCount}/{PROCESSING_PRESETS.length})
             </Typography>
             <LinearProgress variant="determinate" value={(processedCount / PROCESSING_PRESETS.length) * 100} />
           </CardContent>
         </Card>
       )}
 
-      {/* 결과 표시 */}
+      {/* Results Display */}
       {Object.entries(groupedResults).map(([category, categoryResults]) => (
         <Box key={category} sx={{ mb: 6 }}>
           <Typography variant="h5" gutterBottom>
@@ -523,7 +522,7 @@ export function PreviewGalleryDemo() {
               <Grid size={{ xs: 12, lg: 6 }} key={result.preset.id}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    {/* 이미지 또는 에러 표시 */}
+                    {/* Image or Error Display */}
                     {result.error ? (
                       <Box
                         sx={{
@@ -536,7 +535,7 @@ export function PreviewGalleryDemo() {
                         }}
                       >
                         <Typography variant="body2" align="center">
-                          처리 실패
+                          Processing Failed
                           <br />
                           {result.error}
                         </Typography>
@@ -570,12 +569,12 @@ export function PreviewGalleryDemo() {
                         }}
                       >
                         <Typography variant="body2" color="text.secondary">
-                          처리 중...
+                          Processing...
                         </Typography>
                       </Box>
                     )}
 
-                    {/* 프리셋 정보 */}
+                    {/* Preset Information */}
                     <Typography variant="h6" gutterBottom>
                       {result.preset.name}
                     </Typography>
@@ -583,12 +582,12 @@ export function PreviewGalleryDemo() {
                       {result.preset.description}
                     </Typography>
 
-                    {/* 결과 정보 */}
+                    {/* Result Information */}
                     {!result.error && result.imageUrl && (
                       <Stack spacing={1} sx={{ mb: 2 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                           <Typography variant="caption" color="text.secondary">
-                            크기:
+                            Size:
                           </Typography>
                           <Typography variant="caption">
                             {result.width} × {result.height}
@@ -596,24 +595,24 @@ export function PreviewGalleryDemo() {
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                           <Typography variant="caption" color="text.secondary">
-                            파일 크기:
+                            File Size:
                           </Typography>
                           <Typography variant="caption">{formatFileSize(result.fileSize)}</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                           <Typography variant="caption" color="text.secondary">
-                            처리 시간:
+                            Processing Time:
                           </Typography>
                           <Typography variant="caption">{result.processingTime}ms</Typography>
                         </Box>
                       </Stack>
                     )}
 
-                    {/* 코드 스니펫 */}
+                    {/* Code Snippet */}
                     {!result.error && result.imageUrl && (
                       <Box sx={{ mb: 2, flexGrow: 1 }}>
                         <Typography variant="subtitle2" gutterBottom sx={{ fontSize: '0.85rem' }}>
-                          사용법
+                          Usage
                         </Typography>
                         <Box
                           sx={{
@@ -634,7 +633,7 @@ export function PreviewGalleryDemo() {
                       </Box>
                     )}
 
-                    {/* 다운로드 버튼 */}
+                    {/* Download Button */}
                     {!result.error && result.imageUrl && (
                       <Box sx={{ mt: 'auto' }}>
                         <Button
@@ -644,7 +643,7 @@ export function PreviewGalleryDemo() {
                           startIcon={<Download />}
                           onClick={() => handleDownload(result)}
                         >
-                          다운로드
+                          Download
                         </Button>
                       </Box>
                     )}
@@ -656,12 +655,12 @@ export function PreviewGalleryDemo() {
         </Box>
       ))}
 
-      {/* 결과 없음 메시지 */}
+      {/* No Results Message */}
       {!processing && results.length === 0 && originalImage && (
         <Card>
           <CardContent>
             <Typography variant="h6" align="center" color="text.secondary">
-              이미지 처리 결과가 없습니다.
+              No image processing results available.
             </Typography>
           </CardContent>
         </Card>

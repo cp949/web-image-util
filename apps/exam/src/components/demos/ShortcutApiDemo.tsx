@@ -24,11 +24,11 @@ interface ShortcutOperation {
   code: string;
 }
 
-// Direct Mapping 연산들
+// Direct Mapping operations
 const DIRECT_OPERATIONS: ShortcutOperation[] = [
   {
     name: 'coverBox(300, 200)',
-    description: '300×200 박스에 꽉 채우기 (일부 잘림)',
+    description: 'Fill 300×200 box (may crop parts)',
     operation: (src: File) => processImage(src).shortcut.coverBox(300, 200).toCanvas(),
     code: `await processImage(file)
   .shortcut.coverBox(300, 200)
@@ -36,7 +36,7 @@ const DIRECT_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'containBox(300, 200)',
-    description: '300×200 박스 안에 전체 이미지 맞추기',
+    description: 'Fit entire image within 300×200 box',
     operation: (src: File) => processImage(src).shortcut.containBox(300, 200).toCanvas(),
     code: `await processImage(file)
   .shortcut.containBox(300, 200)
@@ -44,7 +44,7 @@ const DIRECT_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'exactSize(300, 200)',
-    description: '정확히 300×200 크기로 변환',
+    description: 'Convert to exactly 300×200 size',
     operation: (src: File) => processImage(src).shortcut.exactSize(300, 200).toCanvas(),
     code: `await processImage(file)
   .shortcut.exactSize(300, 200)
@@ -52,7 +52,7 @@ const DIRECT_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'maxWidth(400)',
-    description: '최대 너비 400px 제한',
+    description: 'Limit maximum width to 400px',
     operation: (src: File) => processImage(src).shortcut.maxWidth(400).toCanvas(),
     code: `await processImage(file)
   .shortcut.maxWidth(400)
@@ -60,7 +60,7 @@ const DIRECT_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'maxHeight(300)',
-    description: '최대 높이 300px 제한',
+    description: 'Limit maximum height to 300px',
     operation: (src: File) => processImage(src).shortcut.maxHeight(300).toCanvas(),
     code: `await processImage(file)
   .shortcut.maxHeight(300)
@@ -68,7 +68,7 @@ const DIRECT_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'minWidth(400)',
-    description: '최소 너비 400px 보장',
+    description: 'Ensure minimum width of 400px',
     operation: (src: File) => processImage(src).shortcut.minWidth(400).toCanvas(),
     code: `await processImage(file)
   .shortcut.minWidth(400)
@@ -76,11 +76,11 @@ const DIRECT_OPERATIONS: ShortcutOperation[] = [
   },
 ];
 
-// Lazy 연산들
+// Lazy operations
 const LAZY_OPERATIONS: ShortcutOperation[] = [
   {
     name: 'toScale(1.5)',
-    description: '1.5배 균등 확대',
+    description: 'Scale uniformly by 1.5x',
     operation: async (src: File) => processImage(src).shortcut.scale(1.5).toCanvas(),
     code: `await processImage(file)
   .shortcut.scale(1.5)
@@ -88,7 +88,7 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'scale(0.5)',
-    description: '0.5배 균등 축소',
+    description: 'Scale uniformly by 0.5x',
     operation: async (src: File) => processImage(src).shortcut.scale(0.5).toCanvas(),
     code: `await processImage(file)
   .shortcut.scale(0.5)
@@ -96,7 +96,7 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'exactWidth(200)',
-    description: '너비를 200px로 조정',
+    description: 'Adjust width to 200px',
     operation: async (src: File) => processImage(src).shortcut.exactWidth(200).toCanvas(),
     code: `await processImage(file)
   .shortcut.exactWidth(200)
@@ -104,7 +104,7 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'exactHeight(200)',
-    description: '높이를 200px로 조정',
+    description: 'Adjust height to 200px',
     operation: async (src: File) => processImage(src).shortcut.exactHeight(200).toCanvas(),
     code: `await processImage(file)
   .shortcut.exactHeight(200)
@@ -112,7 +112,7 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'scaleX(2)',
-    description: '가로만 2배 확대',
+    description: 'Scale horizontally by 2x only',
     operation: async (src: File) => processImage(src).shortcut.scaleX(2).toCanvas(),
     code: `await processImage(file)
   .shortcut.scaleX(2)
@@ -120,7 +120,7 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'scaleY(0.5)',
-    description: '세로만 0.5배 축소',
+    description: 'Scale vertically by 0.5x only',
     operation: (src: File) => processImage(src).shortcut.scaleY(0.5).toCanvas(),
     code: `await processImage(file)
   .shortcut.scaleY(0.5)
@@ -128,11 +128,11 @@ const LAZY_OPERATIONS: ShortcutOperation[] = [
   },
 ];
 
-// 체이닝 예제들
+// Chaining examples
 const CHAINING_OPERATIONS: ShortcutOperation[] = [
   {
     name: 'coverBox + blur',
-    description: '박스 크기 조정 후 블러 효과',
+    description: 'Box sizing then blur effect',
     operation: (src: File) => processImage(src).shortcut.coverBox(300, 200).blur(3).toCanvas(),
     code: `await processImage(file)
   .shortcut.coverBox(300, 200)
@@ -141,7 +141,7 @@ const CHAINING_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'toScale + blur',
-    description: '스케일 조정 후 블러 효과',
+    description: 'Scale adjustment then blur effect',
     operation: (src: File) => processImage(src).shortcut.scale(1.5).blur(2).toCanvas(),
     code: `await processImage(file)
   .shortcut.scale(1.5)
@@ -150,7 +150,7 @@ const CHAINING_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'exactWidth + blur',
-    description: '너비 조정 후 블러 효과',
+    description: 'Width adjustment then blur effect',
     operation: (src: File) => processImage(src).shortcut.exactWidth(300).blur(2).toCanvas(),
     code: `await processImage(file)
   .shortcut.exactWidth(300)
@@ -159,7 +159,7 @@ const CHAINING_OPERATIONS: ShortcutOperation[] = [
   },
   {
     name: 'containBox + blur',
-    description: '박스 안에 맞추고 블러 효과',
+    description: 'Fit in box then blur effect',
     operation: (src: File) => processImage(src).shortcut.containBox(300, 200).blur(1).toCanvas(),
     code: `await processImage(file)
   .shortcut.containBox(300, 200)
@@ -168,7 +168,7 @@ const CHAINING_OPERATIONS: ShortcutOperation[] = [
   },
 ];
 
-// 모든 operation을 합친 배열
+// Array combining all operations
 const ALL_OPERATIONS: ShortcutOperation[] = [...DIRECT_OPERATIONS, ...LAZY_OPERATIONS, ...CHAINING_OPERATIONS];
 
 export function ShortcutApiDemo() {
@@ -178,13 +178,13 @@ export function ShortcutApiDemo() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // 이미지 선택 핸들러 - 선택 즉시 Shortcut 처리 실행
+  // Image selection handler - execute Shortcut processing immediately upon selection
   const handleImageSelect = async (source: string | File) => {
     setResults({});
     setError(null);
 
     if (source instanceof File) {
-      // File 객체인 경우
+      // If File object
       setSelectedImage(source);
 
       const reader = new FileReader();
@@ -192,42 +192,42 @@ export function ShortcutApiDemo() {
         const preview = e.target?.result as string;
         setOriginalPreview(preview);
 
-        // 이미지 로드 완료 후 자동으로 Shortcut 처리 실행
+        // Automatically execute Shortcut processing after image load completion
         await processAllShortcuts(source);
       };
       reader.readAsDataURL(source);
     } else {
-      // string (URL/경로)인 경우 - 샘플 이미지 처리
+      // If string (URL/path) - process sample image
       try {
         setOriginalPreview(source);
 
-        // URL에서 File 객체 생성
+        // Create File object from URL
         const response = await fetch(source);
         const blob = await response.blob();
 
-        // 파일명을 URL에서 추출하거나 기본값 사용
+        // Extract filename from URL or use default
         const filename = source.split('/').pop() || 'sample-image';
         const file = new File([blob], filename, { type: blob.type });
 
         setSelectedImage(file);
 
-        // 샘플 이미지 로드 완료 후 자동으로 Shortcut 처리 실행
+        // Automatically execute Shortcut processing after sample image load completion
         await processAllShortcuts(file);
       } catch (err) {
-        console.error('샘플 이미지 로드 실패:', err);
-        setError(new Error('샘플 이미지를 로드할 수 없습니다.'));
+        console.error('Sample image load failed:', err);
+        setError(new Error('Unable to load sample image.'));
         setSelectedImage(null);
         setOriginalPreview(null);
       }
     }
   };
 
-  // 모든 카테고리의 연산들 가져오기
+  // Get operations from all categories
   const getAllOperations = () => {
     return ALL_OPERATIONS;
   };
 
-  // 모든 shortcut 처리
+  // Process all shortcuts
   const processAllShortcuts = async (imageFile?: File) => {
     const targetImage = imageFile || selectedImage;
     if (!targetImage) return;
@@ -244,7 +244,7 @@ export function ShortcutApiDemo() {
         const result: ResultCanvas = await shortcut.operation(targetImage);
         const processingTime = performance.now() - startTime;
 
-        // Canvas를 Data URL로 변환
+        // Convert Canvas to Data URL
         const dataURL = result.canvas.toDataURL('image/png');
         newResults[shortcut.name] = {
           dataURL,
@@ -257,7 +257,7 @@ export function ShortcutApiDemo() {
       setResults(newResults);
     } catch (err) {
       console.error('Shortcut processing error:', err);
-      setError(err instanceof Error ? err : new Error('처리 중 오류가 발생했습니다.'));
+      setError(err instanceof Error ? err : new Error('An error occurred during processing.'));
     } finally {
       setProcessing(false);
     }
@@ -270,20 +270,20 @@ export function ShortcutApiDemo() {
           🚀 Shortcut API
         </Typography>
 
-        {/* 이미지 업로더 */}
+        {/* Image uploader */}
         <Box sx={{ mb: 3 }}>
           <Container maxWidth="sm">
             <ImageUploader onImageSelect={handleImageSelect} />
           </Container>
         </Box>
 
-        {/* 처리 상태 */}
+        {/* Processing status */}
         <ProcessingStatus processing={processing} />
 
-        {/* 에러 표시 */}
+        {/* Error display */}
         {error && <ErrorDisplay error={error} onClear={() => setError(null)} />}
 
-        {/* 결과 표시 */}
+        {/* Results display */}
         {Object.keys(results).length > 0 && (
           <Grid container spacing={3} sx={{ mt: 2 }}>
             {getAllOperations().map((shortcut) => {
@@ -304,7 +304,7 @@ export function ShortcutApiDemo() {
                           </Typography>
                         </Box>
 
-                        {/* Before/After 비교 */}
+                        {/* Before/After comparison */}
                         {originalPreview && (
                           <BeforeAfterView
                             before={{ src: originalPreview }}
@@ -318,17 +318,17 @@ export function ShortcutApiDemo() {
                           />
                         )}
 
-                        {/* 처리 정보 */}
+                        {/* Processing information */}
                         <Box>
                           <Typography variant="body2" color="text.secondary">
-                            크기: {result.width} × {result.height}px
+                            Size: {result.width} × {result.height}px
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            처리 시간: {result.processingTime.toFixed(2)}ms
+                            Processing time: {result.processingTime.toFixed(2)}ms
                           </Typography>
                         </Box>
 
-                        {/* 코드 예제 */}
+                        {/* Code example */}
                         <CodeSnippet
                           examples={[
                             {

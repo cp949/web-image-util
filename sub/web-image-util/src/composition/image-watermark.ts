@@ -2,16 +2,16 @@ import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 
 /**
- * 이미지 워터마크 옵션
+ * Image watermark options
  *
- * @description 이미지를 워터마크로 사용할 때의 옵션들을 정의하는 인터페이스입니다.
- * 위치, 크기, 투명도, 회전, 블렜드 모드 등을 세밀하게 설정할 수 있습니다.
+ * @description Interface that defines options when using images as watermarks.
+ * Allows fine-grained control over position, size, opacity, rotation, blend mode, and more.
  */
 export interface ImageWatermarkOptions {
   watermarkImage: HTMLImageElement;
   position: Position;
   customPosition?: Point;
-  scale?: number; // 0-1, 원본 대비 크기
+  scale?: number; // 0-1, size relative to original
   opacity?: number; // 0-1
   rotation?: number; // degrees
   margin?: Point;
@@ -19,18 +19,18 @@ export interface ImageWatermarkOptions {
 }
 
 /**
- * 이미지 워터마크 클래스
+ * Image watermark class
  *
- * @description 이미지를 워터마크로 추가하는 기능을 제공하는 정적 클래스입니다.
- * Canvas에 이미지 워터마크를 추가하거나 새로운 Canvas를 생성할 수 있습니다.
+ * @description Static class that provides functionality to add images as watermarks.
+ * Can add image watermarks to Canvas or create new Canvas instances.
  */
 export class ImageWatermark {
   /**
-   * 이미지 워터마크 추가
+   * Add image watermark to canvas
    */
   static addToCanvas(canvas: HTMLCanvasElement, options: ImageWatermarkOptions): HTMLCanvasElement {
     const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D 컨텍스트를 가져올 수 없습니다');
+    if (!ctx) throw new Error('Failed to get Canvas 2D context');
 
     const {
       watermarkImage,
@@ -43,13 +43,13 @@ export class ImageWatermark {
       blendMode = 'source-over',
     } = options;
 
-    // 워터마크 크기 계산
+    // Calculate watermark size
     const watermarkSize: Size = {
       width: watermarkImage.width * scale,
       height: watermarkImage.height * scale,
     };
 
-    // 위치 계산
+    // Calculate position
     const containerSize: Size = { width: canvas.width, height: canvas.height };
     const watermarkPosition = PositionCalculator.calculatePosition(
       position,
@@ -61,11 +61,11 @@ export class ImageWatermark {
 
     ctx.save();
 
-    // 블렌딩 모드 및 투명도 설정
+    // Set blending mode and opacity
     ctx.globalCompositeOperation = blendMode;
     ctx.globalAlpha = opacity;
 
-    // 회전 설정
+    // Set rotation
     if (rotation !== 0) {
       const centerX = watermarkPosition.x + watermarkSize.width / 2;
       const centerY = watermarkPosition.y + watermarkSize.height / 2;
@@ -74,7 +74,7 @@ export class ImageWatermark {
       ctx.translate(-centerX, -centerY);
     }
 
-    // 이미지 그리기
+    // Draw image
     ctx.drawImage(watermarkImage, watermarkPosition.x, watermarkPosition.y, watermarkSize.width, watermarkSize.height);
 
     ctx.restore();
@@ -82,25 +82,25 @@ export class ImageWatermark {
   }
 
   /**
-   * 적응형 크기 조정 (컨테이너 크기에 따라 자동 조정)
+   * Add watermark with adaptive sizing (automatically adjusted based on container size)
    */
   static addWithAdaptiveSize(
     canvas: HTMLCanvasElement,
     options: ImageWatermarkOptions & {
-      maxWidthPercent?: number; // 컨테이너 너비의 최대 %
-      maxHeightPercent?: number; // 컨테이너 높이의 최대 %
+      maxWidthPercent?: number; // Maximum % of container width
+      maxHeightPercent?: number; // Maximum % of container height
     }
   ): HTMLCanvasElement {
     const {
       watermarkImage,
-      maxWidthPercent = 0.2, // 기본 20%
+      maxWidthPercent = 0.2, // Default 20%
       maxHeightPercent = 0.2,
     } = options;
 
     const maxWidth = canvas.width * maxWidthPercent;
     const maxHeight = canvas.height * maxHeightPercent;
 
-    // 비율을 유지하면서 최대 크기에 맞춤
+    // Fit to maximum size while maintaining aspect ratio
     const widthScale = maxWidth / watermarkImage.width;
     const heightScale = maxHeight / watermarkImage.height;
     const adaptiveScale = Math.min(widthScale, heightScale);
@@ -112,7 +112,7 @@ export class ImageWatermark {
   }
 
   /**
-   * 반복 패턴 이미지 워터마크
+   * Add repeating pattern image watermark
    */
   static addRepeatingPattern(
     canvas: HTMLCanvasElement,
@@ -122,7 +122,7 @@ export class ImageWatermark {
     }
   ): HTMLCanvasElement {
     const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D 컨텍스트를 가져올 수 없습니다');
+    if (!ctx) throw new Error('Failed to get Canvas 2D context');
 
     const {
       watermarkImage,

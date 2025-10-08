@@ -1,20 +1,20 @@
 /**
- * 색상 조정 필터 플러그인들
- * 색상 조정 필터 플러그인 모음 (밝기, 대비, 채도, 색상)
+ * Color adjustment filter plugins
+ * Collection of color adjustment filter plugins (brightness, contrast, saturation, hue)
  */
 
 import type { FilterPlugin, FilterValidationResult } from '../plugin-system';
 import { FilterCategory } from '../plugin-system';
 
 /**
- * 밝기 조정 필터 플러그인
+ * Brightness adjustment filter plugin
  *
- * @description 이미지의 밝기를 조정하는 필터 플러그인입니다.
- * -100에서 +100 범위의 값으로 밝기를 조절할 수 있으며, 리니어 조정을 사용합니다.
+ * @description Filter plugin that adjusts image brightness.
+ * Brightness can be controlled with values from -100 to +100 using linear adjustment.
  */
 export const BrightnessFilterPlugin: FilterPlugin<{ value: number }> = {
   name: 'brightness',
-  description: '이미지의 밝기를 조정합니다',
+  description: 'Adjusts image brightness',
   category: FilterCategory.COLOR,
   defaultParams: { value: 0 },
 
@@ -27,7 +27,7 @@ export const BrightnessFilterPlugin: FilterPlugin<{ value: number }> = {
       data[i] = Math.max(0, Math.min(255, data[i] + adjustment)); // R
       data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + adjustment)); // G
       data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + adjustment)); // B
-      // A는 변경하지 않음
+      // Alpha remains unchanged
     }
 
     return result;
@@ -38,11 +38,11 @@ export const BrightnessFilterPlugin: FilterPlugin<{ value: number }> = {
     const warnings: string[] = [];
 
     if (typeof params.value !== 'number') {
-      errors.push('value는 숫자여야 합니다');
+      errors.push('value must be a number');
     } else if (params.value < -100 || params.value > 100) {
-      errors.push('value는 -100에서 100 사이여야 합니다');
+      errors.push('value must be between -100 and 100');
     } else if (Math.abs(params.value) > 50) {
-      warnings.push('극단적인 밝기 조정은 이미지 품질을 저하시킬 수 있습니다');
+      warnings.push('Extreme brightness adjustments may degrade image quality');
     }
 
     return {
@@ -53,20 +53,20 @@ export const BrightnessFilterPlugin: FilterPlugin<{ value: number }> = {
   },
 
   preview(imageData: ImageData, params: { value: number }): ImageData {
-    // 미리보기는 전체 적용과 동일
+    // Preview is same as full application
     return this.apply(imageData, params);
   },
 };
 
 /**
- * 대비 조정 필터 플러그인
+ * Contrast adjustment filter plugin
  *
- * @description 이미지의 대비를 조정하는 필터 플러그인입니다.
- * 표준 대비 조정 공식을 사용하여 명암 차이를 강화하거나 완화합니다.
+ * @description Filter plugin that adjusts image contrast.
+ * Uses standard contrast adjustment formula to enhance or reduce light-dark differences.
  */
 export const ContrastFilterPlugin: FilterPlugin<{ value: number }> = {
   name: 'contrast',
-  description: '이미지의 대비를 조정합니다',
+  description: 'Adjusts image contrast',
   category: FilterCategory.COLOR,
   defaultParams: { value: 0 },
 
@@ -89,11 +89,11 @@ export const ContrastFilterPlugin: FilterPlugin<{ value: number }> = {
     const warnings: string[] = [];
 
     if (typeof params.value !== 'number') {
-      errors.push('value는 숫자여야 합니다');
+      errors.push('value must be a number');
     } else if (params.value < -100 || params.value > 100) {
-      errors.push('value는 -100에서 100 사이여야 합니다');
+      errors.push('value must be between -100 and 100');
     } else if (Math.abs(params.value) > 50) {
-      warnings.push('극단적인 대비 조정은 디테일 손실을 야기할 수 있습니다');
+      warnings.push('Extreme contrast adjustments may cause detail loss');
     }
 
     return {
@@ -105,14 +105,14 @@ export const ContrastFilterPlugin: FilterPlugin<{ value: number }> = {
 };
 
 /**
- * 채도 조정 필터 플러그인
+ * Saturation adjustment filter plugin
  *
- * @description 이미지의 색상 채도를 조정하는 필터 플러그인입니다.
- * 표준 휘도 공식을 사용하여 색상의 생동감을 조절하며, 다른 색상 필터와 최적화 가능합니다.
+ * @description Filter plugin that adjusts image color saturation.
+ * Controls color vibrancy using standard luminance formula and can be optimized with other color filters.
  */
 export const SaturationFilterPlugin: FilterPlugin<{ value: number }> = {
   name: 'saturation',
-  description: '이미지의 채도를 조정합니다',
+  description: 'Adjusts image saturation',
   category: FilterCategory.COLOR,
   defaultParams: { value: 0 },
 
@@ -122,7 +122,7 @@ export const SaturationFilterPlugin: FilterPlugin<{ value: number }> = {
     const factor = (params.value + 100) / 100;
 
     for (let i = 0; i < data.length; i += 4) {
-      // 휘도 계산 (Y = 0.299*R + 0.587*G + 0.114*B)
+      // Calculate luminance (Y = 0.299*R + 0.587*G + 0.114*B)
       const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
 
       data[i] = Math.max(0, Math.min(255, gray + factor * (data[i] - gray)));
@@ -138,11 +138,11 @@ export const SaturationFilterPlugin: FilterPlugin<{ value: number }> = {
     const warnings: string[] = [];
 
     if (typeof params.value !== 'number') {
-      errors.push('value는 숫자여야 합니다');
+      errors.push('value must be a number');
     } else if (params.value < -100 || params.value > 100) {
-      errors.push('value는 -100에서 100 사이여야 합니다');
+      errors.push('value must be between -100 and 100');
     } else if (params.value > 50) {
-      warnings.push('높은 채도는 부자연스러운 색상을 만들 수 있습니다');
+      warnings.push('High saturation may create unnatural colors');
     }
 
     return {
@@ -153,15 +153,15 @@ export const SaturationFilterPlugin: FilterPlugin<{ value: number }> = {
   },
 
   canOptimizeWith(otherFilter: FilterPlugin): boolean {
-    // 다른 색상 조정 필터들과 최적화 가능
+    // Can be optimized with other color adjustment filters
     return ['brightness', 'contrast', 'hue'].includes(otherFilter.name);
   },
 };
 
 /**
- * 모든 색상 필터 플러그인들
+ * All color filter plugins
  *
- * @description 밝기, 대비, 채도 조정 등의 기본적인 색상 보정 필터들을 모은 배열입니다.
- * 사진 보정과 이미지 효과에 필수적인 기능들을 제공합니다.
+ * @description Array containing basic color correction filters including brightness, contrast, and saturation adjustments.
+ * Provides essential functions for photo correction and image effects.
  */
 export const ColorFilterPlugins = [BrightnessFilterPlugin, ContrastFilterPlugin, SaturationFilterPlugin];

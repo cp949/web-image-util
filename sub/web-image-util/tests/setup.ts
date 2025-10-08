@@ -1,6 +1,6 @@
 /**
- * Vitest 테스트 설정 파일
+ * Vitest test setup file
  */
 
-// Canvas와 DOM API mock 설정
+// Canvas and DOM API mock setup
 import './setup/canvas-mock';

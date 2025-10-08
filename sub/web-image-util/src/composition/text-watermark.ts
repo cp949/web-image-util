@@ -2,10 +2,10 @@ import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 
 /**
- * 텍스트 스타일 옵션
+ * Text style options
  *
- * @description 텍스트 워터마크의 시각적 스타일을 정의하는 인터페이스입니다.
- * 폰트, 색상, 외곽선, 그림자, 투명도 등 다양한 시각적 속성을 설정할 수 있습니다.
+ * @description Interface that defines visual style of text watermarks.
+ * Various visual properties such as font, color, outline, shadow, opacity can be set.
  */
 export interface TextStyle {
   fontFamily?: string;
@@ -25,10 +25,10 @@ export interface TextStyle {
 }
 
 /**
- * 텍스트 워터마크 옵션
+ * Text watermark options
  *
- * @description 텍스트를 워터마크로 추가할 때의 옵션들을 정의하는 인터페이스입니다.
- * 텍스트 내용, 위치, 스타일, 여백, 회전 등을 설정할 수 있습니다.
+ * @description Interface that defines options when adding text as watermark.
+ * Text content, position, style, margin, rotation, etc. can be set.
  */
 export interface TextWatermarkOptions {
   text: string;
@@ -40,32 +40,32 @@ export interface TextWatermarkOptions {
 }
 
 /**
- * 텍스트 워터마크 클래스
+ * Text watermark class
  *
- * @description 텍스트를 워터마크로 추가하는 기능을 제공하는 정적 클래스입니다.
- * Canvas에 다양한 스타일의 텍스트 워터마크를 추가하거나 새로운 Canvas를 생성할 수 있습니다.
+ * @description Static class that provides functionality to add text as watermarks.
+ * Can add various styled text watermarks to Canvas or create new Canvas.
  */
 export class TextWatermark {
   /**
-   * 텍스트 워터마크 추가
+   * Add text watermark to canvas
    */
   static addToCanvas(canvas: HTMLCanvasElement, options: TextWatermarkOptions): HTMLCanvasElement {
     const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D 컨텍스트를 가져올 수 없습니다');
+    if (!ctx) throw new Error('Failed to get Canvas 2D context');
 
     const { text, position, customPosition, style, rotation = 0, margin = { x: 10, y: 10 } } = options;
 
-    // 텍스트 스타일 설정
+    // Apply text style
     this.applyTextStyle(ctx, style);
 
-    // 텍스트 크기 측정
+    // Measure text size
     const textMetrics = ctx.measureText(text);
     const textSize: Size = {
       width: textMetrics.width,
       height: style.fontSize || 16,
     };
 
-    // 위치 계산
+    // Calculate position
     const containerSize: Size = { width: canvas.width, height: canvas.height };
     const textPosition = PositionCalculator.calculatePosition(
       position,
@@ -75,7 +75,7 @@ export class TextWatermark {
       margin
     );
 
-    // 회전 및 그리기
+    // Rotate and draw
     ctx.save();
 
     if (rotation !== 0) {
@@ -86,7 +86,7 @@ export class TextWatermark {
       ctx.translate(-centerX, -centerY);
     }
 
-    // 그림자 효과
+    // Apply shadow effect
     if (style.shadow) {
       ctx.shadowColor = style.shadow.color;
       ctx.shadowOffsetX = style.shadow.offsetX;
@@ -94,7 +94,7 @@ export class TextWatermark {
       ctx.shadowBlur = style.shadow.blur;
     }
 
-    // 텍스트 그리기 (textBaseline = 'top'이므로 textPosition.y 사용)
+    // Draw text (using textPosition.y since textBaseline = 'top')
     const drawY = textPosition.y;
 
     if (style.strokeWidth && style.strokeColor) {
@@ -109,7 +109,7 @@ export class TextWatermark {
   }
 
   /**
-   * 텍스트 스타일 적용
+   * Apply text style to canvas context
    */
   private static applyTextStyle(ctx: CanvasRenderingContext2D, style: TextStyle): void {
     const {
@@ -123,10 +123,10 @@ export class TextWatermark {
       opacity = 1,
     } = style;
 
-    // 폰트 설정
+    // Set font
     ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
 
-    // 색상 및 투명도 설정
+    // Set color and opacity
     ctx.globalAlpha = opacity;
     ctx.fillStyle = color;
 
@@ -135,13 +135,13 @@ export class TextWatermark {
       ctx.lineWidth = strokeWidth;
     }
 
-    // 텍스트 정렬
+    // Set text alignment
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
   }
 
   /**
-   * 다중 텍스트 워터마크 추가
+   * Add multiple text watermarks to canvas
    */
   static addMultipleToCanvas(canvas: HTMLCanvasElement, watermarks: TextWatermarkOptions[]): HTMLCanvasElement {
     for (const watermark of watermarks) {
@@ -151,7 +151,7 @@ export class TextWatermark {
   }
 
   /**
-   * 반복 패턴 텍스트 워터마크 (타일링)
+   * Add repeating pattern text watermark (tiling)
    */
   static addRepeatingPattern(
     canvas: HTMLCanvasElement,
@@ -161,7 +161,7 @@ export class TextWatermark {
     }
   ): HTMLCanvasElement {
     const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D 컨텍스트를 가져올 수 없습니다');
+    if (!ctx) throw new Error('Failed to get Canvas 2D context');
 
     const { text, style, rotation = 0, spacing, stagger = false } = options;
 

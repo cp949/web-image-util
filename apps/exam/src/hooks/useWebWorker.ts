@@ -7,13 +7,13 @@ interface WebWorkerHookOptions {
 }
 
 /**
- * 메인 스레드 기반 이미지 처리 훅
+ * Main thread based image processing hook
  *
- * @description 현재는 메인 스레드에서 @cp949/web-image-util을 사용하여 이미지 처리를 수행합니다.
- * 간단한 처리는 충분히 빠르며, 복잡한 처리의 경우 적절한 진행률 표시를 통해 UX를 개선할 수 있습니다.
+ * @description Currently performs image processing using @cp949/web-image-util on the main thread.
+ * Simple processing is fast enough, and for complex processing, UX can be improved with appropriate progress indicators.
  */
 export function useImageWorker(_options: WebWorkerHookOptions = {}) {
-  // 실제 이미지 처리 메서드
+  // Actual image processing method
   const processImageAsync = useCallback(async (source: any, processingOptions: any = {}) => {
     try {
       return await processImage(source)
@@ -28,14 +28,14 @@ export function useImageWorker(_options: WebWorkerHookOptions = {}) {
           quality: processingOptions.quality || 0.8,
         });
     } catch (error) {
-      console.error('이미지 처리 중 오류:', error);
+      console.error('Error during image processing:', error);
       throw error;
     }
   }, []);
 
   const analyzeImage = useCallback(async (source: any) => {
     try {
-      // 기본적인 이미지 정보 분석
+      // Basic image information analysis
       if (typeof source === 'string') {
         const img = new Image();
         await new Promise((resolve, reject) => {
@@ -49,7 +49,7 @@ export function useImageWorker(_options: WebWorkerHookOptions = {}) {
           height: img.naturalHeight,
           aspectRatio: img.naturalWidth / img.naturalHeight,
           format: source.split('.').pop()?.toLowerCase(),
-          hasTransparency: false, // Canvas로 확인 가능하지만 복잡함
+          hasTransparency: false, // Can be checked with Canvas but complex
         };
       } else if (source instanceof Blob) {
         const img = new Image();
@@ -77,14 +77,14 @@ export function useImageWorker(_options: WebWorkerHookOptions = {}) {
 
       return null;
     } catch (error) {
-      console.error('이미지 분석 중 오류:', error);
+      console.error('Error during image analysis:', error);
       throw error;
     }
   }, []);
 
   const optimizeImage = useCallback(async (source: any, targetFormat: string = 'webp') => {
     try {
-      // 포맷 최적화: WebP 지원 시 WebP, 아니면 JPEG 사용
+      // Format optimization: Use WebP if supported, otherwise JPEG
       const canvas = document.createElement('canvas');
       const supportsWebP = canvas.toDataURL('image/webp').startsWith('data:image/webp');
 
@@ -96,12 +96,12 @@ export function useImageWorker(_options: WebWorkerHookOptions = {}) {
         quality,
       });
     } catch (error) {
-      console.error('이미지 최적화 중 오류:', error);
+      console.error('Error during image optimization:', error);
       throw error;
     }
   }, []);
 
-  // 상태 정보 (실제 처리가 완료되면 업데이트)
+  // Status information (updated when actual processing is completed)
   const stats = {
     activeWorkers: 0,
     totalRequests: 0,

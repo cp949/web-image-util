@@ -20,7 +20,7 @@ export function HomeDemo() {
           Web Image Util
         </Typography>
         <Typography variant="h5" color="text.secondary" gutterBottom>
-          브라우저에서 사용하는 강력한 이미지 처리 라이브러리
+          Powerful image processing library for browsers
         </Typography>
         <Box sx={{ mt: 3 }}>
           <Chip label="React 19" color="primary" sx={{ mr: 1 }} />
@@ -35,10 +35,10 @@ export function HomeDemo() {
             <CardContent sx={{ textAlign: 'center' }}>
               <SpeedIcon color="primary" sx={{ fontSize: 48, mb: 2 }} />
               <Typography variant="h6" gutterBottom>
-                고성능 처리
+                High Performance
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Canvas API 기반 최적화된 이미지 처리
+                Optimized image processing based on Canvas API
               </Typography>
             </CardContent>
           </Card>
@@ -49,10 +49,10 @@ export function HomeDemo() {
             <CardContent sx={{ textAlign: 'center' }}>
               <ComponentsIcon color="primary" sx={{ fontSize: 48, mb: 2 }} />
               <Typography variant="h6" gutterBottom>
-                다양한 기능
+                Rich Features
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                리사이징, 필터, 워터마크, 포맷 변환
+                Resizing, filters, watermarks, format conversion
               </Typography>
             </CardContent>
           </Card>
@@ -63,10 +63,10 @@ export function HomeDemo() {
             <CardContent sx={{ textAlign: 'center' }}>
               <SecurityIcon color="primary" sx={{ fontSize: 48, mb: 2 }} />
               <Typography variant="h6" gutterBottom>
-                타입 안전성
+                Type Safety
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                완전한 TypeScript 지원
+                Full TypeScript support
               </Typography>
             </CardContent>
           </Card>
@@ -77,10 +77,10 @@ export function HomeDemo() {
             <CardContent sx={{ textAlign: 'center' }}>
               <GalleryIcon color="primary" sx={{ fontSize: 48, mb: 2 }} />
               <Typography variant="h6" gutterBottom>
-                다양한 포맷
+                Multiple Formats
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                JPEG, PNG, WebP, SVG 지원
+                JPEG, PNG, WebP, SVG support
               </Typography>
             </CardContent>
           </Card>
@@ -89,16 +89,16 @@ export function HomeDemo() {
 
       <Box sx={{ textAlign: 'center', mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          빠른 시작
+          Quick Start
         </Typography>
         <Typography variant="body1" color="text.secondary" paragraph>
-          라이브러리의 기본 사용법을 확인해보세요
+          Check out basic usage of the library
         </Typography>
 
         <Card sx={{ mt: 4, textAlign: 'left' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              설치
+              Installation
             </Typography>
             <Box
               component="pre"
@@ -113,7 +113,7 @@ export function HomeDemo() {
             </Box>
 
             <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-              기본 사용법
+              Basic Usage
             </Typography>
             <Box
               component="pre"
@@ -127,15 +127,15 @@ export function HomeDemo() {
             >
               <code>{`import { processImage, createAvatar } from '@cp949/web-image-util';
 
-// 이미지 리사이징
+// Image resizing
 const resized = await processImage(source)
   .resize({ fit: 'cover', width: 300, height: 200 })
   .toBlob();
 
-// 아바타 생성
+// Avatar creation
 const avatar = await createAvatar(source, { size: 150 });
 
-// 🚀 Shortcut API (Sharp.js 스타일)
+// 🚀 Shortcut API (Sharp.js style)
 const result = await processImage(source)
   .shortcut.coverBox(300, 200)
   .blur(2)
@@ -145,27 +145,27 @@ const result = await processImage(source)
         </Card>
       </Box>
 
-      {/* 데모 페이지 링크 */}
+      {/* Demo page links */}
       <Box sx={{ textAlign: 'center', mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          데모 페이지
+          Demo Pages
         </Typography>
         <Typography variant="body1" color="text.secondary" paragraph>
-          다양한 기능들을 직접 체험해보세요
+          Try various features hands-on
         </Typography>
 
         <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap" sx={{ gap: 2 }}>
           <Button component={Link} href="/basic" variant="outlined" size="large">
-            기본 리사이징
+            Basic Resizing
           </Button>
           <Button component={Link} href="/shortcut-api" variant="outlined" size="large" startIcon={<ShortcutIcon />}>
             Shortcut API
           </Button>
           <Button component={Link} href="/presets" variant="outlined" size="large">
-            프리셋
+            Presets
           </Button>
           <Button component={Link} href="/advanced" variant="outlined" size="large">
-            고급 기능
+            Advanced Features
           </Button>
         </Stack>
       </Box>

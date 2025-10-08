@@ -1,7 +1,7 @@
 /**
- * Canvas 풀링 관리 클래스
- * Canvas 객체를 재사용하여 성능을 최적화합니다.
- * Fabric.js 패턴을 참고한 동적 메모리 관리 시스템
+ * Canvas pooling management class
+ * Optimizes performance by reusing Canvas objects.
+ * Dynamic memory management system based on Fabric.js patterns
  */
 
 import { debugLog } from '../utils/debug';
@@ -11,7 +11,7 @@ export class CanvasPool {
   private maxPoolSize: number;
   private memoryThreshold = 256 * 1024 * 1024; // 256MB
 
-  // 성능 통계
+  // Performance statistics
   private stats = {
     totalCreated: 0,
     totalAcquired: 0,
@@ -25,7 +25,7 @@ export class CanvasPool {
   }
 
   /**
-   * 싱글톤 인스턴스 반환
+   * Returns singleton instance
    */
   static getInstance(): CanvasPool {
     if (!CanvasPool.instance) {
@@ -35,37 +35,37 @@ export class CanvasPool {
   }
 
   /**
-   * 시스템 메모리에 따른 최적 풀 크기 계산
+   * Calculates optimal pool size based on system memory
    */
   private getOptimalPoolSize(): number {
     const memory = this.getAvailableMemory();
-    if (memory > 1024) return 15; // 1GB 이상
-    if (memory > 512) return 12; // 512MB 이상
-    if (memory > 256) return 10; // 256MB 이상
-    return 8; // 기본값
+    if (memory > 1024) return 15; // 1GB or more
+    if (memory > 512) return 12; // 512MB or more
+    if (memory > 256) return 10; // 256MB or more
+    return 8; // Default value
   }
 
   /**
-   * 사용 가능한 메모리 추정 (MB)
+   * Estimates available memory (MB)
    */
   private getAvailableMemory(): number {
     if (typeof performance !== 'undefined' && 'memory' in performance) {
       const memory = (performance as any).memory;
       return (memory.jsHeapSizeLimit - memory.usedJSHeapSize) / (1024 * 1024);
     }
-    return 512; // 기본값 (512MB)
+    return 512; // Default value (512MB)
   }
 
   /**
-   * 풀에서 Canvas 가져오기 또는 새로 생성
-   * @param width - Canvas 너비 (선택사항)
-   * @param height - Canvas 높이 (선택사항)
-   * @returns 재사용 가능한 Canvas 요소
+   * Acquires Canvas from pool or creates new one
+   * @param width - Canvas width (optional)
+   * @param height - Canvas height (optional)
+   * @returns Reusable Canvas element
    */
   acquire(width?: number, height?: number): HTMLCanvasElement {
     this.stats.totalAcquired++;
 
-    // 메모리 압박 상황 체크 및 대응
+    // Check and handle memory pressure
     this.checkMemoryPressure();
 
     let canvas: HTMLCanvasElement;
@@ -78,44 +78,44 @@ export class CanvasPool {
       this.stats.totalCreated++;
     }
 
-    // 크기 설정
+    // Set dimensions
     if (width && height) {
       canvas.width = width;
       canvas.height = height;
     }
 
-    // Canvas 초기화 (Fabric.js 패턴 참고)
+    // Initialize Canvas (based on Fabric.js patterns)
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // 기본 설정 초기화 - 성능을 위해 필수 설정만
+      // Initialize default settings - only essential settings for performance
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
       ctx.fillStyle = '#000000';
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 1;
-      ctx.filter = 'none'; // filter 초기화 추가
+      ctx.filter = 'none'; // Added filter initialization
     }
 
     return canvas;
   }
 
   /**
-   * 메모리 압박 감지 및 대응 (Fabric.js 최적화 패턴 적용)
+   * Detects and handles memory pressure (applying Fabric.js optimization patterns)
    */
   private checkMemoryPressure(): void {
     const currentUsage = this.getEstimatedMemoryUsage();
 
     if (currentUsage > this.memoryThreshold) {
-      // 메모리 압박 시 풀 크기 축소
-      const targetReduction = Math.ceil(this.pool.length * 0.3); // 30% 축소
+      // Reduce pool size during memory pressure
+      const targetReduction = Math.ceil(this.pool.length * 0.3); // 30% reduction
       this.reducePoolSize(targetReduction);
       this.stats.memoryOptimizations++;
     }
   }
 
   /**
-   * 풀 크기 축소
+   * Reduces pool size
    */
   private reducePoolSize(count: number = 1): void {
     for (let i = 0; i < count && this.pool.length > 0; i++) {
@@ -127,36 +127,36 @@ export class CanvasPool {
   }
 
   /**
-   * Canvas를 풀로 반환 (Fabric.js dispose 패턴 적용)
-   * @param canvas - 반환할 Canvas 요소
+   * Returns Canvas to pool (applying Fabric.js dispose pattern)
+   * @param canvas - Canvas element to return
    */
   release(canvas: HTMLCanvasElement): void {
     this.stats.totalReleased++;
 
     if (this.pool.length < this.maxPoolSize) {
-      // 큰 Canvas는 풀로 반환하지 않음 (메모리 절약)
+      // Don't return large Canvas to pool (memory saving)
       const maxSize = 2048 * 2048;
       if (canvas.width * canvas.height <= maxSize) {
-        // Canvas 상태 정리 후 풀로 반환
+        // Clean Canvas state and return to pool
         this.cleanCanvas(canvas);
         this.pool.push(canvas);
         return;
       }
     }
 
-    // 풀이 가득 차거나 Canvas가 너무 클 경우 완전히 해제
+    // Completely dispose if pool is full or Canvas is too large
     this.disposeCanvas(canvas);
   }
 
   /**
-   * Canvas 상태 정리 (재사용을 위한 초기화)
+   * Cleans Canvas state (initialization for reuse)
    */
   private cleanCanvas(canvas: HTMLCanvasElement): void {
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      // 컨텍스트 상태만 초기화 (크기는 유지)
+      // Initialize context state only (maintain dimensions)
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.setTransform(1, 0, 0, 1, 0, 0); // 변형 행렬 초기화
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transformation matrix
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
       ctx.filter = 'none';
@@ -164,22 +164,22 @@ export class CanvasPool {
   }
 
   /**
-   * Canvas 완전 해제 (Fabric.js dispose 패턴)
+   * Complete Canvas disposal (Fabric.js dispose pattern)
    */
   private disposeCanvas(canvas: HTMLCanvasElement): void {
-    // 메모리 해제를 위한 크기 초기화
+    // Reset dimensions for memory release
     canvas.width = 0;
     canvas.height = 0;
   }
 
   /**
-   * 풀 크기 조정
-   * @param size - 최대 풀 크기
+   * Adjusts pool size
+   * @param size - Maximum pool size
    */
   setMaxPoolSize(size: number): void {
     this.maxPoolSize = size;
 
-    // 초과하는 Canvas 제거
+    // Remove excess Canvas objects
     while (this.pool.length > this.maxPoolSize) {
       const canvas = this.pool.pop();
       if (canvas) {
@@ -189,11 +189,11 @@ export class CanvasPool {
   }
 
   /**
-   * 풀 완전 정리 (Fabric.js dispose 패턴)
-   * 메모리 정리가 필요할 때 호출
+   * Complete pool cleanup (Fabric.js dispose pattern)
+   * Called when memory cleanup is needed
    */
   clear(): void {
-    // 모든 Canvas 메모리 정리
+    // Clean up all Canvas memory
     this.pool.forEach((canvas) => {
       this.disposeCanvas(canvas);
     });
@@ -203,7 +203,7 @@ export class CanvasPool {
   }
 
   /**
-   * 통계 초기화
+   * Resets statistics
    */
   private resetStats(): void {
     this.stats = {
@@ -216,20 +216,20 @@ export class CanvasPool {
   }
 
   /**
-   * Canvas Pool 복잡도 측정 (Fabric.js complexity 패턴)
-   * @returns 풀의 복잡도 지수 (0-1)
+   * Measures Canvas Pool complexity (Fabric.js complexity pattern)
+   * @returns Pool complexity index (0-1)
    */
   complexity(): number {
     const memoryUsage = this.getEstimatedMemoryUsage() / this.memoryThreshold;
     const poolUtilization = this.pool.length / this.maxPoolSize;
     const hitRatio = this.stats.totalAcquired > 0 ? this.stats.poolHits / this.stats.totalAcquired : 0;
 
-    // 복잡도 = 메모리 사용률 * 0.5 + 풀 사용률 * 0.3 + (1 - 히트율) * 0.2
+    // Complexity = memory usage ratio * 0.5 + pool utilization * 0.3 + (1 - hit ratio) * 0.2
     return Math.min(1, memoryUsage * 0.5 + poolUtilization * 0.3 + (1 - hitRatio) * 0.2);
   }
 
   /**
-   * 현재 풀 상태 정보 (확장된 통계)
+   * Current pool status information (extended statistics)
    */
   getStats(): {
     poolSize: number;
@@ -252,7 +252,7 @@ export class CanvasPool {
       totalAcquired: this.stats.totalAcquired,
       totalReleased: this.stats.totalReleased,
       poolHits: this.stats.poolHits,
-      hitRatio: Math.round(hitRatio * 100) / 100, // 소수점 2자리
+      hitRatio: Math.round(hitRatio * 100) / 100, // 2 decimal places
       memoryUsageMB: Math.round((this.getEstimatedMemoryUsage() / (1024 * 1024)) * 100) / 100,
       memoryOptimizations: this.stats.memoryOptimizations,
       complexity: Math.round(this.complexity() * 100) / 100,
@@ -260,17 +260,17 @@ export class CanvasPool {
   }
 
   /**
-   * 메모리 사용량 추정 (바이트)
+   * Estimates memory usage (bytes)
    */
   getEstimatedMemoryUsage(): number {
     return this.pool.reduce((total, canvas) => {
-      // RGBA 4바이트 * 픽셀 수
+      // RGBA 4 bytes * pixel count
       return total + canvas.width * canvas.height * 4;
     }, 0);
   }
 
   /**
-   * Canvas Pool 상태 정보 출력 (디버깅용)
+   * Outputs Canvas Pool status information (for debugging)
    */
   logStats(): void {
     const stats = this.getStats();

@@ -57,12 +57,12 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
           <Typography variant="h6">{title}</Typography>
           {imageData && (
             <Stack direction="row" spacing={1}>
-              <Tooltip title="다운로드">
+              <Tooltip title="Download">
                 <IconButton size="small" onClick={() => downloadImage(imageData, `${type}-image.png`)}>
                   <DownloadIcon />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="전체화면">
+              <Tooltip title="Fullscreen">
                 <IconButton size="small" onClick={() => setFullscreen(type)}>
                   <FullscreenIcon />
                 </IconButton>
@@ -73,7 +73,7 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
 
         {imageData ? (
           <Box>
-            {/* 이미지 표시 */}
+            {/* Image display */}
             <Box
               sx={{
                 width: '100%',
@@ -102,12 +102,12 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
               />
             </Box>
 
-            {/* 메타데이터 */}
+            {/* Metadata */}
             {showMetadata && (
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
                   <InfoIcon fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  정보
+                  Info
                 </Typography>
                 <Stack direction="row" spacing={1} flexWrap="wrap">
                   {imageData.width && imageData.height && (
@@ -142,7 +142,7 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              이미지를 선택해주세요
+              Please select an image
             </Typography>
           </Box>
         )}
@@ -154,26 +154,26 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
     <Box>
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <ImageCard imageData={before} title="원본" type="before" />
+          <ImageCard imageData={before} title="Original" type="before" />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <ImageCard imageData={after} title="처리 결과" type="after" />
+          <ImageCard imageData={after} title="Processed Result" type="after" />
         </Grid>
       </Grid>
 
-      {/* 처리 통계 비교 - Phase 3: 향상된 비교 명확성 */}
+      {/* Processing statistics comparison - Phase 3: Enhanced comparison clarity */}
       {before && after && showMetadata && (
         <Card sx={{ mt: 3, bgcolor: 'primary.50', borderLeft: 4, borderColor: 'primary.main' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <InfoIcon color="primary" />
-              처리 결과 비교
+              Processing Comparison
             </Typography>
             <Grid container spacing={2}>
-              {/* 파일 크기 변화 */}
+              {/* File size change */}
               <Grid size={{ xs: 6, sm: 3 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  파일 크기 변화
+                  File Size Change
                 </Typography>
                 {before.size && after.size ? (
                   <Box>
@@ -185,7 +185,7 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
                     </Typography>
                     {after.size < before.size && (
                       <Chip
-                        label={`${Math.round((1 - after.size / before.size) * 100)}% 감소`}
+                        label={`${Math.round((1 - after.size / before.size) * 100)}% reduction`}
                         size="small"
                         color="success"
                         sx={{ mt: 0.5 }}
@@ -197,10 +197,10 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
                 )}
               </Grid>
 
-              {/* 해상도 변화 */}
+              {/* Resolution change */}
               <Grid size={{ xs: 6, sm: 3 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  해상도 변화
+                  Resolution Change
                 </Typography>
                 <Box>
                   <Typography variant="h6">
@@ -208,16 +208,16 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
                   </Typography>
                   {before.width && before.height && (
                     <Typography variant="caption" color="text.secondary">
-                      원본: {before.width}×{before.height}
+                      Original: {before.width}×{before.height}
                     </Typography>
                   )}
                 </Box>
               </Grid>
 
-              {/* 처리 시간 */}
+              {/* Processing time */}
               <Grid size={{ xs: 6, sm: 3 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  처리 시간
+                  Processing Time
                 </Typography>
                 {after.processingTime ? (
                   <Box>
@@ -225,13 +225,13 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
                       {after.processingTime.toFixed(1)}ms
                     </Typography>
                     {after.processingTime < 100 && (
-                      <Chip label="빠름" size="small" color="success" sx={{ mt: 0.5 }} />
+                      <Chip label="Fast" size="small" color="success" sx={{ mt: 0.5 }} />
                     )}
                     {after.processingTime >= 100 && after.processingTime < 500 && (
-                      <Chip label="보통" size="small" color="info" sx={{ mt: 0.5 }} />
+                      <Chip label="Normal" size="small" color="info" sx={{ mt: 0.5 }} />
                     )}
                     {after.processingTime >= 500 && (
-                      <Chip label="느림" size="small" color="warning" sx={{ mt: 0.5 }} />
+                      <Chip label="Slow" size="small" color="warning" sx={{ mt: 0.5 }} />
                     )}
                   </Box>
                 ) : (
@@ -239,10 +239,10 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
                 )}
               </Grid>
 
-              {/* 포맷 변환 */}
+              {/* Format conversion */}
               <Grid size={{ xs: 6, sm: 3 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  포맷
+                  Format
                 </Typography>
                 <Box>
                   <Typography variant="h6">{after.format?.toUpperCase() || '-'}</Typography>
@@ -261,5 +261,5 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
   );
 }
 
-// 🎯 React.memo로 불필요한 리렌더링 방지
+// 🎯 Prevent unnecessary re-renders with React.memo
 export const BeforeAfterView = memo(BeforeAfterViewComponent);

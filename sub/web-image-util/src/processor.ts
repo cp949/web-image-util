@@ -1,11 +1,11 @@
 /**
- * 이미지 프로세서 - 체이닝 API의 핵심 클래스
+ * Image Processor - Core class for chaining API
  *
  * @description
- * Canvas 2D API 기반 브라우저 전용 이미지 처리기
- * - 메서드 체이닝을 통한 직관적인 API
- * - TypeScript 타입 시스템을 활용한 컴파일 타임 안전성
- * - 지연 렌더링 파이프라인으로 최적화된 성능
+ * Browser-only image processor based on Canvas 2D API
+ * - Intuitive API through method chaining
+ * - Compile-time safety using TypeScript type system
+ * - Performance optimized with lazy rendering pipeline
  */
 
 import { LazyRenderPipeline } from './core/lazy-render-pipeline';
@@ -33,32 +33,32 @@ import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './type
 import { ShortcutBuilder } from './shortcut/shortcut-builder';
 
 /**
- * 이미지 프로세서 클래스
+ * Image Processor Class
  *
  * @description
- * 타입 안전한 메서드 체이닝 API를 제공하는 이미지 처리 클래스
+ * Image processing class providing type-safe method chaining API
  *
- * **핵심 설계 원칙:**
- * - resize()는 한 번만 호출 가능 (화질 저하 방지)
- * - TypeScript 타입 시스템으로 컴파일 타임 안전성 보장
- * - 지연 렌더링으로 성능 최적화 (최종 출력 시 한 번만 렌더링)
+ * **Core Design Principles:**
+ * - resize() can only be called once (prevents quality degradation)
+ * - Compile-time safety guaranteed by TypeScript type system
+ * - Performance optimized with lazy rendering (renders only once at final output)
  *
- * @template TState 프로세서 상태 (BeforeResize | AfterResize)
+ * @template TState Processor state (BeforeResize | AfterResize)
  *
  * @example
  * ```typescript
- * // ✅ 올바른 사용: resize() 한 번만 호출
+ * // ✅ Correct usage: call resize() only once
  * const result = await processImage(source)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .blur(2)
  *   .toBlob();
  *
- * // ❌ 컴파일 에러: resize() 중복 호출
+ * // ❌ Compilation error: duplicate resize() calls
  * const processor = processImage(source)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
- *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 타입 에러!
+ *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 Type error!
  *
- * // ✅ 여러 크기 필요시: 별도 인스턴스 사용
+ * // ✅ For multiple sizes: use separate instances
  * const small = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
  * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  * ```
@@ -87,32 +87,32 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
-   * 소스 이미지를 HTMLImageElement로 변환하고 LazyRenderPipeline 초기화
+   * Convert source image to HTMLImageElement and initialize LazyRenderPipeline
    */
   private async ensureLazyPipeline(): Promise<void> {
     if (this.lazyPipeline) {
       return;
     }
 
-    // 소스를 HTMLImageElement로 변환
+    // Convert source to HTMLImageElement
     this.sourceImage = await convertToImageElement(this.source, this.options);
 
-    // LazyRenderPipeline 초기화
+    // Initialize LazyRenderPipeline
     this.lazyPipeline = new LazyRenderPipeline(this.sourceImage);
 
-    // pending 연산들 적용
+    // Apply pending operations
     if (this.pendingResizeConfig) {
       this.lazyPipeline.addResize(this.pendingResizeConfig);
       this.pendingResizeConfig = null;
     }
 
-    // pending ResizeOperation 적용 (Shortcut API용)
+    // Apply pending ResizeOperation (for Shortcut API)
     if (this.pendingResizeOperation) {
       this.lazyPipeline._addResizeOperation(this.pendingResizeOperation);
       this.pendingResizeOperation = null;
     }
 
-    // pending blur 옵션들 적용
+    // Apply pending blur options
     for (const blurOption of this.pendingBlurOptions) {
       this.lazyPipeline.addBlur(blurOption);
     }
@@ -120,93 +120,93 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
-   * 이미지 리사이징
+   * Image resizing
    *
    * @description
-   * **중요: 한 번만 호출 가능**
-   * - 화질 저하 방지: 여러 번 리사이징하면 벡터(SVG) → 래스터 변환으로 품질 손실
-   * - 성능 최적화: 불필요한 중간 Canvas 생성 방지
-   * - TypeScript가 컴파일 타임에 중복 호출 방지
+   * **Important: Can only be called once**
+   * - Prevents quality degradation: Multiple resizing causes vector (SVG) → raster conversion quality loss
+   * - Performance optimization: Prevents unnecessary intermediate Canvas creation
+   * - TypeScript prevents duplicate calls at compile time
    *
-   * @param config 리사이징 설정 (ResizeConfig)
-   * @param _constraint 타입 레벨 제약 (내부 사용, 무시하세요)
-   * @returns AfterResize 상태의 프로세서 (blur, toBlob 등 사용 가능)
+   * @param config Resize configuration (ResizeConfig)
+   * @param _constraint Type-level constraint (internal use, please ignore)
+   * @returns Processor in AfterResize state (blur, toBlob etc. available)
    *
-   * @throws {ImageProcessError} resize()를 두 번 이상 호출하면 런타임 에러
+   * @throws {ImageProcessError} Runtime error if resize() is called more than once
    *
    * @example
    * ```typescript
-   * // ✅ 올바른 사용: resize() 한 번만 호출
+   * // ✅ Correct usage: call resize() only once
    * await processImage(source)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .blur(2)
    *   .toBlob();
    *
-   * // ❌ 컴파일 에러: resize() 중복 호출
+   * // ❌ Compilation error: duplicate resize() calls
    * processImage(source)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
-   *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 타입 에러!
+   *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 Type error!
    *
-   * // ✅ 여러 크기 필요시: 각각 별도 인스턴스 생성
+   * // ✅ For multiple sizes: create separate instances
    * const small = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
    * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
    * ```
    */
   resize(config: ResizeConfig, _constraint?: EnsureCanResize<TState>): ImageProcessor<AfterResizeCall<TState>> {
-    // 1. 다중 resize 호출 방지 (화질 저하 방지)
+    // 1. Prevent multiple resize calls (prevent quality degradation)
     if (this.hasResized) {
       throw new ImageProcessError(
-        'resize()는 한 번만 호출할 수 있습니다. 이미지 화질 저하를 방지하기 위해 단일 resize() 호출만 사용하세요.',
+        'resize() can only be called once. Use a single resize() call to prevent image quality degradation.',
         'MULTIPLE_RESIZE_NOT_ALLOWED',
         undefined,
         [
-          '모든 리사이징 옵션을 하나의 resize() 호출에 포함하세요',
-          '여러 크기가 필요한 경우 각각 별도의 processImage() 인스턴스를 생성하세요',
-          '예시: processImage(source).resize({ fit: "cover", width: 300, height: 200 }).toBlob()',
+          'Include all resizing options in a single resize() call',
+          'Create separate processImage() instances for multiple sizes',
+          'Example: processImage(source).resize({ fit: "cover", width: 300, height: 200 }).toBlob()',
         ]
       );
     }
 
-    // 2. 런타임 검증
+    // 2. Runtime validation
     validateResizeConfig(config);
 
-    // 3. resize 호출 기록
+    // 3. Record resize call
     this.hasResized = true;
 
-    // 4. LazyRenderPipeline에 추가
-    // LazyRenderPipeline은 나중에 ensureLazyPipeline()에서 초기화
-    // 여기서는 config만 저장
+    // 4. Add to LazyRenderPipeline
+    // LazyRenderPipeline will be initialized later in ensureLazyPipeline()
+    // Only store config here
     this.pendingResizeConfig = config;
 
     return this as unknown as ImageProcessor<AfterResizeCall<TState>>;
   }
 
   /**
-   * 이미지 블러 효과
+   * Image blur effect
    *
    * @description
-   * 가우시안 블러를 이미지에 적용합니다.
-   * resize() 전후 어디서나 사용 가능하며, 여러 번 호출 가능합니다.
+   * Applies Gaussian blur to the image.
+   * Can be used before or after resize(), and can be called multiple times.
    *
-   * @param radius 블러 반지름 (픽셀, 기본: 2)
-   * @param options 블러 옵션 (추가 설정)
-   * @returns 동일한 상태의 프로세서 (체이닝 가능)
+   * @param radius Blur radius (pixels, default: 2)
+   * @param options Blur options (additional settings)
+   * @returns Processor in same state (chainable)
    *
    * @example
    * ```typescript
-   * // resize 전 blur 적용
+   * // Apply blur before resize
    * await processImage(source)
    *   .blur(2)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .toBlob();
    *
-   * // resize 후 blur 적용
+   * // Apply blur after resize
    * await processImage(source)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .blur(5)
    *   .toBlob();
    *
-   * // 여러 번 blur 적용 가능 (누적)
+   * // Multiple blur applications possible (cumulative)
    * await processImage(source)
    *   .blur(2)
    *   .blur(3)
@@ -219,8 +219,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       ...options,
     };
 
-    // LazyRenderPipeline에 추가
-    // blur는 여러 번 호출 가능하므로 pending 배열로 관리
+    // Add to LazyRenderPipeline
+    // blur can be called multiple times, so manage with pending array
     this.pendingBlurOptions = this.pendingBlurOptions || [];
     this.pendingBlurOptions.push(blurOptions);
 
@@ -228,50 +228,50 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
-   * Lazy 리사이즈 연산 추가 (Shortcut API용 내부 메서드)
+   * Add lazy resize operation (internal method for Shortcut API)
    *
-   * @description ShortcutBuilder가 사용하는 내부 API입니다.
-   * 소스 크기가 필요한 연산(scale, toWidth, toHeight)을 pending 상태로 저장합니다.
-   * 실제 변환은 최종 출력 시점(toBlob, toCanvas 등)에 수행됩니다.
+   * @description Internal API used by ShortcutBuilder.
+   * Stores operations requiring source size (scale, toWidth, toHeight) in pending state.
+   * Actual conversion is performed at final output time (toBlob, toCanvas, etc.).
    *
    * @param operation ResizeOperation (scale, toWidth, toHeight)
    * @internal
    */
   _addResizeOperation(operation: ResizeOperation): void {
-    // LazyRenderPipeline 초기화 전: pending 상태로 저장
-    // LazyRenderPipeline 초기화 후: 바로 전달
+    // Before LazyRenderPipeline initialization: store in pending state
+    // After LazyRenderPipeline initialization: pass directly
     if (this.lazyPipeline) {
-      // 이미 초기화된 경우 바로 전달
+      // If already initialized, pass directly
       this.lazyPipeline._addResizeOperation(operation);
     } else {
-      // 아직 초기화 안된 경우 pending 상태로 저장
-      // ensureLazyPipeline()에서 초기화 시 자동 적용됨
+      // If not yet initialized, store in pending state
+      // Automatically applied during initialization in ensureLazyPipeline()
       this.pendingResizeOperation = operation;
     }
   }
 
   /**
-   * Shortcut API 접근자
+   * Shortcut API accessor
    *
    * @description
-   * 간편한 리사이징 메서드를 제공하는 ShortcutBuilder를 반환합니다.
-   * 복잡한 ResizeConfig 대신 직관적인 메서드 이름으로 리사이징할 수 있습니다.
+   * Returns ShortcutBuilder that provides convenient resizing methods.
+   * Allows resizing with intuitive method names instead of complex ResizeConfig.
    *
-   * @returns ShortcutBuilder 인스턴스
+   * @returns ShortcutBuilder instance
    *
    * @example
    * ```typescript
-   * // 기본 방식
+   * // Standard approach
    * await processImage(src).resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
    *
-   * // Shortcut API (더 간결함)
+   * // Shortcut API (more concise)
    * await processImage(src).shortcut.coverBox(300, 200).toBlob();
    *
-   * // 다양한 shortcut 메서드 사용 예시
-   * await processImage(src).shortcut.maxWidth(500).toBlob();                        // 최대 너비 제한
-   * await processImage(src).shortcut.containBox(300, 200, { withoutEnlargement: true }).toBlob();  // 확대 방지
-   * await processImage(src).shortcut.exactSize(400, 300).toBlob();                  // 정확한 크기
-   * await processImage(src).shortcut.scale(1.5).toBlob();                           // 배율 조정
+   * // Various shortcut method examples
+   * await processImage(src).shortcut.maxWidth(500).toBlob();                        // Maximum width constraint
+   * await processImage(src).shortcut.containBox(300, 200, { withoutEnlargement: true }).toBlob();  // Prevent enlargement
+   * await processImage(src).shortcut.exactSize(400, 300).toBlob();                  // Exact size
+   * await processImage(src).shortcut.scale(1.5).toBlob();                           // Scale adjustment
    * ```
    */
   get shortcut(): IShortcutBuilder<TState> {
@@ -279,30 +279,30 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   // ==============================================
-  // 스마트 포맷 선택 및 최적화 메서드
+  // Smart format selection and optimization methods
   // ==============================================
 
   /**
-   * 브라우저 지원에 따른 최적 포맷 선택
+   * Select optimal format based on browser support
    * @private
    */
   private getBestFormat(): OutputFormat {
-    // WebP 지원 검사
+    // Check WebP support
     if (this.supportsFormat('webp')) {
       return 'webp';
     }
 
-    // 기본값: PNG (무손실, 투명도 지원)
+    // Default: PNG (lossless, transparency support)
     return 'png';
   }
 
   /**
-   * 포맷별 최적 품질 반환
+   * Return optimal quality for each format
    * @private
    */
   private getOptimalQuality(format: ImageFormat): number {
-    // OPTIMAL_QUALITY_BY_FORMAT 상수에서 최적 품질 값 가져오기
-    // gif, svg 등 출력 미지원 포맷은 기본값 사용
+    // Get optimal quality value from OPTIMAL_QUALITY_BY_FORMAT constant
+    // Use default value for unsupported output formats like gif, svg
     if (format === 'gif' || format === 'svg') {
       return this.options.defaultQuality || 0.8;
     }
@@ -310,7 +310,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
-   * 브라우저의 포맷 지원 여부 확인
+   * Check browser format support
    * @private
    */
   private supportsFormat(format: ImageFormat): boolean {
@@ -321,9 +321,9 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
 
     try {
       const mimeType = `image/${format}`;
-      // Canvas에서 toDataURL로 포맷 지원 여부 확인
+      // Check format support using Canvas toDataURL
       const dataUrl = canvas.toDataURL(mimeType, 0.5);
-      // 지원하지 않는 포맷은 PNG로 대체됨
+      // Unsupported formats are replaced with PNG
       return dataUrl.startsWith(`data:${mimeType}`);
     } catch {
       return false;
@@ -331,13 +331,13 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
-   * 파일명에서 포맷 추출
+   * Extract format from filename
    * @private
    */
   private getFormatFromFilename(filename: string): OutputFormat | null {
     const ext = filename.toLowerCase().split('.').pop();
 
-    // 지원되는 포맷만 매핑
+    // Map only supported formats
     const formatMap: Record<string, OutputFormat> = {
       jpg: 'jpeg',
       jpeg: 'jpeg',
@@ -350,37 +350,37 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
-   * Blob으로 변환 (메타데이터 포함)
+   * Convert to Blob (with metadata)
    *
-   * @param options 출력 옵션
-   * @returns 처리된 이미지 Blob과 메타데이터
+   * @param options Output options
+   * @returns Processed image Blob with metadata
    *
    * @example
    * ```typescript
-   * // 기본값 사용 (WebP 지원 시 WebP/품질 0.8, 미지원 시 PNG/품질 0.8)
+   * // Use defaults (WebP/quality 0.8 if supported, PNG/quality 0.8 if not)
    * const result = await processor.toBlob()
    *
-   * // 명시적 옵션
+   * // Explicit options
    * const result = await processor.toBlob({
    *   format: 'webp',
    *   quality: 0.8
    * })
    *
-   * // 포맷만 지정 (최적 품질 자동 선택)
-   * const result = await processor.toBlob('jpeg') // 품질 0.85 자동 적용
+   * // Format only (optimal quality auto-selected)
+   * const result = await processor.toBlob('jpeg') // Quality 0.85 auto-applied
    *
-   * // 메타데이터 활용
+   * // Using metadata
    * const { blob, width, height, processingTime } = result;
-   * console.log(`${width}x${height} 이미지, ${processingTime}ms 소요`);
+   * console.log(`${width}x${height} image, ${processingTime}ms elapsed`);
    * ```
    */
 
   async toBlob(options?: OutputOptions): Promise<ResultBlob>;
   async toBlob(format: OutputFormat): Promise<ResultBlob>;
   async toBlob(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultBlob> {
-    // ✅ 모든 소스가 동일한 파이프라인 사용 (SVG 분기 제거)
+    // ✅ All sources use the same pipeline (SVG branching removed)
 
-    // 문자열인 경우 포맷으로 처리하고 최적 품질 적용
+    // If string, treat as format and apply optimal quality
     const options: OutputOptions =
       typeof optionsOrFormat === 'string'
         ? {
@@ -389,7 +389,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
           }
         : optionsOrFormat;
 
-    // 스마트 기본 포맷 선택: WebP 지원 시 WebP, 아니면 PNG
+    // Smart default format selection: WebP if supported, otherwise PNG
     const smartFormat = this.getBestFormat();
 
     const outputOptions: Required<OutputOptions> = {
@@ -399,7 +399,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       ...options,
     };
 
-    // 사용자가 옵션을 제공했지만 quality가 없는 경우, 포맷에 최적화된 품질 사용
+    // If user provided options but no quality, use format-optimized quality
     if (options.format && !options.quality) {
       outputOptions.quality = this.getOptimalQuality(options.format);
     }
@@ -409,7 +409,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
     try {
       const blob = await this.canvasToBlob(canvas, outputOptions);
 
-      // 🆕 확장된 결과 객체 반환 (직접 변환 메서드 포함)
+      // 🆕 Return extended result object (includes direct conversion methods)
       return new BlobResultImpl(
         blob,
         result.width,
@@ -419,47 +419,47 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         outputOptions.format
       );
     } catch (error) {
-      throw new ImageProcessError('Blob 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during Blob conversion', 'OUTPUT_FAILED', error as Error);
     }
   }
 
   /**
-   * Data URL로 변환 (메타데이터 포함)
+   * Convert to Data URL (with metadata)
    *
-   * @param options 출력 옵션
-   * @returns 처리된 이미지 Data URL과 메타데이터
+   * @param options Output options
+   * @returns Processed image Data URL with metadata
    *
    * @example
    * ```typescript
-   * // 기본값 사용 (WebP 지원 시 WebP/품질 0.8, 미지원 시 PNG/품질 1.0)
+   * // Use defaults (WebP/quality 0.8 if supported, PNG/quality 1.0 if not)
    * const result = await processor.toDataURL()
    *
-   * // 명시적 옵션
+   * // Explicit options
    * const result = await processor.toDataURL({
    *   format: 'jpeg',
    *   quality: 0.9
    * });
    *
-   * // 포맷만 지정 (최적 품질 자동 선택)
-   * const result2 = await processor.toDataURL('webp'); // 품질 0.8 자동 적용
+   * // Format only (optimal quality auto-selected)
+   * const result2 = await processor.toDataURL('webp'); // Quality 0.8 auto-applied
    *
-   * // img 태그에 바로 사용 가능
+   * // Can be used directly in img tag
    * imgElement.src = result.dataURL;
    * ```
    */
   async toDataURL(options?: OutputOptions): Promise<ResultDataURL>;
   async toDataURL(format: OutputFormat): Promise<ResultDataURL>;
   async toDataURL(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultDataURL> {
-    // 타입에 따라 적절한 toBlob 호출 방식 선택
+    // Select appropriate toBlob call method based on type
     const { blob, ...metadata } =
       typeof optionsOrFormat === 'string'
-        ? await this.toBlob(optionsOrFormat) // OutputFormat 타입
-        : await this.toBlob(optionsOrFormat); // OutputOptions 타입
+        ? await this.toBlob(optionsOrFormat) // OutputFormat type
+        : await this.toBlob(optionsOrFormat); // OutputOptions type
 
     try {
       const dataURL = await this.blobToDataURL(blob);
 
-      // 🆕 확장된 결과 객체 반환 (직접 변환 메서드 포함)
+      // 🆕 Return extended result object (includes direct conversion methods)
       return new DataURLResultImpl(
         dataURL,
         metadata.width,
@@ -469,33 +469,33 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         metadata.format
       );
     } catch (error) {
-      throw new ImageProcessError('Data URL 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during Data URL conversion', 'OUTPUT_FAILED', error as Error);
     }
   }
 
   /**
-   * File 객체로 변환 (메타데이터 포함)
+   * Convert to File object (with metadata)
    *
-   * @param filename 파일명
-   * @param options 출력 옵션 (비어있으맄 파일 확장자로 포맷 자동 감지)
-   * @returns 처리된 이미지 File과 메타데이터
+   * @param filename File name
+   * @param options Output options (if empty, format auto-detected from file extension)
+   * @returns Processed image File with metadata
    *
    * @example
    * ```typescript
-   * // 명시적 옵션
+   * // Explicit options
    * const result = await processor.toFile('thumbnail.webp', {
    *   format: 'webp',
    *   quality: 0.8
    * });
    *
-   * // 파일명으로 포맷 자동 감지 + 최적 품질
-   * const result2 = await processor.toFile('image.jpg'); // JPEG/품질 0.85 자동 적용
-   * const result3 = await processor.toFile('thumbnail.webp'); // WebP/품질 0.8 자동 적용
+   * // Auto-detect format from filename + optimal quality
+   * const result2 = await processor.toFile('image.jpg'); // JPEG/quality 0.85 auto-applied
+   * const result3 = await processor.toFile('thumbnail.webp'); // WebP/quality 0.8 auto-applied
    *
-   * // 포맷만 지정 (최적 품질 자동 선택)
-   * const result4 = await processor.toFile('image.jpg', 'jpeg'); // 품질 0.85 자동 적용
+   * // Format only (optimal quality auto-selected)
+   * const result4 = await processor.toFile('image.jpg', 'jpeg'); // Quality 0.85 auto-applied
    *
-   * // FormData에 추가하여 업로드
+   * // Add to FormData for upload
    * const formData = new FormData();
    * formData.append('image', result.file);
    * ```
@@ -503,22 +503,22 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   async toFile(filename: string, options?: OutputOptions): Promise<ResultFile>;
   async toFile(filename: string, format: OutputFormat): Promise<ResultFile>;
   async toFile(filename: string, optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultFile> {
-    // 파일 확장자로 포맷 자동 감지
+    // Auto-detect format from file extension
     const formatFromFilename = this.getFormatFromFilename(filename);
 
-    // 옵션이 비어있으면 파일명에서 포맷 추출
+    // If options are empty, extract format from filename
     let finalOptions: OutputOptions;
     if (typeof optionsOrFormat === 'string') {
-      // 문자열 포맷 지정
+      // String format specified
       finalOptions = { format: optionsOrFormat };
     } else if (Object.keys(optionsOrFormat).length === 0 && formatFromFilename) {
-      // 빈 객체이고 파일명에서 포맷 감지 가능한 경우
+      // Empty object and format detectable from filename
       finalOptions = {
         format: formatFromFilename,
         quality: this.getOptimalQuality(formatFromFilename),
       };
     } else {
-      // 제공된 옵션 사용
+      // Use provided options
       finalOptions = optionsOrFormat;
     }
 
@@ -530,7 +530,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         lastModified: Date.now(),
       });
 
-      // 🆕 확장된 결과 객체 반환 (직접 변환 메서드 포함)
+      // 🆕 Return extended result object (includes direct conversion methods)
       return new FileResultImpl(
         file,
         metadata.width,
@@ -540,19 +540,19 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         metadata.format
       );
     } catch (error) {
-      throw new ImageProcessError('File 객체 생성 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred while creating File object', 'OUTPUT_FAILED', error as Error);
     }
   }
 
   /**
-   * Canvas로 변환 (메타데이터 포함)
+   * Convert to Canvas (with metadata)
    *
-   * @returns 처리된 Canvas와 메타데이터를 포함한 결과 객체
+   * @returns Result object containing processed Canvas with metadata
    *
    * @example
    * ```typescript
    * const result = await processor.toCanvas();
-   * // Canvas 엘리먼트와 메타데이터 모두 사용 가능
+   * // Both Canvas element and metadata are available
    * document.body.appendChild(result.canvas);
    * console.log(`${result.width}x${result.height}, ${result.processingTime}ms`);
    * ```
@@ -566,22 +566,22 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         result.height,
         result.processingTime,
         result.originalSize,
-        undefined // Canvas는 포맷 정보가 없음
+        undefined // Canvas has no format information
       );
     } catch (error) {
-      throw new ImageProcessError('Canvas 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during Canvas conversion', 'OUTPUT_FAILED', error as Error);
     }
   }
 
   /**
-   * 메타데이터 포함 Canvas 결과
+   * Canvas result with metadata
    *
-   * @returns Canvas와 메타데이터를 포함한 결과 객체
+   * @returns Result object containing Canvas with metadata
    *
    * @example
    * ```typescript
    * const result = await processor.toCanvasDetailed();
-   * console.log(`${result.width}x${result.height} Canvas, ${result.processingTime}ms 소요`);
+   * console.log(`${result.width}x${result.height} Canvas, ${result.processingTime}ms elapsed`);
    * ```
    */
   async toCanvasDetailed(): Promise<ResultCanvas> {
@@ -593,16 +593,16 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         result.height,
         result.processingTime,
         result.originalSize,
-        undefined // Canvas는 포맷 정보가 없음
+        undefined // Canvas has no format information
       );
     } catch (error) {
-      throw new ImageProcessError('Canvas 상세 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during detailed Canvas conversion', 'OUTPUT_FAILED', error as Error);
     }
   }
 
   /**
-   * HTMLImageElement 직접 생성
-   * Canvas → Blob → ObjectURL → Image 경로로 최적화
+   * Create HTMLImageElement directly
+   * Optimized path: Canvas → Blob → ObjectURL → Image
    *
    * @returns HTMLImageElement
    *
@@ -619,7 +619,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (!blob) {
-            reject(new ImageProcessError('Blob 생성 실패', 'CANVAS_TO_BLOB_FAILED'));
+            reject(new ImageProcessError('Blob creation failed', 'CANVAS_TO_BLOB_FAILED'));
             return;
           }
 
@@ -627,26 +627,26 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
           const img = new Image();
 
           img.onload = () => {
-            URL.revokeObjectURL(objectUrl); // 즉시 정리
+            URL.revokeObjectURL(objectUrl); // Immediate cleanup
             resolve(img);
           };
 
           img.onerror = () => {
-            URL.revokeObjectURL(objectUrl); // 에러 시에도 정리
-            reject(new ImageProcessError('Image 로딩 실패', 'IMAGE_LOAD_FAILED'));
+            URL.revokeObjectURL(objectUrl); // Cleanup on error too
+            reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
           };
 
           img.src = objectUrl;
         });
       });
     } catch (error) {
-      throw new ImageProcessError('Element 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', error as Error);
     }
   }
 
   /**
-   * ArrayBuffer 직접 변환
-   * Canvas → Blob → ArrayBuffer 최적화 경로
+   * Convert to ArrayBuffer directly
+   * Optimized path: Canvas → Blob → ArrayBuffer
    *
    * @returns ArrayBuffer
    *
@@ -663,7 +663,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       return new Promise((resolve, reject) => {
         canvas.toBlob(async (blob) => {
           if (!blob) {
-            reject(new ImageProcessError('Blob 생성 실패', 'CANVAS_TO_BLOB_FAILED'));
+            reject(new ImageProcessError('Blob creation failed', 'CANVAS_TO_BLOB_FAILED'));
             return;
           }
 
@@ -671,17 +671,17 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
             const arrayBuffer = await blob.arrayBuffer();
             resolve(arrayBuffer);
           } catch (error) {
-            reject(new ImageProcessError('ArrayBuffer 변환 실패', 'BLOB_TO_ARRAYBUFFER_FAILED', error as Error));
+            reject(new ImageProcessError('ArrayBuffer conversion failed', 'BLOB_TO_ARRAYBUFFER_FAILED', error as Error));
           }
         });
       });
     } catch (error) {
-      throw new ImageProcessError('ArrayBuffer 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during ArrayBuffer conversion', 'OUTPUT_FAILED', error as Error);
     }
   }
 
   /**
-   * Uint8Array 직접 변환
+   * Convert to Uint8Array directly
    *
    * @returns Uint8Array
    *
@@ -696,12 +696,12 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       const arrayBuffer = await this.toArrayBuffer();
       return new Uint8Array(arrayBuffer);
     } catch (error) {
-      throw new ImageProcessError('Uint8Array 변환 중 오류가 발생했습니다', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during Uint8Array conversion', 'OUTPUT_FAILED', error as Error);
     }
   }
 
   /**
-   * Canvas 복사 (안전한 참조가 필요한 경우)
+   * Clone Canvas (when safe reference is needed)
    * @private
    */
   private cloneCanvas(originalCanvas: HTMLCanvasElement): HTMLCanvasElement {
@@ -716,15 +716,15 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
-   * 파이프라인 처리 실행
+   * Execute pipeline processing
    */
   private async executeProcessing() {
     try {
-      // LazyRenderPipeline으로 처리
+      // Process with LazyRenderPipeline
       await this.ensureLazyPipeline();
 
       if (!this.lazyPipeline) {
-        throw new ImageProcessError('LazyRenderPipeline 초기화 실패', 'PROCESSING_FAILED');
+        throw new ImageProcessError('LazyRenderPipeline initialization failed', 'PROCESSING_FAILED');
       }
 
       const { canvas, metadata } = this.lazyPipeline.toCanvas();
@@ -747,12 +747,12 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         throw error;
       }
 
-      throw new ImageProcessError('이미지 처리 중 오류가 발생했습니다', 'CANVAS_CREATION_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during image processing', 'CANVAS_CREATION_FAILED', error as Error);
     }
   }
 
   /**
-   * Canvas를 Blob으로 변환
+   * Convert Canvas to Blob
    */
   private async canvasToBlob(canvas: HTMLCanvasElement, options: Required<OutputOptions>): Promise<Blob> {
     const mimeType = this.formatToMimeType(options.format);
@@ -763,14 +763,14 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
           if (blob) {
             resolve(blob);
           } else {
-            // 대체 포맷으로 재시도
+            // Retry with fallback format
             const fallbackMimeType = this.formatToMimeType(options.fallbackFormat);
             canvas.toBlob(
               (fallbackBlob) => {
                 if (fallbackBlob) {
                   resolve(fallbackBlob);
                 } else {
-                  reject(new Error('Blob 생성에 실패했습니다'));
+                  reject(new Error('Failed to create Blob'));
                 }
               },
               fallbackMimeType,
@@ -785,19 +785,19 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
-   * Blob을 Data URL로 변환
+   * Convert Blob to Data URL
    */
   private async blobToDataURL(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(new Error('Data URL 변환에 실패했습니다'));
+      reader.onerror = () => reject(new Error('Failed to convert to Data URL'));
       reader.readAsDataURL(blob);
     });
   }
 
   /**
-   * 포맷을 MIME 타입으로 변환
+   * Convert format to MIME type
    */
   private formatToMimeType(format: string): string {
     const mimeTypes: Record<string, string> = {
@@ -815,44 +815,44 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   // ==============================================
-  // ✅ SVG 전용 처리 경로 제거됨 - 모든 소스가 통합 파이프라인 사용
+  // ✅ SVG-specific processing path removed - all sources use unified pipeline
   // ==============================================
 }
 
 /**
- * 이미지 프로세서 팩토리 함수
+ * Image processor factory function
  *
  * @description
- * 다양한 타입의 이미지 소스로부터 ImageProcessor 인스턴스를 생성합니다.
- * TypeScript 타입 시스템을 활용하여 resize() 중복 호출을 컴파일 타임에 방지합니다.
+ * Creates ImageProcessor instance from various types of image sources.
+ * Utilizes TypeScript type system to prevent duplicate resize() calls at compile time.
  *
- * @param source 이미지 소스 (HTMLImageElement, Blob, URL, Data URL, SVG, ArrayBuffer 등)
- * @param options 프로세서 옵션 (crossOrigin, defaultQuality 등)
- * @returns BeforeResize 상태의 ImageProcessor (resize() 호출 가능)
+ * @param source Image source (HTMLImageElement, Blob, URL, Data URL, SVG, ArrayBuffer, etc.)
+ * @param options Processor options (crossOrigin, defaultQuality, etc.)
+ * @returns ImageProcessor in BeforeResize state (resize() callable)
  *
  * @example
  * ```typescript
- * // 기본 사용법
+ * // Basic usage
  * const result = await processImage(imageElement)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .blur(2)
  *   .toBlob();
  *
- * // 다양한 소스 타입 지원
+ * // Various source type support
  * processImage(blob)                    // Blob
  * processImage('https://example.com/image.jpg')  // HTTP URL
  * processImage('data:image/svg+xml,...')         // Data URL
  * processImage('<svg>...</svg>')                 // SVG XML
  * processImage(arrayBuffer)                       // ArrayBuffer
  *
- * // 옵션과 함께 사용
+ * // Usage with options
  * const processor = processImage(source, {
  *   crossOrigin: 'use-credentials',
  *   defaultQuality: 0.9,
  *   defaultBackground: { r: 255, g: 255, b: 255, alpha: 1 }
  * });
  *
- * // 여러 크기 필요시: 각각 별도 인스턴스 생성
+ * // When multiple sizes needed: create separate instances
  * const thumbnail = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
  * const fullsize = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  * ```
