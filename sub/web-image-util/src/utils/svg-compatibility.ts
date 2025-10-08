@@ -633,26 +633,27 @@ function padBBox(b: { minX: number; minY: number; width: number; height: number 
 /* ========================================================================== */
 
 /**
- * Basic SVG normalization (for image resizer)
+ * SVG browser compatibility enhancement with optimized defaults
  *
- * @description Performs basic normalization for processing SVG in image resizer.
- * Normalizes SVG with options optimized for Canvas rendering.
+ * @description Applies browser compatibility enhancements using preset options
+ * optimized for Canvas rendering and image processing. This is a convenience
+ * wrapper around enhanceBrowserCompatibility with sensible defaults.
  *
  * @param svgString Original SVG string
- * @returns Normalized SVG string
+ * @returns Enhanced SVG string with browser compatibility improvements
  *
  * @example
  * ```typescript
- * // Normalize SVG for Canvas rendering
- * const normalizedSvg = normalizeSvgBasics(svgString);
+ * // Enhance SVG for browser rendering
+ * const enhancedSvg = enhanceSvgForBrowser(svgString);
  *
- * // Convert normalized SVG to image
- * const result = await processImage(normalizedSvg)
+ * // Convert enhanced SVG to image
+ * const result = await processImage(enhancedSvg)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .toBlob();
  * ```
  */
-export function normalizeSvgBasics(svgString: string): string {
+export function enhanceSvgForBrowser(svgString: string): string {
   const { enhancedSvg } = enhanceBrowserCompatibility(svgString, {
     // === Essential Compatibility ===
     addNamespaces: true, // Required for browser compatibility

@@ -79,7 +79,7 @@ export type { ComplexityAnalysisResult, QualityLevel, SvgComplexityMetrics } fro
  * @description Compatibility enhancement and size information extraction features
  * for consistent SVG rendering across various browsers
  */
-export { enhanceBrowserCompatibility, normalizeSvgBasics } from '../utils/svg-compatibility';
+export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from '../utils/svg-compatibility';
 export { extractSvgDimensions } from '../utils/svg-dimensions';
 export type { SvgDimensions } from '../utils/svg-dimensions';
 

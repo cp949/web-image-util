@@ -18,13 +18,13 @@
  *
  * @example
  * ```typescript
- * import { convertToBlob, normalizeSvgBasics } from '@cp949/web-image-util/utils';
+ * import { convertToBlob, enhanceSvgForBrowser } from '@cp949/web-image-util/utils';
  *
  * // Simple format conversion
  * const blob = await convertToBlob(imageElement);
  *
  * // SVG compatibility improvement
- * const normalizedSvg = normalizeSvgBasics(svgString);
+ * const enhancedSvg = enhanceSvgForBrowser(svgString);
  * ```
  */
 
@@ -58,7 +58,7 @@ export {
  */
 export {
   enhanceBrowserCompatibility,
-  normalizeSvgBasics,
+  enhanceSvgForBrowser,
   type SvgCompatibilityOptions,
   type SvgCompatibilityReport,
 } from './svg-compatibility';

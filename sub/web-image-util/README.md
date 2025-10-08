@@ -650,7 +650,7 @@ class ImageProcessError extends Error {
 
 ```typescript
 // SVG compatibility enhancement
-import { enhanceBrowserCompatibility, normalizeSvgBasics } from '@cp949/web-image-util/utils';
+import { enhanceBrowserCompatibility, enhanceSvgForBrowser } from '@cp949/web-image-util/utils';
 
 // SVG complexity analysis
 import { analyzeSvgComplexity } from '@cp949/web-image-util';

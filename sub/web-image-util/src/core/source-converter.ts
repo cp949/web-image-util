@@ -4,7 +4,7 @@
 
 import type { ImageSource, ProcessorOptions } from '../types';
 import { ImageProcessError } from '../types';
-import { normalizeSvgBasics } from '../utils/svg-compatibility';
+import { enhanceSvgForBrowser } from '../utils/svg-compatibility';
 import { extractSvgDimensions } from '../utils/svg-dimensions';
 import { debugLog, productionLog } from '../utils/debug';
 import type { QualityLevel } from './svg-complexity-analyzer';
@@ -384,7 +384,7 @@ async function convertSvgToElement(
 
   try {
     // 1. SVG normalization processing
-    const normalizedSvg = normalizeSvgBasics(svgString);
+    const normalizedSvg = enhanceSvgForBrowser(svgString);
 
     // 2. Extract SVG size information
     const dimensions = extractSvgDimensions(normalizedSvg);

@@ -51,7 +51,7 @@ export type {
 } from './utils';
 
 // SVG compatibility functions
-export { enhanceBrowserCompatibility, normalizeSvgBasics } from './utils/svg-compatibility';
+export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from './utils/svg-compatibility';
 export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility';
 
 // SVG complexity analysis

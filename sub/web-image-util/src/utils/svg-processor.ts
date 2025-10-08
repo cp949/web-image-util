@@ -5,7 +5,7 @@
  */
 
 import { ImageProcessError } from '../types';
-import { normalizeSvgBasics } from './svg-compatibility';
+import { enhanceSvgForBrowser } from './svg-compatibility';
 
 /**
  * SVG dimension information
@@ -47,7 +47,7 @@ export class SVGProcessor {
 
     try {
       // Apply SVG normalization
-      const processedSvg = normalize ? normalizeSvgBasics(svgString) : svgString;
+      const processedSvg = normalize ? enhanceSvgForBrowser(svgString) : svgString;
 
       // Extract dimension information and apply defaults
       const dimensions = this.extractSVGDimensions(processedSvg);
@@ -258,6 +258,6 @@ export class SVGProcessor {
    * @returns Normalized SVG string
    */
   static normalizeSVG(svgString: string): string {
-    return normalizeSvgBasics(svgString);
+    return enhanceSvgForBrowser(svgString);
   }
 }
