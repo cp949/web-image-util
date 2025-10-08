@@ -89,37 +89,37 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
 ### Overall Flow Diagram
 
 ```
-                                  ┌────────────────────┐
-                                  │  processImage()    │
-                                  │ (factory function) │
-                                  └─────────┬──────────┘
-                                            │
-                    ┌───────────────────────┴─────────────────────┐
-                    │                                             │
-            ┌───────▼─────────┐                           ┌───────▼────────┐
-            │ SourceConverter │                           │ ImageProcessor │
-            │ (source convert)│                           │ (chaining API) │
-            └───────┬─────────┘                           └───────┬────────┘
-                    │                                             │
-          ┌─────────▼──────────┐                          ┌───────▼────────┐
-          │ SVG Detection      │                          │ LazyPipeline   │
-          │ - isInlineSvg()    │                          │ - resize()     │
-          │ - sniffSvgFromBlob │                          │ - blur()       │
-          │ - MIME + Content   │                          └───────┬────────┘
-          └─────────┬──────────┘                                  │
-                    │                                             │
-          ┌─────────▼──────────────┐                ┌─────────────▼─────────────┐
-          │ convertSvgToElement    │                │ ResizeCalculator          │
-          │ - SVG normalization    │                │ - calculateFinalLayout()  │
-          │ - complexity analysis  │                │ - fit mode calculation    │
-          │ - quality level select │                └─────────────┬─────────────┘
-          │ - high quality render  │                              │
-          └────────────────────────┘                ┌─────────────▼─────────────┐
-                                                    │ OnehotRenderer            │
-                                                    │ - single drawImage() call │
-                                                    │ - quality setting         │
-                                                    │ - background color        │
-                                                    └───────────────────────────┘
+                         ┌────────────────────┐
+                         │  processImage()    │
+                         │ (factory function) │
+                         └─────────┬──────────┘
+                                   │
+           ┌───────────────────────┴─────────────────────┐
+           │                                             │
+   ┌───────▼─────────┐                           ┌───────▼────────┐
+   │ SourceConverter │                           │ ImageProcessor │
+   │ (source convert)│                           │ (chaining API) │
+   └───────┬─────────┘                           └───────┬────────┘
+           │                                             │
+ ┌─────────▼──────────┐                          ┌───────▼────────┐
+ │ SVG Detection      │                          │ LazyPipeline   │
+ │ - isInlineSvg()    │                          │ - resize()     │
+ │ - sniffSvgFromBlob │                          │ - blur()       │
+ │ - MIME + Content   │                          └───────┬────────┘
+ └─────────┬──────────┘                                  │
+           │                                             │
+ ┌─────────▼──────────────┐                ┌─────────────▼─────────────┐
+ │ convertSvgToElement    │                │ ResizeCalculator          │
+ │ - SVG normalization    │                │ - calculateFinalLayout()  │
+ │ - complexity analysis  │                │ - fit mode calculation    │
+ │ - quality level select │                └─────────────┬─────────────┘
+ │ - high quality render  │                              │
+ └────────────────────────┘                ┌─────────────▼─────────────┐
+                                           │ OnehotRenderer            │
+                                           │ - single drawImage() call │
+                                           │ - quality setting         │
+                                           │ - background color        │
+                                           └───────────────────────────┘
 ```
 
 

@@ -1,8 +1,41 @@
 /**
- * Browser capability detection system
+ * Browser capability detection and performance optimization system
  *
- * @description Browser capability detection and optimal processing mode selection system
- * for OffscreenCanvas + Web Worker performance optimization
+ * @description
+ * Intelligent browser capability detection system that analyzes the current environment
+ * to determine optimal image processing strategies. Automatically detects modern browser
+ * features and selects the best processing mode for maximum performance and compatibility.
+ *
+ * **🔍 Detection Capabilities:**
+ * - **OffscreenCanvas**: Background image processing without blocking main thread
+ * - **Web Workers**: Multi-threading support for parallel image operations
+ * - **ImageBitmap**: High-performance image data structures
+ * - **Format Support**: WebP, AVIF, and modern image format detection
+ * - **Transfer Objects**: Efficient data transfer between threads
+ * - **Device Metrics**: Pixel ratio and performance characteristics
+ *
+ * **⚡ Performance Optimization:**
+ * - **Smart Mode Selection**: Automatically chooses optimal processing method
+ * - **Thread Management**: Balances performance vs resource usage
+ * - **Memory Efficiency**: Detects memory constraints and adjusts accordingly
+ * - **Fallback Strategies**: Graceful degradation for older browsers
+ *
+ * **🎯 Processing Modes:**
+ * - **main-thread**: Standard Canvas 2D processing (universal compatibility)
+ * - **web-worker**: Background processing with Web Workers (better UX)
+ * - **offscreen**: OffscreenCanvas processing (maximum performance)
+ *
+ * **🔧 Integration Features:**
+ * - **Caching System**: Results cached for session duration (performance)
+ * - **SSR Safe**: Server-side rendering compatible with graceful fallbacks
+ * - **Debug Mode**: Detailed capability reporting for development
+ * - **Timeout Protection**: Prevents hanging during feature detection
+ *
+ * **📊 Use Cases:**
+ * - **Automatic Optimization**: Library automatically uses best available features
+ * - **Performance Profiling**: Developers can analyze browser capabilities
+ * - **Feature Detection**: Check specific capabilities before using advanced features
+ * - **Fallback Planning**: Implement progressive enhancement strategies
  */
 
 // ============================================================================

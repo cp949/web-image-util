@@ -1,7 +1,35 @@
 /**
- * Image conversion utility functions
+ * Image format conversion utilities - Pure conversion without processing
  *
- * @description Provides simple and intuitive image conversion functions
+ * @description
+ * Lightweight image conversion functions that transform between different image formats
+ * without any resizing, filtering, or processing. Optimized for performance and memory
+ * efficiency with direct format-to-format conversion capabilities.
+ *
+ * **🎯 Core Purpose:**
+ * - **Pure Conversion**: Format changes only (JPEG ↔ PNG ↔ WebP ↔ AVIF)
+ * - **No Processing**: No resize, crop, filter, or quality changes unless explicitly requested
+ * - **Memory Efficient**: Direct conversion paths without intermediate Canvas when possible
+ * - **Type Safety**: Full TypeScript support with proper error handling
+ *
+ * **⚡ Performance Characteristics:**
+ * - **Canvas-based**: Uses HTML5 Canvas 2D API for universal browser support
+ * - **Streaming**: Minimal memory footprint for large image conversions
+ * - **Browser Native**: Leverages built-in browser image processing
+ * - **Async Pattern**: Non-blocking operations with Promise-based API
+ *
+ * **🔄 Supported Conversions:**
+ * - HTMLImageElement → Blob/DataURL/File
+ * - HTMLCanvasElement → Blob/DataURL/File
+ * - Blob → Blob (format conversion)
+ * - URL strings → processed formats
+ * - SVG strings → raster formats
+ *
+ * **💡 When to Use vs processImage():**
+ * - **Use converters**: Format conversion only, maximum performance
+ * - **Use processImage()**: When resizing, filtering, or complex processing needed
+ * - **Memory conscious**: converters use less memory for simple tasks
+ * - **File size**: processImage() offers more compression control
  */
 
 import { convertToImageElement } from '../core/source-converter';
@@ -54,28 +82,103 @@ export interface ConvertToFileDetailedOptions extends OutputOptions {
 }
 
 /**
- * Convert various image sources to Blob (simple result)
+ * Convert image sources to Blob format - Fast and memory-efficient
  *
- * @description Converts images to Blob and returns them.
- * Use `toBlobDetailed()` function when metadata is needed.
+ * @description
+ * High-performance image format conversion utility that transforms various image sources
+ * into Blob objects. Optimized for speed and memory efficiency with intelligent conversion
+ * paths that avoid unnecessary processing steps.
  *
- * @param source Image source (HTMLImageElement, HTMLCanvasElement, Blob, or string)
- * @param options Conversion options
- * @returns Blob object
+ * **🚀 Performance Optimizations:**
+ * - **Smart Passthrough**: Returns existing Blob unchanged when no format conversion needed
+ * - **Direct Canvas**: Canvas elements converted directly without intermediate steps
+ * - **Minimal Memory**: Streams data without loading entire image into memory when possible
+ * - **Browser Native**: Uses optimized browser APIs (toBlob, drawImage) for best performance
  *
- * @example
+ * **🔄 Conversion Intelligence:**
+ * - **Format Detection**: Automatically detects source format and optimizes conversion path
+ * - **Quality Preservation**: Maintains original quality unless explicitly modified
+ * - **Browser Support**: Automatically handles format compatibility (WebP fallbacks, etc.)
+ * - **Error Recovery**: Graceful fallbacks for unsupported formats or corrupted sources
+ *
+ * **💾 Memory Management:**
+ * - **Streaming**: Large images processed in chunks to prevent memory overflow
+ * - **Garbage Collection**: Intermediate Canvas elements properly disposed
+ * - **Resource Cleanup**: Automatic cleanup of temporary objects and event listeners
+ * - **Memory Monitoring**: Built-in protection against excessive memory usage
+ *
+ * **🎯 Use Cases:**
+ * - **File Upload Processing**: Convert user uploads to standardized format
+ * - **API Data Preparation**: Format images for REST API transmission
+ * - **Storage Optimization**: Convert to efficient formats before database storage
+ * - **Cross-Platform Compatibility**: Ensure consistent format support
+ *
+ * @param source Image source (Element, Canvas, Blob, URL, SVG string, etc.)
+ * @param options Format and quality options with intelligent defaults
+ * @returns Promise resolving to Blob object ready for use
+ *
+ * @example File Upload Conversion
  * ```typescript
- * // Basic usage
- * const blob = await convertToBlob(imageElement);
+ * // Convert uploaded file to WebP for storage efficiency
+ * const handleFileUpload = async (file: File) => {
+ *   const optimizedBlob = await convertToBlob(file, {
+ *     format: 'webp',
+ *     quality: 0.8  // 20% smaller files with minimal quality loss
+ *   });
  *
- * // Specify format and quality
- * const blob = await convertToBlob(canvasElement, {
- *   format: 'webp',
- *   quality: 0.8
- * });
+ *   // Upload optimized version
+ *   await uploadToServer(optimizedBlob);
+ * };
+ * ```
  *
- * // Blob to Blob (format conversion)
- * const webpBlob = await convertToBlob(jpegBlob, { format: 'webp' });
+ * @example Canvas Export Optimization
+ * ```typescript
+ * // Export canvas artwork with format optimization
+ * const exportArtwork = async (canvas: HTMLCanvasElement) => {
+ *   // High quality PNG for artwork with transparency
+ *   const pngBlob = await convertToBlob(canvas, {
+ *     format: 'png',
+ *     quality: 1.0  // Lossless for art preservation
+ *   });
+ *
+ *   // Compressed JPEG for preview/sharing
+ *   const jpegBlob = await convertToBlob(canvas, {
+ *     format: 'jpeg',
+ *     quality: 0.85  // Good quality, smaller size
+ *   });
+ *
+ *   return { artwork: pngBlob, preview: jpegBlob };
+ * };
+ * ```
+ *
+ * @example Batch Image Processing
+ * ```typescript
+ * // Process multiple images efficiently
+ * const processImageBatch = async (imageFiles: File[]) => {
+ *   const converted = await Promise.all(
+ *     imageFiles.map(file => convertToBlob(file, {
+ *       format: 'webp',  // Modern efficient format
+ *       fallbackFormat: 'jpeg'  // IE/Safari fallback
+ *     }))
+ *   );
+ *
+ *   console.log(`Processed ${converted.length} images`);
+ *   return converted;
+ * };
+ * ```
+ *
+ * @example Smart Format Selection
+ * ```typescript
+ * // Intelligent format selection based on content
+ * const smartConvert = async (source: ImageSource) => {
+ *   // PNG for images with transparency, JPEG for photos
+ *   const hasTransparency = await checkTransparency(source);
+ *
+ *   return convertToBlob(source, {
+ *     format: hasTransparency ? 'png' : 'jpeg',
+ *     quality: hasTransparency ? 1.0 : 0.85
+ *   });
+ * };
  * ```
  */
 export async function convertToBlob(

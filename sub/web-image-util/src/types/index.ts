@@ -1,6 +1,71 @@
 /**
- * web-image-util unified type system
- * Type definitions for web browser image processing library
+ * @cp949/web-image-util - Unified Type System
+ *
+ * @description
+ * Complete TypeScript type definitions for browser-based image processing.
+ * Provides comprehensive type safety for all library operations through discriminated unions,
+ * compile-time constraints, and runtime validation.
+ *
+ * **📦 Type Categories:**
+ * - **Base Types**: Core types (ImageSource, OutputFormat, ResizeFit, etc.)
+ * - **Resize Types**: Discriminated union ResizeConfig system for type-safe resizing
+ * - **Output Types**: Result objects with metadata (ResultBlob, ResultCanvas, etc.)
+ * - **Processing Types**: Options and configurations (ProcessorOptions, BlurOptions)
+ * - **Utility Types**: SVG, error handling, and feature detection types
+ *
+ * **🎯 Design Principles:**
+ * - **Type Safety**: Discriminated unions prevent invalid configurations at compile time
+ * - **Developer Experience**: IntelliSense-friendly with clear parameter constraints
+ * - **Runtime Validation**: Type guards and validation functions for runtime safety
+ * - **Backwards Compatibility**: Versioned types for stable API evolution
+ *
+ * **⚡ Key Features:**
+ * - ResizeConfig discriminated union prevents invalid fit/dimension combinations
+ * - Smart default values with optimal quality per format
+ * - Comprehensive error types with actionable suggestions
+ * - Browser capability detection types
+ *
+ * @example Type-Safe Resize Configuration
+ * ```typescript
+ * import type { ResizeConfig } from '@cp949/web-image-util';
+ *
+ * // ✅ Valid: cover fit with required dimensions
+ * const coverConfig: ResizeConfig = {
+ *   fit: 'cover',
+ *   width: 300,
+ *   height: 200
+ * };
+ *
+ * // ✅ Valid: maxFit with optional dimensions
+ * const maxFitConfig: ResizeConfig = {
+ *   fit: 'maxFit',
+ *   width: 500  // height optional
+ * };
+ *
+ * // ❌ Compile Error: cover fit requires both width AND height
+ * const invalidConfig: ResizeConfig = {
+ *   fit: 'cover',
+ *   width: 300  // Missing height!
+ * };
+ * ```
+ *
+ * @example Result Object Types
+ * ```typescript
+ * import type { ResultBlob, ResultMetadata } from '@cp949/web-image-util';
+ *
+ * const result: ResultBlob = await processImage(source)
+ *   .resize({ fit: 'cover', width: 300, height: 200 })
+ *   .toBlob();
+ *
+ * // Full metadata available
+ * console.log(`${result.width}x${result.height}`);
+ * console.log(`Processing time: ${result.processingTime}ms`);
+ * console.log(`Format: ${result.format}`);
+ *
+ * // Direct conversion methods
+ * const dataURL = await result.toDataURL();
+ * const file = await result.toFile('thumbnail.webp');
+ * ```
  */
 
 // ============================================================================
@@ -89,8 +154,44 @@ export {
 } from './resize-config';
 
 /**
- * Smart resize options (for advanced processing)
- * Used together with ResizeConfig
+ * Smart resize options for advanced processing scenarios
+ *
+ * @description
+ * Additional configuration options for complex resize operations.
+ * These options work alongside ResizeConfig to provide fine-grained control
+ * over processing behavior, performance characteristics, and memory usage.
+ *
+ * **Performance Profiles:**
+ * - `fast`: Prioritize speed over quality (good for previews, thumbnails)
+ * - `balanced`: Balance speed and quality (recommended for most use cases)
+ * - `quality`: Prioritize quality over speed (best for final output)
+ *
+ * **Processing Strategies:**
+ * - `auto`: Library chooses optimal strategy based on input (recommended)
+ * - `fast`: Minimal processing, fastest execution
+ * - `quality`: Maximum quality, slower execution
+ * - `memory-efficient`: Minimize memory usage, may be slower
+ *
+ * @example
+ * ```typescript
+ * // High-quality processing for final output
+ * const options: SmartResizeOptions = {
+ *   width: 1920,
+ *   height: 1080,
+ *   performance: 'quality',
+ *   strategy: 'quality',
+ *   maxMemoryMB: 512
+ * };
+ *
+ * // Fast preview generation
+ * const previewOptions: SmartResizeOptions = {
+ *   width: 200,
+ *   height: 150,
+ *   performance: 'fast',
+ *   strategy: 'fast',
+ *   onProgress: (progress) => console.log(`${progress}% complete`)
+ * };
+ * ```
  */
 export interface SmartResizeOptions {
   /** Target width (pixels) */

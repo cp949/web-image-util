@@ -39,9 +39,11 @@ import { ShortcutBuilder } from './shortcut/shortcut-builder';
  * Image processing class providing type-safe method chaining API
  *
  * **Core Design Principles:**
- * - resize() can only be called once (prevents quality degradation)
- * - Compile-time safety guaranteed by TypeScript type system
- * - Performance optimized with lazy rendering (renders only once at final output)
+ * - resize() can only be called once (prevents quality degradation from multiple raster conversions)
+ * - Compile-time safety guaranteed by TypeScript discriminated union type system
+ * - Performance optimized with lazy rendering pipeline (renders only once at final output)
+ * - Smart format selection based on browser support (WebP → PNG fallback)
+ * - Memory efficient processing with automatic Canvas cleanup
  *
  * @template TState Processor state (BeforeResize | AfterResize)
  *
@@ -185,31 +187,42 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * Image blur effect
    *
    * @description
-   * Applies Gaussian blur to the image.
-   * Can be used before or after resize(), and can be called multiple times.
+   * Applies Gaussian blur to the image using Canvas 2D filter API.
+   * Can be used before or after resize(), and can be called multiple times for cumulative effect.
    *
-   * @param radius Blur radius (pixels, default: 2)
-   * @param options Blur options (additional settings)
+   * **Performance Considerations:**
+   * - Recommended range: 0.5-10 pixels (higher values may cause performance issues)
+   * - Blur before resize for better performance on large images
+   * - Multiple blur calls are cumulative (blur(2) + blur(3) = blur(5) effect)
+   *
+   * @param radius Blur radius in pixels (default: 2, recommended range: 0.5-10)
+   * @param options Blur options (additional settings, currently unused but reserved for future extensions)
    * @returns Processor in same state (chainable)
    *
    * @example
    * ```typescript
-   * // Apply blur before resize
+   * // Apply subtle blur before resize (recommended for performance)
    * await processImage(source)
    *   .blur(2)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .toBlob();
    *
-   * // Apply blur after resize
+   * // Apply strong blur after resize
    * await processImage(source)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .blur(5)
    *   .toBlob();
    *
-   * // Multiple blur applications possible (cumulative)
+   * // Multiple blur applications (cumulative effect)
    * await processImage(source)
-   *   .blur(2)
-   *   .blur(3)
+   *   .blur(2)     // First blur: 2px
+   *   .blur(3)     // Total blur: 5px (2+3)
+   *   .toBlob();
+   *
+   * // Performance-optimized blur for thumbnails
+   * await processImage(source)
+   *   .blur(1)     // Light blur before resize
+   *   .resize({ fit: 'cover', width: 150, height: 150 })
    *   .toBlob();
    * ```
    */

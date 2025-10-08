@@ -37,10 +37,42 @@ function stripBom(s: string): string {
 }
 
 /**
- * Remove XML preamble and noise
- * Skip XML declaration, comments, DOCTYPE, whitespace and return actual content
- * @param head Beginning part of string to analyze
- * @returns Cleaned string
+ * Remove XML preamble and noise from SVG content
+ *
+ * @description
+ * Strips XML declarations, comments, DOCTYPE, and whitespace to get clean SVG content.
+ * This is critical for accurate SVG detection because many SVG files contain:
+ * - UTF-8 BOM markers
+ * - XML prologs (<?xml version="1.0"?>)
+ * - Multiple comments (<!-- ... -->)
+ * - DOCTYPE declarations
+ * - Leading/trailing whitespace
+ *
+ * **Processing Order:**
+ * 1. Remove XML declaration (<?xml ...?>)
+ * 2. Remove all comments (<!-- ... -->) - handles multiple consecutive comments
+ * 3. Remove DOCTYPE declaration
+ * 4. Trim whitespace
+ *
+ * **Performance Optimization:**
+ * - Only processes the beginning portion of large files (4KB limit)
+ * - Uses efficient regex patterns for parsing
+ * - Avoids full DOM parsing for performance
+ *
+ * @param head Beginning part of string to analyze (typically first 4KB)
+ * @returns Cleaned string starting with actual SVG content
+ *
+ * @example
+ * ```typescript
+ * // Input with XML preamble
+ * const input = `<?xml version="1.0" encoding="UTF-8"?>
+ * <!-- This is a comment -->
+ * <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+ * <svg xmlns="http://www.w3.org/2000/svg">...`;
+ *
+ * const cleaned = stripXmlPreambleAndNoise(input);
+ * // Result: '<svg xmlns="http://www.w3.org/2000/svg">...'
+ * ```
  */
 function stripXmlPreambleAndNoise(head: string): string {
   let s = head.trimStart();
@@ -67,10 +99,46 @@ function stripXmlPreambleAndNoise(head: string): string {
 }
 
 /**
- * Accurate inline SVG detection
- * Remove BOM → Remove preamble → Check for <svg tag
- * @param str String to check
- * @returns Whether it's SVG
+ * Accurate inline SVG detection with comprehensive preprocessing
+ *
+ * @description
+ * Performs highly accurate SVG detection by preprocessing the string to remove
+ * common XML artifacts that can interfere with detection. This is the core SVG
+ * detection algorithm used throughout the library.
+ *
+ * **Why This Approach:**
+ * - Simple string checks like `includes('<svg')` produce false positives
+ * - HTML containing `<svg>` elements would be incorrectly detected
+ * - XML files with embedded SVG content need careful parsing
+ * - Real-world SVG files often have complex prologues
+ *
+ * **Detection Algorithm:**
+ * 1. Remove UTF-8 BOM markers (stripBom)
+ * 2. Strip XML declarations, comments, DOCTYPE (stripXmlPreambleAndNoise)
+ * 3. Check if content starts with `<svg` tag with proper boundaries
+ * 4. Use regex `/^<svg[\s>]/i` to ensure it's a start tag, not part of another element
+ *
+ * **Security Considerations:**
+ * - Prevents XSS through careful string validation
+ * - Does not execute or parse the SVG content
+ * - Only performs pattern matching on the structure
+ *
+ * @param str String to test for SVG content
+ * @returns true if the string contains valid SVG content, false otherwise
+ *
+ * @example
+ * ```typescript
+ * // Valid SVG cases
+ * isInlineSvg('<svg xmlns="http://www.w3.org/2000/svg">...</svg>') // true
+ * isInlineSvg('<?xml version="1.0"?><svg>...</svg>') // true
+ * isInlineSvg('<!-- comment --><svg>...</svg>') // true
+ *
+ * // Invalid cases (not SVG)
+ * isInlineSvg('<html><svg>...</svg></html>') // false (HTML with SVG)
+ * isInlineSvg('<div><svg>...</svg></div>') // false (embedded SVG)
+ * isInlineSvg('some text <svg>...</svg>') // false (text with SVG)
+ * isInlineSvg('') // false (empty string)
+ * ```
  */
 function isInlineSvg(str: string): boolean {
   if (!str) return false;
@@ -88,10 +156,50 @@ function isDataUrlSvg(input: string): boolean {
 }
 
 /**
- * Sniff if Blob is SVG by reading the beginning as text
- * @param blob Blob to check
- * @param bytes Number of bytes to read (default: 4096)
- * @returns Whether it's SVG
+ * Content-based SVG detection for Blob objects
+ *
+ * @description
+ * Performs SVG detection by reading and analyzing the beginning of a Blob's content.
+ * This is essential when MIME type information is unreliable or missing.
+ *
+ * **Use Cases:**
+ * - Blob objects with incorrect or missing MIME types
+ * - File uploads where browsers set generic MIME types
+ * - Cross-browser compatibility for file handling
+ * - Verification of server-provided Content-Type headers
+ *
+ * **Performance Optimization:**
+ * - Reads only the first 4KB by default (configurable)
+ * - Sufficient for SVG detection since `<svg>` tag appears at the beginning
+ * - Avoids loading large files entirely into memory
+ * - Uses efficient Blob.slice() for partial reading
+ *
+ * **Error Handling:**
+ * - Returns false on any read errors (corrupted files, access issues)
+ * - Safe for use with potentially invalid Blob objects
+ * - Never throws exceptions, always returns boolean
+ *
+ * @param blob Blob object to analyze for SVG content
+ * @param bytes Number of bytes to read from the beginning (default: 4096, recommended: 1024-8192)
+ * @returns true if Blob contains SVG content, false otherwise or on error
+ *
+ * @example
+ * ```typescript
+ * // Check file upload
+ * const fileInput = document.querySelector('input[type="file"]');
+ * const file = fileInput.files[0];
+ *
+ * if (await sniffSvgFromBlob(file)) {
+ *   console.log('Uploaded file is SVG');
+ *   // Process as SVG
+ * } else {
+ *   console.log('Uploaded file is not SVG');
+ *   // Process as regular image
+ * }
+ *
+ * // Check with custom byte limit for large files
+ * const isSvg = await sniffSvgFromBlob(blob, 1024); // Read only first 1KB
+ * ```
  */
 async function sniffSvgFromBlob(blob: Blob, bytes = 4096): Promise<boolean> {
   try {
@@ -103,11 +211,56 @@ async function sniffSvgFromBlob(blob: Blob, bytes = 4096): Promise<boolean> {
 }
 
 /**
- * Detect image source type
+ * Comprehensive image source type detection
  *
- * @description Analyzes the input image source type to determine the appropriate conversion method.
- * @param source Image source to analyze
- * @returns Detected source type
+ * @description
+ * Analyzes various types of image sources to determine the most appropriate processing method.
+ * This is the central routing function that directs each source type to its optimized conversion path.
+ *
+ * **Detection Priority & Algorithm:**
+ * 1. **Object Types** (instanceof checks): HTMLImageElement, HTMLCanvasElement, Blob, ArrayBuffer, Uint8Array
+ * 2. **String Analysis** (for string inputs):
+ *    - Data URL SVG (highest priority) - `data:image/svg+xml`
+ *    - Inline SVG XML - Uses comprehensive SVG detection algorithm
+ *    - Other Data URLs - `data:image/*`
+ *    - HTTP/HTTPS URLs - With optional SVG extension detection
+ *    - Blob URLs - `blob:` protocol
+ *    - File paths - Local file system paths, SVG extension check
+ *
+ * **SVG Detection Specifics:**
+ * - Blob: MIME type check + filename extension (.svg)
+ * - String: Multi-layered detection (Data URL → Inline XML → File extension)
+ * - URL: File extension analysis with URL parsing fallback
+ *
+ * **Performance Considerations:**
+ * - Fast object type checking using instanceof
+ * - Efficient string parsing with early termination
+ * - Minimal regex usage for maximum speed
+ * - Duck typing fallbacks for compatibility
+ *
+ * @param source Image source to analyze - supports all ImageSource types
+ * @returns Detected source type for appropriate processing pipeline
+ *
+ * @throws {ImageProcessError} When source type is completely unsupported
+ *
+ * @example
+ * ```typescript
+ * // Object types
+ * detectSourceType(imageElement);     // 'element'
+ * detectSourceType(canvasElement);    // 'canvas'
+ * detectSourceType(fileBlob);         // 'blob' or 'svg'
+ * detectSourceType(arrayBuffer);      // 'arrayBuffer'
+ *
+ * // String types
+ * detectSourceType('<svg>...</svg>'); // 'svg'
+ * detectSourceType('data:image/svg+xml,<svg>...'); // 'svg'
+ * detectSourceType('data:image/png;base64,...');   // 'dataurl'
+ * detectSourceType('https://example.com/image.jpg'); // 'url'
+ * detectSourceType('https://example.com/logo.svg');  // 'svg'
+ * detectSourceType('blob:http://localhost/...');     // 'bloburl'
+ * detectSourceType('./assets/image.png');            // 'path'
+ * detectSourceType('./assets/logo.svg');             // 'svg'
+ * ```
  */
 export function detectSourceType(source: ImageSource): SourceType {
   if (source instanceof HTMLImageElement) {
