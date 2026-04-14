@@ -50,8 +50,8 @@
     "shelljs": "^0.10.0",
     "ts-node": "^10.9.2",
     "tslib": "^2.8.1",
-    "tsup": "^8.5.0",
-    "typescript": "^5.9.2",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.2",
     "vitest": "^4.1.4"
   },
   "exports": {

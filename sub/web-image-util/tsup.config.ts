@@ -10,7 +10,12 @@ export default defineConfig({
   format: ['esm'],
   target: 'es2020',
   platform: 'browser', // Browser only
-  dts: true,
+  dts: {
+    compilerOptions: {
+      // tsup DTS bundling injects `baseUrl: "."` under TS 6.
+      ignoreDeprecations: '6.0'
+    }
+  },
   sourcemap: true,
   clean: true,
   outDir: 'dist',
