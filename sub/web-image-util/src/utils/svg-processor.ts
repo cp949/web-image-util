@@ -1,55 +1,54 @@
 /**
- * Dedicated SVG processing class
+ * SVG 문자열을 다루는 전용 처리 유틸리티다.
  *
- * @description Handles SVG string normalization, dimension extraction, and browser compatibility processing
+ * @description SVG 정규화, 크기 추출, 브라우저 호환 보정을 함께 담당한다.
  */
 
 import { ImageProcessError } from '../types';
 import { enhanceSvgForBrowser } from './svg-compatibility';
 
-/**
- * SVG dimension information
- */
+/** SVG 크기 정보다. */
 export interface SVGDimensions {
   width: number;
   height: number;
 }
 
-/**
- * SVG processing options
- */
+/** SVG 처리 옵션이다. */
 export interface SVGProcessOptions {
-  /** Default size (when size information is not available) */
+  /** 크기 정보가 없을 때 사용할 기본 너비 */
   defaultWidth?: number;
+
+  /** 크기 정보가 없을 때 사용할 기본 높이 */
   defaultHeight?: number;
-  /** Whether to normalize SVG (default: true) */
+
+  /** SVG 정규화 여부 */
   normalize?: boolean;
-  /** CORS settings */
+
+  /** CORS 설정 */
   crossOrigin?: string;
 }
 
 /**
- * Dedicated SVG processor
+ * SVG를 안전하게 HTMLImageElement로 변환한다.
  *
- * @description Safely converts SVG strings to HTMLImageElement and
- * provides advanced features like dimension extraction and normalization
+ * @description 필요하면 크기 보정과 정규화도 함께 수행한다.
  */
 export class SVGProcessor {
   /**
-   * Convert SVG string to HTMLImageElement
+   * SVG 문자열을 HTMLImageElement로 변환한다.
    *
-   * @param svgString SVG XML string
-   * @param options Processing options
-   * @returns HTMLImageElement
+   * @param svgString SVG XML 문자열
+   * @param options 처리 옵션
+   * @returns 변환된 이미지 요소
    */
   static async processSVGString(svgString: string, options: SVGProcessOptions = {}): Promise<HTMLImageElement> {
     const { normalize = true, crossOrigin } = options;
 
     try {
-      // Apply SVG normalization
+      // 필요하면 SVG를 브라우저 친화적으로 정규화한다.
       const processedSvg = normalize ? enhanceSvgForBrowser(svgString) : svgString;
 
-      // Extract dimension information and apply defaults
+      // SVG 크기를 추출하고 비어 있으면 기본값을 채운다.
       const dimensions = this.extractSVGDimensions(processedSvg);
       let finalSvg = processedSvg;
 
@@ -59,18 +58,18 @@ export class SVGProcessor {
         finalSvg = this.addDimensionsToSVG(processedSvg, width, height);
       }
 
-      // Create Blob and convert to Object URL
+      // Blob URL로 바꿔 일반 이미지 로더 경로를 재사용한다.
       const blob = new Blob([finalSvg], { type: 'image/svg+xml;charset=utf-8' });
       const objectUrl = URL.createObjectURL(blob);
 
       try {
-        const img = new Image();
+        const img = document.createElement('img');
 
         if (crossOrigin) {
           img.crossOrigin = crossOrigin;
         }
 
-        // Promise-based image loading
+        // 이미지 로딩이 끝날 때까지 기다린다.
         await new Promise<void>((resolve, reject) => {
           img.onload = () => resolve();
           img.onerror = () => reject(new ImageProcessError('SVG loading failed', 'SVG_LOAD_FAILED'));
@@ -79,7 +78,7 @@ export class SVGProcessor {
 
         return img;
       } finally {
-        // Clean up Object URL (prevent memory leaks)
+        // 사용한 Object URL은 반드시 정리한다.
         URL.revokeObjectURL(objectUrl);
       }
     } catch (error) {
@@ -94,10 +93,10 @@ export class SVGProcessor {
   }
 
   /**
-   * Extract dimension information from SVG string
+   * SVG 문자열에서 크기 정보를 추출한다.
    *
-   * @param svgString SVG XML string
-   * @returns Dimension information or null
+   * @param svgString SVG XML 문자열
+   * @returns 추출한 크기 정보 또는 null
    */
   static extractSVGDimensions(svgString: string): SVGDimensions | null {
     try {
@@ -109,7 +108,7 @@ export class SVGProcessor {
         return null;
       }
 
-      // 1. Direct extraction from width/height attributes
+      // 1. width/height 속성에서 직접 추출한다.
       const widthAttr = svgElement.getAttribute('width');
       const heightAttr = svgElement.getAttribute('height');
 
@@ -122,19 +121,19 @@ export class SVGProcessor {
         }
       }
 
-      // 2. Extract from viewBox
+      // 2. viewBox가 있으면 그 값을 사용한다.
       const viewBox = svgElement.getAttribute('viewBox');
       if (viewBox) {
         const values = viewBox.trim().split(/\s+/).map(Number);
         if (values.length === 4 && values[2] > 0 && values[3] > 0) {
           return {
-            width: values[2], // viewBox width
-            height: values[3], // viewBox height
+            width: values[2], // viewBox 너비
+            height: values[3], // viewBox 높이
           };
         }
       }
 
-      // 3. Extract from style attribute
+      // 3. style 속성도 보조적으로 확인한다.
       const style = svgElement.getAttribute('style');
       if (style) {
         const widthMatch = style.match(/width\s*:\s*([^;]+)/);

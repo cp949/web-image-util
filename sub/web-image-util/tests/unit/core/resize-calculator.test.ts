@@ -1,13 +1,7 @@
 /**
- * ResizeCalculator Unit Tests
+ * ResizeCalculator의 핵심 동작을 검증하는 단위 테스트다.
  *
- * @description
- * Comprehensive tests for all ResizeCalculator class functionality
- * - 5 fit modes (cover, contain, fill, maxFit, minFit)
- * - Padding system (numeric, object, none)
- * - Extreme cases (large/small images, abnormal ratios)
- * - Regression prevention for existing bugs
- * - Performance validation
+ * @description fit 모드, 패딩, 극단 입력, 회귀 방지, 성능 기대치를 함께 확인한다.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -21,14 +15,11 @@ describe('ResizeCalculator', () => {
     calculator = new ResizeCalculator();
   });
 
-  // ============================================================================
-  // COVER FIT MODE - Maintains aspect ratio while filling entire area (may crop)
-  // ============================================================================
+  // cover는 비율을 유지하면서 영역을 채우고 필요하면 잘라낸다.
 
   describe('cover fit mode', () => {
     it('should scale up to cover the target area (landscape image)', () => {
-      // Landscape image (1920x1080) → Square (800x800)
-      // Expected: Fitting height to 800 makes width 1422, covering the canvas
+      // 가로형 이미지를 정사각형 영역에 맞추면 높이를 기준으로 채워진다.
       const result = calculator.calculateFinalLayout(1920, 1080, {
         fit: 'cover',
         width: 800,
@@ -38,13 +29,13 @@ describe('ResizeCalculator', () => {
       expect(result.imageSize.width).toBe(1422);
       expect(result.imageSize.height).toBe(800);
       expect(result.canvasSize).toEqual({ width: 800, height: 800 });
-      // Center-aligned with horizontal crop
+      // 가운데 정렬되며 좌우가 잘린다.
       expect(result.position.x).toBe(-311); // (800 - 1422) / 2 = -311
       expect(result.position.y).toBe(0);
     });
 
     it('should scale up to cover the target area (portrait image)', () => {
-      // Portrait image (1080x1920) → Square (800x800)
+      // 세로형 이미지를 정사각형 영역에 맞춘다.
       const result = calculator.calculateFinalLayout(1080, 1920, {
         fit: 'cover',
         width: 800,
@@ -55,11 +46,11 @@ describe('ResizeCalculator', () => {
       expect(result.imageSize.height).toBe(1422);
       expect(result.canvasSize).toEqual({ width: 800, height: 800 });
       expect(result.position.x).toBe(0);
-      expect(result.position.y).toBe(-311); // Vertical crop
+      expect(result.position.y).toBe(-311); // 상하가 잘린다.
     });
 
     it('should scale down to cover the target area', () => {
-      // Large square image (2000x2000) → Small square (500x500)
+      // 큰 정사각형 이미지를 작은 정사각형으로 축소한다.
       const result = calculator.calculateFinalLayout(2000, 2000, {
         fit: 'cover',
         width: 500,
@@ -72,7 +63,7 @@ describe('ResizeCalculator', () => {
     });
 
     it('should maintain aspect ratio when covering', () => {
-      // Aspect ratio validation: Original 16:9 → Still 16:9 after cover
+      // cover 이후에도 원본 종횡비는 유지돼야 한다.
       const result = calculator.calculateFinalLayout(1600, 900, {
         fit: 'cover',
         width: 400,
@@ -82,19 +73,16 @@ describe('ResizeCalculator', () => {
       const originalRatio = 1600 / 900;
       const resultRatio = result.imageSize.width / result.imageSize.height;
 
-      // Account for floating point errors
+      // 부동소수점 오차는 조금 허용한다.
       expect(Math.abs(resultRatio - originalRatio)).toBeLessThan(0.01);
     });
   });
 
-  // ============================================================================
-  // CONTAIN FIT MODE - Maintains aspect ratio with entire image visible (padding added)
-  // ============================================================================
+  // contain은 비율을 유지한 채 전체 이미지를 보여 주고 남는 공간은 여백이 된다.
 
   describe('contain fit mode', () => {
     it('should scale down to fit inside the target area (landscape)', () => {
-      // Landscape image (1920x1080) → Square (800x800)
-      // Fitting width to 800 makes height 450, entire image fits
+      // 가로형 이미지는 너비를 기준으로 맞추고 세로 여백이 생긴다.
       const result = calculator.calculateFinalLayout(1920, 1080, {
         fit: 'contain',
         width: 800,
@@ -104,13 +92,13 @@ describe('ResizeCalculator', () => {
       expect(result.imageSize.width).toBe(800);
       expect(result.imageSize.height).toBe(450);
       expect(result.canvasSize).toEqual({ width: 800, height: 800 });
-      // Center-aligned with vertical padding
+      // 가운데 정렬되며 위아래 여백이 남는다.
       expect(result.position.x).toBe(0);
       expect(result.position.y).toBe(175); // (800 - 450) / 2 = 175
     });
 
     it('should scale down to fit inside the target area (portrait)', () => {
-      // Portrait image (1080x1920) → Square (800x800)
+      // 세로형 이미지도 같은 규칙으로 contain 계산을 검증한다.
       const result = calculator.calculateFinalLayout(1080, 1920, {
         fit: 'contain',
         width: 800,
@@ -684,7 +672,6 @@ describe('ResizeCalculator', () => {
     it('should not degrade with different fit modes', () => {
       // Skip performance consistency test in Node.js environment
       if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-        console.log('Performance consistency test skipped in Node.js environment');
         return;
       }
 

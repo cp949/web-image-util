@@ -1,10 +1,11 @@
 /**
- * Image common utilities - Support for image conversion and processing in browser environment
+ * 브라우저 환경의 이미지 변환과 입출력을 돕는 공통 유틸리티다.
  */
 
 import type { ImageFileExt, ImageSource, ImageSourceConvertOptions, ImageStringSourceType } from './common-types';
 import { createImageError } from './error-helpers';
 import { debugLog } from '../utils/debug';
+import { createImageElement } from '../utils/image-element';
 
 const IMAGE_TYPE_TO_EXTENSION: Record<string, string> = {
   png: 'png',
@@ -26,11 +27,11 @@ const IMAGE_TYPE_TO_EXTENSION: Record<string, string> = {
 };
 
 /**
- * Convert Base64 data to Uint8Array
+ * Base64 문자열을 Uint8Array로 변환한다.
  *
- * @description Converts Base64 string to binary data. Optimized for large data processing.
- * @param base64 Base64 encoded string
- * @returns Binary data converted to Uint8Array
+ * @description fetch 경로를 사용해 큰 입력도 안정적으로 바이너리로 바꾼다.
+ * @param base64 Base64로 인코딩된 문자열
+ * @returns Uint8Array로 변환한 바이너리 데이터
  */
 export function base64ToBuffer(base64: string): Promise<Uint8Array> {
   const dataUrl = 'data:application/octet-binary;base64,' + base64;
@@ -41,11 +42,11 @@ export function base64ToBuffer(base64: string): Promise<Uint8Array> {
 }
 
 /**
- * Download Blob as file
+ * Blob을 파일로 다운로드한다.
  *
- * @description Downloads Blob object as file in browser. Automatically handles compatibility issues like iOS Safari.
- * @param blob Blob object to download
- * @param fileName File name for download
+ * @description 브라우저 환경에서 Blob 다운로드를 처리하고 iOS Safari 우회도 함께 지원한다.
+ * @param blob 다운로드할 Blob 객체
+ * @param fileName 저장할 파일 이름
  */
 export function downloadBlob(blob: Blob, fileName: string) {
   if ('download' in HTMLAnchorElement.prototype) {
@@ -60,7 +61,7 @@ export function downloadBlob(blob: Blob, fileName: string) {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(downloadLink);
   } else {
-    // iOS Safari compatibility - open with data URL in new tab
+    // iOS Safari에서는 새 탭에 Data URL을 열어 다운로드를 우회한다.
     let popup: Window | null = window.open('', '_blank');
     if (popup) {
       const reader = new FileReader();
@@ -77,6 +78,7 @@ export function downloadBlob(blob: Blob, fileName: string) {
   }
 }
 
+/** 링크를 다운로드 가능한 리소스로 연다. */
 export function downloadLink(href: string) {
   if ('download' in HTMLAnchorElement.prototype) {
     const downloadLink = document.createElement('a');
@@ -86,7 +88,7 @@ export function downloadLink(href: string) {
     downloadLink.click();
     document.body.removeChild(downloadLink);
   } else {
-    // iOS Safari compatibility - open with data URL in new tab
+    // iOS Safari에서는 새 탭 열기로 대체한다.
     const popup: Window | null = window.open('', '_blank');
     if (popup) {
       popup.location.href = href;
@@ -96,6 +98,7 @@ export function downloadLink(href: string) {
   }
 }
 
+/** Blob을 Data URL 문자열로 변환한다. */
 export function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -156,14 +159,7 @@ export function urlToElement(
   }
 ): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    let img: HTMLImageElement;
-    if (opts?.elementSize) {
-      img = new Image(opts.elementSize.width, opts.elementSize.height);
-    } else {
-      img = new Image();
-    }
-
-    img.setAttribute('src', url);
+    const img = createImageElement(opts?.elementSize);
 
     if (opts?.crossOrigin) {
       img.crossOrigin = opts?.crossOrigin;
@@ -177,6 +173,8 @@ export function urlToElement(
       const error = event instanceof ErrorEvent ? event.error : new Error(String(event));
       reject(createImageError('SOURCE_LOAD_FAILED', error, { sourceType: 'url', format: url }));
     };
+
+    img.src = url;
   });
 }
 

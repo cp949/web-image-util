@@ -1,14 +1,14 @@
-// ImageFormat imported from unified type system
+// 통합 타입 시스템에서 ImageFormat을 가져온다.
 import type { ImageFormat } from '../types';
 import { ImageFormats } from '../types';
+import { createImageElement } from '../utils/image-element';
 
 export type { ImageFormat };
 
 /**
- * Image format to MIME type mapping
+ * 이미지 포맷별 MIME 타입 매핑이다.
  *
- * @description Map defining MIME types corresponding to each image format
- * Used by Canvas.toBlob() and FileReader API.
+ * @description Canvas.toBlob()과 FileReader API에서 공통으로 사용한다.
  */
 export const FORMAT_MIME_MAP: Record<ImageFormat, string> = {
   [ImageFormats.JPEG]: 'image/jpeg',
@@ -21,19 +21,16 @@ export const FORMAT_MIME_MAP: Record<ImageFormat, string> = {
 };
 
 /**
- * Browser image format support detector
+ * 브라우저의 이미지 포맷 지원 여부를 판별한다.
  *
- * @description Class that checks supported image formats in current browser and selects optimal format
- * Dynamically verifies support for modern formats like WebP, AVIF, etc.
+ * @description 현재 환경에서 사용할 수 있는 포맷을 확인하고 최적 포맷 선택에 활용한다.
  */
 export class FormatDetector {
   private static supportCache = new Map<ImageFormat, boolean>();
 
-  /**
-   * Check support for specific format
-   */
+  /** 특정 포맷 지원 여부를 확인한다. */
   static async isSupported(format: ImageFormat): Promise<boolean> {
-    // Return cached result
+    // 이미 계산한 결과가 있으면 캐시를 재사용한다.
     if (this.supportCache.has(format)) {
       return this.supportCache.get(format)!;
     }
@@ -45,7 +42,7 @@ export class FormatDetector {
       case ImageFormats.JPG:
       case ImageFormats.PNG:
       case ImageFormats.GIF:
-        supported = true; // Basic support
+        supported = true; // 기본 지원 포맷이다.
         break;
 
       case ImageFormats.WEBP:
@@ -57,7 +54,7 @@ export class FormatDetector {
         break;
 
       case ImageFormats.SVG:
-        supported = true; // SVG has basic support
+        supported = true; // SVG는 기본 지원 대상으로 본다.
         break;
     }
 
@@ -65,14 +62,12 @@ export class FormatDetector {
     return supported;
   }
 
-  /**
-   * Test WebP support
-   */
+  /** WebP 지원 여부를 테스트한다. */
   private static testWebPSupport(): Promise<boolean> {
     return new Promise((resolve) => {
       const webpData =
         'data:image/webp;base64,UklGRjoAAABXRUJQVlA4WAoAAAAQAAAAAAAAAAAAQUxQSAwAAAARBxAR/Q9ERP8DAABWUDggGAAAABQBAJ0BKgEAAQAAAP4AAA3AAP7mtQAAAA==';
-      const img = new Image();
+      const img = createImageElement();
 
       img.onload = () => resolve(img.width > 0 && img.height > 0);
       img.onerror = () => resolve(false);
@@ -81,14 +76,12 @@ export class FormatDetector {
     });
   }
 
-  /**
-   * Test AVIF support
-   */
+  /** AVIF 지원 여부를 테스트한다. */
   private static testAVIFSupport(): Promise<boolean> {
     return new Promise((resolve) => {
       const avifData =
         'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgS0AAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEAwgMg8f8D///8WfhwB8+ErK42A=';
-      const img = new Image();
+      const img = createImageElement();
 
       img.onload = () => resolve(img.width > 0 && img.height > 0);
       img.onerror = () => resolve(false);
@@ -97,9 +90,7 @@ export class FormatDetector {
     });
   }
 
-  /**
-   * Return all supported formats
-   */
+  /** 지원 가능한 모든 포맷을 반환한다. */
   static async getSupportedFormats(): Promise<ImageFormat[]> {
     const formats = Object.values(ImageFormats);
     const supported: ImageFormat[] = [];
@@ -113,9 +104,7 @@ export class FormatDetector {
     return supported;
   }
 
-  /**
-   * Select optimal format (compression ratio priority)
-   */
+  /** 압축 효율을 우선해 최적 포맷을 선택한다. */
   static async getBestFormat(hasTransparency: boolean = false): Promise<ImageFormat> {
     // Case with transparency
     if (hasTransparency) {

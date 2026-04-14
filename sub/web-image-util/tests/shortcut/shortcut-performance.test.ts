@@ -2,16 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { processImage } from '../../src/index';
 
 describe('Shortcut API Performance', () => {
-  // Base64 encoded 100x100 blue square SVG
+  // Base64로 인코딩한 100x100 파란 정사각형 SVG다.
   const testImageUrl =
     'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNzNkYyIvPjwvc3ZnPg==';
 
-  // Vitest best practice: Helper function for performance testing
   /**
-   * Execute given function multiple times and calculate average execution time
-   * @param fn Function to measure
-   * @param iterations Number of iterations
-   * @returns Average execution time (ms), minimum time, maximum time
+   * 함수를 여러 번 실행해 성능 통계를 계산한다.
+   * @param fn 측정할 함수
+   * @param iterations 반복 횟수
+   * @returns 평균, 최소, 최대, 중앙값 실행 시간
    */
   function measurePerformance(fn: () => void, iterations: number) {
     const times: number[] = [];
@@ -32,12 +31,12 @@ describe('Shortcut API Performance', () => {
   }
 
   describe('Shortcut Creation Performance', () => {
-    // Vitest best practice: consistently measure performance tests for multiple scenarios with describe.each
+    // 여러 시나리오를 같은 기준으로 비교하기 위해 describe.each를 사용한다.
     describe.each([
       {
         name: 'Direct Mapping - coverBox',
         factory: () => processImage(testImageUrl).shortcut.coverBox(300, 200),
-        threshold: 100, // Maximum allowed time for 1000 creations (ms)
+        threshold: 100, // 1000회 생성 시 허용 시간 상한(ms)
       },
       {
         name: 'Direct Mapping - containBox',
@@ -65,14 +64,13 @@ describe('Shortcut API Performance', () => {
           - Max: ${stats.max.toFixed(3)}ms
           - Total: ${(stats.avg * 1000).toFixed(2)}ms`);
 
-        // Total execution time should be within threshold
+        // 총 실행 시간은 임계값 안에 있어야 한다.
         expect(stats.avg * 1000, `1000 creations should complete within ${threshold}ms`).toBeLessThan(threshold);
       });
 
       it('should have consistent performance (low variance)', () => {
-        // Skip performance consistency test in Node.js environment
+        // Node 환경에서는 변동성 측정 의미가 낮아 건너뛴다.
         if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-          console.log('Performance consistency test skipped in Node.js environment');
           return;
         }
 
@@ -83,7 +81,7 @@ describe('Shortcut API Performance', () => {
           `Variance: ${variance.toFixed(3)}ms (max: ${stats.max.toFixed(3)}ms, min: ${stats.min.toFixed(3)}ms)`
         );
 
-        // Verify performance consistency only in browser environment
+        // 브라우저 환경에서만 성능 편차를 검증한다.
         expect(variance, 'performance should be consistent').toBeLessThan(stats.median * 5);
       });
     });
@@ -100,7 +98,7 @@ describe('Shortcut API Performance', () => {
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      // 100 chaining operations should complete within 50ms
+      // 100회 체이닝 생성은 50ms 안에 끝나야 한다.
       expect(duration).toBeLessThan(50);
       console.log(`100 chained operations: ${duration.toFixed(2)}ms`);
     });

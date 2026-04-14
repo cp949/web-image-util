@@ -36,6 +36,7 @@ import { convertToImageElement } from '../core/source-converter';
 import type { ResultBlob, ResultDataURL, ResultFile, ImageSource, OutputOptions } from '../types';
 import { ImageProcessError } from '../types';
 import { DataURLResultImpl, BlobResultImpl, FileResultImpl } from '../types/result-implementations';
+import { createImageElement } from './image-element';
 
 /**
  * Basic Blob conversion options
@@ -621,7 +622,7 @@ async function imageElementToCanvas(imageElement: HTMLImageElement): Promise<HTM
  */
 async function getBlobDimensions(blob: Blob): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const img = createImageElement();
     const url = URL.createObjectURL(blob);
 
     img.onload = () => {

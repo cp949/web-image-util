@@ -1,5 +1,5 @@
 /**
- * Source converter - Convert various image sources to HTMLImageElement
+ * 다양한 입력 소스를 HTMLImageElement로 정규화하는 변환기다.
  */
 
 import type { ImageSource, ProcessorOptions } from '../types';
@@ -11,9 +11,7 @@ import type { QualityLevel } from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
 
 /**
- * Image source type
- *
- * @description Types of supported image sources
+ * 지원하는 이미지 입력 소스 타입이다.
  */
 export type SourceType =
   | 'element'
@@ -28,70 +26,38 @@ export type SourceType =
   | 'path';
 
 /**
- * Remove UTF-8 BOM
- * @param s Input string
- * @returns String with BOM removed
+ * 문자열 앞의 UTF-8 BOM을 제거한다.
+ * @param s 입력 문자열
+ * @returns BOM이 제거된 문자열
  */
 function stripBom(s: string): string {
   return s.replace(/^\uFEFF/, '');
 }
 
 /**
- * Remove XML preamble and noise from SVG content
+ * SVG 앞부분의 XML 프롤로그와 잡음을 제거한다.
  *
- * @description
- * Strips XML declarations, comments, DOCTYPE, and whitespace to get clean SVG content.
- * This is critical for accurate SVG detection because many SVG files contain:
- * - UTF-8 BOM markers
- * - XML prologs (<?xml version="1.0"?>)
- * - Multiple comments (<!-- ... -->)
- * - DOCTYPE declarations
- * - Leading/trailing whitespace
- *
- * **Processing Order:**
- * 1. Remove XML declaration (<?xml ...?>)
- * 2. Remove all comments (<!-- ... -->) - handles multiple consecutive comments
- * 3. Remove DOCTYPE declaration
- * 4. Trim whitespace
- *
- * **Performance Optimization:**
- * - Only processes the beginning portion of large files (4KB limit)
- * - Uses efficient regex patterns for parsing
- * - Avoids full DOM parsing for performance
- *
- * @param head Beginning part of string to analyze (typically first 4KB)
- * @returns Cleaned string starting with actual SVG content
- *
- * @example
- * ```typescript
- * // Input with XML preamble
- * const input = `<?xml version="1.0" encoding="UTF-8"?>
- * <!-- This is a comment -->
- * <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
- * <svg xmlns="http://www.w3.org/2000/svg">...`;
- *
- * const cleaned = stripXmlPreambleAndNoise(input);
- * // Result: '<svg xmlns="http://www.w3.org/2000/svg">...'
- * ```
+ * @description XML 선언, 주석, DOCTYPE, 공백을 걷어내 실제 SVG 루트 태그 판별에 집중할 수 있게 한다.
+ * @param head 분석할 문자열의 앞부분
+ * @returns 실제 SVG 내용부터 시작하는 문자열
  */
 function stripXmlPreambleAndNoise(head: string): string {
   let s = head.trimStart();
 
-  // Remove XML declaration: <?xml ...?>
+  // XML 선언을 먼저 제거한다.
   if (s.startsWith('<?xml')) {
     const end = s.indexOf('?>');
     if (end >= 0) s = s.slice(end + 2).trimStart();
   }
 
-  // Remove comments (handle multiple consecutive ones)
-  // Repeatedly remove <!-- ... -->
+  // 연속된 주석이 있을 수 있어 반복해서 제거한다.
   while (true) {
     const m = s.match(/^<!--[\s\S]*?-->\s*/);
     if (!m) break;
     s = s.slice(m[0].length);
   }
 
-  // Remove DOCTYPE
+  // DOCTYPE 선언을 제거한다.
   const doctype = s.match(/^<!DOCTYPE[^>]*>\s*/i);
   if (doctype) s = s.slice(doctype[0].length);
 
@@ -527,7 +493,7 @@ async function convertSvgToElement(
   // Bypass SVG processing in test environment (prevent timeout)
   if (typeof globalThis !== 'undefined' && (globalThis as any)._SVG_MOCK_MODE) {
     return new Promise<HTMLImageElement>((resolve) => {
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => resolve(img);
       // Use simple 1x1 transparent pixel image
       img.src =
@@ -578,7 +544,7 @@ async function convertSvgToElement(
 
     // 8. Optimized Image creation (hybrid approach)
     return new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
+      const img = document.createElement('img');
       let objectUrl: string | null = null;
 
       // Success handler
@@ -675,7 +641,7 @@ async function loadBlobUrl(blobUrl: string, options?: ProcessorOptions): Promise
 
     // Default Image loading for non-SVG cases
     return new Promise((resolve, reject) => {
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => resolve(img);
       img.onerror = () =>
         reject(new ImageProcessError(`Failed to load Blob URL image: ${blobUrl}`, 'SOURCE_LOAD_FAILED'));
@@ -739,7 +705,7 @@ async function loadImageFromUrl(
 
     // Default Image loading approach
     return new Promise((resolve, reject) => {
-      const img = new Image();
+      const img = document.createElement('img');
 
       if (crossOrigin) {
         img.crossOrigin = crossOrigin;
@@ -832,7 +798,7 @@ function detectMimeTypeFromBuffer(buffer: ArrayBuffer): string {
  */
 async function convertCanvasToElement(canvas: HTMLCanvasElement): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const img = document.createElement('img');
     const dataURL = canvas.toDataURL();
 
     img.onload = () => resolve(img);
@@ -856,7 +822,7 @@ async function convertBlobToElement(blob: Blob, options?: ProcessorOptions): Pro
 
   // Regular Blob processing
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const img = document.createElement('img');
     const objectUrl = URL.createObjectURL(blob);
 
     img.onload = () => {

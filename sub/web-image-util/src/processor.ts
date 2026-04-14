@@ -1,11 +1,7 @@
 /**
- * Image Processor - Core class for chaining API
+ * 체이닝 기반 이미지 처리를 담당하는 핵심 클래스다.
  *
- * @description
- * Browser-only image processor based on Canvas 2D API
- * - Intuitive API through method chaining
- * - Compile-time safety using TypeScript type system
- * - Performance optimized with lazy rendering pipeline
+ * @description Canvas 2D API를 바탕으로 브라우저 전용 이미지 처리 흐름을 구성한다.
  */
 
 import { LazyRenderPipeline } from './core/lazy-render-pipeline';
@@ -31,21 +27,14 @@ import { validateResizeConfig } from './types/resize-config';
 import { BlobResultImpl, CanvasResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
 import { ShortcutBuilder } from './shortcut/shortcut-builder';
+import { createImageElement } from './utils/image-element';
 
 /**
- * Image Processor Class
+ * 타입 안전한 이미지 처리 체이닝 API를 제공한다.
  *
- * @description
- * Image processing class providing type-safe method chaining API
+ * @description resize 1회 제한, 지연 렌더링, 브라우저 포맷 선택을 한 곳에서 관리한다.
  *
- * **Core Design Principles:**
- * - resize() can only be called once (prevents quality degradation from multiple raster conversions)
- * - Compile-time safety guaranteed by TypeScript discriminated union type system
- * - Performance optimized with lazy rendering pipeline (renders only once at final output)
- * - Smart format selection based on browser support (WebP → PNG fallback)
- * - Memory efficient processing with automatic Canvas cleanup
- *
- * @template TState Processor state (BeforeResize | AfterResize)
+ * @template TState 프로세서 상태
  *
  * @example
  * ```typescript
@@ -89,32 +78,32 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
-   * Convert source image to HTMLImageElement and initialize LazyRenderPipeline
+   * 입력 소스를 HTMLImageElement로 정규화하고 지연 파이프라인을 준비한다.
    */
   private async ensureLazyPipeline(): Promise<void> {
     if (this.lazyPipeline) {
       return;
     }
 
-    // Convert source to HTMLImageElement
+    // 입력 소스를 공통 이미지 요소로 바꾼다.
     this.sourceImage = await convertToImageElement(this.source, this.options);
 
-    // Initialize LazyRenderPipeline
+    // 이후 연산을 쌓아 둘 지연 파이프라인을 만든다.
     this.lazyPipeline = new LazyRenderPipeline(this.sourceImage);
 
-    // Apply pending operations
+    // 초기화 전에 예약된 연산을 순서대로 반영한다.
     if (this.pendingResizeConfig) {
       this.lazyPipeline.addResize(this.pendingResizeConfig);
       this.pendingResizeConfig = null;
     }
 
-    // Apply pending ResizeOperation (for Shortcut API)
+    // Shortcut API에서 예약한 리사이즈 연산도 이어서 반영한다.
     if (this.pendingResizeOperation) {
       this.lazyPipeline._addResizeOperation(this.pendingResizeOperation);
       this.pendingResizeOperation = null;
     }
 
-    // Apply pending blur options
+    // 대기 중인 블러 연산도 모두 연결한다.
     for (const blurOption of this.pendingBlurOptions) {
       this.lazyPipeline.addBlur(blurOption);
     }
@@ -637,7 +626,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
           }
 
           const objectUrl = URL.createObjectURL(blob);
-          const img = new Image();
+          const img = createImageElement();
 
           img.onload = () => {
             URL.revokeObjectURL(objectUrl); // Immediate cleanup

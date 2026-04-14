@@ -1,6 +1,7 @@
 /**
- * Result object implementation classes
- * Provides direct conversion methods that optimize performance by reusing size information
+ * 결과 객체의 실제 변환 동작을 담당하는 구현 모음이다.
+ *
+ * @description 이미 알고 있는 크기 정보를 재사용해 후속 변환 비용을 줄인다.
  */
 
 import { ImageProcessError } from './index';
@@ -13,10 +14,12 @@ import type {
   OutputFormat,
   GeometrySize,
 } from './index';
+import { createImageElement } from '../utils/image-element';
 
 /**
- * DataURL result implementation class
- * Enables efficient conversion since size information is already known
+ * Data URL 결과 객체 구현이다.
+ *
+ * @description 계산된 크기 정보를 활용해 후속 변환을 단순화한다.
  */
 export class DataURLResultImpl implements ResultDataURL {
   constructor(
@@ -28,18 +31,16 @@ export class DataURLResultImpl implements ResultDataURL {
     public format?: OutputFormat
   ) {}
 
-  /**
-   * Convert to Canvas (optimized by reusing size information)
-   */
+  /** 크기 정보를 재사용해 Canvas로 변환한다. */
   async toCanvas(): Promise<HTMLCanvasElement> {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
 
-    // 🎯 Pre-set canvas dimensions since we already know the size information
+    // 이미 계산된 결과 크기를 그대로 캔버스에 반영한다.
     canvas.width = this.width;
     canvas.height = this.height;
 
-    const img = new Image();
+    const img = createImageElement();
     await new Promise((resolve, reject) => {
       img.onload = resolve;
       img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
@@ -50,9 +51,7 @@ export class DataURLResultImpl implements ResultDataURL {
     return canvas;
   }
 
-  /**
-   * Convert to Blob
-   */
+  /** Blob으로 변환한다. */
   async toBlob(options?: OutputOptions): Promise<globalThis.Blob> {
     const canvas = await this.toCanvas();
     return new Promise((resolve, reject) => {
@@ -71,9 +70,7 @@ export class DataURLResultImpl implements ResultDataURL {
     });
   }
 
-  /**
-   * Convert to File object
-   */
+  /** File 객체로 변환한다. */
   async toFile(filename: string, options?: OutputOptions): Promise<globalThis.File> {
     const blob = await this.toBlob(options);
     return new File([blob], filename, {
@@ -82,11 +79,9 @@ export class DataURLResultImpl implements ResultDataURL {
     });
   }
 
-  /**
-   * Convert to HTMLImageElement
-   */
+  /** HTMLImageElement로 변환한다. */
   async toElement(): Promise<HTMLImageElement> {
-    const img = new Image();
+    const img = createImageElement();
     await new Promise((resolve, reject) => {
       img.onload = resolve;
       img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
@@ -95,26 +90,20 @@ export class DataURLResultImpl implements ResultDataURL {
     return img;
   }
 
-  /**
-   * Convert to ArrayBuffer
-   */
+  /** ArrayBuffer로 변환한다. */
   async toArrayBuffer(): Promise<ArrayBuffer> {
     const blob = await this.toBlob();
     return await blob.arrayBuffer();
   }
 
-  /**
-   * Convert to Uint8Array
-   */
+  /** Uint8Array로 변환한다. */
   async toUint8Array(): Promise<Uint8Array> {
     const arrayBuffer = await this.toArrayBuffer();
     return new Uint8Array(arrayBuffer);
   }
 }
 
-/**
- * Blob result implementation class
- */
+/** Blob 결과 객체 구현이다. */
 export class BlobResultImpl implements ResultBlob {
   constructor(
     public blob: globalThis.Blob,
@@ -132,7 +121,7 @@ export class BlobResultImpl implements ResultBlob {
     const objectUrl = URL.createObjectURL(this.blob);
 
     try {
-      const img = new Image();
+      const img = createImageElement();
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
@@ -214,7 +203,7 @@ export class BlobResultImpl implements ResultBlob {
     const objectUrl = URL.createObjectURL(this.blob);
 
     try {
-      const img = new Image();
+      const img = createImageElement();
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
@@ -262,7 +251,7 @@ export class FileResultImpl implements ResultFile {
     const objectUrl = URL.createObjectURL(this.file);
 
     try {
-      const img = new Image();
+      const img = createImageElement();
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
@@ -324,7 +313,7 @@ export class FileResultImpl implements ResultFile {
     const objectUrl = URL.createObjectURL(this.file);
 
     try {
-      const img = new Image();
+      const img = createImageElement();
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
@@ -409,7 +398,7 @@ export class CanvasResultImpl implements ResultCanvas {
    */
   async toElement(): Promise<HTMLImageElement> {
     const dataURL = await this.toDataURL();
-    const img = new Image();
+    const img = createImageElement();
     await new Promise((resolve, reject) => {
       img.onload = resolve;
       img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));

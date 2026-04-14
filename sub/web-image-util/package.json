@@ -43,7 +43,7 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^24.5.2",
-    "@vitest/browser": "^3.2.4",
+    "@vitest/browser": "^4.1.4",
     "canvas": "^3.2.0",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
@@ -58,7 +58,7 @@
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.44.1",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.4"
   },
   "exports": {
     ".": {

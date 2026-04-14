@@ -1,50 +1,14 @@
 /**
- * Browser capability detection and performance optimization system
+ * 브라우저 기능 감지와 성능 최적화 판단을 담당한다.
  *
- * @description
- * Intelligent browser capability detection system that analyzes the current environment
- * to determine optimal image processing strategies. Automatically detects modern browser
- * features and selects the best processing mode for maximum performance and compatibility.
- *
- * **🔍 Detection Capabilities:**
- * - **OffscreenCanvas**: Background image processing without blocking main thread
- * - **Web Workers**: Multi-threading support for parallel image operations
- * - **ImageBitmap**: High-performance image data structures
- * - **Format Support**: WebP, AVIF, and modern image format detection
- * - **Transfer Objects**: Efficient data transfer between threads
- * - **Device Metrics**: Pixel ratio and performance characteristics
- *
- * **⚡ Performance Optimization:**
- * - **Smart Mode Selection**: Automatically chooses optimal processing method
- * - **Thread Management**: Balances performance vs resource usage
- * - **Memory Efficiency**: Detects memory constraints and adjusts accordingly
- * - **Fallback Strategies**: Graceful degradation for older browsers
- *
- * **🎯 Processing Modes:**
- * - **main-thread**: Standard Canvas 2D processing (universal compatibility)
- * - **web-worker**: Background processing with Web Workers (better UX)
- * - **offscreen**: OffscreenCanvas processing (maximum performance)
- *
- * **🔧 Integration Features:**
- * - **Caching System**: Results cached for session duration (performance)
- * - **SSR Safe**: Server-side rendering compatible with graceful fallbacks
- * - **Debug Mode**: Detailed capability reporting for development
- * - **Timeout Protection**: Prevents hanging during feature detection
- *
- * **📊 Use Cases:**
- * - **Automatic Optimization**: Library automatically uses best available features
- * - **Performance Profiling**: Developers can analyze browser capabilities
- * - **Feature Detection**: Check specific capabilities before using advanced features
- * - **Fallback Planning**: Implement progressive enhancement strategies
+ * @description 현재 환경을 분석해 어떤 이미지 처리 경로가 적절한지 결정한다.
  */
 
-// ============================================================================
-// TYPES - Browser capability and performance related types
-// ============================================================================
+import { createImageElement } from './image-element';
 
-/**
- * Browser capability detection results
- */
+// 브라우저 기능과 성능 판단에 쓰는 타입들이다.
+
+/** 브라우저 기능 감지 결과다. */
 export interface BrowserCapabilities {
   /** OffscreenCanvas support */
   offscreenCanvas: boolean;
@@ -64,9 +28,7 @@ export interface BrowserCapabilities {
   devicePixelRatio: number;
 }
 
-/**
- * Performance features analysis result
- */
+/** 성능 관련 기능 분석 결과다. */
 export interface PerformanceFeatures {
   /** Whether OffscreenCanvas can be used */
   canUseOffscreenCanvas: boolean;
@@ -78,9 +40,7 @@ export interface PerformanceFeatures {
   recommendedProcessingMode: 'main-thread' | 'web-worker' | 'offscreen';
 }
 
-/**
- * Detection options
- */
+/** 기능 감지 옵션이다. */
 export interface DetectionOptions {
   /** Whether to use cache (default: true) */
   useCache?: boolean;
@@ -90,28 +50,20 @@ export interface DetectionOptions {
   debug?: boolean;
 }
 
-// ============================================================================
-// CACHE SYSTEM - Detection result caching system
-// ============================================================================
+// 감지 결과를 재사용하기 위한 캐시 영역이다.
 
-/**
- * Capability detection result cache
- */
+/** 기능 감지 결과 캐시다. */
 class CapabilityCache {
   private cache = new Map<string, any>();
   private isSSR = typeof window === 'undefined' && typeof globalThis.document === 'undefined';
 
-  /**
-   * Get value from cache
-   */
+  /** 캐시에서 값을 읽는다. */
   get<T>(key: string): T | undefined {
     if (this.isSSR) return undefined;
     return this.cache.get(key);
   }
 
-  /**
-   * Store value in cache
-   */
+  /** 캐시에 값을 저장한다. */
   set<T>(key: string, value: T): void {
     if (this.isSSR) return;
     this.cache.set(key, value);
@@ -238,7 +190,7 @@ async function detectWebPSupport(timeout: number = 5000): Promise<boolean> {
     const timeoutId = setTimeout(() => resolve(false), timeout);
 
     try {
-      const img = new Image();
+      const img = createImageElement();
 
       img.onload = () => {
         clearTimeout(timeoutId);
@@ -276,7 +228,7 @@ async function detectAVIFSupport(timeout: number = 5000): Promise<boolean> {
     const timeoutId = setTimeout(() => resolve(false), timeout);
 
     try {
-      const img = new Image();
+      const img = createImageElement();
 
       img.onload = () => {
         clearTimeout(timeoutId);
