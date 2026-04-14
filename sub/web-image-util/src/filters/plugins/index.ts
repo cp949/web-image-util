@@ -18,6 +18,10 @@ import { EffectFilterPlugins } from './effect-plugins';
  */
 export const AllFilterPlugins = [...ColorFilterPlugins, ...EffectFilterPlugins, ...BlurFilterPlugins];
 
+function hasAllDefaultFiltersRegistered(): boolean {
+  return AllFilterPlugins.every((plugin) => filterManager.hasFilter(plugin.name));
+}
+
 /**
  * Automatically register all default filter plugins
  *
@@ -52,12 +56,12 @@ export function registerDefaultFilters(): void {
 /**
  * Initialize plugin system
  *
- * @description Automatically called when library loads to initialize filter system.
- * Registers default filters and exposes filter API to global object.
+ * @description 소비자가 필터 사용 전 명시적으로 호출해야 합니다. 기본 필터를 등록하고 필터 API를 전역 객체에 노출합니다.
  */
 export function initializeFilterSystem(): void {
-  // Register default filters
-  registerDefaultFilters();
+  if (!hasAllDefaultFiltersRegistered()) {
+    registerDefaultFilters();
+  }
 
   // Expose registration functions to global object for developers to register additional plugins
   if (typeof window !== 'undefined') {
@@ -81,8 +85,7 @@ export function initializeFilterSystem(): void {
   }
 }
 
-// Automatic initialization on library load
-initializeFilterSystem();
+// 자동 초기화 제거됨 — 소비자가 명시적으로 initializeFilterSystem()을 호출해야 합니다.
 
 export type {
   BlendMode,

@@ -1,6 +1,6 @@
 'use client';
 
-import { features, processImage } from '@cp949/web-image-util';
+import { detectBrowserCapabilities, detectSyncCapabilities, processImage } from '@cp949/web-image-util';
 import {
   BugReport as BugIcon,
   Code as CodeIcon,
@@ -92,6 +92,8 @@ const DEFAULT_BROWSER_INFO: BrowserInfo = {
   webWorkerSupport: false,
 };
 
+const DEFAULT_SYNC_CAPABILITIES = detectSyncCapabilities();
+
 export function DevToolsDemo() {
   const [activeTab, setActiveTab] = useState(0);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -138,9 +140,9 @@ export function DevToolsDemo() {
       language: navigator.language,
       cookieEnabled: navigator.cookieEnabled,
       onlineStatus: navigator.onLine,
-      webpSupport: features.webp,
-      avifSupport: features.avif,
-      offscreenCanvasSupport: features.offscreenCanvas,
+      webpSupport: false,
+      avifSupport: false,
+      offscreenCanvasSupport: DEFAULT_SYNC_CAPABILITIES.offscreenCanvas,
       webWorkerSupport: typeof Worker !== 'undefined',
       memory: memory
         ? {
@@ -155,7 +157,30 @@ export function DevToolsDemo() {
   const [browserInfo, setBrowserInfo] = useState<BrowserInfo>(DEFAULT_BROWSER_INFO);
 
   useEffect(() => {
+    let isMounted = true;
+
     setBrowserInfo(getBrowserInfo());
+
+    void detectBrowserCapabilities()
+      .then((capabilities) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setBrowserInfo((prev) => ({
+          ...prev,
+          webpSupport: capabilities.webp,
+          avifSupport: capabilities.avif,
+          offscreenCanvasSupport: capabilities.offscreenCanvas,
+        }));
+      })
+      .catch(() => {
+        // 감지 실패 시 초기 동기 정보만 유지한다.
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleImageSelect = async (source: File | string) => {

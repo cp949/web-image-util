@@ -174,8 +174,8 @@ import {
   convertToDataURL,
   convertToFile,
   convertToElement,
+  detectBrowserCapabilities,
   enhanceBrowserCompatibility,
-  features
 } from '@cp949/web-image-util';
 
 // SVG compatibility enhancement
@@ -191,9 +191,10 @@ const imageElement = await convertToElement(blob);
 const blob = await convertToBlob(canvas, { format: 'webp', quality: 0.8 });
 
 // Browser feature support detection
-console.log('WebP support:', features.webp);
-console.log('AVIF support:', features.avif);
-console.log('OffscreenCanvas support:', features.offscreenCanvas);
+const capabilities = await detectBrowserCapabilities();
+console.log('WebP support:', capabilities.webp);
+console.log('AVIF support:', capabilities.avif);
+console.log('OffscreenCanvas support:', capabilities.offscreenCanvas);
 ```
 
 ---

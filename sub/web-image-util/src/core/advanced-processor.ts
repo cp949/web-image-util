@@ -7,7 +7,8 @@ import type { ImageFormat } from '../base/format-detector';
 import type { SimpleImageWatermarkOptions, SimpleTextWatermarkOptions } from '../composition/simple-watermark';
 import { SimpleWatermark } from '../composition/simple-watermark';
 import type { FilterChain } from '../filters/plugin-system';
-import { filterManager } from '../filters/plugin-system';
+import { filterManager, getMissingFilterNames } from '../filters/plugin-system';
+import { ImageProcessError } from '../types';
 import { productionLog } from '../utils/debug';
 import type { AutoProcessingResult } from './auto-high-res';
 import { AutoHighResProcessor } from './auto-high-res';
@@ -132,6 +133,14 @@ export class AdvancedImageProcessor {
 
     // 2. Apply filters (new plugin system)
     if (options.filters && options.filters.filters.length > 0) {
+      const missingFilters = getMissingFilterNames(options.filters.filters);
+      if (missingFilters.length > 0) {
+        throw new ImageProcessError(
+          `Requested filters are not initialized: ${missingFilters.join(', ')}. Call initializeFilterSystem() before using advanced filters.`,
+          'PROCESSING_FAILED'
+        );
+      }
+
       try {
         const imageData = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
         const filteredData = filterManager.applyFilterChain(imageData, options.filters);
@@ -141,7 +150,7 @@ export class AdvancedImageProcessor {
         messages.push(`Applied ${filtersApplied} filter(s).`);
       } catch (error) {
         productionLog.error('Filter application failed:', error);
-        messages.push('Some filters failed to apply.');
+        throw new ImageProcessError('Advanced filter processing failed.', 'PROCESSING_FAILED', error as Error);
       }
     }
 

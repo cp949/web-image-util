@@ -1,12 +1,12 @@
 /**
- * @cp949/web-image-util - Advanced Features API
+ * 고급 이미지 처리 기능을 한곳에서 노출하는 서브 엔트리다.
  *
- * Sub-entry point providing advanced features
- *
- * @example Usage
+ * @example
  * ```typescript
- * // Advanced image processing
- * import { AdvancedImageProcessor } from '@cp949/web-image-util/advanced';
+ * // 고급 이미지 처리
+ * import { AdvancedImageProcessor, initializeFilterSystem } from '@cp949/web-image-util/advanced';
+ *
+ * initializeFilterSystem();
  *
  * const result = await AdvancedImageProcessor.processImage(image, {
  *   resize: { width: 800, height: 600, priority: 'quality' },
@@ -22,12 +22,15 @@
  *   format: 'auto'
  * });
  *
- * // Or use individual features
+ * // 또는 개별 기능만 선택해서 사용
  * import { smartResize, addTextWatermark, autoOptimize } from '@cp949/web-image-util/advanced';
  * ```
  */
 
-// ===== Enhanced Error Handling System =====
+import { getMissingFilterNames } from './filters/plugin-system';
+import { ImageProcessError } from './types';
+
+// ===== 고급 오류 처리 =====
 export { createAndHandleError, createQuickError, getErrorStats, withErrorHandling } from './base/error-helpers';
 export type {
   PresetTextStyle,
@@ -35,10 +38,10 @@ export type {
   SimplePosition,
   SimpleTextWatermarkOptions,
 } from './composition/simple-watermark';
-// ===== Simplified Watermark System =====
+// ===== 단순 워터마크 시스템 =====
 export { addCopyright, addImageWatermark, addTextWatermark, SimpleWatermark } from './composition/simple-watermark';
 export type { AdvancedProcessingOptions, AdvancedProcessingResult } from './core/advanced-processor';
-// ===== Image Processing System =====
+// ===== 고급 이미지 처리 =====
 export {
   AdvancedImageProcessor,
   addWatermarkAndOptimize,
@@ -46,17 +49,17 @@ export {
   smartResize,
 } from './core/advanced-processor';
 export type { AutoProcessingResult } from './core/auto-high-res';
-// ===== Automatic High Resolution Processing =====
+// ===== 자동 고해상도 처리 =====
 export { AutoHighResProcessor, smartResize as autoSmartResize, smartResizeWithProgress } from './core/auto-high-res';
 export { BatchResizer } from './core/batch-resizer';
 export type { ErrorStats } from './core/error-handler';
 export { globalErrorHandler, ImageErrorHandler } from './core/error-handler';
 export type { ResizePerformanceOptions, ResizeProfile } from './core/performance-config';
 export { getPerformanceConfig, RESIZE_PROFILES } from './core/performance-config';
-// ===== Performance Optimization System =====
+// ===== 성능 최적화 =====
 export { autoResize, fastResize, qualityResize, ResizePerformance } from './core/performance-utils';
 export type { FormatOptimizationResult, SmartFormatOptions } from './core/smart-format';
-// ===== Smart Format Optimization =====
+// ===== 스마트 포맷 최적화 =====
 export {
   autoOptimize,
   ImagePurpose,
@@ -72,46 +75,51 @@ export type {
   FilterPlugin,
   FilterValidationResult,
 } from './filters/plugin-system';
-// ===== Filter Plugin System =====
+// ===== 필터 플러그인 시스템 =====
 export {
   applyFilter,
   applyFilterChain,
-  // Plugin manager
+  // 플러그인 매니저
   filterManager,
   getAvailableFilters,
   registerFilter,
 } from './filters/plugin-system';
-// Default filter plugins
-export { AllFilterPlugins, BlurFilterPlugins, ColorFilterPlugins, EffectFilterPlugins } from './filters/plugins';
+// 기본 필터 플러그인
+export {
+  AllFilterPlugins,
+  BlurFilterPlugins,
+  ColorFilterPlugins,
+  EffectFilterPlugins,
+  initializeFilterSystem,
+  registerDefaultFilters,
+} from './filters/plugins';
 
-// ===== Advanced Features =====
+// ===== 고급 기능 =====
 
-// Filter system - plugin-based architecture
-// Usage: filterManager.applyFilter(imageData, { name: 'brightness', params: { value: 10 } })
+// 필터 시스템은 플러그인 아키텍처를 사용한다.
+// 사용 예: filterManager.applyFilter(imageData, { name: 'brightness', params: { value: 10 } })
 
 export type { ImageFormat } from './base/format-detector';
-// Format related
+// 포맷 관련 기능
 export { FORMAT_MIME_MAP, FormatDetector } from './base/format-detector';
 export type { HighResolutionOptions, ProcessingResult } from './base/high-res-manager';
 
-// High-resolution processing (manual control)
+// 고해상도 처리 수동 제어
 export { HighResolutionManager } from './base/high-res-manager';
-// Watermark system (fine-grained control)
+// 세밀한 워터마크 제어
 export type { ImageWatermarkOptions, TextWatermarkOptions } from './composition';
 export { ImageWatermark } from './composition/image-watermark';
 export { TextWatermark } from './composition/text-watermark';
 
-// ===== Convenience Functions =====
+// ===== 편의 함수 =====
 
 /**
- * Quick thumbnail generation (most common use case)
+ * 가장 자주 쓰는 고급 썸네일 생성 흐름을 묶어 제공한다.
  *
- * @description Creates optimized thumbnails using advanced options.
- * Includes features like watermarks, filters, and automatic format selection.
- * @param image Original image element
- * @param size Thumbnail size (square)
- * @param options Thumbnail generation options
- * @returns Generated thumbnail and statistics information
+ * @param image 원본 이미지 요소
+ * @param size 정사각형 썸네일 한 변 길이
+ * @param options 포맷, 품질, 워터마크, 필터 옵션
+ * @returns 생성된 썸네일과 통계 정보
  */
 export async function createAdvancedThumbnail(
   image: HTMLImageElement,
@@ -123,6 +131,8 @@ export async function createAdvancedThumbnail(
     filters?: Array<{ name: string; params: any }>;
   } = {}
 ): Promise<{ canvas: HTMLCanvasElement; blob: Blob; stats: any }> {
+  assertAdvancedFiltersInitialized(options.filters);
+
   const { AdvancedImageProcessor } = await import('./core/advanced-processor');
 
   const result = await AdvancedImageProcessor.processImage(image, {
@@ -149,7 +159,7 @@ export async function createAdvancedThumbnail(
     format: options.format || 'auto',
   });
 
-  // Default creation if Blob is missing
+  // 브라우저 구현 차이로 Blob이 비어 있으면 기본 JPEG Blob을 다시 만든다.
   if (!result.blob) {
     result.blob = await new Promise<Blob>((resolve, reject) => {
       result.canvas.toBlob(
@@ -171,14 +181,12 @@ export async function createAdvancedThumbnail(
 }
 
 /**
- * Social media image optimization
+ * 소셜 미디어 플랫폼 권장 크기에 맞춰 이미지를 최적화한다.
  *
- * @description Optimizes images for each social media platform's recommended size and format.
- * Automatically applies platform-specific optimal size and quality settings.
- * @param image Original image element
- * @param platform Social media platform to optimize for
- * @param options Additional options (watermark, filters, etc.)
- * @returns Optimized image Canvas and Blob
+ * @param image 원본 이미지 요소
+ * @param platform 최적화 대상 플랫폼
+ * @param options 워터마크와 필터 등 추가 옵션
+ * @returns 최적화된 캔버스와 Blob
  */
 export async function optimizeForSocial(
   image: HTMLImageElement,
@@ -188,6 +196,8 @@ export async function optimizeForSocial(
     filters?: Array<{ name: string; params: any }>;
   } = {}
 ): Promise<{ canvas: HTMLCanvasElement; blob: Blob }> {
+  assertAdvancedFiltersInitialized(options.filters);
+
   const { AdvancedImageProcessor } = await import('./core/advanced-processor');
 
   const dimensions = {
@@ -237,6 +247,27 @@ export async function optimizeForSocial(
     canvas: result.canvas,
     blob: result.blob!,
   };
+}
+
+/**
+ * advanced 편의 API에 전달된 필터가 초기화되었는지 사전 확인한다.
+ *
+ * @param filters 편의 API에 전달된 필터 목록
+ * @throws {ImageProcessError} 초기화되지 않은 필터가 있으면
+ */
+function assertAdvancedFiltersInitialized(filters?: Array<{ name: string; params: any }>): void {
+  if (!filters || filters.length === 0) {
+    return;
+  }
+
+  const missingFilters = getMissingFilterNames(filters);
+
+  if (missingFilters.length > 0) {
+    throw new ImageProcessError(
+      `Requested filters are not initialized: ${missingFilters.join(', ')}. Call initializeFilterSystem() before using advanced filters.`,
+      'PROCESSING_FAILED'
+    );
+  }
 }
 
 /**

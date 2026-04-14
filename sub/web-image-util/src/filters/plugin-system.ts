@@ -1,68 +1,57 @@
 /**
- * New plugin-based filter system
- *
- * Key features:
- * - Plugin registration and dynamic loading support
- * - Enhanced type safety
- * - Filter chain optimization
- * - Custom filter support
+ * 필터 등록과 실행을 담당하는 플러그인 기반 필터 시스템이다.
  */
 
 import { debugLog, productionLog } from '../utils/debug';
 
 /**
- * Base filter plugin interface
+ * 모든 필터 플러그인이 구현해야 하는 기본 계약이다.
  *
- * @description Interface that all filter plugins must implement
- * Ensures type safety and consistent API.
- * @template TParams Filter parameter type
+ * @template TParams 필터 파라미터 타입
  */
 export interface FilterPlugin<TParams = any> {
-  /** Unique filter name */
+  /** 고유한 필터 이름 */
   readonly name: string;
 
-  /** Filter description */
+  /** 필터 설명 */
   readonly description?: string;
 
-  /** Filter category */
+  /** 필터 분류 */
   readonly category: FilterCategory;
 
-  /** Default parameters */
+  /** 기본 파라미터 */
   readonly defaultParams: TParams;
 
   /**
-   * Filter application function
-   * @param imageData - Original image data
-   * @param params - Filter parameters
-   * @returns Image data with filter applied
+   * 이미지 데이터에 필터를 적용한다.
+   *
+   * @param imageData 원본 이미지 데이터
+   * @param params 필터 파라미터
+   * @returns 필터가 적용된 이미지 데이터
    */
   apply(imageData: ImageData, params: TParams): ImageData;
 
   /**
-   * Parameter validation
-   * @param params - Parameters to validate
-   * @returns Validation result
+   * 전달된 파라미터를 검증한다.
+   *
+   * @param params 검증할 파라미터
+   * @returns 검증 결과
    */
   validate(params: TParams): FilterValidationResult;
 
   /**
-   * Filter preview (optional)
-   * Generate quick preview with small sample image
+   * 작은 샘플 이미지로 빠른 미리보기를 생성한다.
    */
   preview?(imageData: ImageData, params: TParams): ImageData;
 
   /**
-   * Filter optimization compatibility
-   * Check if can be optimized by combining with other filters
+   * 다른 필터와 결합 최적화가 가능한지 판단한다.
    */
   canOptimizeWith?(otherFilter: FilterPlugin): boolean;
 }
 
 /**
- * Filter categories
- *
- * @description Enum for categorizing filters by functionality
- * Used by filter manager for category-based management.
+ * 필터 기능 분류 열거형이다.
  */
 export enum FilterCategory {
   COLOR = 'color',
@@ -74,32 +63,25 @@ export enum FilterCategory {
   CUSTOM = 'custom',
 }
 
-/**
- * Filter validation result
- */
+/** 필터 파라미터 검증 결과다. */
 export interface FilterValidationResult {
   valid: boolean;
   errors?: string[];
   warnings?: string[];
 }
 
-/**
- * Filter application options
- */
+/** 필터 적용 시 사용하는 옵션이다. */
 export interface FilterOptions<TParams = any> {
   name: string;
   params: TParams;
   blend?: BlendMode;
   opacity?: number; // 0 ~ 1
-  enabled?: boolean; // Filter enabled state
-  id?: string; // For filter identification in chain
+  enabled?: boolean; // 필터 활성화 여부
+  id?: string; // 체인 내부 식별자
 }
 
 /**
- * Blend modes (extended)
- *
- * @description Enum defining how filters are composited with original images
- * Provides effects similar to CSS blend-mode.
+ * 필터 결과를 원본 이미지와 합성하는 방식이다.
  */
 export enum BlendMode {
   NORMAL = 'normal',
@@ -116,21 +98,31 @@ export enum BlendMode {
   EXCLUSION = 'exclusion',
 }
 
-/**
- * Filter chain
- */
+/** 여러 필터를 순차 적용할 때 사용하는 체인 설정이다. */
 export interface FilterChain {
   filters: FilterOptions[];
   preview?: boolean;
-  optimize?: boolean; // Whether to optimize chain
-  name?: string; // Chain name (for presets)
+  optimize?: boolean; // 체인 최적화 여부
+  name?: string; // 프리셋 등에 사용할 체인 이름
 }
 
 /**
- * Filter plugin manager
+ * 활성화된 필터 중 아직 등록되지 않은 필터 이름 목록을 반환한다.
  *
- * @description Central management class responsible for registration, management, and application of filter plugins
- * Implemented as singleton pattern to provide consistent filter management globally.
+ * @param filters 검사할 필터 목록
+ * @returns 등록되지 않은 필터 이름 목록
+ */
+export function getMissingFilterNames(filters: Array<Pick<FilterOptions, 'name' | 'enabled'>>): string[] {
+  return filters
+    .filter((filter) => filter.enabled !== false)
+    .map((filter) => filter.name)
+    .filter((filterName) => !filterManager.hasFilter(filterName));
+}
+
+/**
+ * 필터 플러그인의 등록, 조회, 실행을 담당하는 중앙 관리자다.
+ *
+ * 전역에서 동일한 필터 레지스트리를 공유하도록 싱글턴으로 동작한다.
  */
 export class FilterPluginManager {
   private static instance: FilterPluginManager;
@@ -139,9 +131,7 @@ export class FilterPluginManager {
 
   private constructor() {}
 
-  /**
-   * Return singleton instance
-   */
+  /** 싱글턴 인스턴스를 반환한다. */
   static getInstance(): FilterPluginManager {
     if (!FilterPluginManager.instance) {
       FilterPluginManager.instance = new FilterPluginManager();
@@ -150,8 +140,9 @@ export class FilterPluginManager {
   }
 
   /**
-   * Register filter plugin
-   * @param plugin - Plugin to register
+   * 필터 플러그인을 등록한다.
+   *
+   * @param plugin 등록할 플러그인
    */
   register<TParams>(plugin: FilterPlugin<TParams>): void {
     if (this.plugins.has(plugin.name)) {
@@ -160,7 +151,7 @@ export class FilterPluginManager {
 
     this.plugins.set(plugin.name, plugin);
 
-    // Categorize by category
+    // 카테고리별 조회를 위해 분류 인덱스를 함께 갱신한다.
     if (!this.categories.has(plugin.category)) {
       this.categories.set(plugin.category, new Set());
     }
@@ -170,8 +161,9 @@ export class FilterPluginManager {
   }
 
   /**
-   * Unregister plugin
-   * @param name - Name of plugin to unregister
+   * 등록된 플러그인을 해제한다.
+   *
+   * @param name 해제할 플러그인 이름
    */
   unregister(name: string): boolean {
     const plugin = this.plugins.get(name);
@@ -187,23 +179,23 @@ export class FilterPluginManager {
   }
 
   /**
-   * Return registered plugin
-   * @param name - Plugin name
+   * 이름으로 등록된 플러그인을 조회한다.
+   *
+   * @param name 플러그인 이름
    */
   getPlugin(name: string): FilterPlugin | undefined {
     return this.plugins.get(name);
   }
 
-  /**
-   * Return all registered plugins
-   */
+  /** 등록된 모든 플러그인을 반환한다. */
   getAllPlugins(): FilterPlugin[] {
     return Array.from(this.plugins.values());
   }
 
   /**
-   * Return plugins by category
-   * @param category - Filter category
+   * 특정 카테고리에 속한 플러그인을 반환한다.
+   *
+   * @param category 필터 카테고리
    */
   getPluginsByCategory(category: FilterCategory): FilterPlugin[] {
     const names = this.categories.get(category) || new Set();

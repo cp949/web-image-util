@@ -393,17 +393,25 @@ export interface ResultCanvas extends ResultMetadata {
  * Processor global options
  */
 export interface ProcessorOptions {
-  /** CORS setting (default: 'anonymous') */
+  /** CORS 설정 (기본값: 'anonymous') */
   crossOrigin?: string;
-  /** Default quality setting (default: 0.8) */
+  /** 기본 품질 설정 (기본값: 0.8) */
   defaultQuality?: number;
-  /** Default background color (default: transparent black) */
+  /** 기본 배경색 (기본값: 투명 검정) */
   defaultBackground?: ResizeBackground;
-  /** Default format (default: 'auto') */
+  /** 기본 출력 포맷 (기본값: 'auto') */
   defaultFormat?: OutputFormat | 'auto';
-  /** Timeout (milliseconds, default: 30 seconds) */
+  /** 타임아웃 (밀리초, 기본값: 30초) — 하위 호환용으로 유지 */
   timeout?: number;
-  // Cannot explicitly set memory limits in browser
+  /** fetch 요청 타임아웃 (밀리초, 기본값: 30_000). 0이면 타임아웃 없음. */
+  fetchTimeoutMs?: number;
+  /** fetch 응답 최대 허용 바이트 (기본값: 100 * 1024 * 1024 = 100MiB). 0이면 무제한. */
+  maxSourceBytes?: number;
+  /** 허용할 URL 프로토콜 목록 (기본값: ['http:', 'https:', 'blob:', 'data:']). */
+  allowedProtocols?: string[];
+  /** 외부 fetch 취소용 AbortSignal. */
+  abortSignal?: AbortSignal;
+  // 브라우저에서는 메모리 제한을 명시적으로 설정할 수 없음
 }
 
 /**

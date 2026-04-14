@@ -1,6 +1,6 @@
 'use client';
 
-import { features, processImage } from '@cp949/web-image-util';
+import { detectBrowserCapabilities, processImage } from '@cp949/web-image-util';
 import { Assessment as BenchmarkIcon, Speed as SpeedIcon, Timeline as TimelineIcon } from '@mui/icons-material';
 import {
   Alert,
@@ -28,7 +28,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { CodeSnippet } from '../common/CodeSnippet';
 
@@ -65,6 +65,12 @@ export function PerformanceDemo() {
   const [results, setResults] = useState<BenchmarkResult[]>([]);
   const [memoryStats, setMemoryStats] = useState<any>(null);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [capabilities, setCapabilities] = useState({
+    webp: false,
+    avif: false,
+    offscreenCanvas: false,
+    imageBitmap: false,
+  });
 
   const [testConfig, setTestConfig] = useState({
     iterations: 10,
@@ -80,6 +86,31 @@ export function PerformanceDemo() {
     medium: { src: '/sample-images/sample1.jpg', width: 1920, height: 1080 },
     large: { src: '/sample-images/sample2.jpg', width: 4000, height: 3000 },
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void detectBrowserCapabilities()
+      .then((detected) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setCapabilities({
+          webp: detected.webp,
+          avif: detected.avif,
+          offscreenCanvas: detected.offscreenCanvas,
+          imageBitmap: detected.imageBitmap,
+        });
+      })
+      .catch(() => {
+        // 감지 실패 시에는 안전한 기본값을 유지한다.
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Performance test cases
   const performanceTests: PerformanceTest[] = [
@@ -398,36 +429,36 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2">WebP Support</Typography>
                     <Chip
-                      label={features.webp ? 'Yes' : 'No'}
+                      label={capabilities.webp ? 'Yes' : 'No'}
                       size="small"
-                      color={features.webp ? 'success' : 'error'}
+                      color={capabilities.webp ? 'success' : 'error'}
                     />
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2">OffscreenCanvas</Typography>
                     <Chip
-                      label={features.offscreenCanvas ? 'Yes' : 'No'}
+                      label={capabilities.offscreenCanvas ? 'Yes' : 'No'}
                       size="small"
-                      color={features.offscreenCanvas ? 'success' : 'error'}
+                      color={capabilities.offscreenCanvas ? 'success' : 'error'}
                     />
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2">AVIF Support</Typography>
                     <Chip
-                      label={features.avif ? 'Yes' : 'No'}
+                      label={capabilities.avif ? 'Yes' : 'No'}
                       size="small"
-                      color={features.avif ? 'success' : 'error'}
+                      color={capabilities.avif ? 'success' : 'error'}
                     />
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="body2">ImageBitmap</Typography>
                     <Chip
-                      label={features.imageBitmap ? 'Yes' : 'No'}
+                      label={capabilities.imageBitmap ? 'Yes' : 'No'}
                       size="small"
-                      color={features.imageBitmap ? 'success' : 'error'}
+                      color={capabilities.imageBitmap ? 'success' : 'error'}
                     />
                   </Box>
 

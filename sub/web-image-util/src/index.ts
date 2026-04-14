@@ -86,6 +86,13 @@
  * ```
  */
 
+// browser-capabilities 모듈의 단일 감지 경로를 features 퍼사드에서 재사용한다
+import {
+  detectSyncCapabilities as _detectSyncCapabilities,
+  getCachedBrowserCapabilities as _getCachedBrowserCapabilities,
+  getCachedFormatSupport as _getCachedFormatSupport,
+} from './utils/browser-capabilities';
+
 // SVG complexity analysis
 export { analyzeSvgComplexity } from './core/svg-complexity-analyzer';
 export type { AvatarOptions, SocialImageOptions, SocialPlatform, ThumbnailOptions } from './presets';
@@ -153,69 +160,116 @@ export {
   convertToFile,
   convertToFileDetailed,
 } from './utils';
+// 브라우저 기능 감지 — 단일 구현 소스를 재노출한다
+export {
+  analyzePerformanceFeatures,
+  type BrowserCapabilities,
+  BrowserCapabilityDetector,
+  DEFAULT_DETECTION_OPTIONS,
+  type DetectionOptions,
+  detectBrowserCapabilities,
+  detectFormatSupport,
+  detectSyncCapabilities,
+  FEATURE_PERFORMANCE_WEIGHTS,
+  getCachedBrowserCapabilities,
+  getCachedFormatSupport,
+  getOptimalProcessingMode,
+  type PerformanceFeatures,
+  PROCESSING_MODE_DESCRIPTIONS,
+} from './utils/browser-capabilities';
 export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility';
 // SVG compatibility functions
 export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from './utils/svg-compatibility';
 // SVG utility functions
 export { extractSvgDimensions } from './utils/svg-dimensions';
+// SVG sanitize
+export { sanitizeSvg } from './utils/svg-sanitizer';
+
+type LegacyFormatKey = 'webp' | 'avif';
+
+const legacyFormatSupportCache: Partial<Record<LegacyFormatKey, boolean>> = {};
 
 /**
- * Browser feature support detection
+ * 하위 호환 `features` 퍼사드를 위해 포맷 지원 여부를 동기적으로 판정한다.
+ *
+ * 비동기 capability 캐시가 비어 있는 첫 접근에서만 예전 Canvas 기반 판별을 수행하고,
+ * 이후에는 모듈 내부 캐시를 재사용한다.
+ */
+function detectLegacyFormatSupport(format: LegacyFormatKey): boolean {
+  const cached = legacyFormatSupportCache[format];
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  try {
+    if (typeof globalThis.document === 'undefined') {
+      legacyFormatSupportCache[format] = false;
+      return false;
+    }
+
+    const canvas = globalThis.document.createElement('canvas');
+    const mimeType = `image/${format}`;
+    const supported = canvas.toDataURL(mimeType).startsWith(`data:${mimeType}`);
+    legacyFormatSupportCache[format] = supported;
+    return supported;
+  } catch {
+    legacyFormatSupportCache[format] = false;
+    return false;
+  }
+}
+
+/**
+ * 브라우저 기능 지원 여부를 동기적으로 감지한다 (하위 호환 퍼사드).
+ *
+ * @deprecated `detectBrowserCapabilities()` 또는 `detectSyncCapabilities()`를 사용하세요.
+ * 이 객체는 하위 호환용 동기 퍼사드입니다. `webp`와 `avif`는 우선
+ * `detectBrowserCapabilities()` 또는 `detectFormatSupport()`가 채운 최신 캐시를 재사용하고,
+ * 캐시가 비어 있으면 예전 Canvas 기반 동기 판별로 한 번만 폴백합니다.
  *
  * @description
- * Runtime detection of browser capabilities for optimal image processing strategy selection.
- * Use these feature flags to implement progressive enhancement and format fallbacks.
+ * 브라우저 기능 감지 모듈을 재사용하는 하위 호환 동기 퍼사드입니다.
+ * 동기 판별 가능한 항목은 `detectSyncCapabilities()`에 위임하고,
+ * 비동기 포맷 감지 결과는 캐시에서 재사용합니다. 포맷 캐시가 비어 있을 때는
+ * 기존 `features` API와 동일한 동기 Canvas 감지를 사용합니다.
  *
- * **Usage Patterns:**
- * - Check format support before processing
- * - Enable advanced features based on capability
- * - Implement graceful degradation strategies
- * - Optimize processing paths for browser capabilities
- *
- * @example
+ * @example 기존 사용법 (deprecated)
  * ```typescript
  * import { features } from '@cp949/web-image-util';
+ * const format = features.webp ? 'webp' : 'png';
+ * ```
  *
- * // Choose optimal format based on browser support
- * const format = features.webp ? 'webp' : features.avif ? 'avif' : 'png';
- *
- * // Use OffscreenCanvas for better performance if available
- * if (features.offscreenCanvas) {
- *   // Use OffscreenCanvas-based processing
- * } else {
- *   // Fallback to regular Canvas
- * }
- *
- * // Progressive format selection
- * const result = await processImage(source)
- *   .resize({ fit: 'cover', width: 300, height: 200 })
- *   .toBlob({ format: features.webp ? 'webp' : 'png' });
+ * @example 권장 사용법
+ * ```typescript
+ * import { detectBrowserCapabilities } from '@cp949/web-image-util';
+ * const caps = await detectBrowserCapabilities();
+ * const format = caps.webp ? 'webp' : 'png';
  * ```
  */
 export const features = {
-  /** WebP support */
-  webp: (() => {
-    try {
-      const canvas = document.createElement('canvas');
-      return canvas.toDataURL('image/webp').startsWith('data:image/webp');
-    } catch {
-      return false;
+  /** WebP 지원 여부 */
+  get webp(): boolean {
+    const cachedCapabilities = _getCachedBrowserCapabilities();
+    if (cachedCapabilities) {
+      return cachedCapabilities.webp;
     }
-  })(),
 
-  /** AVIF support */
-  avif: (() => {
-    try {
-      const canvas = document.createElement('canvas');
-      return canvas.toDataURL('image/avif').startsWith('data:image/avif');
-    } catch {
-      return false;
+    return _getCachedFormatSupport().webp ?? detectLegacyFormatSupport('webp');
+  },
+  /** AVIF 지원 여부 */
+  get avif(): boolean {
+    const cachedCapabilities = _getCachedBrowserCapabilities();
+    if (cachedCapabilities) {
+      return cachedCapabilities.avif;
     }
-  })(),
 
-  /** OffscreenCanvas support */
-  offscreenCanvas: typeof OffscreenCanvas !== 'undefined',
-
-  /** ImageBitmap support */
-  imageBitmap: typeof createImageBitmap !== 'undefined',
+    return _getCachedFormatSupport().avif ?? detectLegacyFormatSupport('avif');
+  },
+  /** OffscreenCanvas 지원 여부 */
+  get offscreenCanvas(): boolean {
+    return _detectSyncCapabilities().offscreenCanvas;
+  },
+  /** ImageBitmap 지원 여부 */
+  get imageBitmap(): boolean {
+    return _detectSyncCapabilities().imageBitmap;
+  },
 } as const;

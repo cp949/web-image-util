@@ -54,18 +54,17 @@ export interface DetectionOptions {
 
 /** 기능 감지 결과 캐시다. */
 class CapabilityCache {
-  private cache = new Map<string, any>();
-  private isSSR = typeof window === 'undefined' && typeof globalThis.document === 'undefined';
+  private cache = new Map<string, unknown>();
 
   /** 캐시에서 값을 읽는다. */
   get<T>(key: string): T | undefined {
-    if (this.isSSR) return undefined;
-    return this.cache.get(key);
+    if (this.isServerSide) return undefined;
+    return this.cache.get(key) as T | undefined;
   }
 
   /** 캐시에 값을 저장한다. */
   set<T>(key: string, value: T): void {
-    if (this.isSSR) return;
+    if (this.isServerSide) return;
     this.cache.set(key, value);
   }
 
@@ -80,7 +79,7 @@ class CapabilityCache {
    * Whether SSR environment
    */
   get isServerSide(): boolean {
-    return this.isSSR;
+    return typeof window === 'undefined' || typeof globalThis.document === 'undefined';
   }
 }
 
@@ -445,6 +444,27 @@ export function detectSyncCapabilities(): Omit<BrowserCapabilities, 'webp' | 'av
 export async function detectFormatSupport(timeout?: number): Promise<{ webp: boolean; avif: boolean }> {
   const detector = BrowserCapabilityDetector.getInstance();
   return detector.detectFormatSupport(timeout);
+}
+
+/**
+ * 현재 캐시에 저장된 브라우저 기능 감지 결과를 반환한다.
+ *
+ * 비동기 감지를 아직 수행하지 않았다면 undefined를 반환한다.
+ */
+export function getCachedBrowserCapabilities(): BrowserCapabilities | undefined {
+  return capabilityCache.get<BrowserCapabilities>('browser-capabilities');
+}
+
+/**
+ * 현재 캐시에 저장된 포맷 감지 결과를 동기적으로 읽는다.
+ *
+ * 감지가 아직 수행되지 않았다면 해당 필드는 undefined다.
+ */
+export function getCachedFormatSupport(): Partial<Pick<BrowserCapabilities, 'webp' | 'avif'>> {
+  return {
+    webp: capabilityCache.get<boolean>('webp'),
+    avif: capabilityCache.get<boolean>('avif'),
+  };
 }
 
 /**

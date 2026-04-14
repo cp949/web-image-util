@@ -5,7 +5,8 @@ export default defineConfig({
     'src/index.ts',
     'src/advanced-index.ts',
     'src/utils/index.ts',
-    'src/presets/index.ts'
+    'src/presets/index.ts',
+    'src/filters/plugins/index.ts'
   ],
   format: ['esm'],
   target: 'es2020',
