@@ -608,6 +608,28 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 
 > **참고**: 비-SVG URL(`image.png` 등)은 `fetch`가 실패해도 직접 로드 방식으로 허용됩니다.
 
+#### 개발/디버깅 전용 escape hatch
+
+`processImage()`는 안전한 기본 경로입니다. SVG 입력에서 sanitize와 브라우저 호환성 보정을 건너뛰고 원본 SVG를 그대로 로딩해야 하는 경우(예: 렌더링 문제 디버깅)에만 `unsafe_ProcessImage()`를 사용하세요.
+
+```typescript
+import { processImage, unsafe_ProcessImage } from '@cp949/web-image-util';
+
+// 기본 권장 경로 — sanitize와 호환성 보정이 자동으로 적용된다.
+const safe = await processImage(svgXml)
+  .resize({ fit: 'cover', width: 200, height: 200 })
+  .toBlob();
+
+// 개발/디버깅 전용 — sanitize와 호환성 보정을 건너뛴다.
+const debugOnly = await unsafe_ProcessImage(svgXml)
+  .resize({ fit: 'cover', width: 200, height: 200 })
+  .toBlob();
+```
+
+> `unsafe_ProcessImage()`는 개발/디버깅 전용이다.
+> SVG 보안 필터링과 브라우저 호환성 보정을 건너뛴다.
+> 신뢰할 수 없는 입력에는 사용하면 안 되며, 브라우저의 CORS 및 canvas 보안 제약은 그대로 적용된다.
+
 ---
 
 ## 📚 API 레퍼런스
