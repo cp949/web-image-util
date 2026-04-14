@@ -262,13 +262,21 @@ describe('Shortcut API Performance', () => {
         rounds
       );
 
-      const shortcutStats = measureBatchDuration(() => {
-        processImage(testImageUrl).shortcut.coverBox(300, 200);
-      }, iterations, rounds);
+      const shortcutStats = measureBatchDuration(
+        () => {
+          processImage(testImageUrl).shortcut.coverBox(300, 200);
+        },
+        iterations,
+        rounds
+      );
 
-      const remeasuredDirectStats = measureBatchDuration(() => {
-        processImage(testImageUrl).resize({ fit: 'cover', width: 300, height: 200 });
-      }, iterations, rounds);
+      const remeasuredDirectStats = measureBatchDuration(
+        () => {
+          processImage(testImageUrl).resize({ fit: 'cover', width: 300, height: 200 });
+        },
+        iterations,
+        rounds
+      );
 
       console.log(`Iterations per round: ${iterations}`);
       console.log(`Shortcut API median: ${shortcutStats.median.toFixed(2)}ms`);
@@ -278,9 +286,10 @@ describe('Shortcut API Performance', () => {
       );
 
       // 보정 후에도 측정 구간이 너무 짧으면 비교 결과를 신뢰하기 어렵다.
-      expect(directStats.median, 'comparison baseline should be large enough for a stable measurement').toBeGreaterThanOrEqual(
-        5
-      );
+      expect(
+        directStats.median,
+        'comparison baseline should be large enough for a stable measurement'
+      ).toBeGreaterThanOrEqual(5);
 
       // 충분한 측정 구간에서는 비율 기준과 작은 절대 허용치를 함께 사용한다.
       const allowedDuration = Math.max(remeasuredDirectStats.median * 1.5, remeasuredDirectStats.median + 2);

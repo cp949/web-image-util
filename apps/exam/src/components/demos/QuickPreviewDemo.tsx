@@ -84,11 +84,7 @@ export function QuickPreviewDemo() {
 
   // Reprocess if image exists when preset changes
   useEffect(() => {
-    const shouldReprocess = shouldReprocessForPresetChange(
-      !!originalImage,
-      previousPresetRef.current,
-      selectedPreset
-    );
+    const shouldReprocess = shouldReprocessForPresetChange(!!originalImage, previousPresetRef.current, selectedPreset);
 
     previousPresetRef.current = selectedPreset;
 
