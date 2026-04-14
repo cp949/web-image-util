@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config'
-import { mergeConfig, sharedConfig, testTypeConfigs } from './tests/vitest.shared.config'
 
 /**
  * Contract Test-Only Vitest Configuration
@@ -8,31 +7,34 @@ import { mergeConfig, sharedConfig, testTypeConfigs } from './tests/vitest.share
  * Feature: Contract testing through mocking without actual browser APIs
  * Scope: API call patterns, parameter validation, standards compliance
  */
-export default defineConfig(
-  mergeConfig(sharedConfig, {
-    ...testTypeConfigs.contract,
-    test: {
-      ...testTypeConfigs.contract.test,
-
-      // Contract test-specific configuration
-      exclude: [
-        ...sharedConfig.test?.exclude || [],
-        'tests/integration/**', // Exclude integration tests (requires browser)
-        'tests/unit/**', // Exclude unit tests (run separately)
-        'tests/performance/**' // Exclude performance tests
-      ],
-
-      // Reporter configuration (track contract test results)
-      reporter: ['verbose', 'json'],
-      outputFile: {
-        json: 'test-results/contract-test-results.json',
-      },
-
-      // Add HTML to coverage reporters (for detailed analysis)
-      coverage: {
-        ...testTypeConfigs.contract.test?.coverage,
-        reporter: ['text', 'json', 'html']
-      }
-    }
-  })
-)
+export default defineConfig({
+  test: {
+    name: 'contract-tests',
+    environment: 'happy-dom',
+    setupFiles: ['./tests/setup/canvas-mock.ts'],
+    include: ['tests/contract/**/*.test.ts'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      'tests/integration/**',
+      'tests/unit/**',
+      'tests/performance/**',
+    ],
+    globals: true,
+    testTimeout: 30000,
+    hookTimeout: 10000,
+    retry: 1,
+    passWithNoTests: true,
+    reporter: ['verbose', 'json'],
+    outputFile: {
+      json: 'test-results/contract-test-results.json',
+    },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      reportsDirectory: 'coverage/contract',
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.d.ts', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
+    },
+  },
+})

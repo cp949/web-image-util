@@ -40,6 +40,11 @@
       "outputs": ["coverage/**"],
       "inputs": ["src/**/*.ts", "tests/**/*.ts", "vitest.node.config.*"]
     },
+    "test:contract": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/contract/**", "test-results/**"],
+      "inputs": ["src/**/*.ts", "tests/**/*.ts", "vitest.contract.config.*"]
+    },
     "test:ui": {
       "cache": false,
       "persistent": true

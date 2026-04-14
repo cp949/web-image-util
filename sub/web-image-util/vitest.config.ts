@@ -2,35 +2,6 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    // Browser Mode configuration
-    browser: {
-      enabled: false,
-      provider: 'playwright',
-      headless: true,
-      instances: [
-        {
-          browser: 'chromium',
-          name: 'chromium',
-        },
-        {
-          browser: 'firefox',
-          name: 'firefox',
-        },
-        {
-          browser: 'webkit',
-          name: 'webkit',
-        },
-      ],
-      // Browser test UI configuration
-      ui: false, // Disabled in CI
-      // File isolation
-      isolate: true,
-      // Parallel execution
-      fileParallelism: true,
-      // Connection timeout
-      connectTimeout: 60000,
-    },
-
     // Test environment configuration
     environment: 'node', // Fixed to Node.js environment
 
