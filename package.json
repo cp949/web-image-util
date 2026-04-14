@@ -27,7 +27,7 @@
     "test:ui": "turbo run test:ui",
     "test:browser": "turbo run test:browser",
     "test:coverage": "turbo run test:coverage",
-    "ci": "turbo run typecheck lint format:check test:node",
+    "verify:ci": "turbo run typecheck lint format:check test:node",
     "dev": "turbo run build:watch",
     "dev:exam": "pnpm --filter @cp949/exam dev"
   },
