@@ -1,18 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTestImageBlob } from '../../utils/image-helper';
 
-describe('unsafe_ProcessImage', () => {
+describe('unsafe_processImage', () => {
   it('루트 엔트리에서 공개된다', async () => {
-    const { unsafe_ProcessImage } = await import('../../../src');
-    expect(unsafe_ProcessImage).toBeTypeOf('function');
+    const { unsafe_processImage } = await import('../../../src');
+    expect(unsafe_processImage).toBeTypeOf('function');
   });
 
   it('비-SVG Blob 입력은 processImage와 동일하게 처리한다', async () => {
-    const { processImage, unsafe_ProcessImage } = await import('../../../src');
+    const { processImage, unsafe_processImage } = await import('../../../src');
     const blob = await createTestImageBlob(20, 20, 'red');
 
     const safe = await processImage(blob).resize({ fit: 'cover', width: 10, height: 10 }).toBlob();
-    const unsafe = await unsafe_ProcessImage(blob).resize({ fit: 'cover', width: 10, height: 10 }).toBlob();
+    const unsafe = await unsafe_processImage(blob).resize({ fit: 'cover', width: 10, height: 10 }).toBlob();
 
     expect(unsafe.width).toBe(safe.width);
     expect(unsafe.height).toBe(safe.height);
@@ -21,7 +21,7 @@ describe('unsafe_ProcessImage', () => {
   });
 });
 
-describe('unsafe_ProcessImage — safe/unsafe 경로 차이', () => {
+describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
   beforeEach(() => {
     vi.resetModules();
   });
@@ -51,7 +51,7 @@ describe('unsafe_ProcessImage — safe/unsafe 경로 차이', () => {
       return { ...actual, enhanceSvgForBrowser };
     });
 
-    const { processImage, unsafe_ProcessImage } = await import('../../../src');
+    const { processImage, unsafe_processImage } = await import('../../../src');
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
 
     try {
@@ -62,7 +62,7 @@ describe('unsafe_ProcessImage — safe/unsafe 경로 차이', () => {
       sanitizeSvg.mockClear();
       enhanceSvgForBrowser.mockClear();
 
-      await (unsafe_ProcessImage(svg).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
+      await (unsafe_processImage(svg).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
       expect(sanitizeSvg).not.toHaveBeenCalled();
       expect(enhanceSvgForBrowser).not.toHaveBeenCalled();
     } finally {

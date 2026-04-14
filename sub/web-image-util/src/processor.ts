@@ -877,7 +877,7 @@ export function processImage(source: ImageSource, options?: ProcessorOptions): I
  * - 신뢰할 수 없는 SVG에는 사용하지 않는다.
  * - 브라우저의 CORS 및 tainted canvas 보안은 그대로 적용된다.
  */
-export function unsafe_ProcessImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {
+export function unsafe_processImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {
   return new ImageProcessor<BeforeResize>(source, {
     ...options,
     __svgPassthroughMode: 'unsafe-pass-through',
