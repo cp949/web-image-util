@@ -55,12 +55,20 @@ import { createImageElement } from './utils/image-element';
  * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  * ```
  */
+// SVG 처리 경로를 제어하는 내부 전용 모드 타입이다. 공개 타입에 노출하지 않는다.
+type SvgPassthroughMode = 'safe' | 'unsafe-pass-through';
+
+// 공개 ProcessorOptions를 확장하는 내부 전용 옵션 타입이다.
+type InternalProcessorOptions = ProcessorOptions & {
+  __svgPassthroughMode?: SvgPassthroughMode;
+};
+
 export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   implements TypedImageProcessor<TState>, IImageProcessor<TState>
 {
   private lazyPipeline: LazyRenderPipeline | null = null;
   private sourceImage: HTMLImageElement | null = null;
-  private options: ProcessorOptions;
+  private options: InternalProcessorOptions;
   private hasResized = false;
   private pendingResizeConfig: ResizeConfig | null = null;
   private pendingBlurOptions: BlurOptions[] = [];
@@ -68,12 +76,13 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
 
   constructor(
     private source: ImageSource,
-    options: ProcessorOptions = {}
+    options: InternalProcessorOptions = {}
   ) {
     this.options = {
       crossOrigin: 'anonymous',
       defaultQuality: 0.8,
       defaultBackground: { r: 0, g: 0, b: 0, alpha: 0 },
+      __svgPassthroughMode: 'safe',
       ...options,
     };
   }
@@ -858,4 +867,19 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
  */
 export function processImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {
   return new ImageProcessor<BeforeResize>(source, options);
+}
+
+/**
+ * 개발 및 디버깅 전용 SVG escape hatch.
+ *
+ * - SVG sanitize를 건너뛴다.
+ * - SVG 브라우저 호환성 보정을 건너뛴다.
+ * - 신뢰할 수 없는 SVG에는 사용하지 않는다.
+ * - 브라우저의 CORS 및 tainted canvas 보안은 그대로 적용된다.
+ */
+export function unsafe_ProcessImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {
+  return new ImageProcessor<BeforeResize>(source, {
+    ...options,
+    __svgPassthroughMode: 'unsafe-pass-through',
+  });
 }

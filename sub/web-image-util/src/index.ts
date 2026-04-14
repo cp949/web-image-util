@@ -100,7 +100,7 @@ export type { AvatarOptions, SocialImageOptions, SocialPlatform, ThumbnailOption
 // Convenience features
 export { createAvatar, createSocialImage, createThumbnail } from './presets';
 // Core API
-export { ImageProcessor, processImage } from './processor';
+export { ImageProcessor, processImage, unsafe_ProcessImage } from './processor';
 // Shortcut API
 export { ShortcutBuilder } from './shortcut';
 // Type definitions
