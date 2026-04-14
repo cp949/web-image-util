@@ -45,8 +45,8 @@ describe('unsafe_processImage', () => {
       await (unsafe_processImage(buffer).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
       expect(sanitizeSvg).not.toHaveBeenCalled();
     } finally {
-      vi.doUnmock('../../../src/utils/svg-sanitizer');
       vi.restoreAllMocks();
+      vi.doUnmock('../../../src/utils/svg-sanitizer');
     }
   });
 
@@ -70,8 +70,8 @@ describe('unsafe_processImage', () => {
       await (unsafe_processImage(uint8).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
       expect(sanitizeSvg).not.toHaveBeenCalled();
     } finally {
-      vi.doUnmock('../../../src/utils/svg-sanitizer');
       vi.restoreAllMocks();
+      vi.doUnmock('../../../src/utils/svg-sanitizer');
     }
   });
 });
