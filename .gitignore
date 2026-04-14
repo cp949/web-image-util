@@ -1,9 +1,10 @@
+_works/
 build/
 dist/
 .claude/
 test-results/
-_TODO/
 CLAUDE.md
+AGENTS.md
 .mcp.json
 claudedocs/
 
