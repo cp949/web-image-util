@@ -76,6 +76,8 @@ interface ResultSummary {
   overallAvgTime: number;
   /** 경고가 필요한 항목 목록 */
   warnings: string[];
+  /** 벤치마크 실행 시점의 안전 옵션(Web Worker) 활성화 여부 */
+  safeMode: boolean;
 }
 
 export function PerformanceDemo() {
@@ -206,8 +208,8 @@ export function PerformanceDemo() {
     };
   };
 
-  /** 결과 요약 생성: 포맷 비교, 경고 메시지 등 */
-  const buildSummary = (allResults: BenchmarkResult[]): ResultSummary => {
+  /** 결과 요약 생성: 포맷 비교, 경고 메시지, 안전 옵션 상태 포함 */
+  const buildSummary = (allResults: BenchmarkResult[], usedSafeMode: boolean): ResultSummary => {
     // 포맷 카테고리만 추출하여 비교한다.
     const formatResults = allResults.filter((r) => r.category === 'format');
 
@@ -245,7 +247,7 @@ export function PerformanceDemo() {
       warnings.push('WebP is not supported in this browser. JPEG will be used as fallback, resulting in larger files.');
     }
 
-    return { fastestFormat, smallestFormat, overallAvgTime, warnings };
+    return { fastestFormat, smallestFormat, overallAvgTime, warnings, safeMode: usedSafeMode };
   };
 
   const startPerformanceTests = async () => {
@@ -290,8 +292,8 @@ export function PerformanceDemo() {
         }
       }
 
-      // 결과 요약 생성
-      setSummary(buildSummary(newResults));
+      // 결과 요약 생성 (실행 시점의 안전 옵션 상태를 캡처)
+      setSummary(buildSummary(newResults, testConfig.useWebWorker));
 
       // 종료 후 메모리 사용량 측정
       if (initialMemory && performanceExt.memory) {
@@ -621,6 +623,19 @@ const blob = await processImage(source)
                           {formatTime(summary.overallAvgTime)}
                         </Typography>
                       </Paper>
+                    </Grid>
+                    {/* 안전 옵션 활성화 여부 표시 */}
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Processing Mode
+                        </Typography>
+                        <Chip
+                          label={summary.safeMode ? 'Web Worker' : 'Standard'}
+                          size="small"
+                          color={summary.safeMode ? 'primary' : 'default'}
+                        />
+                      </Box>
                     </Grid>
                   </Grid>
 
