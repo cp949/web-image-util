@@ -449,7 +449,7 @@ Our **SVG detection and processing logic** is the technical crown jewel of this 
 
 - **📝 Source Files**: 65 TypeScript files
 - **🧪 Test Coverage**: 12 comprehensive test suites
-- **📦 Current Version**: v2.0.22
+- **📦 Current Version**: v2.0.25
 - **🎯 TypeScript**: 5.9+ with strict mode
 - **⚡ Build System**: Turbo + tsup for optimal performance
 
