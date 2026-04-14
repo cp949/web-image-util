@@ -830,7 +830,7 @@ const blob = await processImage(source)
 
 ### Canvas 소유권 주의사항
 
-`.toCanvas()` 또는 `.toCanvasDetailed()`를 사용하면 Canvas 객체를 직접 받습니다. 이 경우 **Canvas는 풀에 자동 반환되지 않으므로** 사용 후 직접 해제하거나 `releaseCanvas()` 호출이 필요합니다.
+`.toCanvas()` 또는 `.toCanvasDetailed()`를 사용하면 Canvas 객체를 직접 받습니다. 이 경우 **Canvas는 풀에 자동 반환되지 않으므로** 사용이 끝나면 참조를 해제하면 됩니다. 대용량 반복 작업에서는 `toBlob()`을 사용하여 Canvas 수명 주기를 자동으로 관리하는 것을 권장합니다.
 
 ```typescript
 // toBlob() 사용 권장 — Canvas 수명 주기가 자동 관리됨

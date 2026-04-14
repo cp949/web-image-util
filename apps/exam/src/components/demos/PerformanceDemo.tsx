@@ -395,8 +395,8 @@ const blob = await processImage(source)
     ];
   };
 
-  // 포맷 비교 결과만 필터링
-  const formatResults = results.filter((r) => r.category === 'format');
+  // 포맷 비교 결과만 필터링 (buildSummary 내부의 formatResults와 구분)
+  const formatBenchmarks = results.filter((r) => r.category === 'format');
 
   return (
     <Container maxWidth="lg">
@@ -662,7 +662,7 @@ const blob = await processImage(source)
             )}
 
             {/* 포맷 비교 패널 */}
-            {formatResults.length > 0 && (
+            {formatBenchmarks.length > 0 && (
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -683,7 +683,7 @@ const blob = await processImage(source)
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {formatResults.map((result, index) => {
+                        {formatBenchmarks.map((result, index) => {
                           const rating = getPerformanceRating(result.avgTime);
                           return (
                             <TableRow key={index}>

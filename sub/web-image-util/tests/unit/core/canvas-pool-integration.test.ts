@@ -144,14 +144,13 @@ describe('CanvasPool 통합', () => {
       const pipeline = new LazyRenderPipeline(mockImage);
       pipeline.addResize({ fit: 'cover', width: 300, height: 200 });
 
-      const releaseSpy = vi.spyOn(pool, 'release');
+      const releasedBefore = pool.getStats().totalReleased;
 
       await pipeline.toBlob();
 
       // toBlob 완료 후 내부 렌더링 canvas가 pool에 반환돼야 한다
-      expect(releaseSpy).toHaveBeenCalledTimes(1);
-
-      releaseSpy.mockRestore();
+      const releasedAfter = pool.getStats().totalReleased;
+      expect(releasedAfter - releasedBefore).toBe(1);
     });
 
     it('toCanvas는 canvas를 pool에 반환하지 않아야 한다', () => {
