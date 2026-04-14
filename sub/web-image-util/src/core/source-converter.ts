@@ -11,6 +11,14 @@ import { sanitizeSvg } from '../utils/svg-sanitizer';
 import type { QualityLevel } from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
 
+/** SVG 처리 경로를 제어하는 내부 전용 모드 타입이다. */
+type SvgPassthroughMode = 'safe' | 'unsafe-pass-through';
+
+/** 공개 ProcessorOptions를 확장하는 내부 전용 옵션 타입이다. */
+type InternalSourceConverterOptions = ProcessorOptions & {
+  __svgPassthroughMode?: SvgPassthroughMode;
+};
+
 /**
  * SVG 입력 최대 허용 바이트 수 (10MiB).
  * 실제 SVG 파일은 대부분 수백KB 이하이며,
@@ -655,6 +663,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           return convertSvgToElement(svgContent, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
+            passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
           });
         }
         // 인라인 SVG 문자열은 경로 판정보다 먼저 공통 처리기로 보낸다.
@@ -662,6 +671,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           return convertSvgToElement(source, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
+            passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
           });
         }
         // 원격 SVG URL은 응답 본문을 검증한 뒤에만 로드한다.
@@ -700,6 +710,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           return convertSvgToElement(svgContent, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
+            passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
           });
         }
         // 로컬 경로처럼 보이는 SVG도 fetch 응답을 검증한 뒤 처리한다.
@@ -743,6 +754,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           return convertSvgToElement(svgContent, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
+            passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
           });
         }
         // 일반 문자열 SVG는 즉시 공통 처리기로 보낸다.
@@ -750,6 +762,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           return convertSvgToElement(source, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
+            passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
           });
         }
       } else {
@@ -758,6 +771,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
         return convertSvgToElement(svgText, undefined, undefined, {
           quality: 'auto',
           crossOrigin: options?.crossOrigin,
+          passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
         });
       }
     case 'dataurl':
@@ -801,6 +815,8 @@ interface SvgRenderingOptions {
   quality?: QualityLevel | 'auto';
   /** CORS 설정 */
   crossOrigin?: string;
+  /** SVG passthrough 모드 — unsafe는 sanitize와 호환성 보정을 건너뛴다 */
+  passthroughMode?: SvgPassthroughMode;
 }
 
 /**
@@ -1071,12 +1087,21 @@ async function convertSvgToElement(
   targetHeight?: number,
   options?: SvgRenderingOptions
 ): Promise<HTMLImageElement> {
-  // 렌더링 전에 위험 요소를 먼저 제거한다 (sanitize 계층)
-  const sanitized = sanitizeSvg(svgString);
-  // 위험한 SVG 콘텐츠는 테스트 환경 우회 이전에 차단한다
-  assertSafeSvgContent(sanitized);
-  // 크기 초과 입력도 테스트 환경 우회 이전에 차단한다
-  checkSvgSizeLimit(sanitized, '인라인 SVG');
+  const passthroughMode = options?.passthroughMode ?? 'safe';
+
+  // safe 경로만 sanitize와 안전성 검사를 수행한다.
+  const svgForSafety =
+    passthroughMode === 'unsafe-pass-through'
+      ? svgString
+      : sanitizeSvg(svgString);
+
+  if (passthroughMode !== 'unsafe-pass-through') {
+    // 위험한 SVG 콘텐츠는 테스트 환경 우회 이전에 차단한다
+    assertSafeSvgContent(svgForSafety);
+  }
+
+  // 크기 초과 입력은 passthrough 경로에서도 차단한다.
+  checkSvgSizeLimit(svgForSafety, '인라인 SVG');
 
   // 테스트 환경에서는 실제 SVG 디코딩을 우회해 타임아웃을 방지한다.
   if (typeof globalThis !== 'undefined' && (globalThis as any)._SVG_MOCK_MODE) {
@@ -1090,11 +1115,14 @@ async function convertSvgToElement(
   }
 
   try {
-    // 1. 브라우저별 차이를 줄이기 위해 sanitize된 SVG를 정규화한다.
-    const normalizedSvg = enhanceSvgForBrowser(sanitized);
+    // safe 경로는 브라우저 호환성 보정을 수행하고, unsafe 경로는 원본을 그대로 사용한다.
+    const svgForLoad =
+      passthroughMode === 'unsafe-pass-through'
+        ? svgForSafety
+        : enhanceSvgForBrowser(svgForSafety);
 
     // 2. 원본 SVG의 크기 정보를 추출한다.
-    const dimensions = extractSvgDimensions(normalizedSvg);
+    const dimensions = extractSvgDimensions(svgForLoad);
 
     // 3. 목표 렌더링 크기를 결정한다.
     const finalWidth = targetWidth || dimensions.width;
@@ -1103,7 +1131,7 @@ async function convertSvgToElement(
     // 4. 명시값 또는 복잡도 분석 결과로 품질 수준을 정한다.
     let qualityLevel: QualityLevel = 'medium';
     if (options?.quality === 'auto' || !options?.quality) {
-      const complexityResult = analyzeSvgComplexity(normalizedSvg);
+      const complexityResult = analyzeSvgComplexity(svgForLoad);
       qualityLevel = complexityResult.recommendedQuality;
     } else {
       qualityLevel = options.quality;
@@ -1124,7 +1152,7 @@ async function convertSvgToElement(
     });
 
     // 7. 정규화된 SVG를 그대로 사용해 벡터 품질을 유지한다.
-    const enhancedSvg = normalizedSvg;
+    const enhancedSvg = svgForLoad;
 
     // 8. 크기에 따라 Blob URL과 Base64를 선택하는 하이브리드 로딩을 적용한다.
     return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -1233,6 +1261,7 @@ async function loadBlobUrl(blobUrl: string, options?: ProcessorOptions): Promise
         const svgContent = await blob.text();
         return convertSvgToElement(svgContent, undefined, undefined, {
           quality: 'auto',
+          passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
         });
       }
     }
@@ -1324,6 +1353,7 @@ async function loadImageFromUrl(
             return convertSvgToElement(responseText, undefined, undefined, {
               quality: 'auto',
               crossOrigin: options?.crossOrigin,
+              passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
             });
           }
 
@@ -1334,6 +1364,7 @@ async function loadImageFromUrl(
             return convertSvgToElement(responseText, undefined, undefined, {
               quality: 'auto',
               crossOrigin: options?.crossOrigin,
+              passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
             });
           }
 
@@ -1504,6 +1535,7 @@ async function convertBlobToElement(blob: Blob, options?: ProcessorOptions): Pro
     const svgText = await blob.text();
     return convertSvgToElement(svgText, undefined, undefined, {
       quality: 'auto',
+      passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
     });
   }
 
