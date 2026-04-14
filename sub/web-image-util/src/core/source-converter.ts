@@ -19,6 +19,11 @@ type InternalSourceConverterOptions = ProcessorOptions & {
   __svgPassthroughMode?: SvgPassthroughMode;
 };
 
+/** options에서 SVG passthrough 모드를 추출한다. 기본값은 안전한 'safe'다. */
+function resolvePassthroughMode(options: InternalSourceConverterOptions | undefined): SvgPassthroughMode {
+  return options?.__svgPassthroughMode ?? 'safe';
+}
+
 /**
  * SVG 입력 최대 허용 바이트 수 (10MiB).
  * 실제 SVG 파일은 대부분 수백KB 이하이며,
@@ -648,7 +653,7 @@ function parseSvgFromDataUrl(dataUrl: string): string {
 }
 
 /** 문자열 기반 입력을 HTMLImageElement로 변환한다. */
-async function convertStringToElement(source: string, options?: ProcessorOptions): Promise<HTMLImageElement> {
+async function convertStringToElement(source: string, options?: InternalSourceConverterOptions): Promise<HTMLImageElement> {
   const sourceType = detectSourceType(source);
 
   switch (sourceType) {
@@ -663,7 +668,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           return convertSvgToElement(svgContent, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
-            passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
+            passthroughMode: resolvePassthroughMode(options),
           });
         }
         // 인라인 SVG 문자열은 경로 판정보다 먼저 공통 처리기로 보낸다.
@@ -671,7 +676,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           return convertSvgToElement(source, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
-            passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
+            passthroughMode: resolvePassthroughMode(options),
           });
         }
         // 원격 SVG URL은 응답 본문을 검증한 뒤에만 로드한다.
@@ -710,7 +715,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           return convertSvgToElement(svgContent, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
-            passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
+            passthroughMode: resolvePassthroughMode(options),
           });
         }
         // 로컬 경로처럼 보이는 SVG도 fetch 응답을 검증한 뒤 처리한다.
@@ -754,7 +759,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           return convertSvgToElement(svgContent, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
-            passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
+            passthroughMode: resolvePassthroughMode(options),
           });
         }
         // 일반 문자열 SVG는 즉시 공통 처리기로 보낸다.
@@ -762,7 +767,7 @@ async function convertStringToElement(source: string, options?: ProcessorOptions
           return convertSvgToElement(source, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
-            passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
+            passthroughMode: resolvePassthroughMode(options),
           });
         }
       } else {
@@ -1224,7 +1229,7 @@ async function convertSvgToElement(
  *
  * MIME 타입과 실제 본문을 함께 확인해 SVG를 이중 검증한다.
  */
-async function loadBlobUrl(blobUrl: string, options?: ProcessorOptions): Promise<HTMLImageElement> {
+async function loadBlobUrl(blobUrl: string, options?: InternalSourceConverterOptions): Promise<HTMLImageElement> {
   try {
     // 프로토콜 허용 여부를 먼저 확인한다.
     const allowedProtocols = options?.allowedProtocols ?? DEFAULT_ALLOWED_PROTOCOLS;
@@ -1296,7 +1301,7 @@ async function loadBlobUrl(blobUrl: string, options?: ProcessorOptions): Promise
 async function loadImageFromUrl(
   url: string,
   crossOrigin?: string,
-  options?: ProcessorOptions
+  options?: InternalSourceConverterOptions
 ): Promise<HTMLImageElement> {
   const loadImageElementDirectly = () =>
     new Promise<HTMLImageElement>((resolve, reject) => {
@@ -1353,7 +1358,7 @@ async function loadImageFromUrl(
             return convertSvgToElement(responseText, undefined, undefined, {
               quality: 'auto',
               crossOrigin: options?.crossOrigin,
-              passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
+              passthroughMode: resolvePassthroughMode(options),
             });
           }
 
@@ -1364,7 +1369,7 @@ async function loadImageFromUrl(
             return convertSvgToElement(responseText, undefined, undefined, {
               quality: 'auto',
               crossOrigin: options?.crossOrigin,
-              passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
+              passthroughMode: resolvePassthroughMode(options),
             });
           }
 
@@ -1508,7 +1513,7 @@ async function convertCanvasToElement(canvas: HTMLCanvasElement): Promise<HTMLIm
 /**
  * Convert Blob to HTMLImageElement (includes SVG high-quality processing)
  */
-async function convertBlobToElement(blob: Blob, options?: ProcessorOptions): Promise<HTMLImageElement> {
+async function convertBlobToElement(blob: Blob, options?: InternalSourceConverterOptions): Promise<HTMLImageElement> {
   // maxSourceBytes 옵션이 설정된 경우, Blob 크기가 한도를 초과하면 오류를 던진다
   const maxBytes = options?.maxSourceBytes ?? DEFAULT_MAX_SOURCE_BYTES;
   if (maxBytes > 0 && blob.size > maxBytes) {
@@ -1586,6 +1591,8 @@ export async function convertToImageElement(
   source: ImageSource,
   options?: ProcessorOptions
 ): Promise<HTMLImageElement> {
+  // 공개 시그니처는 ProcessorOptions를 유지하고, 내부 전달 시 한 번만 좁혀 사용한다.
+  const internalOptions = options as InternalSourceConverterOptions | undefined;
   try {
     if (source instanceof HTMLImageElement) {
       // Check if image is already loaded
@@ -1621,13 +1628,13 @@ export async function convertToImageElement(
         'size' in source &&
         ('slice' in source || 'arrayBuffer' in source))
     ) {
-      return convertBlobToElement(source as Blob, options);
+      return convertBlobToElement(source as Blob, internalOptions);
     }
 
     if (source instanceof ArrayBuffer) {
       const mimeType = detectMimeTypeFromBuffer(source);
       const blob = new Blob([source], { type: mimeType });
-      return convertBlobToElement(blob, options);
+      return convertBlobToElement(blob, internalOptions);
     }
 
     if (source instanceof Uint8Array) {
@@ -1638,11 +1645,11 @@ export async function convertToImageElement(
           : source.slice().buffer;
       const mimeType = detectMimeTypeFromBuffer(arrayBuffer);
       const blob = new Blob([arrayBuffer], { type: mimeType });
-      return convertBlobToElement(blob, options);
+      return convertBlobToElement(blob, internalOptions);
     }
 
     if (typeof source === 'string') {
-      return convertStringToElement(source, options);
+      return convertStringToElement(source, internalOptions);
     }
 
     throw new ImageProcessError(`Unsupported source type: ${typeof source}`, 'INVALID_SOURCE');

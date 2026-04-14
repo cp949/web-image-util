@@ -628,7 +628,8 @@ const debugOnly = await unsafe_processImage(svgXml)
 
 > `unsafe_processImage()`는 개발/디버깅 전용이다.
 > SVG 보안 필터링과 브라우저 호환성 보정을 건너뛴다.
-> 신뢰할 수 없는 입력에는 사용하면 안 되며, 브라우저의 CORS 및 canvas 보안 제약은 그대로 적용된다.
+> 신뢰할 수 없는 입력에는 사용하지 않는다.
+> 브라우저의 CORS 및 canvas 보안 제약은 그대로 적용된다.
 
 ---
 

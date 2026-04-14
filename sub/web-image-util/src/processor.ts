@@ -56,6 +56,7 @@ import { createImageElement } from './utils/image-element';
  * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  * ```
  */
+
 // 공개 ProcessorOptions를 확장하는 내부 전용 옵션 타입이다.
 type InternalProcessorOptions = ProcessorOptions & {
   __svgPassthroughMode?: SvgPassthroughMode;
@@ -874,6 +875,7 @@ export function processImage(source: ImageSource, options?: ProcessorOptions): I
  * - SVG 브라우저 호환성 보정을 건너뛴다.
  * - 신뢰할 수 없는 SVG에는 사용하지 않는다.
  * - 브라우저의 CORS 및 tainted canvas 보안은 그대로 적용된다.
+ * - SVG 크기 제한(10MiB)은 이 경로에서도 유지된다.
  */
 export function unsafe_processImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {
   return new ImageProcessor<BeforeResize>(source, {
