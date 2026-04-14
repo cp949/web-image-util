@@ -7,6 +7,7 @@
 import { CanvasPool } from './base/canvas-pool';
 import { LazyRenderPipeline } from './core/lazy-render-pipeline';
 import { convertToImageElement } from './core/source-converter';
+import type { SvgPassthroughMode } from './core/source-converter';
 import { ShortcutBuilder } from './shortcut/shortcut-builder';
 import type {
   BlurOptions,
@@ -55,9 +56,6 @@ import { createImageElement } from './utils/image-element';
  * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  * ```
  */
-// SVG 처리 경로를 제어하는 내부 전용 모드 타입이다. 공개 타입에 노출하지 않는다.
-type SvgPassthroughMode = 'safe' | 'unsafe-pass-through';
-
 // 공개 ProcessorOptions를 확장하는 내부 전용 옵션 타입이다.
 type InternalProcessorOptions = ProcessorOptions & {
   __svgPassthroughMode?: SvgPassthroughMode;

@@ -11,8 +11,8 @@ import { sanitizeSvg } from '../utils/svg-sanitizer';
 import type { QualityLevel } from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
 
-/** SVG 처리 경로를 제어하는 내부 전용 모드 타입이다. */
-type SvgPassthroughMode = 'safe' | 'unsafe-pass-through';
+/** SVG 처리 경로를 제어하는 내부 전용 모드 타입이다. 공개 index.ts에서 재export하지 않는다. */
+export type SvgPassthroughMode = 'safe' | 'unsafe-pass-through';
 
 /** 공개 ProcessorOptions를 확장하는 내부 전용 옵션 타입이다. */
 type InternalSourceConverterOptions = ProcessorOptions & {
