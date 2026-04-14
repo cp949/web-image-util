@@ -7,6 +7,7 @@
  * - Generate final result only without creating intermediate Canvas
  */
 
+import { CanvasPool } from '../base/canvas-pool';
 import type { BlurOptions, ResultMetadata } from '../types';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
@@ -131,6 +132,8 @@ export class LazyRenderPipeline {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
+            // blob 변환 실패 시에도 canvas를 pool에 반환
+            CanvasPool.getInstance().release(canvas);
             reject(new ImageProcessError('Blob creation failed', 'BLOB_CONVERSION_ERROR'));
             return;
           }
@@ -147,6 +150,9 @@ export class LazyRenderPipeline {
           // Output debugging information
           const layout = this.calculateFinalLayout();
           debugLayout(layout, this.operations.length);
+
+          // blob 변환 완료 후 내부 canvas를 pool에 반환 (소비자는 blob을 받음)
+          CanvasPool.getInstance().release(canvas);
 
           resolve({ blob, metadata });
         },

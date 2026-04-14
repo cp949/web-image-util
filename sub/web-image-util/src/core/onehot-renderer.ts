@@ -13,6 +13,7 @@
  * - Considers Canvas 2D API compatibility
  */
 
+import { CanvasPool } from '../base/canvas-pool';
 import type { ResizeConfig } from '../types/resize-config';
 import { productionLog } from '../utils/debug';
 import type { LayoutResult } from './resize-calculator';
@@ -108,11 +109,12 @@ export class OnehotRenderer {
     config: ResizeConfig,
     options?: RenderOptions
   ): HTMLCanvasElement {
-    // 1. Create output canvas and validate size
+    // 1. 출력 canvas 생성 및 크기 검증 — pool에서 우선 획득
     this.validateLayout(layout);
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(layout.canvasSize.width);
-    canvas.height = Math.round(layout.canvasSize.height);
+    const canvas = CanvasPool.getInstance().acquire(
+      Math.round(layout.canvasSize.width),
+      Math.round(layout.canvasSize.height)
+    );
 
     // 2. Set up context (apply quality options)
     const ctx = this.setupCanvas(canvas, options);

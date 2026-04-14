@@ -7,6 +7,7 @@
  * - Generates only final result without creating intermediate Canvas objects
  */
 
+import { CanvasPool } from '../base/canvas-pool';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import { debugLog } from '../utils/debug';
@@ -144,10 +145,8 @@ export function renderAllOperationsOnce(sourceImage: HTMLImageElement, operation
   // 1. Analyze all operations to calculate final layout
   const layout = analyzeAllOperations(sourceImage, operations);
 
-  // 2. Create final Canvas
-  const canvas = document.createElement('canvas');
-  canvas.width = layout.width;
-  canvas.height = layout.height;
+  // 2. 최종 Canvas 생성 — pool에서 우선 획득
+  const canvas = CanvasPool.getInstance().acquire(layout.width, layout.height);
 
   const ctx = canvas.getContext('2d');
   if (!ctx) {
