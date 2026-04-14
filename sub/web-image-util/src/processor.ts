@@ -6,8 +6,8 @@
 
 import { CanvasPool } from './base/canvas-pool';
 import { LazyRenderPipeline } from './core/lazy-render-pipeline';
-import { convertToImageElement } from './core/source-converter';
 import type { SvgPassthroughMode } from './core/source-converter';
+import { convertToImageElement } from './core/source-converter';
 import { ShortcutBuilder } from './shortcut/shortcut-builder';
 import type {
   BlurOptions,

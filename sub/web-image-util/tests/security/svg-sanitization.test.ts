@@ -5,6 +5,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { convertToImageElement } from '../../src/core/source-converter';
 import { convertToElement } from '../../src/utils/converters';
+import { sanitizeSvg } from '../../src/utils/svg-sanitizer';
 
 /**
  * 스트리밍 응답 본문을 흉내 내는 최소 Reader 구현을 만든다.
@@ -43,6 +44,26 @@ function createStreamBody(chunks: Array<string | Uint8Array>, options?: { throwO
 }
 
 describe('보안: SVG 위험 요소 차단', () => {
+  it('safe 경로는 sanitize 후 10MiB 미만이 되는 과대 script SVG도 원본 기준으로 차단한다', async () => {
+    const safeBody = '<rect width="10" height="10"/>';
+    const svgPrefix = '<svg xmlns="http://www.w3.org/2000/svg">';
+    const svgSuffix = `${safeBody}</svg>`;
+    const scriptPrefix = '<script>';
+    const scriptSuffix = '</script>';
+    const limitBytes = 10 * 1024 * 1024;
+    const fixedBytes = new TextEncoder().encode(svgPrefix + scriptPrefix + scriptSuffix + svgSuffix).length;
+    const scriptPayload = 'a'.repeat(limitBytes - fixedBytes + 1);
+    const oversizedSvg = `${svgPrefix}${scriptPrefix}${scriptPayload}${scriptSuffix}${svgSuffix}`;
+    const sanitizedSvg = sanitizeSvg(oversizedSvg);
+
+    expect(new TextEncoder().encode(oversizedSvg).length).toBeGreaterThan(limitBytes);
+    expect(new TextEncoder().encode(sanitizedSvg).length).toBeLessThan(limitBytes);
+
+    await expect(convertToElement(oversizedSvg)).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+    });
+  });
+
   it('스크립트 요소가 포함된 SVG 문자열은 sanitize 후 렌더링된다', async () => {
     // sanitize 계층이 script 요소를 제거하므로 convertToElement는 성공한다
     const maliciousSvg =

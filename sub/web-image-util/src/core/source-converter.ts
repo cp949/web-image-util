@@ -653,7 +653,10 @@ function parseSvgFromDataUrl(dataUrl: string): string {
 }
 
 /** 문자열 기반 입력을 HTMLImageElement로 변환한다. */
-async function convertStringToElement(source: string, options?: InternalSourceConverterOptions): Promise<HTMLImageElement> {
+async function convertStringToElement(
+  source: string,
+  options?: InternalSourceConverterOptions
+): Promise<HTMLImageElement> {
   const sourceType = detectSourceType(source);
 
   switch (sourceType) {
@@ -1094,11 +1097,13 @@ async function convertSvgToElement(
 ): Promise<HTMLImageElement> {
   const passthroughMode = options?.passthroughMode ?? 'safe';
 
+  if (passthroughMode !== 'unsafe-pass-through') {
+    // sanitize 과정에서 제거될 콘텐츠로 원본 크기 제한을 우회하지 못하게 한다.
+    checkSvgSizeLimit(svgString, '인라인 SVG');
+  }
+
   // safe 경로만 sanitize와 안전성 검사를 수행한다.
-  const svgForSafety =
-    passthroughMode === 'unsafe-pass-through'
-      ? svgString
-      : sanitizeSvg(svgString);
+  const svgForSafety = passthroughMode === 'unsafe-pass-through' ? svgString : sanitizeSvg(svgString);
 
   if (passthroughMode !== 'unsafe-pass-through') {
     // 위험한 SVG 콘텐츠는 테스트 환경 우회 이전에 차단한다
@@ -1121,10 +1126,7 @@ async function convertSvgToElement(
 
   try {
     // safe 경로는 브라우저 호환성 보정을 수행하고, unsafe 경로는 원본을 그대로 사용한다.
-    const svgForLoad =
-      passthroughMode === 'unsafe-pass-through'
-        ? svgForSafety
-        : enhanceSvgForBrowser(svgForSafety);
+    const svgForLoad = passthroughMode === 'unsafe-pass-through' ? svgForSafety : enhanceSvgForBrowser(svgForSafety);
 
     // 2. 원본 SVG의 크기 정보를 추출한다.
     const dimensions = extractSvgDimensions(svgForLoad);
@@ -1489,6 +1491,17 @@ function detectMimeTypeFromBuffer(buffer: ArrayBuffer): string {
   // ICO signature: 00 00 01 00
   if (bytes.length >= 4 && bytes[0] === 0x00 && bytes[1] === 0x00 && bytes[2] === 0x01 && bytes[3] === 0x00) {
     return 'image/x-icon';
+  }
+
+  // 바이너리 시그니처가 없더라도 실제 SVG XML이면 보안 경로를 타도록 본문 앞부분을 스니핑한다.
+  try {
+    const sniffLength = Math.min(bytes.length, 4096);
+    const decodedHead = new TextDecoder().decode(bytes.subarray(0, sniffLength));
+    if (isInlineSvg(decodedHead)) {
+      return 'image/svg+xml';
+    }
+  } catch {
+    // 텍스트 디코딩 실패는 비-SVG 후보로 간주하고 기존 기본값으로 폴백한다.
   }
 
   // Return PNG as default

@@ -600,6 +600,10 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 
 초과 시 `ImageProcessError(code: 'INVALID_SOURCE')`가 발생합니다.
 
+추가로 safe 경로의 SVG 크기 제한은 **sanitize 이후 결과가 아니라 원본 입력 기준**으로 적용됩니다. 즉, `<script>` 같은 제거 가능한 마크업이 많아서 sanitize 후에는 작아지더라도, 원본 SVG가 제한을 넘으면 차단됩니다.
+
+이 규칙은 문자열 입력뿐 아니라 SVG 내용을 담은 `Blob`, `ArrayBuffer`, `Uint8Array` 입력에도 동일하게 적용됩니다. 버퍼 계열 입력도 가능한 경우 SVG로 판별해 같은 보안 검사와 크기 제한 경로를 사용합니다.
+
 #### 허용되는 경우
 
 - 순수 도형, 경로, 텍스트만 포함하는 자기완결형(self-contained) SVG
@@ -628,6 +632,7 @@ const debugOnly = await unsafe_processImage(svgXml)
 
 > `unsafe_processImage()`는 개발/디버깅 전용이다.
 > SVG 보안 필터링과 브라우저 호환성 보정을 건너뛴다.
+> 다만 SVG 크기 제한과 브라우저의 기본 보안 제약(CORS, tainted canvas)은 그대로 적용된다.
 > 신뢰할 수 없는 입력에는 사용하지 않는다.
 > 브라우저의 CORS 및 canvas 보안 제약은 그대로 적용된다.
 

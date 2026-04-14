@@ -6,6 +6,14 @@ function createOversizedSvg(): string {
   return `<svg xmlns="http://www.w3.org/2000/svg"><text>${oversizedPadding}</text></svg>`;
 }
 
+function createSvgArrayBuffer(svg: string): ArrayBuffer {
+  return new TextEncoder().encode(svg).buffer as ArrayBuffer;
+}
+
+function createSvgUint8Array(svg: string): Uint8Array {
+  return new TextEncoder().encode(svg);
+}
+
 describe('unsafe_processImage', () => {
   it('루트 엔트리에서 공개된다', async () => {
     const { unsafe_processImage } = await import('../../../src');
@@ -25,10 +33,12 @@ describe('unsafe_processImage', () => {
     expect(unsafe.blob.size).toBeGreaterThan(0);
   });
 
-  it('ArrayBuffer SVG 입력에서도 passthrough 모드가 전파된다', async () => {
+  it('ArrayBuffer SVG 입력은 safe 경로에서 차단되고 unsafe 경로는 sanitize만 우회한다', async () => {
     vi.resetModules();
 
     const sanitizeSvg = vi.fn((svg: string) => svg);
+    const enhanceSvgForBrowser = vi.fn((svg: string) => svg);
+
     vi.doMock('../../../src/utils/svg-sanitizer', async () => {
       const actual = await vi.importActual<typeof import('../../../src/utils/svg-sanitizer')>(
         '../../../src/utils/svg-sanitizer'
@@ -36,43 +46,58 @@ describe('unsafe_processImage', () => {
       return { ...actual, sanitizeSvg };
     });
 
-    try {
-      const { unsafe_processImage } = await import('../../../src');
-      const svg =
-        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
-      const buffer = new TextEncoder().encode(svg).buffer as ArrayBuffer;
+    vi.doMock('../../../src/utils/svg-compatibility', async () => {
+      const actual = await vi.importActual<typeof import('../../../src/utils/svg-compatibility')>(
+        '../../../src/utils/svg-compatibility'
+      );
+      return { ...actual, enhanceSvgForBrowser };
+    });
 
-      await (unsafe_processImage(buffer).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
+    try {
+      const { processImage, unsafe_processImage } = await import('../../../src');
+      const svg =
+        '<svg xmlns="http://www.w3.org/2000/svg"><image href="./assets/pattern.png" width="10" height="10"/></svg>';
+      const buffer = createSvgArrayBuffer(svg);
+
+      await expect((processImage(buffer) as any).toElement()).rejects.toMatchObject({
+        code: 'OUTPUT_FAILED',
+        originalError: expect.objectContaining({
+          code: 'INVALID_SOURCE',
+        }),
+      });
+      expect(sanitizeSvg).toHaveBeenCalledTimes(1);
+      expect(enhanceSvgForBrowser).not.toHaveBeenCalled();
+
+      sanitizeSvg.mockClear();
+      enhanceSvgForBrowser.mockClear();
+
+      await expect((unsafe_processImage(buffer) as any).toElement()).resolves.toBeInstanceOf(HTMLImageElement);
       expect(sanitizeSvg).not.toHaveBeenCalled();
+      expect(enhanceSvgForBrowser).not.toHaveBeenCalled();
     } finally {
       vi.restoreAllMocks();
       vi.doUnmock('../../../src/utils/svg-sanitizer');
+      vi.doUnmock('../../../src/utils/svg-compatibility');
     }
   });
 
-  it('Uint8Array SVG 입력에서도 passthrough 모드가 전파된다', async () => {
-    vi.resetModules();
+  it('Uint8Array SVG 입력은 safe 경로에서 크기 제한을 유지하고 unsafe도 동일하게 차단한다', async () => {
+    const { processImage, unsafe_processImage } = await import('../../../src');
+    const uint8 = createSvgUint8Array(createOversizedSvg());
 
-    const sanitizeSvg = vi.fn((svg: string) => svg);
-    vi.doMock('../../../src/utils/svg-sanitizer', async () => {
-      const actual = await vi.importActual<typeof import('../../../src/utils/svg-sanitizer')>(
-        '../../../src/utils/svg-sanitizer'
-      );
-      return { ...actual, sanitizeSvg };
+    await expect((processImage(uint8) as any).toElement()).rejects.toMatchObject({
+      code: 'OUTPUT_FAILED',
+      originalError: expect.objectContaining({
+        code: 'INVALID_SOURCE',
+      }),
     });
 
-    try {
-      const { unsafe_processImage } = await import('../../../src');
-      const svg =
-        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
-      const uint8 = new TextEncoder().encode(svg);
-
-      await (unsafe_processImage(uint8).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
-      expect(sanitizeSvg).not.toHaveBeenCalled();
-    } finally {
-      vi.restoreAllMocks();
-      vi.doUnmock('../../../src/utils/svg-sanitizer');
-    }
+    await expect((unsafe_processImage(uint8) as any).toElement()).rejects.toMatchObject({
+      code: 'OUTPUT_FAILED',
+      originalError: expect.objectContaining({
+        code: 'INVALID_SOURCE',
+      }),
+    });
   });
 });
 
@@ -110,8 +135,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
       });
 
       const { processImage, unsafe_processImage } = await import('../../../src');
-      const svg =
-        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
 
       await (processImage(svg).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
       expect(sanitizeSvg).toHaveBeenCalled();
@@ -152,7 +176,9 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
 
     sanitizeSvg.mockClear();
 
-    await expect((unsafe_processImage(svgWithRelativeHref) as any).toElement()).resolves.toBeInstanceOf(HTMLImageElement);
+    await expect((unsafe_processImage(svgWithRelativeHref) as any).toElement()).resolves.toBeInstanceOf(
+      HTMLImageElement
+    );
     expect(sanitizeSvg).not.toHaveBeenCalled();
   });
 
