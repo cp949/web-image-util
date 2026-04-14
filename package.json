@@ -8,7 +8,7 @@
   "author": "cp949 <cp949@naver.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=20.19.0"
   },
   "packageManager": "pnpm@10.17.1",
   "scripts": {

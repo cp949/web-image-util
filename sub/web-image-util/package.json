@@ -11,7 +11,7 @@
   "license": "MIT",
   "homepage": "https://github.com/cp949/web-image-util.git",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "build": "tsup && node ./scripts/generate-llm-txt.mjs",
