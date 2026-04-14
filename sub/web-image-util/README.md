@@ -1,22 +1,22 @@
 # @cp949/web-image-util
 
-> 웹 브라우저를 위한 고성능 이미지 처리 라이브러리
+> 웹 브라우저를 위한 이미지 처리 라이브러리
 
-Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 등 다양한 이미지 처리 기능을 제공합니다.
+Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 제공합니다.
 
-**설계 철학**: 웹 브라우저 환경에 최적화된 강력한 이미지 처리 기능을 제공하여, 서버 사이드 이미지 처리의 편의성을 Canvas 2D API와 함께 클라이언트 환경으로 가져옵니다.
+**설계 방향**: 서버 사이드 이미지 처리 라이브러리의 사용성을 참고하되, 브라우저 환경에 맞는 방식으로 구성합니다.
 
 [![npm version](https://img.shields.io/npm/v/@cp949/web-image-util)](https://www.npmjs.com/package/@cp949/web-image-util)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## 주요 특징
 
-- **🎯 완전한 타입 안정성**: Discriminated Union 기반 TypeScript 타입 시스템 지원
-- **🎨 고품질 SVG 처리**: 벡터 품질을 최대한 보존하는 전용 파이프라인 제공
-- **🔗 체이닝 API**: 직관적인 메서드 체이닝으로 편리하게 사용 가능
-- **⚡ 높은 성능**: Canvas Pool, 스마트 포맷 선택 등 다양한 최적화 적용
-- **🌐 제로 의존성**: 브라우저 네이티브 API만 사용
-- **📦 트리 셰이킹 지원**: ES 모듈 기반 번들 크기 최적화
+- **타입 안정성**: Discriminated Union 기반 TypeScript 타입 시스템 지원
+- **SVG 처리**: 벡터 품질 보존을 고려한 렌더링 파이프라인 제공
+- **체이닝 API**: 메서드 체이닝 방식으로 구성
+- **성능 고려**: Canvas Pool, 포맷 선택 등의 최적화 적용
+- **제로 의존성**: 브라우저 네이티브 API만 사용
+- **트리 셰이킹 지원**: ES 모듈 기반 번들 크기 최적화
 
 ## 설치
 
@@ -26,45 +26,45 @@ npm install @cp949/web-image-util
 
 ## 🚀 빠른 시작
 
-### ⚡ 5분 안에 첫 성공
+### 기본 예제
 
 ```typescript
 import { processImage } from '@cp949/web-image-util';
 
-// 🎯 시나리오 1: SNS 프로필 이미지(정사각형, 고품질)
+// 프로필 이미지
 const profileImage = await processImage(userPhoto)
-  .shortcut.coverBox(400, 400)  // 정사각형으로 크롭
+  .shortcut.coverBox(400, 400)
   .toBlob({ format: 'webp', quality: 0.9 });
 
-// 📱 시나리오 2: 반응형 썸네일(빠른 로딩)
+// 썸네일
 const thumbnail = await processImage(originalImage)
-  .shortcut.scale(0.5)  // 50% 축소
+  .shortcut.scale(0.5)
   .toBlob({ format: 'webp', quality: 0.8 });
 
-// 🎨 시나리오 3: 워터마크용 배너
+// 배너 이미지
 const banner = await processImage(backgroundImage)
   .resize({ fit: 'cover', width: 1200, height: 400 })
-  .blur(1)  // 약한 블러 효과
+  .blur(1)
   .toBlob({ format: 'jpeg', quality: 0.85 });
 ```
 
-### 🎮 추가 예제
+### 추가 예제
 
 ```typescript
-// ✨ 프리셋 함수로 더 간단하게 사용
+// 프리셋 함수 사용
 import { createThumbnail, createAvatar } from '@cp949/web-image-util/presets';
 
 const thumbnail = await createThumbnail(imageFile, { width: 300, height: 200 });
 const avatar = await createAvatar(profilePhoto, { size: 128 });
 ```
 
-### 📦 프로젝트에 바로 적용하기
+### 설치 후 예제
 
 ```bash
 # 1. 설치
 npm install @cp949/web-image-util
 
-# 2. 타입 정의 사용(TypeScript)
+# 2. TypeScript에서 import
 import { processImage } from '@cp949/web-image-util';
 
 # 3. 첫 이미지 처리
@@ -75,7 +75,7 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
 
 - [아키텍처](#-아키텍처)
 - [리사이즈 가이드](#-리사이즈-가이드)
-- [🚀 Shortcut API](#-shortcut-api)
+- [Shortcut API](#-shortcut-api)
 - [편의 함수(프리셋)](#-편의-함수프리셋)
 - [입력/출력 타입](#-입력출력-타입)
 - [SVG 처리](#-svg-처리)
@@ -91,14 +91,14 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
 ```
                          ┌────────────────────┐
                          │  processImage()    │
-                         │    (팩토리 함수)    │
+                         │    (팩토리 함수)   │
                          └─────────┬──────────┘
                                    │
            ┌───────────────────────┴─────────────────────┐
            │                                             │
    ┌───────▼─────────┐                           ┌───────▼────────┐
    │ SourceConverter │                           │ ImageProcessor │
-   │   (소스 변환)    │                           │   (체이닝 API)  │
+   │   (소스 변환)   │                           │   (체이닝 API) │
    └───────┬─────────┘                           └───────┬────────┘
            │                                             │
  ┌─────────▼──────────┐                          ┌───────▼────────┐
@@ -113,7 +113,7 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
  │ - SVG 정규화           │                │ - calculateFinalLayout()  │
  │ - 복잡도 분석          │                │ - fit 모드 계산           │
  │ - 품질 레벨 선택       │                └─────────────┬─────────────┘
- │ - 고품질 렌더링        │                              │
+ │ - 품질 보존 렌더링     │                              │
  └────────────────────────┘                ┌─────────────▼─────────────┐
                                            │ OnehotRenderer            │
                                            │ - drawImage() 1회 호출    │
@@ -124,7 +124,7 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
 
 ### 핵심 흐름
 
-1. **입력 처리**: 파일, URL, SVG 등 다양한 소스를 `HTMLImageElement`로 변환
+1. **입력 처리**: 파일, URL, SVG 등 여러 소스를 `HTMLImageElement`로 변환
 2. **연산 누적**: `.resize()`, `.blur()` 같은 체이닝 메서드를 `LazyPipeline`에 저장
 3. **배치 렌더링**: 최종 출력 시점에 단 한 번의 Canvas 처리로 전체 연산 실행
 4. **포맷 변환**: Canvas 결과를 Blob, DataURL, File 등으로 변환
@@ -134,7 +134,7 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
 - **지연 렌더링**: 중간 Canvas를 만들지 않아 메모리 효율이 높음
 - **SVG 호환성 보정**: 브라우저별 SVG 렌더링 차이를 자동 보정
 - **타입 안정성**: 잘못된 체이닝을 컴파일 타임에 방지
-- **스마트 포맷 선택**: 브라우저 지원 여부를 바탕으로 최적 포맷 자동 선택
+- **포맷 선택**: 브라우저 지원 여부를 바탕으로 적절한 포맷 선택 가능
 
 ---
 
@@ -144,13 +144,13 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
 
 다음 5가지 리사이즈 방식을 제공합니다.
 
-| fit 모드 | 비율 유지 | 전체 표시 | 여백 추가 | 크롭 | 확대/축소 | 사용 예시 |
-| -------- | --------- | --------- | --------- | ---- | --------- | -------- |
-| `cover`   | ✅ | ❌ | ❌ | ✅ | 둘 다 | 썸네일, 배경 이미지 |
-| `contain` | ✅ | ✅ | ✅ | ❌ | 둘 다 | 갤러리, 미리보기 |
-| `fill`    | ❌ | ✅ | ❌ | ❌ | 둘 다 | 정확한 크기 필요 |
-| `maxFit`  | ✅ | ✅ | ❌ | ❌ | 축소만 | 최대 크기 제한 |
-| `minFit`  | ✅ | ✅ | ❌ | ❌ | 확대만 | 최소 크기 보장 |
+| fit 모드  | 비율 유지 | 전체 표시 | 여백 추가 | 크롭 | 확대/축소 | 사용 예시           |
+| --------- | --------- | --------- | --------- | ---- | --------- | ------------------- |
+| `cover`   | ✅         | ❌         | ❌         | ✅    | 둘 다     | 썸네일, 배경 이미지 |
+| `contain` | ✅         | ✅         | ✅         | ❌    | 둘 다     | 갤러리, 미리보기    |
+| `fill`    | ❌         | ✅         | ❌         | ❌    | 둘 다     | 정확한 크기 필요    |
+| `maxFit`  | ✅         | ✅         | ❌         | ❌    | 축소만    | 최대 크기 제한      |
+| `minFit`  | ✅         | ✅         | ❌         | ❌    | 확대만    | 최소 크기 보장      |
 
 ### 기본 사용법
 
@@ -200,7 +200,7 @@ await processImage(source)
   .toBlob();
 ```
 
-### 실전 예제
+### 예제
 
 ```typescript
 // 썸네일(정사각형, 크롭 허용)
@@ -208,12 +208,12 @@ const thumbnail = await processImage(photo)
   .resize({ fit: 'cover', width: 200, height: 200 })
   .toBlob({ format: 'webp', quality: 0.8 });
 
-// 프로필 아바타(고품질)
+// 프로필 아바타
 const avatar = await processImage(userPhoto)
   .resize({ fit: 'cover', width: 150, height: 150 })
   .toBlob({ format: 'png', quality: 0.9 });
 
-// 모바일 최적화(원본 크기 보호)
+// 모바일용 축소 이미지
 const mobile = await processImage(photo)
   .resize({ fit: 'maxFit', width: 400 })
   .toBlob({ format: 'webp', quality: 0.7 });
@@ -239,19 +239,19 @@ const correct = await processImage(source)
 
 ## 🚀 Shortcut API
 
-Sharp.js와 유사한 직관적 Shortcut API를 제공합니다. 자주 사용하는 리사이즈 패턴을 더 간결하게 표현할 수 있습니다.
+Sharp.js와 비슷한 형태의 Shortcut API를 제공합니다. 자주 사용하는 리사이즈 패턴을 짧게 표현할 수 있습니다.
 
 ### 사용법
 
 ```typescript
 import { processImage } from '@cp949/web-image-util';
 
-// Shortcut API로 간단하게 사용
+// Shortcut API 사용
 const result = await processImage(source)
   .shortcut.coverBox(300, 200)
   .toBlob();
 
-// 다른 메서드와 체이닝도 가능
+// 다른 메서드와 조합 가능
 const blurred = await processImage(source)
   .shortcut.scale(1.5)
   .blur(2)
@@ -371,7 +371,7 @@ await processImage(source).shortcut.coverBox(300, 200, {
 
 ## 📋 편의 함수(프리셋)
 
-용도별로 최적화된 설정을 자동 적용하는 함수들입니다.
+용도별 기본 설정을 적용하는 함수들입니다.
 
 ```typescript
 import {
@@ -380,25 +380,25 @@ import {
   createSocialImage
 } from '@cp949/web-image-util/presets';
 
-// 웹 썸네일(성능 우선)
+// 웹 썸네일
 const thumbnail = await createThumbnail(source, {
   size: 300,           // 300x300 정사각형
   format: 'webp',      // WebP 우선(미지원 시 JPEG)
   quality: 0.8         // 중간 품질
 });
 
-// 프로필 아바타(품질 우선)
+// 프로필 아바타
 const avatar = await createAvatar(userPhoto, {
   size: 64,            // 64x64
   format: 'png',       // PNG(투명도 지원)
-  quality: 0.9         // 높은 품질
+  quality: 0.9
 });
 
-// 소셜 미디어 이미지(호환성 우선)
+// 소셜 미디어 이미지
 const instagramPost = await createSocialImage(photo, {
   platform: 'instagram',  // 1080x1080 자동 적용
-  format: 'jpeg',         // JPEG(호환성 우선)
-  quality: 0.85           // 균형 잡힌 품질
+  format: 'jpeg',         // JPEG 사용
+  quality: 0.85
 });
 
 // 지원 플랫폼: 'twitter', 'facebook', 'instagram', 'linkedin', 'youtube', 'pinterest'
@@ -410,7 +410,7 @@ const instagramPost = await createSocialImage(photo, {
 
 ### 입력(`ImageSource`)
 
-다양한 형태의 이미지 소스를 지원합니다.
+여러 형태의 이미지 소스를 지원합니다.
 
 ```typescript
 // File/Blob 객체
@@ -460,7 +460,7 @@ formData.append('image', result.blob);
 await fetch('/upload', { method: 'POST', body: formData });
 ```
 
-#### `toDataURL()` - 즉시 표시용
+#### `toDataURL()` - 화면 표시용
 
 ```typescript
 const result = await processImage(source)
@@ -498,9 +498,9 @@ ctx.fillText('Watermark', 10, 20);
 
 ## 🎨 SVG 처리
 
-### 자동 SVG 감지와 고품질 렌더링
+### 자동 SVG 감지와 렌더링
 
-이 라이브러리의 **핵심 기술**은 다양한 SVG 입력 형태를 정확하고 안전하게 감지하여 벡터 품질을 최대한 보존하는 것입니다.
+이 라이브러리는 여러 SVG 입력 형태를 감지하고, 벡터 특성을 유지한 채 렌더링하는 것을 목표로 합니다.
 
 #### 지원하는 SVG 소스 유형
 
@@ -524,23 +524,23 @@ const svgFile = new File([svgXml], 'icon.svg', { type: 'image/svg+xml' });
 await processImage(svgFile).resize({ width: 200, height: 200 }).toBlob();
 ```
 
-#### SVG 품질 보장
+#### SVG 렌더링 특성
 
-리사이즈 크기와 무관하게 선명한 결과를 유지합니다.
+리사이즈 크기와 무관하게 선명한 결과를 유지하도록 처리합니다.
 
 ```typescript
-// 1000x1000으로 확대해도 선명한 고품질 SVG 리사이즈
+// 큰 크기로 출력하는 예제
 const result = await processImage(svgString)
   .resize({ fit: 'cover', width: 1000, height: 1000 })
   .toBlob({ format: 'png' });
 ```
 
-**기술적 특징**
+**특징**
 
-- ✅ **벡터 품질 보존**: SVG 원본을 유지한 채 목표 크기로 직접 렌더링
-- ✅ **정확한 감지**: BOM, XML 프롤로그, 주석, DOCTYPE 제거 후 `<svg>` 루트를 정밀 판정
-- ✅ **오탐 방지**: HTML 안의 SVG 조각, 일반 XML 등 비-SVG 입력을 구분
-- ✅ **이중 검증**: MIME 타입과 콘텐츠 스니핑을 함께 사용해 안전하게 감지
+- **벡터 품질 보존**: SVG 원본을 유지한 채 목표 크기로 직접 렌더링
+- **정확한 감지**: BOM, XML 프롤로그, 주석, DOCTYPE 제거 후 `<svg>` 루트를 정밀 판정
+- **오탐 방지**: HTML 안의 SVG 조각, 일반 XML 등 비-SVG 입력을 구분
+- **이중 검증**: MIME 타입과 콘텐츠 스니핑을 함께 사용해 안전하게 감지
 
 #### SVG 호환성 보정(선택)
 
@@ -563,9 +563,9 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 
 라이브러리는 SVG 입력에 대해 **sanitize 우선 + 애매하면 fail-closed** 정책을 기본으로 적용합니다.
 
-이 라이브러리의 목적은 범용 SVG 보안 정화기가 아니라 **브라우저용 이미지 처리기**입니다. 따라서 SVG에 대해서는 명백히 위험한 패턴을 우선 차단하고, 안전성을 확신하기 어려운 입력은 거부하는 방향을 기본 정책으로 삼습니다.
+이 라이브러리의 목적은 범용 SVG 보안 필터가 아니라 **브라우저용 이미지 처리기**입니다. 따라서 SVG에 대해서는 명백히 위험한 패턴을 우선 차단하고, 안전성을 확신하기 어려운 입력은 거부하는 방향을 기본 정책으로 삼습니다.
 
-복잡한 SVG를 최대한 보존하면서 정교하게 정화해야 하는 요구사항은 이 라이브러리의 기본 책임 범위를 벗어납니다. 그런 경우에는 애플리케이션에서 전용 SVG 보안 sanitizer를 먼저 적용한 뒤, 정제된 결과를 `@cp949/web-image-util`에 전달하는 방식을 권장합니다.
+복잡한 SVG를 최대한 보존하면서 세밀한 보안 처리가 필요한 요구사항은 이 라이브러리의 기본 책임 범위를 벗어납니다. 그런 경우에는 애플리케이션에서 전용 SVG sanitizer를 먼저 적용한 뒤, 처리된 결과를 `@cp949/web-image-util`에 전달하는 방식을 권장합니다.
 
 #### 정제 후 허용되는 경우
 
@@ -592,11 +592,11 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 
 과도한 메모리 사용을 막기 위해 다음 입력에는 크기 제한이 적용됩니다.
 
-| 입력 유형 | 제한 |
-| --- | --- |
-| 인라인 SVG 문자열 | 약 10MiB(UTF-8 바이트 기준) |
+| 입력 유형                     | 제한                                  |
+| ----------------------------- | ------------------------------------- |
+| 인라인 SVG 문자열             | 약 10MiB(UTF-8 바이트 기준)           |
 | Data URL 디코딩 후 SVG 콘텐츠 | 약 10MiB(디코딩 후 UTF-8 바이트 기준) |
-| 원격 SVG/XML 계열 응답 텍스트 | 약 10MiB(수신 바이트 기준) |
+| 원격 SVG/XML 계열 응답 텍스트 | 약 10MiB(수신 바이트 기준)            |
 
 초과 시 `ImageProcessError(code: 'INVALID_SOURCE')`가 발생합니다.
 
@@ -783,7 +783,7 @@ try {
 
 ## 📦 서브패키지
 
-필요한 기능만 가져와 번들 크기를 최적화할 수 있습니다.
+필요한 기능만 가져와 사용할 수 있습니다.
 
 ```typescript
 // 메인 API
@@ -811,14 +811,14 @@ initializeFilterSystem();
 
 ---
 
-## ⚡ 성능 최적화
+## ⚡ 성능
 
 ### Canvas Pool
 
 라이브러리는 내부적으로 **Canvas Pool**을 사용하여 Canvas 객체를 재사용합니다. 매 처리마다 새 Canvas를 생성·파괴하는 대신, 완료된 Canvas를 풀에 반환하여 다음 처리에 재사용합니다. 이로 인해:
 
 - **GC 압력 감소**: 반복 처리 시 Canvas 생성·소멸로 인한 Garbage Collection 빈도를 줄입니다.
-- **일관된 처리 속도**: 첫 번째 이후 처리에서 Canvas 생성 오버헤드가 없어집니다.
+- **처리 비용 감소**: 반복 처리에서 Canvas 생성 오버헤드를 줄입니다.
 - **자동 관리**: 별도 설정 없이 `toBlob()`, `toDataURL()`, `toFile()` 사용 시 자동으로 작동합니다.
 
 ```typescript
@@ -846,14 +846,14 @@ const canvas = await processImage(source).resize({ fit: 'cover', width: 300, hei
 
 포맷 선택은 처리 시간과 출력 파일 크기 모두에 영향을 미칩니다.
 
-| 포맷 | 처리 속도 | 파일 크기 | 추천 상황 |
-| ---- | --------- | --------- | --------- |
-| WebP | 빠름 | 작음 (JPEG 대비 25~35% 감소) | WebP 지원 브라우저 대상, 일반 사진 |
-| JPEG | 빠름 | 중간 | 범용, 투명도 불필요 |
-| PNG  | 느림 | 큼 (무손실) | 투명도 필요, 아이콘, 텍스트 포함 이미지 |
+| 포맷 | 처리 속도 | 파일 크기                    | 추천 상황                               |
+| ---- | --------- | ---------------------------- | --------------------------------------- |
+| WebP | 빠름      | 작음 (JPEG 대비 25~35% 감소) | WebP 지원 브라우저 대상, 일반 사진      |
+| JPEG | 빠름      | 중간                         | 범용, 투명도 불필요                     |
+| PNG  | 느림      | 큼 (무손실)                  | 투명도 필요, 아이콘, 텍스트 포함 이미지 |
 
 ```typescript
-// 브라우저 지원 여부를 확인하고 최적 포맷을 선택한다.
+// 브라우저 지원 여부를 확인하고 포맷을 선택한다.
 import { detectBrowserCapabilities } from '@cp949/web-image-util';
 
 const caps = await detectBrowserCapabilities();
@@ -882,6 +882,6 @@ MIT License
 
 <div align="center">
 
-웹을 위해 ❤️
+웹 브라우저 환경을 위한 이미지 처리 라이브러리
 
 </div>
