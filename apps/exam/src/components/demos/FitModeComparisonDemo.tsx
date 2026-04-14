@@ -58,7 +58,12 @@ export function FitModeComparisonDemo() {
 
   const fitModes = [
     { key: 'cover', name: 'Cover', color: '#f44336', description: 'Image fills the area completely (may crop)' },
-    { key: 'contain', name: 'Contain', color: '#2196f3', description: 'Entire image fits within area (may have padding)' },
+    {
+      key: 'contain',
+      name: 'Contain',
+      color: '#2196f3',
+      description: 'Entire image fits within area (may have padding)',
+    },
     { key: 'fill', name: 'Fill', color: '#ff9800', description: 'Fits area ignoring aspect ratio' },
     { key: 'maxFit', name: 'MaxFit', color: '#4caf50', description: 'Scale down only, no enlargement' },
     { key: 'minFit', name: 'MinFit', color: '#9c27b0', description: 'Scale up only, no reduction' },
@@ -94,7 +99,7 @@ export function FitModeComparisonDemo() {
       if (widthAttr && heightAttr) {
         const width = parseFloat(widthAttr.replace(/[^\d.]/g, ''));
         const height = parseFloat(heightAttr.replace(/[^\d.]/g, ''));
-        if (!isNaN(width) && !isNaN(height)) {
+        if (!Number.isNaN(width) && !Number.isNaN(height)) {
           return { width, height };
         }
       }
@@ -103,7 +108,7 @@ export function FitModeComparisonDemo() {
       const viewBox = svgElement.getAttribute('viewBox');
       if (viewBox) {
         const values = viewBox.split(/\s+/).map((v) => parseFloat(v));
-        if (values.length === 4 && !values.some(isNaN)) {
+        if (values.length === 4 && !values.some(Number.isNaN)) {
           return { width: values[2], height: values[3] };
         }
       }
@@ -220,7 +225,7 @@ export function FitModeComparisonDemo() {
         }
       }
     } catch (err) {
-      setError('An error occurred during image processing: ' + (err instanceof Error ? err.message : err));
+      setError(`An error occurred during image processing: ${err instanceof Error ? err.message : err}`);
     } finally {
       setComparisonState((prev) => ({ ...prev, isProcessing: false }));
     }
@@ -322,8 +327,8 @@ export function FitModeComparisonDemo() {
         SVG Fit Modes: Vector Processing Without Quality Loss
       </Typography>
       <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-        Experience high-quality fit mode processing using SVG's resolution-independent characteristics. Vector quality is
-        maintained at any size.
+        Experience high-quality fit mode processing using SVG's resolution-independent characteristics. Vector quality
+        is maintained at any size.
       </Typography>
 
       <Grid container spacing={4}>
@@ -359,7 +364,9 @@ export function FitModeComparisonDemo() {
                   label="Quality Comparison Mode"
                 />
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                  {showQualityComparison ? 'Compare SVG quality at various sizes' : 'Compare fit modes (adjustable size)'}
+                  {showQualityComparison
+                    ? 'Compare SVG quality at various sizes'
+                    : 'Compare fit modes (adjustable size)'}
                 </Typography>
               </CardContent>
             </Card>
@@ -477,9 +484,8 @@ export function FitModeComparisonDemo() {
                 </Typography>
                 <Typography variant="body2">
                   • Resolution Independent: No pixelation at any size
-                  <br />
-                  • Sharp Curves: Smooth lines with vector-based rendering<br />
-                  • Free Scaling: Infinite zoom without quality degradation
+                  <br />• Sharp Curves: Smooth lines with vector-based rendering
+                  <br />• Free Scaling: Infinite zoom without quality degradation
                   <br />• File Efficiency: Small file size even for complex images
                 </Typography>
               </Alert>

@@ -34,10 +34,10 @@ export class AutoMemoryManager {
   private optimizationCount = 0;
 
   static getInstance(): AutoMemoryManager {
-    if (!this.instance) {
-      this.instance = new AutoMemoryManager();
+    if (!AutoMemoryManager.instance) {
+      AutoMemoryManager.instance = new AutoMemoryManager();
     }
-    return this.instance;
+    return AutoMemoryManager.instance;
   }
 
   /**

@@ -31,8 +31,8 @@ export class FormatDetector {
   /** 특정 포맷 지원 여부를 확인한다. */
   static async isSupported(format: ImageFormat): Promise<boolean> {
     // 이미 계산한 결과가 있으면 캐시를 재사용한다.
-    if (this.supportCache.has(format)) {
-      return this.supportCache.get(format)!;
+    if (FormatDetector.supportCache.has(format)) {
+      return FormatDetector.supportCache.get(format)!;
     }
 
     let supported = false;
@@ -46,11 +46,11 @@ export class FormatDetector {
         break;
 
       case ImageFormats.WEBP:
-        supported = await this.testWebPSupport();
+        supported = await FormatDetector.testWebPSupport();
         break;
 
       case ImageFormats.AVIF:
-        supported = await this.testAVIFSupport();
+        supported = await FormatDetector.testAVIFSupport();
         break;
 
       case ImageFormats.SVG:
@@ -58,7 +58,7 @@ export class FormatDetector {
         break;
     }
 
-    this.supportCache.set(format, supported);
+    FormatDetector.supportCache.set(format, supported);
     return supported;
   }
 
@@ -96,7 +96,7 @@ export class FormatDetector {
     const supported: ImageFormat[] = [];
 
     for (const format of formats) {
-      if (await this.isSupported(format)) {
+      if (await FormatDetector.isSupported(format)) {
         supported.push(format);
       }
     }
@@ -108,14 +108,14 @@ export class FormatDetector {
   static async getBestFormat(hasTransparency: boolean = false): Promise<ImageFormat> {
     // Case with transparency
     if (hasTransparency) {
-      if (await this.isSupported(ImageFormats.AVIF)) return ImageFormats.AVIF;
-      if (await this.isSupported(ImageFormats.WEBP)) return ImageFormats.WEBP;
+      if (await FormatDetector.isSupported(ImageFormats.AVIF)) return ImageFormats.AVIF;
+      if (await FormatDetector.isSupported(ImageFormats.WEBP)) return ImageFormats.WEBP;
       return ImageFormats.PNG;
     }
 
     // Case without transparency
-    if (await this.isSupported(ImageFormats.AVIF)) return ImageFormats.AVIF;
-    if (await this.isSupported(ImageFormats.WEBP)) return ImageFormats.WEBP;
+    if (await FormatDetector.isSupported(ImageFormats.AVIF)) return ImageFormats.AVIF;
+    if (await FormatDetector.isSupported(ImageFormats.WEBP)) return ImageFormats.WEBP;
     return ImageFormats.JPEG;
   }
 }

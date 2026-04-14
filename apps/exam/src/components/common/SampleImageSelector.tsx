@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { useSampleImages, type SampleImage } from '../../hooks/useSampleImages';
+import { type SampleImage, useSampleImages } from '../../hooks/useSampleImages';
 
 /**
  * SampleImageSelector Component Props
@@ -41,16 +41,11 @@ export function SampleImageSelector({
   compact = false,
   recommendedFor,
 }: SampleImageSelectorProps) {
-  const { sampleImages, getImagesByType, getRecommendedImages } =
-    useSampleImages();
-  const [selectedCategory, setSelectedCategory] = useState<
-    'all' | 'jpg' | 'png' | 'svg'
-  >(selectedType);
+  const { sampleImages, getImagesByType, getRecommendedImages } = useSampleImages();
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'jpg' | 'png' | 'svg'>(selectedType);
 
   // Display all sample images (recommendation filter removed)
-  const displayImages: SampleImage[] = selectedCategory === 'all'
-    ? sampleImages
-    : getImagesByType(selectedCategory);
+  const displayImages: SampleImage[] = selectedCategory === 'all' ? sampleImages : getImagesByType(selectedCategory);
 
   // Recommended images info (for display)
   const recommendedImages = recommendedFor ? getRecommendedImages(recommendedFor) : [];
@@ -66,17 +61,13 @@ export function SampleImageSelector({
               alignItems: 'center',
             }}
           >
-            <Typography variant="h6">
-              Select Sample Image
-            </Typography>
+            <Typography variant="h6">Select Sample Image</Typography>
 
             {!compact && (
               <ToggleButtonGroup
                 value={selectedCategory}
                 exclusive
-                onChange={(_, newCategory) =>
-                  setSelectedCategory(newCategory || 'all')
-                }
+                onChange={(_, newCategory) => setSelectedCategory(newCategory || 'all')}
                 size="small"
               >
                 <ToggleButton value="all">All</ToggleButton>
@@ -115,16 +106,12 @@ export function SampleImageSelector({
                     sx={{
                       aspectRatio: '1 / 1',
                       objectFit: 'cover',
-                      height: compact ? 80 : 120
+                      height: compact ? 80 : 120,
                     }}
                   />
                   {!compact && (
                     <CardContent sx={{ p: 1 }}>
-                      <Typography
-                        variant="caption"
-                        noWrap
-                        sx={{ display: 'block', mb: 0.5 }}
-                      >
+                      <Typography variant="caption" noWrap sx={{ display: 'block', mb: 0.5 }}>
                         {image.name}
                       </Typography>
                       <Box
@@ -134,23 +121,10 @@ export function SampleImageSelector({
                           gap: 0.5,
                         }}
                       >
-                        <Chip
-                          label={image.type.toUpperCase()}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                        <Chip
-                          label={image.size}
-                          size="small"
-                          variant="outlined"
-                        />
+                        <Chip label={image.type.toUpperCase()} size="small" color="primary" variant="outlined" />
+                        <Chip label={image.size} size="small" variant="outlined" />
                       </Box>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: 'block', mt: 0.5 }}
-                      >
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
                         {image.description}
                       </Typography>
                     </CardContent>

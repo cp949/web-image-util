@@ -52,7 +52,7 @@ This is a **monorepo** built with **Turbo** and **pnpm workspaces**, containing:
 
 - **Core Library** (`sub/web-image-util/`) - The main image processing package
 - **Demo App** (`apps/exam/`) - Interactive Next.js application showcasing all features
-- **Shared Configs** - ESLint and TypeScript configurations
+- **Shared Configs** (`sub/typescript-config/`) - Shared TypeScript configuration
 
 ## 📦 Core Library Features
 
@@ -353,7 +353,6 @@ web-image-util/
 │   │   │   └── composition/     # Image composition
 │   │   ├── tests/               # 106 test cases
 │   │   └── README.md            # 📚 Complete API documentation
-│   ├── eslint-config/           # Shared ESLint configuration
 │   └── typescript-config/       # Shared TypeScript configuration
 ├── 🖥️ apps/
 │   └── exam/                    # 📱 Next.js demo application
@@ -384,9 +383,9 @@ pnpm test:ui            # Run in UI mode
 
 # 🔍 Quality Checks
 pnpm typecheck          # TypeScript type checking
-pnpm lint               # ESLint linting
-pnpm lint:fix           # Auto-fix linting errors
-pnpm format             # Prettier formatting
+pnpm lint               # Biome linting
+pnpm lint:fix           # Auto-fix Biome issues
+pnpm format             # Biome formatting
 
 # 🚀 Development Server
 pnpm dev                # Start demo app dev server
@@ -467,4 +466,3 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ---
 
 **Made with ❤️ for the web development community**
-

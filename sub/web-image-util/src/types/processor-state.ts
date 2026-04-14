@@ -55,4 +55,5 @@ export type ResizeAlreadyCalledError = {
 /**
  * Type-level constraint check
  */
-export type EnsureCanResize<T extends ProcessorState> = CanResize<T> extends true ? void : ResizeAlreadyCalledError;
+export type EnsureCanResize<T extends ProcessorState> =
+  CanResize<T> extends true ? undefined : ResizeAlreadyCalledError;

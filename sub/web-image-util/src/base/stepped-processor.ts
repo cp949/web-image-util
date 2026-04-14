@@ -37,7 +37,7 @@ export class SteppedProcessor {
     targetHeight: number,
     options: SteppedProcessingOptions = {}
   ): Promise<HTMLCanvasElement> {
-    const opts = { ...this.DEFAULT_OPTIONS, ...options };
+    const opts = { ...SteppedProcessor.DEFAULT_OPTIONS, ...options };
     const sourceWidth = img.width;
     const sourceHeight = img.height;
 
@@ -62,11 +62,11 @@ export class SteppedProcessor {
     // Determine if stepped reduction is needed
     if (minScale >= opts.minStepRatio || opts.quality === 'fast') {
       // Direct resizing is sufficient
-      return this.directResize(img, targetWidth, targetHeight, opts.quality);
+      return SteppedProcessor.directResize(img, targetWidth, targetHeight, opts.quality);
     }
 
     // Execute stepped reduction
-    return this.performSteppedResize(img, targetWidth, targetHeight, minScale, opts);
+    return SteppedProcessor.performSteppedResize(img, targetWidth, targetHeight, minScale, opts);
   }
 
   /**
@@ -81,9 +81,9 @@ export class SteppedProcessor {
     opts: Required<SteppedProcessingOptions>
   ): Promise<HTMLCanvasElement> {
     // Calculate steps
-    const steps = this.calculateOptimalSteps(minScale, opts.maxSteps);
+    const steps = SteppedProcessor.calculateOptimalSteps(minScale, opts.maxSteps);
 
-    let currentCanvas = await this.imageToCanvas(img);
+    let currentCanvas = await SteppedProcessor.imageToCanvas(img);
     let currentWidth = img.width;
     let currentHeight = img.height;
 
@@ -98,7 +98,7 @@ export class SteppedProcessor {
         const stepHeight =
           step === steps.length - 1 ? targetHeight : Math.max(targetHeight, Math.floor(currentHeight * stepScale));
 
-        const stepCanvas = await this.canvasToCanvas(currentCanvas, stepWidth, stepHeight, opts.quality);
+        const stepCanvas = await SteppedProcessor.canvasToCanvas(currentCanvas, stepWidth, stepHeight, opts.quality);
 
         // Clean up previous Canvas (excluding original image)
         if (currentCanvas !== (img as any)) {
@@ -141,7 +141,7 @@ export class SteppedProcessor {
         steps.push(minScale);
       } else {
         // Intermediate steps reduce roughly by half
-        const stepScale = Math.pow(minScale, i / targetSteps);
+        const stepScale = minScale ** (i / targetSteps);
         steps.push(Math.max(0.5, stepScale));
       }
     }
@@ -299,7 +299,7 @@ export class SteppedProcessor {
         const globalIndex = chunks.indexOf(chunk) * concurrency + chunkIndex;
 
         try {
-          const result = await this.resizeWithSteps(img, targetWidth, targetHeight, processingOptions);
+          const result = await SteppedProcessor.resizeWithSteps(img, targetWidth, targetHeight, processingOptions);
 
           results[globalIndex] = result;
           completed++;
@@ -352,11 +352,11 @@ export class SteppedProcessor {
 
     if (Math.max(img.width, img.height) <= stepDimension) {
       // Direct processing possible within memory limit
-      return this.resizeWithSteps(img, targetWidth, targetHeight, { quality: 'high' });
+      return SteppedProcessor.resizeWithSteps(img, targetWidth, targetHeight, { quality: 'high' });
     }
 
     // Stepped reduction considering memory limitations
-    return this.resizeWithSteps(img, targetWidth, targetHeight, {
+    return SteppedProcessor.resizeWithSteps(img, targetWidth, targetHeight, {
       quality: 'high',
       maxSteps: 15, // Distribute memory usage across more steps
       minStepRatio: 0.3, // Apply more granular steps

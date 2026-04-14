@@ -6,9 +6,9 @@
 import type { ImageFormat } from '../base/format-detector';
 import type { SimpleImageWatermarkOptions, SimpleTextWatermarkOptions } from '../composition/simple-watermark';
 import { SimpleWatermark } from '../composition/simple-watermark';
-import { productionLog } from '../utils/debug';
 import type { FilterChain } from '../filters/plugin-system';
 import { filterManager } from '../filters/plugin-system';
+import { productionLog } from '../utils/debug';
 import type { AutoProcessingResult } from './auto-high-res';
 import { AutoHighResProcessor } from './auto-high-res';
 import type { SmartFormatOptions } from './smart-format';
@@ -280,7 +280,7 @@ export class AdvancedImageProcessor {
   ): Promise<{ canvas: HTMLCanvasElement; blob: Blob }> {
     const dimensions = typeof size === 'number' ? { width: size, height: size } : size;
 
-    const result = await this.processImage(source, {
+    const result = await AdvancedImageProcessor.processImage(source, {
       resize: {
         ...dimensions,
         priority: options.quality === 'fast' ? 'speed' : options.quality === 'high' ? 'quality' : 'balanced',
@@ -353,7 +353,7 @@ export class AdvancedImageProcessor {
         const globalIndex = chunks.indexOf(chunk) * concurrency + chunkIndex;
 
         try {
-          const result = await this.processImage(item.image, item.options);
+          const result = await AdvancedImageProcessor.processImage(item.image, item.options);
 
           results[globalIndex] = result;
           completed++;

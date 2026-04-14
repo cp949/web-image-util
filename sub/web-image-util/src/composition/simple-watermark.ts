@@ -82,10 +82,10 @@ export class SimpleWatermark {
     } = options;
 
     // Convert simple position to internal Position
-    const internalPosition = this.convertSimplePosition(position);
+    const internalPosition = SimpleWatermark.convertSimplePosition(position);
 
     // Resolve style
-    const textStyle = this.resolveTextStyle(style, size);
+    const textStyle = SimpleWatermark.resolveTextStyle(style, size);
     if (opacity !== undefined) {
       textStyle.opacity = opacity;
     }
@@ -119,13 +119,13 @@ export class SimpleWatermark {
     } = options;
 
     // Convert simple position to internal Position
-    const internalPosition = this.convertSimplePosition(position);
+    const internalPosition = SimpleWatermark.convertSimplePosition(position);
 
     // Resolve size
-    const scale = this.resolveImageSize(size, canvas, image);
+    const scale = SimpleWatermark.resolveImageSize(size, canvas, image);
 
     // Map blend mode
-    const globalCompositeOperation = this.mapBlendMode(blendMode);
+    const globalCompositeOperation = SimpleWatermark.mapBlendMode(blendMode);
 
     // ImageWatermark configuration
     const watermarkOptions: ImageWatermarkOptions = {
@@ -165,7 +165,7 @@ export class SimpleWatermark {
     // Adaptive size adjustment
     return ImageWatermark.addWithAdaptiveSize(canvas, {
       watermarkImage: image,
-      position: this.convertSimplePosition(position),
+      position: SimpleWatermark.convertSimplePosition(position),
       maxWidthPercent: maxSize,
       maxHeightPercent: maxSize,
       opacity,
@@ -195,7 +195,7 @@ export class SimpleWatermark {
       outline: 'outline' as PresetTextStyle,
     };
 
-    return this.addText(canvas, {
+    return SimpleWatermark.addText(canvas, {
       text: copyright,
       position,
       style: styleMap[style],
@@ -222,12 +222,12 @@ export class SimpleWatermark {
   ): HTMLCanvasElement {
     const { spacing = 200, opacity = 0.1, rotation = -45, stagger = true } = options;
 
-    const textStyle = this.resolveTextStyle('subtle', 'medium');
+    const textStyle = SimpleWatermark.resolveTextStyle('subtle', 'medium');
     textStyle.opacity = opacity;
 
     return TextWatermark.addRepeatingPattern(canvas, {
       text,
-      position: this.convertSimplePosition('center'), // position ignored in pattern
+      position: SimpleWatermark.convertSimplePosition('center'), // position ignored in pattern
       style: textStyle,
       rotation,
       spacing: { x: spacing, y: spacing },
@@ -263,11 +263,11 @@ export class SimpleWatermark {
   ): TextStyle {
     // If already a TextStyle object, apply size only and return
     if (typeof style === 'object') {
-      const resolvedSize = this.resolveTextSize(size);
+      const resolvedSize = SimpleWatermark.resolveTextSize(size);
       return { ...style, fontSize: resolvedSize };
     }
 
-    const fontSize = this.resolveTextSize(size);
+    const fontSize = SimpleWatermark.resolveTextSize(size);
 
     const presetStyles: Record<PresetTextStyle, TextStyle> = {
       default: {

@@ -1,6 +1,6 @@
 'use client';
 
-import { processImage, ResizeConfig } from '@cp949/web-image-util';
+import { processImage, type ResizeConfig } from '@cp949/web-image-util';
 import { Download, PhotoSizeSelectActual, Storage } from '@mui/icons-material';
 import {
   Box,
@@ -297,9 +297,9 @@ export function PreviewGalleryDemo() {
                       height,
                     };
 
-
-        let processor = processImage(source) //
-          .resize(resizeConfig);
+        let processor =
+          processImage(source) //
+            .resize(resizeConfig);
 
         // Apply blur effect
         if (preset.options.blur) {
@@ -313,7 +313,6 @@ export function PreviewGalleryDemo() {
 
         const processingTime = Date.now() - startTime;
         const imageUrl = URL.createObjectURL(result.blob);
-
 
         newResults.push({
           preset,
@@ -358,7 +357,7 @@ export function PreviewGalleryDemo() {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
   };
 
   // Generate simple chain-style code examples (new ResizeConfig API)
@@ -448,7 +447,8 @@ export function PreviewGalleryDemo() {
         Conversion Preview
       </Typography>
       <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-        Compare all processing options at a glance with a single image. View results with various sizes, qualities, formats, and effects applied in real-time.
+        Compare all processing options at a glance with a single image. View results with various sizes, qualities,
+        formats, and effects applied in real-time.
       </Typography>
 
       {/* Image Uploader */}

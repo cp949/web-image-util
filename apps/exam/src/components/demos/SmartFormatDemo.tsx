@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import type { ResultBlob } from '@cp949/web-image-util';
+import { processImage } from '@cp949/web-image-util';
+import { Cancel, CheckCircle } from '@mui/icons-material';
 import {
-  Container,
-  Typography,
-  Grid,
-  Button,
   Alert,
+  Box,
   Card,
   CardContent,
   CardMedia,
-  Box,
   Chip,
+  Container,
+  Grid,
+  Paper,
   Stack,
   Table,
   TableBody,
@@ -19,12 +20,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  LinearProgress,
+  Typography,
 } from '@mui/material';
-import { CompareArrows as CompareIcon, CheckCircle, Cancel } from '@mui/icons-material';
-import { processImage } from '@cp949/web-image-util';
-import type { ResultBlob } from '@cp949/web-image-util';
+import { useEffect, useState } from 'react';
 import { ImageUploader } from '../common/ImageUploader';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { ProcessingStatus } from '../ui/ProcessingStatus';
@@ -111,8 +109,7 @@ export function SmartFormatDemo() {
         setProgress(((i + 1) / formats.length) * 100);
 
         // Check browser support
-        const supported =
-          format === 'webp' ? browserSupport.webp : true;
+        const supported = format === 'webp' ? browserSupport.webp : true;
 
         if (!supported) {
           results.push({
@@ -175,8 +172,8 @@ export function SmartFormatDemo() {
       </Typography>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        Compare JPEG, PNG, and WebP formats and check browser support.
-        Get automatic recommendations for the optimal format.
+        Compare JPEG, PNG, and WebP formats and check browser support. Get automatic recommendations for the optimal
+        format.
       </Alert>
 
       {/* Browser Support Information */}
@@ -186,18 +183,8 @@ export function SmartFormatDemo() {
             Current Browser Format Support
           </Typography>
           <Stack direction="row" spacing={2}>
-            <Chip
-              icon={<CheckCircle />}
-              label="JPEG"
-              color="success"
-              variant="outlined"
-            />
-            <Chip
-              icon={<CheckCircle />}
-              label="PNG"
-              color="success"
-              variant="outlined"
-            />
+            <Chip icon={<CheckCircle />} label="JPEG" color="success" variant="outlined" />
+            <Chip icon={<CheckCircle />} label="PNG" color="success" variant="outlined" />
             <Chip
               icon={browserSupport.webp ? <CheckCircle /> : <Cancel />}
               label="WebP"
@@ -216,10 +203,7 @@ export function SmartFormatDemo() {
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
-          <ImageUploader
-            onImageSelect={handleImageSelect}
-            recommendedSamplesFor="smart-format"
-          />
+          <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="smart-format" />
 
           {selectedImage && processing && (
             <Alert severity="info" sx={{ mt: 2 }}>
@@ -269,12 +253,8 @@ export function SmartFormatDemo() {
                       )}
                       <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="h6">
-                            {FORMAT_LABELS[result.format]}
-                          </Typography>
-                          {!result.supported && (
-                            <Chip label="Unsupported" color="default" size="small" />
-                          )}
+                          <Typography variant="h6">{FORMAT_LABELS[result.format]}</Typography>
+                          {!result.supported && <Chip label="Unsupported" color="default" size="small" />}
                         </Box>
                         {result.supported ? (
                           <Stack spacing={0.5}>
@@ -328,9 +308,7 @@ export function SmartFormatDemo() {
                             <TableCell align="right">
                               {result.supported ? `${result.processingTime.toFixed(0)}ms` : 'N/A'}
                             </TableCell>
-                            <TableCell align="right">
-                              {formatFileSize(result.size)}
-                            </TableCell>
+                            <TableCell align="right">{formatFileSize(result.size)}</TableCell>
                             <TableCell align="right">
                               {result.supported ? calculateSavings(baselineSize, result.size) : 'N/A'}
                             </TableCell>
@@ -338,11 +316,7 @@ export function SmartFormatDemo() {
                               {result.supported ? `${(result.quality * 100).toFixed(0)}%` : 'N/A'}
                             </TableCell>
                             <TableCell align="center">
-                              {result.supported ? (
-                                <CheckCircle color="success" />
-                              ) : (
-                                <Cancel color="disabled" />
-                              )}
+                              {result.supported ? <CheckCircle color="success" /> : <Cancel color="disabled" />}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -368,10 +342,7 @@ export function SmartFormatDemo() {
                         • WebP is approximately{' '}
                         {Math.abs(
                           parseFloat(
-                            calculateSavings(
-                              baselineSize,
-                              formatResults.find((r) => r.format === 'webp')?.size || 0
-                            )
+                            calculateSavings(baselineSize, formatResults.find((r) => r.format === 'webp')?.size || 0)
                           )
                         ).toFixed(0)}
                         % smaller than PNG
@@ -384,9 +355,7 @@ export function SmartFormatDemo() {
           )}
 
           {!processing && !error && formatResults.length === 0 && !selectedImage && (
-            <Alert severity="info">
-              Format comparison will start automatically when you select an image.
-            </Alert>
+            <Alert severity="info">Format comparison will start automatically when you select an image.</Alert>
           )}
         </Grid>
       </Grid>

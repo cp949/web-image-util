@@ -1,16 +1,16 @@
 // Enhanced image processing hook - Full utilization of v2.0 API
 
-import { useState, useCallback, useEffect } from 'react';
-import { processImage, ImageProcessError } from '@cp949/web-image-util';
 import type { ResizeConfig } from '@cp949/web-image-util';
+import { ImageProcessError, processImage } from '@cp949/web-image-util';
+import { useCallback, useEffect, useState } from 'react';
 import type {
-  ProcessingOptions,
   DemoState,
   ImageInfo,
   ProcessedImageInfo,
+  ProcessingOptions,
   ResultBlob,
 } from '../components/demos/types';
-import { getErrorMessage, isRecoverableError, logError, formatFileSize } from '../utils/errorHandling';
+import { getErrorMessage, isRecoverableError, logError } from '../utils/errorHandling';
 
 /**
  * Image information extraction helper
@@ -260,11 +260,7 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
 
           try {
             // Utilize common processing function
-            const processedInfo = await processImageWithOptions(
-              imageInfo.src,
-              processingOptions,
-              imageInfo.size
-            );
+            const processedInfo = await processImageWithOptions(imageInfo.src, processingOptions, imageInfo.size);
 
             setState((prev) => ({
               ...prev,
@@ -290,7 +286,6 @@ export function useImageProcessing(options?: UseImageProcessingOptions) {
     },
     [options?.autoProcess, options?.defaultOptions]
   );
-
 
   /**
    * Clear error

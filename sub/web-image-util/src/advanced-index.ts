@@ -27,15 +27,51 @@
  * ```
  */
 
+// ===== Enhanced Error Handling System =====
+export { createAndHandleError, createQuickError, getErrorStats, withErrorHandling } from './base/error-helpers';
+export type {
+  PresetTextStyle,
+  SimpleImageWatermarkOptions,
+  SimplePosition,
+  SimpleTextWatermarkOptions,
+} from './composition/simple-watermark';
+// ===== Simplified Watermark System =====
+export { addCopyright, addImageWatermark, addTextWatermark, SimpleWatermark } from './composition/simple-watermark';
+export type { AdvancedProcessingOptions, AdvancedProcessingResult } from './core/advanced-processor';
 // ===== Image Processing System =====
 export {
-  addWatermarkAndOptimize,
   AdvancedImageProcessor,
+  addWatermarkAndOptimize,
   processWithFilters,
   smartResize,
 } from './core/advanced-processor';
-export type { AdvancedProcessingOptions, AdvancedProcessingResult } from './core/advanced-processor';
-
+export type { AutoProcessingResult } from './core/auto-high-res';
+// ===== Automatic High Resolution Processing =====
+export { AutoHighResProcessor, smartResize as autoSmartResize, smartResizeWithProgress } from './core/auto-high-res';
+export { BatchResizer } from './core/batch-resizer';
+export type { ErrorStats } from './core/error-handler';
+export { globalErrorHandler, ImageErrorHandler } from './core/error-handler';
+export type { ResizePerformanceOptions, ResizeProfile } from './core/performance-config';
+export { getPerformanceConfig, RESIZE_PROFILES } from './core/performance-config';
+// ===== Performance Optimization System =====
+export { autoResize, fastResize, qualityResize, ResizePerformance } from './core/performance-utils';
+export type { FormatOptimizationResult, SmartFormatOptions } from './core/smart-format';
+// ===== Smart Format Optimization =====
+export {
+  autoOptimize,
+  ImagePurpose,
+  optimizeForThumbnail,
+  optimizeForWeb,
+  SmartFormatSelector,
+} from './core/smart-format';
+export type {
+  BlendMode,
+  FilterCategory,
+  FilterChain,
+  FilterOptions,
+  FilterPlugin,
+  FilterValidationResult,
+} from './filters/plugin-system';
 // ===== Filter Plugin System =====
 export {
   applyFilter,
@@ -45,69 +81,25 @@ export {
   getAvailableFilters,
   registerFilter,
 } from './filters/plugin-system';
-export type {
-  BlendMode,
-  FilterCategory,
-  FilterChain,
-  FilterOptions,
-  FilterPlugin,
-  FilterValidationResult,
-} from './filters/plugin-system';
-
 // Default filter plugins
 export { AllFilterPlugins, BlurFilterPlugins, ColorFilterPlugins, EffectFilterPlugins } from './filters/plugins';
-
-// ===== Simplified Watermark System =====
-export { addCopyright, addImageWatermark, addTextWatermark, SimpleWatermark } from './composition/simple-watermark';
-export type {
-  PresetTextStyle,
-  SimpleImageWatermarkOptions,
-  SimplePosition,
-  SimpleTextWatermarkOptions,
-} from './composition/simple-watermark';
-
-// ===== Automatic High Resolution Processing =====
-export { AutoHighResProcessor, smartResize as autoSmartResize, smartResizeWithProgress } from './core/auto-high-res';
-export type { AutoProcessingResult } from './core/auto-high-res';
-
-// ===== Smart Format Optimization =====
-export {
-  autoOptimize,
-  ImagePurpose,
-  optimizeForThumbnail,
-  optimizeForWeb,
-  SmartFormatSelector,
-} from './core/smart-format';
-export type { FormatOptimizationResult, SmartFormatOptions } from './core/smart-format';
-
-// ===== Performance Optimization System =====
-export { autoResize, fastResize, qualityResize, ResizePerformance } from './core/performance-utils';
-export { BatchResizer } from './core/batch-resizer';
-export { getPerformanceConfig, RESIZE_PROFILES } from './core/performance-config';
-export type { ResizePerformanceOptions, ResizeProfile } from './core/performance-config';
-
-// ===== Enhanced Error Handling System =====
-export { createAndHandleError, createQuickError, getErrorStats, withErrorHandling } from './base/error-helpers';
-export { globalErrorHandler, ImageErrorHandler } from './core/error-handler';
-export type { ErrorStats } from './core/error-handler';
 
 // ===== Advanced Features =====
 
 // Filter system - plugin-based architecture
 // Usage: filterManager.applyFilter(imageData, { name: 'brightness', params: { value: 10 } })
 
+export type { ImageFormat } from './base/format-detector';
+// Format related
+export { FORMAT_MIME_MAP, FormatDetector } from './base/format-detector';
+export type { HighResolutionOptions, ProcessingResult } from './base/high-res-manager';
+
+// High-resolution processing (manual control)
+export { HighResolutionManager } from './base/high-res-manager';
 // Watermark system (fine-grained control)
 export type { ImageWatermarkOptions, TextWatermarkOptions } from './composition';
 export { ImageWatermark } from './composition/image-watermark';
 export { TextWatermark } from './composition/text-watermark';
-
-// High-resolution processing (manual control)
-export { HighResolutionManager } from './base/high-res-manager';
-export type { HighResolutionOptions, ProcessingResult } from './base/high-res-manager';
-
-// Format related
-export { FORMAT_MIME_MAP, FormatDetector } from './base/format-detector';
-export type { ImageFormat } from './base/format-detector';
 
 // ===== Convenience Functions =====
 

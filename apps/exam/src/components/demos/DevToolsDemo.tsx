@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { processImage, features } from '@cp949/web-image-util';
+import { features, processImage } from '@cp949/web-image-util';
 import {
   BugReport as BugIcon,
   Code as CodeIcon,
@@ -37,7 +37,8 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { CodeSnippet } from '../common/CodeSnippet';
 import { ImageUploader } from '../common/ImageUploader';
 
@@ -558,7 +559,7 @@ export function DevToolsDemo() {
                         onChange={(e) =>
                           setCodeGenOptions((prev) => ({
                             ...prev,
-                            width: parseInt(e.target.value) || 300,
+                            width: parseInt(e.target.value, 10) || 300,
                           }))
                         }
                       />
@@ -573,7 +574,7 @@ export function DevToolsDemo() {
                         onChange={(e) =>
                           setCodeGenOptions((prev) => ({
                             ...prev,
-                            height: parseInt(e.target.value) || 200,
+                            height: parseInt(e.target.value, 10) || 200,
                           }))
                         }
                       />

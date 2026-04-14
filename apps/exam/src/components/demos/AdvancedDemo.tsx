@@ -393,7 +393,8 @@ const blob = await new Promise(resolve => {
         Advanced Features
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        Experience advanced image processing features including watermark addition, image composition, and multi-layer processing.
+        Experience advanced image processing features including watermark addition, image composition, and multi-layer
+        processing.
       </Typography>
 
       {/* Error display */}
@@ -701,7 +702,8 @@ const blob = await new Promise(resolve => {
                     </Stack>
 
                     <Alert severity="info" sx={{ mb: 2 }}>
-                      Try the watermark composition features in the Text and Image tabs above. You can apply multiple watermarks sequentially to create complex composition effects.
+                      Try the watermark composition features in the Text and Image tabs above. You can apply multiple
+                      watermarks sequentially to create complex composition effects.
                     </Alert>
                   </Box>
                 )}
@@ -751,7 +753,9 @@ const blob = await new Promise(resolve => {
             )}
 
             {/* Code Examples */}
-            {originalImage && <CodeSnippet title="Code Examples for Current Settings" examples={generateCodeExamples()} />}
+            {originalImage && (
+              <CodeSnippet title="Code Examples for Current Settings" examples={generateCodeExamples()} />
+            )}
           </Stack>
         </Grid>
       </Grid>

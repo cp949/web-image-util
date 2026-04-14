@@ -1,6 +1,6 @@
+import { Link as LinkIcon, CloudUpload as UploadIcon } from '@mui/icons-material';
+import { Alert, Box, Button, Card, CardContent, Chip, LinearProgress, Stack, Typography } from '@mui/material';
 import { useCallback, useState } from 'react';
-import { Box, Button, Card, CardContent, Typography, Alert, LinearProgress, Stack, Chip, SxProps } from '@mui/material';
-import { CloudUpload as UploadIcon, Link as LinkIcon } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
 import { SampleImageSelector } from './SampleImageSelector';
 

@@ -1,6 +1,6 @@
 import { withManagedCanvas } from '../base/canvas-utils';
-import type { Rectangle, Size } from './position-types';
 import { productionLog } from '../utils/debug';
+import type { Rectangle, Size } from './position-types';
 
 /**
  * Layer information
@@ -135,7 +135,13 @@ export class ImageComposer {
         const cellY = spacing + row * (cellHeight + spacing);
 
         // Calculate image size adjustment
-        const { x, y, width, height } = this.calculateFitSize(image.width, image.height, cellWidth, cellHeight, fit);
+        const { x, y, width, height } = ImageComposer.calculateFitSize(
+          image.width,
+          image.height,
+          cellWidth,
+          cellHeight,
+          fit
+        );
 
         ctx.drawImage(image, cellX + x, cellY + y, width, height);
       }
@@ -179,7 +185,7 @@ export class ImageComposer {
         const scaledHeight = image.height * scale;
 
         // Determine position
-        let x, y;
+        let x: number, y: number;
         let attempts = 0;
         const maxAttempts = 50;
 
@@ -190,7 +196,7 @@ export class ImageComposer {
         } while (
           !overlap &&
           attempts < maxAttempts &&
-          this.isOverlapping({ x, y, width: scaledWidth, height: scaledHeight }, usedAreas)
+          ImageComposer.isOverlapping({ x, y, width: scaledWidth, height: scaledHeight }, usedAreas)
         );
 
         // Record area

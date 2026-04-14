@@ -204,7 +204,7 @@ export const VignetteFilterPlugin: FilterPlugin<{ intensity: number; size: numbe
 
         // Calculate vignette factor
         let vignetteFactor = 1 - (distance / maxDistance) * params.size;
-        vignetteFactor = Math.pow(vignetteFactor, params.blur);
+        vignetteFactor = vignetteFactor ** params.blur;
         vignetteFactor = Math.max(0, Math.min(1, vignetteFactor));
 
         const darkening = 1 - (1 - vignetteFactor) * params.intensity;

@@ -34,10 +34,10 @@ export class ImageErrorHandler {
   };
 
   static getInstance(): ImageErrorHandler {
-    if (!this.instance) {
-      this.instance = new ImageErrorHandler();
+    if (!ImageErrorHandler.instance) {
+      ImageErrorHandler.instance = new ImageErrorHandler();
     }
-    return this.instance;
+    return ImageErrorHandler.instance;
   }
 
   /**
@@ -111,9 +111,7 @@ export class ImageErrorHandler {
    * Context information formatting
    */
   private formatContext(context: any): string {
-    const filtered = Object.entries(context)
-      .filter(([key, value]) => value !== undefined)
-      .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+    const filtered = Object.fromEntries(Object.entries(context).filter(([, value]) => value !== undefined));
 
     return JSON.stringify(filtered, null, 2);
   }

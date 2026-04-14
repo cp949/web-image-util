@@ -22,7 +22,6 @@ interface BeforeAfterViewProps {
 function BeforeAfterViewComponent({ before, after, showMetadata = true }: BeforeAfterViewProps) {
   const [, setFullscreen] = useState<'before' | 'after' | null>(null);
 
-
   const downloadImage = async (imageData: ImageData, filename: string) => {
     try {
       const response = await fetch(imageData.src);
@@ -224,15 +223,11 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
                     <Typography variant="h5" color="primary">
                       {after.processingTime.toFixed(1)}ms
                     </Typography>
-                    {after.processingTime < 100 && (
-                      <Chip label="Fast" size="small" color="success" sx={{ mt: 0.5 }} />
-                    )}
+                    {after.processingTime < 100 && <Chip label="Fast" size="small" color="success" sx={{ mt: 0.5 }} />}
                     {after.processingTime >= 100 && after.processingTime < 500 && (
                       <Chip label="Normal" size="small" color="info" sx={{ mt: 0.5 }} />
                     )}
-                    {after.processingTime >= 500 && (
-                      <Chip label="Slow" size="small" color="warning" sx={{ mt: 0.5 }} />
-                    )}
+                    {after.processingTime >= 500 && <Chip label="Slow" size="small" color="warning" sx={{ mt: 0.5 }} />}
                   </Box>
                 ) : (
                   <Typography variant="h6">-</Typography>

@@ -5,7 +5,7 @@
  * Verifies type-level behavior only, without Canvas creation.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { processImage } from '../../../src/processor';
 import { ImageProcessError } from '../../../src/types';
 
@@ -106,17 +106,13 @@ describe('Type-Safe Processor Simple Test', () => {
 
       // blur() → resize() order
       expect(() => {
-        const processor1 = processImage(testBlob)
-          .blur(1)
-          .resize({ fit: 'cover', width: 200, height: 200 });
+        const processor1 = processImage(testBlob).blur(1).resize({ fit: 'cover', width: 200, height: 200 });
         expect(processor1).toBeDefined();
       }).not.toThrow();
 
       // resize() → blur() order
       expect(() => {
-        const processor2 = processImage(testBlob)
-          .resize({ fit: 'maxFit', width: 300 })
-          .blur(2);
+        const processor2 = processImage(testBlob).resize({ fit: 'maxFit', width: 300 }).blur(2);
         expect(processor2).toBeDefined();
       }).not.toThrow();
 

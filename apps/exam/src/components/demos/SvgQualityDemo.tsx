@@ -142,7 +142,8 @@ export function SvgQualityDemo() {
       </Typography>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        Experience innovative SVG quality processing. "Calculate early, render once" philosophy perfectly preserves vector quality.
+        Experience innovative SVG quality processing. "Calculate early, render once" philosophy perfectly preserves
+        vector quality.
       </Alert>
 
       <Grid container spacing={4}>
@@ -248,11 +249,11 @@ export function SvgQualityDemo() {
                 </Typography>
                 <Typography variant="body2">
                   • Ultra quality file size is{' '}
-                  {((qualityResults[2]?.size || 0) / (qualityResults[0]?.size || 1)).toFixed(1)}x larger than standard quality
+                  {((qualityResults[2]?.size || 0) / (qualityResults[0]?.size || 1)).toFixed(1)}x larger than standard
+                  quality
                   <br />• Processing time increases by approximately{' '}
                   {((qualityResults[2]?.processingTime || 0) / (qualityResults[0]?.processingTime || 1)).toFixed(1)}x
-                  <br />
-                  • ⚡ New direct rendering: Perfect SVG vector quality preservation by removing scaleFactor
+                  <br />• ⚡ New direct rendering: Perfect SVG vector quality preservation by removing scaleFactor
                   <br />• 🎯 "Calculate early, render once" philosophy improves both performance and quality
                 </Typography>
               </Alert>

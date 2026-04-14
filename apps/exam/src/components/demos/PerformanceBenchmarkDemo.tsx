@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import type { ResultBlob } from '@cp949/web-image-util';
+import { processImage } from '@cp949/web-image-util';
+import { Memory, Speed as SpeedIcon, Timer } from '@mui/icons-material';
 import {
-  Container,
-  Typography,
-  Grid,
-  Button,
   Alert,
+  Box,
   Card,
   CardContent,
-  Box,
   Chip,
+  Container,
+  Grid,
+  Paper,
   Stack,
   Table,
   TableBody,
@@ -18,16 +19,13 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  LinearProgress,
+  Typography,
 } from '@mui/material';
-import { Speed as SpeedIcon, Memory, Timer } from '@mui/icons-material';
-import { processImage } from '@cp949/web-image-util';
-import type { ResultBlob } from '@cp949/web-image-util';
+import { useEffect, useState } from 'react';
+import { usePerformanceMonitor } from '../../hooks/usePerformanceMonitor';
 import { ImageUploader } from '../common/ImageUploader';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { ProcessingStatus } from '../ui/ProcessingStatus';
-import { usePerformanceMonitor } from '../../hooks/usePerformanceMonitor';
 
 type BenchmarkSize = 'small' | 'medium' | 'large';
 
@@ -108,10 +106,7 @@ export function PerformanceBenchmarkDemo() {
         const isMemoryEstimated = true;
 
         // Calculate throughput (bytes per second)
-        const throughput =
-          result.processingTime > 0
-            ? (result.blob.size / result.processingTime) * 1000
-            : 0;
+        const throughput = result.processingTime > 0 ? (result.blob.size / result.processingTime) * 1000 : 0;
 
         results.push({
           size,
@@ -151,20 +146,17 @@ export function PerformanceBenchmarkDemo() {
   const formatThroughput = (bytesPerSecond: number): string => {
     if (bytesPerSecond === 0) return '0 B/s';
     if (bytesPerSecond < 1024) return `${bytesPerSecond.toFixed(0)} B/s`;
-    if (bytesPerSecond < 1024 * 1024)
-      return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`;
+    if (bytesPerSecond < 1024 * 1024) return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`;
     return `${(bytesPerSecond / (1024 * 1024)).toFixed(2)} MB/s`;
   };
 
   // Calculate statistics
   const totalTime = benchmarkResults.reduce((sum, r) => sum + r.processingTime, 0);
-  const avgTime =
-    benchmarkResults.length > 0 ? totalTime / benchmarkResults.length : 0;
+  const avgTime = benchmarkResults.length > 0 ? totalTime / benchmarkResults.length : 0;
   const totalMemory = benchmarkResults.reduce((sum, r) => sum + r.memoryUsage, 0);
   const avgThroughput =
     benchmarkResults.length > 0
-      ? benchmarkResults.reduce((sum, r) => sum + r.throughput, 0) /
-        benchmarkResults.length
+      ? benchmarkResults.reduce((sum, r) => sum + r.throughput, 0) / benchmarkResults.length
       : 0;
 
   return (
@@ -174,16 +166,13 @@ export function PerformanceBenchmarkDemo() {
       </Typography>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        Measure processing performance across various image sizes. Compare processing time, memory usage,
-        and throughput.
+        Measure processing performance across various image sizes. Compare processing time, memory usage, and
+        throughput.
       </Alert>
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
-          <ImageUploader
-            onImageSelect={handleImageSelect}
-            recommendedSamplesFor="performance"
-          />
+          <ImageUploader onImageSelect={handleImageSelect} recommendedSamplesFor="performance" />
 
           {selectedImage && processing && (
             <Alert severity="info" sx={{ mt: 2 }}>
@@ -244,24 +233,26 @@ export function PerformanceBenchmarkDemo() {
                   <Typography variant="h6" gutterBottom>
                     Selected Image
                   </Typography>
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    bgcolor: 'grey.50',
-                    borderRadius: 1,
-                    p: 2,
-                    maxHeight: 300,
-                    overflow: 'hidden'
-                  }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      bgcolor: 'grey.50',
+                      borderRadius: 1,
+                      p: 2,
+                      maxHeight: 300,
+                      overflow: 'hidden',
+                    }}
+                  >
                     <img
                       src={selectedImage || ''}
-                      alt="Selected image"
+                      alt="Selected source for benchmark"
                       style={{
                         maxWidth: '100%',
                         maxHeight: '250px',
                         objectFit: 'contain',
-                        borderRadius: '4px'
+                        borderRadius: '4px',
                       }}
                     />
                   </Box>
@@ -344,26 +335,16 @@ export function PerformanceBenchmarkDemo() {
                                 label={SIZE_CONFIGS[result.size].label}
                                 size="small"
                                 color={
-                                  result.size === 'small'
-                                    ? 'success'
-                                    : result.size === 'medium'
-                                      ? 'primary'
-                                      : 'warning'
+                                  result.size === 'small' ? 'success' : result.size === 'medium' ? 'primary' : 'warning'
                                 }
                               />
                             </TableCell>
                             <TableCell align="right">
                               {result.width}×{result.height}
                             </TableCell>
-                            <TableCell align="right">
-                              {result.processingTime.toFixed(2)}ms
-                            </TableCell>
-                            <TableCell align="right">
-                              {formatFileSize(result.fileSize)}
-                            </TableCell>
-                            <TableCell align="right">
-                              {formatThroughput(result.throughput)}
-                            </TableCell>
+                            <TableCell align="right">{result.processingTime.toFixed(2)}ms</TableCell>
+                            <TableCell align="right">{formatFileSize(result.fileSize)}</TableCell>
+                            <TableCell align="right">{formatThroughput(result.throughput)}</TableCell>
                             <TableCell align="right">
                               {formatMemoryUsage(result.memoryUsage, result.isMemoryEstimated)}
                             </TableCell>
@@ -387,8 +368,7 @@ export function PerformanceBenchmarkDemo() {
                         <Typography variant="body2">
                           • Small → Medium processing time increase:{' '}
                           {(
-                            ((benchmarkResults[1].processingTime -
-                              benchmarkResults[0].processingTime) /
+                            ((benchmarkResults[1].processingTime - benchmarkResults[0].processingTime) /
                               benchmarkResults[0].processingTime) *
                             100
                           ).toFixed(1)}
@@ -398,8 +378,7 @@ export function PerformanceBenchmarkDemo() {
                           <Typography variant="body2">
                             • Medium → Large processing time increase:{' '}
                             {(
-                              ((benchmarkResults[2].processingTime -
-                                benchmarkResults[1].processingTime) /
+                              ((benchmarkResults[2].processingTime - benchmarkResults[1].processingTime) /
                                 benchmarkResults[1].processingTime) *
                               100
                             ).toFixed(1)}
@@ -425,8 +404,7 @@ export function PerformanceBenchmarkDemo() {
                   {avgTime < 100 && ' Excellent performance!'}
                   {avgTime >= 100 && avgTime < 500 && ' Good performance.'}
                   {avgTime >= 500 && ' Consider using smaller image sizes.'}
-                  <br />
-                  • Be mindful of memory usage when processing large images.
+                  <br />• Be mindful of memory usage when processing large images.
                   <br />• For real-time processing, use small to medium sizes.
                 </Typography>
               </Alert>
@@ -435,8 +413,7 @@ export function PerformanceBenchmarkDemo() {
 
           {!processing && !error && benchmarkResults.length === 0 && !selectedImage && (
             <Alert severity="info">
-              Select an image to automatically start the benchmark. You can measure performance
-              across various sizes.
+              Select an image to automatically start the benchmark. You can measure performance across various sizes.
             </Alert>
           )}
         </Grid>

@@ -29,27 +29,46 @@
  */
 
 /**
+ * Browser capability detection system
+ *
+ * @description Intelligent system that automatically detects current browser's
+ * image processing capabilities and determines optimal processing methods
+ */
+export {
+  analyzePerformanceFeatures,
+  type BrowserCapabilities,
+  BrowserCapabilityDetector,
+  DEFAULT_DETECTION_OPTIONS,
+  type DetectionOptions,
+  detectBrowserCapabilities,
+  detectFormatSupport,
+  detectSyncCapabilities,
+  FEATURE_PERFORMANCE_WEIGHTS,
+  getOptimalProcessingMode,
+  type PerformanceFeatures,
+  PROCESSING_MODE_DESCRIPTIONS,
+} from './browser-capabilities';
+/**
  * Image format conversion functions
  *
  * @description Functions that perform pure format conversion without image resizing
  * Suitable for fast and lightweight conversion tasks
  */
 export {
+  type ConvertToBlobDetailedOptions,
+  type ConvertToBlobOptions,
+  type ConvertToDataURLDetailedOptions,
+  type ConvertToDataURLOptions,
+  type ConvertToFileDetailedOptions,
+  type ConvertToFileOptions,
   convertToBlob,
   convertToBlobDetailed,
   convertToDataURL,
   convertToDataURLDetailed,
+  convertToElement,
   convertToFile,
   convertToFileDetailed,
-  convertToElement,
-  type ConvertToBlobOptions,
-  type ConvertToBlobDetailedOptions,
-  type ConvertToDataURLOptions,
-  type ConvertToDataURLDetailedOptions,
-  type ConvertToFileOptions,
-  type ConvertToFileDetailedOptions,
 } from './converters';
-
 /**
  * SVG compatibility and browser normalization functions
  *
@@ -64,30 +83,9 @@ export {
 } from './svg-compatibility';
 
 /**
- * Browser capability detection system
- *
- * @description Intelligent system that automatically detects current browser's
- * image processing capabilities and determines optimal processing methods
- */
-export {
-  BrowserCapabilityDetector,
-  detectBrowserCapabilities,
-  analyzePerformanceFeatures,
-  detectSyncCapabilities,
-  detectFormatSupport,
-  getOptimalProcessingMode,
-  DEFAULT_DETECTION_OPTIONS,
-  PROCESSING_MODE_DESCRIPTIONS,
-  FEATURE_PERFORMANCE_WEIGHTS,
-  type BrowserCapabilities,
-  type PerformanceFeatures,
-  type DetectionOptions,
-} from './browser-capabilities';
-
-/**
  * SVG vector optimization system
  *
  * @description Advanced optimization tools that reduce SVG file size
  * and improve rendering performance
  */
-export { SvgOptimizer, type SvgOptimizationOptions, type OptimizationResult } from './svg-optimizer';
+export { type OptimizationResult, type SvgOptimizationOptions, SvgOptimizer } from './svg-optimizer';

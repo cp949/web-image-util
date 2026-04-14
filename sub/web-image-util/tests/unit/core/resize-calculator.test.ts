@@ -4,7 +4,7 @@
  * @description fit 모드, 패딩, 극단 입력, 회귀 방지, 성능 기대치를 함께 확인한다.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ResizeCalculator } from '../../../src/core/resize-calculator';
 import type { ResizeConfig } from '../../../src/types/resize-config';
 

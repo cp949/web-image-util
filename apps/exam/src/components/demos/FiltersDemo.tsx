@@ -595,7 +595,9 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Stack spacing={1}>
                       <Chip label="Contrast" color="primary" variant="outlined" />
-                      <Typography variant="body2">Adjusts the difference between light and dark areas for sharpness</Typography>
+                      <Typography variant="body2">
+                        Adjusts the difference between light and dark areas for sharpness
+                      </Typography>
                     </Stack>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
@@ -612,12 +614,9 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
             <Alert severity="success">
               <Typography variant="body2">
                 <strong>✅ All filters are fully implemented!</strong>
-                <br />
-                • Blur: Uses processImage built-in API
-                <br />
-                • Color Adjustment: Uses filterManager plugin system
-                <br />
-                • Special Effects: Supports grayscale, sepia, invert, and more
+                <br />• Blur: Uses processImage built-in API
+                <br />• Color Adjustment: Uses filterManager plugin system
+                <br />• Special Effects: Supports grayscale, sepia, invert, and more
                 <br />• Real-time Processing: All filters can be combined and applied instantly
               </Typography>
             </Alert>

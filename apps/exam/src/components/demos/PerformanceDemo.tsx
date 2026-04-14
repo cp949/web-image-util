@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { processImage, features } from '@cp949/web-image-util';
+import { features, processImage } from '@cp949/web-image-util';
 import { Assessment as BenchmarkIcon, Speed as SpeedIcon, Timeline as TimelineIcon } from '@mui/icons-material';
 import {
   Alert,
@@ -87,7 +87,10 @@ export function PerformanceDemo() {
       name: 'Basic Resize',
       description: 'Resize to 300x200',
       category: 'resize',
-      operation: () => processImage(sampleImages[testConfig.sampleImage].src).resize({ fit: 'cover', width: 300, height: 200 }).toBlob(),
+      operation: () =>
+        processImage(sampleImages[testConfig.sampleImage].src)
+          .resize({ fit: 'cover', width: 300, height: 200 })
+          .toBlob(),
     },
     {
       name: 'JPEG Conversion',
@@ -566,25 +569,24 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
 
                     {results.some((r) => r.errors > 0) && (
                       <Alert severity="error">
-                        Some operations encountered errors. Consider strengthening error handling logic and input validation.
+                        Some operations encountered errors. Consider strengthening error handling logic and input
+                        validation.
                       </Alert>
                     )}
 
                     {memoryStats && memoryStats.delta.used > 50 * 1024 * 1024 && (
                       <Alert severity="info">
-                        Memory usage increased by {formatMemory(memoryStats.delta.used)}. Check resource cleanup after processing.
+                        Memory usage increased by {formatMemory(memoryStats.delta.used)}. Check resource cleanup after
+                        processing.
                       </Alert>
                     )}
 
                     <Alert severity="success">
                       <Typography variant="body2">
                         <strong>Performance Improvement Tips:</strong>
-                        <br />
-                        • Process large images in stages
-                        <br />
-                        • Use Web Workers to prevent main thread blocking
-                        <br />
-                        • Consider sequential processing instead of Promise.all for batch operations
+                        <br />• Process large images in stages
+                        <br />• Use Web Workers to prevent main thread blocking
+                        <br />• Consider sequential processing instead of Promise.all for batch operations
                         <br />• Reuse Canvas objects to reduce GC pressure
                       </Typography>
                     </Alert>

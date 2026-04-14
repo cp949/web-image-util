@@ -22,7 +22,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
-import { useBatchProcessing, type BatchItem } from '../../hooks/useBatchProcessing';
+import { type BatchItem, useBatchProcessing } from '../../hooks/useBatchProcessing';
 import { useImageProcessing } from '../../hooks/useImageProcessing';
 import { ImageUploader } from '../common/ImageUploader';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
@@ -237,7 +237,9 @@ const BATCH_PRESETS: Record<string, BatchItem[]> = {
 const PRESET_CATEGORIES = [
   {
     category: 'Thumbnails',
-    presets: [{ key: 'thumbnails', label: 'Thumbnail Comparison', count: 3, description: 'Compare various thumbnail sizes' }],
+    presets: [
+      { key: 'thumbnails', label: 'Thumbnail Comparison', count: 3, description: 'Compare various thumbnail sizes' },
+    ],
   },
   {
     category: 'Size & Resolution',
@@ -250,14 +252,24 @@ const PRESET_CATEGORIES = [
     category: 'Format & Quality',
     presets: [
       { key: 'formats', label: 'Format Comparison', count: 5, description: 'Compare JPEG, PNG, WebP' },
-      { key: 'qualities', label: 'Quality Comparison', count: 5, description: 'Compare file sizes by compression quality' },
+      {
+        key: 'qualities',
+        label: 'Quality Comparison',
+        count: 5,
+        description: 'Compare file sizes by compression quality',
+      },
     ],
   },
   {
     category: 'Fit Modes',
     presets: [
       { key: 'fits', label: 'Fit Mode Comparison', count: 5, description: 'Compare 5 different fit modes' },
-      { key: 'backgrounds', label: 'Background Color Comparison', count: 4, description: 'Contain fit background colors' },
+      {
+        key: 'backgrounds',
+        label: 'Background Color Comparison',
+        count: 4,
+        description: 'Contain fit background colors',
+      },
     ],
   },
   {
@@ -507,7 +519,7 @@ export function BatchComparisonDemo() {
                                   backgroundColor: '#f5f5f5',
                                 }}
                               >
-                                {result.result && result.result.src ? (
+                                {result.result?.src ? (
                                   <img
                                     src={result.result.src}
                                     alt={result.label}

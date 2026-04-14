@@ -1,6 +1,6 @@
+import { productionLog } from '../utils/debug';
 import { withManagedCanvas } from './canvas-utils';
 import { createImageError } from './error-helpers';
-import { productionLog } from '../utils/debug';
 import type { ImageAnalysis } from './high-res-detector';
 import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector';
 // Memory management optimized for browser environment
@@ -70,12 +70,14 @@ export class HighResolutionManager {
     targetHeight: number,
     options: HighResolutionOptions = {}
   ): Promise<ProcessingResult> {
-    const opts = { ...this.DEFAULT_OPTIONS, ...options };
+    const opts = { ...HighResolutionManager.DEFAULT_OPTIONS, ...options };
     const startTime = Date.now();
     let memoryPeakUsage = 0;
 
     // Initialize progress tracking
-    const progressTracker = opts.enableProgressTracking ? this.createProgressTracker(opts.onProgress) : null;
+    const progressTracker = opts.enableProgressTracking
+      ? HighResolutionManager.createProgressTracker(opts.onProgress)
+      : null;
 
     try {
       // 1. Image analysis
@@ -83,24 +85,31 @@ export class HighResolutionManager {
       const analysis = HighResolutionDetector.analyzeImage(img);
 
       // 2. Determine processing strategy
-      const strategy = this.selectOptimalStrategy(analysis, opts, img, targetWidth, targetHeight);
+      const strategy = HighResolutionManager.selectOptimalStrategy(analysis, opts, img, targetWidth, targetHeight);
       progressTracker?.update('analyzing', 20, `Strategy selected: ${strategy}`);
 
       // 3. Check and manage memory situation
-      await this.checkAndManageMemory(opts, analysis);
+      await HighResolutionManager.checkAndManageMemory(opts, analysis);
       progressTracker?.update('analyzing', 30, 'Memory check completed');
 
       // 4. Execute actual processing
       progressTracker?.update('processing', 40, 'Starting image processing...');
-      const canvas = await this.executeProcessing(img, targetWidth, targetHeight, strategy, opts, progressTracker);
+      const canvas = await HighResolutionManager.executeProcessing(
+        img,
+        targetWidth,
+        targetHeight,
+        strategy,
+        opts,
+        progressTracker
+      );
 
       // 5. Post-processing and optimization
       progressTracker?.update('finalizing', 90, 'Finalizing...');
-      const optimizedCanvas = await this.postProcess(canvas, opts);
+      const optimizedCanvas = await HighResolutionManager.postProcess(canvas, opts);
 
       // 6. Generate result
       const processingTime = (Date.now() - startTime) / 1000;
-      memoryPeakUsage = this.getCurrentMemoryUsage();
+      memoryPeakUsage = HighResolutionManager.getCurrentMemoryUsage();
 
       progressTracker?.update('completed', 100, 'Processing completed');
 
@@ -135,17 +144,17 @@ export class HighResolutionManager {
 
     // If memory constraints are severe
     // Simple memory check
-    const memoryCheck = this.isMemoryLow();
+    const memoryCheck = HighResolutionManager.isMemoryLow();
     if (memoryCheck) {
       productionLog.warn('Low memory detected, selecting memory-efficient strategy');
-      return this.selectMemoryEfficientStrategy(analysis);
+      return HighResolutionManager.selectMemoryEfficientStrategy(analysis);
     }
 
     // Strategy adjustment based on quality settings
     if (opts.quality === 'fast') {
-      return this.selectFastStrategy(analysis);
+      return HighResolutionManager.selectFastStrategy(analysis);
     } else if (opts.quality === 'high') {
-      return this.selectHighQualityStrategy(analysis, img, targetWidth, targetHeight);
+      return HighResolutionManager.selectHighQualityStrategy(analysis, img, targetWidth, targetHeight);
     }
 
     // Select balanced strategy (default)
@@ -225,10 +234,10 @@ export class HighResolutionManager {
 
     switch (strategy) {
       case ProcessingStrategy.DIRECT:
-        return this.directResize(img, targetWidth, targetHeight, opts.quality);
+        return HighResolutionManager.directResize(img, targetWidth, targetHeight, opts.quality);
 
       case ProcessingStrategy.CHUNKED:
-        return this.chunkedResize(img, targetWidth, targetHeight, opts, progressCallback);
+        return HighResolutionManager.chunkedResize(img, targetWidth, targetHeight, opts, progressCallback);
 
       case ProcessingStrategy.STEPPED:
         return SteppedProcessor.resizeWithSteps(img, targetWidth, targetHeight, {
@@ -306,7 +315,7 @@ export class HighResolutionManager {
    * @private
    */
   private static async checkAndManageMemory(opts: HighResolutionOptions, analysis: ImageAnalysis): Promise<void> {
-    const memoryInfo = this.getEstimatedUsage();
+    const memoryInfo = HighResolutionManager.getEstimatedUsage();
     const availableMB = (memoryInfo.limit - memoryInfo.used) / (1024 * 1024);
 
     // Memory warning occurred
@@ -318,7 +327,7 @@ export class HighResolutionManager {
     }
 
     // Trigger garbage collection when memory is low
-    if (this.isMemoryLow()) {
+    if (HighResolutionManager.isMemoryLow()) {
       if (typeof global !== 'undefined' && global.gc) {
         global.gc();
       }
@@ -373,7 +382,7 @@ export class HighResolutionManager {
    * @private
    */
   private static getCurrentMemoryUsage(): number {
-    const usage = this.getEstimatedUsage();
+    const usage = HighResolutionManager.getEstimatedUsage();
     return Math.round((usage.used / (1024 * 1024)) * 100) / 100;
   }
 
@@ -398,7 +407,7 @@ export class HighResolutionManager {
     warnings: string[];
     estimatedTime: number;
   } {
-    const opts = { ...this.DEFAULT_OPTIONS, ...options };
+    const opts = { ...HighResolutionManager.DEFAULT_OPTIONS, ...options };
     const analysis = HighResolutionDetector.analyzeImage(img);
     const warnings: string[] = [];
 
@@ -421,7 +430,13 @@ export class HighResolutionManager {
     }
 
     // Determine recommended strategy
-    const recommendedStrategy = this.selectOptimalStrategy(analysis, opts as any, img, targetWidth, targetHeight);
+    const recommendedStrategy = HighResolutionManager.selectOptimalStrategy(
+      analysis,
+      opts as any,
+      img,
+      targetWidth,
+      targetHeight
+    );
 
     // Calculate estimated processing time
     const timeEstimate = HighResolutionDetector.estimateProcessingTime(analysis);
@@ -479,7 +494,7 @@ export class HighResolutionManager {
         const globalIndex = chunks.indexOf(chunk) * concurrency + chunkIndex;
 
         try {
-          const result = await this.smartResize(img, targetWidth, targetHeight, processingOptions);
+          const result = await HighResolutionManager.smartResize(img, targetWidth, targetHeight, processingOptions);
 
           results[globalIndex] = result;
           completed++;

@@ -1,6 +1,4 @@
 'use client';
-
-import { Photo, PhotoSizeSelectLarge, PhotoSizeSelectSmall } from '@mui/icons-material';
 import {
   Box,
   Card,
@@ -23,6 +21,30 @@ import { ImageMetadata } from '../ui/ImageMetadata';
 import { ProcessingStatus } from '../ui/ProcessingStatus';
 import type { ProcessingOptions } from './types';
 
+const PRESETS: Record<'thumbnail' | 'medium' | 'large', ProcessingOptions> = {
+  thumbnail: {
+    fit: 'cover',
+    width: 150,
+    height: 150,
+    quality: 75,
+    format: 'jpeg',
+  },
+  medium: {
+    fit: 'cover',
+    width: 400,
+    height: 300,
+    quality: 85,
+    format: 'jpeg',
+  },
+  large: {
+    fit: 'contain',
+    width: 800,
+    height: 600,
+    quality: 90,
+    format: 'webp',
+  },
+};
+
 /**
  * One-click preview demo
  * Simple demo component showcasing autoProcess functionality
@@ -31,35 +53,10 @@ export function QuickPreviewDemo() {
   // Predefined preset options
   const [selectedPreset, setSelectedPreset] = useState<'thumbnail' | 'medium' | 'large'>('medium');
 
-  // Processing options per preset
-  const presets: Record<'thumbnail' | 'medium' | 'large', ProcessingOptions> = {
-    thumbnail: {
-      fit: 'cover',
-      width: 150,
-      height: 150,
-      quality: 75,
-      format: 'jpeg',
-    },
-    medium: {
-      fit: 'cover',
-      width: 400,
-      height: 300,
-      quality: 85,
-      format: 'jpeg',
-    },
-    large: {
-      fit: 'contain',
-      width: 800,
-      height: 600,
-      quality: 90,
-      format: 'webp',
-    },
-  };
-
   // Use hook with autoProcess enabled
   const imageProcessing = useImageProcessing({
     autoProcess: true, // 🎯 Enable one-click automatic processing
-    defaultOptions: presets[selectedPreset],
+    defaultOptions: PRESETS[selectedPreset],
   });
 
   const {
@@ -76,16 +73,16 @@ export function QuickPreviewDemo() {
   // Reprocess if image exists when preset changes
   useEffect(() => {
     if (originalImage && !processing) {
-      handleProcess(presets[selectedPreset]);
+      handleProcess(PRESETS[selectedPreset]);
     }
-  }, [selectedPreset]); // originalImage and processing intentionally excluded (infinite loop prevention)
+  }, [selectedPreset, originalImage, processing, handleProcess]);
 
   // Latest processed image
   const processedImage = processedImages[processedImages.length - 1] || null;
 
   // Generate code example
   const generateCodeExample = () => {
-    const preset = presets[selectedPreset];
+    const preset = PRESETS[selectedPreset];
     return `import { useImageProcessing } from '@/hooks/useImageProcessing';
 
 // 🎯 Enable one-click processing with autoProcess option
@@ -151,9 +148,9 @@ const {
                   </ToggleButton>
                 </ToggleButtonGroup>
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                  Fit: <strong>{presets[selectedPreset].fit}</strong> | Quality:{' '}
-                  <strong>{presets[selectedPreset].quality}</strong> | Format:{' '}
-                  <strong>{presets[selectedPreset].format.toUpperCase()}</strong>
+                  Fit: <strong>{PRESETS[selectedPreset].fit}</strong> | Quality:{' '}
+                  <strong>{PRESETS[selectedPreset].quality}</strong> | Format:{' '}
+                  <strong>{PRESETS[selectedPreset].format.toUpperCase()}</strong>
                 </Typography>
               </CardContent>
             </Card>
@@ -212,7 +209,9 @@ const {
                   <Typography variant="body2" paragraph>
                     3. Images are <strong>automatically processed immediately</strong> when selected
                   </Typography>
-                  <Typography variant="body2">4. Images are automatically reprocessed when you change presets</Typography>
+                  <Typography variant="body2">
+                    4. Images are automatically reprocessed when you change presets
+                  </Typography>
                 </CardContent>
               </Card>
             )}
@@ -273,7 +272,8 @@ const {
                       5. Real-time Preset Switching
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Images are automatically reprocessed when presets change, allowing quick comparison of different sizes.
+                      Images are automatically reprocessed when presets change, allowing quick comparison of different
+                      sizes.
                     </Typography>
                   </Box>
                 </Stack>

@@ -147,10 +147,6 @@ class MockHTMLImageElement {
   onload: ((this: HTMLImageElement, ev: Event) => any) | null = null;
   onerror: ((this: HTMLImageElement, ev: Event) => any) | null = null;
 
-  constructor() {
-    // 생성자에서는 별도 초기화를 하지 않는다.
-  }
-
   // src 접근자를 통해 로딩 완료 상태를 흉내 낸다.
   get src(): string {
     return this._src;

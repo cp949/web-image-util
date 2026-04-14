@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import {
   Tune as AdvancedIcon,
@@ -11,8 +11,8 @@ import {
   Speed as PerformanceIcon,
   Dashboard as PresetsIcon,
   PhotoSizeSelectActual as ProcessIcon,
-  CloudUpload as UploadIcon
-} from '@mui/icons-material'
+  CloudUpload as UploadIcon,
+} from '@mui/icons-material';
 import {
   BottomNavigation,
   BottomNavigationAction,
@@ -30,21 +30,20 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
-  Zoom
-} from '@mui/material'
-import { useRouter } from 'next/navigation'
-import { usePathname } from 'next/navigation'
-import React, { useState } from 'react'
+  Zoom,
+} from '@mui/material';
+import { usePathname, useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 
 interface MobileOptimizedLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 interface NavigationItem {
-  path: string
-  label: string
-  icon: React.ReactElement
-  primary?: boolean
+  path: string;
+  label: string;
+  icon: React.ReactElement;
+  primary?: boolean;
 }
 
 const navigationItems: NavigationItem[] = [
@@ -56,63 +55,63 @@ const navigationItems: NavigationItem[] = [
   { path: '/converters', label: 'Converters', icon: <ConvertersIcon /> },
   { path: '/performance', label: 'Performance', icon: <PerformanceIcon /> },
   { path: '/dev-tools', label: 'Dev Tools', icon: <DevToolsIcon /> },
-]
+];
 
 export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) {
-  const theme = useTheme()
-  const router = useRouter()
-  const pathname = usePathname()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [showFab, setShowFab] = useState(true)
+  const theme = useTheme();
+  const router = useRouter();
+  const pathname = usePathname();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showFab, setShowFab] = useState(true);
 
   // Find navigation value matching current path
   const getCurrentNavValue = () => {
-    const primaryItems = navigationItems.filter(item => item.primary)
-    const currentIndex = primaryItems.findIndex(item => item.path === pathname)
-    return currentIndex >= 0 ? currentIndex : 0
-  }
+    const primaryItems = navigationItems.filter((item) => item.primary);
+    const currentIndex = primaryItems.findIndex((item) => item.path === pathname);
+    return currentIndex >= 0 ? currentIndex : 0;
+  };
 
-  const [bottomNavValue, setBottomNavValue] = useState(getCurrentNavValue())
+  const [bottomNavValue, setBottomNavValue] = useState(getCurrentNavValue());
 
   React.useEffect(() => {
-    setBottomNavValue(getCurrentNavValue())
-  }, [pathname])
+    setBottomNavValue(getCurrentNavValue());
+  }, [pathname]);
 
   const handleBottomNavChange = (_: React.SyntheticEvent, newValue: number) => {
-    setBottomNavValue(newValue)
-    const primaryItems = navigationItems.filter(item => item.primary)
+    setBottomNavValue(newValue);
+    const primaryItems = navigationItems.filter((item) => item.primary);
     if (primaryItems[newValue]) {
-      router.push(primaryItems[newValue].path)
+      router.push(primaryItems[newValue].path);
     }
-  }
+  };
 
   const handleDrawerItemClick = (path: string) => {
-    router.push(path)
-    setDrawerOpen(false)
-  }
+    router.push(path);
+    setDrawerOpen(false);
+  };
 
   // Hide/show FAB on scroll detection
   React.useEffect(() => {
-    let lastScrollY = window.scrollY
+    let lastScrollY = window.scrollY;
 
     const handleScroll = () => {
-      const currentScrollY = window.scrollY
-      setShowFab(currentScrollY < lastScrollY || currentScrollY < 100)
-      lastScrollY = currentScrollY
-    }
+      const currentScrollY = window.scrollY;
+      setShowFab(currentScrollY < lastScrollY || currentScrollY < 100);
+      lastScrollY = currentScrollY;
+    };
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   if (!isMobile) {
-    return <>{children}</> // Use default layout on desktop
+    return <>{children}</>; // Use default layout on desktop
   }
 
-  const primaryItems = navigationItems.filter(item => item.primary)
-  const drawerItems = navigationItems
+  const primaryItems = navigationItems.filter((item) => item.primary);
+  const drawerItems = navigationItems;
 
   return (
     <Box sx={{ pb: 7, minHeight: '100vh' }}>
@@ -125,7 +124,7 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
           bottom: 0,
           left: 0,
           right: 0,
-          zIndex: 1000
+          zIndex: 1000,
         }}
         elevation={8}
       >
@@ -138,12 +137,12 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
               minWidth: 0,
               maxWidth: 'none',
               '&.Mui-selected': {
-                color: 'primary.main'
-              }
-            }
+                color: 'primary.main',
+              },
+            },
           }}
         >
-          {primaryItems.map((item,  ) => (
+          {primaryItems.map((item) => (
             <BottomNavigationAction
               key={item.path}
               label={item.label}
@@ -153,9 +152,9 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
                 '& .MuiBottomNavigationAction-label': {
                   fontSize: '0.65rem',
                   '&.Mui-selected': {
-                    fontSize: '0.65rem'
-                  }
-                }
+                    fontSize: '0.65rem',
+                  },
+                },
               }}
             />
           ))}
@@ -166,8 +165,8 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
             sx={{
               fontSize: '0.75rem',
               '& .MuiBottomNavigationAction-label': {
-                fontSize: '0.65rem'
-              }
+                fontSize: '0.65rem',
+              },
             }}
           />
         </BottomNavigation>
@@ -197,28 +196,26 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
               width: 40,
               height: 4,
               backgroundColor: 'divider',
-              borderRadius: 2
-            }
-          }
+              borderRadius: 2,
+            },
+          },
         }}
       >
         <Box sx={{ pt: 3 }}>
           {/* Drawer header */}
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            px: 2,
-            pb: 1
-          }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 2,
+              pb: 1,
+            }}
+          >
             <Typography variant="h6" component="h2">
               More Features
             </Typography>
-            <IconButton
-              onClick={() => setDrawerOpen(false)}
-              size="small"
-              aria-label="Close"
-            >
+            <IconButton onClick={() => setDrawerOpen(false)} size="small" aria-label="Close">
               <CloseIcon />
             </IconButton>
           </Box>
@@ -228,13 +225,10 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
           {/* Navigation items */}
           <List>
             {drawerItems.map((item) => {
-              const isCurrentPath = pathname === item.path
-              
+              const isCurrentPath = pathname === item.path;
+
               return (
-                <ListItem 
-                  key={item.path} 
-                  disablePadding
-                >
+                <ListItem key={item.path} disablePadding>
                   <ListItemButton
                     onClick={() => handleDrawerItemClick(item.path)}
                     selected={isCurrentPath}
@@ -244,30 +238,30 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
                         backgroundColor: 'primary.50',
                         '&:hover': {
                           backgroundColor: 'primary.100',
-                        }
-                      }
+                        },
+                      },
                     }}
                   >
                     <ListItemIcon
                       sx={{
                         minWidth: 40,
-                        color: isCurrentPath ? 'primary.main' : 'inherit'
+                        color: isCurrentPath ? 'primary.main' : 'inherit',
                       }}
                     >
                       {item.icon}
                     </ListItemIcon>
-                    <ListItemText 
+                    <ListItemText
                       primary={item.label}
                       slotProps={{
-                        primary:{
-                        variant: 'body2',
-                        color: isCurrentPath ? 'primary' : 'inherit'
-                        }
+                        primary: {
+                          variant: 'body2',
+                          color: isCurrentPath ? 'primary' : 'inherit',
+                        },
                       }}
                     />
                   </ListItemButton>
                 </ListItem>
-              )
+              );
             })}
           </List>
         </Box>
@@ -282,26 +276,26 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
             position: 'fixed',
             bottom: 80,
             right: 16,
-            zIndex: 999
+            zIndex: 999,
           }}
           onClick={() => {
             // Open file selection dialog
-            const input = document.createElement('input')
-            input.type = 'file'
-            input.accept = 'image/*'
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
             input.onchange = (e) => {
-              const file = (e.target as HTMLInputElement).files?.[0]
+              const file = (e.target as HTMLInputElement).files?.[0];
               if (file) {
                 // Navigate to basic processing page when image is selected
-                router.push('/basic')
+                router.push('/basic');
               }
-            }
-            input.click()
+            };
+            input.click();
           }}
         >
           <UploadIcon />
         </Fab>
       </Zoom>
     </Box>
-  )
+  );
 }

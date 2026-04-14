@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { createAvatar, createSocialImage, createThumbnail, processImage } from '@cp949/web-image-util';
 import {
@@ -116,7 +116,7 @@ export function BatchDemo() {
         let result: Blob;
 
         switch (options.operation) {
-          case 'resize':
+          case 'resize': {
             const resizeResult = await processImage(file.file)
               .resize({ fit: 'cover', width: options.width!, height: options.height! })
               .toBlob({
@@ -125,8 +125,9 @@ export function BatchDemo() {
               });
             result = resizeResult.blob;
             break;
+          }
 
-          case 'thumbnail':
+          case 'thumbnail': {
             const thumbnailResult = await createThumbnail(file.file, {
               size: options.size || 150,
               format: options.format as 'png' | 'webp',
@@ -134,16 +135,18 @@ export function BatchDemo() {
             });
             result = thumbnailResult.blob;
             break;
+          }
 
-          case 'avatar':
+          case 'avatar': {
             const avatarResult = await createAvatar(file.file, {
               size: options.size || 128,
               format: options.format as 'png' | 'webp',
             });
             result = avatarResult.blob;
             break;
+          }
 
-          case 'social':
+          case 'social': {
             const socialResult = await createSocialImage(file.file, {
               platform: options.socialPlatform || 'instagram',
               format: options.format as 'png' | 'webp',
@@ -151,6 +154,7 @@ export function BatchDemo() {
             });
             result = socialResult.blob;
             break;
+          }
 
           default:
             throw new Error('Unknown operation');
@@ -409,7 +413,7 @@ const downloadAsZip = async (results) => {
                           onChange={(e) =>
                             setOptions((prev) => ({
                               ...prev,
-                              width: parseInt(e.target.value) || 300,
+                              width: parseInt(e.target.value, 10) || 300,
                             }))
                           }
                         />
@@ -423,7 +427,7 @@ const downloadAsZip = async (results) => {
                           onChange={(e) =>
                             setOptions((prev) => ({
                               ...prev,
-                              height: parseInt(e.target.value) || 200,
+                              height: parseInt(e.target.value, 10) || 200,
                             }))
                           }
                         />
@@ -442,7 +446,7 @@ const downloadAsZip = async (results) => {
                     onChange={(e) =>
                       setOptions((prev) => ({
                         ...prev,
-                        size: parseInt(e.target.value) || 150,
+                        size: parseInt(e.target.value, 10) || 150,
                       }))
                     }
                     sx={{ mb: 2 }}
@@ -497,7 +501,7 @@ const downloadAsZip = async (results) => {
                   onChange={(e) =>
                     setOptions((prev) => ({
                       ...prev,
-                      quality: parseInt(e.target.value) || 80,
+                      quality: parseInt(e.target.value, 10) || 80,
                     }))
                   }
                   inputProps={{ min: 10, max: 100 }}
@@ -652,10 +656,8 @@ const downloadAsZip = async (results) => {
             <Alert severity="info">
               <Typography variant="body2">
                 <strong>Performance Tips:</strong>
-                <br />
-                • For large files, split them into smaller batches for processing
-                <br />
-                • Use Promise.all for faster parallel processing
+                <br />• For large files, split them into smaller batches for processing
+                <br />• Use Promise.all for faster parallel processing
                 <br />• Consider memory usage and avoid processing too many files at once
               </Typography>
             </Alert>

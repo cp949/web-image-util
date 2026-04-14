@@ -1,6 +1,14 @@
 // Common type definitions - Full utilization of v2.0 API
 
-import type { ResizeFit, ImageSource, ResultBlob, ResultDataURL, ResultFile, ImageProcessError, Padding } from '@cp949/web-image-util';
+import type {
+  ImageProcessError,
+  ImageSource,
+  Padding,
+  ResizeFit,
+  ResultBlob,
+  ResultDataURL,
+  ResultFile,
+} from '@cp949/web-image-util';
 
 /**
  * Demo application global state
@@ -70,7 +78,7 @@ export interface PerformanceMetrics {
 }
 
 // Re-export useful types from library
-export type { ResizeFit, ImageSource, ResultBlob, ResultDataURL, ResultFile, ImageProcessError, Padding };
+export type { ImageProcessError, ImageSource, Padding, ResizeFit, ResultBlob, ResultDataURL, ResultFile };
 
 // Local type aliases
 export type OutputFormat = 'jpeg' | 'png' | 'webp';

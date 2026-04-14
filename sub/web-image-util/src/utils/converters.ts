@@ -33,9 +33,9 @@
  */
 
 import { convertToImageElement } from '../core/source-converter';
-import type { ResultBlob, ResultDataURL, ResultFile, ImageSource, OutputOptions } from '../types';
+import type { ImageSource, OutputOptions, ResultBlob, ResultDataURL, ResultFile } from '../types';
 import { ImageProcessError } from '../types';
-import { DataURLResultImpl, BlobResultImpl, FileResultImpl } from '../types/result-implementations';
+import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from '../types/result-implementations';
 import { createImageElement } from './image-element';
 
 /**

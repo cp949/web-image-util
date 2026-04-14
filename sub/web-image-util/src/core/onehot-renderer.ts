@@ -14,8 +14,8 @@
  */
 
 import type { ResizeConfig } from '../types/resize-config';
-import type { LayoutResult } from './resize-calculator';
 import { productionLog } from '../utils/debug';
+import type { LayoutResult } from './resize-calculator';
 
 // ============================================================================
 // INTERFACES - Interface definitions

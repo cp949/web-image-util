@@ -1,5 +1,5 @@
+import { describe, expect, it } from 'vitest';
 import { processImage } from '../../src/index';
-import { describe, it, expect } from 'vitest';
 
 /**
  * SVG Quality Degradation Fix Verification Tests

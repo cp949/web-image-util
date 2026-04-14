@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { PerformanceMetrics } from '../components/demos/types';
 
 /**
@@ -18,35 +18,30 @@ export function usePerformanceMonitor() {
   /**
    * Performance measurement for async operations
    */
-  const measurePerformance = useCallback(async <T,>(operation: () => Promise<T>): Promise<T> => {
+  const measurePerformance = useCallback(async <T>(operation: () => Promise<T>): Promise<T> => {
     const startTime = performance.now();
     const startMemory = (performance as any).memory?.usedJSHeapSize || 0;
+    const result = await operation();
 
-    try {
-      const result = await operation();
+    const endTime = performance.now();
+    const endMemory = (performance as any).memory?.usedJSHeapSize || 0;
 
-      const endTime = performance.now();
-      const endMemory = (performance as any).memory?.usedJSHeapSize || 0;
+    const processingTime = endTime - startTime;
+    const memoryUsage = endMemory - startMemory;
 
-      const processingTime = endTime - startTime;
-      const memoryUsage = endMemory - startMemory;
-
-      // Calculate throughput (if blob exists)
-      let throughput = 0;
-      if (result && typeof result === 'object' && 'blob' in result && result.blob instanceof Blob) {
-        throughput = (result.blob.size / processingTime) * 1000; // bytes per second
-      }
-
-      setMetrics({
-        processingTime,
-        memoryUsage,
-        throughput,
-      });
-
-      return result;
-    } catch (error) {
-      throw error;
+    // Calculate throughput (if blob exists)
+    let throughput = 0;
+    if (result && typeof result === 'object' && 'blob' in result && result.blob instanceof Blob) {
+      throughput = (result.blob.size / processingTime) * 1000; // bytes per second
     }
+
+    setMetrics({
+      processingTime,
+      memoryUsage,
+      throughput,
+    });
+
+    return result;
   }, []);
 
   /**
@@ -89,5 +84,5 @@ function formatBytes(bytes: number): string {
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(k));
 
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+  return `${(bytes / k ** i).toFixed(2)} ${sizes[i]}`;
 }

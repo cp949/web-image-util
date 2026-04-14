@@ -7,11 +7,11 @@
  * - Generates only final result without creating intermediate Canvas objects
  */
 
-import type { LazyOperation, FinalLayout } from './lazy-render-pipeline';
-import type { ResizeConfig } from '../types/resize-config';
 import { ImageProcessError } from '../types';
-import { ResizeCalculator } from './resize-calculator';
+import type { ResizeConfig } from '../types/resize-config';
 import { debugLog } from '../utils/debug';
+import type { FinalLayout, LazyOperation } from './lazy-render-pipeline';
+import { ResizeCalculator } from './resize-calculator';
 
 /**
  * Analyze all operations to calculate final layout

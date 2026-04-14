@@ -2,8 +2,8 @@
 
 'use client';
 
+import type { ImageProcessError } from '@cp949/web-image-util';
 import { Alert, Button, Stack } from '@mui/material';
-import { ImageProcessError } from '@cp949/web-image-util';
 import { getErrorMessage, getErrorSeverity } from '../../utils/errorHandling';
 
 interface ErrorDisplayProps {

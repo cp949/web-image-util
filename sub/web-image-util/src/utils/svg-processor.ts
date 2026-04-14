@@ -49,13 +49,13 @@ export class SVGProcessor {
       const processedSvg = normalize ? enhanceSvgForBrowser(svgString) : svgString;
 
       // SVG 크기를 추출하고 비어 있으면 기본값을 채운다.
-      const dimensions = this.extractSVGDimensions(processedSvg);
+      const dimensions = SVGProcessor.extractSVGDimensions(processedSvg);
       let finalSvg = processedSvg;
 
       if (!dimensions && (options.defaultWidth || options.defaultHeight)) {
         const width = options.defaultWidth || 300;
         const height = options.defaultHeight || 300;
-        finalSvg = this.addDimensionsToSVG(processedSvg, width, height);
+        finalSvg = SVGProcessor.addDimensionsToSVG(processedSvg, width, height);
       }
 
       // Blob URL로 바꿔 일반 이미지 로더 경로를 재사용한다.
@@ -113,8 +113,8 @@ export class SVGProcessor {
       const heightAttr = svgElement.getAttribute('height');
 
       if (widthAttr && heightAttr) {
-        const width = this.parseNumericValue(widthAttr);
-        const height = this.parseNumericValue(heightAttr);
+        const width = SVGProcessor.parseNumericValue(widthAttr);
+        const height = SVGProcessor.parseNumericValue(heightAttr);
 
         if (width > 0 && height > 0) {
           return { width, height };
@@ -140,8 +140,8 @@ export class SVGProcessor {
         const heightMatch = style.match(/height\s*:\s*([^;]+)/);
 
         if (widthMatch && heightMatch) {
-          const width = this.parseNumericValue(widthMatch[1].trim());
-          const height = this.parseNumericValue(heightMatch[1].trim());
+          const width = SVGProcessor.parseNumericValue(widthMatch[1].trim());
+          const height = SVGProcessor.parseNumericValue(heightMatch[1].trim());
 
           if (width > 0 && height > 0) {
             return { width, height };
@@ -204,7 +204,7 @@ export class SVGProcessor {
 
     // When only numbers are present
     const numOnly = parseFloat(value);
-    if (!isNaN(numOnly) && isFinite(numOnly)) {
+    if (!Number.isNaN(numOnly) && Number.isFinite(numOnly)) {
       return numOnly;
     }
 
@@ -212,7 +212,7 @@ export class SVGProcessor {
     const pxMatch = value.match(/^([0-9.]+)px$/i);
     if (pxMatch) {
       const num = parseFloat(pxMatch[1]);
-      return !isNaN(num) && isFinite(num) ? num : 0;
+      return !Number.isNaN(num) && Number.isFinite(num) ? num : 0;
     }
 
     // Handle % unit as default (accurate calculation not possible)

@@ -9,7 +9,7 @@ import { createImageError } from '../base/error-helpers';
 import type { ProcessingStrategy } from '../base/high-res-detector';
 import type { SmartResizeOptions } from '../types';
 import { AutoMemoryManager } from './auto-memory-manager';
-import { BatchResizer, type BatchResizeJob } from './batch-resizer';
+import { type BatchResizeJob, BatchResizer } from './batch-resizer';
 import { InternalHighResProcessor } from './internal/internal-high-res-processor';
 import type { ResizeProfile } from './performance-config';
 
@@ -49,15 +49,15 @@ export class SmartProcessor {
       const strategy = options.strategy || 'auto';
 
       // Determine automatic optimization
-      const shouldUseHighRes = this.shouldUseHighResProcessing(img.width, img.height, width, height);
+      const shouldUseHighRes = SmartProcessor.shouldUseHighResProcessing(img.width, img.height, width, height);
 
       if (!shouldUseHighRes) {
         // Regular resizing - simple and fast
-        return this.simpleResize(img, width, height, options);
+        return SmartProcessor.simpleResize(img, width, height, options);
       }
 
       // High-resolution processing needed - convert complex options to simple options
-      const internalOptions = this.convertToInternalOptions(options, img.width, img.height);
+      const internalOptions = SmartProcessor.convertToInternalOptions(options, img.width, img.height);
 
       // Automatic memory status check
       const memoryManager = AutoMemoryManager.getInstance();
@@ -133,11 +133,11 @@ export class SmartProcessor {
     const strategy = options.strategy || 'auto';
 
     return {
-      quality: this.mapStrategyToQuality(strategy),
-      forceStrategy: this.selectInternalStrategy(strategy, originalWidth, originalHeight),
-      maxMemoryUsageMB: options.maxMemoryMB || this.getAutoMemoryLimit(),
+      quality: SmartProcessor.mapStrategyToQuality(strategy),
+      forceStrategy: SmartProcessor.selectInternalStrategy(strategy, originalWidth, originalHeight),
+      maxMemoryUsageMB: options.maxMemoryMB || SmartProcessor.getAutoMemoryLimit(),
       enableProgressTracking: !!options.onProgress,
-      onProgress: options.onProgress ? this.wrapProgressCallback(options.onProgress) : undefined,
+      onProgress: options.onProgress ? SmartProcessor.wrapProgressCallback(options.onProgress) : undefined,
     };
   }
 
@@ -151,7 +151,6 @@ export class SmartProcessor {
         return 'fast';
       case 'quality':
         return 'high';
-      case 'auto':
       default:
         return 'balanced';
     }
@@ -249,9 +248,9 @@ export class SmartProcessor {
 
     const jobs: BatchResizeJob<HTMLCanvasElement>[] = images.map((img, index) => ({
       id: `resize-${index}`,
-      operation: () => this.process(img, width, height, options),
+      operation: () => SmartProcessor.process(img, width, height, options),
     }));
 
-    return this.processBatch(jobs, performance);
+    return SmartProcessor.processBatch(jobs, performance);
   }
 }

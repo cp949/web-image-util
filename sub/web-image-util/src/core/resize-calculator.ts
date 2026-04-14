@@ -8,8 +8,8 @@
  * - Single responsibility: Only performs layout calculations, rendering is handled by OnehotRenderer
  */
 
-import type { ResizeConfig, Padding } from '../types/resize-config';
 import type { GeometryPoint, GeometrySize } from '../types/base';
+import type { Padding, ResizeConfig } from '../types/resize-config';
 
 // ============================================================================
 // INTERFACES - Interface definitions

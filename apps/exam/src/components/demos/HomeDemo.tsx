@@ -2,14 +2,14 @@
 
 'use client';
 
-import { Box, Typography, Card, CardContent, Grid, Chip, Container, Button, Stack } from '@mui/material';
 import {
-  PhotoLibrary as GalleryIcon,
-  Speed as SpeedIcon,
-  Security as SecurityIcon,
   Widgets as ComponentsIcon,
+  PhotoLibrary as GalleryIcon,
+  Security as SecurityIcon,
   AutoFixHigh as ShortcutIcon,
+  Speed as SpeedIcon,
 } from '@mui/icons-material';
+import { Box, Button, Card, CardContent, Chip, Container, Grid, Stack, Typography } from '@mui/material';
 import Link from 'next/link';
 
 export function HomeDemo() {

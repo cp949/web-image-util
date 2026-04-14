@@ -95,7 +95,7 @@ export class AutoHighResProcessor {
     const { priority = 'balanced', onProgress, onMemoryWarning, thresholds: customThresholds } = options;
 
     // Set thresholds
-    const thresholds = { ...this.defaultThresholds, ...customThresholds };
+    const thresholds = { ...AutoHighResProcessor.defaultThresholds, ...customThresholds };
 
     // Analyze image
     const analysis = HighResolutionDetector.analyzeImage(img);
@@ -104,7 +104,7 @@ export class AutoHighResProcessor {
     onProgress?.(10, 'Analyzing image...');
 
     // Determine automatic optimization strategy
-    const strategy = this.determineOptimalStrategy(analysis, priority, thresholds);
+    const strategy = AutoHighResProcessor.determineOptimalStrategy(analysis, priority, thresholds);
 
     onProgress?.(20, `Optimization strategy: ${strategy.name}`);
 
@@ -134,13 +134,13 @@ export class AutoHighResProcessor {
         processingResult = await HighResolutionManager.smartResize(img, targetWidth, targetHeight, highResOptions);
       } else {
         // Direct processing for standard resolution
-        processingResult = await this.standardResize(img, targetWidth, targetHeight, strategy.quality);
+        processingResult = await AutoHighResProcessor.standardResize(img, targetWidth, targetHeight, strategy.quality);
       }
     } catch (error) {
       // Fallback processing on failure
       productionLog.warn('High-resolution processing failed, switching to standard processing:', error);
       onProgress?.(50, 'Changing processing method...');
-      processingResult = await this.standardResize(img, targetWidth, targetHeight, 'balanced');
+      processingResult = await AutoHighResProcessor.standardResize(img, targetWidth, targetHeight, 'balanced');
     }
 
     onProgress?.(100, 'Processing complete');
@@ -152,7 +152,7 @@ export class AutoHighResProcessor {
         strategy: strategy.name,
         memoryOptimized: strategy.memoryOptimized,
         tileProcessing: strategy.tileProcessing,
-        estimatedTimeSaved: this.calculateTimeSaved(analysis, strategy),
+        estimatedTimeSaved: AutoHighResProcessor.calculateTimeSaved(analysis, strategy),
       },
       stats: {
         originalSize: { width: img.width, height: img.height },
@@ -188,12 +188,12 @@ export class AutoHighResProcessor {
     estimatedMemory: number;
     suggestedStrategy: string;
   } {
-    const thresholds = { ...this.defaultThresholds, ...options.thresholds };
+    const thresholds = { ...AutoHighResProcessor.defaultThresholds, ...options.thresholds };
 
     // Basic validation
     const validation = HighResolutionManager.validateProcessingCapability(img, targetWidth, targetHeight);
     const analysis = HighResolutionDetector.analyzeImage(img);
-    const strategy = this.determineOptimalStrategy(analysis, 'balanced', thresholds);
+    const strategy = AutoHighResProcessor.determineOptimalStrategy(analysis, 'balanced', thresholds);
 
     const warnings: string[] = [...validation.warnings];
     const recommendations: string[] = [];
@@ -254,7 +254,7 @@ export class AutoHighResProcessor {
         const { img, targetWidth, targetHeight, name } = imageItem;
 
         try {
-          const result = await this.smartResize(img, targetWidth, targetHeight, {
+          const result = await AutoHighResProcessor.smartResize(img, targetWidth, targetHeight, {
             priority,
             onProgress: (progress, message) => {
               // Individual image progress is not reflected in overall (too complex)

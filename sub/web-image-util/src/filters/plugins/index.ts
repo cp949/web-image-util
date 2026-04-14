@@ -4,11 +4,11 @@
  * This file is a centralized management file for registering and exporting all filter plugins.
  */
 
+import { debugLog, productionLog } from '../../utils/debug';
 import { filterManager, registerFilter } from '../plugin-system';
 import { BlurFilterPlugins } from './blur-plugins';
 import { ColorFilterPlugins } from './color-plugins';
 import { EffectFilterPlugins } from './effect-plugins';
-import { debugLog, productionLog } from '../../utils/debug';
 
 /**
  * All default filter plugins
@@ -84,13 +84,6 @@ export function initializeFilterSystem(): void {
 // Automatic initialization on library load
 initializeFilterSystem();
 
-// Export individual plugin categories for convenience
-export { BlurFilterPlugins } from './blur-plugins';
-export { ColorFilterPlugins } from './color-plugins';
-export { EffectFilterPlugins } from './effect-plugins';
-
-// Re-export core elements of plugin system
-export { applyFilter, applyFilterChain, filterManager, getAvailableFilters, registerFilter } from '../plugin-system';
 export type {
   BlendMode,
   FilterCategory,
@@ -99,3 +92,9 @@ export type {
   FilterPlugin,
   FilterValidationResult,
 } from '../plugin-system';
+// Re-export core elements of plugin system
+export { applyFilter, applyFilterChain, filterManager, getAvailableFilters, registerFilter } from '../plugin-system';
+// Export individual plugin categories for convenience
+export { BlurFilterPlugins } from './blur-plugins';
+export { ColorFilterPlugins } from './color-plugins';
+export { EffectFilterPlugins } from './effect-plugins';

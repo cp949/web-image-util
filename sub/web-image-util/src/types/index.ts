@@ -122,11 +122,9 @@ export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstant
 
 // Re-import types from base.ts to make them available
 import type { GeometrySize, ImageErrorCodeType, OutputFormat, ResizeBackground } from './base';
-
+import { ImageErrorCodeConstants, ImageFormats, OutputFormats } from './base';
 // Import ResizeConfig type for use in ImageProcessor
 import type { ResizeConfig } from './resize-config';
-
-import { ImageErrorCodeConstants, ImageFormats, OutputFormats } from './base';
 
 // ============================================================================
 // RESIZE TYPES - Resize-related types
@@ -485,13 +483,11 @@ export type { AvatarOptions, SocialImageOptions, SocialPlatform, ThumbnailOption
 // SHORTCUT API TYPES - Shortcut API-related types
 // ============================================================================
 
-export { isScaleX, isScaleXY, isScaleY, isUniformScale } from './shortcut-types';
-export type { DirectResizeConfig, ResizeOperation, ScaleOperation } from './shortcut-types';
-
-export type { IImageProcessor, InitialProcessorInterface, ResizedProcessorInterface } from './processor-interface';
-
 // Re-export Size type defined in LazyRenderPipeline
 export type { Size } from '../core/lazy-render-pipeline';
+export type { IImageProcessor, InitialProcessorInterface, ResizedProcessorInterface } from './processor-interface';
+export type { DirectResizeConfig, ResizeOperation, ScaleOperation } from './shortcut-types';
+export { isScaleX, isScaleXY, isScaleY, isUniformScale } from './shortcut-types';
 
 // ============================================================================
 // ADDITIONAL TYPES - Additional types for test compatibility
@@ -528,10 +524,9 @@ export interface PerformanceConfig {
 
 // Re-export SVG size information and Canvas high-quality setting types
 export type { HighQualityCanvasOptions } from '../base/canvas-utils';
-export type { SvgDimensions } from '../utils/svg-dimensions';
-
 // SVG complexity analysis and quality system types
 export type { ComplexityAnalysisResult, QualityLevel, SvgComplexityMetrics } from '../core/svg-complexity-analyzer';
+export type { SvgDimensions } from '../utils/svg-dimensions';
 
 // (Removed: SvgProcessingOptions, SvgProcessingResult - unnecessary)
 

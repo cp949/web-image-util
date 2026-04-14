@@ -56,7 +56,8 @@ describe('Type-safe processor tests', () => {
   describe('Runtime behavior validation', () => {
     it('should validate normal chaining behavior', async () => {
       // Use simple Data URL to prevent timeout from Canvas mock
-      const testDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+      const testDataUrl =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
       const result = await processImage(testDataUrl)
         .blur(1)

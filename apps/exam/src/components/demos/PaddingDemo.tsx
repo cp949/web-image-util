@@ -220,7 +220,8 @@ const partial = await processImage(source)
         Padding Feature
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        Add margin (padding) around images to achieve frame effects, secure safe areas, optimize for social media uploads, and more.
+        Add margin (padding) around images to achieve frame effects, secure safe areas, optimize for social media
+        uploads, and more.
       </Typography>
 
       <Alert severity="info" sx={{ mb: 3 }}>
@@ -460,10 +461,26 @@ const partial = await processImage(source)
                           control={<Radio size="small" />}
                           label="Contain (fit entirely) ⭐"
                         />
-                        <FormControlLabel value="cover" control={<Radio size="small" />} label="Cover (fill completely)" />
-                        <FormControlLabel value="fill" control={<Radio size="small" />} label="Fill (stretch to fill)" />
-                        <FormControlLabel value="maxFit" control={<Radio size="small" />} label="MaxFit (shrink only)" />
-                        <FormControlLabel value="minFit" control={<Radio size="small" />} label="MinFit (enlarge only)" />
+                        <FormControlLabel
+                          value="cover"
+                          control={<Radio size="small" />}
+                          label="Cover (fill completely)"
+                        />
+                        <FormControlLabel
+                          value="fill"
+                          control={<Radio size="small" />}
+                          label="Fill (stretch to fill)"
+                        />
+                        <FormControlLabel
+                          value="maxFit"
+                          control={<Radio size="small" />}
+                          label="MaxFit (shrink only)"
+                        />
+                        <FormControlLabel
+                          value="minFit"
+                          control={<Radio size="small" />}
+                          label="MinFit (enlarge only)"
+                        />
                       </RadioGroup>
                     </FormControl>
                   </Grid>
@@ -483,7 +500,11 @@ const partial = await processImage(source)
                           }))
                         }
                       >
-                        <FormControlLabel value="png" control={<Radio size="small" />} label="PNG (transparency support) ⭐" />
+                        <FormControlLabel
+                          value="png"
+                          control={<Radio size="small" />}
+                          label="PNG (transparency support) ⭐"
+                        />
                         <FormControlLabel value="jpeg" control={<Radio size="small" />} label="JPEG" />
                         <FormControlLabel value="webp" control={<Radio size="small" />} label="WebP" />
                       </RadioGroup>
@@ -529,18 +550,16 @@ const partial = await processImage(source)
                             {processedImage.width} × {processedImage.height}
                           </>
                         ) : (
-                          <>
-                            {(() => {
-                              // Calculate expected size
-                              const targetWidth = options.width || originalImage.width;
-                              const targetHeight = options.height || originalImage.height;
-                              const paddingH =
-                                paddingMode === 'number' ? numberPadding * 2 : objectPadding.left + objectPadding.right;
-                              const paddingV =
-                                paddingMode === 'number' ? numberPadding * 2 : objectPadding.top + objectPadding.bottom;
-                              return `${targetWidth + paddingH} × ${targetHeight + paddingV}`;
-                            })()}
-                          </>
+                          (() => {
+                            // Calculate expected size
+                            const targetWidth = options.width || originalImage.width;
+                            const targetHeight = options.height || originalImage.height;
+                            const paddingH =
+                              paddingMode === 'number' ? numberPadding * 2 : objectPadding.left + objectPadding.right;
+                            const paddingV =
+                              paddingMode === 'number' ? numberPadding * 2 : objectPadding.top + objectPadding.bottom;
+                            return `${targetWidth + paddingH} × ${targetHeight + paddingV}`;
+                          })()
                         )}
                       </Typography>
                     </Grid>
@@ -549,14 +568,15 @@ const partial = await processImage(source)
                         <Typography variant="body2">
                           {paddingMode === 'number' ? (
                             <>
-                              <strong>Padding {numberPadding}px</strong> applied → width +{numberPadding * 2}px, height +
-                              {numberPadding * 2}px
+                              <strong>Padding {numberPadding}px</strong> applied → width +{numberPadding * 2}px, height
+                              +{numberPadding * 2}px
                             </>
                           ) : (
                             <>
-                              <strong>Asymmetric padding</strong> applied → width +{objectPadding.left + objectPadding.right}px
-                              (L:{objectPadding.left} + R:{objectPadding.right}), height +
-                              {objectPadding.top + objectPadding.bottom}px (T:{objectPadding.top} + B:
+                              <strong>Asymmetric padding</strong> applied → width +
+                              {objectPadding.left + objectPadding.right}px (L:{objectPadding.left} + R:
+                              {objectPadding.right}), height +{objectPadding.top + objectPadding.bottom}px (T:
+                              {objectPadding.top} + B:
                               {objectPadding.bottom})
                             </>
                           )}

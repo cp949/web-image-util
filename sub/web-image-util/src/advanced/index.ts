@@ -40,6 +40,7 @@
 // Browser Capability Detection and Optimization System
 // ============================================================================
 
+export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from '../utils/browser-capabilities';
 /**
  * Browser capability detection and performance analysis module
  *
@@ -58,12 +59,11 @@ export {
   PROCESSING_MODE_DESCRIPTIONS,
 } from '../utils/browser-capabilities';
 
-export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from '../utils/browser-capabilities';
-
 // ============================================================================
 // SVG Quality Analysis and Complexity System
 // ============================================================================
 
+export type { ComplexityAnalysisResult, QualityLevel, SvgComplexityMetrics } from '../core/svg-complexity-analyzer';
 /**
  * SVG complexity analysis and quality optimization module
  *
@@ -71,7 +71,6 @@ export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from 
  * optimal rendering quality and enhance browser compatibility
  */
 export { analyzeSvgComplexity } from '../core/svg-complexity-analyzer';
-export type { ComplexityAnalysisResult, QualityLevel, SvgComplexityMetrics } from '../core/svg-complexity-analyzer';
 
 /**
  * SVG compatibility and dimension handling utilities
@@ -80,20 +79,20 @@ export type { ComplexityAnalysisResult, QualityLevel, SvgComplexityMetrics } fro
  * for consistent SVG rendering across various browsers
  */
 export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from '../utils/svg-compatibility';
-export { extractSvgDimensions } from '../utils/svg-dimensions';
 export type { SvgDimensions } from '../utils/svg-dimensions';
+export { extractSvgDimensions } from '../utils/svg-dimensions';
 
 // ============================================================================
 // Canvas High-Quality Rendering Configuration
 // ============================================================================
 
+export type { HighQualityCanvasOptions } from '../base/canvas-utils';
 /**
  * Canvas high-quality rendering configuration
  *
  * @description Canvas rendering optimization options for image quality enhancement
  */
 export { setupHighQualityCanvas } from '../base/canvas-utils';
-export type { HighQualityCanvasOptions } from '../base/canvas-utils';
 
 // ============================================================================
 // Convenience Functions and Integrated API

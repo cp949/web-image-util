@@ -143,7 +143,9 @@ export async function withMultipleManagedCanvas<T>(
 
     return await operation(canvasData);
   } finally {
-    managedCanvases.forEach((managed) => managed.dispose());
+    managedCanvases.forEach((managed) => {
+      managed.dispose();
+    });
   }
 }
 

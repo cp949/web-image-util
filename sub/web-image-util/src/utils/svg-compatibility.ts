@@ -184,11 +184,7 @@ export function enhanceBrowserCompatibility(
     // In preserve-framing mode, 0×0 is already prevented by defaultSize
     // However, if user explicitly sets this option, prioritize user setting
     ensureNonZeroViewport:
-      options.ensureNonZeroViewport !== undefined
-        ? options.ensureNonZeroViewport
-        : mode === 'preserve-framing'
-          ? false
-          : true,
+      options.ensureNonZeroViewport !== undefined ? options.ensureNonZeroViewport : mode !== 'preserve-framing',
   };
 
   const opts = { ...smartDefaults, ...options };
@@ -525,24 +521,26 @@ function heuristicBBoxFromString(
   // Find circles using regex
   const circleRegex =
     /<circle[^>]*cx=["']?([^"'\s]+)["']?[^>]*cy=["']?([^"'\s]+)["']?[^>]*r=["']?([^"'\s]+)["']?[^>]*\/?>/gi;
-  let circleMatch;
-  while ((circleMatch = circleRegex.exec(svgString)) !== null) {
+  let circleMatch = circleRegex.exec(svgString);
+  while (circleMatch !== null) {
     const cx = parseFloat(circleMatch[1]);
     const cy = parseFloat(circleMatch[2]);
     const r = parseFloat(circleMatch[3]);
     if (r > 0) push(cx - r, cy - r, cx + r, cy + r);
+    circleMatch = circleRegex.exec(svgString);
   }
 
   // Find rectangles using regex
   const rectRegex =
     /<rect[^>]*x=["']?([^"'\s]+)["']?[^>]*y=["']?([^"'\s]+)["']?[^>]*width=["']?([^"'\s]+)["']?[^>]*height=["']?([^"'\s]+)["']?[^>]*\/?>/gi;
-  let rectMatch;
-  while ((rectMatch = rectRegex.exec(svgString)) !== null) {
+  let rectMatch = rectRegex.exec(svgString);
+  while (rectMatch !== null) {
     const x = parseFloat(rectMatch[1]);
     const y = parseFloat(rectMatch[2]);
     const w = parseFloat(rectMatch[3]);
     const h = parseFloat(rectMatch[4]);
     if (w > 0 && h > 0) push(x, y, x + w, y + h);
+    rectMatch = rectRegex.exec(svgString);
   }
 
   if (minX === +Infinity || minY === +Infinity || maxX === -Infinity || maxY === -Infinity) {

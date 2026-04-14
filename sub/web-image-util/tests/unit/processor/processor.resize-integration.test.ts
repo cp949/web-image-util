@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { processImage } from '../../../src/processor';
-import { createTestImageBlob } from '../../utils/image-helper';
-import type { ResizeConfig } from '../../../src/types/resize-config';
 import { ImageProcessError } from '../../../src/types';
+import type { ResizeConfig } from '../../../src/types/resize-config';
+import { createTestImageBlob } from '../../utils/image-helper';
 
 describe('Processor Resize Integration Tests', () => {
   describe('new resize API with all fit modes', () => {

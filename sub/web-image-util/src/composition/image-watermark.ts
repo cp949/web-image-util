@@ -105,7 +105,7 @@ export class ImageWatermark {
     const heightScale = maxHeight / watermarkImage.height;
     const adaptiveScale = Math.min(widthScale, heightScale);
 
-    return this.addToCanvas(canvas, {
+    return ImageWatermark.addToCanvas(canvas, {
       ...options,
       scale: adaptiveScale,
     });

@@ -2,26 +2,10 @@
 
 'use client';
 
-import {
-  Card,
-  CardContent,
-  Grid,
-  Stack,
-  Typography,
-  Chip,
-  Box,
-  LinearProgress,
-  Alert,
-} from '@mui/material';
-import {
-  PhotoSizeSelectActual,
-  Speed,
-  CompareArrows,
-  CheckCircle,
-  Info,
-} from '@mui/icons-material';
-import type { ImageInfo, ProcessedImageInfo } from '../demos/types';
+import { CheckCircle, CompareArrows, Info, PhotoSizeSelectActual, Speed } from '@mui/icons-material';
+import { Alert, Box, Card, CardContent, Chip, Grid, LinearProgress, Stack, Typography } from '@mui/material';
 import { formatFileSize, formatProcessingTime } from '../../utils/errorHandling';
+import type { ImageInfo, ProcessedImageInfo } from '../demos/types';
 
 interface ImageMetadataProps {
   original: ImageInfo | null;
@@ -97,7 +81,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                       {original.width} × {original.height}px
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Total {(original.width * original.height / 1_000_000).toFixed(2)}MP
+                      Total {((original.width * original.height) / 1_000_000).toFixed(2)}MP
                     </Typography>
                   </Box>
                   {original.size && (
@@ -159,7 +143,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                       <Typography variant="caption" color="text.secondary">
                         {processed.width === original.width && processed.height === original.height
                           ? 'Size maintained'
-                          : `${((processed.width * processed.height) / (original.width * original.height) * 100).toFixed(0)}% of original`}
+                          : `${(((processed.width * processed.height) / (original.width * original.height)) * 100).toFixed(0)}% of original`}
                       </Typography>
                     )}
                   </Box>

@@ -60,7 +60,7 @@ export class SvgOptimizer {
    */
   static optimize(
     svgString: string,
-    options: SvgOptimizationOptions = this.getDefaultOptions()
+    options: SvgOptimizationOptions = SvgOptimizer.getDefaultOptions()
   ): { optimizedSvg: string; result: OptimizationResult } {
     const startTime = performance.now();
     const originalSize = svgString.length;
@@ -70,30 +70,30 @@ export class SvgOptimizer {
     try {
       // 1. Remove metadata
       if (options.removeMetadata) {
-        optimizedSvg = this.removeMetadata(optimizedSvg);
+        optimizedSvg = SvgOptimizer.removeMetadata(optimizedSvg);
         optimizations.push('metadata removal');
       }
 
       // 2. Simplify paths
       if (options.simplifyPaths) {
-        optimizedSvg = this.simplifyPaths(optimizedSvg, options.precision);
+        optimizedSvg = SvgOptimizer.simplifyPaths(optimizedSvg, options.precision);
         optimizations.push('path simplification');
       }
 
       // 3. Optimize gradients
       if (options.optimizeGradients) {
-        optimizedSvg = this.optimizeGradients(optimizedSvg);
+        optimizedSvg = SvgOptimizer.optimizeGradients(optimizedSvg);
         optimizations.push('gradient optimization');
       }
 
       // 4. Remove unused definitions
       if (options.removeUnusedDefs) {
-        optimizedSvg = this.removeUnusedDefs(optimizedSvg);
+        optimizedSvg = SvgOptimizer.removeUnusedDefs(optimizedSvg);
         optimizations.push('unused definitions removal');
       }
 
       // 5. Clean up whitespace
-      optimizedSvg = this.cleanupWhitespace(optimizedSvg);
+      optimizedSvg = SvgOptimizer.cleanupWhitespace(optimizedSvg);
       optimizations.push('whitespace cleanup');
 
       const optimizedSize = optimizedSvg.length;
@@ -251,7 +251,7 @@ export class SvgOptimizer {
 
       // Detect and map duplicate gradients
       gradients.forEach((gradient) => {
-        const hash = this.hashGradient(gradient);
+        const hash = SvgOptimizer.hashGradient(gradient);
         const currentId = gradient.getAttribute('id');
 
         if (!currentId) return;

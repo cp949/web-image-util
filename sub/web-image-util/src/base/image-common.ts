@@ -2,10 +2,10 @@
  * 브라우저 환경의 이미지 변환과 입출력을 돕는 공통 유틸리티다.
  */
 
-import type { ImageFileExt, ImageSource, ImageSourceConvertOptions, ImageStringSourceType } from './common-types';
-import { createImageError } from './error-helpers';
 import { debugLog } from '../utils/debug';
 import { createImageElement } from '../utils/image-element';
+import type { ImageFileExt, ImageSource, ImageSourceConvertOptions, ImageStringSourceType } from './common-types';
+import { createImageError } from './error-helpers';
 
 const IMAGE_TYPE_TO_EXTENSION: Record<string, string> = {
   png: 'png',
@@ -34,7 +34,7 @@ const IMAGE_TYPE_TO_EXTENSION: Record<string, string> = {
  * @returns Uint8Array로 변환한 바이너리 데이터
  */
 export function base64ToBuffer(base64: string): Promise<Uint8Array> {
-  const dataUrl = 'data:application/octet-binary;base64,' + base64;
+  const dataUrl = `data:application/octet-binary;base64,${base64}`;
 
   return fetch(dataUrl)
     .then((res) => res.arrayBuffer())
@@ -65,7 +65,7 @@ export function downloadBlob(blob: Blob, fileName: string) {
     let popup: Window | null = window.open('', '_blank');
     if (popup) {
       const reader = new FileReader();
-      reader.onloadend = function () {
+      reader.onloadend = () => {
         if (popup) {
           popup.location.href = reader.result as string;
           popup = null;
@@ -115,14 +115,14 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 const fixFileExt = (fileName: string, ext: string) => {
-  if (fileName.toLowerCase().endsWith('.' + ext)) {
+  if (fileName.toLowerCase().endsWith(`.${ext}`)) {
     return fileName;
   }
   const idx = fileName.lastIndexOf('.');
   if (idx > 0) {
-    return fileName.substring(0, idx) + '.' + ext;
+    return `${fileName.substring(0, idx)}.${ext}`;
   }
-  return fileName + '.' + ext;
+  return `${fileName}.${ext}`;
 };
 
 export function fixBlobFileExt(blob: Blob, fileName: string) {
@@ -134,7 +134,7 @@ export function fixBlobFileExt(blob: Blob, fileName: string) {
 }
 
 export function blobToFile(blob: Blob, fileName: string): Promise<File> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (blob.type.indexOf('image/svg+xml') >= 0) {
       return resolve(new File([blob], fixBlobFileExt(blob, fileName), { type: 'image/svg+xml' }));
     } else {
@@ -165,7 +165,7 @@ export function urlToElement(
       img.crossOrigin = opts?.crossOrigin;
     }
 
-    img.onload = function () {
+    img.onload = () => {
       resolve(img);
     };
 
@@ -207,7 +207,7 @@ export function isSvgDataUrl(dataUrl: string): boolean {
 
 export function svgToDataUrl(svgXml: string): string {
   const svg = svgXml.replace(/&nbsp/g, '&#160');
-  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 export function svgToBlob(svgXml: string): Blob {
@@ -331,7 +331,7 @@ export async function checkImageFormatFromString(image: string): Promise<
     if (format) {
       return { format, src: image };
     }
-    debugLog.warn('Unknown image data URL:', image.substring(0, 100) + '...');
+    debugLog.warn('Unknown image data URL:', `${image.substring(0, 100)}...`);
     return undefined;
   }
   const dataUrl = await stringToDataUrl(image).catch((err) => {

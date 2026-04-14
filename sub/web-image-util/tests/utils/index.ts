@@ -3,19 +3,19 @@
  */
 
 export {
-	createTestCanvas,
-	getCanvasPixelData,
-	compareCanvases,
-	createGradientCanvas,
-	createCheckerboardCanvas,
-	canvasToBlob,
+  canvasToBlob,
+  compareCanvases,
+  createCheckerboardCanvas,
+  createGradientCanvas,
+  createTestCanvas,
+  getCanvasPixelData,
 } from './canvas-helper';
 
 export {
-	createTestImageBlob,
-	createTestImageElement,
-	createTestImageDataUrl,
-	getImageDimensions,
-	getCanvasDimensions,
-	compareBlobSizes,
+  compareBlobSizes,
+  createTestImageBlob,
+  createTestImageDataUrl,
+  createTestImageElement,
+  getCanvasDimensions,
+  getImageDimensions,
 } from './image-helper';

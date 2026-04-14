@@ -4,9 +4,9 @@
 
 import type { ImageSource, ProcessorOptions } from '../types';
 import { ImageProcessError } from '../types';
+import { debugLog, productionLog } from '../utils/debug';
 import { enhanceSvgForBrowser } from '../utils/svg-compatibility';
 import { extractSvgDimensions } from '../utils/svg-dimensions';
-import { debugLog, productionLog } from '../utils/debug';
 import type { QualityLevel } from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
 

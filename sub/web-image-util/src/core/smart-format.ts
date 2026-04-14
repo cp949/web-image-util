@@ -117,7 +117,7 @@ export class SmartFormatSelector {
     options: SmartFormatOptions = {}
   ): Promise<FormatOptimizationResult> {
     // Apply default settings by purpose
-    const purposeDefaults = options.purpose ? this.purposeSettings[options.purpose] : {};
+    const purposeDefaults = options.purpose ? SmartFormatSelector.purposeSettings[options.purpose] : {};
 
     const mergedOptions: Required<SmartFormatOptions> = {
       purpose: ImagePurpose.WEB,
@@ -131,16 +131,21 @@ export class SmartFormatSelector {
     };
 
     // Analyze image characteristics
-    const analysis = await this.analyzeImage(canvas);
+    const analysis = await SmartFormatSelector.analyzeImage(canvas);
 
     // Detect transparency (if not specified in options)
     const hasTransparency = options.preserveTransparency ?? analysis.hasTransparency;
 
     // Check supported formats
-    const supportedFormats = await this.getSupportedFormats(mergedOptions);
+    const supportedFormats = await SmartFormatSelector.getSupportedFormats(mergedOptions);
 
     // Calculate scores for each format
-    const formatScores = await this.scoreFormats(supportedFormats, analysis, hasTransparency, mergedOptions);
+    const formatScores = await SmartFormatSelector.scoreFormats(
+      supportedFormats,
+      analysis,
+      hasTransparency,
+      mergedOptions
+    );
 
     // Select format with highest score
     const bestFormat = formatScores[0];
@@ -259,7 +264,7 @@ export class SmartFormatSelector {
 
     for (const format of formats) {
       let score = 0;
-      const quality = this.getRecommendedQuality(format, options);
+      const quality = SmartFormatSelector.getRecommendedQuality(format, options);
       let reason = '';
       let estimatedSavings = 0;
 
@@ -325,11 +330,11 @@ export class SmartFormatSelector {
       }
 
       // Apply quality priority
-      const qualityBonus = this.calculateQualityBonus(format, options.qualityPriority);
+      const qualityBonus = SmartFormatSelector.calculateQualityBonus(format, options.qualityPriority);
       score += qualityBonus;
 
       // Consider file size limit
-      const sizeScore = this.calculateSizeScore(format, options.maxSizeKB, estimatedSavings);
+      const sizeScore = SmartFormatSelector.calculateSizeScore(format, options.maxSizeKB, estimatedSavings);
       score += sizeScore;
 
       formatScores.push({
@@ -435,7 +440,7 @@ export class SmartFormatSelector {
 
     for (const { canvas, name, options } of canvases) {
       const mergedOptions = { ...globalOptions, ...options };
-      const result = await this.selectOptimalFormat(canvas, mergedOptions);
+      const result = await SmartFormatSelector.selectOptimalFormat(canvas, mergedOptions);
 
       results.push({ name, result });
     }

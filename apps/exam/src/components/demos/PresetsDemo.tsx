@@ -377,7 +377,7 @@ const socialImages = await Promise.all([
                       onChange={(e) =>
                         setThumbnailOptions((prev) => ({
                           ...prev,
-                          size: parseInt(e.target.value) || 150,
+                          size: parseInt(e.target.value, 10) || 150,
                         }))
                       }
                       sx={{ mb: 2 }}
@@ -444,7 +444,7 @@ const socialImages = await Promise.all([
                       onChange={(e) =>
                         setAvatarOptions((prev) => ({
                           ...prev,
-                          size: parseInt(e.target.value) || 128,
+                          size: parseInt(e.target.value, 10) || 128,
                         }))
                       }
                       sx={{ mb: 2 }}
@@ -663,7 +663,9 @@ const socialImages = await Promise.all([
             )}
 
             {/* Code examples */}
-            {originalImage && <CodeSnippet title="Code Example for Current Settings" examples={generateCodeExamples()} />}
+            {originalImage && (
+              <CodeSnippet title="Code Example for Current Settings" examples={generateCodeExamples()} />
+            )}
           </Stack>
         </Grid>
       </Grid>

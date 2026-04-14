@@ -7,7 +7,7 @@
 
 import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './index';
 import type { AfterResize, BeforeResize, ProcessorState } from './processor-state';
-import type { ResizeConfig, ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig } from './resize-config';
+import type { ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig, ResizeConfig } from './resize-config';
 import type { ResizeOperation, ScaleOperation } from './shortcut-types';
 
 /**

@@ -55,17 +55,17 @@ export class TiledProcessor {
     targetHeight: number,
     options: TiledProcessingOptions = {}
   ): Promise<HTMLCanvasElement> {
-    const opts = { ...this.DEFAULT_OPTIONS, ...options };
+    const opts = { ...TiledProcessor.DEFAULT_OPTIONS, ...options };
 
     // Input validation
-    this.validateInputs(img, targetWidth, targetHeight, opts);
+    TiledProcessor.validateInputs(img, targetWidth, targetHeight, opts);
 
     // Calculate scale
     const scaleX = targetWidth / img.width;
     const scaleY = targetHeight / img.height;
 
     // Generate tile plan
-    const tiles = this.generateTilePlan(
+    const tiles = TiledProcessor.generateTilePlan(
       img.width,
       img.height,
       targetWidth,
@@ -82,7 +82,7 @@ export class TiledProcessor {
       }
 
       // Process tiles
-      await this.processTiles(img, tiles, scaleX, scaleY, resultCtx, opts);
+      await TiledProcessor.processTiles(img, tiles, scaleX, scaleY, resultCtx, opts);
 
       return resultCanvas;
     });
@@ -150,12 +150,12 @@ export class TiledProcessor {
     let completedTiles = 0;
 
     // Divide tiles into chunks for parallel processing
-    const chunks = this.chunkArray(tiles, opts.maxConcurrency);
+    const chunks = TiledProcessor.chunkArray(tiles, opts.maxConcurrency);
 
     for (const chunk of chunks) {
       const chunkPromises = chunk.map(async (tile) => {
         try {
-          await this.processSingleTile(img, tile, resultCtx, opts.quality);
+          await TiledProcessor.processSingleTile(img, tile, resultCtx, opts.quality);
           completedTiles++;
           opts.onProgress?.(completedTiles, totalTiles);
         } catch (error) {
@@ -226,11 +226,11 @@ export class TiledProcessor {
     processor: (tileCanvas: HTMLCanvasElement, tileInfo: TileInfo) => Promise<HTMLCanvasElement> | HTMLCanvasElement,
     options: TiledProcessingOptions = {}
   ): Promise<HTMLCanvasElement> {
-    const opts = { ...this.DEFAULT_OPTIONS, ...options };
+    const opts = { ...TiledProcessor.DEFAULT_OPTIONS, ...options };
     const { width: imgWidth, height: imgHeight } = img;
 
     // Generate tile information
-    const tiles = this.generateSimpleTilePlan(imgWidth, imgHeight, opts.tileSize, opts.overlapSize);
+    const tiles = TiledProcessor.generateSimpleTilePlan(imgWidth, imgHeight, opts.tileSize, opts.overlapSize);
 
     return withManagedCanvas(imgWidth, imgHeight, async (resultCanvas, resultCtx) => {
       let processedTiles = 0;
@@ -378,7 +378,7 @@ export class TiledProcessor {
     tileCount: number;
     memoryUsageMB: number;
   } {
-    const tiles = this.generateTilePlan(img.width, img.height, targetWidth, targetHeight, tileSize, 0);
+    const tiles = TiledProcessor.generateTilePlan(img.width, img.height, targetWidth, targetHeight, tileSize, 0);
 
     // Average processing time per tile (empirical value)
     const timePerTile = 0.1; // seconds
@@ -413,7 +413,7 @@ export class TiledProcessor {
     const recommendedSize = Math.max(minSize, Math.min(maxSize, maxTileSize));
 
     // Adjust to nearest power of 2 for processing efficiency
-    const powerOfTwo = Math.pow(2, Math.round(Math.log2(recommendedSize)));
+    const powerOfTwo = 2 ** Math.round(Math.log2(recommendedSize));
 
     return Math.max(minSize, Math.min(maxSize, powerOfTwo));
   }
@@ -435,7 +435,7 @@ export class TiledProcessor {
     estimatedMemoryMB: number;
   } {
     const reasons: string[] = [];
-    const tiles = this.generateSimpleTilePlan(img.width, img.height, tileSize, 0);
+    const tiles = TiledProcessor.generateSimpleTilePlan(img.width, img.height, tileSize, 0);
     const estimatedMemoryMB = (tileSize * tileSize * 4) / (1024 * 1024);
 
     let suitable = true;

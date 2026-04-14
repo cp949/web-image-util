@@ -56,7 +56,7 @@ export class TextWatermark {
     const { text, position, customPosition, style, rotation = 0, margin = { x: 10, y: 10 } } = options;
 
     // Apply text style
-    this.applyTextStyle(ctx, style);
+    TextWatermark.applyTextStyle(ctx, style);
 
     // Measure text size
     const textMetrics = ctx.measureText(text);
@@ -145,7 +145,7 @@ export class TextWatermark {
    */
   static addMultipleToCanvas(canvas: HTMLCanvasElement, watermarks: TextWatermarkOptions[]): HTMLCanvasElement {
     for (const watermark of watermarks) {
-      this.addToCanvas(canvas, watermark);
+      TextWatermark.addToCanvas(canvas, watermark);
     }
     return canvas;
   }
@@ -165,7 +165,7 @@ export class TextWatermark {
 
     const { text, style, rotation = 0, spacing, stagger = false } = options;
 
-    this.applyTextStyle(ctx, style);
+    TextWatermark.applyTextStyle(ctx, style);
     const textMetrics = ctx.measureText(text);
     const textWidth = textMetrics.width;
     const textHeight = style.fontSize || 16;

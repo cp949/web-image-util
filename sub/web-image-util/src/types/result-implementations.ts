@@ -4,17 +4,17 @@
  * @description 이미 알고 있는 크기 정보를 재사용해 후속 변환 비용을 줄인다.
  */
 
-import { ImageProcessError } from './index';
-import type {
-  ResultDataURL,
-  ResultBlob,
-  ResultFile,
-  ResultCanvas,
-  OutputOptions,
-  OutputFormat,
-  GeometrySize,
-} from './index';
 import { createImageElement } from '../utils/image-element';
+import type {
+  GeometrySize,
+  OutputFormat,
+  OutputOptions,
+  ResultBlob,
+  ResultCanvas,
+  ResultDataURL,
+  ResultFile,
+} from './index';
+import { ImageProcessError } from './index';
 
 /**
  * Data URL 결과 객체 구현이다.

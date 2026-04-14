@@ -6,9 +6,9 @@
  */
 
 import type { BlurOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from '../types';
+import type { IShortcutBuilder } from './processor-interface';
 import type { AfterResize, AfterResizeCall, BeforeResize, EnsureCanResize, ProcessorState } from './processor-state';
 import type { ResizeConfig } from './resize-config';
-import type { IShortcutBuilder } from './processor-interface';
 
 // Re-export for use by other modules
 export type { AfterResize, BeforeResize } from './processor-state';

@@ -1,5 +1,5 @@
-import { PerformanceDemo } from '../../components/demos/PerformanceDemo'
+import { PerformanceDemo } from '../../components/demos/PerformanceDemo';
 
 export default function Page() {
-  return <PerformanceDemo />
+  return <PerformanceDemo />;
 }

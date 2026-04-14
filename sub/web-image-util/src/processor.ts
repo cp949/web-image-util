@@ -6,6 +6,7 @@
 
 import { LazyRenderPipeline } from './core/lazy-render-pipeline';
 import { convertToImageElement } from './core/source-converter';
+import { ShortcutBuilder } from './shortcut/shortcut-builder';
 import type {
   BlurOptions,
   ImageFormat,
@@ -19,14 +20,13 @@ import type {
   ResultFile,
 } from './types';
 import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
-import type { AfterResizeCall, EnsureCanResize, ProcessorState } from './types/processor-state';
 import type { IImageProcessor, IShortcutBuilder } from './types/processor-interface';
-import type { ResizeOperation } from './types/shortcut-types';
+import type { AfterResizeCall, EnsureCanResize, ProcessorState } from './types/processor-state';
 import type { ResizeConfig } from './types/resize-config';
 import { validateResizeConfig } from './types/resize-config';
 import { BlobResultImpl, CanvasResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
+import type { ResizeOperation } from './types/shortcut-types';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
-import { ShortcutBuilder } from './shortcut/shortcut-builder';
 import { createImageElement } from './utils/image-element';
 
 /**
@@ -673,7 +673,9 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
             const arrayBuffer = await blob.arrayBuffer();
             resolve(arrayBuffer);
           } catch (error) {
-            reject(new ImageProcessError('ArrayBuffer conversion failed', 'BLOB_TO_ARRAYBUFFER_FAILED', error as Error));
+            reject(
+              new ImageProcessError('ArrayBuffer conversion failed', 'BLOB_TO_ARRAYBUFFER_FAILED', error as Error)
+            );
           }
         });
       });
@@ -700,21 +702,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
     } catch (error) {
       throw new ImageProcessError('Error occurred during Uint8Array conversion', 'OUTPUT_FAILED', error as Error);
     }
-  }
-
-  /**
-   * Clone Canvas (when safe reference is needed)
-   * @private
-   */
-  private cloneCanvas(originalCanvas: HTMLCanvasElement): HTMLCanvasElement {
-    const clonedCanvas = document.createElement('canvas');
-    const ctx = clonedCanvas.getContext('2d')!;
-
-    clonedCanvas.width = originalCanvas.width;
-    clonedCanvas.height = originalCanvas.height;
-
-    ctx.drawImage(originalCanvas, 0, 0);
-    return clonedCanvas;
   }
 
   /**

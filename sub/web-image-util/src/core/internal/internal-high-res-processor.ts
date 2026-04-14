@@ -1,11 +1,11 @@
 import { withManagedCanvas } from '../../base/canvas-utils';
 import { createImageError } from '../../base/error-helpers';
-import { productionLog } from '../../utils/debug';
 import type { ImageAnalysis } from '../../base/high-res-detector';
 import { HighResolutionDetector, ProcessingStrategy } from '../../base/high-res-detector';
 // Memory management optimized for browser environment
 import { SteppedProcessor } from '../../base/stepped-processor';
 import { TiledProcessor } from '../../base/tiled-processor';
+import { productionLog } from '../../utils/debug';
 
 /**
  * High-resolution processing options
@@ -74,12 +74,14 @@ export class InternalHighResProcessor {
     targetHeight: number,
     options: HighResolutionOptions = {}
   ): Promise<ProcessingResult> {
-    const opts = { ...this.DEFAULT_OPTIONS, ...options };
+    const opts = { ...InternalHighResProcessor.DEFAULT_OPTIONS, ...options };
     const startTime = Date.now();
     let memoryPeakUsage = 0;
 
     // Initialize progress tracking
-    const progressTracker = opts.enableProgressTracking ? this.createProgressTracker(opts.onProgress) : null;
+    const progressTracker = opts.enableProgressTracking
+      ? InternalHighResProcessor.createProgressTracker(opts.onProgress)
+      : null;
 
     try {
       // 1. Image analysis
@@ -87,24 +89,31 @@ export class InternalHighResProcessor {
       const analysis = HighResolutionDetector.analyzeImage(img);
 
       // 2. Determine processing strategy
-      const strategy = this.selectOptimalStrategy(analysis, opts, img, targetWidth, targetHeight);
+      const strategy = InternalHighResProcessor.selectOptimalStrategy(analysis, opts, img, targetWidth, targetHeight);
       progressTracker?.update('analyzing', 20, `Strategy selected: ${strategy}`);
 
       // 3. Check and manage memory situation
-      await this.checkAndManageMemory(opts, analysis);
+      await InternalHighResProcessor.checkAndManageMemory(opts, analysis);
       progressTracker?.update('analyzing', 30, 'Memory check completed');
 
       // 4. Perform actual processing
       progressTracker?.update('processing', 40, 'Starting image processing...');
-      const canvas = await this.executeProcessing(img, targetWidth, targetHeight, strategy, opts, progressTracker);
+      const canvas = await InternalHighResProcessor.executeProcessing(
+        img,
+        targetWidth,
+        targetHeight,
+        strategy,
+        opts,
+        progressTracker
+      );
 
       // 5. Post-processing and optimization
       progressTracker?.update('finalizing', 90, 'Finalizing...');
-      const optimizedCanvas = await this.postProcess(canvas, opts);
+      const optimizedCanvas = await InternalHighResProcessor.postProcess(canvas, opts);
 
       // 6. Generate result
       const processingTime = (Date.now() - startTime) / 1000;
-      memoryPeakUsage = this.getCurrentMemoryUsage();
+      memoryPeakUsage = InternalHighResProcessor.getCurrentMemoryUsage();
 
       progressTracker?.update('completed', 100, 'Processing completed');
 
@@ -139,17 +148,17 @@ export class InternalHighResProcessor {
 
     // When memory constraints are severe
     // Simple memory check
-    const memoryCheck = this.isMemoryLow();
+    const memoryCheck = InternalHighResProcessor.isMemoryLow();
     if (memoryCheck) {
       productionLog.warn('Low memory detected, selecting memory-efficient strategy');
-      return this.selectMemoryEfficientStrategy(analysis);
+      return InternalHighResProcessor.selectMemoryEfficientStrategy(analysis);
     }
 
     // Strategy adjustment based on quality settings
     if (opts.quality === 'fast') {
-      return this.selectFastStrategy(analysis);
+      return InternalHighResProcessor.selectFastStrategy(analysis);
     } else if (opts.quality === 'high') {
-      return this.selectHighQualityStrategy(analysis, img, targetWidth, targetHeight);
+      return InternalHighResProcessor.selectHighQualityStrategy(analysis, img, targetWidth, targetHeight);
     }
 
     // Balanced strategy selection (default)
@@ -229,10 +238,10 @@ export class InternalHighResProcessor {
 
     switch (strategy) {
       case ProcessingStrategy.DIRECT:
-        return this.directResize(img, targetWidth, targetHeight, opts.quality);
+        return InternalHighResProcessor.directResize(img, targetWidth, targetHeight, opts.quality);
 
       case ProcessingStrategy.CHUNKED:
-        return this.chunkedResize(img, targetWidth, targetHeight, opts, progressCallback);
+        return InternalHighResProcessor.chunkedResize(img, targetWidth, targetHeight, opts, progressCallback);
 
       case ProcessingStrategy.STEPPED:
         return SteppedProcessor.resizeWithSteps(img, targetWidth, targetHeight, {
@@ -310,7 +319,7 @@ export class InternalHighResProcessor {
    * @private
    */
   private static async checkAndManageMemory(opts: HighResolutionOptions, analysis: ImageAnalysis): Promise<void> {
-    const memoryInfo = this.getEstimatedUsage();
+    const memoryInfo = InternalHighResProcessor.getEstimatedUsage();
     const availableMB = (memoryInfo.limit - memoryInfo.used) / (1024 * 1024);
 
     // Memory warning
@@ -322,7 +331,7 @@ export class InternalHighResProcessor {
     }
 
     // Trigger garbage collection when memory is low
-    if (this.isMemoryLow()) {
+    if (InternalHighResProcessor.isMemoryLow()) {
       if (typeof global !== 'undefined' && global.gc) {
         global.gc();
       }
@@ -377,7 +386,7 @@ export class InternalHighResProcessor {
    * @private
    */
   private static getCurrentMemoryUsage(): number {
-    const usage = this.getEstimatedUsage();
+    const usage = InternalHighResProcessor.getEstimatedUsage();
     return Math.round((usage.used / (1024 * 1024)) * 100) / 100;
   }
 
@@ -402,7 +411,7 @@ export class InternalHighResProcessor {
     warnings: string[];
     estimatedTime: number;
   } {
-    const opts = { ...this.DEFAULT_OPTIONS, ...options };
+    const opts = { ...InternalHighResProcessor.DEFAULT_OPTIONS, ...options };
     const analysis = HighResolutionDetector.analyzeImage(img);
     const warnings: string[] = [];
 
@@ -425,7 +434,13 @@ export class InternalHighResProcessor {
     }
 
     // Determine recommended strategy
-    const recommendedStrategy = this.selectOptimalStrategy(analysis, opts as any, img, targetWidth, targetHeight);
+    const recommendedStrategy = InternalHighResProcessor.selectOptimalStrategy(
+      analysis,
+      opts as any,
+      img,
+      targetWidth,
+      targetHeight
+    );
 
     // Calculate estimated processing time
     const timeEstimate = HighResolutionDetector.estimateProcessingTime(analysis);
@@ -483,7 +498,7 @@ export class InternalHighResProcessor {
         const globalIndex = chunks.indexOf(chunk) * concurrency + chunkIndex;
 
         try {
-          const result = await this.smartResize(img, targetWidth, targetHeight, processingOptions);
+          const result = await InternalHighResProcessor.smartResize(img, targetWidth, targetHeight, processingOptions);
 
           results[globalIndex] = result;
           completed++;

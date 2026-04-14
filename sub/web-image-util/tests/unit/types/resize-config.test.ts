@@ -1,14 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { ImageProcessError } from '../../../src/types';
 import {
-  type ResizeConfig,
-  validateResizeConfig,
-  isCoverConfig,
   isContainConfig,
+  isCoverConfig,
   isFillConfig,
   isMaxFitConfig,
   isMinFitConfig,
+  type ResizeConfig,
+  validateResizeConfig,
 } from '../../../src/types/resize-config';
-import { ImageProcessError } from '../../../src/types';
 
 describe('ResizeConfig Types', () => {
   describe('validateResizeConfig', () => {

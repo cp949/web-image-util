@@ -123,7 +123,8 @@ console.log('Result size:', result.width, 'x', result.height);`;
         Basic Image Processing
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        Experience the innovative features of the processImage API. The ResizeConfig API with single resize() call constraint and "calculate ahead, render once" philosophy provides better performance and quality.
+        Experience the innovative features of the processImage API. The ResizeConfig API with single resize() call
+        constraint and "calculate ahead, render once" philosophy provides better performance and quality.
       </Typography>
 
       <Grid container spacing={4}>
@@ -339,10 +340,22 @@ console.log('Result size:', result.width, 'x', result.height);`;
                         onChange={(e) => setOptions((prev) => ({ ...prev, fit: e.target.value as ResizeFit }))}
                       >
                         <FormControlLabel value="cover" control={<Radio />} label="Cover (fill completely, may crop)" />
-                        <FormControlLabel value="contain" control={<Radio />} label="Contain (fit entirely, with padding)" />
+                        <FormControlLabel
+                          value="contain"
+                          control={<Radio />}
+                          label="Contain (fit entirely, with padding)"
+                        />
                         <FormControlLabel value="fill" control={<Radio />} label="Fill (stretch to fill)" />
-                        <FormControlLabel value="maxFit" control={<Radio />} label="MaxFit (shrink only, no enlargement)" />
-                        <FormControlLabel value="minFit" control={<Radio />} label="MinFit (enlarge only, no shrinking)" />
+                        <FormControlLabel
+                          value="maxFit"
+                          control={<Radio />}
+                          label="MaxFit (shrink only, no enlargement)"
+                        />
+                        <FormControlLabel
+                          value="minFit"
+                          control={<Radio />}
+                          label="MinFit (enlarge only, no shrinking)"
+                        />
                       </RadioGroup>
                     </FormControl>
                   </Grid>
@@ -371,7 +384,9 @@ console.log('Result size:', result.width, 'x', result.height);`;
             <ImageMetadata original={originalImage} processed={processedImage} />
 
             {/* Code snippet */}
-            {originalImage && <CodeSnippet title="Code Examples for Current Settings" examples={generateCodeExamples()} />}
+            {originalImage && (
+              <CodeSnippet title="Code Examples for Current Settings" examples={generateCodeExamples()} />
+            )}
           </Stack>
         </Grid>
       </Grid>

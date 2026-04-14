@@ -131,7 +131,7 @@ export class ResizePerformance {
     profile: ResizeProfile;
     reason: string;
   } {
-    const memoryInfo = this.getMemoryInfo();
+    const memoryInfo = ResizePerformance.getMemoryInfo();
 
     // High memory pressure situation
     if (memoryInfo.pressureLevel === 'high') {

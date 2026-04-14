@@ -5,7 +5,7 @@
  */
 
 import { globalErrorHandler } from '../core/error-handler';
-import { ImageProcessError, type ImageErrorCodeType } from '../types';
+import { type ImageErrorCodeType, ImageProcessError } from '../types';
 
 /**
  * Error context information
@@ -35,8 +35,7 @@ const USER_FRIENDLY_MESSAGES: Record<ImageErrorCodeType, string> = {
   SOURCE_LOAD_FAILED: 'Failed to load image. Please check your network connection or file path.',
 
   // Processing-related errors
-  CANVAS_CREATION_FAILED:
-    'Cannot create Canvas for image processing. Please verify that your browser supports Canvas.',
+  CANVAS_CREATION_FAILED: 'Cannot create Canvas for image processing. Please verify that your browser supports Canvas.',
   CANVAS_CONTEXT_FAILED: 'Cannot get Canvas 2D context. Please verify that your browser supports Canvas API.',
   RESIZE_FAILED: 'Image resizing failed. There may be an issue with the image size or format.',
   CONVERSION_FAILED: 'Image format conversion failed. Please try a different format.',
@@ -130,10 +129,7 @@ const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
     'Process in multiple steps',
   ],
 
-  BROWSER_NOT_SUPPORTED: [
-    'Use Chrome, Firefox, Safari, or Edge',
-    'For WebP support, use Chrome 32+ or Firefox 65+',
-  ],
+  BROWSER_NOT_SUPPORTED: ['Use Chrome, Firefox, Safari, or Edge', 'For WebP support, use Chrome 32+ or Firefox 65+'],
 
   // Basic solutions
   RESIZE_FAILED: ['Check image size and try with smaller values'],
@@ -150,10 +146,7 @@ const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
     'Check network connection status',
     'Check CORS settings or permission issues',
   ],
-  BLOB_TO_ARRAYBUFFER_FAILED: [
-    'Try with smaller image if memory is insufficient',
-    'Refresh the browser and try again',
-  ],
+  BLOB_TO_ARRAYBUFFER_FAILED: ['Try with smaller image if memory is insufficient', 'Refresh the browser and try again'],
 
   // SVG-related solutions
   SVG_LOAD_FAILED: [
@@ -195,10 +188,7 @@ const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
 
   FEATURE_NOT_SUPPORTED: ['Try using a different approach or polyfill'],
 
-  BLOB_CONVERSION_ERROR: [
-    'Refresh the browser and try again',
-    'Try with smaller image if memory is insufficient',
-  ],
+  BLOB_CONVERSION_ERROR: ['Refresh the browser and try again', 'Try with smaller image if memory is insufficient'],
 
   MULTIPLE_RESIZE_NOT_ALLOWED: [
     'Create a new processImage() instance',
@@ -320,7 +310,7 @@ export function checkBrowserSupport(): {
   const canvas = document.createElement('canvas');
 
   return {
-    canvas: !!(canvas.getContext && canvas.getContext('2d')),
+    canvas: !!canvas.getContext?.('2d'),
     webp: canvas.toDataURL('image/webp').startsWith('data:image/webp'),
     avif: canvas.toDataURL('image/avif').startsWith('data:image/avif'),
     offscreenCanvas: typeof OffscreenCanvas !== 'undefined',

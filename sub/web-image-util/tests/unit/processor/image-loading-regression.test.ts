@@ -40,12 +40,14 @@ describe('image loading regression safeguards', () => {
     const input = await createTestImageBlob(64, 64, 'red');
     const originalImage = globalThis.Image;
     let constructorCalls = 0;
-    const forbiddenImageConstructor = vi.fn(class ForbiddenImage {
-      constructor() {
-        constructorCalls += 1;
-        throw new Error('Unexpected global Image constructor usage');
+    const forbiddenImageConstructor = vi.fn(
+      class ForbiddenImage {
+        constructor() {
+          constructorCalls += 1;
+          throw new Error('Unexpected global Image constructor usage');
+        }
       }
-    });
+    );
 
     // happy-dom에서도 document.createElement('img') 경로만 타는지 확인한다.
     globalThis.Image = forbiddenImageConstructor as unknown as typeof Image;

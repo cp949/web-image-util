@@ -233,9 +233,7 @@ export function useSampleImages() {
     const recommendation = recommendations[demoType];
     if (!recommendation) return [];
 
-    return SAMPLE_IMAGES.filter((img) =>
-      recommendation.images.some((name) => img.path.includes(name)),
-    );
+    return SAMPLE_IMAGES.filter((img) => recommendation.images.some((name) => img.path.includes(name)));
   }, []);
 
   return {

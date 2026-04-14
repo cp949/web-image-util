@@ -70,7 +70,7 @@ function parseViewBox(viewBoxStr: string | null): SvgDimensions['viewBox'] {
   if (!viewBoxStr) return undefined;
 
   const values = viewBoxStr.split(/\s+/).map(Number);
-  if (values.length !== 4 || values.some(isNaN)) return undefined;
+  if (values.length !== 4 || values.some(Number.isNaN)) return undefined;
 
   return {
     x: values[0],

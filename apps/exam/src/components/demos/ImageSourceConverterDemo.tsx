@@ -352,7 +352,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
   };
 
   const formatTime = (ms: number) => {
@@ -411,7 +411,8 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
         Image Conversion Functions Test
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-        Test all features of the new convertTo conversion functions. Supports conversion from various input formats to multiple output formats.
+        Test all features of the new convertTo conversion functions. Supports conversion from various input formats to
+        multiple output formats.
       </Typography>
 
       <Grid container spacing={4}>
@@ -704,12 +705,9 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
             <Alert severity="info">
               <Typography variant="body2">
                 <strong>convertTo Functions Features:</strong>
-                <br />
-                • Type-safe conversion: Each method returns the exact type
-                <br />
-                • Chainable: Results can be used as input for other conversions
-                <br />
-                • Diverse input support: Supports File, Blob, Canvas, Image, DataURL, SVG, URL
+                <br />• Type-safe conversion: Each method returns the exact type
+                <br />• Chainable: Results can be used as input for other conversions
+                <br />• Diverse input support: Supports File, Blob, Canvas, Image, DataURL, SVG, URL
                 <br />• Performance optimization: Provides optimized conversion paths through metadata injection
               </Typography>
             </Alert>

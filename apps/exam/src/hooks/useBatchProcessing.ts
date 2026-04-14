@@ -1,10 +1,10 @@
 // Batch processing hook - Phase 4.2
 // Process images simultaneously with multiple settings and compare results
 
-import { useState, useCallback, useRef } from 'react';
-import { processImage, ImageProcessError } from '@cp949/web-image-util';
 import type { ResizeConfig } from '@cp949/web-image-util';
-import type { ProcessingOptions, ImageInfo, ProcessedImageInfo, ResultBlob } from '../components/demos/types';
+import { ImageProcessError, processImage } from '@cp949/web-image-util';
+import { useCallback, useRef, useState } from 'react';
+import type { ImageInfo, ProcessedImageInfo, ProcessingOptions, ResultBlob } from '../components/demos/types';
 import { logError } from '../utils/errorHandling';
 
 /**

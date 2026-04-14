@@ -86,90 +86,78 @@
  * ```
  */
 
-// Core API
-export { processImage, ImageProcessor } from './processor';
-
-// Shortcut API
-export { ShortcutBuilder } from './shortcut';
-
-// Convenience features
-export { createThumbnail, createAvatar, createSocialImage } from './presets';
-export type { ThumbnailOptions, AvatarOptions, SocialImageOptions, SocialPlatform } from './presets';
-
-// Utility functions
-export {
-  convertToBlob,
-  convertToBlobDetailed,
-  convertToDataURL,
-  convertToDataURLDetailed,
-  convertToFile,
-  convertToFileDetailed,
-  convertToElement,
-} from './utils';
-export type {
-  ConvertToBlobOptions,
-  ConvertToBlobDetailedOptions,
-  ConvertToDataURLOptions,
-  ConvertToDataURLDetailedOptions,
-  ConvertToFileOptions,
-  ConvertToFileDetailedOptions,
-} from './utils';
-
-// SVG compatibility functions
-export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from './utils/svg-compatibility';
-export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility';
-
 // SVG complexity analysis
 export { analyzeSvgComplexity } from './core/svg-complexity-analyzer';
+export type { AvatarOptions, SocialImageOptions, SocialPlatform, ThumbnailOptions } from './presets';
 
-// SVG utility functions
-export { extractSvgDimensions } from './utils/svg-dimensions';
-
+// Convenience features
+export { createAvatar, createSocialImage, createThumbnail } from './presets';
+// Core API
+export { ImageProcessor, processImage } from './processor';
+// Shortcut API
+export { ShortcutBuilder } from './shortcut';
 // Type definitions
 export type {
-  // Input types
-  ImageSource,
-
-  // Option types
-  ResizeConfig,
+  BlurOptions,
+  ComplexityAnalysisResult,
+  ContainConfig,
   // ResizeConfig sub-types (for explicit type specification)
   CoverConfig,
-  ContainConfig,
   FillConfig,
+  ImageErrorCodeType,
+  ImageFormat,
+  // Input types
+  ImageSource,
   MaxFitConfig,
   MinFitConfig,
-  SmartResizeOptions,
-  BlurOptions,
+  // Utility types
+  OutputFormat, // Added: for explicit output format specification
   OutputOptions,
-  ProcessorOptions,
   Padding,
-
+  ProcessorOptions,
+  // SVG quality system types
+  QualityLevel,
+  ResizeBackground,
+  // Option types
+  ResizeConfig,
+  ResizeFit,
+  ResizePosition,
   // Result types
   ResultBlob,
   ResultCanvas,
   ResultDataURL,
   ResultFile,
   ResultMetadata,
-
-  // Utility types
-  OutputFormat, // Added: for explicit output format specification
-  ResizeFit,
-  ResizePosition,
-  ResizeBackground,
-  ImageFormat,
-  ImageErrorCodeType,
-
-  // SVG quality system types
-  QualityLevel,
+  SmartResizeOptions,
   SvgComplexityMetrics,
-  ComplexityAnalysisResult,
-
   // SVG utility types
   SvgDimensions,
 } from './types';
-
 // Error classes
 export { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
+export type {
+  ConvertToBlobDetailedOptions,
+  ConvertToBlobOptions,
+  ConvertToDataURLDetailedOptions,
+  ConvertToDataURLOptions,
+  ConvertToFileDetailedOptions,
+  ConvertToFileOptions,
+} from './utils';
+// Utility functions
+export {
+  convertToBlob,
+  convertToBlobDetailed,
+  convertToDataURL,
+  convertToDataURLDetailed,
+  convertToElement,
+  convertToFile,
+  convertToFileDetailed,
+} from './utils';
+export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility';
+// SVG compatibility functions
+export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from './utils/svg-compatibility';
+// SVG utility functions
+export { extractSvgDimensions } from './utils/svg-dimensions';
 
 /**
  * Browser feature support detection

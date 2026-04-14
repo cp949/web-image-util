@@ -62,14 +62,14 @@ export class HighResolutionDetector {
   static analyzeImage(img: HTMLImageElement): ImageAnalysis {
     const { width, height } = img;
     const pixelCount = width * height;
-    const estimatedMemory = pixelCount * this.BYTES_PER_PIXEL;
+    const estimatedMemory = pixelCount * HighResolutionDetector.BYTES_PER_PIXEL;
     const estimatedMemoryMB = estimatedMemory / (1024 * 1024);
 
     // Determine processing strategy
-    const strategy = this.determineStrategy(estimatedMemory, width, height);
+    const strategy = HighResolutionDetector.determineStrategy(estimatedMemory, width, height);
 
     // Calculate processing complexity
-    const processingComplexity = this.calculateComplexity(pixelCount, strategy);
+    const processingComplexity = HighResolutionDetector.calculateComplexity(pixelCount, strategy);
 
     return {
       width,
@@ -78,8 +78,8 @@ export class HighResolutionDetector {
       totalPixels: pixelCount,
       estimatedMemoryMB: Math.round(estimatedMemoryMB * 100) / 100,
       strategy,
-      maxSafeDimension: this.getMaxSafeDimension(),
-      recommendedChunkSize: this.getOptimalChunkSize(pixelCount),
+      maxSafeDimension: HighResolutionDetector.getMaxSafeDimension(),
+      recommendedChunkSize: HighResolutionDetector.getOptimalChunkSize(pixelCount),
       processingComplexity,
     };
   }
@@ -89,7 +89,7 @@ export class HighResolutionDetector {
    * @private
    */
   private static determineStrategy(estimatedMemory: number, width: number, height: number): ProcessingStrategy {
-    const maxDimension = this.getMaxSafeDimension();
+    const maxDimension = HighResolutionDetector.getMaxSafeDimension();
 
     // Force tile processing when Canvas size limit is exceeded
     if (width > maxDimension || height > maxDimension) {
@@ -97,11 +97,11 @@ export class HighResolutionDetector {
     }
 
     // Determine strategy based on memory usage
-    if (estimatedMemory <= this.MEMORY_THRESHOLDS.SMALL) {
+    if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.SMALL) {
       return ProcessingStrategy.DIRECT;
-    } else if (estimatedMemory <= this.MEMORY_THRESHOLDS.MEDIUM) {
+    } else if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.MEDIUM) {
       return ProcessingStrategy.CHUNKED;
-    } else if (estimatedMemory <= this.MEMORY_THRESHOLDS.LARGE) {
+    } else if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.LARGE) {
       return ProcessingStrategy.STEPPED;
     } else {
       return ProcessingStrategy.TILED;
@@ -141,16 +141,16 @@ export class HighResolutionDetector {
     const userAgent = navigator.userAgent.toLowerCase();
 
     if (userAgent.includes('chrome') || userAgent.includes('chromium')) {
-      return this.MAX_CANVAS_SIZE.chrome;
+      return HighResolutionDetector.MAX_CANVAS_SIZE.chrome;
     } else if (userAgent.includes('firefox')) {
-      return this.MAX_CANVAS_SIZE.firefox;
+      return HighResolutionDetector.MAX_CANVAS_SIZE.firefox;
     } else if (userAgent.includes('safari')) {
-      return this.MAX_CANVAS_SIZE.safari;
+      return HighResolutionDetector.MAX_CANVAS_SIZE.safari;
     } else if (userAgent.includes('edge') || userAgent.includes('edg/')) {
-      return this.MAX_CANVAS_SIZE.edge;
+      return HighResolutionDetector.MAX_CANVAS_SIZE.edge;
     }
 
-    return this.MAX_CANVAS_SIZE.default;
+    return HighResolutionDetector.MAX_CANVAS_SIZE.default;
   }
 
   /**
@@ -162,7 +162,7 @@ export class HighResolutionDetector {
    */
   static getOptimalChunkSize(totalPixels: number): number {
     // Limit to maximum 16MB memory usage per chunk
-    const maxChunkPixels = this.MEMORY_THRESHOLDS.SMALL / this.BYTES_PER_PIXEL;
+    const maxChunkPixels = HighResolutionDetector.MEMORY_THRESHOLDS.SMALL / HighResolutionDetector.BYTES_PER_PIXEL;
     const theoreticalChunkSize = Math.floor(Math.sqrt(maxChunkPixels));
 
     // Limit to practical range (512px ~ 2048px)
@@ -172,7 +172,7 @@ export class HighResolutionDetector {
     let chunkSize = Math.max(minChunkSize, Math.min(maxChunkSize, theoreticalChunkSize));
 
     // Adjust to value close to power of 2 (for processing efficiency)
-    const powerOfTwo = Math.pow(2, Math.round(Math.log2(chunkSize)));
+    const powerOfTwo = 2 ** Math.round(Math.log2(chunkSize));
     chunkSize = Math.max(minChunkSize, Math.min(maxChunkSize, powerOfTwo));
 
     return chunkSize;
@@ -190,7 +190,7 @@ export class HighResolutionDetector {
     limitations: string[];
     recommendations: string[];
   } {
-    const analysis = this.analyzeImage(img);
+    const analysis = HighResolutionDetector.analyzeImage(img);
     const limitations: string[] = [];
     const recommendations: string[] = [];
     let canProcess = true;
@@ -340,7 +340,11 @@ export class HighResolutionDetector {
           name: 'Tile Processing',
           description: 'Divides the image into tiles for individual processing.',
           advantages: ['Can process ultra-large images', 'Limited memory usage', 'Scalability'],
-          disadvantages: ['Longest processing time', 'Complex tile boundary processing', 'High implementation complexity'],
+          disadvantages: [
+            'Longest processing time',
+            'Complex tile boundary processing',
+            'High implementation complexity',
+          ],
         };
 
       default:

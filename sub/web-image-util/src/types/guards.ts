@@ -5,7 +5,7 @@
  * Support TypeScript type narrowing to improve compile-time safety
  */
 
-import type { ImageSource, ImageFormat, ResizeFit, ResizePosition, ResizeBackground } from './base';
+import type { ImageFormat, ImageSource, ResizeBackground, ResizeFit, ResizePosition } from './base';
 
 // Define constants directly to prevent circular imports
 const VALID_RESIZE_FITS = ['cover', 'contain', 'fill', 'maxFit', 'minFit'] as const;
@@ -37,7 +37,7 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 function isNumberInRange(value: unknown, min: number, max: number): value is number {
-  return typeof value === 'number' && !isNaN(value) && value >= min && value <= max;
+  return typeof value === 'number' && !Number.isNaN(value) && value >= min && value <= max;
 }
 
 function isValidRGBValue(value: unknown): value is number {
