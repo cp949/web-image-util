@@ -161,6 +161,7 @@ export class CanvasPool {
       ctx.globalAlpha = 1;
       ctx.fillStyle = '#000000';
       ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
       ctx.filter = 'none';
     }
   }
