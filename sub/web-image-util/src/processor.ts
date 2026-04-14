@@ -4,6 +4,7 @@
  * @description Canvas 2D API를 바탕으로 브라우저 전용 이미지 처리 흐름을 구성한다.
  */
 
+import { CanvasPool } from './base/canvas-pool';
 import { LazyRenderPipeline } from './core/lazy-render-pipeline';
 import { convertToImageElement } from './core/source-converter';
 import { ShortcutBuilder } from './shortcut/shortcut-builder';
@@ -422,6 +423,9 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       );
     } catch (error) {
       throw new ImageProcessError('Error occurred during Blob conversion', 'OUTPUT_FAILED', error as Error);
+    } finally {
+      // blob 변환이 끝났으므로 pool-acquired canvas를 반환한다.
+      CanvasPool.getInstance().release(canvas);
     }
   }
 
@@ -620,6 +624,9 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
 
       return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
+          // blob 변환 시도 후 canvas는 더 이상 필요하지 않으므로 pool에 반환한다.
+          CanvasPool.getInstance().release(canvas);
+
           if (!blob) {
             reject(new ImageProcessError('Blob creation failed', 'CANVAS_TO_BLOB_FAILED'));
             return;
@@ -664,6 +671,9 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
 
       return new Promise((resolve, reject) => {
         canvas.toBlob(async (blob) => {
+          // blob 변환 시도 후 canvas는 더 이상 필요하지 않으므로 pool에 반환한다.
+          CanvasPool.getInstance().release(canvas);
+
           if (!blob) {
             reject(new ImageProcessError('Blob creation failed', 'CANVAS_TO_BLOB_FAILED'));
             return;

@@ -178,20 +178,28 @@ export class LazyRenderPipeline {
 
     const canvas = this.renderOnce();
 
-    const metadata: ResultMetadata = {
-      width: canvas.width,
-      height: canvas.height,
-      format: 'canvas' as any,
-      size: canvas.width * canvas.height * 4, // RGBA estimation
-      processingTime: performance.now() - startTime,
-      operations: this.operations.length,
-    };
+    // canvas 획득 이후 예외가 발생하면 pool에 반환한다.
+    // 정상 경로에서는 소비자가 canvas를 소유하므로 release하지 않는다.
+    try {
+      const metadata: ResultMetadata = {
+        width: canvas.width,
+        height: canvas.height,
+        format: 'canvas' as any,
+        size: canvas.width * canvas.height * 4, // RGBA estimation
+        processingTime: performance.now() - startTime,
+        operations: this.operations.length,
+      };
 
-    // Output debugging information
-    const layout = this.calculateFinalLayout();
-    debugLayout(layout, this.operations.length);
+      // Output debugging information
+      const layout = this.calculateFinalLayout();
+      debugLayout(layout, this.operations.length);
 
-    return { canvas, metadata };
+      return { canvas, metadata };
+    } catch (error) {
+      // 예외 발생 시 canvas를 pool에 반환하여 누수를 방지한다.
+      CanvasPool.getInstance().release(canvas);
+      throw error;
+    }
   }
 
   /**

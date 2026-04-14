@@ -134,12 +134,16 @@ export function calculateAllFilters(operations: LazyOperation[]): string {
 }
 
 /**
- * 🚀 Core function: Render all operations at once
+ * 🚀 핵심 함수: 모든 연산을 한 번에 렌더링한다.
  *
- * This function is the key to SVG quality improvement.
- * - Draw background first
- * - Apply all filters at once
- * - Complete all processing with a single drawImage call
+ * - 배경을 먼저 그린 뒤 모든 필터를 한꺼번에 적용한다.
+ * - drawImage 한 번으로 모든 처리를 완료한다.
+ *
+ * **Canvas 소유권 규칙 (중요)**
+ * - 반환되는 canvas는 {@link CanvasPool}에서 획득한 것이다.
+ * - 호출자는 canvas 사용이 끝나면 반드시 `CanvasPool.getInstance().release(canvas)`를 호출해야 한다.
+ * - 단, canvas 자체를 최종 소비자(consumer)에게 반환하는 경우에는 release를 호출하지 않는다.
+ *   이 경우 소유권이 소비자에게 이전되므로, 소비자가 canvas를 관리할 책임을 진다.
  */
 export function renderAllOperationsOnce(sourceImage: HTMLImageElement, operations: LazyOperation[]): HTMLCanvasElement {
   // 1. Analyze all operations to calculate final layout
