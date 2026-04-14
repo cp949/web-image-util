@@ -1,5 +1,5 @@
-import type { Metadata } from 'next';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
+import type { Metadata } from 'next';
 import { ClientThemeProvider } from '../components/providers/ThemeProvider';
 
 export const metadata: Metadata = {

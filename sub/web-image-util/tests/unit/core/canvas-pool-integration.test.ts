@@ -9,8 +9,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool';
-import { OnehotRenderer } from '../../../src/core/onehot-renderer';
 import { LazyRenderPipeline } from '../../../src/core/lazy-render-pipeline';
+import { OnehotRenderer } from '../../../src/core/onehot-renderer';
 import { ResizeCalculator } from '../../../src/core/resize-calculator';
 import type { ResizeConfig } from '../../../src/types/resize-config';
 

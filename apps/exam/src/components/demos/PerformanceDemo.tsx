@@ -1,7 +1,12 @@
 'use client';
 
 import { detectBrowserCapabilities, processImage } from '@cp949/web-image-util';
-import { Assessment as BenchmarkIcon, Speed as SpeedIcon, Timeline as TimelineIcon, Warning as WarningIcon } from '@mui/icons-material';
+import {
+  Assessment as BenchmarkIcon,
+  Speed as SpeedIcon,
+  Timeline as TimelineIcon,
+  Warning as WarningIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -223,7 +228,8 @@ export function PerformanceDemo() {
     const withSize = formatResults.filter((r) => r.outputSize !== undefined);
     const smallestFormat =
       withSize.length > 0
-        ? withSize.reduce((best, r) => ((r.outputSize ?? Infinity) < (best.outputSize ?? Infinity) ? r : best)).operation
+        ? withSize.reduce((best, r) => ((r.outputSize ?? Infinity) < (best.outputSize ?? Infinity) ? r : best))
+            .operation
         : '-';
 
     // 전체 평균 처리 시간
@@ -619,9 +625,7 @@ const blob = await processImage(source)
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                           Overall Average Processing Time
                         </Typography>
-                        <Typography variant="h6">
-                          {formatTime(summary.overallAvgTime)}
-                        </Typography>
+                        <Typography variant="h6">{formatTime(summary.overallAvgTime)}</Typography>
                       </Paper>
                     </Grid>
                     {/* 안전 옵션 활성화 여부 표시 */}
@@ -713,7 +717,8 @@ const blob = await processImage(source)
                     <Typography variant="subtitle2">Format Selection Guide</Typography>
                     <Alert severity="info">
                       <Typography variant="body2">
-                        <strong>WebP</strong>: Best balance of quality and file size. Use when browser support is confirmed.
+                        <strong>WebP</strong>: Best balance of quality and file size. Use when browser support is
+                        confirmed.
                         <br />
                         <strong>JPEG</strong>: Universal support. Good for photos without transparency.
                         <br />
@@ -854,7 +859,8 @@ const blob = await processImage(source)
                         <br />• Process large images in stages
                         <br />• Use Web Workers to prevent main thread blocking
                         <br />• Consider sequential processing instead of Promise.all for batch operations
-                        <br />• Canvas Pool automatically reuses canvases — use toBlob() to let the pool manage lifecycle
+                        <br />• Canvas Pool automatically reuses canvases — use toBlob() to let the pool manage
+                        lifecycle
                         <br />• Prefer WebP over PNG for significant file size reduction with similar quality
                       </Typography>
                     </Alert>

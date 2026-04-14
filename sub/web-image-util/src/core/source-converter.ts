@@ -340,7 +340,28 @@ function normalizePolicyRef(ref: string): string {
       }
     });
 
-  return decoded.replace(/[\u0000-\u0020\u007f-\u009f\s]+/g, '').trim().toLowerCase();
+  return stripPolicyNoise(decoded).toLowerCase();
+}
+
+/**
+ * 프로토콜 판별을 흐릴 수 있는 제어 문자와 공백을 제거한다.
+ *
+ * @param value 정리할 문자열
+ * @returns 정책 비교용으로 정리된 문자열
+ */
+function stripPolicyNoise(value: string): string {
+  let normalized = '';
+
+  for (const char of value) {
+    const codePoint = char.codePointAt(0) ?? 0;
+    if (char.trim().length === 0 || codePoint <= 0x20 || (codePoint >= 0x7f && codePoint <= 0x9f)) {
+      continue;
+    }
+
+    normalized += char;
+  }
+
+  return normalized;
 }
 
 /**
@@ -1476,7 +1497,10 @@ async function convertBlobToElement(blob: Blob, options?: ProcessorOptions): Pro
     (blob as File).name?.endsWith('.svg');
 
   // High-quality processing for SVG Blob
-  if (shouldSniffSvg && ((normalizedType === 'image/svg+xml' || (blob as File).name?.endsWith('.svg')) || (await sniffSvgFromBlob(blob)))) {
+  if (
+    shouldSniffSvg &&
+    (normalizedType === 'image/svg+xml' || (blob as File).name?.endsWith('.svg') || (await sniffSvgFromBlob(blob)))
+  ) {
     const svgText = await blob.text();
     return convertSvgToElement(svgText, undefined, undefined, {
       quality: 'auto',
