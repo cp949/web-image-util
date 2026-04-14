@@ -14,10 +14,10 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node ./scripts/generate-llm-txt.mjs",
     "build:watch": "tsup --watch",
     "package": "pnpm build",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist llm.txt",
     "lint": "biome check src tests",
     "lint:fix": "biome check --write src tests",
     "format": "biome format --write src tests",
@@ -80,6 +80,7 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "llm.txt"
   ]
 }

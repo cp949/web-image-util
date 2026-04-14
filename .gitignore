@@ -2,6 +2,7 @@ _works/
 .worktrees/
 build/
 dist/
+sub/web-image-util/llm.txt
 .claude/
 test-results/
 CLAUDE.md
