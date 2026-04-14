@@ -36,16 +36,18 @@ describe('unsafe_processImage', () => {
       return { ...actual, sanitizeSvg };
     });
 
-    const { unsafe_processImage } = await import('../../../src');
-    const svg =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
-    const buffer = new TextEncoder().encode(svg).buffer as ArrayBuffer;
+    try {
+      const { unsafe_processImage } = await import('../../../src');
+      const svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
+      const buffer = new TextEncoder().encode(svg).buffer as ArrayBuffer;
 
-    await (unsafe_processImage(buffer).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
-    expect(sanitizeSvg).not.toHaveBeenCalled();
-
-    vi.doUnmock('../../../src/utils/svg-sanitizer');
-    vi.restoreAllMocks();
+      await (unsafe_processImage(buffer).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
+      expect(sanitizeSvg).not.toHaveBeenCalled();
+    } finally {
+      vi.doUnmock('../../../src/utils/svg-sanitizer');
+      vi.restoreAllMocks();
+    }
   });
 
   it('Uint8Array SVG 입력에서도 passthrough 모드가 전파된다', async () => {
@@ -59,16 +61,18 @@ describe('unsafe_processImage', () => {
       return { ...actual, sanitizeSvg };
     });
 
-    const { unsafe_processImage } = await import('../../../src');
-    const svg =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
-    const uint8 = new TextEncoder().encode(svg);
+    try {
+      const { unsafe_processImage } = await import('../../../src');
+      const svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
+      const uint8 = new TextEncoder().encode(svg);
 
-    await (unsafe_processImage(uint8).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
-    expect(sanitizeSvg).not.toHaveBeenCalled();
-
-    vi.doUnmock('../../../src/utils/svg-sanitizer');
-    vi.restoreAllMocks();
+      await (unsafe_processImage(uint8).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
+      expect(sanitizeSvg).not.toHaveBeenCalled();
+    } finally {
+      vi.doUnmock('../../../src/utils/svg-sanitizer');
+      vi.restoreAllMocks();
+    }
   });
 });
 
