@@ -1,7 +1,7 @@
 'use client';
 
 import { detectBrowserCapabilities, processImage } from '@cp949/web-image-util';
-import { Assessment as BenchmarkIcon, Speed as SpeedIcon, Timeline as TimelineIcon } from '@mui/icons-material';
+import { Assessment as BenchmarkIcon, Speed as SpeedIcon, Timeline as TimelineIcon, Warning as WarningIcon } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -10,6 +10,7 @@ import {
   CardContent,
   Chip,
   Container,
+  Divider,
   FormControl,
   FormControlLabel,
   Grid,
@@ -48,16 +49,33 @@ interface BenchmarkResult {
   avgTime: number;
   minTime: number;
   maxTime: number;
-  throughput: number; // operations per second
+  throughput: number; // 초당 처리 건수
   memoryUsage?: number;
   errors: number;
+  /** 이 결과가 속한 카테고리 */
+  category: 'resize' | 'format' | 'filter' | 'watermark';
+  /** 포맷 비교용: 결과물 크기(bytes) */
+  outputSize?: number;
 }
 
 interface PerformanceTest {
   name: string;
   description: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   operation: () => Promise<any>;
   category: 'resize' | 'format' | 'filter' | 'watermark';
+}
+
+/** 처리 완료 후 표시할 결과 요약 */
+interface ResultSummary {
+  /** 가장 빠른 포맷 이름 */
+  fastestFormat: string;
+  /** 가장 작은 출력 크기를 가진 포맷 */
+  smallestFormat: string;
+  /** 전체 평균 처리 시간 */
+  overallAvgTime: number;
+  /** 경고가 필요한 항목 목록 */
+  warnings: string[];
 }
 
 export function PerformanceDemo() {
@@ -65,6 +83,7 @@ export function PerformanceDemo() {
   const [results, setResults] = useState<BenchmarkResult[]>([]);
   const [memoryStats, setMemoryStats] = useState<any>(null);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [summary, setSummary] = useState<ResultSummary | null>(null);
   const [capabilities, setCapabilities] = useState({
     webp: false,
     avif: false,
@@ -80,7 +99,7 @@ export function PerformanceDemo() {
     testAllSizes: false,
   });
 
-  // Sample image settings (actual existing files)
+  // 샘플 이미지 설정 (실제 존재하는 파일)
   const sampleImages = {
     small: { src: '/sample-images/sample3.png', width: 300, height: 300 },
     medium: { src: '/sample-images/sample1.jpg', width: 1920, height: 1080 },
@@ -112,7 +131,7 @@ export function PerformanceDemo() {
     };
   }, []);
 
-  // Performance test cases
+  // 성능 테스트 케이스 정의
   const performanceTests: PerformanceTest[] = [
     {
       name: 'Basic Resize',
@@ -135,18 +154,30 @@ export function PerformanceDemo() {
       category: 'format',
       operation: () => processImage(sampleImages[testConfig.sampleImage].src).toBlob({ format: 'webp', quality: 0.8 }),
     },
+    {
+      name: 'PNG Conversion',
+      description: 'Convert to PNG format',
+      category: 'format',
+      operation: () => processImage(sampleImages[testConfig.sampleImage].src).toBlob({ format: 'png' }),
+    },
   ];
 
   const runBenchmark = async (test: PerformanceTest, iterations: number): Promise<BenchmarkResult> => {
     const times: number[] = [];
     let errors = 0;
+    let lastOutputSize: number | undefined;
 
     for (let i = 0; i < iterations; i++) {
       try {
         const startTime = performance.now();
-        await test.operation();
+        const blob = await test.operation();
         const endTime = performance.now();
         times.push(endTime - startTime);
+
+        // 마지막 반복의 출력 크기를 기록한다.
+        if (blob) {
+          lastOutputSize = blob.size;
+        }
       } catch (error) {
         errors++;
         console.error(`Test ${test.name} iteration ${i + 1} failed:`, error);
@@ -160,7 +191,7 @@ export function PerformanceDemo() {
     const avgTime = times.reduce((sum, time) => sum + time, 0) / times.length;
     const minTime = Math.min(...times);
     const maxTime = Math.max(...times);
-    const throughput = 1000 / avgTime; // operations per second
+    const throughput = 1000 / avgTime; // 초당 처리 건수
 
     return {
       operation: test.name,
@@ -170,16 +201,61 @@ export function PerformanceDemo() {
       maxTime,
       throughput,
       errors,
+      category: test.category,
+      outputSize: lastOutputSize,
     };
+  };
+
+  /** 결과 요약 생성: 포맷 비교, 경고 메시지 등 */
+  const buildSummary = (allResults: BenchmarkResult[]): ResultSummary => {
+    // 포맷 카테고리만 추출하여 비교한다.
+    const formatResults = allResults.filter((r) => r.category === 'format');
+
+    // 가장 빠른 포맷 선택
+    const fastestFormat =
+      formatResults.length > 0
+        ? formatResults.reduce((best, r) => (r.avgTime < best.avgTime ? r : best)).operation
+        : '-';
+
+    // 가장 작은 출력 크기 포맷 선택
+    const withSize = formatResults.filter((r) => r.outputSize !== undefined);
+    const smallestFormat =
+      withSize.length > 0
+        ? withSize.reduce((best, r) => ((r.outputSize ?? Infinity) < (best.outputSize ?? Infinity) ? r : best)).operation
+        : '-';
+
+    // 전체 평균 처리 시간
+    const overallAvgTime =
+      allResults.length > 0 ? allResults.reduce((sum, r) => sum + r.avgTime, 0) / allResults.length : 0;
+
+    // 경고 메시지 수집
+    const warnings: string[] = [];
+
+    if (allResults.some((r) => r.avgTime > 500)) {
+      warnings.push('One or more operations exceeded 500ms. Consider reducing image dimensions or using Web Workers.');
+    } else if (allResults.some((r) => r.avgTime > 200)) {
+      warnings.push('Some operations exceeded 200ms. Canvas Pool is active and reusing canvases to reduce overhead.');
+    }
+
+    if (allResults.some((r) => r.errors > 0)) {
+      warnings.push('Some iterations encountered errors. Check browser console for details.');
+    }
+
+    if (!capabilities.webp) {
+      warnings.push('WebP is not supported in this browser. JPEG will be used as fallback, resulting in larger files.');
+    }
+
+    return { fastestFormat, smallestFormat, overallAvgTime, warnings };
   };
 
   const startPerformanceTests = async () => {
     setRunning(true);
     setResults([]);
     setChartData([]);
+    setSummary(null);
 
     try {
-      // Start memory usage measurement
+      // 시작 전 메모리 사용량 측정
       const performanceExt = performance as ExtendedPerformance;
       const initialMemory = performanceExt.memory
         ? {
@@ -199,7 +275,7 @@ export function PerformanceDemo() {
           const result = await runBenchmark(test, testConfig.iterations);
           newResults.push(result);
 
-          // Update chart data
+          // 차트 데이터 업데이트
           newChartData.push({
             name: test.name,
             avgTime: Math.round(result.avgTime),
@@ -214,7 +290,10 @@ export function PerformanceDemo() {
         }
       }
 
-      // Final memory usage measurement
+      // 결과 요약 생성
+      setSummary(buildSummary(newResults));
+
+      // 종료 후 메모리 사용량 측정
       if (initialMemory && performanceExt.memory) {
         const finalMemory = {
           used: performanceExt.memory.usedJSHeapSize,
@@ -247,6 +326,12 @@ export function PerformanceDemo() {
     return `${Math.round(mb * 100) / 100}MB`;
   };
 
+  /** bytes를 KB 단위로 표시한다. */
+  const formatSize = (bytes: number) => {
+    const kb = bytes / 1024;
+    return `${Math.round(kb)}KB`;
+  };
+
   const getPerformanceRating = (avgTime: number) => {
     if (avgTime < 50) return { rating: 'Excellent', color: 'success' as const };
     if (avgTime < 100) return { rating: 'Good', color: 'primary' as const };
@@ -255,7 +340,7 @@ export function PerformanceDemo() {
   };
 
   const generateCodeExample = () => {
-    const code = `// Performance measurement example
+    const code = `// 성능 측정 예시
 async function measurePerformance(operation, iterations = 10) {
   const times = [];
 
@@ -269,7 +354,7 @@ async function measurePerformance(operation, iterations = 10) {
   const avgTime = times.reduce((sum, time) => sum + time, 0) / times.length;
   const minTime = Math.min(...times);
   const maxTime = Math.max(...times);
-  const throughput = 1000 / avgTime; // ops/sec
+  const throughput = 1000 / avgTime; // 초당 처리 건수
 
   return {
     avgTime,
@@ -280,21 +365,24 @@ async function measurePerformance(operation, iterations = 10) {
   };
 }
 
-// Usage example
-const resizePerf = await measurePerformance(
-  () => processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob()
+// 포맷별 처리 시간과 출력 크기 비교
+const formats = ['jpeg', 'webp', 'png'] as const;
+const formatResults = await Promise.all(
+  formats.map(async (format) => {
+    const start = performance.now();
+    const blob = await processImage(source)
+      .resize({ fit: 'cover', width: 800, height: 600 })
+      .toBlob({ format, quality: 0.8 });
+    const elapsed = performance.now() - start;
+    return { format, time: elapsed, size: blob?.size ?? 0 };
+  })
 );
 
-console.log(\`Average: \${resizePerf.avgTime.toFixed(2)}ms\`);
-console.log(\`Throughput: \${resizePerf.throughput.toFixed(2)} ops/sec\`);
-
-// Memory usage monitoring
-const memoryBefore = performance.memory.usedJSHeapSize;
-await heavyImageProcessing();
-const memoryAfter = performance.memory.usedJSHeapSize;
-const memoryUsed = memoryAfter - memoryBefore;
-
-console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
+// Canvas Pool은 내부적으로 자동 활성화됨.
+// toCanvas() 사용 시 반드시 직접 관리하거나 toBlob()을 사용하세요.
+const blob = await processImage(source)
+  .resize({ fit: 'cover', width: 300, height: 200 })
+  .toBlob(); // Canvas가 자동 반환됨`;
 
     return [
       {
@@ -304,6 +392,9 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
       },
     ];
   };
+
+  // 포맷 비교 결과만 필터링
+  const formatResults = results.filter((r) => r.category === 'format');
 
   return (
     <Container maxWidth="lg">
@@ -317,7 +408,7 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
-            {/* Test settings */}
+            {/* 테스트 설정 */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -399,7 +490,7 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
               </CardContent>
             </Card>
 
-            {/* System information */}
+            {/* 시스템 정보 */}
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -492,7 +583,137 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
 
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* Performance chart */}
+            {/* 결과 요약 — 테스트 완료 후 가장 먼저 표시 */}
+            {summary && (
+              <Card sx={{ border: '2px solid', borderColor: 'primary.main' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom color="primary">
+                    결과 요약 (Result Summary)
+                  </Typography>
+
+                  <Grid container spacing={2} sx={{ mb: 2 }}>
+                    <Grid size={{ xs: 6 }}>
+                      <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                          Fastest Format
+                        </Typography>
+                        <Typography variant="h6" color="success.main">
+                          {summary.fastestFormat}
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                    <Grid size={{ xs: 6 }}>
+                      <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                          Smallest Output
+                        </Typography>
+                        <Typography variant="h6" color="info.main">
+                          {summary.smallestFormat}
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                      <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                          Overall Average Processing Time
+                        </Typography>
+                        <Typography variant="h6">
+                          {formatTime(summary.overallAvgTime)}
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  </Grid>
+
+                  {/* 경고 메시지 영역 */}
+                  {summary.warnings.length > 0 && (
+                    <Stack spacing={1}>
+                      <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <WarningIcon fontSize="small" color="warning" />
+                        Warnings
+                      </Typography>
+                      {summary.warnings.map((warning, idx) => (
+                        <Alert key={idx} severity="warning" icon={<WarningIcon />}>
+                          {warning}
+                        </Alert>
+                      ))}
+                    </Stack>
+                  )}
+
+                  {summary.warnings.length === 0 && (
+                    <Alert severity="success">All operations completed within acceptable time limits.</Alert>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 포맷 비교 패널 */}
+            {formatResults.length > 0 && (
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Format Comparison
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Processing time and output size comparison across formats (quality: 0.8 for JPEG/WebP)
+                  </Typography>
+
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Format</TableCell>
+                          <TableCell align="right">Avg Time</TableCell>
+                          <TableCell align="right">Output Size</TableCell>
+                          <TableCell align="center">Rating</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {formatResults.map((result, index) => {
+                          const rating = getPerformanceRating(result.avgTime);
+                          return (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                  {result.operation}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="right">{formatTime(result.avgTime)}</TableCell>
+                              <TableCell align="right">
+                                {result.outputSize !== undefined ? formatSize(result.outputSize) : '-'}
+                              </TableCell>
+                              <TableCell align="center">
+                                <Chip label={rating.rating} color={rating.color} size="small" />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* 포맷 선택 가이드 */}
+                  <Stack spacing={1}>
+                    <Typography variant="subtitle2">Format Selection Guide</Typography>
+                    <Alert severity="info">
+                      <Typography variant="body2">
+                        <strong>WebP</strong>: Best balance of quality and file size. Use when browser support is confirmed.
+                        <br />
+                        <strong>JPEG</strong>: Universal support. Good for photos without transparency.
+                        <br />
+                        <strong>PNG</strong>: Lossless with transparency support. Larger file size.
+                        <br />
+                        <br />
+                        Canvas Pool is enabled by default — canvases are reused across operations to reduce GC pressure.
+                      </Typography>
+                    </Alert>
+                  </Stack>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 성능 차트 */}
             {chartData.length > 0 && (
               <Card>
                 <CardContent>
@@ -534,7 +755,7 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
               </Card>
             )}
 
-            {/* Benchmark results table */}
+            {/* 벤치마크 결과 테이블 */}
             {results.length > 0 && (
               <Card>
                 <CardContent>
@@ -583,7 +804,7 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
               </Card>
             )}
 
-            {/* Optimization recommendations */}
+            {/* 최적화 가이드 */}
             {results.length > 0 && (
               <Card>
                 <CardContent>
@@ -618,7 +839,8 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
                         <br />• Process large images in stages
                         <br />• Use Web Workers to prevent main thread blocking
                         <br />• Consider sequential processing instead of Promise.all for batch operations
-                        <br />• Reuse Canvas objects to reduce GC pressure
+                        <br />• Canvas Pool automatically reuses canvases — use toBlob() to let the pool manage lifecycle
+                        <br />• Prefer WebP over PNG for significant file size reduction with similar quality
                       </Typography>
                     </Alert>
                   </Stack>
@@ -626,7 +848,7 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
               </Card>
             )}
 
-            {/* Code examples */}
+            {/* 코드 예제 */}
             <CodeSnippet title="Performance Measurement Code" examples={generateCodeExample()} />
           </Stack>
         </Grid>
@@ -634,5 +856,3 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
     </Container>
   );
 }
-
-// removed old export default;

@@ -811,6 +811,61 @@ initializeFilterSystem();
 
 ---
 
+## ⚡ 성능 최적화
+
+### Canvas Pool
+
+라이브러리는 내부적으로 **Canvas Pool**을 사용하여 Canvas 객체를 재사용합니다. 매 처리마다 새 Canvas를 생성·파괴하는 대신, 완료된 Canvas를 풀에 반환하여 다음 처리에 재사용합니다. 이로 인해:
+
+- **GC 압력 감소**: 반복 처리 시 Canvas 생성·소멸로 인한 Garbage Collection 빈도를 줄입니다.
+- **일관된 처리 속도**: 첫 번째 이후 처리에서 Canvas 생성 오버헤드가 없어집니다.
+- **자동 관리**: 별도 설정 없이 `toBlob()`, `toDataURL()`, `toFile()` 사용 시 자동으로 작동합니다.
+
+```typescript
+// Canvas Pool이 자동으로 활성화됨 — 별도 설정 불필요
+const blob = await processImage(source)
+  .resize({ fit: 'cover', width: 800, height: 600 })
+  .toBlob({ format: 'webp', quality: 0.85 }); // Canvas가 처리 후 자동 반환됨
+```
+
+### Canvas 소유권 주의사항
+
+`.toCanvas()` 또는 `.toCanvasDetailed()`를 사용하면 Canvas 객체를 직접 받습니다. 이 경우 **Canvas는 풀에 자동 반환되지 않으므로** 사용 후 직접 해제하거나 `releaseCanvas()` 호출이 필요합니다.
+
+```typescript
+// toBlob() 사용 권장 — Canvas 수명 주기가 자동 관리됨
+const blob = await processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
+
+// toCanvas() 사용 시 — Canvas 소유권이 호출자에게 이전됨
+// 대용량 처리나 반복 작업에서는 메모리 누수 가능성에 주의하세요.
+const canvas = await processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toCanvas();
+// canvas를 사용한 뒤 참조를 해제한다.
+```
+
+### 포맷별 처리 시간과 파일 크기
+
+포맷 선택은 처리 시간과 출력 파일 크기 모두에 영향을 미칩니다.
+
+| 포맷 | 처리 속도 | 파일 크기 | 추천 상황 |
+| ---- | --------- | --------- | --------- |
+| WebP | 빠름 | 작음 (JPEG 대비 25~35% 감소) | WebP 지원 브라우저 대상, 일반 사진 |
+| JPEG | 빠름 | 중간 | 범용, 투명도 불필요 |
+| PNG  | 느림 | 큼 (무손실) | 투명도 필요, 아이콘, 텍스트 포함 이미지 |
+
+```typescript
+// 브라우저 지원 여부를 확인하고 최적 포맷을 선택한다.
+import { detectBrowserCapabilities } from '@cp949/web-image-util';
+
+const caps = await detectBrowserCapabilities();
+const format = caps.webp ? 'webp' : 'jpeg';
+
+const blob = await processImage(source)
+  .resize({ fit: 'cover', width: 800, height: 600 })
+  .toBlob({ format, quality: 0.85 });
+```
+
+---
+
 ## 📄 라이선스
 
 MIT License
