@@ -74,7 +74,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
               {original ? (
                 <Stack spacing={1.5}>
                   <Box>
-                    <Typography variant="caption" color="text.secondary" display="block">
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       Resolution
                     </Typography>
                     <Typography variant="h6" color="primary">
@@ -86,17 +86,17 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                   </Box>
                   {original.size && (
                     <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                         File Size
                       </Typography>
-                      <Typography variant="body1" fontWeight="medium">
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
                         {formatFileSize(original.size)}
                       </Typography>
                     </Box>
                   )}
                   {original.format && (
                     <Box>
-                      <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                         Format
                       </Typography>
                       <Chip label={original.format.toUpperCase()} size="small" color="default" />
@@ -133,7 +133,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
               {processed ? (
                 <Stack spacing={1.5}>
                   <Box>
-                    <Typography variant="caption" color="text.secondary" display="block">
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       Resolution
                     </Typography>
                     <Typography variant="h6" color="success.main">
@@ -149,36 +149,36 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                   </Box>
                   {processed.size && (
                     <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                         File Size
                       </Typography>
-                      <Typography variant="body1" fontWeight="medium" color="success.main">
+                      <Typography variant="body1" color="success.main" sx={{ fontWeight: 'medium' }}>
                         {formatFileSize(processed.size)}
                       </Typography>
                     </Box>
                   )}
                   <Box>
-                    <Typography variant="caption" color="text.secondary" display="block">
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       Processing Time
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Speed fontSize="small" color="primary" />
-                      <Typography variant="body1" fontWeight="medium">
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
                         {formatProcessingTime(processed.processingTime)}
                       </Typography>
                     </Box>
                   </Box>
                   {processed.compressionRatio && (
                     <Box>
-                      <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                         Compression Efficiency
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <CompareArrows fontSize="small" color="success" />
                         <Typography
                           variant="body1"
-                          fontWeight="medium"
                           color={processed.compressionRatio < 1 ? 'success.main' : 'inherit'}
+                          sx={{ fontWeight: 'medium' }}
                         >
                           {(processed.compressionRatio * 100).toFixed(1)}%
                         </Typography>
@@ -200,7 +200,7 @@ export function ImageMetadata({ original, processed }: ImageMetadataProps) {
                   )}
                   {processed.format && (
                     <Box>
-                      <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                         Format
                       </Typography>
                       <Chip label={processed.format.toUpperCase()} size="small" color="success" />

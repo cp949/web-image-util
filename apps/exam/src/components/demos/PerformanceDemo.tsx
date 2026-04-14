@@ -279,7 +279,7 @@ console.log(\`Memory used: \${(memoryUsed / 1024 / 1024).toFixed(2)}MB\`);`;
       <Typography variant="h3" component="h1" gutterBottom>
         Performance Test
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
         Measure the performance of various image processing operations and identify optimization points.
       </Typography>
 

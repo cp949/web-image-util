@@ -463,11 +463,11 @@ export function PreviewGalleryDemo() {
             <Typography variant="h6" gutterBottom>
               Original Image Information
             </Typography>
-            <Grid container spacing={2} alignItems="center">
+            <Grid container spacing={2} sx={{ alignItems: 'center' }}>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <PhotoSizeSelectActual color="primary" />
-                  <Typography variant="caption" display="block">
+                  <Typography variant="caption" sx={{ display: 'block' }}>
                     Size
                   </Typography>
                   <Typography variant="h6">
@@ -479,7 +479,7 @@ export function PreviewGalleryDemo() {
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <Box sx={{ textAlign: 'center' }}>
                     <Storage color="primary" />
-                    <Typography variant="caption" display="block">
+                    <Typography variant="caption" sx={{ display: 'block' }}>
                       File Size
                     </Typography>
                     <Typography variant="h6">{formatFileSize(originalImage.size)}</Typography>
@@ -488,7 +488,7 @@ export function PreviewGalleryDemo() {
               )}
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="caption" display="block">
+                  <Typography variant="caption" sx={{ display: 'block' }}>
                     Format
                   </Typography>
                   <Chip label={originalImage.format?.toUpperCase() || 'Unknown'} color="primary" />

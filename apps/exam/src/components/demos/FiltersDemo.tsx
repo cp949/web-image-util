@@ -333,7 +333,7 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
       <Typography variant="h3" component="h1" gutterBottom>
         Filter Effects
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
         Apply various filter effects to change the mood and atmosphere of your images.
       </Typography>
 
@@ -347,7 +347,7 @@ const result = filterManager.applyFilterChain(imageData, filterChain);`;
                 <Typography variant="h6" gutterBottom>
                   Filter Presets
                 </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
+                <Stack direction="row" spacing={1} useFlexGap sx={{ mb: 3, flexWrap: 'wrap' }}>
                   <Button variant="outlined" size="small" onClick={presetFilters.vintage}>
                     Vintage
                   </Button>

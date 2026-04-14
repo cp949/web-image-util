@@ -338,7 +338,7 @@ const socialImages = await Promise.all([
       <Typography variant="h3" component="h1" gutterBottom>
         Preset Functions
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
         Convenience functions that allow you to handle commonly used patterns with simple function calls.
       </Typography>
 
@@ -552,7 +552,7 @@ const socialImages = await Promise.all([
                     <Typography variant="h6" gutterBottom>
                       Batch Processing
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" paragraph>
+                    <Typography variant="body2" color="text.secondary" component="p" sx={{ mb: 2 }}>
                       Generate multiple thumbnail sizes at once.
                     </Typography>
 
@@ -626,7 +626,7 @@ const socialImages = await Promise.all([
                               }}
                             />
                           </Box>
-                          <Typography variant="caption" display="block">
+                          <Typography variant="caption" sx={{ display: 'block' }}>
                             {image.width}×{image.height}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">

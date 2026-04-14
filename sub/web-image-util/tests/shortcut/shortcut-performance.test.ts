@@ -30,6 +30,63 @@ describe('Shortcut API Performance', () => {
     };
   }
 
+  /**
+   * 매우 짧은 동기 작업은 JIT/GC 노이즈 영향이 커서 여러 번 측정한 중앙값을 사용한다.
+   * @param fn 측정할 함수
+   * @param iterations 라운드별 반복 횟수
+   * @param rounds 측정 라운드 수
+   * @returns 총 실행 시간 통계
+   */
+  function measureBatchDuration(fn: () => void, iterations: number, rounds: number) {
+    const durations: number[] = [];
+
+    // 워밍업으로 초기 JIT 비용을 최대한 제거한다.
+    for (let i = 0; i < Math.min(iterations, 100); i++) {
+      fn();
+    }
+
+    for (let round = 0; round < rounds; round++) {
+      const start = performance.now();
+
+      for (let i = 0; i < iterations; i++) {
+        fn();
+      }
+
+      durations.push(performance.now() - start);
+    }
+
+    const sortedDurations = [...durations].sort((a, b) => a - b);
+
+    return {
+      avg: durations.reduce((sum, duration) => sum + duration, 0) / durations.length,
+      min: Math.min(...durations),
+      max: Math.max(...durations),
+      median: sortedDurations[Math.floor(sortedDurations.length / 2)],
+    };
+  }
+
+  /**
+   * 비교 대상이 충분한 측정 구간에 들어오도록 반복 횟수를 자동 보정한다.
+   * @param fn 기준 함수
+   * @param targetDurationMs 중앙값 목표 시간(ms)
+   * @param rounds 측정 라운드 수
+   * @returns 보정된 반복 횟수와 기준 함수 통계
+   */
+  function calibrateBatchIterations(fn: () => void, targetDurationMs: number, rounds: number) {
+    let iterations = 1_000;
+    let stats = measureBatchDuration(fn, iterations, rounds);
+
+    while (stats.median < targetDurationMs && iterations < 1_000_000) {
+      iterations *= 2;
+      stats = measureBatchDuration(fn, iterations, rounds);
+    }
+
+    return {
+      iterations,
+      stats,
+    };
+  }
+
   describe('Shortcut Creation Performance', () => {
     // 여러 시나리오를 같은 기준으로 비교하기 위해 describe.each를 사용한다.
     describe.each([
@@ -196,28 +253,40 @@ describe('Shortcut API Performance', () => {
 
   describe('Comparison: Shortcut vs Direct API', () => {
     it('should have comparable performance to direct resize API', () => {
-      // Shortcut API
-      const shortcutStart = performance.now();
-      for (let i = 0; i < 1000; i++) {
-        processImage(testImageUrl).shortcut.coverBox(300, 200);
-      }
-      const shortcutDuration = performance.now() - shortcutStart;
-
-      // Direct API
-      const directStart = performance.now();
-      for (let i = 0; i < 1000; i++) {
-        processImage(testImageUrl).resize({ fit: 'cover', width: 300, height: 200 });
-      }
-      const directDuration = performance.now() - directStart;
-
-      console.log(`Shortcut API: ${shortcutDuration.toFixed(2)}ms`);
-      console.log(`Direct API: ${directDuration.toFixed(2)}ms`);
-      console.log(
-        `Overhead: ${(shortcutDuration - directDuration).toFixed(2)}ms (${((shortcutDuration / directDuration - 1) * 100).toFixed(1)}%)`
+      const rounds = 7;
+      const { iterations, stats: directStats } = calibrateBatchIterations(
+        () => {
+          processImage(testImageUrl).resize({ fit: 'cover', width: 300, height: 200 });
+        },
+        5,
+        rounds
       );
 
+      const shortcutStats = measureBatchDuration(() => {
+        processImage(testImageUrl).shortcut.coverBox(300, 200);
+      }, iterations, rounds);
+
+      const remeasuredDirectStats = measureBatchDuration(() => {
+        processImage(testImageUrl).resize({ fit: 'cover', width: 300, height: 200 });
+      }, iterations, rounds);
+
+      console.log(`Iterations per round: ${iterations}`);
+      console.log(`Shortcut API median: ${shortcutStats.median.toFixed(2)}ms`);
+      console.log(`Direct API median: ${remeasuredDirectStats.median.toFixed(2)}ms`);
+      console.log(
+        `Overhead: ${(shortcutStats.median - remeasuredDirectStats.median).toFixed(2)}ms (${((shortcutStats.median / remeasuredDirectStats.median - 1) * 100).toFixed(1)}%)`
+      );
+
+      // 보정 후에도 측정 구간이 너무 짧으면 비교 결과를 신뢰하기 어렵다.
+      expect(directStats.median, 'comparison baseline should be large enough for a stable measurement').toBeGreaterThanOrEqual(
+        5
+      );
+
+      // 충분한 측정 구간에서는 비율 기준과 작은 절대 허용치를 함께 사용한다.
+      const allowedDuration = Math.max(remeasuredDirectStats.median * 1.5, remeasuredDirectStats.median + 2);
+
       // Shortcut API overhead should be within 50% compared to direct API
-      expect(shortcutDuration).toBeLessThan(directDuration * 1.5);
+      expect(shortcutStats.median).toBeLessThan(allowedDuration);
     });
   });
 });

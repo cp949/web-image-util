@@ -38,7 +38,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CodeSnippet } from '../common/CodeSnippet';
 import { ImageUploader } from '../common/ImageUploader';
 
@@ -79,12 +79,26 @@ interface BrowserInfo {
   };
 }
 
+const DEFAULT_BROWSER_INFO: BrowserInfo = {
+  userAgent: 'Unknown',
+  vendor: 'Unknown',
+  platform: 'Unknown',
+  language: 'Unknown',
+  cookieEnabled: false,
+  onlineStatus: false,
+  webpSupport: false,
+  avifSupport: false,
+  offscreenCanvasSupport: false,
+  webWorkerSupport: false,
+};
+
 export function DevToolsDemo() {
   const [activeTab, setActiveTab] = useState(0);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [apiResponse, setApiResponse] = useState<unknown>(null);
   const [generatedCode, setGeneratedCode] = useState('');
   const [debugMode, setDebugMode] = useState(false);
+  const logSequenceRef = useRef(0);
 
   const [codeGenOptions, setCodeGenOptions] = useState({
     operation: 'resize',
@@ -99,8 +113,10 @@ export function DevToolsDemo() {
 
   // Log entry function
   const addLog = (level: LogEntry['level'], message: string, data?: unknown, operation?: string) => {
+    logSequenceRef.current += 1;
+
     const logEntry: LogEntry = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${logSequenceRef.current}`,
       timestamp: new Date(),
       level,
       message,
@@ -136,7 +152,11 @@ export function DevToolsDemo() {
     };
   };
 
-  const [browserInfo] = useState<BrowserInfo>(getBrowserInfo());
+  const [browserInfo, setBrowserInfo] = useState<BrowserInfo>(DEFAULT_BROWSER_INFO);
+
+  useEffect(() => {
+    setBrowserInfo(getBrowserInfo());
+  }, []);
 
   const handleImageSelect = async (source: File | string) => {
     addLog('info', 'Image selected', {
@@ -335,7 +355,7 @@ export function DevToolsDemo() {
       <Typography variant="h3" component="h1" gutterBottom>
         Developer Tools
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
         Tools for development assistance including debugging, code generation, and browser compatibility checking.
       </Typography>
 
@@ -478,6 +498,11 @@ export function DevToolsDemo() {
                           <ListItem key={log.id} divider>
                             <ListItemIcon>{getLogIcon(log.level)}</ListItemIcon>
                             <ListItemText
+                              slotProps={{
+                                secondary: {
+                                  component: 'div',
+                                },
+                              }}
                               primary={
                                 <Box>
                                   <Typography variant="body2" component="span" sx={{ color: getLogColor(log.level) }}>
@@ -581,7 +606,7 @@ export function DevToolsDemo() {
                     </Grid>
                   </Grid>
 
-                  <Stack direction="row" spacing={2} sx={{ mb: 3 }} flexWrap="wrap">
+                  <Stack direction="row" spacing={2} useFlexGap sx={{ mb: 3, flexWrap: 'wrap' }}>
                     <FormControlLabel
                       control={
                         <Switch

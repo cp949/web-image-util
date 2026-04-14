@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { ClientThemeProvider } from '../components/providers/ThemeProvider';
 
 export const metadata: Metadata = {
@@ -10,7 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body>
-        <ClientThemeProvider>{children}</ClientThemeProvider>
+        <AppRouterCacheProvider>
+          <ClientThemeProvider>{children}</ClientThemeProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );

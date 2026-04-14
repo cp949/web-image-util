@@ -219,7 +219,7 @@ const partial = await processImage(source)
         <PaddingIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
         Padding Feature
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
         Add margin (padding) around images to achieve frame effects, secure safe areas, optimize for social media
         uploads, and more.
       </Typography>
@@ -302,7 +302,7 @@ const partial = await processImage(source)
                     </Typography>
 
                     {/* Preset padding buttons */}
-                    <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                    <Stack direction="row" spacing={1} useFlexGap sx={{ mb: 2, flexWrap: 'wrap' }}>
                       {[0, 10, 20, 30, 50].map((preset) => (
                         <Button
                           key={preset}

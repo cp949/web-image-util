@@ -323,7 +323,7 @@ const downloadAsZip = async (results) => {
       <Typography variant="h3" component="h1" gutterBottom>
         Batch Processing
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
         Process multiple images at once with the same settings.
       </Typography>
 
@@ -504,7 +504,7 @@ const downloadAsZip = async (results) => {
                       quality: parseInt(e.target.value, 10) || 80,
                     }))
                   }
-                  inputProps={{ min: 10, max: 100 }}
+                  slotProps={{ htmlInput: { min: 10, max: 100 } }}
                   sx={{ mb: 3 }}
                 />
 
@@ -563,7 +563,7 @@ const downloadAsZip = async (results) => {
                           }
                         />
                         <ListItemSecondaryAction>
-                          <Stack direction="row" spacing={1} alignItems="center">
+                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                             <Chip label={file.status} color={getStatusColor(file.status)} size="small" />
                             <IconButton
                               edge="end"

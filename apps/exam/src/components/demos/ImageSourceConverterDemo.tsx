@@ -466,7 +466,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
                       }}
                     />
                     {sourceFile && (
-                      <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                      <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
                         {sourceFile.name} ({formatFileSize(sourceFile.size)})
                       </Typography>
                     )}
@@ -599,7 +599,7 @@ const fromUrl = ImageSourceConverter.from('image.jpg');     // URL string`;
                             ) : (
                               <ErrorIcon color="error" sx={{ mr: 1 }} />
                             )}
-                            <Typography variant="subtitle1" fontWeight="bold">
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                               {result.type}
                             </Typography>
                           </Box>

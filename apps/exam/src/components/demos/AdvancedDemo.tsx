@@ -392,7 +392,7 @@ const blob = await new Promise(resolve => {
       <Typography variant="h3" component="h1" gutterBottom>
         Advanced Features
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
         Experience advanced image processing features including watermark addition, image composition, and multi-layer
         processing.
       </Typography>
@@ -522,8 +522,8 @@ const blob = await new Promise(resolve => {
                         }))
                       }
                       sx={{ mb: 2 }}
-                      InputProps={{
-                        inputProps: {
+                      slotProps={{
+                        htmlInput: {
                           style: { height: 40 },
                         },
                       }}
@@ -558,8 +558,8 @@ const blob = await new Promise(resolve => {
                           }))
                         }
                         sx={{ mb: 2 }}
-                        InputProps={{
-                          inputProps: {
+                        slotProps={{
+                          htmlInput: {
                             style: { height: 40 },
                           },
                         }}

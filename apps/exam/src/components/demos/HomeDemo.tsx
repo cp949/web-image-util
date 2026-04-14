@@ -1,7 +1,5 @@
 'use client';
 
-'use client';
-
 import {
   Widgets as ComponentsIcon,
   PhotoLibrary as GalleryIcon,
@@ -91,7 +89,7 @@ export function HomeDemo() {
         <Typography variant="h4" gutterBottom>
           Quick Start
         </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
+        <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
           Check out basic usage of the library
         </Typography>
 
@@ -150,11 +148,11 @@ const result = await processImage(source)
         <Typography variant="h4" gutterBottom>
           Demo Pages
         </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
+        <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
           Try various features hands-on
         </Typography>
 
-        <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap" sx={{ gap: 2 }}>
+        <Stack direction="row" spacing={2} useFlexGap sx={{ justifyContent: 'center', flexWrap: 'wrap' }}>
           <Button component={Link} href="/basic" variant="outlined" size="large">
             Basic Resizing
           </Button>

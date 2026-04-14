@@ -383,7 +383,7 @@ export function BatchComparisonDemo() {
         <CompareArrows sx={{ mr: 1, verticalAlign: 'middle' }} />
         Batch Processing & Result Comparison
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
         Process images simultaneously with multiple settings and compare results.
       </Typography>
 
@@ -423,33 +423,33 @@ export function BatchComparisonDemo() {
                     Statistics
                   </Typography>
                   <Stack spacing={1}>
-                    <Box display="flex" justifyContent="space-between">
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="body2">Total:</Typography>
-                      <Typography variant="body2" fontWeight="bold">
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                         {stats.total} items
                       </Typography>
                     </Box>
-                    <Box display="flex" justifyContent="space-between">
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="body2" color="success.main">
                         Completed:
                       </Typography>
-                      <Typography variant="body2" fontWeight="bold" color="success.main">
+                      <Typography variant="body2" color="success.main" sx={{ fontWeight: 'bold' }}>
                         {stats.completed} items
                       </Typography>
                     </Box>
-                    <Box display="flex" justifyContent="space-between">
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="body2" color="error.main">
                         Failed:
                       </Typography>
-                      <Typography variant="body2" fontWeight="bold" color="error.main">
+                      <Typography variant="body2" color="error.main" sx={{ fontWeight: 'bold' }}>
                         {stats.failed} items
                       </Typography>
                     </Box>
-                    <Box display="flex" justifyContent="space-between">
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="body2" color="info.main">
                         In Progress:
                       </Typography>
-                      <Typography variant="body2" fontWeight="bold" color="info.main">
+                      <Typography variant="body2" color="info.main" sx={{ fontWeight: 'bold' }}>
                         {stats.processing} items
                       </Typography>
                     </Box>
@@ -475,7 +475,7 @@ export function BatchComparisonDemo() {
                   Select Preset
                 </Typography>
 
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
                   {PRESET_CATEGORIES.flatMap((category) =>
                     category.presets.map((preset) => (
                       <Button
@@ -556,7 +556,7 @@ export function BatchComparisonDemo() {
                                 <Typography variant="subtitle2" gutterBottom>
                                   {result.label}
                                 </Typography>
-                                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
+                                <Stack direction="row" spacing={1} useFlexGap sx={{ mb: 1, flexWrap: 'wrap' }}>
                                   <Chip
                                     label={`${result.result?.width}×${result.result?.height}`}
                                     size="small"

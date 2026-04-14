@@ -11,7 +11,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useImageProcessing } from '../../hooks/useImageProcessing';
 import { CodeSnippet } from '../common/CodeSnippet';
 import { ImageUploader } from '../common/ImageUploader';
@@ -46,12 +46,24 @@ const PRESETS: Record<'thumbnail' | 'medium' | 'large', ProcessingOptions> = {
 };
 
 /**
+ * 이미지가 이미 있는 상태에서 preset이 실제로 바뀐 경우에만 재처리한다.
+ */
+export function shouldReprocessForPresetChange(
+  hasOriginalImage: boolean,
+  previousPreset: 'thumbnail' | 'medium' | 'large',
+  nextPreset: 'thumbnail' | 'medium' | 'large'
+) {
+  return hasOriginalImage && previousPreset !== nextPreset;
+}
+
+/**
  * One-click preview demo
  * Simple demo component showcasing autoProcess functionality
  */
 export function QuickPreviewDemo() {
   // Predefined preset options
   const [selectedPreset, setSelectedPreset] = useState<'thumbnail' | 'medium' | 'large'>('medium');
+  const previousPresetRef = useRef<'thumbnail' | 'medium' | 'large'>(selectedPreset);
 
   // Use hook with autoProcess enabled
   const imageProcessing = useImageProcessing({
@@ -72,10 +84,18 @@ export function QuickPreviewDemo() {
 
   // Reprocess if image exists when preset changes
   useEffect(() => {
-    if (originalImage && !processing) {
+    const shouldReprocess = shouldReprocessForPresetChange(
+      !!originalImage,
+      previousPresetRef.current,
+      selectedPreset
+    );
+
+    previousPresetRef.current = selectedPreset;
+
+    if (shouldReprocess) {
       handleProcess(PRESETS[selectedPreset]);
     }
-  }, [selectedPreset, originalImage, processing, handleProcess]);
+  }, [selectedPreset, originalImage, handleProcess]);
 
   // Latest processed image
   const processedImage = processedImages[processedImages.length - 1] || null;
@@ -147,7 +167,7 @@ const {
                     <Chip label="800×600" size="small" sx={{ ml: 1 }} />
                   </ToggleButton>
                 </ToggleButtonGroup>
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                   Fit: <strong>{PRESETS[selectedPreset].fit}</strong> | Quality:{' '}
                   <strong>{PRESETS[selectedPreset].quality}</strong> | Format:{' '}
                   <strong>{PRESETS[selectedPreset].format.toUpperCase()}</strong>
@@ -200,13 +220,13 @@ const {
                   <Typography variant="h6" gutterBottom>
                     How to Use
                   </Typography>
-                  <Typography variant="body2" paragraph>
+                  <Typography variant="body2" component="p" sx={{ mb: 2 }}>
                     1. <strong>Select a preset</strong> on the left (Thumbnail/Medium/Large)
                   </Typography>
-                  <Typography variant="body2" paragraph>
+                  <Typography variant="body2" component="p" sx={{ mb: 2 }}>
                     2. Click a sample image or upload a file
                   </Typography>
-                  <Typography variant="body2" paragraph>
+                  <Typography variant="body2" component="p" sx={{ mb: 2 }}>
                     3. Images are <strong>automatically processed immediately</strong> when selected
                   </Typography>
                   <Typography variant="body2">

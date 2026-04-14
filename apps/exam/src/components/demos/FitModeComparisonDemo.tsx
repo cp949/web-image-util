@@ -363,7 +363,7 @@ export function FitModeComparisonDemo() {
                   }
                   label="Quality Comparison Mode"
                 />
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                   {showQualityComparison
                     ? 'Compare SVG quality at various sizes'
                     : 'Compare fit modes (adjustable size)'}
@@ -509,8 +509,11 @@ export function FitModeComparisonDemo() {
                         <Grid size={{ xs: 12, sm: 6, lg: showQualityComparison ? 3 : 4 }} key={key}>
                           <Card variant="outlined" sx={{ border: 2, borderColor: mode.color, height: '100%' }}>
                             <CardContent>
-                              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                                <Typography variant="subtitle1" fontWeight="bold" sx={{ color: mode.color }}>
+                              <Stack
+                                direction="row"
+                                sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+                              >
+                                <Typography variant="subtitle1" sx={{ color: mode.color, fontWeight: 'bold' }}>
                                   {mode.name}
                                 </Typography>
                                 <Chip
@@ -572,10 +575,10 @@ export function FitModeComparisonDemo() {
                                   </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <Typography variant="caption" fontWeight="bold">
+                                  <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
                                     Actual Size:
                                   </Typography>
-                                  <Typography variant="caption" fontWeight="bold" color="primary.main">
+                                  <Typography variant="caption" color="primary.main" sx={{ fontWeight: 'bold' }}>
                                     {result.actualDimensions?.width}×{result.actualDimensions?.height}
                                   </Typography>
                                 </Box>

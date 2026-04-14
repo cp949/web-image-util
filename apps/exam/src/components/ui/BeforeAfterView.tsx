@@ -52,7 +52,7 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
   }) => (
     <Card sx={{ height: '100%' }}>
       <CardContent>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6">{title}</Typography>
           {imageData && (
             <Stack direction="row" spacing={1}>
@@ -108,7 +108,7 @@ function BeforeAfterViewComponent({ before, after, showMetadata = true }: Before
                   <InfoIcon fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Info
                 </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
                   {imageData.width && imageData.height && (
                     <Chip label={`${imageData.width}×${imageData.height}`} size="small" variant="outlined" />
                   )}

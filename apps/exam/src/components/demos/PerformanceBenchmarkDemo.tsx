@@ -265,7 +265,7 @@ export function PerformanceBenchmarkDemo() {
                   <Card>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Timer color="primary" sx={{ fontSize: 40, mb: 1 }} />
-                      <Typography variant="caption" display="block" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                         Average Processing Time
                       </Typography>
                       <Typography variant="h5">{avgTime.toFixed(0)}ms</Typography>
@@ -276,7 +276,7 @@ export function PerformanceBenchmarkDemo() {
                   <Card>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Memory color="secondary" sx={{ fontSize: 40, mb: 1 }} />
-                      <Typography variant="caption" display="block" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                         Total Memory Usage
                       </Typography>
                       <Typography variant="h5">~{formatFileSize(totalMemory)}</Typography>
@@ -287,7 +287,7 @@ export function PerformanceBenchmarkDemo() {
                   <Card>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <SpeedIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
-                      <Typography variant="caption" display="block" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                         Average Throughput
                       </Typography>
                       <Typography variant="h5" sx={{ fontSize: '1.3rem' }}>
@@ -300,7 +300,7 @@ export function PerformanceBenchmarkDemo() {
                   <Card>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <Timer color="info" sx={{ fontSize: 40, mb: 1 }} />
-                      <Typography variant="caption" display="block" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                         Total Processing Time
                       </Typography>
                       <Typography variant="h5">{totalTime.toFixed(0)}ms</Typography>

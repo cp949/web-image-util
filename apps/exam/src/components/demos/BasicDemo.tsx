@@ -122,7 +122,7 @@ console.log('Result size:', result.width, 'x', result.height);`;
       <Typography variant="h3" component="h1" gutterBottom>
         Basic Image Processing
       </Typography>
-      <Typography variant="body1" color="text.secondary" paragraph>
+      <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
         Experience the innovative features of the processImage API. The ResizeConfig API with single resize() call
         constraint and "calculate ahead, render once" philosophy provides better performance and quality.
       </Typography>
@@ -258,7 +258,7 @@ console.log('Result size:', result.width, 'x', result.height);`;
                       </Typography>
 
                       {/* Preset padding buttons */}
-                      <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                      <Stack direction="row" spacing={1} useFlexGap sx={{ mb: 2, flexWrap: 'wrap' }}>
                         {[10, 20, 30, 50].map((preset) => (
                           <Button
                             key={preset}

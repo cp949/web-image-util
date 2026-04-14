@@ -182,21 +182,23 @@ export function MobileOptimizedLayout({ children }: MobileOptimizedLayoutProps) 
         ModalProps={{
           keepMounted: true, // Performance optimization
         }}
-        PaperProps={{
-          sx: {
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            maxHeight: '70vh',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 8,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 40,
-              height: 4,
-              backgroundColor: 'divider',
-              borderRadius: 2,
+        slotProps={{
+          paper: {
+            sx: {
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              maxHeight: '70vh',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 8,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 40,
+                height: 4,
+                backgroundColor: 'divider',
+                borderRadius: 2,
+              },
             },
           },
         }}

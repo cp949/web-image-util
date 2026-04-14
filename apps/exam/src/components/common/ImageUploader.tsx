@@ -115,7 +115,7 @@ export function ImageUploader({
           </Box>
 
           {/* Additional option buttons */}
-          <Stack direction="row" spacing={1} justifyContent="center">
+          <Stack direction="row" spacing={1} sx={{ justifyContent: 'center' }}>
             <Button variant="outlined" startIcon={<LinkIcon />} onClick={handleUrlInput}>
               Load from URL
             </Button>
@@ -140,10 +140,10 @@ export function ImageUploader({
 
           {/* Format support information */}
           <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+            <Typography variant="caption" color="text.secondary" gutterBottom sx={{ display: 'block' }}>
               Supported formats:
             </Typography>
-            <Stack direction="row" spacing={0.5} flexWrap="wrap">
+            <Stack direction="row" spacing={0.5} useFlexGap sx={{ flexWrap: 'wrap' }}>
               {supportedFormats.map((format) => (
                 <Chip key={format} label={format.toUpperCase()} size="small" variant="outlined" />
               ))}
