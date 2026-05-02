@@ -211,6 +211,37 @@ describe('Processor Resize Integration Tests', () => {
       toBlobSpy.mockRestore();
     });
 
+    it('should report actual Blob format when browser returns a fallback MIME without null callback', async () => {
+      const testBlob = await createTestImageBlob(400, 300, 'red');
+      const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;
+      const toBlobSpy = vi.spyOn(canvasPrototype, 'toBlob').mockImplementation(function (
+        this: HTMLCanvasElement,
+        callback: BlobCallback,
+        type?: string,
+        quality?: number
+      ) {
+        if (type === 'image/avif') {
+          callback(new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer], { type: 'image/png' }));
+          return;
+        }
+
+        callback(new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer], { type: type || 'image/png' }));
+      });
+
+      try {
+        const result = await processImage(testBlob)
+          .resize({ fit: 'cover', width: 200, height: 200 })
+          .toBlob({ format: 'avif', fallbackFormat: 'png' });
+
+        expect(toBlobSpy).toHaveBeenCalledTimes(1);
+        expect(toBlobSpy).toHaveBeenCalledWith(expect.any(Function), 'image/avif', expect.any(Number));
+        expect(result.blob.type).toBe('image/png');
+        expect(result.format).toBe('png');
+      } finally {
+        toBlobSpy.mockRestore();
+      }
+    });
+
     it('should report fallback format when requested Blob format is not created', async () => {
       const testBlob = await createTestImageBlob(400, 300, 'red');
       const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;

@@ -29,6 +29,7 @@ import { validateResizeConfig } from './types/resize-config';
 import { BlobResultImpl, CanvasResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
 import type { ResizeOperation } from './types/shortcut-types';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
+import { formatToMimeType, mimeTypeToOutputFormat } from './utils/format-utils';
 import { createImageElement } from './utils/image-element';
 
 /**
@@ -773,20 +774,23 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
     canvas: HTMLCanvasElement,
     options: Required<OutputOptions>
   ): Promise<{ blob: Blob; format: OutputFormat }> {
-    const mimeType = this.formatToMimeType(options.format);
+    const mimeType = formatToMimeType(options.format);
 
     return new Promise((resolve, reject) => {
       canvas.toBlob(
         (blob) => {
           if (blob) {
-            resolve({ blob, format: options.format });
+            // 브라우저가 요청 포맷 대신 다른 MIME으로 Blob을 반환할 수 있으므로 실제 type 기준으로 포맷을 결정한다.
+            const actualFormat = mimeTypeToOutputFormat(blob.type) ?? options.format;
+            resolve({ blob, format: actualFormat });
           } else {
-            // Retry with fallback format
-            const fallbackMimeType = this.formatToMimeType(options.fallbackFormat);
+            // 요청 포맷 미지원 시 fallback 포맷으로 재시도한다.
+            const fallbackMimeType = formatToMimeType(options.fallbackFormat);
             canvas.toBlob(
               (fallbackBlob) => {
                 if (fallbackBlob) {
-                  resolve({ blob: fallbackBlob, format: options.fallbackFormat });
+                  const actualFallbackFormat = mimeTypeToOutputFormat(fallbackBlob.type) ?? options.fallbackFormat;
+                  resolve({ blob: fallbackBlob, format: actualFallbackFormat });
                 } else {
                   reject(new Error('Failed to create Blob'));
                 }
@@ -812,24 +816,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       reader.onerror = () => reject(new Error('Failed to convert to Data URL'));
       reader.readAsDataURL(blob);
     });
-  }
-
-  /**
-   * Convert format to MIME type
-   */
-  private formatToMimeType(format: string): string {
-    const mimeTypes: Record<string, string> = {
-      jpeg: 'image/jpeg',
-      jpg: 'image/jpeg',
-      png: 'image/png',
-      webp: 'image/webp',
-      avif: 'image/avif',
-      gif: 'image/gif',
-      bmp: 'image/bmp',
-      tiff: 'image/tiff',
-    };
-
-    return mimeTypes[format.toLowerCase()] || 'image/png';
   }
 
   // ==============================================
