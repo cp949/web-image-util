@@ -49,16 +49,6 @@ describe('ResizeConfig Types', () => {
         expect(() => validateResizeConfig(config)).not.toThrow();
       });
 
-      it('should validate contain config with trimEmpty option', () => {
-        const config: ResizeConfig = {
-          fit: 'contain',
-          width: 300,
-          height: 200,
-          trimEmpty: true,
-        };
-        expect(() => validateResizeConfig(config)).not.toThrow();
-      });
-
       it('should validate contain config with withoutEnlargement option', () => {
         const config: ResizeConfig = {
           fit: 'contain',
@@ -183,7 +173,7 @@ describe('ResizeConfig Types', () => {
       it('should validate all fit modes', () => {
         const configs: ResizeConfig[] = [
           { fit: 'cover', width: 300, height: 200 },
-          { fit: 'contain', width: 300, height: 200, trimEmpty: true },
+          { fit: 'contain', width: 300, height: 200, withoutEnlargement: true },
           { fit: 'fill', width: 300, height: 200 },
           { fit: 'maxFit', width: 300 },
           { fit: 'minFit', height: 200 },
@@ -206,12 +196,12 @@ describe('ResizeConfig Types', () => {
       expect(isMinFitConfig(config)).toBe(false);
     });
 
-    it('should correctly identify contain config with trimEmpty', () => {
+    it('should correctly identify contain config with withoutEnlargement', () => {
       const config: ResizeConfig = {
         fit: 'contain',
         width: 300,
         height: 200,
-        trimEmpty: true,
+        withoutEnlargement: true,
       };
       expect(isContainConfig(config)).toBe(true);
       expect(isCoverConfig(config)).toBe(false);
@@ -241,11 +231,11 @@ describe('ResizeConfig Types', () => {
 
   describe('TypeScript Discriminated Union', () => {
     it('should narrow type based on fit property', () => {
-      const config: ResizeConfig = { fit: 'contain', width: 300, height: 200, trimEmpty: true };
+      const config: ResizeConfig = { fit: 'contain', width: 300, height: 200, withoutEnlargement: true };
 
       if (isContainConfig(config)) {
-        // TypeScript should recognize config.trimEmpty here
-        expect(config.trimEmpty).toBe(true);
+        // TypeScript should recognize config.withoutEnlargement here
+        expect(config.withoutEnlargement).toBe(true);
       } else {
         throw new Error('Type guard should work');
       }
@@ -257,7 +247,7 @@ describe('ResizeConfig Types', () => {
 
       // ✅ Valid configs
       const validCover: ResizeConfig = { fit: 'cover', width: 300, height: 200 };
-      const validContain: ResizeConfig = { fit: 'contain', width: 300, height: 200, trimEmpty: true };
+      const validContain: ResizeConfig = { fit: 'contain', width: 300, height: 200, withoutEnlargement: true };
       const validMaxFit: ResizeConfig = { fit: 'maxFit', width: 300 };
 
       expect(validCover.fit).toBe('cover');
@@ -267,6 +257,13 @@ describe('ResizeConfig Types', () => {
       // ❌ Invalid configs would cause type errors (at compile time)
       // const invalidCover: ResizeConfig = { fit: 'cover', width: 300 }; // missing height
       // const invalidMaxFit: ResizeConfig = { fit: 'maxFit' }; // missing both width/height
+    });
+
+    it('should reject removed trimEmpty option at type level', () => {
+      // @ts-expect-error trimEmpty는 contain 옵션에서 제거됐다.
+      const invalidContain: ResizeConfig = { fit: 'contain', width: 300, height: 200, trimEmpty: true };
+
+      expect(invalidContain).toBeDefined();
     });
   });
 });

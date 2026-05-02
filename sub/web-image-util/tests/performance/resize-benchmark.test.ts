@@ -114,29 +114,6 @@ describe('Resize Performance Benchmarks', () => {
     });
   });
 
-  describe('trimEmpty performance', () => {
-    it('should handle trimEmpty efficiently', async () => {
-      const testBlob = await createTestImageBlob(400, 400, 'orange');
-
-      const startTime = performance.now();
-
-      await processImage(testBlob)
-        .resize({
-          fit: 'contain',
-          width: 800,
-          height: 800,
-          trimEmpty: true,
-        })
-        .toBlob();
-
-      const endTime = performance.now();
-      const processingTime = endTime - startTime;
-
-      // Processing with trimEmpty should complete within 1 second
-      expect(processingTime).toBeLessThan(1000);
-    });
-  });
-
   describe('chained operations performance', () => {
     it('should handle chained resize and blur efficiently', async () => {
       const testBlob = await createTestImageBlob(800, 600, 'cyan');

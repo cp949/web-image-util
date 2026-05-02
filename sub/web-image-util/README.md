@@ -152,6 +152,8 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
 | `maxFit`  | ✅         | ✅         | ❌         | ❌    | 축소만    | 최대 크기 제한      |
 | `minFit`  | ✅         | ✅         | ❌         | ❌    | 확대만    | 최소 크기 보장      |
 
+`contain`은 지정한 `width`/`height` 크기의 출력 캔버스를 유지합니다. 원본 이미지를 최대 크기 안으로만 줄이고 출력 캔버스도 실제 이미지 크기로 받고 싶다면 `maxFit`을 사용하세요.
+
 ### 기본 사용법
 
 ```typescript
@@ -167,6 +169,16 @@ await processImage(source)
     width: 300,
     height: 200,
     background: '#ffffff'  // 여백 색상
+  })
+  .toBlob();
+
+// contain + withoutEnlargement: 출력 박스는 유지하고 작은 이미지만 확대하지 않음
+await processImage(source)
+  .resize({
+    fit: 'contain',
+    width: 300,
+    height: 200,
+    withoutEnlargement: true
   })
   .toBlob();
 
@@ -356,7 +368,6 @@ const complex = await processImage(source)
 await processImage(source).shortcut.containBox(300, 200, {
   padding: { top: 10, bottom: 10, left: 10, right: 10 },
   background: '#ffffff',
-  trimEmpty: true,
   withoutEnlargement: true
 }).toBlob();
 
@@ -659,9 +670,9 @@ interface ResizeConfig {
   fit: 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit';
   width?: number;
   height?: number;
-  background?: string;  // contain 모드 여백 색상
+  background?: string;  // 여백 또는 패딩 배경 색상
   padding?: number | { top?, right?, bottom?, left? };
-  trimEmpty?: boolean;  // contain 모드 여백 제거
+  withoutEnlargement?: boolean;  // contain 모드에서 내부 이미지 확대 금지
 }
 ```
 

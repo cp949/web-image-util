@@ -138,6 +138,19 @@ describe('ResizeCalculator', () => {
 
       expect(Math.abs(resultRatio - originalRatio)).toBeLessThan(0.01);
     });
+
+    it('should keep fixed canvas but not upscale image when withoutEnlargement is true', () => {
+      const result = calculator.calculateFinalLayout(100, 80, {
+        fit: 'contain',
+        width: 300,
+        height: 300,
+        withoutEnlargement: true,
+      });
+
+      expect(result.imageSize).toEqual({ width: 100, height: 80 });
+      expect(result.canvasSize).toEqual({ width: 300, height: 300 });
+      expect(result.position).toEqual({ x: 100, y: 110 });
+    });
   });
 
   // ============================================================================

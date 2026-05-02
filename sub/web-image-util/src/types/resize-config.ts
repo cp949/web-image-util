@@ -60,9 +60,7 @@ export interface ContainConfig extends BaseResizeConfig {
   fit: 'contain';
   width: number;
   height: number;
-  /** Whether to trim empty space (default: false) - automatically removes padding with same color as background */
-  trimEmpty?: boolean;
-  /** Whether to prevent enlargement (default: false) - if true, small images won't be enlarged */
+  /** 원본보다 크게 확대하지 않을지 여부. 출력 캔버스 크기는 유지한다 */
   withoutEnlargement?: boolean;
 }
 

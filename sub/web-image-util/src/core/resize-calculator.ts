@@ -335,14 +335,14 @@ export class ResizeCalculator {
   private calculateContainSize(
     originalWidth: number,
     originalHeight: number,
-    config: { width: number; height: number }
+    config: { width: number; height: number; withoutEnlargement?: boolean }
   ): GeometrySize {
     const { width: targetW, height: targetH } = config;
 
     // Choose smaller of horizontal/vertical ratios to fit entire image
     const scaleX = targetW / originalWidth;
     const scaleY = targetH / originalHeight;
-    const scale = Math.min(scaleX, scaleY);
+    const scale = config.withoutEnlargement ? Math.min(scaleX, scaleY, 1) : Math.min(scaleX, scaleY);
 
     return {
       width: Math.round(originalWidth * scale),

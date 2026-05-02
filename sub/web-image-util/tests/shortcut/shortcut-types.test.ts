@@ -101,9 +101,15 @@ describe('Shortcut API Type Safety', () => {
     const processor = processImage(testImageUrl).shortcut.containBox(300, 200, {
       padding: { top: 10, bottom: 10, left: 10, right: 10 },
       background: '#ffffff',
-      trimEmpty: true,
       withoutEnlargement: true,
     });
+
+    expect(processor).toBeDefined();
+  });
+
+  it('should reject removed trimEmpty option for containBox at type level', () => {
+    // @ts-expect-error trimEmpty는 containBox 옵션에서 제거됐다.
+    const processor = processImage(testImageUrl).shortcut.containBox(300, 200, { trimEmpty: true });
 
     expect(processor).toBeDefined();
   });

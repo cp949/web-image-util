@@ -73,43 +73,8 @@ describe('Processor Resize Integration Tests', () => {
     });
   });
 
-  describe('contain mode with trimEmpty option', () => {
-    it('should handle trimEmpty option', async () => {
-      const testBlob = await createTestImageBlob(100, 100, 'red');
-
-      const withoutTrim = await processImage(testBlob).resize({ fit: 'contain', width: 200, height: 400 }).toCanvas();
-
-      const withTrim = await processImage(testBlob)
-        .resize({ fit: 'contain', width: 200, height: 400, trimEmpty: true })
-        .toCanvas();
-
-      // Size may differ when trimEmpty is applied
-      expect(withTrim.width).toBeLessThanOrEqual(withoutTrim.width);
-      expect(withTrim.height).toBeLessThanOrEqual(withoutTrim.height);
-    });
-
-    it('should trim with custom background color', async () => {
-      const testBlob = await createTestImageBlob(100, 100, 'blue');
-
-      const result = await processImage(testBlob)
-        .resize({
-          fit: 'contain',
-          width: 200,
-          height: 400,
-          trimEmpty: true,
-          background: 'white',
-        })
-        .toCanvas();
-
-      // Canvas creation should succeed even after trimming
-      expect(result.canvas).toBeInstanceOf(HTMLCanvasElement);
-      expect(result.width).toBeGreaterThan(0);
-      expect(result.height).toBeGreaterThan(0);
-    });
-  });
-
   describe('contain mode with withoutEnlargement option', () => {
-    it('should not upscale small images with withoutEnlargement', async () => {
+    it('should keep the requested canvas size with withoutEnlargement', async () => {
       const testBlob = await createTestImageBlob(100, 100, 'green');
 
       const result = await processImage(testBlob)
@@ -121,9 +86,9 @@ describe('Processor Resize Integration Tests', () => {
         })
         .toCanvas();
 
-      // Should not enlarge
-      expect(result.width).toBeLessThanOrEqual(400);
-      expect(result.height).toBeLessThanOrEqual(400);
+      expect(result.canvas).toBeInstanceOf(HTMLCanvasElement);
+      expect(result.width).toBe(400);
+      expect(result.height).toBe(400);
     });
   });
 

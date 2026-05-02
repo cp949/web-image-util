@@ -91,7 +91,7 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
    *
    * @param width Output width (pixels)
    * @param height Output height (pixels)
-   * @param options Additional options (trimEmpty, withoutEnlargement, padding, background)
+   * @param options Additional options (withoutEnlargement, padding, background)
    * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
@@ -104,11 +104,6 @@ export class ShortcutBuilder<TState extends ProcessorState> implements IShortcut
    *   withoutEnlargement: true
    * }).toBlob();
    *
-   * // Auto-trim empty space
-   * await processImage(src).shortcut.containBox(300, 200, {
-   *   trimEmpty: true,
-   *   background: '#ffffff'
-   * }).toBlob();
    * ```
    */
   containBox(
