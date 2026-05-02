@@ -1,10 +1,9 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * Node.js test configuration (happy-dom environment)
+ * Node.js/happy-dom 테스트 설정 (브라우저 없는 빠른 단위 테스트)
  *
- * Purpose: Fast testing without browser
- * Features: Execute isolated test files in tests folder
+ * 브라우저 전용 smoke test(tests/browser/**)는 수집하지 않는다.
  */
 export default defineConfig({
   test: {
