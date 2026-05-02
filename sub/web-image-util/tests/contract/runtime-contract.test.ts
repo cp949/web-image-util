@@ -30,6 +30,7 @@ import {
   sanitizeSvg,
   unsafe_processImage,
 } from '../../src';
+import { sanitizeSvgStrict, sanitizeSvgStrictDetailed } from '../../src/svg-sanitizer';
 
 const SAMPLE_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="red"/></svg>';
@@ -165,5 +166,32 @@ describe('SVG 유틸 계약', () => {
     const enhanced = enhanceSvgForBrowser(SAMPLE_SVG);
     expect(typeof enhanced).toBe('string');
     expect(enhanced).toContain('<svg');
+  });
+});
+
+describe('strict SVG sanitizer 서브패스 계약', () => {
+  test('sanitizeSvgStrict는 위험 SVG 요소와 외부 참조를 제거한다', () => {
+    const result = sanitizeSvgStrict(
+      '<svg><foreignObject><div>unsafe</div></foreignObject><image href="https://example.com/a.png"/></svg>'
+    );
+
+    expect(result).toContain('<svg');
+    expect(result).not.toContain('foreignObject');
+    expect(result).not.toContain('https://example.com/a.png');
+  });
+
+  test('sanitizeSvgStrictDetailed는 strict 정책을 완화하는 DOMPurify 설정을 무시한다', () => {
+    const result = sanitizeSvgStrictDetailed('<svg><foreignObject><div>unsafe</div></foreignObject></svg>', {
+      domPurifyConfig: {
+        ALLOWED_TAGS: ['svg', 'foreignObject', 'div'],
+        RETURN_DOM: true,
+      },
+    });
+
+    expect(result.svg).toContain('<svg');
+    expect(result.svg).not.toContain('foreignObject');
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('ALLOWED_TAGS'), expect.stringContaining('RETURN_DOM')])
+    );
   });
 });

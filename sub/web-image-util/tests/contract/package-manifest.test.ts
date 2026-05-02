@@ -38,8 +38,15 @@ describe('package.json 배포 매니페스트', () => {
     expect(pkg.files).toEqual(['dist', 'README.md', 'llm.txt']);
   });
 
-  test('exports 맵은 문서화된 4개의 서브패스를 모두 노출한다', () => {
-    expect(Object.keys(exports).sort()).toEqual(['.', './advanced', './filters', './presets', './utils']);
+  test('exports 맵은 문서화된 서브패스를 모두 노출한다', () => {
+    expect(Object.keys(exports).sort()).toEqual([
+      '.',
+      './advanced',
+      './filters',
+      './presets',
+      './svg-sanitizer',
+      './utils',
+    ]);
   });
 
   test('모든 exports 항목은 ESM import 경로와 타입 정의 경로를 포함한다', () => {
@@ -69,6 +76,10 @@ describe('package.json 배포 매니페스트', () => {
       './filters': {
         import: './dist/filters/plugins/index.js',
         types: './dist/filters/plugins/index.d.ts',
+      },
+      './svg-sanitizer': {
+        import: './dist/svg-sanitizer/index.js',
+        types: './dist/svg-sanitizer/index.d.ts',
       },
     };
 

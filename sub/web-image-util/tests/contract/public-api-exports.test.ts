@@ -2,7 +2,8 @@
  * 공개 export 계약 테스트
  *
  * @description
- * 루트 엔트리(`@cp949/web-image-util`)와 서브패스(`/utils`, `/advanced`, `/presets`, `/filters`)의
+ * 루트 엔트리(`@cp949/web-image-util`)와 서브패스(`/utils`, `/advanced`, `/presets`, `/filters`,
+ * `/svg-sanitizer`)의
  * 명시적 value export 목록을 잠근다. 의도되지 않은 추가/제거를 즉시 감지하기 위해
  * 정확 일치(`exact match`) 방식으로 검증한다.
  *
@@ -15,6 +16,7 @@ import * as root from '../../src';
 import * as advanced from '../../src/advanced-index';
 import * as filters from '../../src/filters/plugins';
 import * as presets from '../../src/presets';
+import * as svgSanitizer from '../../src/svg-sanitizer';
 import * as utils from '../../src/utils';
 
 /**
@@ -164,6 +166,8 @@ const UTILS_VALUE_EXPORTS = [
 
 const PRESETS_VALUE_EXPORTS = ['createAvatar', 'createSocialImage', 'createThumbnail'].sort();
 
+const SVG_SANITIZER_VALUE_EXPORTS = ['sanitizeSvgStrict', 'sanitizeSvgStrictDetailed'].sort();
+
 const FILTERS_VALUE_EXPORTS = [
   // index.ts에서 직접 노출하는 함수와 모음
   'AllFilterPlugins',
@@ -270,6 +274,10 @@ describe('공개 export 계약', () => {
 
   test('`/filters` 서브패스 value export 목록이 고정되어 있다', () => {
     expect(valueExportKeys(filters)).toEqual(FILTERS_VALUE_EXPORTS);
+  });
+
+  test('`/svg-sanitizer` 서브패스 value export 목록이 고정되어 있다', () => {
+    expect(valueExportKeys(svgSanitizer)).toEqual(SVG_SANITIZER_VALUE_EXPORTS);
   });
 
   test('`/advanced` 서브패스 value export 목록이 고정되어 있다', () => {
