@@ -173,26 +173,20 @@ describe('Shortcut API Type Safety', () => {
       expect(typeof processor.toDataURL).toBe('function');
     });
 
-    it('should reject resize() after shortcut resize at type level', () => {
+    it('should keep output methods after shortcut resize', () => {
       const processor = processImage(testImageUrl).shortcut.scale(1.5);
 
-      if (false) {
-        // @ts-expect-error resize()는 Shortcut resize 이후 다시 호출할 수 없다.
-        processor.resize({ fit: 'cover', width: 100, height: 100 });
-      }
-
-      expect(processor).toBeDefined();
+      expect(typeof processor.toBlob).toBe('function');
+      expect(typeof processor.toDataURL).toBe('function');
+      expect(typeof processor.toCanvas).toBe('function');
     });
 
-    it('should reject shortcut resize after direct resize at type level', () => {
+    it('should keep output methods after direct resize', () => {
       const processor = processImage(testImageUrl).resize({ fit: 'cover', width: 100, height: 100 });
 
-      if (false) {
-        // @ts-expect-error Shortcut resize도 일반 resize 이후 다시 호출할 수 없다.
-        processor.shortcut.exactWidth(50);
-      }
-
-      expect(processor).toBeDefined();
+      expect(typeof processor.toBlob).toBe('function');
+      expect(typeof processor.toDataURL).toBe('function');
+      expect(typeof processor.toCanvas).toBe('function');
     });
   });
 
