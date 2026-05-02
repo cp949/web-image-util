@@ -121,6 +121,12 @@ export {
   type ImageOrientation,
 } from './image-info';
 /**
+ * 이미지 투명도 검사 유틸리티
+ *
+ * @description Canvas 픽셀 alpha 채널을 샘플링해 투명 픽셀 포함 여부를 확인한다
+ */
+export { hasTransparency, type TransparencyOptions } from './image-inspection';
+/**
  * SVG compatibility and browser normalization functions
  *
  * @description Compatibility enhancement and standardization features

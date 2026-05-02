@@ -161,6 +161,7 @@ export type {
   ImageOrientation,
   OutputFilenameOptions,
   ResolveOutputFormatOptions,
+  TransparencyOptions,
 } from './utils';
 // Utility functions
 export {
@@ -187,6 +188,7 @@ export {
   getImageInfo,
   getImageOrientation,
   getOutputFilename,
+  hasTransparency,
   isDataURLString,
   isInlineSvg,
   isSupportedOutputFormat,
