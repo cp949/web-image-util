@@ -88,10 +88,51 @@ function decodeDataURLPayload({ isBase64, payload }: ParsedDataURL): Uint8Array 
       return decodeBase64Payload(payload);
     }
 
-    return new TextEncoder().encode(decodeURIComponent(payload));
+    return decodePercentEncodedPayload(payload);
   } catch {
     throwInvalidDataURL();
   }
+}
+
+function decodePercentEncodedPayload(payload: string): Uint8Array {
+  const bytes: number[] = [];
+  const encoder = new TextEncoder();
+
+  for (let index = 0; index < payload.length; index += 1) {
+    const character = payload[index];
+
+    if (character === '%') {
+      const hex = payload.slice(index + 1, index + 3);
+
+      if (!isHexByte(hex)) {
+        throwInvalidDataURL();
+      }
+
+      bytes.push(Number.parseInt(hex, 16));
+      index += 2;
+      continue;
+    }
+
+    // escape되지 않은 문자는 Data URL 규칙에 맞춰 UTF-8 바이트로 보존한다.
+    const codePoint = payload.codePointAt(index);
+
+    if (codePoint === undefined) {
+      throwInvalidDataURL();
+    }
+
+    const unescapedCharacter = String.fromCodePoint(codePoint);
+    bytes.push(...encoder.encode(unescapedCharacter));
+
+    if (codePoint > 0xffff) {
+      index += 1;
+    }
+  }
+
+  return new Uint8Array(bytes);
+}
+
+function isHexByte(value: string): boolean {
+  return /^[\da-fA-F]{2}$/.test(value);
 }
 
 function decodeBase64Payload(payload: string): Uint8Array {

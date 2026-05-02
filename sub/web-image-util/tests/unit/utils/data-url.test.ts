@@ -29,13 +29,25 @@ describe('data URL utilities', () => {
     expect(blob.type).toBe('image/svg+xml');
   });
 
+  it('byte-oriented percent-encoded Data URL을 Blob으로 변환한다', async () => {
+    const blob = dataURLToBlob('data:application/octet-stream,%FF');
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    expect(blob.type).toBe('application/octet-stream');
+    expect(blob.size).toBe(1);
+    expect(bytes[0]).toBe(255);
+  });
+
   it('Data URL의 원본 바이트 크기를 추정한다', () => {
     expect(estimateDataURLSize('data:text/plain;base64,aGVsbG8=')).toBe(5);
     expect(estimateDataURLSize('data:image/svg+xml,%3Csvg%3E%3C/svg%3E')).toBe(11);
+    expect(estimateDataURLSize('data:application/octet-stream,%FF')).toBe(1);
   });
 
   it('잘못된 Data URL은 명확한 오류를 던진다', () => {
     expect(() => dataURLToBlob('not-data-url')).toThrow('유효한 Data URL이 아닙니다');
     expect(() => estimateDataURLSize('not-data-url')).toThrow('유효한 Data URL이 아닙니다');
+    expect(() => dataURLToBlob('data:text/plain,%GG')).toThrow('유효한 Data URL이 아닙니다');
+    expect(() => estimateDataURLSize('data:text/plain,%')).toThrow('유효한 Data URL이 아닙니다');
   });
 });
