@@ -433,17 +433,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
     const { canvas, result } = await this.executeProcessing();
 
     try {
-      const blob = await this.canvasToBlob(canvas, outputOptions);
+      const { blob, format } = await this.canvasToBlob(canvas, outputOptions);
 
       // 🆕 Return extended result object (includes direct conversion methods)
-      return new BlobResultImpl(
-        blob,
-        result.width,
-        result.height,
-        result.processingTime,
-        result.originalSize,
-        outputOptions.format
-      );
+      return new BlobResultImpl(blob, result.width, result.height, result.processingTime, result.originalSize, format);
     } catch (error) {
       throw new ImageProcessError('Error occurred during Blob conversion', 'OUTPUT_FAILED', error as Error);
     } finally {
@@ -776,21 +769,24 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   /**
    * Convert Canvas to Blob
    */
-  private async canvasToBlob(canvas: HTMLCanvasElement, options: Required<OutputOptions>): Promise<Blob> {
+  private async canvasToBlob(
+    canvas: HTMLCanvasElement,
+    options: Required<OutputOptions>
+  ): Promise<{ blob: Blob; format: OutputFormat }> {
     const mimeType = this.formatToMimeType(options.format);
 
     return new Promise((resolve, reject) => {
       canvas.toBlob(
         (blob) => {
           if (blob) {
-            resolve(blob);
+            resolve({ blob, format: options.format });
           } else {
             // Retry with fallback format
             const fallbackMimeType = this.formatToMimeType(options.fallbackFormat);
             canvas.toBlob(
               (fallbackBlob) => {
                 if (fallbackBlob) {
-                  resolve(fallbackBlob);
+                  resolve({ blob: fallbackBlob, format: options.fallbackFormat });
                 } else {
                   reject(new Error('Failed to create Blob'));
                 }
