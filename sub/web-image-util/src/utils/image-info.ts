@@ -15,6 +15,9 @@ export interface ImageInfo extends ImageDimensions {
   format: ImageFormat | 'unknown';
 }
 
+/** 이미지 치수 기준 방향 값이다. */
+export type ImageOrientation = 'landscape' | 'portrait' | 'square';
+
 /** MIME 타입을 공개 이미지 포맷 값으로 변환한다. */
 function formatFromMimeType(mimeType: string): ImageInfo['format'] {
   const normalized = mimeType.toLowerCase().split(';')[0].trim();
@@ -246,6 +249,28 @@ export async function getImageDimensions(source: ImageSource): Promise<ImageDime
   return dimensionsFromElement(element);
 }
 
+/** 이미지 소스의 입력 포맷을 반환한다. */
+export async function getImageFormat(source: ImageSource): Promise<ImageInfo['format']> {
+  return detectImageFormat(source);
+}
+
+/** 이미지 소스의 가로/세로 비율을 반환한다. */
+export async function getImageAspectRatio(source: ImageSource): Promise<number> {
+  const { width, height } = await getImageDimensions(source);
+  return width / height;
+}
+
+/** 이미지 소스의 치수 기준 방향을 반환한다. */
+export async function getImageOrientation(source: ImageSource): Promise<ImageOrientation> {
+  const { width, height } = await getImageDimensions(source);
+
+  if (width === height) {
+    return 'square';
+  }
+
+  return width > height ? 'landscape' : 'portrait';
+}
+
 /**
  * 이미지 소스의 치수와 입력 포맷을 반환한다.
  *
@@ -253,7 +278,7 @@ export async function getImageDimensions(source: ImageSource): Promise<ImageDime
  * 확인한다. 치수 확인은 `getImageDimensions()`와 같은 fast path를 공유해 이미지 로딩을 중복하지 않는다.
  */
 export async function getImageInfo(source: ImageSource): Promise<ImageInfo> {
-  const format = await detectImageFormat(source);
+  const format = await getImageFormat(source);
   const dimensions = await getImageDimensions(source);
 
   return {
