@@ -11,7 +11,7 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./tests/setup/canvas-mock.ts'],
     include: ['tests/**/*.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/browser/**'],
     globals: true,
     coverage: {
       provider: 'v8',

@@ -27,7 +27,7 @@
     "test:security:coverage": "vitest --coverage --config tests/security/vitest.config.ts",
     "test:package-subpath": "node --input-type=module -e \"const mod = await import('@cp949/web-image-util/svg-sanitizer'); if (typeof mod.sanitizeSvgStrict !== 'function' || typeof mod.sanitizeSvgStrictDetailed !== 'function') throw new Error('svg-sanitizer subpath export smoke failed');\"",
     "test:ui": "vitest --ui",
-    "test:browser": "vitest --browser",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:coverage": "vitest run --coverage --config vitest.node.config.ts",
     "test:coverage:contract": "vitest --coverage --config vitest.contract.config.ts",
     "test:types": "vitest --config vitest.node.config.ts tests/unit/types"
@@ -39,6 +39,7 @@
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^25.6.0",
     "@vitest/browser": "^4.1.4",
+    "@vitest/browser-playwright": "4.1.4",
     "@vitest/coverage-v8": "^4.1.4",
     "canvas": "^3.2.3",
     "happy-dom": "^20.9.0",

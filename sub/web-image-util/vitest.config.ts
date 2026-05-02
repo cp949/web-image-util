@@ -9,7 +9,7 @@ export default defineConfig({
     include: ['tests/**/*.{test,spec}.{js,ts}', 'src/**/*.{test,spec}.{js,ts}'],
 
     // Files to exclude
-    exclude: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/*.d.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/*.d.ts', 'tests/browser/**'],
 
     // Global configuration
     globals: true,
