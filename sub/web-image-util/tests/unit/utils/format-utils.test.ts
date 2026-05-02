@@ -21,6 +21,7 @@ describe('format utilities', () => {
 
   it('MIME 타입을 이미지 포맷으로 변환한다', () => {
     expect(mimeTypeToImageFormat('image/jpeg')).toBe('jpeg');
+    expect(mimeTypeToImageFormat('IMAGE/JPEG')).toBe('jpeg');
     expect(mimeTypeToImageFormat('image/svg+xml; charset=utf-8')).toBe('svg');
     expect(mimeTypeToImageFormat('application/octet-stream')).toBe('unknown');
   });
@@ -29,6 +30,7 @@ describe('format utilities', () => {
     expect(mimeTypeToOutputFormat('image/jpeg')).toBe('jpeg');
     expect(mimeTypeToOutputFormat('image/png')).toBe('png');
     expect(mimeTypeToOutputFormat('image/gif')).toBeUndefined();
+    expect(mimeTypeToOutputFormat('image/svg+xml')).toBeUndefined();
   });
 
   it('파일 확장자를 출력 포맷에 맞게 교체한다', () => {
@@ -36,6 +38,7 @@ describe('format utilities', () => {
     expect(replaceImageExtension('archive.photo.old.jpg', 'png')).toBe('archive.photo.old.png');
     expect(replaceImageExtension('photo', 'jpeg')).toBe('photo.jpeg');
     expect(replaceImageExtension('photo.backup?x=1', 'avif')).toBe('photo.avif');
+    expect(replaceImageExtension('images/nested/photo.png#preview', 'webp')).toBe('images/nested/photo.webp');
   });
 
   it('출력 옵션을 반영한 최종 파일명을 계산한다', () => {
@@ -56,7 +59,8 @@ describe('format utilities', () => {
 
   it('선호 포맷과 지원 목록을 기준으로 출력 포맷을 결정한다', () => {
     expect(resolveOutputFormat('avif', { supported: ['webp', 'png'] })).toBe('webp');
-    expect(resolveOutputFormat('webp', { supported: ['png'], fallback: 'jpeg' })).toBe('jpeg');
+    expect(resolveOutputFormat('webp', { supported: ['png'], fallback: 'jpeg' })).toBe('png');
     expect(resolveOutputFormat('png', { supported: ['png'] })).toBe('png');
+    expect(resolveOutputFormat('webp', { supported: ['avif'], fallback: 'jpeg' })).toBe('png');
   });
 });

@@ -105,7 +105,7 @@ export function resolveOutputFormat(preferred: OutputFormat, options: ResolveOut
     return preferred;
   }
 
-  if (isSupportedOutputFormat(options.fallback)) {
+  if (options.fallback && supported.includes(options.fallback)) {
     return options.fallback;
   }
 
