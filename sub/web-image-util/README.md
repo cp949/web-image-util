@@ -747,6 +747,13 @@ console.log(dimensions.width, dimensions.height);
 const info = await getImageInfo(file);
 console.log(info.width, info.height, info.format);
 
+// 인라인 SVG XML 문자열 판정
+import { isInlineSvg } from '@cp949/web-image-util/utils';
+
+if (isInlineSvg(input)) {
+  console.log('SVG XML 문자열입니다');
+}
+
 // SVG 호환성 보정
 import { enhanceBrowserCompatibility, enhanceSvgForBrowser } from '@cp949/web-image-util/utils';
 

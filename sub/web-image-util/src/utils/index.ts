@@ -89,6 +89,13 @@ export {
 } from './svg-compatibility';
 
 /**
+ * SVG 문자열 감지 유틸리티
+ *
+ * @description 문자열 입력이 실제 인라인 SVG XML 루트로 시작하는지 판정한다
+ */
+export { isInlineSvg } from './svg-detection';
+
+/**
  * SVG vector optimization system
  *
  * @description Advanced optimization tools that reduce SVG file size

@@ -163,6 +163,7 @@ export {
   convertToFileDetailed,
   getImageDimensions,
   getImageInfo,
+  isInlineSvg,
 } from './utils';
 // 브라우저 기능 감지 — 단일 구현 소스를 재노출한다
 export {
