@@ -9,7 +9,14 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 [![npm version](https://img.shields.io/npm/v/@cp949/web-image-util)](https://www.npmjs.com/package/@cp949/web-image-util)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-현재 배포 준비 버전: `2.0.28`
+현재 배포 준비 버전: `2.0.29`
+
+## 배포 메모
+
+### 2.0.29
+
+- SVG 호환성 보정에서 `xlink:href`를 DOM selector에 의존하지 않고 순회 기반으로 현대화합니다.
+- 기존 `href`가 있는 SVG 요소는 값을 보존하면서 legacy `xlink:href`만 제거합니다.
 
 ## 주요 특징
 

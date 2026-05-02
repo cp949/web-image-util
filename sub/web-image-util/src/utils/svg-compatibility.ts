@@ -100,6 +100,8 @@ const DEFAULT_OPTIONS: Required<Omit<SvgCompatibilityOptions, 'defaultSize' | 'p
   ensureNonZeroViewport: true,
 };
 
+const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink';
+
 /**
  * Enhance SVG browser compatibility with advanced processing
  *
@@ -281,22 +283,24 @@ function addRequiredNamespaces(root: Element, report: SvgCompatibilityReport) {
 }
 
 /**
- * Modernize SVG syntax
- * Convert xlink:href to href (only when href is not present)
+ * SVG legacy 참조 문법을 현대 브라우저용 href 속성으로 정규화한다.
  */
 function modernizeSvgSyntax(root: Element, report: SvgCompatibilityReport) {
   let count = 0;
-  const nodes = root.querySelectorAll('[xlink\\:href]');
-  nodes.forEach((el) => {
-    const xlink = el.getAttribute('xlink:href');
-    if (!xlink) return;
-    const href = el.getAttribute('href');
-    if (!href) {
+
+  for (const el of Array.from(root.getElementsByTagName('*'))) {
+    const xlink = el.getAttribute('xlink:href') ?? el.getAttributeNS(XLINK_NAMESPACE, 'href');
+    if (xlink === null) continue;
+
+    if (!el.hasAttribute('href')) {
       el.setAttribute('href', xlink);
-      el.removeAttribute('xlink:href');
-      count++;
     }
-  });
+
+    el.removeAttribute('xlink:href');
+    el.removeAttributeNS(XLINK_NAMESPACE, 'href');
+    count++;
+  }
+
   report.modernizedSyntax = count;
 }
 
