@@ -64,12 +64,13 @@ pnpm test         # 패키지 테스트 실행
 pnpm test:node    # Node.js/happy-dom 테스트
 pnpm test:browser # Vitest Browser 기반 브라우저 테스트
 pnpm verify:ci    # 타입체크 + lint + format:check + test:node + test:contract
+pnpm verify:release # verify:ci + browser smoke test + npm pack dry-run
 pnpm publish:npm  # 패키지 빌드 후 npm publish
 ```
 
 커버리지는 별도 점검 경로입니다. `pnpm --filter @cp949/web-image-util test:coverage`로 실행하며, 현재 루트 `verify:ci` 필수 gate에는 포함되어 있지 않습니다.
 
-Node.js/happy-dom 테스트는 Canvas/Image/FileReader mock을 사용하므로 옵션, 계약, metadata, 오류 경로를 빠르게 확인하는 용도입니다. 실제 픽셀, SVG 렌더링, 브라우저별 `canvas.toBlob()` MIME fallback은 `test:browser` 경로에서 확인합니다. mock 책임 범위는 `tests/setup/README.md`에 따로 정리되어 있습니다.
+Node.js/happy-dom 테스트는 Canvas/Image/FileReader mock을 사용하므로 옵션, 계약, metadata, 오류 경로를 빠르게 확인하는 용도입니다. 실제 픽셀, SVG 렌더링, 브라우저별 `canvas.toBlob()` MIME fallback은 `test:browser` 경로에서 확인합니다. `test:browser`는 `verify:ci`에는 포함하지 않고, 릴리스 전 `verify:release` gate에서 필수로 실행합니다. mock 책임 범위는 `tests/setup/README.md`에 따로 정리되어 있습니다.
 
 버전 업데이트와 배포 전에는 루트 [Release Checklist](../../docs/release-checklist.md)를 따라 README, CLAUDE 문서, package scripts, `llm.txt`가 실제 코드와 같은지 확인합니다.
 

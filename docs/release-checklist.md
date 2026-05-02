@@ -31,10 +31,10 @@ rg -n "2\\.0\\.[0-9]+" README.md sub/web-image-util/README.md CLAUDE.md sub/web-
 ```bash
 node -p "Object.keys(require('./package.json').scripts).sort().join('\n')"
 node -p "Object.keys(require('./sub/web-image-util/package.json').scripts).sort().join('\n')"
-rg -n "pnpm (ci|verify:ci|publish:npm|test:coverage|test:browser|test:contract)" README.md CLAUDE.md sub/web-image-util/README.md sub/web-image-util/CLAUDE.md
+rg -n "pnpm (ci|verify:ci|verify:release|publish:npm|test:coverage|test:browser|test:contract)" README.md CLAUDE.md sub/web-image-util/README.md sub/web-image-util/CLAUDE.md
 ```
 
-현재 루트 CI 성격의 기본 검증 명령은 `pnpm verify:ci`다. `test:coverage`는 별도 점검 경로이며, `verify:ci`에 포함하기로 결정한 경우에만 문서의 coverage 설명을 바꾼다.
+현재 루트 CI 성격의 기본 검증 명령은 `pnpm verify:ci`다. 릴리스 전 필수 검증 명령은 `pnpm verify:release`이며, `verify:ci`, browser smoke test, npm pack dry-run을 함께 실행한다. `test:coverage`는 별도 점검 경로이며, `verify:ci`에 포함하기로 결정한 경우에만 문서의 coverage 설명을 바꾼다.
 
 ## 구조 설명 동기화
 
@@ -49,7 +49,7 @@ rg --files sub/web-image-util/src/core
 
 ## 생성 산출물
 
-공개 API, README, 유틸리티 export가 바뀌면 `llm.txt`도 최신 상태여야 한다. `pnpm build`는 `sub/web-image-util/scripts/generate-llm-txt.mjs`를 실행한다.
+공개 API, README, 유틸리티 export가 바뀌면 `llm.txt`도 최신 상태여야 한다. 운영 기준은 [llm.txt 운영 가이드](llm-txt.md)를 따른다. `pnpm build`는 `sub/web-image-util/scripts/generate-llm-txt.mjs`를 실행한다.
 
 ```bash
 pnpm build
@@ -63,21 +63,19 @@ git diff -- sub/web-image-util/llm.txt
 최소 검증:
 
 ```bash
-pnpm verify:ci
+pnpm verify:release
 pnpm test:package-subpath
 pnpm --filter @cp949/web-image-util package
-cd sub/web-image-util && npm pack --dry-run
 ```
 
 변경 범위에 따라 추가 검증:
 
 ```bash
 pnpm --filter @cp949/web-image-util test:coverage
-pnpm --filter @cp949/web-image-util test:browser
 pnpm --filter @cp949/web-image-util test:security
 ```
 
-`test:coverage`가 실패하는 상태에서 배포해야 한다면, 실패 이유와 배포 판단을 작업 메모나 릴리스 메모에 명시한다.
+`test:coverage`가 실패하는 상태에서 배포해야 한다면, 실패 이유와 배포 판단을 릴리스 메모에 명시한다.
 
 ## 최종 검색
 

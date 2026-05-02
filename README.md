@@ -113,6 +113,7 @@ pnpm format:check
 pnpm test
 pnpm test:coverage
 pnpm verify:ci
+pnpm verify:release
 pnpm dev
 pnpm publish:npm
 ```
@@ -127,13 +128,14 @@ pnpm publish:npm
 
 이 스크립트는 `@cp949/web-image-util` 패키지를 빌드한 뒤 `npm publish --access=public`을 실행합니다.
 
-버전 업데이트와 배포 전에는 [Release Checklist](docs/release-checklist.md)를 따라 문서, 스크립트, 배포 산출물이 실제 코드와 같은지 확인합니다.
+버전 업데이트와 배포 전에는 `pnpm verify:release`를 실행하고, [Release Checklist](docs/release-checklist.md)를 따라 문서, 스크립트, 배포 산출물이 실제 코드와 같은지 확인합니다.
 
 ## 문서
 
 - [라이브러리 문서](sub/web-image-util/README.md)
 - [예제 앱 문서](apps/exam/README.md)
 - [릴리스 체크리스트](docs/release-checklist.md)
+- [llm.txt 운영 가이드](docs/llm-txt.md)
 - [프로젝트 가이드](CLAUDE.md)
 
 ## 라이선스
