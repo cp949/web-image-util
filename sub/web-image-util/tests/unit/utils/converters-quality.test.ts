@@ -46,6 +46,15 @@ describe('converter quality options', () => {
     await expect(ensureDataURL(dataURL, { format: 'jpeg', quality: 0.95 })).resolves.toBe(dataURL);
   });
 
+  it('should keep convertToBlob Blob passthrough behavior even when only quality is provided', async () => {
+    const blob = new Blob(['mock'], { type: 'image/jpeg' });
+    const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;
+    const toBlobSpy = vi.spyOn(canvasPrototype, 'toBlob');
+
+    await expect(convertToBlob(blob, { quality: 0.5 })).resolves.toBe(blob);
+    expect(toBlobSpy).not.toHaveBeenCalled();
+  });
+
   it('should encode Blob sources to Data URL with output options', async () => {
     const blob = new Blob(['mock'], { type: 'image/png' });
     const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;
@@ -84,6 +93,18 @@ describe('converter quality options', () => {
     expect(toBlobSpy).toHaveBeenLastCalledWith(expect.any(Function), 'image/png', 0.5);
   });
 
+  it('should preserve Blob source format when only quality is provided', async () => {
+    const blob = new Blob(['mock'], { type: 'image/jpeg' });
+    const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;
+    const toBlobSpy = vi.spyOn(canvasPrototype, 'toBlob');
+
+    const result = await ensureBlob(blob, { quality: 0.5 });
+
+    expect(result).not.toBe(blob);
+    expect(result.type).toBe('image/jpeg');
+    expect(toBlobSpy).toHaveBeenLastCalledWith(expect.any(Function), 'image/jpeg', 0.5);
+  });
+
   it('should reuse File sources when filename and output options do not require changes', async () => {
     const file = new File(['mock'], 'image.png', { type: 'image/png' });
 
@@ -101,5 +122,18 @@ describe('converter quality options', () => {
     expect(reencoded).not.toBe(file);
     expect(reencoded.name).toBe('image.jpg');
     expect(reencoded.type).toBe('image/jpeg');
+  });
+
+  it('should preserve File source format when only quality is provided', async () => {
+    const file = new File(['mock'], 'image.jpg', { type: 'image/jpeg' });
+    const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;
+    const toBlobSpy = vi.spyOn(canvasPrototype, 'toBlob');
+
+    const result = await ensureFile(file, 'image.jpg', { quality: 0.5 });
+
+    expect(result).not.toBe(file);
+    expect(result.name).toBe('image.jpg');
+    expect(result.type).toBe('image/jpeg');
+    expect(toBlobSpy).toHaveBeenLastCalledWith(expect.any(Function), 'image/jpeg', 0.5);
   });
 });

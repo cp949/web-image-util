@@ -33,7 +33,7 @@
  */
 
 import { convertToImageElement } from '../core/source-converter';
-import type { ImageSource, OutputOptions, ResultBlob, ResultDataURL, ResultFile } from '../types';
+import type { ImageSource, OutputFormat, OutputOptions, ResultBlob, ResultDataURL, ResultFile } from '../types';
 import { ImageProcessError } from '../types';
 import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from '../types/result-implementations';
 import { createImageElement } from './image-element';
@@ -148,6 +148,8 @@ export type EnsureFileDetailedOptions = ConvertToFileDetailedOptions;
  * @param options Format and quality options with intelligent defaults
  * @returns Promise resolving to Blob object ready for use
  *
+ * @deprecated 기존 호환성용 API입니다. 새 코드에서는 `ensureBlob()`을 사용하세요.
+ *
  * @example File Upload Conversion
  * ```typescript
  * // Convert uploaded file to WebP for storage efficiency
@@ -252,6 +254,8 @@ export async function convertToBlob(
  * @param options Conversion options
  * @returns BlobResult object (Blob with metadata)
  *
+ * @deprecated 기존 호환성용 API입니다. 새 코드에서는 `ensureBlobDetailed()`을 사용하세요.
+ *
  * @example
  * ```typescript
  * // With detailed information
@@ -317,6 +321,8 @@ export async function convertToBlobDetailed(
  * @param options Conversion options
  * @returns Data URL string
  *
+ * @deprecated 기존 호환성용 API입니다. 새 코드에서는 `ensureDataURL()`을 사용하세요.
+ *
  * @example
  * ```typescript
  * // Basic usage
@@ -372,6 +378,8 @@ export async function convertToDataURL(
  * @param source Image source
  * @param options Conversion options
  * @returns DataURLResult object (Data URL with metadata)
+ *
+ * @deprecated 기존 호환성용 API입니다. 새 코드에서는 `ensureDataURLDetailed()`을 사용하세요.
  *
  * @example
  * ```typescript
@@ -466,7 +474,8 @@ export async function ensureBlob(
 
     const imageElement = await convertToImageElement(source);
     const canvas = await imageElementToCanvas(imageElement);
-    return await canvasToBlob(canvas, options);
+    const outputOptions = source instanceof Blob ? getBlobReencodeOptions(source, options) : options;
+    return await canvasToBlob(canvas, outputOptions);
   } catch (error) {
     throw new ImageProcessError('Error occurred while ensuring Blob output', 'CONVERSION_FAILED', error as Error);
   }
@@ -498,7 +507,8 @@ export async function ensureBlobDetailed(
 
     const imageElement = await convertToImageElement(source);
     const canvas = await imageElementToCanvas(imageElement);
-    const blob = await canvasToBlob(canvas, options);
+    const outputOptions = source instanceof Blob ? getBlobReencodeOptions(source, options) : options;
+    const blob = await canvasToBlob(canvas, outputOptions);
 
     return new BlobResultImpl(blob, canvas.width, canvas.height, Date.now() - startTime, {
       width: imageElement.width,
@@ -659,6 +669,8 @@ export async function ensureFileDetailed(
  * @param options Conversion options
  * @returns File object
  *
+ * @deprecated 기존 호환성용 API입니다. 새 코드에서는 `ensureFile()`을 사용하세요.
+ *
  * @example
  * ```typescript
  * // Basic usage
@@ -717,6 +729,8 @@ export async function convertToFile(
  * @param filename Filename
  * @param options Conversion options
  * @returns FileResult object (File with metadata)
+ *
+ * @deprecated 기존 호환성용 API입니다. 새 코드에서는 `ensureFileDetailed()`을 사용하세요.
  *
  * @example
  * ```typescript
@@ -831,6 +845,8 @@ async function blobToDataURL(blob: Blob): Promise<string> {
  * @param source Image source (HTMLImageElement, Blob, URL, Data URL, SVG XML, ArrayBuffer, etc.)
  * @returns HTMLImageElement Promise
  *
+ * @deprecated 기존 호환성용 API입니다. 새 코드에서는 필요한 출력 형태에 맞는 `ensureXxx()` API를 사용하세요.
+ *
  * @example
  * ```typescript
  * import { convertToElement } from '@cp949/web-image-util/utils';
@@ -911,6 +927,25 @@ function shouldReencodeBlob(blob: Blob, options: OutputOptions): boolean {
 }
 
 /**
+ * Blob 재인코딩 시 명시 포맷이 없으면 원본 MIME을 출력 포맷으로 유지한다.
+ */
+function getBlobReencodeOptions(blob: Blob, options: OutputOptions): OutputOptions {
+  if (options.format) {
+    return options;
+  }
+
+  const sourceFormat = mimeTypeToOutputFormat(blob.type);
+  if (!sourceFormat) {
+    return options;
+  }
+
+  return {
+    ...options,
+    format: sourceFormat,
+  };
+}
+
+/**
  * File 원본을 그대로 재사용할 수 있는지 판정한다.
  */
 function shouldReuseFile(file: File, filename: string, options: EnsureFileOptions): boolean {
@@ -946,6 +981,25 @@ function formatToMimeType(format: string): string {
   };
 
   return mimeTypes[format.toLowerCase()] || 'image/png';
+}
+
+/**
+ * MIME 타입을 Canvas 출력 포맷으로 변환한다.
+ */
+function mimeTypeToOutputFormat(mimeType: string): OutputFormat | undefined {
+  switch (mimeType.toLowerCase()) {
+    case 'image/jpeg':
+    case 'image/jpg':
+      return 'jpeg';
+    case 'image/png':
+      return 'png';
+    case 'image/webp':
+      return 'webp';
+    case 'image/avif':
+      return 'avif';
+    default:
+      return undefined;
+  }
 }
 
 /**
