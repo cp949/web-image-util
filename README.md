@@ -8,6 +8,8 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
+현재 배포 준비 버전: `2.0.28`
+
 ## 소개
 
 이 저장소의 중심은 `@cp949/web-image-util` 패키지입니다. 브라우저 환경에서 이미지를 다루는 작업을 체이닝 API로 구성할 수 있고, SVG 입력 처리와 여러 출력 포맷 변환을 함께 제공합니다.
