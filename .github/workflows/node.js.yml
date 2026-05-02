@@ -40,6 +40,9 @@ jobs:
       - name: Build packages
         run: pnpm build
 
+      - name: Check package subpath exports
+        run: pnpm test:package-subpath
+
       - name: Package for publishing
         run: pnpm --filter @cp949/web-image-util package
 

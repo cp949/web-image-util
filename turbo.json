@@ -45,6 +45,10 @@
       "outputs": ["coverage/contract/**", "test-results/**"],
       "inputs": ["src/**/*.ts", "tests/**/*.ts", "vitest.contract.config.*"]
     },
+    "test:package-subpath": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
     "test:ui": {
       "cache": false,
       "persistent": true

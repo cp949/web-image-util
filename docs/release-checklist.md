@@ -64,6 +64,7 @@ git diff -- sub/web-image-util/llm.txt
 
 ```bash
 pnpm verify:ci
+pnpm test:package-subpath
 pnpm --filter @cp949/web-image-util package
 cd sub/web-image-util && npm pack --dry-run
 ```

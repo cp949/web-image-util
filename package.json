@@ -24,6 +24,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:node": "turbo run test:node",
+    "test:package-subpath": "turbo run test:package-subpath --filter=@cp949/web-image-util",
     "test:ui": "turbo run test:ui",
     "test:browser": "turbo run test:browser",
     "test:coverage": "turbo run test:coverage",
