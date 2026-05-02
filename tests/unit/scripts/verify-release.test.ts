@@ -11,6 +11,7 @@ type ReleaseVerificationStep = {
   command: string;
   args: string[];
   cwd: string;
+  env?: NodeJS.ProcessEnv;
 };
 
 describe('릴리스 검증 스크립트', () => {
@@ -45,8 +46,34 @@ describe('릴리스 검증 스크립트', () => {
         command: 'npm',
         args: ['pack', '--dry-run'],
         cwd: expect.stringMatching(/web-image-util\/sub\/web-image-util$/),
+        env: expect.objectContaining({
+          npm_config_user_agent: expect.any(String),
+        }),
       },
     ]);
+  });
+
+  test('npm pack 단계는 npm 11 경고를 만드는 pnpm 전용 env config를 제거한다', () => {
+    const originalEnv = process.env;
+    process.env = {
+      ...originalEnv,
+      npm_config_verify_deps_before_run: 'false',
+      NPM_CONFIG_HOIST: 'true',
+      npm_config__jsr_registry: 'https://example.test',
+      npm_config_user_agent: 'pnpm/10.17.1 npm/? node/v24.12.0 linux x64',
+    };
+
+    try {
+      const npmPackStep = getReleaseVerificationSteps().find((step) => step.label === 'npm pack dry-run');
+
+      expect(npmPackStep?.env).toBeDefined();
+      expect(npmPackStep?.env?.npm_config_verify_deps_before_run).toBeUndefined();
+      expect(npmPackStep?.env?.NPM_CONFIG_HOIST).toBeUndefined();
+      expect(npmPackStep?.env?.npm_config__jsr_registry).toBeUndefined();
+      expect(npmPackStep?.env?.npm_config_user_agent).toBe('pnpm/10.17.1 npm/? node/v24.12.0 linux x64');
+    } finally {
+      process.env = originalEnv;
+    }
   });
 
   test('모든 단계가 성공하면 0을 반환한다', () => {

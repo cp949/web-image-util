@@ -6,6 +6,30 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDir, '..');
 const packageRoot = join(repositoryRoot, 'sub/web-image-util');
 
+const NPM_PACK_IGNORED_ENV_CONFIG_KEYS = new Set(['verify_deps_before_run', 'hoist', '_jsr_registry']);
+
+/**
+ * npm 11은 pnpm 전용 npm_config_* 환경 변수를 알 수 없는 config로 보고 경고한다.
+ * npm pack 단계에만 정제된 환경을 전달해 릴리스 로그의 노이즈를 제거한다.
+ */
+function createNpmPackEnvironment(sourceEnv = process.env) {
+  const env = { ...sourceEnv };
+
+  for (const key of Object.keys(env)) {
+    const normalizedKey = key.toLowerCase();
+    if (!normalizedKey.startsWith('npm_config_')) {
+      continue;
+    }
+
+    const configKey = normalizedKey.slice('npm_config_'.length);
+    if (NPM_PACK_IGNORED_ENV_CONFIG_KEYS.has(configKey)) {
+      delete env[key];
+    }
+  }
+
+  return env;
+}
+
 export function getReleaseVerificationSteps() {
   return [
     {
@@ -25,6 +49,7 @@ export function getReleaseVerificationSteps() {
       command: 'npm',
       args: ['pack', '--dry-run'],
       cwd: packageRoot,
+      env: createNpmPackEnvironment(),
     },
   ];
 }
@@ -60,6 +85,7 @@ export function runReleaseVerification(steps = getReleaseVerificationSteps(), ru
 function runReleaseVerificationStep(step) {
   return spawnSync(step.command, step.args, {
     cwd: step.cwd,
+    env: step.env,
     stdio: 'inherit',
     shell: process.platform === 'win32',
   });
