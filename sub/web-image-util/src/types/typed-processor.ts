@@ -7,7 +7,7 @@
 
 import type { BlurOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from '../types';
 import type { IShortcutBuilder } from './processor-interface';
-import type { AfterResize, AfterResizeCall, BeforeResize, EnsureCanResize, ProcessorState } from './processor-state';
+import type { AfterResize, BeforeResize, ProcessorState } from './processor-state';
 import type { ResizeConfig } from './resize-config';
 
 // Re-export for use by other modules
@@ -42,11 +42,7 @@ export interface TypedImageProcessor<TState extends ProcessorState = BeforeResiz
    *   .resize({ fit: 'cover', width: 300, height: 200 });
    * ```
    */
-  resize(
-    config: ResizeConfig,
-    // Type-level constraint: only available when resize() can be called
-    _constraint?: EnsureCanResize<TState>
-  ): TypedImageProcessor<AfterResizeCall<TState>>;
+  resize(this: TypedImageProcessor<BeforeResize>, config: ResizeConfig): TypedImageProcessor<AfterResize>;
 
   /**
    * Apply blur effect

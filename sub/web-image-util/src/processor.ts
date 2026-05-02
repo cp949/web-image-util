@@ -23,7 +23,7 @@ import type {
 } from './types';
 import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
 import type { IImageProcessor, IShortcutBuilder } from './types/processor-interface';
-import type { AfterResizeCall, EnsureCanResize, ProcessorState } from './types/processor-state';
+import type { AfterResizeCall, ProcessorState } from './types/processor-state';
 import type { ResizeConfig } from './types/resize-config';
 import { validateResizeConfig } from './types/resize-config';
 import { BlobResultImpl, CanvasResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
@@ -152,7 +152,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
    * ```
    */
-  resize(config: ResizeConfig, _constraint?: EnsureCanResize<TState>): ImageProcessor<AfterResizeCall<TState>> {
+  resize(config: ResizeConfig): ImageProcessor<AfterResizeCall<TState>> {
     // 1. Prevent multiple resize calls (prevent quality degradation)
     if (this.hasResized) {
       throw new ImageProcessError(
@@ -249,6 +249,21 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * @internal
    */
   _addResizeOperation(operation: ResizeOperation): void {
+    if (this.hasResized) {
+      throw new ImageProcessError(
+        'resize() can only be called once. Use a single resize operation to prevent image quality degradation.',
+        'MULTIPLE_RESIZE_NOT_ALLOWED',
+        undefined,
+        [
+          'Include all resizing options in a single resize operation',
+          'Create separate processImage() instances for multiple sizes',
+          'Example: processImage(source).shortcut.exactWidth(300).toBlob()',
+        ]
+      );
+    }
+
+    this.hasResized = true;
+
     // Before LazyRenderPipeline initialization: store in pending state
     // After LazyRenderPipeline initialization: pass directly
     if (this.lazyPipeline) {

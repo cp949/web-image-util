@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { processImage } from '../../src/index';
+import { ImageProcessError } from '../../src/types';
 import type { ScaleOperation } from '../../src/types/shortcut-types';
 
 describe('Shortcut API Type Safety', () => {
@@ -38,7 +39,9 @@ describe('Shortcut API Type Safety', () => {
         const processor = factory(testImageUrl);
 
         expect(typeof processor.blur, 'blur should be a function').toBe('function');
-        expect(typeof processor.resize, 'resize should be a function').toBe('function');
+        expect(() => {
+          processor.resize({ fit: 'cover', width: 100, height: 100 });
+        }, 'resize should reject duplicate resize operations').toThrow(ImageProcessError);
       });
 
       it('should maintain type safety through chaining', () => {
@@ -168,6 +171,54 @@ describe('Shortcut API Type Safety', () => {
 
       expect(typeof processor.toBlob).toBe('function');
       expect(typeof processor.toDataURL).toBe('function');
+    });
+
+    it('should reject resize() after shortcut resize at type level', () => {
+      const processor = processImage(testImageUrl).shortcut.scale(1.5);
+
+      if (false) {
+        // @ts-expect-error resize()는 Shortcut resize 이후 다시 호출할 수 없다.
+        processor.resize({ fit: 'cover', width: 100, height: 100 });
+      }
+
+      expect(processor).toBeDefined();
+    });
+
+    it('should reject shortcut resize after direct resize at type level', () => {
+      const processor = processImage(testImageUrl).resize({ fit: 'cover', width: 100, height: 100 });
+
+      if (false) {
+        // @ts-expect-error Shortcut resize도 일반 resize 이후 다시 호출할 수 없다.
+        processor.shortcut.exactWidth(50);
+      }
+
+      expect(processor).toBeDefined();
+    });
+  });
+
+  describe('Duplicate Resize Runtime Safety', () => {
+    it('should reject a direct resize after a lazy shortcut resize', () => {
+      const processor = processImage(testImageUrl).shortcut.scale(1.5);
+
+      expect(() => {
+        processor.resize({ fit: 'cover', width: 100, height: 100 });
+      }).toThrow(ImageProcessError);
+    });
+
+    it('should reject a lazy shortcut resize after a direct resize', () => {
+      const processor = processImage(testImageUrl).resize({ fit: 'cover', width: 100, height: 100 });
+
+      expect(() => {
+        processor.shortcut.exactWidth(50);
+      }).toThrow(ImageProcessError);
+    });
+
+    it('should reject multiple lazy shortcut resize calls', () => {
+      const processor = processImage(testImageUrl).shortcut.scale(1.5);
+
+      expect(() => {
+        processor.shortcut.exactWidth(50);
+      }).toThrow(ImageProcessError);
     });
   });
 

@@ -28,6 +28,7 @@ export interface IShortcutBuilder<TState extends ProcessorState> {
    * Cover mode resizing (fills the box completely with image, may crop parts)
    */
   coverBox(
+    this: IShortcutBuilder<BeforeResize>,
     width: number,
     height: number,
     options?: Partial<Omit<CoverConfig, 'fit' | 'width' | 'height'>>
@@ -37,6 +38,7 @@ export interface IShortcutBuilder<TState extends ProcessorState> {
    * Contain mode resizing (fits entire image within box, creates padding)
    */
   containBox(
+    this: IShortcutBuilder<BeforeResize>,
     width: number,
     height: number,
     options?: Partial<Omit<ContainConfig, 'fit' | 'width' | 'height'>>
@@ -45,22 +47,31 @@ export interface IShortcutBuilder<TState extends ProcessorState> {
   /**
    * Fill mode resizing (stretches/compresses image to exact size, ignores aspect ratio)
    */
-  exactSize(width: number, height: number): IImageProcessor<AfterResize>;
+  exactSize(this: IShortcutBuilder<BeforeResize>, width: number, height: number): IImageProcessor<AfterResize>;
 
   /**
    * Maximum width limit (shrink only, no enlargement)
    */
-  maxWidth(width: number, options?: Partial<Omit<MaxFitConfig, 'fit' | 'width'>>): IImageProcessor<AfterResize>;
+  maxWidth(
+    this: IShortcutBuilder<BeforeResize>,
+    width: number,
+    options?: Partial<Omit<MaxFitConfig, 'fit' | 'width'>>
+  ): IImageProcessor<AfterResize>;
 
   /**
    * Maximum height limit (shrink only, no enlargement)
    */
-  maxHeight(height: number, options?: Partial<Omit<MaxFitConfig, 'fit' | 'height'>>): IImageProcessor<AfterResize>;
+  maxHeight(
+    this: IShortcutBuilder<BeforeResize>,
+    height: number,
+    options?: Partial<Omit<MaxFitConfig, 'fit' | 'height'>>
+  ): IImageProcessor<AfterResize>;
 
   /**
    * Maximum size limit (shrink only, no enlargement)
    */
   maxSize(
+    this: IShortcutBuilder<BeforeResize>,
     size: { width: number; height: number },
     options?: Partial<Omit<MaxFitConfig, 'fit' | 'width' | 'height'>>
   ): IImageProcessor<AfterResize>;
@@ -68,17 +79,26 @@ export interface IShortcutBuilder<TState extends ProcessorState> {
   /**
    * Minimum width guarantee (enlarge only, no shrinking)
    */
-  minWidth(width: number, options?: Partial<Omit<MinFitConfig, 'fit' | 'width'>>): IImageProcessor<AfterResize>;
+  minWidth(
+    this: IShortcutBuilder<BeforeResize>,
+    width: number,
+    options?: Partial<Omit<MinFitConfig, 'fit' | 'width'>>
+  ): IImageProcessor<AfterResize>;
 
   /**
    * Minimum height guarantee (enlarge only, no shrinking)
    */
-  minHeight(height: number, options?: Partial<Omit<MinFitConfig, 'fit' | 'height'>>): IImageProcessor<AfterResize>;
+  minHeight(
+    this: IShortcutBuilder<BeforeResize>,
+    height: number,
+    options?: Partial<Omit<MinFitConfig, 'fit' | 'height'>>
+  ): IImageProcessor<AfterResize>;
 
   /**
    * Minimum size guarantee (enlarge only, no shrinking)
    */
   minSize(
+    this: IShortcutBuilder<BeforeResize>,
     size: { width: number; height: number },
     options?: Partial<Omit<MinFitConfig, 'fit' | 'width' | 'height'>>
   ): IImageProcessor<AfterResize>;
@@ -95,37 +115,37 @@ export interface IShortcutBuilder<TState extends ProcessorState> {
    * Resize to exact width (height maintains aspect ratio)
    * @since v3.0.0
    */
-  exactWidth(width: number): IImageProcessor<AfterResize>;
+  exactWidth(this: IShortcutBuilder<BeforeResize>, width: number): IImageProcessor<AfterResize>;
 
   /**
    * Resize to exact height (width maintains aspect ratio)
    * @since v3.0.0
    */
-  exactHeight(height: number): IImageProcessor<AfterResize>;
+  exactHeight(this: IShortcutBuilder<BeforeResize>, height: number): IImageProcessor<AfterResize>;
 
   /**
    * Scale-based resizing
    * @since v3.0.0
    */
-  scale(scale: ScaleOperation): IImageProcessor<AfterResize>;
+  scale(this: IShortcutBuilder<BeforeResize>, scale: ScaleOperation): IImageProcessor<AfterResize>;
 
   /**
    * X-axis scale resizing (convenience method)
    * @since v3.0.0
    */
-  scaleX(scaleX: number): IImageProcessor<AfterResize>;
+  scaleX(this: IShortcutBuilder<BeforeResize>, scaleX: number): IImageProcessor<AfterResize>;
 
   /**
    * Y-axis scale resizing (convenience method)
    * @since v3.0.0
    */
-  scaleY(scaleY: number): IImageProcessor<AfterResize>;
+  scaleY(this: IShortcutBuilder<BeforeResize>, scaleY: number): IImageProcessor<AfterResize>;
 
   /**
    * Individual X/Y-axis scale resizing (convenience method)
    * @since v3.0.0
    */
-  scaleXY(scaleX: number, scaleY: number): IImageProcessor<AfterResize>;
+  scaleXY(this: IShortcutBuilder<BeforeResize>, scaleX: number, scaleY: number): IImageProcessor<AfterResize>;
 }
 
 /**
@@ -149,7 +169,7 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * Image resizing
    * Transitions to AfterResize state after resize() call.
    */
-  resize(config: ResizeConfig): IImageProcessor<AfterResize>;
+  resize(this: IImageProcessor<BeforeResize>, config: ResizeConfig): IImageProcessor<AfterResize>;
 
   /**
    * Image blur effect

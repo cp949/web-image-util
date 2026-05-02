@@ -58,19 +58,37 @@ export class LazyRenderPipeline {
     this.sourceImage = sourceImage;
   }
 
-  /**
-   * Add resize operation (calculation only, no rendering)
-   * Constraint to allow only one call
-   */
-  addResize(config: ResizeConfig): this {
-    if (this.resizeCalled) {
+  private assertResizeNotCalled(): void {
+    if (this.resizeCalled || this.pendingResizeOperation) {
       throw new ImageProcessError(
         'resize() can only be called once. If you need multiple resizes, use a new processImage()',
         'MULTIPLE_RESIZE_NOT_ALLOWED'
       );
     }
-    this.resizeCalled = true;
+  }
+
+  private appendResize(config: ResizeConfig): void {
     this.operations.push({ type: 'resize', config });
+  }
+
+  private applyPendingResizeOperation(): void {
+    if (!this.pendingResizeOperation) {
+      return;
+    }
+
+    const resizeConfig = this.convertToResizeConfig(this.pendingResizeOperation);
+    this.appendResize(resizeConfig);
+    this.pendingResizeOperation = undefined;
+  }
+
+  /**
+   * Add resize operation (calculation only, no rendering)
+   * Constraint to allow only one call
+   */
+  addResize(config: ResizeConfig): this {
+    this.assertResizeNotCalled();
+    this.resizeCalled = true;
+    this.appendResize(config);
     return this;
   }
 
@@ -93,6 +111,8 @@ export class LazyRenderPipeline {
    * @internal
    */
   _addResizeOperation(operation: ResizeOperation): void {
+    this.assertResizeNotCalled();
+    this.resizeCalled = true;
     this.pendingResizeOperation = operation;
   }
 
@@ -126,6 +146,7 @@ export class LazyRenderPipeline {
    */
   async toBlob(format: string = 'image/png', quality?: number): Promise<{ blob: Blob; metadata: ResultMetadata }> {
     const startTime = performance.now();
+    this.applyPendingResizeOperation();
     const canvas = this.renderOnce();
 
     return new Promise((resolve, reject) => {
@@ -170,11 +191,7 @@ export class LazyRenderPipeline {
     const startTime = performance.now();
 
     // 🎯 Philosophy implementation: Perform operations only at final output
-    if (this.pendingResizeOperation) {
-      const resizeConfig = this.convertToResizeConfig(this.pendingResizeOperation);
-      this.addResize(resizeConfig); // Utilize existing system
-      this.pendingResizeOperation = undefined; // Clean up after processing
-    }
+    this.applyPendingResizeOperation();
 
     const canvas = this.renderOnce();
 
