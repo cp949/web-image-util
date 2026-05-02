@@ -6,7 +6,8 @@ export default defineConfig({
     'src/advanced-index.ts',
     'src/utils/index.ts',
     'src/presets/index.ts',
-    'src/filters/plugins/index.ts'
+    'src/filters/plugins/index.ts',
+    'src/svg-sanitizer/index.ts'
   ],
   format: ['esm'],
   target: 'es2020',

@@ -38,6 +38,9 @@
     "test:types": "vitest --config vitest.wsl.config.ts tests/unit/types",
     "typecheck:wsl": "tsc --noEmit --project tsconfig.json"
   },
+  "dependencies": {
+    "dompurify": "^3.2.0"
+  },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^25.6.0",
@@ -77,6 +80,10 @@
     "./filters": {
       "import": "./dist/filters/plugins/index.js",
       "types": "./dist/filters/plugins/index.d.ts"
+    },
+    "./svg-sanitizer": {
+      "import": "./dist/svg-sanitizer/index.js",
+      "types": "./dist/svg-sanitizer/index.d.ts"
     }
   },
   "files": [
