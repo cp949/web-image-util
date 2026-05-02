@@ -319,7 +319,7 @@ export async function convertToDataURL(
     const imageElement = await convertToImageElement(source);
 
     // Direct conversion if no options (faster)
-    if (!options.format && !options.quality) {
+    if (!options.format && options.quality === undefined) {
       // Return as-is if already Data URL
       if (typeof source === 'string' && source.startsWith('data:')) {
         return source;
@@ -381,7 +381,7 @@ export async function convertToDataURLDetailed(
     const imageElement = await convertToImageElement(source);
 
     // Direct conversion if no options (faster)
-    if (!options.format && !options.quality) {
+    if (!options.format && options.quality === undefined) {
       // Return as-is if already Data URL
       if (typeof source === 'string' && source.startsWith('data:')) {
         return new DataURLResultImpl(source, imageElement.width, imageElement.height, Date.now() - startTime);
@@ -528,7 +528,7 @@ export async function convertToFileDetailed(
  */
 async function canvasToBlob(canvas: HTMLCanvasElement, options: OutputOptions): Promise<Blob> {
   const mimeType = formatToMimeType(options.format || 'png');
-  const quality = options.quality || 0.8;
+  const quality = options.quality ?? 0.8;
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -562,7 +562,7 @@ async function canvasToBlob(canvas: HTMLCanvasElement, options: OutputOptions): 
  */
 function canvasToDataURL(canvas: HTMLCanvasElement, options: OutputOptions): string {
   const mimeType = formatToMimeType(options.format || 'png');
-  const quality = options.quality || 0.8;
+  const quality = options.quality ?? 0.8;
 
   return canvas.toDataURL(mimeType, quality);
 }

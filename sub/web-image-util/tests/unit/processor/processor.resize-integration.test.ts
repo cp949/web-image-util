@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { processImage } from '../../../src/processor';
 import { ImageProcessError } from '../../../src/types';
 import type { ResizeConfig } from '../../../src/types/resize-config';
@@ -196,6 +196,19 @@ describe('Processor Resize Integration Tests', () => {
       expect(result.dataURL).toMatch(/^data:image\//);
       expect(result.width).toBe(200);
       expect(result.height).toBe(200);
+    });
+
+    it('should preserve explicit zero quality for Blob output', async () => {
+      const testBlob = await createTestImageBlob(400, 300, 'red');
+      const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;
+      const toBlobSpy = vi.spyOn(canvasPrototype, 'toBlob');
+
+      await processImage(testBlob)
+        .resize({ fit: 'cover', width: 200, height: 200 })
+        .toBlob({ format: 'jpeg', quality: 0 });
+
+      expect(toBlobSpy).toHaveBeenLastCalledWith(expect.any(Function), 'image/jpeg', 0);
+      toBlobSpy.mockRestore();
     });
   });
 

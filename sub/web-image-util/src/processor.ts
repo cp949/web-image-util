@@ -315,9 +315,9 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
     // Get optimal quality value from OPTIMAL_QUALITY_BY_FORMAT constant
     // Use default value for unsupported output formats like gif, svg
     if (format === 'gif' || format === 'svg') {
-      return this.options.defaultQuality || 0.8;
+      return this.options.defaultQuality ?? 0.8;
     }
-    return OPTIMAL_QUALITY_BY_FORMAT[format as OutputFormat] || this.options.defaultQuality || 0.8;
+    return OPTIMAL_QUALITY_BY_FORMAT[format as OutputFormat] ?? this.options.defaultQuality ?? 0.8;
   }
 
   /**
@@ -411,7 +411,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
     };
 
     // If user provided options but no quality, use format-optimized quality
-    if (options.format && !options.quality) {
+    if (options.format && options.quality === undefined) {
       outputOptions.quality = this.getOptimalQuality(options.format);
     }
 
