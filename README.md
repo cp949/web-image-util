@@ -17,6 +17,8 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 - 이미지 포맷 조회 API를 로컬 판정용 `getImageFormat()`과 네트워크 응답 스니핑용 `fetchImageFormat()`으로 명확히 분리합니다.
 - `fetchImageFormat()`을 루트와 `@cp949/web-image-util/utils` 공개 API, README, `llm.txt` 생성 목록에 반영합니다.
 - URL/body 스니핑 경계와 Content-Type fallback 테스트를 보강해 배포 전 검증 범위를 넓힙니다.
+- 공개 타입의 `any`를 줄여 출력 포맷, 파일명, 필터 플러그인 파라미터를 더 엄격하게 검사합니다. 느슨한 `any`에 기대던 소비자 코드는 새 타입 오류가 발생할 수 있습니다.
+- `FilterPlugin`/`FilterOptions`의 기본 파라미터 타입은 `unknown`이며, 기본 필터 모음은 범용 호출용으로 넓게 노출하고 개별 플러그인 export에서 정밀한 파라미터 타입을 보존합니다.
 
 ### 2.0.31
 

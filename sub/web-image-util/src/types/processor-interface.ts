@@ -5,7 +5,15 @@
  * Separated interfaces only to prevent circular dependencies.
  */
 
-import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './index';
+import type {
+  BlurOptions,
+  OutputFormat,
+  OutputOptions,
+  ResultBlob,
+  ResultCanvas,
+  ResultDataURL,
+  ResultFile,
+} from './index';
 import type { AfterResize, BeforeResize, ProcessorState } from './processor-state';
 import type { ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig, ResizeConfig } from './resize-config';
 import type { ResizeOperation, ScaleOperation } from './shortcut-types';
@@ -181,16 +189,19 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * Convert to Blob
    */
   toBlob(options?: OutputOptions): Promise<ResultBlob>;
+  toBlob(format: OutputFormat): Promise<ResultBlob>;
 
   /**
    * Convert to Data URL
    */
   toDataURL(options?: OutputOptions): Promise<ResultDataURL>;
+  toDataURL(format: OutputFormat): Promise<ResultDataURL>;
 
   /**
    * Convert to File object
    */
   toFile(filename: string, options?: OutputOptions): Promise<ResultFile>;
+  toFile(filename: string, format: OutputFormat): Promise<ResultFile>;
 
   /**
    * Convert to Canvas

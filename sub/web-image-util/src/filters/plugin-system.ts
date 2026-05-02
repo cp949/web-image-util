@@ -9,7 +9,7 @@ import { debugLog, productionLog } from '../utils/debug';
  *
  * @template TParams 필터 파라미터 타입
  */
-export interface FilterPlugin<TParams = any> {
+export interface FilterPlugin<TParams = unknown> {
   /** 고유한 필터 이름 */
   readonly name: string;
 
@@ -47,7 +47,7 @@ export interface FilterPlugin<TParams = any> {
   /**
    * 다른 필터와 결합 최적화가 가능한지 판단한다.
    */
-  canOptimizeWith?(otherFilter: FilterPlugin): boolean;
+  canOptimizeWith?(otherFilter: FilterPlugin<unknown>): boolean;
 }
 
 /**
@@ -71,7 +71,7 @@ export interface FilterValidationResult {
 }
 
 /** 필터 적용 시 사용하는 옵션이다. */
-export interface FilterOptions<TParams = any> {
+export interface FilterOptions<TParams = unknown> {
   name: string;
   params: TParams;
   blend?: BlendMode;
@@ -480,7 +480,7 @@ export const filterManager = FilterPluginManager.getInstance();
  * @description Register new filter plugin to global filter manager.
  * @param plugin Filter plugin to register
  */
-export function registerFilter(plugin: FilterPlugin<any>): void {
+export function registerFilter<TParams>(plugin: FilterPlugin<TParams>): void {
   filterManager.register(plugin);
 }
 

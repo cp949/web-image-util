@@ -6,8 +6,8 @@
  */
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { FilterPluginManager } from '../../../src/filters/plugin-system';
-import { filterManager, initializeFilterSystem } from '../../../src/filters/plugins/index';
+import { FilterPluginManager, filterManager } from '../../../src/filters/plugin-system';
+import { initializeFilterSystem } from '../../../src/filters/plugins/index';
 
 describe('필터 초기화 부작용 제거', () => {
   // 각 테스트 후 전역 상태 정리

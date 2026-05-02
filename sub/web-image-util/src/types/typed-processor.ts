@@ -5,7 +5,16 @@
  * prevent incorrect usage at compile time.
  */
 
-import type { BlurOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from '../types';
+import type {
+  BlurOptions,
+  ImageSource,
+  OutputFormat,
+  OutputOptions,
+  ResultBlob,
+  ResultCanvas,
+  ResultDataURL,
+  ResultFile,
+} from '../types';
 import type { IShortcutBuilder } from './processor-interface';
 import type { AfterResize, BeforeResize, ProcessorState } from './processor-state';
 import type { ResizeConfig } from './resize-config';
@@ -57,8 +66,8 @@ export interface TypedImageProcessor<TState extends ProcessorState = BeforeResiz
   /**
    * Return result as Blob
    */
-  toBlob(options?: any): Promise<ResultBlob>;
-  toBlob(format?: string): Promise<ResultBlob>;
+  toBlob(options?: OutputOptions): Promise<ResultBlob>;
+  toBlob(format: OutputFormat): Promise<ResultBlob>;
 
   /**
    * Return result as Canvas
@@ -68,14 +77,14 @@ export interface TypedImageProcessor<TState extends ProcessorState = BeforeResiz
   /**
    * Return result as Data URL
    */
-  toDataURL(options?: any): Promise<ResultDataURL>;
-  toDataURL(format?: string): Promise<ResultDataURL>;
+  toDataURL(options?: OutputOptions): Promise<ResultDataURL>;
+  toDataURL(format: OutputFormat): Promise<ResultDataURL>;
 
   /**
    * Return result as File
    */
-  toFile(filename?: string, options?: any): Promise<ResultFile>;
-  toFile(filename?: string, format?: string): Promise<ResultFile>;
+  toFile(filename: string, options?: OutputOptions): Promise<ResultFile>;
+  toFile(filename: string, format: OutputFormat): Promise<ResultFile>;
 }
 
 /**
@@ -91,7 +100,7 @@ export type ResizedProcessor = TypedImageProcessor<AfterResize>;
 /**
  * Processor factory function type
  */
-export type ProcessorFactory = (source: any) => InitialProcessor;
+export type ProcessorFactory = (source: ImageSource) => InitialProcessor;
 
 /**
  * Type utility: Check current state

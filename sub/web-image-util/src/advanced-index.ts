@@ -27,6 +27,7 @@
  * ```
  */
 
+import type { FilterCategory, FilterOptions, FilterPlugin, FilterValidationResult } from './filters/plugin-system';
 import { getMissingFilterNames } from './filters/plugin-system';
 import { ImageProcessError } from './types';
 
@@ -69,7 +70,6 @@ export {
 } from './core/smart-format';
 export type {
   BlendMode,
-  FilterCategory,
   FilterChain,
   FilterOptions,
   FilterPlugin,
@@ -79,25 +79,21 @@ export type {
 export {
   applyFilter,
   applyFilterChain,
+  FilterCategory,
   // 플러그인 매니저
   filterManager,
   getAvailableFilters,
   registerFilter,
 } from './filters/plugin-system';
-// 기본 필터 플러그인
-export {
-  AllFilterPlugins,
-  BlurFilterPlugins,
-  ColorFilterPlugins,
-  EffectFilterPlugins,
-  initializeFilterSystem,
-  registerDefaultFilters,
-} from './filters/plugins';
+// 기본 필터 플러그인 (개별 플러그인, 카테고리별 컬렉션, AllFilterPlugins, 초기화 함수를 포함)
+export * from './filters/plugins';
 
 // ===== 고급 기능 =====
 
 // 필터 시스템은 플러그인 아키텍처를 사용한다.
 // 사용 예: filterManager.applyFilter(imageData, { name: 'brightness', params: { value: 10 } })
+
+export type AdvancedFilterOption<TParams = unknown> = Pick<FilterOptions<TParams>, 'name' | 'params'>;
 
 export type { ImageFormat } from './base/format-detector';
 // 포맷 관련 기능
@@ -128,7 +124,7 @@ export async function createAdvancedThumbnail(
     format?: 'auto' | 'webp' | 'jpeg' | 'png';
     quality?: 'fast' | 'balanced' | 'high';
     watermark?: string;
-    filters?: Array<{ name: string; params: any }>;
+    filters?: AdvancedFilterOption[];
   } = {}
 ): Promise<{ canvas: HTMLCanvasElement; blob: Blob; stats: any }> {
   assertAdvancedFiltersInitialized(options.filters);
@@ -193,7 +189,7 @@ export async function optimizeForSocial(
   platform: 'instagram' | 'twitter' | 'facebook' | 'linkedin',
   options: {
     watermark?: string;
-    filters?: Array<{ name: string; params: any }>;
+    filters?: AdvancedFilterOption[];
   } = {}
 ): Promise<{ canvas: HTMLCanvasElement; blob: Blob }> {
   assertAdvancedFiltersInitialized(options.filters);
@@ -255,7 +251,7 @@ export async function optimizeForSocial(
  * @param filters 편의 API에 전달된 필터 목록
  * @throws {ImageProcessError} 초기화되지 않은 필터가 있으면
  */
-function assertAdvancedFiltersInitialized(filters?: Array<{ name: string; params: any }>): void {
+function assertAdvancedFiltersInitialized(filters?: AdvancedFilterOption[]): void {
   if (!filters || filters.length === 0) {
     return;
   }
@@ -350,11 +346,11 @@ export function getAdvancedFeatureInfo() {
 export function createFilterPlugin<TParams>(config: {
   name: string;
   description: string;
-  category: any;
+  category: FilterCategory;
   defaultParams: TParams;
   apply: (imageData: ImageData, params: TParams) => ImageData;
-  validate: (params: TParams) => any;
-}): any {
+  validate: (params: TParams) => FilterValidationResult;
+}): FilterPlugin<TParams> {
   return {
     ...config,
     preview: config.apply, // Default to same as full application
