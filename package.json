@@ -45,6 +45,13 @@
     "tsup": "^8.5.1",
     "turbo": "^2.9.6",
     "typescript": "^6.0.2",
+    "vite": "7.3.2",
     "vitest": "^4.1.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "8.5.13",
+      "vite": "7.3.2"
+    }
   }
 }

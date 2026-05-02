@@ -84,9 +84,6 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 
-# pnpm lock file
-pnpm-lock.yaml
-
 # Turbo
 .turbo/
 
