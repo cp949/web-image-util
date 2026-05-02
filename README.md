@@ -86,7 +86,18 @@ pnpm test
 pnpm test:coverage
 pnpm ci
 pnpm dev
+pnpm publish:npm
 ```
+
+## 배포
+
+npm 배포는 루트에서 다음 스크립트로 실행합니다.
+
+```bash
+pnpm publish:npm
+```
+
+이 스크립트는 `@cp949/web-image-util` 패키지를 빌드한 뒤 `npm publish --access=public`을 실행합니다.
 
 ## 문서
 
