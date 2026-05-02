@@ -9,9 +9,14 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 [![npm version](https://img.shields.io/npm/v/@cp949/web-image-util)](https://www.npmjs.com/package/@cp949/web-image-util)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-현재 배포 준비 버전: `2.0.30`
+현재 배포 준비 버전: `2.0.31`
 
 ## 배포 메모
+
+### 2.0.31
+
+- README와 CLAUDE 프로젝트 가이드의 배포 준비 버전을 최신 패치 버전으로 정리합니다.
+- 배포 전 패키징 검증 대상에 `llm.txt`와 새 유틸리티 API 문서가 포함되도록 릴리스 문서를 유지합니다.
 
 ### 2.0.30
 
