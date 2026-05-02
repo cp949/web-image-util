@@ -1,0 +1,117 @@
+/**
+ * Data URL 판정과 Blob 변환을 담당하는 유틸리티 모음이다.
+ */
+
+const INVALID_DATA_URL_MESSAGE = '유효한 Data URL이 아닙니다';
+
+type ParsedDataURL = {
+  isBase64: boolean;
+  mimeType: string;
+  payload: string;
+};
+
+/**
+ * 값이 Data URL 문자열인지 판정한다.
+ *
+ * @param value 판정할 값
+ * @returns Data URL 문자열이면 true
+ */
+export function isDataURLString(value: unknown): value is string {
+  return typeof value === 'string' && value.trimStart().startsWith('data:');
+}
+
+/**
+ * Blob을 base64 Data URL 문자열로 변환한다.
+ *
+ * @param blob 변환할 Blob
+ * @returns Data URL 문자열
+ */
+export async function blobToDataURL(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Blob to Data URL conversion failed'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Data URL을 Blob으로 변환한다.
+ *
+ * @param dataURL 변환할 Data URL 문자열
+ * @returns 디코딩된 Blob
+ */
+export function dataURLToBlob(dataURL: string): Blob {
+  const parsed = parseDataURL(dataURL);
+  const bytes = decodeDataURLPayload(parsed);
+
+  return new Blob([toArrayBuffer(bytes)], { type: parsed.mimeType });
+}
+
+/**
+ * Data URL payload를 디코딩한 원본 바이트 크기로 추정한다.
+ *
+ * @param dataURL 크기를 계산할 Data URL 문자열
+ * @returns 디코딩된 payload의 바이트 수
+ */
+export function estimateDataURLSize(dataURL: string): number {
+  const parsed = parseDataURL(dataURL);
+
+  return decodeDataURLPayload(parsed).byteLength;
+}
+
+function parseDataURL(dataURL: string): ParsedDataURL {
+  const normalizedDataURL = dataURL.trimStart();
+
+  if (!isDataURLString(normalizedDataURL)) {
+    throwInvalidDataURL();
+  }
+
+  const commaIndex = normalizedDataURL.indexOf(',');
+
+  if (commaIndex === -1) {
+    throwInvalidDataURL();
+  }
+
+  const metadata = normalizedDataURL.slice('data:'.length, commaIndex);
+  const payload = normalizedDataURL.slice(commaIndex + 1);
+  const metadataParts = metadata.split(';').filter(Boolean);
+  const mimeType = metadataParts[0]?.includes('/') ? metadataParts[0] : '';
+  const isBase64 = metadataParts.some((part) => part.toLowerCase() === 'base64');
+
+  return { isBase64, mimeType, payload };
+}
+
+function decodeDataURLPayload({ isBase64, payload }: ParsedDataURL): Uint8Array {
+  try {
+    if (isBase64) {
+      return decodeBase64Payload(payload);
+    }
+
+    return new TextEncoder().encode(decodeURIComponent(payload));
+  } catch {
+    throwInvalidDataURL();
+  }
+}
+
+function decodeBase64Payload(payload: string): Uint8Array {
+  const binary = atob(payload);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes;
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+
+  return buffer;
+}
+
+function throwInvalidDataURL(): never {
+  throw new Error(INVALID_DATA_URL_MESSAGE);
+}

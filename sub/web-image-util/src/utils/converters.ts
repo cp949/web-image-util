@@ -36,7 +36,10 @@ import { convertToImageElement } from '../core/source-converter';
 import type { ImageSource, OutputFormat, OutputOptions, ResultBlob, ResultDataURL, ResultFile } from '../types';
 import { ImageProcessError } from '../types';
 import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from '../types/result-implementations';
+import { blobToDataURL, isDataURLString } from './data-url';
 import { createImageElement } from './image-element';
+
+export { isDataURLString } from './data-url';
 
 /**
  * Basic Blob conversion options
@@ -440,16 +443,6 @@ export async function convertToDataURLDetailed(
 }
 
 /**
- * 값이 Data URL 문자열인지 판정한다.
- *
- * @param value 판정할 값
- * @returns Data URL 문자열이면 true
- */
-export function isDataURLString(value: unknown): value is string {
-  return typeof value === 'string' && value.trimStart().startsWith('data:');
-}
-
-/**
  * 입력을 Blob으로 보장한다.
  *
  * @description 이미 Blob이고 출력 옵션 적용이 필요 없으면 원본을 반환한다.
@@ -825,18 +818,6 @@ function canvasToDataURL(canvas: HTMLCanvasElement, options: OutputOptions): str
   const quality = options.quality ?? 0.8;
 
   return canvas.toDataURL(mimeType, quality);
-}
-
-/**
- * Convert Blob to Data URL
- */
-async function blobToDataURL(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error('Blob to Data URL conversion failed'));
-    reader.readAsDataURL(blob);
-  });
 }
 
 /**

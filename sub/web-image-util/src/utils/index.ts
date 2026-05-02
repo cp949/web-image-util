@@ -80,8 +80,13 @@ export {
   ensureDataURLDetailed,
   ensureFile,
   ensureFileDetailed,
-  isDataURLString,
 } from './converters';
+/**
+ * Data URL 변환 유틸리티
+ *
+ * @description Blob과 Data URL 사이의 순수 변환 및 크기 추정 기능
+ */
+export { blobToDataURL, dataURLToBlob, estimateDataURLSize, isDataURLString } from './data-url';
 /**
  * Image format conversion functions
  *

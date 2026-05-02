@@ -163,6 +163,7 @@ export type {
 } from './utils';
 // Utility functions
 export {
+  blobToDataURL,
   convertToBlob,
   convertToBlobDetailed,
   convertToDataURL,
@@ -170,12 +171,14 @@ export {
   convertToElement,
   convertToFile,
   convertToFileDetailed,
+  dataURLToBlob,
   ensureBlob,
   ensureBlobDetailed,
   ensureDataURL,
   ensureDataURLDetailed,
   ensureFile,
   ensureFileDetailed,
+  estimateDataURLSize,
   formatToMimeType,
   getImageDimensions,
   getImageInfo,
