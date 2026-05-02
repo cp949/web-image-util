@@ -149,6 +149,8 @@ export type {
   ConvertToDataURLOptions,
   ConvertToFileDetailedOptions,
   ConvertToFileOptions,
+  ImageDimensions,
+  ImageInfo,
 } from './utils';
 // Utility functions
 export {
@@ -159,6 +161,8 @@ export {
   convertToElement,
   convertToFile,
   convertToFileDetailed,
+  getImageDimensions,
+  getImageInfo,
 } from './utils';
 // 브라우저 기능 감지 — 단일 구현 소스를 재노출한다
 export {

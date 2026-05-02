@@ -70,6 +70,12 @@ export {
   convertToFileDetailed,
 } from './converters';
 /**
+ * 이미지 정보 조회 유틸리티
+ *
+ * @description processImage와 같은 입력 타입에서 치수와 포맷 정보를 가볍게 조회한다
+ */
+export { getImageDimensions, getImageInfo, type ImageDimensions, type ImageInfo } from './image-info';
+/**
  * SVG compatibility and browser normalization functions
  *
  * @description Compatibility enhancement and standardization features

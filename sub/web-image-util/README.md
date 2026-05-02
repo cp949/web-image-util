@@ -738,6 +738,15 @@ class ImageProcessError extends Error {
 ### 유틸리티 함수
 
 ```typescript
+// 이미지 치수/포맷 조회
+import { getImageDimensions, getImageInfo } from '@cp949/web-image-util/utils';
+
+const dimensions = await getImageDimensions(file);
+console.log(dimensions.width, dimensions.height);
+
+const info = await getImageInfo(file);
+console.log(info.width, info.height, info.format);
+
 // SVG 호환성 보정
 import { enhanceBrowserCompatibility, enhanceSvgForBrowser } from '@cp949/web-image-util/utils';
 
