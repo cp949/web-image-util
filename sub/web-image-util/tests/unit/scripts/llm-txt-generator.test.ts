@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 // 런타임 생성 스크립트를 직접 검증하기 위해 선언 파일 없이 .mjs 모듈을 불러온다.
@@ -40,5 +42,19 @@ declare function createThumbnail(source: ImageSource, options: ThumbnailOptions)
     expect(output).toContain('## Anti-Patterns');
     expect(output).not.toContain('@cp949/web-image-util: function');
     expect(output).not.toContain('Build-generated `llm.txt`');
+  });
+
+  test('utils 핵심 API 목록에 이미지 정보와 SVG 감지 유틸을 포함한다', () => {
+    const script = readFileSync(join(process.cwd(), 'scripts/generate-llm-txt.mjs'), 'utf8');
+
+    expect(script).toContain("'getImageDimensions'");
+    expect(script).toContain("'getImageInfo'");
+    expect(script).toContain("'isInlineSvg'");
+  });
+
+  test('해시가 붙은 dist 선언 파일명을 하드코딩하지 않는다', () => {
+    const script = readFileSync(join(process.cwd(), 'scripts/generate-llm-txt.mjs'), 'utf8');
+
+    expect(script).not.toContain('dist/svg-sanitizer-');
   });
 });
