@@ -155,8 +155,11 @@ export type {
   EnsureDataURLOptions,
   EnsureFileDetailedOptions,
   EnsureFileOptions,
+  ImageFormatOrUnknown,
   ImageDimensions,
   ImageInfo,
+  OutputFilenameOptions,
+  ResolveOutputFormatOptions,
 } from './utils';
 // Utility functions
 export {
@@ -173,10 +176,17 @@ export {
   ensureDataURLDetailed,
   ensureFile,
   ensureFileDetailed,
+  formatToMimeType,
   getImageDimensions,
   getImageInfo,
+  getOutputFilename,
+  isSupportedOutputFormat,
   isDataURLString,
   isInlineSvg,
+  mimeTypeToImageFormat,
+  mimeTypeToOutputFormat,
+  replaceImageExtension,
+  resolveOutputFormat,
 } from './utils';
 // 브라우저 기능 감지 — 단일 구현 소스를 재노출한다
 export {
