@@ -50,6 +50,23 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 npm install @cp949/web-image-util
 ```
 
+## 개발/검증 명령
+
+이 저장소에서 직접 개발할 때는 루트 workspace 기준 명령을 우선 사용합니다.
+
+```bash
+pnpm build        # 메인 패키지 빌드
+pnpm test         # 패키지 테스트 실행
+pnpm test:node    # Node.js/happy-dom 테스트
+pnpm test:browser # Vitest Browser 기반 브라우저 테스트
+pnpm verify:ci    # 타입체크 + lint + format:check + test:node + test:contract
+pnpm publish:npm  # 패키지 빌드 후 npm publish
+```
+
+커버리지는 별도 점검 경로입니다. `pnpm --filter @cp949/web-image-util test:coverage`로 실행하며, 현재 루트 `verify:ci` 필수 gate에는 포함되어 있지 않습니다.
+
+버전 업데이트와 배포 전에는 루트 [Release Checklist](../../docs/release-checklist.md)를 따라 README, CLAUDE 문서, package scripts, `llm.txt`가 실제 코드와 같은지 확인합니다.
+
 ## 🚀 빠른 시작
 
 ### 기본 예제
