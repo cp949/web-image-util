@@ -223,6 +223,31 @@ describe('브라우저 스모크 테스트', () => {
     expect(rightPixel?.[1]).toBeGreaterThan(rightPixel?.[2] ?? 255);
   });
 
+  it('SVG Data URL 입력을 실제 브라우저에서 렌더링한다', async () => {
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="80" height="40" viewBox="0 0 80 40">
+        <rect width="80" height="40" fill="#ffffff"/>
+        <rect x="0" y="0" width="40" height="40" fill="#f97316"/>
+        <rect x="40" y="0" width="40" height="40" fill="#0ea5e9"/>
+      </svg>
+    `;
+    const dataURL = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+
+    const result = await processImage(dataURL).resize({ fit: 'fill', width: 40, height: 20 }).toCanvas();
+    const context = result.canvas.getContext('2d');
+    expect(context).not.toBeNull();
+
+    const leftPixel = context?.getImageData(10, 10, 1, 1).data;
+    const rightPixel = context?.getImageData(30, 10, 1, 1).data;
+
+    expect(result.width).toBe(40);
+    expect(result.height).toBe(20);
+    expect(leftPixel?.[0]).toBeGreaterThan(leftPixel?.[2] ?? 255);
+    expect(leftPixel?.[1]).toBeGreaterThan(leftPixel?.[2] ?? 255);
+    expect(rightPixel?.[2]).toBeGreaterThan(rightPixel?.[0] ?? 255);
+    expect(rightPixel?.[2]).toBeGreaterThan(rightPixel?.[1] ?? 255);
+  });
+
   it('브라우저 출력 MIME과 결과 format metadata를 일치시킨다', async () => {
     const result = await processImage(createFixtureCanvas())
       .resize({ fit: 'fill', width: 16, height: 16 })
