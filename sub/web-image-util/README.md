@@ -434,6 +434,8 @@ const instagramPost = await createSocialImage(photo, {
 ```typescript
 import {
   dataURLToBlob,
+  detectImageSourceInfo,
+  detectImageStringSourceType,
   getImageAspectRatio,
   getImageFormat,
   getImageOrientation,
@@ -448,6 +450,12 @@ const ratio = await getImageAspectRatio(file);
 const filename = getOutputFilename('photo.png', { format: 'webp' });
 const outputFormat = resolveOutputFormat('avif', { supported: ['webp', 'png'] });
 const blob = dataURLToBlob('data:image/png;base64,...');
+
+const sourceType = detectImageStringSourceType('/assets/icon.svg?version=1');
+// sourceType: 'svg-path'
+
+const sourceInfo = await detectImageSourceInfo(file);
+// sourceInfo.type: 'blob' | 'svg-blob' 등
 ```
 
 투명도 확인이 필요하면 `hasTransparency`, Data URL 변환에는 `blobToDataURL`, 문자열 기반 용량 추정에는 `estimateDataURLSize`를 사용할 수 있습니다.

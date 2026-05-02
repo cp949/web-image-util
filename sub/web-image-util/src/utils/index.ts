@@ -127,6 +127,22 @@ export {
  */
 export { hasTransparency, type TransparencyOptions } from './image-inspection';
 /**
+ * 이미지 소스 판정 유틸리티
+ *
+ * @description processImage에 넘길 소스의 입력 형태와 문자열 소스의 세부 유형을 판정한다
+ */
+export {
+  type DetectImageSourceInfoOptions,
+  detectImageSourceInfo,
+  detectImageSourceType,
+  detectImageStringSourceInfo,
+  detectImageStringSourceType,
+  type ImageSourceInfo,
+  type ImageSourceType,
+  type ImageStringSourceInfo,
+  type ImageStringSourceType,
+} from './source-utils';
+/**
  * SVG compatibility and browser normalization functions
  *
  * @description Compatibility enhancement and standardization features
