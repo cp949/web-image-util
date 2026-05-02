@@ -46,6 +46,12 @@ describe('converter quality options', () => {
     await expect(ensureDataURL(dataURL, { format: 'jpeg', quality: 0.95 })).resolves.toBe(dataURL);
   });
 
+  it('should preserve leading-whitespace Data URL strings in legacy conversion', async () => {
+    const dataURL = '  data:image/png;base64,already-data-url';
+
+    await expect(convertToDataURL(dataURL)).resolves.toBe(dataURL);
+  });
+
   it('should keep convertToBlob Blob passthrough behavior even when only quality is provided', async () => {
     const blob = new Blob(['mock'], { type: 'image/jpeg' });
     const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;

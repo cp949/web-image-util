@@ -360,7 +360,7 @@ export async function convertToDataURL(
     // Direct conversion if no options (faster)
     if (!options.format && options.quality === undefined) {
       // Return as-is if already Data URL
-      if (typeof source === 'string' && source.startsWith('data:')) {
+      if (isDataURLString(source)) {
         return source;
       }
     }
@@ -424,7 +424,7 @@ export async function convertToDataURLDetailed(
     // Direct conversion if no options (faster)
     if (!options.format && options.quality === undefined) {
       // Return as-is if already Data URL
-      if (typeof source === 'string' && source.startsWith('data:')) {
+      if (isDataURLString(source)) {
         return new DataURLResultImpl(source, imageElement.width, imageElement.height, Date.now() - startTime);
       }
     }
