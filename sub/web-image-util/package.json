@@ -30,7 +30,7 @@
     "test:security:coverage": "vitest --coverage --config tests/security/vitest.config.ts",
     "test:ui": "vitest --ui",
     "test:browser": "vitest --browser",
-    "test:coverage": "vitest --coverage",
+    "test:coverage": "vitest run --coverage",
     "test:coverage:contract": "vitest --coverage --config vitest.contract.config.ts",
     "test:wsl": "vitest --config vitest.wsl.config.ts",
     "test:wsl:ui": "vitest --config vitest.wsl.config.ts --ui",
