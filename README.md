@@ -136,6 +136,7 @@ pnpm publish:npm
 - [예제 앱 문서](apps/exam/README.md)
 - [릴리스 체크리스트](docs/release-checklist.md)
 - [llm.txt 운영 가이드](docs/llm-txt.md)
+- [설계 결정 기록](docs/design/README.md)
 - [프로젝트 가이드](CLAUDE.md)
 
 ## 라이선스
