@@ -399,8 +399,6 @@ export interface ProcessorOptions {
   defaultQuality?: number;
   /** 기본 배경색 (기본값: 투명 검정) */
   defaultBackground?: ResizeBackground;
-  /** 기본 출력 포맷 (기본값: 'auto') */
-  defaultFormat?: OutputFormat | 'auto';
   /** 타임아웃 (밀리초, 기본값: 30초) — 하위 호환용으로 유지 */
   timeout?: number;
   /** fetch 요청 타임아웃 (밀리초, 기본값: 30_000). 0이면 타임아웃 없음. */
