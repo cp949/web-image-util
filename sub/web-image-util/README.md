@@ -86,6 +86,7 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
 - [리사이즈 가이드](#-리사이즈-가이드)
 - [Shortcut API](#-shortcut-api)
 - [편의 함수(프리셋)](#-편의-함수프리셋)
+- [유틸리티 함수](#-유틸리티-함수)
 - [입력/출력 타입](#-입력출력-타입)
 - [SVG 처리](#-svg-처리)
 - [API 레퍼런스](#-api-레퍼런스)
@@ -423,6 +424,33 @@ const instagramPost = await createSocialImage(photo, {
 
 // 지원 플랫폼: 'twitter', 'facebook', 'instagram', 'linkedin', 'youtube', 'pinterest'
 ```
+
+---
+
+## 🧰 유틸리티 함수
+
+이미지 메타데이터 확인, 출력 파일명 계산, Data URL 변환 같은 보조 작업은 `utils` 엔트리에서 사용할 수 있습니다.
+
+```typescript
+import {
+  dataURLToBlob,
+  getImageAspectRatio,
+  getImageFormat,
+  getImageOrientation,
+  getOutputFilename,
+  resolveOutputFormat,
+} from '@cp949/web-image-util/utils';
+
+const format = await getImageFormat(file);
+const orientation = await getImageOrientation(file);
+const ratio = await getImageAspectRatio(file);
+
+const filename = getOutputFilename('photo.png', { format: 'webp' });
+const outputFormat = resolveOutputFormat('avif', { supported: ['webp', 'png'] });
+const blob = dataURLToBlob('data:image/png;base64,...');
+```
+
+투명도 확인이 필요하면 `hasTransparency`, Data URL 변환에는 `blobToDataURL`, 문자열 기반 용량 추정에는 `estimateDataURLSize`를 사용할 수 있습니다.
 
 ---
 
