@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { hasTransparency } from '../../../src/utils';
 
@@ -41,5 +41,39 @@ describe('image inspection utilities', () => {
     mockAlphaData(ctx, [255, 255]);
 
     await expect(hasTransparency(canvas)).resolves.toBe(false);
+  });
+
+  it('크기가 없는 캔버스는 픽셀을 읽지 않고 false를 반환한다', async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 0;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context is required');
+    const getImageDataSpy = vi.spyOn(ctx, 'getImageData');
+
+    await expect(hasTransparency(canvas)).resolves.toBe(false);
+    expect(getImageDataSpy).not.toHaveBeenCalled();
+  });
+
+  it('sampleStep으로 건너뛴 투명 픽셀은 검사하지 않는다', async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 3;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context is required');
+    mockAlphaData(ctx, [255, 0, 255]);
+
+    await expect(hasTransparency(canvas, { sampleStep: 2 })).resolves.toBe(false);
+  });
+
+  it('유효하지 않은 sampleStep은 1로 보정해 투명 픽셀을 검사한다', async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context is required');
+    mockAlphaData(ctx, [255, 0]);
+
+    await expect(hasTransparency(canvas, { sampleStep: Number.NaN })).resolves.toBe(true);
   });
 });

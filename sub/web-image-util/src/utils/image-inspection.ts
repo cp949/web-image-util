@@ -61,8 +61,13 @@ export async function hasTransparency(
   options?: TransparencyOptions
 ): Promise<boolean> {
   const canvas = source instanceof HTMLCanvasElement ? source : await imageSourceToCanvas(source);
-  const context = getCanvasContext(canvas);
   const { width, height } = canvas;
+
+  if (width <= 0 || height <= 0) {
+    return false;
+  }
+
+  const context = getCanvasContext(canvas);
   const imageData = context.getImageData(0, 0, width, height);
   const sampleStep = normalizeSampleStep(options?.sampleStep);
 
