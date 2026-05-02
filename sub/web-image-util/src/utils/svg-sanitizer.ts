@@ -1,16 +1,22 @@
 /**
- * SVG 새니타이저 모듈
+ * SVG 경량 방어층(lightweight safety guard) 모듈
  *
  * @description
- * SVG 문자열에서 XSS 및 캔버스 오염을 유발할 수 있는 위험 요소를 제거한다.
+ * `processImage()` 내부에서 사용하는 경량 방어층이다. 이미지 로딩/Canvas 변환
+ * 파이프라인을 보호하기 위해 SVG 문자열에서 명백히 위험한 패턴을 제거한다.
  * 브라우저와 Node.js(happy-dom) 양쪽에서 동작하도록 정규식 기반으로 구현한다.
+ *
+ * 이 모듈은 DOMPurify 같은 전용 strict sanitizer를 대체하지 않는다.
+ * 신뢰할 수 없는 SVG를 다루는 경우 호출처에서 `@cp949/web-image-util/svg-sanitizer`의
+ * `sanitizeSvgStrict()`를 먼저 호출하거나 자체 sanitizer로 사전 정제한다.
  *
  * **제거 대상:**
  * - `<script>` 요소 (자가 닫힘 포함)
  * - `<foreignObject>` 요소 (중첩 콘텐츠 포함)
  * - `on*` 이벤트 핸들러 속성 (onload, onclick 등)
  * - `href`, `xlink:href`, `src` 속성 중 외부 URL을 가리키는 것
- *   (http://, https://, data:, javascript: — 프래그먼트 참조 `#id`는 보존)
+ *   (http://, https://, //..., data:, javascript: — 프래그먼트 참조 `#id`는 보존)
+ * - `style` 속성 또는 `<style>` 본문 안의 외부 `url(...)` 참조
  */
 
 /**
@@ -116,7 +122,7 @@ function isExternalHref(value: string): boolean {
 /**
  * CSS `url()` 함수 내 값이 외부 참조인지 판정한다.
  *
- * 외부 참조로 간주하는 스킴: http://, https://, data:, javascript://
+ * 외부 참조로 간주하는 스킴: http://, https://, //..., data:, javascript:
  * 프래그먼트 참조(#...) 는 내부 참조이므로 허용한다.
  *
  * @param urlValue `url()` 안쪽의 따옴표가 제거된 문자열
@@ -162,7 +168,7 @@ function stripExternalCssUrls(css: string): string {
 const SVG_START_TAG_PATTERN = /<([a-z][a-z0-9:-]*)(\b(?:[^"'<>]|"[^"]*"|'[^']*')*)(\/?)>/gi;
 
 /**
- * SVG 문자열에서 위험 요소와 속성을 제거한 안전한 SVG 문자열을 반환한다.
+ * SVG 문자열에서 위험 요소와 속성을 제거하는 경량 방어층(lightweight safety guard).
  *
  * **처리 순서:**
  * 1. `<script>...</script>` 또는 `<script ... />` 제거
@@ -175,9 +181,11 @@ const SVG_START_TAG_PATTERN = /<([a-z][a-z0-9:-]*)(\b(?:[^"'<>]|"[^"]*"|'[^']*')
  * @returns 위험 요소가 제거된 SVG 문자열
  *
  * @remarks
- * 이 함수는 정규식 기반으로 알려진 위협 벡터의 일부를 제거한다.
- * 완전한 보안 솔루션이 아니며, 신뢰할 수 없는 SVG를 완전히 안전하게 만들어주지 않는다.
- * 실제 프로덕션 환경에서는 DOMPurify 등 전용 라이브러리와 병행 사용을 권장한다.
+ * 이 함수는 정규식 기반의 경량 방어층이며, 완전한 보안 sanitizer가 아니다.
+ * `processImage()`의 SVG 로딩 파이프라인을 보호하기 위해 알려진 위협 벡터의
+ * 일부를 제거할 뿐이며, 신뢰할 수 없는 SVG를 완전히 안전하게 만들어주지 않는다.
+ * 신뢰할 수 없는 SVG를 다루는 경우 `@cp949/web-image-util/svg-sanitizer`의
+ * DOMPurify 기반 `sanitizeSvgStrict()`를 먼저 호출하는 것을 권장한다.
  */
 export function sanitizeSvg(svgString: string): string {
   let result = svgString;

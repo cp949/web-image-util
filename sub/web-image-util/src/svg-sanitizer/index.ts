@@ -33,7 +33,7 @@ type DOMPurifyInstance = ReturnType<typeof DOMPurify>;
  * strict SVG sanitizer 옵션
  */
 export interface StrictSvgSanitizerOptions {
-  /** 최대 SVG 입력 바이트 크기 (UTF-8 기준). 기본값: 10_485_760 (10MB) */
+  /** 최대 SVG 입력 바이트 크기 (UTF-8 기준). 기본값: 10_485_760 (10MiB) */
   maxBytes?: number;
   /** 최대 노드 개수. 기본값: 10_000 */
   maxNodeCount?: number;
@@ -61,7 +61,7 @@ export interface SanitizeSvgStrictDetailedResult {
   warnings: string[];
 }
 
-/** 기본 최대 입력 바이트 크기 (10MB) */
+/** 기본 최대 입력 바이트 크기 (10MiB) */
 const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
 
 /** 기본 최대 노드 개수 */
@@ -669,7 +669,7 @@ function sanitizeSvgStrictCore(
  * DOMPurify 기반 strict SVG sanitizer.
  *
  * 신뢰할 수 없는 SVG에서 XSS 벡터, 위험 태그, 위험 속성, 외부 리소스 참조를
- * 제거한 안전한 SVG 문자열을 반환한다.
+ * 정의된 strict 정책에 따라 제거한 SVG 문자열을 반환한다.
  *
  * @param svg 입력 SVG 문자열
  * @param options sanitizer 옵션

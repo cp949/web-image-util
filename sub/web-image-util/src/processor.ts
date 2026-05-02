@@ -886,11 +886,21 @@ export function processImage(source: ImageSource, options?: ProcessorOptions): I
 /**
  * 개발 및 디버깅 전용 SVG escape hatch.
  *
- * - SVG sanitize를 건너뛴다.
- * - SVG 브라우저 호환성 보정을 건너뛴다.
- * - 신뢰할 수 없는 SVG에는 사용하지 않는다.
- * - 브라우저의 CORS 및 tainted canvas 보안은 그대로 적용된다.
- * - SVG 크기 제한(10MiB)은 이 경로에서도 유지된다.
+ * `processImage()`가 적용하는 경량 방어층(lightweight safety guard)과 브라우저
+ * 호환성 보정을 모두 건너뛰고 원본 SVG를 그대로 로딩한다. 렌더링 문제를 재현하거나
+ * 디버깅하는 등 신뢰할 수 있는 입력에 대해서만 사용한다.
+ *
+ * 위험 경고:
+ * - 신뢰할 수 없는 SVG에는 절대 사용하지 않는다.
+ * - `<script>`, `on*` 이벤트 핸들러, 외부 `href`/`xlink:href`/`src`,
+ *   외부 CSS `url(...)`이 모두 그대로 통과되어 XSS와 canvas taint 위험이 발생한다.
+ * - 신뢰할 수 없는 입력을 다뤄야 한다면 이 함수 대신
+ *   `@cp949/web-image-util/svg-sanitizer`의 `sanitizeSvgStrict()`로 먼저 정제한 결과를
+ *   `processImage()`에 넘긴다.
+ *
+ * 적용되는 제약:
+ * - 브라우저의 CORS 및 tainted canvas 보안은 이 경로에서도 그대로 적용된다.
+ * - SVG 크기 제한(약 10MiB)은 이 경로에서도 유지된다.
  */
 export function unsafe_processImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {
   return new ImageProcessor<BeforeResize>(source, {

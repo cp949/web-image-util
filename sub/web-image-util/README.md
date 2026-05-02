@@ -675,15 +675,20 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 
 ### 보안 정책
 
-라이브러리는 SVG 입력에 대해 **sanitize 우선 + 애매하면 fail-closed** 정책을 기본으로 적용합니다.
+이 라이브러리는 **브라우저용 이미지 처리기**이며, 범용 SVG 보안 필터가 아닙니다. SVG 처리에는 책임이 다른 두 개의 경로가 있습니다.
 
-이 라이브러리의 목적은 범용 SVG 보안 필터가 아니라 **브라우저용 이미지 처리기**입니다. 따라서 SVG에 대해서는 명백히 위험한 패턴을 우선 차단하고, 안전성을 확신하기 어려운 입력은 거부하는 방향을 기본 정책으로 삼습니다.
+| 경로 | API | 역할 |
+| --- | --- | --- |
+| 기본 처리 | `processImage()` | 이미지 로딩/Canvas 변환 파이프라인을 보호하는 **경량 방어층(lightweight safety guard)** |
+| 명시적 사전 정제 | `sanitizeSvgStrict()` (`@cp949/web-image-util/svg-sanitizer`) | DOMPurify 기반 **고강도 strict sanitizer**. 호출자가 명시적으로 실행 |
 
-복잡한 SVG를 최대한 보존하면서 세밀한 보안 처리가 필요한 요구사항은 이 라이브러리의 기본 책임 범위를 벗어납니다. 그런 경우에는 애플리케이션에서 전용 SVG sanitizer를 먼저 적용한 뒤, 처리된 결과를 `@cp949/web-image-util`에 전달하는 방식을 권장합니다.
+`processImage()`의 기본 SVG 처리는 명백히 위험한 패턴을 제거하는 경량 방어층이며, 보안팀 수준의 sanitizer 역할을 약속하지 않습니다. 신뢰할 수 없는 SVG를 다루는 서비스는 `processImage()` 호출 전에 `sanitizeSvgStrict()`를 직접 호출하거나, 자체 sanitizer로 사전 정제한 결과를 넘기는 방식을 권장합니다.
 
-#### 정제 후 허용되는 경우
+이미 호출처에서 별도 sanitizing을 수행한 사용자는 기존처럼 `processImage()`만 사용해도 됩니다.
 
-다음과 같은 명백한 위험 요소는 가능한 범위에서 제거한 뒤 렌더링을 계속 시도합니다.
+#### 기본 경로 — `processImage()`의 경량 방어층
+
+`processImage()`는 SVG 입력을 이미지로 로딩하고 Canvas로 변환하는 과정에서 다음과 같은 명백한 위험 요소를 가능한 범위에서 제거한 뒤 렌더링을 계속 시도합니다.
 
 - `<script>` 태그
 - `onload`, `onclick` 등 `on*` 이벤트 핸들러 속성
@@ -692,8 +697,6 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 
 > 문자 참조(`jav&#x61;script:` 등)로 우회하려는 값도 정규화 후 같은 정책으로 처리합니다.
 
-#### 명시적으로 차단되는 경우
-
 다음 조건을 만족하는 SVG는 `ImageProcessError(code: 'INVALID_SOURCE')`로 거부됩니다.
 
 - sanitize 이후에도 로컬 경로(`./`, `../`, `/`) 참조가 남는 SVG
@@ -701,6 +704,8 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 - 원격 `.svg` URL을 `fetch`하는 과정에서 네트워크 오류가 발생한 경우
 - `image/svg+xml`, `text/xml`, `application/xml` 응답 본문을 안전하게 읽거나 검증할 수 없는 경우
 - `allowedProtocols`에서 `data:`를 제외했는데 SVG Data URL을 전달한 경우
+
+이 경량 방어층은 정규식 기반이며, DOMPurify 같은 전용 sanitizer가 다루는 모든 우회 기법을 커버하지 않습니다. 보안 요구가 높은 서비스는 아래 strict sanitizer 또는 자체 sanitizer로 사전 정제하세요.
 
 #### 크기 제한
 
@@ -718,7 +723,7 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 
 이 규칙은 문자열 입력뿐 아니라 SVG 내용을 담은 `Blob`, `ArrayBuffer`, `Uint8Array` 입력에도 동일하게 적용됩니다. 버퍼 계열 입력도 가능한 경우 SVG로 판별해 같은 보안 검사와 크기 제한 경로를 사용합니다.
 
-#### 허용되는 경우
+#### 기본 경로에서 허용되는 경우
 
 - 순수 도형, 경로, 텍스트만 포함하는 자기완결형(self-contained) SVG
 - `allowedProtocols`에 `data:`가 포함되어 있고 외부 리소스를 참조하지 않는 인라인 Data URI SVG
@@ -726,29 +731,117 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 
 > **참고**: 비-SVG URL(`image.png` 등)은 `fetch`가 실패해도 직접 로드 방식으로 허용됩니다.
 
-#### 개발/디버깅 전용 escape hatch
+#### 명시적 사전 정제 — `sanitizeSvgStrict()`
 
-`processImage()`는 안전한 기본 경로입니다. SVG 입력에서 sanitize와 브라우저 호환성 보정을 건너뛰고 원본 SVG를 그대로 로딩해야 하는 경우(예: 렌더링 문제 디버깅)에만 `unsafe_processImage()`를 사용하세요.
+신뢰할 수 없는 SVG를 다루는 경우 `@cp949/web-image-util/svg-sanitizer` 서브패스의 `sanitizeSvgStrict()`를 `processImage()` 호출 전에 명시적으로 실행하세요. DOMPurify 기반의 strict sanitizer로, 이 라이브러리의 경량 방어층과는 책임이 다릅니다.
+
+```typescript
+import { processImage } from '@cp949/web-image-util';
+import { sanitizeSvgStrict } from '@cp949/web-image-util/svg-sanitizer';
+
+// 신뢰할 수 없는 SVG는 먼저 strict sanitizer로 정제한다.
+const safeSvg = sanitizeSvgStrict(untrustedSvg);
+
+const result = await processImage(safeSvg)
+  .resize({ fit: 'cover', width: 300, height: 300 })
+  .toBlob();
+```
+
+정제 결과와 함께 어떤 정책이 적용되었는지 확인하려면 `sanitizeSvgStrictDetailed()`를 사용합니다. 반환값은 `{ svg, warnings }` 형태입니다.
+
+```typescript
+import { processImage } from '@cp949/web-image-util';
+import { sanitizeSvgStrictDetailed } from '@cp949/web-image-util/svg-sanitizer';
+
+const { svg, warnings } = sanitizeSvgStrictDetailed(untrustedSvg, {
+  removeMetadata: true,
+});
+
+if (warnings.length > 0) {
+  // 어떤 정책이 적용되었는지 로깅한다.
+  console.warn('strict sanitizer warnings:', warnings);
+}
+
+const result = await processImage(svg)
+  .resize({ fit: 'cover', width: 300, height: 300 })
+  .toBlob();
+```
+
+> `warnings`는 라이브러리가 사전/후처리한 항목(DOCTYPE/ENTITY 제거, 사용자 설정 충돌, 위험 속성/참조 제거 등)을 담습니다. DOMPurify 내부의 `removed` 배열은 노출하지 않습니다.
+
+##### `StrictSvgSanitizerOptions`
+
+| 옵션 | 기본값 | 설명 |
+| --- | --- | --- |
+| `maxBytes` | `10_485_760` (10MiB) | 입력 SVG의 최대 바이트 크기(UTF-8 기준). 초과 시 예외를 던집니다. |
+| `maxNodeCount` | `10_000` | 정제 후 자손 Element 개수 상한. DoS 방어용이며 초과 시 예외를 던집니다. |
+| `removeMetadata` | `false` | `<metadata>` 요소를 제거할지 여부. |
+| `domPurifyConfig` | `undefined` | DOMPurify에 추가로 전달할 설정. 라이브러리가 강제하는 보안 핵심 옵션은 무시되며 `warnings`에 기록됩니다. |
+
+##### strict 정책을 완화하는 DOMPurify 설정은 무시됩니다
+
+`domPurifyConfig`로 전달하더라도 라이브러리가 강제하는 strict 정책을 우회할 수 없습니다. 다음과 같은 설정은 무시되고 `warnings`에 기록됩니다.
+
+- `ALLOWED_TAGS`, `ALLOWED_ATTR`
+- `ADD_TAGS`, `ADD_ATTR`, `ADD_DATA_URI_TAGS`, `ADD_URI_SAFE_ATTR`
+- `ALLOW_UNKNOWN_PROTOCOLS`, `ALLOWED_URI_REGEXP`, `CUSTOM_ELEMENT_HANDLING`
+- `USE_PROFILES`, `SAFE_FOR_TEMPLATES`, `SAFE_FOR_XML`, `WHOLE_DOCUMENT`
+- `RETURN_DOM`, `RETURN_DOM_FRAGMENT`, `RETURN_TRUSTED_TYPE`, `IN_PLACE`, `KEEP_CONTENT`
+
+`FORBID_TAGS`와 `FORBID_ATTR`는 사용자 값과 라이브러리 강제 값(`script`, `foreignObject`, `on*`)이 union 머지됩니다.
+
+##### strict sanitizer가 다루지 않는 항목
+
+DOMPurify 기반이라도 만능은 아닙니다. 1차 구현 범위에는 다음 항목이 **포함되지 않습니다**.
+
+- 중첩 깊이 제한
+- 비정상적으로 큰 `viewBox` 또는 좌표값 제한
+- SMIL 무한 애니메이션 정밀 분석
+- `<use>`, `<filter>`, `<pattern>` 순환 참조 감지
+- 접근성 자동 보정
+- SVGO 수준의 최적화
+- 다크모드, RTL, Retina 같은 표시 품질 보정
+
+보안 요구가 높은 서비스는 앱/보안팀 정책에 맞는 DOMPurify config와 추가 검토(예: 위 항목에 대한 자체 검사)를 별도로 적용하세요.
+
+##### DOMPurify 보안 업데이트 통제
+
+이 라이브러리는 `dompurify`를 직접 dependency로 포함합니다. DOMPurify의 보안 업데이트가 발표될 경우, 패키지 매니저의 override 기능으로 사용 버전을 직접 통제할 수 있습니다. 예를 들어 pnpm은 루트 `package.json`에서 다음과 같이 지정합니다.
+
+```jsonc
+{
+  "pnpm": {
+    "overrides": {
+      "dompurify": "^3.x.y"
+    }
+  }
+}
+```
+
+npm은 `overrides`, yarn은 `resolutions`로 같은 효과를 낼 수 있습니다.
+
+#### 개발/디버깅 전용 escape hatch — `unsafe_processImage()`
+
+`processImage()`는 **경량 방어층이 적용되는 기본 경로**입니다. SVG 입력에서 경량 방어층과 브라우저 호환성 보정을 모두 건너뛰고 원본 SVG를 그대로 로딩해야 하는 경우(예: 렌더링 문제 디버깅)에 한해 `unsafe_processImage()`를 사용합니다.
 
 ```typescript
 import { processImage, unsafe_processImage } from '@cp949/web-image-util';
 
-// 기본 권장 경로 — sanitize와 호환성 보정이 자동으로 적용된다.
+// 기본 경로 — 경량 방어층과 호환성 보정이 자동으로 적용된다.
 const safe = await processImage(svgXml)
   .resize({ fit: 'cover', width: 200, height: 200 })
   .toBlob();
 
-// 개발/디버깅 전용 — sanitize와 호환성 보정을 건너뛴다.
+// 개발/디버깅 전용 — 경량 방어층과 호환성 보정을 모두 건너뛴다.
 const debugOnly = await unsafe_processImage(svgXml)
   .resize({ fit: 'cover', width: 200, height: 200 })
   .toBlob();
 ```
 
-> `unsafe_processImage()`는 개발/디버깅 전용이다.
-> SVG 보안 필터링과 브라우저 호환성 보정을 건너뛴다.
-> 다만 SVG 크기 제한과 브라우저의 기본 보안 제약(CORS, tainted canvas)은 그대로 적용된다.
-> 신뢰할 수 없는 입력에는 사용하지 않는다.
-> 브라우저의 CORS 및 canvas 보안 제약은 그대로 적용된다.
+> `unsafe_processImage()`는 개발/디버깅 전용입니다.
+> 신뢰할 수 없는 SVG에는 절대 사용하지 마세요. `<script>`, `on*` 핸들러, 외부 리소스 참조가 모두 그대로 통과되어 XSS와 canvas taint 위험이 있습니다.
+> 신뢰할 수 없는 입력을 다뤄야 한다면 `unsafe_processImage()` 대신 `sanitizeSvgStrict()`로 먼저 정제한 결과를 `processImage()`에 넘기세요.
+> 브라우저의 CORS와 tainted canvas 보안은 이 경로에서도 그대로 적용되며, SVG 크기 제한(약 10MiB)도 유지됩니다.
 
 ---
 
