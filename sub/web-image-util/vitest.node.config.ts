@@ -13,9 +13,15 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     globals: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.d.ts', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
+    },
     testTimeout: 30000,
     hookTimeout: 10000,
     retry: 1,
-    reporter: 'verbose',
+    reporters: ['verbose'],
   },
 });

@@ -21,7 +21,7 @@ export default defineConfig({
     // 계약 테스트는 항상 존재해야 한다 — include 글롭이 비면 실패시켜
     // 설정 오류나 디렉터리 이동을 즉시 감지한다.
     passWithNoTests: false,
-    reporter: ['verbose', 'json'],
+    reporters: ['verbose', 'json'],
     outputFile: {
       json: 'test-results/contract-test-results.json',
     },
