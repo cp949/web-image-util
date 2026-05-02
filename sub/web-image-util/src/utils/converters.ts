@@ -33,10 +33,11 @@
  */
 
 import { convertToImageElement } from '../core/source-converter';
-import type { ImageSource, OutputFormat, OutputOptions, ResultBlob, ResultDataURL, ResultFile } from '../types';
+import type { ImageSource, OutputOptions, ResultBlob, ResultDataURL, ResultFile } from '../types';
 import { ImageProcessError } from '../types';
 import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from '../types/result-implementations';
 import { blobToDataURL, isDataURLString } from './data-url';
+import { formatToMimeType, getOutputFilename, mimeTypeToOutputFormat } from './format-utils';
 import { createImageElement } from './image-element';
 
 export { isDataURLString } from './data-url';
@@ -697,10 +698,7 @@ export async function convertToFile(
     const blob = await convertToBlob(source, options);
 
     // Automatic filename extension correction
-    let finalFilename = filename;
-    if (options.autoExtension !== false && options.format) {
-      finalFilename = adjustFileExtension(filename, options.format);
-    }
+    const finalFilename = getFinalFilename(filename, options);
 
     // Create File object
     return new File([blob], finalFilename, {
@@ -751,10 +749,7 @@ export async function convertToFileDetailed(
     const blobResult = await convertToBlobDetailed(source, options);
 
     // Automatic filename extension correction
-    let finalFilename = filename;
-    if (options.autoExtension !== false && options.format) {
-      finalFilename = adjustFileExtension(filename, options.format);
-    }
+    const finalFilename = getFinalFilename(filename, options);
 
     // Create File object
     const file = new File([blobResult.blob], finalFilename, {
@@ -939,59 +934,5 @@ function shouldReuseFile(file: File, filename: string, options: EnsureFileOption
  * 출력 옵션을 반영한 최종 파일명을 계산한다.
  */
 function getFinalFilename(filename: string, options: EnsureFileOptions): string {
-  if (options.autoExtension !== false && options.format) {
-    return adjustFileExtension(filename, options.format);
-  }
-
-  return filename;
-}
-
-/**
- * Convert format to MIME type
- */
-function formatToMimeType(format: string): string {
-  const mimeTypes: Record<string, string> = {
-    jpeg: 'image/jpeg',
-    jpg: 'image/jpeg',
-    png: 'image/png',
-    webp: 'image/webp',
-    avif: 'image/avif',
-    gif: 'image/gif',
-    bmp: 'image/bmp',
-    tiff: 'image/tiff',
-  };
-
-  return mimeTypes[format.toLowerCase()] || 'image/png';
-}
-
-/**
- * MIME 타입을 Canvas 출력 포맷으로 변환한다.
- */
-function mimeTypeToOutputFormat(mimeType: string): OutputFormat | undefined {
-  switch (mimeType.toLowerCase()) {
-    case 'image/jpeg':
-    case 'image/jpg':
-      return 'jpeg';
-    case 'image/png':
-      return 'png';
-    case 'image/webp':
-      return 'webp';
-    case 'image/avif':
-      return 'avif';
-    default:
-      return undefined;
-  }
-}
-
-/**
- * Adjust filename extension
- */
-function adjustFileExtension(filename: string, format: string): string {
-  const lastDotIndex = filename.lastIndexOf('.');
-  const nameWithoutExt = lastDotIndex > -1 ? filename.substring(0, lastDotIndex) : filename;
-
-  // Unify JPEG to jpg
-  const extension = format === 'jpeg' ? 'jpg' : format;
-
-  return `${nameWithoutExt}.${extension}`;
+  return getOutputFilename(filename, options);
 }

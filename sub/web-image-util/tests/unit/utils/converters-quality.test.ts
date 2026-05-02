@@ -126,7 +126,7 @@ describe('converter quality options', () => {
     expect(renamed).not.toBe(file);
     expect(renamed.name).toBe('renamed.png');
     expect(reencoded).not.toBe(file);
-    expect(reencoded.name).toBe('image.jpg');
+    expect(reencoded.name).toBe('image.jpeg');
     expect(reencoded.type).toBe('image/jpeg');
   });
 
@@ -141,5 +141,23 @@ describe('converter quality options', () => {
     expect(result.name).toBe('image.jpg');
     expect(result.type).toBe('image/jpeg');
     expect(toBlobSpy).toHaveBeenLastCalledWith(expect.any(Function), 'image/jpeg', 0.5);
+  });
+
+  it('should use shared filename utility when ensuring File output extension', async () => {
+    const blob = new Blob(['mock'], { type: 'image/png' });
+
+    const result = await ensureFile(blob, 'photo.png', { format: 'webp' });
+
+    expect(result.name).toBe('photo.webp');
+    expect(result.type).toBe('image/webp');
+  });
+
+  it('should keep original filename when autoExtension is false', async () => {
+    const blob = new Blob(['mock'], { type: 'image/png' });
+
+    const result = await ensureFile(blob, 'photo.png', { format: 'jpeg', autoExtension: false });
+
+    expect(result.name).toBe('photo.png');
+    expect(result.type).toBe('image/jpeg');
   });
 });
