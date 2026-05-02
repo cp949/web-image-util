@@ -9,9 +9,15 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 [![npm version](https://img.shields.io/npm/v/@cp949/web-image-util)](https://www.npmjs.com/package/@cp949/web-image-util)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-현재 배포 준비 버전: `2.0.29`
+현재 배포 준비 버전: `2.0.30`
 
 ## 배포 메모
+
+### 2.0.30
+
+- 이미지 포맷, Data URL, 이미지 정보, 투명도 검사 유틸리티를 공개 API와 문서에 정리합니다.
+- `detectImageSourceType()`, `detectImageSourceInfo()` 등 원격 로드 없이 입력 형태를 판정하는 소스 감지 유틸리티를 추가합니다.
+- `llm.txt` 생성 목록에 새 유틸리티 함수들을 등록해 LLM용 API 인덱스를 최신 상태로 유지합니다.
 
 ### 2.0.29
 
@@ -429,36 +435,53 @@ const instagramPost = await createSocialImage(photo, {
 
 ## 🧰 유틸리티 함수
 
-이미지 메타데이터 확인, 출력 파일명 계산, Data URL 변환 같은 보조 작업은 `utils` 엔트리에서 사용할 수 있습니다.
+이미지 메타데이터 확인, 출력 파일명 계산, Data URL 변환, 입력 소스 판정 같은 보조 작업은 `utils` 엔트리에서 사용할 수 있습니다.
 
 ```typescript
 import {
+  blobToDataURL,
   dataURLToBlob,
   detectImageSourceInfo,
+  detectImageSourceType,
+  detectImageStringSourceInfo,
   detectImageStringSourceType,
+  estimateDataURLSize,
+  formatToMimeType,
   getImageAspectRatio,
   getImageFormat,
   getImageOrientation,
   getOutputFilename,
+  hasTransparency,
+  mimeTypeToImageFormat,
   resolveOutputFormat,
 } from '@cp949/web-image-util/utils';
 
 const format = await getImageFormat(file);
 const orientation = await getImageOrientation(file);
 const ratio = await getImageAspectRatio(file);
+const transparent = await hasTransparency(file, { sampleStep: 4 });
 
 const filename = getOutputFilename('photo.png', { format: 'webp' });
 const outputFormat = resolveOutputFormat('avif', { supported: ['webp', 'png'] });
 const blob = dataURLToBlob('data:image/png;base64,...');
+const dataUrl = await blobToDataURL(blob);
+const size = estimateDataURLSize(dataUrl);
 
 const sourceType = detectImageStringSourceType('/assets/icon.svg?version=1');
 // sourceType: 'svg-path'
 
 const sourceInfo = await detectImageSourceInfo(file);
 // sourceInfo.type: 'blob' | 'svg-blob' 등
+
+const stringInfo = detectImageStringSourceInfo('data:image/webp;base64,...');
+// stringInfo.format: 'webp'
+
+const mimeType = formatToMimeType('webp');
+const mimeFormat = mimeTypeToImageFormat('image/png; charset=utf-8');
+const lightweightType = detectImageSourceType(file);
 ```
 
-투명도 확인이 필요하면 `hasTransparency`, Data URL 변환에는 `blobToDataURL`, 문자열 기반 용량 추정에는 `estimateDataURLSize`를 사용할 수 있습니다.
+컨버터 계열은 기존 `convertToBlob()`, `convertToDataURL()`, `convertToFile()`과 상세 결과를 반환하는 `convertToBlobDetailed()`, `convertToDataURLDetailed()`, `convertToFileDetailed()`을 제공합니다. Blob/Data URL/File을 그대로 재사용할 수 있는 경우에는 `ensureBlob()`, `ensureDataURL()`, `ensureFile()` 계열을 사용할 수 있습니다.
 
 ---
 
@@ -783,8 +806,14 @@ class ImageProcessError extends Error {
 ### 유틸리티 함수
 
 ```typescript
-// 이미지 치수/포맷 조회
-import { getImageDimensions, getImageInfo } from '@cp949/web-image-util/utils';
+// 이미지 치수/포맷/방향 조회
+import {
+  getImageAspectRatio,
+  getImageDimensions,
+  getImageFormat,
+  getImageInfo,
+  getImageOrientation,
+} from '@cp949/web-image-util/utils';
 
 const dimensions = await getImageDimensions(file);
 console.log(dimensions.width, dimensions.height);
@@ -792,12 +821,61 @@ console.log(dimensions.width, dimensions.height);
 const info = await getImageInfo(file);
 console.log(info.width, info.height, info.format);
 
+const format = await getImageFormat(file);
+const ratio = await getImageAspectRatio(file);
+const orientation = await getImageOrientation(file);
+
 // 인라인 SVG XML 문자열 판정
 import { isInlineSvg } from '@cp949/web-image-util/utils';
 
 if (isInlineSvg(input)) {
   console.log('SVG XML 문자열입니다');
 }
+
+// 이미지 입력 소스 판정
+import {
+  detectImageSourceInfo,
+  detectImageSourceType,
+  detectImageStringSourceInfo,
+  detectImageStringSourceType,
+} from '@cp949/web-image-util/utils';
+
+const sourceType = detectImageSourceType(file);
+const sourceInfo = await detectImageSourceInfo(file);
+const stringType = detectImageStringSourceType('/assets/photo.webp');
+const stringInfo = detectImageStringSourceInfo('data:image/png;base64,...');
+
+// Data URL 변환과 크기 추정
+import { blobToDataURL, dataURLToBlob, estimateDataURLSize, isDataURLString } from '@cp949/web-image-util/utils';
+
+const dataUrl = await blobToDataURL(file);
+const blob = dataURLToBlob(dataUrl);
+const size = estimateDataURLSize(dataUrl);
+const isDataUrl = isDataURLString(dataUrl);
+
+// 포맷/MIME/파일명 유틸리티
+import {
+  formatToMimeType,
+  getOutputFilename,
+  isSupportedOutputFormat,
+  mimeTypeToImageFormat,
+  mimeTypeToOutputFormat,
+  replaceImageExtension,
+  resolveOutputFormat,
+} from '@cp949/web-image-util/utils';
+
+const mimeType = formatToMimeType('webp');
+const imageFormat = mimeTypeToImageFormat('image/jpeg');
+const outputFormat = mimeTypeToOutputFormat('image/jpg');
+const canOutput = isSupportedOutputFormat('avif');
+const filename = getOutputFilename('photo.png', { format: 'webp' });
+const replaced = replaceImageExtension('photo.jpg?cache=1', 'png');
+const resolved = resolveOutputFormat('avif', { supported: ['webp', 'png'] });
+
+// 투명도 검사
+import { hasTransparency } from '@cp949/web-image-util/utils';
+
+const transparent = await hasTransparency(file, { sampleStep: 4 });
 
 // SVG 호환성 보정
 import { enhanceBrowserCompatibility, enhanceSvgForBrowser } from '@cp949/web-image-util/utils';
@@ -809,7 +887,21 @@ import { analyzeSvgComplexity } from '@cp949/web-image-util';
 import { extractSvgDimensions } from '@cp949/web-image-util';
 
 // 포맷 변환
-import { toBlob, toDataURL, toFile } from '@cp949/web-image-util/utils';
+import {
+  convertToBlob,
+  convertToBlobDetailed,
+  convertToDataURL,
+  convertToDataURLDetailed,
+  convertToElement,
+  convertToFile,
+  convertToFileDetailed,
+  ensureBlob,
+  ensureBlobDetailed,
+  ensureDataURL,
+  ensureDataURLDetailed,
+  ensureFile,
+  ensureFileDetailed,
+} from '@cp949/web-image-util/utils';
 ```
 
 ---

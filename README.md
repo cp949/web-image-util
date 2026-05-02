@@ -8,9 +8,14 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
-현재 배포 준비 버전: `2.0.29`
+현재 배포 준비 버전: `2.0.30`
 
 ## 배포 메모
+
+### 2.0.30
+
+- 이미지 포맷, Data URL, 이미지 정보, 투명도 검사, 소스 판정 유틸리티를 공개 API와 문서에 정리합니다.
+- `llm.txt` 생성 목록에 새 유틸리티 함수들을 등록해 배포 패키지의 LLM용 API 인덱스를 최신 상태로 유지합니다.
 
 ### 2.0.29
 
@@ -29,7 +34,8 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 - TypeScript 타입 지원
 - 브라우저 네이티브 API 기반 구현
 - SVG 입력 감지와 렌더링 지원
-- 이미지 치수와 입력 포맷 조회 유틸리티
+- 이미지 치수, 입력 포맷, 투명도, 소스 타입 조회 유틸리티
+- Data URL 변환과 출력 포맷/파일명 계산 유틸리티
 - WebP, JPEG, PNG 출력 지원
 - ES 모듈 기반 트리 셰이킹 지원
 
