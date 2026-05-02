@@ -10,9 +10,6 @@
   "author": "cp949 <cp949@naver.com>",
   "license": "MIT",
   "homepage": "https://github.com/cp949/web-image-util.git",
-  "engines": {
-    "node": ">=20.19.0"
-  },
   "scripts": {
     "build": "tsup && node ./scripts/generate-llm-txt.mjs",
     "build:watch": "tsup --watch",

@@ -52,6 +52,8 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 npm install @cp949/web-image-util
 ```
 
+이 패키지는 브라우저의 Canvas 2D API와 DOM API를 사용하는 ESM 라이브러리입니다. npm 소비자에게 별도의 Node.js engine 제약을 선언하지 않으며, 저장소 개발과 검증에 필요한 Node.js 버전은 루트 `package.json`의 `engines` 기준을 따릅니다.
+
 ## 개발/검증 명령
 
 이 저장소에서 직접 개발할 때는 루트 workspace 기준 명령을 우선 사용합니다.
