@@ -47,9 +47,17 @@ declare function createThumbnail(source: ImageSource, options: ThumbnailOptions)
   test('utils 핵심 API 목록에 이미지 정보와 SVG 감지 유틸을 포함한다', () => {
     const script = readFileSync(join(process.cwd(), 'scripts/generate-llm-txt.mjs'), 'utf8');
 
+    expect(script).toContain("'blobToDataURL'");
+    expect(script).toContain("'dataURLToBlob'");
+    expect(script).toContain("'detectImageSourceInfo'");
+    expect(script).toContain("'formatToMimeType'");
+    expect(script).toContain("'getImageAspectRatio'");
     expect(script).toContain("'getImageDimensions'");
+    expect(script).toContain("'getImageFormat'");
     expect(script).toContain("'getImageInfo'");
+    expect(script).toContain("'hasTransparency'");
     expect(script).toContain("'isInlineSvg'");
+    expect(script).toContain("'resolveOutputFormat'");
   });
 
   test('해시가 붙은 dist 선언 파일명을 하드코딩하지 않는다', () => {
