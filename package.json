@@ -29,7 +29,7 @@
     "test:browser": "turbo run test:browser",
     "test:coverage": "turbo run test:coverage",
     "verify:ci": "turbo run typecheck lint format:check test:node test:contract",
-    "verify:release": "pnpm verify:ci && pnpm --filter @cp949/web-image-util test:browser && cd sub/web-image-util && npm pack --dry-run",
+    "verify:release": "node ./scripts/verify-release.mjs",
     "dev": "turbo run build:watch",
     "dev:exam": "pnpm --filter @cp949/exam dev"
   },

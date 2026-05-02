@@ -18,7 +18,7 @@
 pnpm verify:release
 ```
 
-이 명령은 아래 순서로 실행한다.
+이 명령은 `scripts/verify-release.mjs`를 통해 아래 순서로 실행한다. 각 단계는 시작 로그를 출력하고, 실패하면 해당 명령의 exit code로 종료한다.
 
 - `pnpm verify:ci`
 - `pnpm --filter @cp949/web-image-util test:browser`
