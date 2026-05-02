@@ -62,6 +62,7 @@ async function main() {
         'ensureFile',
         'ensureFileDetailed',
         'estimateDataURLSize',
+        'fetchImageFormat',
         'formatToMimeType',
         'getImageAspectRatio',
         'getImageDimensions',

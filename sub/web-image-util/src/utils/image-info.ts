@@ -1,6 +1,7 @@
 import { convertToImageElement, detectSourceType } from '../core/source-converter';
 import type { ImageFormat, ImageSource } from '../types';
 import { ImageFormats } from '../types';
+import { isInlineSvg } from './svg-detection';
 import { extractSvgDimensions } from './svg-dimensions';
 
 /** 이미지 치수 정보다. */
@@ -15,8 +16,18 @@ export interface ImageInfo extends ImageDimensions {
   format: ImageFormat | 'unknown';
 }
 
+/** 네트워크 조회 기반 이미지 포맷 판정 옵션이다. */
+export interface FetchImageFormatOptions {
+  /** 응답 앞부분에서 읽을 최대 바이트 수다. 기본값은 4096이다. */
+  sniffBytes?: number;
+  /** fetch 요청에 전달할 추가 옵션이다. `method`는 본문 스니핑을 위해 항상 GET으로 고정된다. */
+  fetchOptions?: Omit<RequestInit, 'body' | 'method'>;
+}
+
 /** 이미지 치수 기준 방향 값이다. */
 export type ImageOrientation = 'landscape' | 'portrait' | 'square';
+
+const DEFAULT_FORMAT_SNIFF_BYTES = 4096;
 
 /** MIME 타입을 공개 이미지 포맷 값으로 변환한다. */
 function formatFromMimeType(mimeType: string): ImageInfo['format'] {
@@ -123,6 +134,101 @@ function formatFromBytes(bytes: Uint8Array): ImageInfo['format'] {
   }
 
   return 'unknown';
+}
+
+/** 문자열 소스가 fetch로 조회 가능한 형태인지 판정한다. */
+function canFetchStringSource(source: string): boolean {
+  const trimmed = source.trim();
+  const lower = trimmed.toLowerCase();
+
+  if (trimmed.length === 0 || lower.startsWith('data:') || isInlineSvg(trimmed)) {
+    return false;
+  }
+
+  return (
+    lower.startsWith('http://') ||
+    lower.startsWith('https://') ||
+    lower.startsWith('blob:') ||
+    trimmed.startsWith('//') ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('./') ||
+    trimmed.startsWith('../')
+  );
+}
+
+/** Response 본문 앞부분만 읽어 포맷 스니핑에 필요한 바이트를 반환한다. */
+async function readResponsePrefix(response: Response, bytes: number): Promise<Uint8Array> {
+  const byteLimit = Math.max(0, bytes);
+  if (byteLimit === 0) {
+    return new Uint8Array();
+  }
+
+  if (!response.body) {
+    const buffer = await response.arrayBuffer();
+    return new Uint8Array(buffer, 0, Math.min(buffer.byteLength, byteLimit));
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  let shouldCancelReader = false;
+
+  try {
+    while (totalBytes < byteLimit) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      const remainingBytes = byteLimit - totalBytes;
+      const chunk = value.byteLength > remainingBytes ? value.slice(0, remainingBytes) : value;
+      chunks.push(chunk);
+      totalBytes += chunk.byteLength;
+
+      if (value.byteLength > remainingBytes) {
+        shouldCancelReader = true;
+        break;
+      }
+    }
+
+    if (totalBytes >= byteLimit) {
+      shouldCancelReader = true;
+    }
+
+    if (shouldCancelReader) {
+      try {
+        await reader.cancel();
+      } catch {
+        // 스트림 정리 실패는 이미 읽은 prefix 기반 포맷 판정을 무효화하지 않는다.
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const prefix = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    prefix.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return prefix;
+}
+
+/** 응답 MIME과 본문 앞부분을 조합해 실제 이미지 포맷을 판정한다. */
+function formatFromResponsePrefix(bytes: Uint8Array, contentType: string): ImageInfo['format'] {
+  const byteFormat = formatFromBytes(bytes);
+  if (byteFormat !== 'unknown') {
+    return byteFormat;
+  }
+
+  const text = new TextDecoder().decode(bytes);
+  if (isInlineSvg(text)) {
+    return ImageFormats.SVG;
+  }
+
+  return formatFromMimeType(contentType);
 }
 
 /** 이미지 요소가 이미 가진 치수 값을 읽는다. */
@@ -252,6 +358,39 @@ export async function getImageDimensions(source: ImageSource): Promise<ImageDime
 /** 이미지 소스의 입력 포맷을 반환한다. */
 export async function getImageFormat(source: ImageSource): Promise<ImageInfo['format']> {
   return detectImageFormat(source);
+}
+
+/**
+ * URL 또는 브라우저 경로 응답을 fetch해 실제 이미지 포맷을 판정한다.
+ *
+ * @description 확장자 힌트는 사용하지 않고 응답의 Content-Type과 앞부분 바이트/SVG 텍스트 루트를 확인한다.
+ * fetch 대상이 아니거나 응답을 읽을 수 없거나 포맷을 알 수 없으면 `unknown`을 반환한다.
+ */
+export async function fetchImageFormat(
+  source: string,
+  options: FetchImageFormatOptions = {}
+): Promise<ImageInfo['format']> {
+  if (!canFetchStringSource(source)) {
+    return 'unknown';
+  }
+
+  try {
+    const response = await fetch(source.trim(), {
+      ...options.fetchOptions,
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      return 'unknown';
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    const prefix = await readResponsePrefix(response, options.sniffBytes ?? DEFAULT_FORMAT_SNIFF_BYTES);
+
+    return formatFromResponsePrefix(prefix, contentType);
+  } catch {
+    return 'unknown';
+  }
 }
 
 /** 이미지 소스의 가로/세로 비율을 반환한다. */

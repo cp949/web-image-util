@@ -8,9 +8,15 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
-현재 배포 준비 버전: `2.0.31`
+현재 배포 준비 버전: `2.0.32`
 
 ## 배포 메모
+
+### 2.0.32
+
+- 이미지 포맷 조회 API를 로컬 판정용 `getImageFormat()`과 네트워크 응답 스니핑용 `fetchImageFormat()`으로 명확히 분리합니다.
+- `fetchImageFormat()`을 루트와 `@cp949/web-image-util/utils` 공개 API, README, `llm.txt` 생성 목록에 반영합니다.
+- URL/body 스니핑 경계와 Content-Type fallback 테스트를 보강해 배포 전 검증 범위를 넓힙니다.
 
 ### 2.0.31
 

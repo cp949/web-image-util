@@ -1,6 +1,6 @@
 {
   "name": "@cp949/web-image-util",
-  "version": "2.0.31",
+  "version": "2.0.32",
   "description": "simple web image utils",
   "type": "module",
   "main": "./dist/index.js",

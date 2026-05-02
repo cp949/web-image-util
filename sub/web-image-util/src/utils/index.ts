@@ -111,6 +111,8 @@ export {
  * @description processImage와 같은 입력 타입에서 치수와 포맷 정보를 가볍게 조회한다
  */
 export {
+  type FetchImageFormatOptions,
+  fetchImageFormat,
   getImageAspectRatio,
   getImageDimensions,
   getImageFormat,

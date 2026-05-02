@@ -56,6 +56,8 @@ declare function createThumbnail(source: ImageSource, options: ThumbnailOptions)
     expect(script).toContain("'getImageFormat'");
     expect(script).toContain("'getImageInfo'");
     expect(script).toContain("'hasTransparency'");
+    expect(script).toContain("'fetchImageFormat'");
+    expect(script).not.toContain("'getOrFetchImageFormat'");
     expect(script).toContain("'isInlineSvg'");
     expect(script).toContain("'resolveOutputFormat'");
   });
