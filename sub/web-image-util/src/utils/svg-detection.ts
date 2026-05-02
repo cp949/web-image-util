@@ -23,25 +23,74 @@ function stripBom(value: string): string {
 function stripXmlPreambleAndNoise(head: string): string {
   let s = head.trimStart();
 
-  // XML 선언을 먼저 제거한다. 닫히지 않은 선언은 유효한 SVG 시작으로 보지 않는다.
-  if (s.startsWith('<?xml')) {
-    const end = s.indexOf('?>');
-    if (end < 0) return s;
-    s = s.slice(end + 2).trimStart();
-  }
-
-  // 연속된 주석이 있을 수 있어 반복해서 제거한다.
   while (true) {
-    const match = s.match(/^<!--[\s\S]*?-->\s*/);
-    if (!match) break;
-    s = s.slice(match[0].length);
+    // XML 선언을 제거한다. 닫히지 않은 선언은 유효한 SVG 시작으로 보지 않는다.
+    if (s.startsWith('<?xml')) {
+      const end = s.indexOf('?>');
+      if (end < 0) return s;
+      s = s.slice(end + 2).trimStart();
+      continue;
+    }
+
+    if (s.startsWith('<!--')) {
+      const end = s.indexOf('-->');
+      if (end < 0) return s;
+      s = s.slice(end + 3).trimStart();
+      continue;
+    }
+
+    if (/^<!DOCTYPE\b/i.test(s)) {
+      const end = findDoctypeEnd(s);
+      if (end < 0) return s;
+      s = s.slice(end + 1).trimStart();
+      continue;
+    }
+
+    return s;
+  }
+}
+
+/**
+ * DOCTYPE 선언의 실제 종료 위치를 찾는다.
+ *
+ * internal subset 안의 `>`나 인용부호 안 문자를 선언 종료로 오해하지 않게 한다.
+ *
+ * @param candidate DOCTYPE으로 시작하는 문자열
+ * @returns DOCTYPE 종료 `>`의 위치, 닫히지 않았으면 -1
+ */
+function findDoctypeEnd(candidate: string): number {
+  let bracketDepth = 0;
+  let quote: '"' | "'" | null = null;
+
+  for (let index = '<!DOCTYPE'.length; index < candidate.length; index += 1) {
+    const char = candidate[index];
+
+    if (quote) {
+      if (char === quote) quote = null;
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+
+    if (char === '[') {
+      bracketDepth += 1;
+      continue;
+    }
+
+    if (char === ']' && bracketDepth > 0) {
+      bracketDepth -= 1;
+      continue;
+    }
+
+    if (char === '>' && bracketDepth === 0) {
+      return index;
+    }
   }
 
-  // DOCTYPE 선언을 제거한다.
-  const doctype = s.match(/^<!DOCTYPE[^>]*>\s*/i);
-  if (doctype) s = s.slice(doctype[0].length);
-
-  return s.trimStart();
+  return -1;
 }
 
 /**

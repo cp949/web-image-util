@@ -23,6 +23,27 @@ describe('isInlineSvg', () => {
     expect(isInlineSvg(source)).toBe(true);
   });
 
+  it('DOCTYPE internal subset 안의 > 문자를 선언 종료로 오해하지 않는다', () => {
+    const source = [
+      '<!DOCTYPE svg [',
+      '<!ENTITY label "1 > 0">',
+      ']>',
+      '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+    ].join('\n');
+
+    expect(isInlineSvg(source)).toBe(true);
+  });
+
+  it('닫히지 않은 DOCTYPE 뒤의 SVG 문자열은 인라인 SVG로 판정하지 않는다', () => {
+    const source = [
+      '<!DOCTYPE svg [',
+      '<!ENTITY label "1 > 0">',
+      '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+    ].join('\n');
+
+    expect(isInlineSvg(source)).toBe(false);
+  });
+
   it('HTML 조각 내부에 중첩된 SVG는 인라인 SVG로 판정하지 않는다', () => {
     expect(isInlineSvg('<div><svg></svg></div>')).toBe(false);
   });
