@@ -83,6 +83,36 @@ export interface ConvertToFileDetailedOptions extends OutputOptions {
 }
 
 /**
+ * Blob 보장 변환 옵션
+ */
+export type EnsureBlobOptions = ConvertToBlobOptions;
+
+/**
+ * 상세 Blob 보장 변환 옵션
+ */
+export type EnsureBlobDetailedOptions = ConvertToBlobDetailedOptions;
+
+/**
+ * Data URL 보장 변환 옵션
+ */
+export type EnsureDataURLOptions = ConvertToDataURLOptions;
+
+/**
+ * 상세 Data URL 보장 변환 옵션
+ */
+export type EnsureDataURLDetailedOptions = ConvertToDataURLDetailedOptions;
+
+/**
+ * File 보장 변환 옵션
+ */
+export type EnsureFileOptions = ConvertToFileOptions;
+
+/**
+ * 상세 File 보장 변환 옵션
+ */
+export type EnsureFileDetailedOptions = ConvertToFileDetailedOptions;
+
+/**
  * Convert image sources to Blob format - Fast and memory-efficient
  *
  * @description
@@ -402,6 +432,222 @@ export async function convertToDataURLDetailed(
 }
 
 /**
+ * 값이 Data URL 문자열인지 판정한다.
+ *
+ * @param value 판정할 값
+ * @returns Data URL 문자열이면 true
+ */
+export function isDataURLString(value: unknown): value is string {
+  return typeof value === 'string' && value.trimStart().startsWith('data:');
+}
+
+/**
+ * 입력을 Blob으로 보장한다.
+ *
+ * @description 이미 Blob이고 출력 옵션 적용이 필요 없으면 원본을 반환한다.
+ * 포맷 변경이나 품질 변경이 필요하면 Canvas 경로로 재인코딩한다.
+ *
+ * @param source 이미지 입력
+ * @param options 출력 옵션
+ * @returns Blob 객체
+ */
+export async function ensureBlob(
+  source: ImageSource | HTMLCanvasElement,
+  options: EnsureBlobOptions = {}
+): Promise<Blob> {
+  try {
+    if (source instanceof HTMLCanvasElement) {
+      return await canvasToBlob(source, options);
+    }
+
+    if (source instanceof Blob && !shouldReencodeBlob(source, options)) {
+      return source;
+    }
+
+    const imageElement = await convertToImageElement(source);
+    const canvas = await imageElementToCanvas(imageElement);
+    return await canvasToBlob(canvas, options);
+  } catch (error) {
+    throw new ImageProcessError('Error occurred while ensuring Blob output', 'CONVERSION_FAILED', error as Error);
+  }
+}
+
+/**
+ * 입력을 상세 메타데이터가 있는 Blob 결과로 보장한다.
+ *
+ * @param source 이미지 입력
+ * @param options 출력 옵션
+ * @returns Blob 결과 객체
+ */
+export async function ensureBlobDetailed(
+  source: ImageSource | HTMLCanvasElement,
+  options: EnsureBlobDetailedOptions = {}
+): Promise<ResultBlob> {
+  const startTime = Date.now();
+
+  try {
+    if (source instanceof HTMLCanvasElement) {
+      const blob = await canvasToBlob(source, options);
+      return new BlobResultImpl(blob, source.width, source.height, Date.now() - startTime);
+    }
+
+    if (source instanceof Blob && !shouldReencodeBlob(source, options)) {
+      const { width, height } = await getBlobDimensions(source);
+      return new BlobResultImpl(source, width, height, Date.now() - startTime);
+    }
+
+    const imageElement = await convertToImageElement(source);
+    const canvas = await imageElementToCanvas(imageElement);
+    const blob = await canvasToBlob(canvas, options);
+
+    return new BlobResultImpl(blob, canvas.width, canvas.height, Date.now() - startTime, {
+      width: imageElement.width,
+      height: imageElement.height,
+    });
+  } catch (error) {
+    throw new ImageProcessError('Error occurred while ensuring Blob output', 'CONVERSION_FAILED', error as Error);
+  }
+}
+
+/**
+ * 입력을 Data URL로 보장한다.
+ *
+ * @description 이미 Data URL 문자열이면 원본을 그대로 반환한다.
+ * 그 외 입력은 Canvas 경로로 인코딩해 출력 옵션을 적용한다.
+ *
+ * @param source 이미지 입력
+ * @param options 출력 옵션
+ * @returns Data URL 문자열
+ */
+export async function ensureDataURL(
+  source: ImageSource | HTMLCanvasElement,
+  options: EnsureDataURLOptions = {}
+): Promise<string> {
+  try {
+    if (isDataURLString(source)) {
+      return source;
+    }
+
+    if (source instanceof HTMLCanvasElement) {
+      return canvasToDataURL(source, options);
+    }
+
+    const imageElement = await convertToImageElement(source);
+    const canvas = await imageElementToCanvas(imageElement);
+    return canvasToDataURL(canvas, options);
+  } catch (error) {
+    throw new ImageProcessError('Error occurred while ensuring Data URL output', 'CONVERSION_FAILED', error as Error);
+  }
+}
+
+/**
+ * 입력을 상세 메타데이터가 있는 Data URL 결과로 보장한다.
+ *
+ * @param source 이미지 입력
+ * @param options 출력 옵션
+ * @returns Data URL 결과 객체
+ */
+export async function ensureDataURLDetailed(
+  source: ImageSource | HTMLCanvasElement,
+  options: EnsureDataURLDetailedOptions = {}
+): Promise<ResultDataURL> {
+  const startTime = Date.now();
+
+  try {
+    if (isDataURLString(source)) {
+      const imageElement = await convertToImageElement(source);
+      return new DataURLResultImpl(source, imageElement.width, imageElement.height, Date.now() - startTime);
+    }
+
+    if (source instanceof HTMLCanvasElement) {
+      const dataURL = canvasToDataURL(source, options);
+      return new DataURLResultImpl(dataURL, source.width, source.height, Date.now() - startTime);
+    }
+
+    const imageElement = await convertToImageElement(source);
+    const canvas = await imageElementToCanvas(imageElement);
+    const dataURL = canvasToDataURL(canvas, options);
+
+    return new DataURLResultImpl(dataURL, canvas.width, canvas.height, Date.now() - startTime, {
+      width: imageElement.width,
+      height: imageElement.height,
+    });
+  } catch (error) {
+    throw new ImageProcessError('Error occurred while ensuring Data URL output', 'CONVERSION_FAILED', error as Error);
+  }
+}
+
+/**
+ * 입력을 지정 파일명의 File로 보장한다.
+ *
+ * @param source 이미지 입력
+ * @param filename 결과 파일명
+ * @param options 출력 옵션
+ * @returns File 객체
+ */
+export async function ensureFile(
+  source: ImageSource | HTMLCanvasElement,
+  filename: string,
+  options: EnsureFileOptions = {}
+): Promise<File> {
+  try {
+    if (isFileSource(source) && shouldReuseFile(source, filename, options)) {
+      return source;
+    }
+
+    const blob = await ensureBlob(source, options);
+    const finalFilename = getFinalFilename(filename, options);
+
+    return new File([blob], finalFilename, {
+      type: blob.type,
+      lastModified: Date.now(),
+    });
+  } catch (error) {
+    throw new ImageProcessError('Error occurred while ensuring File output', 'CONVERSION_FAILED', error as Error);
+  }
+}
+
+/**
+ * 입력을 상세 메타데이터가 있는 File 결과로 보장한다.
+ *
+ * @param source 이미지 입력
+ * @param filename 결과 파일명
+ * @param options 출력 옵션
+ * @returns File 결과 객체
+ */
+export async function ensureFileDetailed(
+  source: ImageSource | HTMLCanvasElement,
+  filename: string,
+  options: EnsureFileDetailedOptions = {}
+): Promise<ResultFile> {
+  const startTime = Date.now();
+
+  try {
+    if (isFileSource(source) && shouldReuseFile(source, filename, options)) {
+      const { width, height } = await getBlobDimensions(source);
+      return new FileResultImpl(source, width, height, Date.now() - startTime);
+    }
+
+    const blobResult = await ensureBlobDetailed(source, options);
+    const finalFilename = getFinalFilename(filename, options);
+    const file = new File([blobResult.blob], finalFilename, {
+      type: blobResult.blob.type,
+      lastModified: Date.now(),
+    });
+
+    return new FileResultImpl(
+      file,
+      blobResult.width,
+      blobResult.height,
+      Date.now() - startTime,
+      blobResult.originalSize
+    );
+  } catch (error) {
+    throw new ImageProcessError('Error occurred while ensuring File output', 'CONVERSION_FAILED', error as Error);
+  }
+}
+
+/**
  * Convert various image sources to File object
  *
  * @description Create File object that can be added to FormData and uploaded to server
@@ -640,6 +886,48 @@ async function getBlobDimensions(blob: Blob): Promise<{ width: number; height: n
 
     img.src = url;
   });
+}
+
+/**
+ * File 인스턴스인지 안전하게 판정한다.
+ */
+function isFileSource(source: unknown): source is File {
+  return typeof File !== 'undefined' && source instanceof File;
+}
+
+/**
+ * Blob 재인코딩이 필요한지 판정한다.
+ */
+function shouldReencodeBlob(blob: Blob, options: OutputOptions): boolean {
+  if (options.quality !== undefined) {
+    return true;
+  }
+
+  if (!options.format) {
+    return false;
+  }
+
+  return blob.type !== `image/${options.format}` && blob.type !== formatToMimeType(options.format);
+}
+
+/**
+ * File 원본을 그대로 재사용할 수 있는지 판정한다.
+ */
+function shouldReuseFile(file: File, filename: string, options: EnsureFileOptions): boolean {
+  return (
+    file.name === filename && filename === getFinalFilename(filename, options) && !shouldReencodeBlob(file, options)
+  );
+}
+
+/**
+ * 출력 옵션을 반영한 최종 파일명을 계산한다.
+ */
+function getFinalFilename(filename: string, options: EnsureFileOptions): string {
+  if (options.autoExtension !== false && options.format) {
+    return adjustFileExtension(filename, options.format);
+  }
+
+  return filename;
 }
 
 /**

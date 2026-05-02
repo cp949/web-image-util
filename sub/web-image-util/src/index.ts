@@ -149,6 +149,12 @@ export type {
   ConvertToDataURLOptions,
   ConvertToFileDetailedOptions,
   ConvertToFileOptions,
+  EnsureBlobDetailedOptions,
+  EnsureBlobOptions,
+  EnsureDataURLDetailedOptions,
+  EnsureDataURLOptions,
+  EnsureFileDetailedOptions,
+  EnsureFileOptions,
   ImageDimensions,
   ImageInfo,
 } from './utils';
@@ -161,8 +167,15 @@ export {
   convertToElement,
   convertToFile,
   convertToFileDetailed,
+  ensureBlob,
+  ensureBlobDetailed,
+  ensureDataURL,
+  ensureDataURLDetailed,
+  ensureFile,
+  ensureFileDetailed,
   getImageDimensions,
   getImageInfo,
+  isDataURLString,
   isInlineSvg,
 } from './utils';
 // 브라우저 기능 감지 — 단일 구현 소스를 재노출한다

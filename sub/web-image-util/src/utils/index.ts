@@ -68,6 +68,19 @@ export {
   convertToElement,
   convertToFile,
   convertToFileDetailed,
+  type EnsureBlobDetailedOptions,
+  type EnsureBlobOptions,
+  type EnsureDataURLDetailedOptions,
+  type EnsureDataURLOptions,
+  type EnsureFileDetailedOptions,
+  type EnsureFileOptions,
+  ensureBlob,
+  ensureBlobDetailed,
+  ensureDataURL,
+  ensureDataURLDetailed,
+  ensureFile,
+  ensureFileDetailed,
+  isDataURLString,
 } from './converters';
 /**
  * 이미지 정보 조회 유틸리티
