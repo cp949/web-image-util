@@ -8,7 +8,7 @@ export interface OutputFilenameOptions extends Pick<OutputOptions, 'format'> {
 }
 
 export interface ResolveOutputFormatOptions {
-  /** 현재 실행 환경에서 실제 출력 가능한 포맷 목록 */
+  /** 선택 우선순위를 걸러낼 지원 포맷 목록. 후보가 모두 제외되면 최종 안전값으로 png를 반환한다. */
   supported?: readonly OutputFormat[];
   /** 선호 포맷을 사용할 수 없을 때 우선 적용할 대체 포맷 */
   fallback?: OutputFormat;
@@ -97,6 +97,9 @@ export function getOutputFilename(filename: string, options: OutputFilenameOptio
 
 /**
  * 선호 포맷과 지원 목록을 기준으로 실제 출력 포맷을 결정한다.
+ *
+ * `supported`는 선호 포맷, 대체 포맷, 기본 우선순위(webp, jpeg, png)를 고르는 데 사용한다.
+ * 지원 목록 안에서 후보를 찾지 못하면 Canvas 호환성이 가장 넓은 png를 최종 폴백으로 반환한다.
  */
 export function resolveOutputFormat(preferred: OutputFormat, options: ResolveOutputFormatOptions = {}): OutputFormat {
   const supported = options.supported ?? OUTPUT_FORMATS;

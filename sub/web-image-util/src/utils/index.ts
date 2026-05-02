@@ -55,24 +55,6 @@ export {
  * Suitable for fast and lightweight conversion tasks
  */
 export {
-  type ImageFormatOrUnknown,
-  type OutputFilenameOptions,
-  type ResolveOutputFormatOptions,
-  formatToMimeType,
-  getOutputFilename,
-  isSupportedOutputFormat,
-  mimeTypeToImageFormat,
-  mimeTypeToOutputFormat,
-  replaceImageExtension,
-  resolveOutputFormat,
-} from './format-utils';
-/**
- * 이미지 정보 조회 유틸리티
- *
- * @description processImage와 같은 입력 타입에서 치수와 포맷 정보를 가볍게 조회한다
- */
-export { getImageDimensions, getImageInfo, type ImageDimensions, type ImageInfo } from './image-info';
-export {
   type ConvertToBlobDetailedOptions,
   type ConvertToBlobOptions,
   type ConvertToDataURLDetailedOptions,
@@ -100,6 +82,30 @@ export {
   ensureFileDetailed,
   isDataURLString,
 } from './converters';
+/**
+ * Image format conversion functions
+ *
+ * @description Functions that perform pure format conversion without image resizing
+ * Suitable for fast and lightweight conversion tasks
+ */
+export {
+  formatToMimeType,
+  getOutputFilename,
+  type ImageFormatOrUnknown,
+  isSupportedOutputFormat,
+  mimeTypeToImageFormat,
+  mimeTypeToOutputFormat,
+  type OutputFilenameOptions,
+  type ResolveOutputFormatOptions,
+  replaceImageExtension,
+  resolveOutputFormat,
+} from './format-utils';
+/**
+ * 이미지 정보 조회 유틸리티
+ *
+ * @description processImage와 같은 입력 타입에서 치수와 포맷 정보를 가볍게 조회한다
+ */
+export { getImageDimensions, getImageInfo, type ImageDimensions, type ImageInfo } from './image-info';
 /**
  * SVG compatibility and browser normalization functions
  *
