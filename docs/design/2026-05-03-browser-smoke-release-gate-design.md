@@ -8,7 +8,7 @@
 
 ## 결정
 
-루트 `verify:ci`는 빠른 기본 gate로 유지한다. 대신 `verify:release`를 추가해 릴리스 전 필수 검증을 한 명령으로 묶는다.
+루트 `verify:ci`는 빠른 기본 gate로 유지한다. 단, 루트 운영 스크립트 계약을 빠른 gate에서 놓치지 않도록 `test:scripts`를 `verify:ci`의 선행 단계로 둔다. 대신 `verify:release`를 추가해 릴리스 전 필수 검증을 한 명령으로 묶는다.
 
 ## 스크립트 계약
 
@@ -20,13 +20,14 @@ pnpm verify:release
 
 이 명령은 `scripts/verify-release.mjs`를 통해 아래 순서로 실행한다. 각 단계는 시작 로그를 출력하고, 실패하면 해당 명령의 exit code로 종료한다.
 
-- `pnpm verify:ci`
+- `pnpm verify:ci` (`test:scripts` 포함)
 - `pnpm --filter @cp949/web-image-util test:browser`
 - `cd sub/web-image-util && npm pack --dry-run`
 
 ## 문서 계약
 
 - 루트 README와 패키지 README는 `verify:ci`와 `verify:release`의 역할을 구분한다.
+- 루트 `scripts/**` 테스트는 `tests/unit/scripts/**`에서 관리하고, 패키지 테스트와 분리한다.
 - `CLAUDE.md`는 개발자가 작업 중 빠르게 확인할 gate와 릴리스 전 gate를 혼동하지 않도록 명령 설명을 갱신한다.
 - `docs/release-checklist.md`의 배포 전 최소 검증은 `pnpm verify:release` 중심으로 정리한다.
 

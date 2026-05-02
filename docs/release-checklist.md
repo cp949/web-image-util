@@ -31,10 +31,12 @@ rg -n "2\\.0\\.[0-9]+" README.md sub/web-image-util/README.md CLAUDE.md sub/web-
 ```bash
 node -p "Object.keys(require('./package.json').scripts).sort().join('\n')"
 node -p "Object.keys(require('./sub/web-image-util/package.json').scripts).sort().join('\n')"
-rg -n "pnpm (ci|verify:ci|verify:release|publish:npm|test:coverage|test:browser|test:contract)" README.md CLAUDE.md sub/web-image-util/README.md sub/web-image-util/CLAUDE.md
+rg -n "pnpm (ci|verify:ci|verify:release|publish:npm|test:scripts|test:coverage|test:browser|test:contract)" README.md CLAUDE.md sub/web-image-util/README.md sub/web-image-util/CLAUDE.md
 ```
 
-현재 루트 CI 성격의 기본 검증 명령은 `pnpm verify:ci`다. 릴리스 전 필수 검증 명령은 `pnpm verify:release`이며, `verify:ci`, browser smoke test, npm pack dry-run을 함께 실행한다. `test:coverage`는 별도 점검 경로이며, `verify:ci`에 포함하기로 결정한 경우에만 문서의 coverage 설명을 바꾼다.
+현재 루트 CI 성격의 기본 검증 명령은 `pnpm verify:ci`다. `verify:ci`는 루트 운영 스크립트 테스트인 `pnpm test:scripts`를 먼저 실행한 뒤 Turbo 기반 타입체크, lint, format 검사, Node 테스트, 계약 테스트를 실행한다. 릴리스 전 필수 검증 명령은 `pnpm verify:release`이며, `verify:ci`, browser smoke test, npm pack dry-run을 함께 실행한다. `test:coverage`는 별도 점검 경로이며, `verify:ci`에 포함하기로 결정한 경우에만 문서의 coverage 설명을 바꾼다.
+
+루트 운영 스크립트 테스트는 `tests/unit/scripts/**`에 둔다. `sub/web-image-util/tests/**`는 패키지 라이브러리 테스트를 담당하므로, 루트 `scripts/**`의 테스트를 패키지 내부로 되돌리지 않는다.
 
 ## 구조 설명 동기화
 

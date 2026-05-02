@@ -111,12 +111,15 @@ pnpm lint:fix
 pnpm format
 pnpm format:check
 pnpm test
+pnpm test:scripts
 pnpm test:coverage
 pnpm verify:ci
 pnpm verify:release
 pnpm dev
 pnpm publish:npm
 ```
+
+`pnpm test:scripts`는 루트 운영 스크립트 테스트를 실행합니다. 루트 스크립트 테스트는 `tests/unit/scripts/**`에 두고, 패키지 라이브러리 테스트는 `sub/web-image-util/tests/**`에서 관리합니다. `pnpm verify:ci`는 `test:scripts`를 먼저 실행한 뒤 Turbo 기반 타입체크, lint, format 검사, Node 테스트, 계약 테스트를 실행합니다.
 
 ## 배포
 

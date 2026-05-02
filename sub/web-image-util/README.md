@@ -63,10 +63,13 @@ pnpm build        # 메인 패키지 빌드
 pnpm test         # 패키지 테스트 실행
 pnpm test:node    # Node.js/happy-dom 테스트
 pnpm test:browser # Vitest Browser 기반 브라우저 테스트
-pnpm verify:ci    # 타입체크 + lint + format:check + test:node + test:contract
+pnpm test:scripts # 루트 운영 스크립트 테스트
+pnpm verify:ci    # test:scripts + 타입체크 + lint + format:check + test:node + test:contract
 pnpm verify:release # verify:ci + browser smoke test + npm pack dry-run
 pnpm publish:npm  # 패키지 빌드 후 npm publish
 ```
+
+루트 운영 스크립트 테스트는 `tests/unit/scripts/**`에서 관리하고, 패키지 라이브러리 테스트는 `sub/web-image-util/tests/**`에서 관리합니다. 루트 `verify:ci`는 두 범위를 함께 검증합니다.
 
 커버리지는 별도 점검 경로입니다. `pnpm --filter @cp949/web-image-util test:coverage`로 실행하며, 현재 루트 `verify:ci` 필수 gate에는 포함되어 있지 않습니다.
 
