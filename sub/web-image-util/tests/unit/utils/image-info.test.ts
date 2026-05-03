@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-
+import { ImageProcessError } from '../../../src';
 import {
   fetchImageFormat,
   fetchImageSourceBlob,
@@ -9,7 +9,6 @@ import {
   getImageInfo,
   getImageOrientation,
 } from '../../../src/utils';
-import { ImageProcessError } from '../../../src';
 
 describe('image info utilities', () => {
   it('캔버스 치수는 이미지 변환 없이 캔버스 속성에서 바로 반환한다', async () => {

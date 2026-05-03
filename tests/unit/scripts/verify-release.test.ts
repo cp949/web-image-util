@@ -36,6 +36,12 @@ describe('릴리스 검증 스크립트', () => {
         cwd: expect.stringMatching(/web-image-util$/),
       },
       {
+        label: '패키지 빌드',
+        command: 'pnpm',
+        args: ['--filter', '@cp949/web-image-util', 'build'],
+        cwd: expect.stringMatching(/web-image-util$/),
+      },
+      {
         label: '브라우저 smoke test',
         command: 'pnpm',
         args: ['--filter', '@cp949/web-image-util', 'test:browser'],

@@ -22,14 +22,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest --config vitest.node.config.ts",
     "test:node": "vitest --config vitest.node.config.ts",
-    "test:contract": "vitest --config vitest.contract.config.ts",
+    "test:contract": "pnpm build && vitest --config vitest.contract.config.ts",
     "test:security": "vitest --config tests/security/vitest.config.ts",
     "test:security:coverage": "vitest --coverage --config tests/security/vitest.config.ts",
     "test:package-subpath": "node --input-type=module -e \"const mod = await import('@cp949/web-image-util/svg-sanitizer'); if (typeof mod.sanitizeSvgStrict !== 'function' || typeof mod.sanitizeSvgStrictDetailed !== 'function') throw new Error('svg-sanitizer subpath export smoke failed');\"",
     "test:ui": "vitest --ui",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:coverage": "vitest run --coverage --config vitest.node.config.ts",
-    "test:coverage:contract": "vitest --coverage --config vitest.contract.config.ts",
+    "test:coverage:contract": "pnpm build && vitest --coverage --config vitest.contract.config.ts",
     "test:types": "vitest --config vitest.node.config.ts tests/unit/types"
   },
   "dependencies": {

@@ -272,8 +272,24 @@ describe('공개 export 계약', () => {
     expect(valueExportKeys(root)).toEqual(ROOT_VALUE_EXPORTS);
   });
 
+  test('빌드된 루트 패키지 export는 신규 photo-editor 유틸을 노출한다', async () => {
+    const builtRoot = await import('../../dist/index.js');
+
+    expect(builtRoot.decodeSvgDataURL).toBeTypeOf('function');
+    expect(builtRoot.estimateDataURLPayloadByteLength).toBeTypeOf('function');
+    expect(builtRoot.fetchImageSourceBlob).toBeTypeOf('function');
+  });
+
   test('`/utils` 서브패스 value export 목록이 고정되어 있다', () => {
     expect(valueExportKeys(utils)).toEqual(UTILS_VALUE_EXPORTS);
+  });
+
+  test('빌드된 `/utils` 서브패스 export는 신규 photo-editor 유틸을 노출한다', async () => {
+    const builtUtils = await import('../../dist/utils/index.js');
+
+    expect(builtUtils.decodeSvgDataURL).toBeTypeOf('function');
+    expect(builtUtils.estimateDataURLPayloadByteLength).toBeTypeOf('function');
+    expect(builtUtils.fetchImageSourceBlob).toBeTypeOf('function');
   });
 
   test('`/presets` 서브패스 value export 목록이 고정되어 있다', () => {

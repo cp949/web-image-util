@@ -39,6 +39,12 @@ export function getReleaseVerificationSteps() {
       cwd: repositoryRoot,
     },
     {
+      label: '패키지 빌드',
+      command: 'pnpm',
+      args: ['--filter', '@cp949/web-image-util', 'build'],
+      cwd: repositoryRoot,
+    },
+    {
       label: '브라우저 smoke test',
       command: 'pnpm',
       args: ['--filter', '@cp949/web-image-util', 'test:browser'],

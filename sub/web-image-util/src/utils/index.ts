@@ -88,11 +88,11 @@ export {
  */
 export {
   blobToDataURL,
+  type DecodedSvgDataURL,
   dataURLToBlob,
   decodeSvgDataURL,
-  type DecodedSvgDataURL,
-  estimateDataURLPayloadByteLength,
   type EstimateDataURLPayloadByteLengthOptions,
+  estimateDataURLPayloadByteLength,
   estimateDataURLSize,
   isDataURLString,
 } from './data-url';
@@ -121,10 +121,10 @@ export {
  */
 export {
   type FetchImageFormatOptions,
-  fetchImageFormat,
   type FetchImageSourceBlobOptions,
-  fetchImageSourceBlob,
   type FetchImageSourceBlobResult,
+  fetchImageFormat,
+  fetchImageSourceBlob,
   getImageAspectRatio,
   getImageDimensions,
   getImageFormat,
