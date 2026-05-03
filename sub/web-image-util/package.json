@@ -84,6 +84,7 @@
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     "llm.txt"
   ]
 }

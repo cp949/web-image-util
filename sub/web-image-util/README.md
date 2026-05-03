@@ -189,8 +189,6 @@ const outputFormat = resolveOutputFormat('avif', { supported: ['webp', 'png'] })
 const fetched = await fetchImageSourceBlob(url, { maxBytes: 20 * 1024 * 1024 });
 ```
 
-전체 export 목록은 [API reference](https://github.com/cp949/web-image-util/blob/main/docs/api-reference.md)를 참고하세요.
-
 ## 에러 처리
 
 라이브러리 내부 에러는 `ImageProcessError` 또는 그 하위 타입으로 전달됩니다.
@@ -229,7 +227,6 @@ const format = caps.webp ? 'webp' : 'jpeg';
 
 ## 문서
 
-- [API reference](https://github.com/cp949/web-image-util/blob/main/docs/api-reference.md)
 - [Architecture](https://github.com/cp949/web-image-util/blob/main/docs/architecture.md)
 - [SVG sanitizer 보안 정책](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md)
 - [Release checklist](https://github.com/cp949/web-image-util/blob/main/docs/release-checklist.md)

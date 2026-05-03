@@ -8,21 +8,21 @@
 
 - `sub/web-image-util/package.json`의 `version`
 - 루트 `README.md`의 `현재 배포 준비 버전`
-- `sub/web-image-util/README.md`의 `현재 배포 준비 버전`
-- 루트 `CLAUDE.md`의 `현재 배포 준비 버전`
-- `sub/web-image-util/CLAUDE.md`의 `현재 배포 준비 버전`
+- 저장소에서 별도로 버전을 추적하는 내부 가이드 문서(있는 경우)
+
+`sub/web-image-util/README.md`(npm 배포용)는 npm 페이지가 자동으로 버전을 노출하므로 버전 문자열을 두지 않는다.
 
 버전 문자열을 바꾼 뒤 아래 명령으로 누락된 이전 버전이 없는지 확인한다.
 
 ```bash
-rg -n "2\\.0\\.[0-9]+" README.md sub/web-image-util/README.md CLAUDE.md sub/web-image-util/CLAUDE.md sub/web-image-util/package.json
+rg -n "2\\.0\\.[0-9]+" README.md sub/web-image-util/README.md sub/web-image-util/package.json
 ```
 
-## 배포 메모
+## 변경 내역(CHANGELOG)
 
-사용자에게 의미 있는 변경이 있으면 루트 `README.md`와 `sub/web-image-util/README.md`의 `배포 메모`에 같은 버전 섹션을 추가한다.
+사용자에게 의미 있는 변경이 있으면 `sub/web-image-util/CHANGELOG.md`에 같은 버전 섹션을 추가한다. Keep a Changelog 형식을 따르며 추가/변경/수정/호환성 깨지는 변경으로 분류한다.
 
-배포 메모에는 구현 세부보다 사용자가 알아야 할 API 변경, 공개 export 변화, 검증 범위, 호환성 변경을 우선 적는다.
+CHANGELOG에는 구현 세부보다 사용자가 알아야 할 API 변경, 공개 export 변화, 검증 범위, 호환성 변경을 우선 적는다.
 
 ## 스크립트와 문서 동기화
 
@@ -31,7 +31,7 @@ rg -n "2\\.0\\.[0-9]+" README.md sub/web-image-util/README.md CLAUDE.md sub/web-
 ```bash
 node -p "Object.keys(require('./package.json').scripts).sort().join('\n')"
 node -p "Object.keys(require('./sub/web-image-util/package.json').scripts).sort().join('\n')"
-rg -n "pnpm (ci|verify:ci|verify:release|publish:npm|test:scripts|test:coverage|test:browser|test:contract)" README.md CLAUDE.md sub/web-image-util/README.md sub/web-image-util/CLAUDE.md
+rg -n "pnpm (ci|verify:ci|verify:release|publish:npm|test:scripts|test:coverage|test:browser|test:contract)" README.md sub/web-image-util/README.md
 ```
 
 현재 루트 CI 성격의 기본 검증 명령은 `pnpm verify:ci`다. `verify:ci`는 루트 운영 스크립트 테스트인 `pnpm test:scripts`를 먼저 실행한 뒤 Turbo 기반 타입체크, lint, format 검사, Node 테스트, 계약 테스트를 실행한다. 릴리스 전 필수 검증 명령은 `pnpm verify:release`이며, `verify:ci`, browser smoke test, npm pack dry-run을 함께 실행한다. `test:coverage`는 별도 점검 경로이며, `verify:ci`에 포함하기로 결정한 경우에만 문서의 coverage 설명을 바꾼다.
@@ -43,7 +43,7 @@ rg -n "pnpm (ci|verify:ci|verify:release|publish:npm|test:scripts|test:coverage|
 아키텍처 문서에서 파일명이나 클래스명을 언급할 때는 실제 파일 존재 여부를 확인한다.
 
 ```bash
-rg -n "pipeline\\.ts|RenderPipeline|LazyRenderPipeline|lazy-render-pipeline" README.md CLAUDE.md sub/web-image-util/README.md sub/web-image-util/CLAUDE.md
+rg -n "pipeline\\.ts|RenderPipeline|LazyRenderPipeline|lazy-render-pipeline" README.md sub/web-image-util/README.md docs/architecture.md
 rg --files sub/web-image-util/src/core
 ```
 
@@ -84,7 +84,7 @@ pnpm --filter @cp949/web-image-util test:security
 배포 직전에는 오래된 버전, 없어진 구조, 잘못된 명령이 남아 있지 않은지 검색한다.
 
 ```bash
-rg -n "2\\.0\\.이전버전|pipeline\\.ts|(^|[^A-Za-z])RenderPipeline([^A-Za-z]|$)|pnpm ci|coverage 목표" README.md CLAUDE.md sub/web-image-util/README.md sub/web-image-util/CLAUDE.md docs
+rg -n "2\\.0\\.이전버전|pipeline\\.ts|(^|[^A-Za-z])RenderPipeline([^A-Za-z]|$)|pnpm ci|coverage 목표" README.md sub/web-image-util/README.md docs
 ```
 
 검색 결과가 의도된 문맥인지 직접 읽고 확인한다.
