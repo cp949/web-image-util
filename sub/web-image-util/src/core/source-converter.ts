@@ -127,7 +127,15 @@ function isAbortLikeError(error: unknown): boolean {
   }
 
   const errorName = 'name' in error && typeof error.name === 'string' ? error.name : '';
-  return errorName === 'AbortError' || errorName === 'TimeoutError';
+  if (errorName === 'AbortError' || errorName === 'TimeoutError') {
+    return true;
+  }
+
+  if (error instanceof ImageProcessError && error.originalError) {
+    return isAbortLikeError(error.originalError);
+  }
+
+  return false;
 }
 
 /**
@@ -175,14 +183,23 @@ function checkAllowedProtocol(url: string, allowedProtocols: string[]): void {
   }
 }
 
+/** fetch 중단 핸들 — signal과 리소스 정리 함수를 함께 반환한다. */
+interface FetchAbortHandle {
+  signal: AbortSignal | undefined;
+  dispose: () => void;
+}
+
 /**
- * 타임아웃과 사용자 제공 AbortSignal을 결합한 AbortSignal을 반환한다.
+ * 타임아웃과 사용자 제공 AbortSignal을 결합한 FetchAbortHandle을 반환한다.
+ *
+ * fetch 완료 후 반드시 handle.dispose()를 호출해 타이머와 이벤트 리스너를 정리해야 한다.
  *
  * @param timeoutMs 타임아웃 밀리초. 0이면 타임아웃을 설정하지 않는다.
  * @param userSignal 사용자가 전달한 외부 AbortSignal (선택)
- * @returns 결합된 AbortSignal 또는 undefined
+ * @returns FetchAbortHandle
  */
-function createFetchAbortSignal(timeoutMs: number, userSignal?: AbortSignal): AbortSignal | undefined {
+function createFetchAbortHandle(timeoutMs: number, userSignal?: AbortSignal): FetchAbortHandle {
+  const cleanups: Array<() => void> = [];
   const signals: AbortSignal[] = [];
 
   if (timeoutMs > 0) {
@@ -191,7 +208,12 @@ function createFetchAbortSignal(timeoutMs: number, userSignal?: AbortSignal): Ab
       signals.push(AbortSignal.timeout(timeoutMs));
     } else {
       const controller = new AbortController();
-      setTimeout(() => controller.abort(new DOMException('fetch timed out', 'TimeoutError')), timeoutMs);
+      const timerId = setTimeout(
+        () => controller.abort(new DOMException('fetch timed out', 'TimeoutError')),
+        timeoutMs
+      );
+      // fetch 완료 후 타이머 누수를 막기 위해 정리 함수에 등록한다
+      cleanups.push(() => clearTimeout(timerId));
       signals.push(controller.signal);
     }
   }
@@ -200,24 +222,41 @@ function createFetchAbortSignal(timeoutMs: number, userSignal?: AbortSignal): Ab
     signals.push(userSignal);
   }
 
-  if (signals.length === 0) return undefined;
-  if (signals.length === 1) return signals[0];
+  const runCleanups = () => {
+    for (const fn of cleanups) fn();
+  };
+
+  if (signals.length === 0) {
+    return { signal: undefined, dispose: runCleanups };
+  }
+  if (signals.length === 1) {
+    return { signal: signals[0], dispose: runCleanups };
+  }
 
   // 여러 신호를 결합한다 — AbortSignal.any가 지원되면 사용한다
   if (typeof AbortSignal.any === 'function') {
-    return AbortSignal.any(signals);
+    return { signal: AbortSignal.any(signals), dispose: runCleanups };
   }
 
-  // 폴백: 수동으로 결합한다
+  // 폴백: 수동으로 결합한다 — addEventListener 리스너도 정리 대상에 포함한다
   const controller = new AbortController();
-  for (const signal of signals) {
-    if (signal.aborted) {
-      controller.abort(signal.reason);
+  const listenerEntries: Array<{ signal: AbortSignal; listener: () => void }> = [];
+  for (const sig of signals) {
+    if (sig.aborted) {
+      controller.abort(sig.reason);
       break;
     }
-    signal.addEventListener('abort', () => controller.abort(signal.reason), { once: true });
+    const listener = () => controller.abort(sig.reason);
+    sig.addEventListener('abort', listener, { once: true });
+    listenerEntries.push({ signal: sig, listener });
   }
-  return controller.signal;
+  cleanups.push(() => {
+    for (const { signal: sig, listener } of listenerEntries) {
+      sig.removeEventListener('abort', listener);
+    }
+  });
+
+  return { signal: controller.signal, dispose: runCleanups };
 }
 
 /**
@@ -668,27 +707,33 @@ async function convertStringToElement(
 
           // fetch 타임아웃과 AbortSignal을 결합한다.
           const timeoutMs = resolveFetchTimeoutMs(options);
-          const signal = createFetchAbortSignal(timeoutMs, options?.abortSignal);
+          const handle = createFetchAbortHandle(timeoutMs, options?.abortSignal);
           const maxBytes = options?.maxSourceBytes !== undefined ? options.maxSourceBytes : DEFAULT_MAX_SOURCE_BYTES;
 
-          // 원격 SVG fetch 실패 시 직접 로드로 넘기지 않고 차단한다 (fail-closed)
-          let response: Response;
+          let svgContent: string;
           try {
-            response = await fetch(source, signal ? { signal } : undefined);
+            // 원격 SVG fetch 실패 시 직접 로드로 넘기지 않고 차단한다 (fail-closed)
+            const response = await fetch(source, handle.signal ? { signal: handle.signal } : undefined);
+            if (!response.ok) {
+              throw new ImageProcessError(`Failed to load SVG URL: ${response.status}`, 'SOURCE_LOAD_FAILED');
+            }
+
+            // 응답 크기가 최대 허용 바이트를 초과하면 차단한다.
+            checkResponseSize(response, maxBytes, '원격 SVG URL');
+
+            svgContent = await readVerifiedSvgResponse(response, '원격 SVG 응답');
           } catch (fetchError) {
-            if (signal?.aborted || isAbortLikeError(fetchError)) {
+            if (handle.signal?.aborted || isAbortLikeError(fetchError)) {
               throw new ImageProcessError('원격 SVG 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', fetchError as Error);
             }
+            if (fetchError instanceof ImageProcessError) {
+              throw fetchError;
+            }
             throw new ImageProcessError('SVG URL을 안전하게 확인할 수 없어 로드를 차단합니다', 'INVALID_SOURCE');
-          }
-          if (!response.ok) {
-            throw new ImageProcessError(`Failed to load SVG URL: ${response.status}`, 'SOURCE_LOAD_FAILED');
+          } finally {
+            handle.dispose();
           }
 
-          // 응답 크기가 최대 허용 바이트를 초과하면 차단한다.
-          checkResponseSize(response, maxBytes, '원격 SVG URL');
-
-          const svgContent = await readVerifiedSvgResponse(response, '원격 SVG 응답');
           return convertSvgToElement(svgContent, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
@@ -713,27 +758,33 @@ async function convertStringToElement(
 
           // fetch 타임아웃과 AbortSignal을 결합한다.
           const timeoutMs = resolveFetchTimeoutMs(options);
-          const signal = createFetchAbortSignal(timeoutMs, options?.abortSignal);
+          const handle = createFetchAbortHandle(timeoutMs, options?.abortSignal);
           const maxBytes = options?.maxSourceBytes !== undefined ? options.maxSourceBytes : DEFAULT_MAX_SOURCE_BYTES;
 
-          // 로컬 SVG 경로 fetch 실패 시 안전하게 차단한다
-          let response: Response;
+          let svgContent: string;
           try {
-            response = await fetch(source, signal ? { signal } : undefined);
+            // 로컬 SVG 경로 fetch 실패 시 안전하게 차단한다
+            const response = await fetch(source, handle.signal ? { signal: handle.signal } : undefined);
+            if (!response.ok) {
+              throw new ImageProcessError(`Failed to load SVG file: ${response.status}`, 'SOURCE_LOAD_FAILED');
+            }
+
+            // 응답 크기가 최대 허용 바이트를 초과하면 차단한다.
+            checkResponseSize(response, maxBytes, 'SVG 리소스 경로');
+
+            svgContent = await readVerifiedSvgResponse(response, '원격 SVG 응답');
           } catch (fetchError) {
-            if (signal?.aborted || isAbortLikeError(fetchError)) {
+            if (handle.signal?.aborted || isAbortLikeError(fetchError)) {
               throw new ImageProcessError('원격 SVG 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', fetchError as Error);
             }
+            if (fetchError instanceof ImageProcessError) {
+              throw fetchError;
+            }
             throw new ImageProcessError('SVG URL을 안전하게 확인할 수 없어 로드를 차단합니다', 'INVALID_SOURCE');
-          }
-          if (!response.ok) {
-            throw new ImageProcessError(`Failed to load SVG file: ${response.status}`, 'SOURCE_LOAD_FAILED');
+          } finally {
+            handle.dispose();
           }
 
-          // 응답 크기가 최대 허용 바이트를 초과하면 차단한다.
-          checkResponseSize(response, maxBytes, 'SVG 리소스 경로');
-
-          const svgContent = await readVerifiedSvgResponse(response, '원격 SVG 응답');
           return convertSvgToElement(svgContent, undefined, undefined, {
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
@@ -1229,19 +1280,25 @@ async function loadBlobUrl(blobUrl: string, options?: InternalSourceConverterOpt
 
     // fetch 타임아웃과 AbortSignal을 결합한다.
     const timeoutMs = resolveFetchTimeoutMs(options);
-    const signal = createFetchAbortSignal(timeoutMs, options?.abortSignal);
+    const handle = createFetchAbortHandle(timeoutMs, options?.abortSignal);
 
-    // Blob URL도 fetch 응답을 통해 MIME 타입과 실제 콘텐츠를 함께 확인한다.
-    const response = await fetch(blobUrl, signal ? { signal } : undefined);
+    let contentType: string;
+    let blob: Blob;
+    try {
+      // Blob URL도 fetch 응답을 통해 MIME 타입과 실제 콘텐츠를 함께 확인한다.
+      const response = await fetch(blobUrl, handle.signal ? { signal: handle.signal } : undefined);
 
-    const maxBytes = options?.maxSourceBytes !== undefined ? options.maxSourceBytes : DEFAULT_MAX_SOURCE_BYTES;
+      const maxBytes = options?.maxSourceBytes !== undefined ? options.maxSourceBytes : DEFAULT_MAX_SOURCE_BYTES;
 
-    if (!response.ok) {
-      throw new ImageProcessError(`Failed to load Blob URL: ${response.status}`, 'SOURCE_LOAD_FAILED');
+      if (!response.ok) {
+        throw new ImageProcessError(`Failed to load Blob URL: ${response.status}`, 'SOURCE_LOAD_FAILED');
+      }
+
+      contentType = response.headers.get('content-type')?.toLowerCase() || '';
+      blob = await readCheckedBlobResponse(response, maxBytes, 'Blob URL');
+    } finally {
+      handle.dispose();
     }
-
-    const contentType = response.headers.get('content-type')?.toLowerCase() || '';
-    const blob = await readCheckedBlobResponse(response, maxBytes, 'Blob URL');
 
     // 1차 판정: Content-Type 기반 SVG 감지
     const isSvgMime = contentType.includes('image/svg+xml');
@@ -1318,19 +1375,19 @@ async function loadImageFromUrl(
       checkAllowedProtocol(normalizePolicyUrl(url), allowedProtocols);
     }
 
-    // fetch 타임아웃과 AbortSignal을 미리 준비한다.
-    const timeoutMs = resolveFetchTimeoutMs(options);
-    const signal = createFetchAbortSignal(timeoutMs, options?.abortSignal);
     const maxBytes = options?.maxSourceBytes !== undefined ? options.maxSourceBytes : DEFAULT_MAX_SOURCE_BYTES;
 
     // HTTP/HTTPS URL은 우선 fetch로 MIME 타입과 본문을 확인한다.
     if (url.startsWith('http://') || url.startsWith('https://') || isProtocolRelativeUrl(url)) {
+      // fetch 타임아웃과 AbortSignal을 fetch 분기 안에서 생성한다.
+      const timeoutMs = resolveFetchTimeoutMs(options);
+      const handle = createFetchAbortHandle(timeoutMs, options?.abortSignal);
       try {
         // 한 번의 GET 요청으로 Content-Type 확인과 실제 로딩을 함께 처리한다.
         const response = await fetch(url, {
           method: 'GET',
           mode: crossOrigin ? 'cors' : 'same-origin',
-          ...(signal ? { signal } : {}),
+          ...(handle.signal ? { signal: handle.signal } : {}),
         });
 
         if (!response.ok) {
@@ -1395,7 +1452,7 @@ async function loadImageFromUrl(
         }
         // 사용자가 취소했거나 타임아웃된 요청은 보안/제어 정책의 일부이므로
         // 브라우저 기본 이미지 로딩으로 우회하지 않는다.
-        if (signal?.aborted || isAbortLikeError(fetchError)) {
+        if (handle.signal?.aborted || isAbortLikeError(fetchError)) {
           throw new ImageProcessError('원격 이미지 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', fetchError as Error);
         }
         // .svg URL은 fetch 실패 시 직접 로드로 넘기지 않고 차단한다 (fail-closed)
@@ -1404,6 +1461,8 @@ async function loadImageFromUrl(
         }
         // 비-SVG URL은 기존 방식대로 직접 로드로 폴백한다
         productionLog.warn('Failed to check Content-Type, fallback to default image loading:', fetchError);
+      } finally {
+        handle.dispose();
       }
     }
 
