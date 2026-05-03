@@ -641,37 +641,53 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
 
       return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
-          // blob 변환 시도 후 canvas는 더 이상 필요하지 않으므로 pool에 반환한다.
-          CanvasPool.getInstance().release(canvas);
+          try {
+            // blob 변환 시도 후 canvas는 더 이상 필요하지 않으므로 pool에 반환한다.
+            CanvasPool.getInstance().release(canvas);
 
-          if (!blob) {
-            reject(new ImageProcessError('Blob creation failed', 'CANVAS_TO_BLOB_FAILED'));
-            return;
+            if (!blob) {
+              reject(new ImageProcessError('Blob creation failed', 'CANVAS_TO_BLOB_FAILED'));
+              return;
+            }
+
+            const objectUrl = URL.createObjectURL(blob);
+            const img = createImageElement();
+
+            // loadImageElement 헬퍼 미사용: objectURL revoke 책임이 이 콜백 안에 있으므로
+            // 헬퍼 서명(img, src, errorCode)으로는 objectURL 정리를 포함할 수 없다.
+            // Promise 결정 시 핸들러를 해제하고 objectURL을 정리한다.
+            const cleanup = () => {
+              img.onload = null;
+              img.onerror = null;
+              URL.revokeObjectURL(objectUrl);
+            };
+
+            img.onload = () => {
+              try {
+                cleanup();
+                resolve(img);
+              } catch (error) {
+                reject(
+                  new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', error as Error)
+                );
+              }
+            };
+
+            img.onerror = () => {
+              try {
+                cleanup();
+                reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
+              } catch (error) {
+                reject(
+                  new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', error as Error)
+                );
+              }
+            };
+
+            img.src = objectUrl;
+          } catch (error) {
+            reject(new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', error as Error));
           }
-
-          const objectUrl = URL.createObjectURL(blob);
-          const img = createImageElement();
-
-          // loadImageElement 헬퍼 미사용: objectURL revoke 책임이 이 콜백 안에 있으므로
-          // 헬퍼 서명(img, src, errorCode)으로는 objectURL 정리를 포함할 수 없다.
-          // Promise 결정 시 핸들러를 해제하고 objectURL을 정리한다.
-          const cleanup = () => {
-            img.onload = null;
-            img.onerror = null;
-            URL.revokeObjectURL(objectUrl);
-          };
-
-          img.onload = () => {
-            cleanup();
-            resolve(img);
-          };
-
-          img.onerror = () => {
-            cleanup();
-            reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
-          };
-
-          img.src = objectUrl;
         });
       });
     } catch (error) {
@@ -697,11 +713,18 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
 
       return new Promise((resolve, reject) => {
         canvas.toBlob(async (blob) => {
-          // blob 변환 시도 후 canvas는 더 이상 필요하지 않으므로 pool에 반환한다.
-          CanvasPool.getInstance().release(canvas);
+          try {
+            // blob 변환 시도 후 canvas는 더 이상 필요하지 않으므로 pool에 반환한다.
+            CanvasPool.getInstance().release(canvas);
 
-          if (!blob) {
-            reject(new ImageProcessError('Blob creation failed', 'CANVAS_TO_BLOB_FAILED'));
+            if (!blob) {
+              reject(new ImageProcessError('Blob creation failed', 'CANVAS_TO_BLOB_FAILED'));
+              return;
+            }
+          } catch (error) {
+            reject(
+              new ImageProcessError('Error occurred during ArrayBuffer conversion', 'OUTPUT_FAILED', error as Error)
+            );
             return;
           }
 

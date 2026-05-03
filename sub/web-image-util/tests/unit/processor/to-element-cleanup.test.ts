@@ -104,4 +104,17 @@ describe('toElement cleanup 동작', () => {
     expect(img.onerror).toBeNull();
     expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:processor-to-element');
   });
+
+  it('objectURL 생성 예외를 OUTPUT_FAILED로 감싸고 originalError를 보존한다', async () => {
+    const canvas = createCanvasWithBlob(new Blob(['output'], { type: 'image/png' }));
+    const cause = new Error('object url unavailable');
+    createObjectURLSpy.mockImplementation(() => {
+      throw cause;
+    });
+
+    await expect(createProcessorWithCanvas(canvas).toElement()).rejects.toMatchObject({
+      code: 'OUTPUT_FAILED',
+      originalError: cause,
+    });
+  });
 });

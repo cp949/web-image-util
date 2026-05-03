@@ -289,9 +289,14 @@ export class LazyRenderPipeline {
         };
       }
 
-      // TypeScript exhaustive checking:
-      // Default is unreachable since all cases are handled
-      // Compile error will occur when new types are added, ensuring safety
+      default: {
+        // 새 ResizeOperation variant 추가 시 컴파일 에러로 누락 감지
+        const _exhaustive: never = operation;
+        throw new ImageProcessError(
+          `알 수 없는 ResizeOperation 타입: ${(_exhaustive as { type?: unknown }).type ?? 'unknown'}`,
+          'INVALID_DIMENSIONS'
+        );
+      }
     }
   }
 
