@@ -150,36 +150,53 @@ export class LazyRenderPipeline {
     const canvas = this.renderOnce();
 
     return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            // blob 변환 실패 시에도 canvas를 pool에 반환
-            CanvasPool.getInstance().release(canvas);
-            reject(new ImageProcessError('Blob creation failed', 'BLOB_CONVERSION_ERROR'));
-            return;
-          }
+      let released = false;
+      const releaseOnce = () => {
+        if (released) {
+          return;
+        }
 
-          const metadata: ResultMetadata = {
-            width: canvas.width,
-            height: canvas.height,
-            format: format as any,
-            size: blob.size,
-            processingTime: performance.now() - startTime,
-            operations: this.operations.length,
-          };
+        released = true;
+        CanvasPool.getInstance().release(canvas);
+      };
 
-          // Output debugging information
-          const layout = this.calculateFinalLayout();
-          debugLayout(layout, this.operations.length);
+      try {
+        canvas.toBlob(
+          (blob) => {
+            try {
+              if (!blob) {
+                reject(new ImageProcessError('Blob creation failed', 'BLOB_CONVERSION_ERROR'));
+                return;
+              }
 
-          // blob 변환 완료 후 내부 canvas를 pool에 반환 (소비자는 blob을 받음)
-          CanvasPool.getInstance().release(canvas);
+              const metadata: ResultMetadata = {
+                width: canvas.width,
+                height: canvas.height,
+                format: format as any,
+                size: blob.size,
+                processingTime: performance.now() - startTime,
+                operations: this.operations.length,
+              };
 
-          resolve({ blob, metadata });
-        },
-        format,
-        quality
-      );
+              // 디버깅 정보 출력
+              const layout = this.calculateFinalLayout();
+              debugLayout(layout, this.operations.length);
+
+              resolve({ blob, metadata });
+            } catch (error) {
+              reject(error);
+            } finally {
+              // 예외 발생 여부와 무관하게 canvas를 pool에 반환
+              releaseOnce();
+            }
+          },
+          format,
+          quality
+        );
+      } catch (error) {
+        releaseOnce();
+        reject(error);
+      }
     });
   }
 

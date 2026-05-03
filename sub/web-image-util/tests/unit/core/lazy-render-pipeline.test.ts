@@ -137,6 +137,52 @@ describe('LazyRenderPipeline', () => {
       }).toThrow();
     });
   });
+
+  describe('toBlob() Canvas Release', () => {
+    it('블롭 변환 콜백 내부에서 예외가 발생해도 canvas를 pool에 반환한다', async () => {
+      const { CanvasPool } = await import('../../../src/base/canvas-pool');
+      const pool = CanvasPool.getInstance();
+      const releaseSpy = vi.spyOn(pool, 'release');
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {
+        throw new Error('debug log failed');
+      });
+
+      try {
+        const img = createMockImage(100, 100);
+        const pipeline = new LazyRenderPipeline(img);
+
+        await expect(pipeline.toBlob()).rejects.toThrow();
+        expect(releaseSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        process.env.NODE_ENV = originalNodeEnv;
+        logSpy.mockRestore();
+        releaseSpy.mockRestore();
+      }
+    });
+
+    it('canvas.toBlob 호출 자체가 예외를 던져도 canvas를 pool에 반환한다', async () => {
+      const { CanvasPool } = await import('../../../src/base/canvas-pool');
+      const pool = CanvasPool.getInstance();
+      const releaseSpy = vi.spyOn(pool, 'release');
+      const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;
+      const toBlobSpy = vi.spyOn(canvasPrototype, 'toBlob').mockImplementation(() => {
+        throw new DOMException('canvas is not origin-clean', 'SecurityError');
+      });
+
+      try {
+        const img = createMockImage(100, 100);
+        const pipeline = new LazyRenderPipeline(img);
+
+        await expect(pipeline.toBlob()).rejects.toThrow('canvas is not origin-clean');
+        expect(releaseSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        toBlobSpy.mockRestore();
+        releaseSpy.mockRestore();
+      }
+    });
+  });
 });
 
 describe('Single Rendering Concept Validation', () => {
