@@ -5,6 +5,7 @@
  */
 
 import { createImageElement } from '../utils/image-element';
+import { loadImageElement } from '../utils/image-loader';
 import type {
   GeometrySize,
   OutputFormat,
@@ -41,11 +42,7 @@ export class DataURLResultImpl implements ResultDataURL {
     canvas.height = this.height;
 
     const img = createImageElement();
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
-      img.src = this.dataURL;
-    });
+    await loadImageElement(img, this.dataURL);
 
     ctx.drawImage(img, 0, 0);
     return canvas;
@@ -82,11 +79,7 @@ export class DataURLResultImpl implements ResultDataURL {
   /** HTMLImageElement로 변환한다. */
   async toElement(): Promise<HTMLImageElement> {
     const img = createImageElement();
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
-      img.src = this.dataURL;
-    });
+    await loadImageElement(img, this.dataURL);
     return img;
   }
 
@@ -122,23 +115,19 @@ export class BlobResultImpl implements ResultBlob {
 
     try {
       const img = createImageElement();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
-        img.src = objectUrl;
-      });
+      await loadImageElement(img, objectUrl);
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
 
-      // 🎯 Reuse size information
+      // 이미 계산된 결과 크기를 그대로 캔버스에 반영한다.
       canvas.width = this.width;
       canvas.height = this.height;
 
       ctx.drawImage(img, 0, 0);
       return canvas;
     } finally {
-      URL.revokeObjectURL(objectUrl); // Immediate cleanup
+      URL.revokeObjectURL(objectUrl);
     }
   }
 
@@ -204,14 +193,10 @@ export class BlobResultImpl implements ResultBlob {
 
     try {
       const img = createImageElement();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
-        img.src = objectUrl;
-      });
+      await loadImageElement(img, objectUrl);
       return img;
     } finally {
-      URL.revokeObjectURL(objectUrl); // Immediate cleanup
+      URL.revokeObjectURL(objectUrl);
     }
   }
 
@@ -252,23 +237,19 @@ export class FileResultImpl implements ResultFile {
 
     try {
       const img = createImageElement();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
-        img.src = objectUrl;
-      });
+      await loadImageElement(img, objectUrl);
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
 
-      // 🎯 Reuse size information
+      // 이미 계산된 결과 크기를 그대로 캔버스에 반영한다.
       canvas.width = this.width;
       canvas.height = this.height;
 
       ctx.drawImage(img, 0, 0);
       return canvas;
     } finally {
-      URL.revokeObjectURL(objectUrl); // Immediate cleanup
+      URL.revokeObjectURL(objectUrl);
     }
   }
 
@@ -314,14 +295,10 @@ export class FileResultImpl implements ResultFile {
 
     try {
       const img = createImageElement();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
-        img.src = objectUrl;
-      });
+      await loadImageElement(img, objectUrl);
       return img;
     } finally {
-      URL.revokeObjectURL(objectUrl); // Immediate cleanup
+      URL.revokeObjectURL(objectUrl);
     }
   }
 
@@ -399,11 +376,7 @@ export class CanvasResultImpl implements ResultCanvas {
   async toElement(): Promise<HTMLImageElement> {
     const dataURL = await this.toDataURL();
     const img = createImageElement();
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = () => reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
-      img.src = dataURL;
-    });
+    await loadImageElement(img, dataURL);
     return img;
   }
 

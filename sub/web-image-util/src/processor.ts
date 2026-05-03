@@ -652,13 +652,22 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
           const objectUrl = URL.createObjectURL(blob);
           const img = createImageElement();
 
+          // loadImageElement 헬퍼 미사용: objectURL revoke 책임이 이 콜백 안에 있으므로
+          // 헬퍼 서명(img, src, errorCode)으로는 objectURL 정리를 포함할 수 없다.
+          // Promise 결정 시 핸들러를 해제하고 objectURL을 정리한다.
+          const cleanup = () => {
+            img.onload = null;
+            img.onerror = null;
+            URL.revokeObjectURL(objectUrl);
+          };
+
           img.onload = () => {
-            URL.revokeObjectURL(objectUrl); // Immediate cleanup
+            cleanup();
             resolve(img);
           };
 
           img.onerror = () => {
-            URL.revokeObjectURL(objectUrl); // Cleanup on error too
+            cleanup();
             reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
           };
 

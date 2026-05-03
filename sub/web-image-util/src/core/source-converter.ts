@@ -1155,9 +1155,18 @@ async function convertSvgToElement(
 
   // 테스트 환경에서는 실제 SVG 디코딩을 우회해 타임아웃을 방지한다.
   if (typeof globalThis !== 'undefined' && (globalThis as any)._SVG_MOCK_MODE) {
-    return new Promise<HTMLImageElement>((resolve) => {
+    return new Promise<HTMLImageElement>((resolve, reject) => {
       const img = document.createElement('img');
-      img.onload = () => resolve(img);
+      img.onload = () => {
+        img.onload = null;
+        img.onerror = null;
+        resolve(img);
+      };
+      img.onerror = () => {
+        img.onload = null;
+        img.onerror = null;
+        reject(new ImageProcessError('Mock SVG image loading failed', 'IMAGE_LOAD_FAILED'));
+      };
       // 최소 비용의 1x1 투명 PNG로 대체한다.
       img.src =
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
@@ -1207,19 +1216,24 @@ async function convertSvgToElement(
       const img = document.createElement('img');
       let objectUrl: string | null = null;
 
+      // Promise 결정 시 핸들러를 해제하고 Blob URL을 정리한다.
+      const cleanup = () => {
+        img.onload = null;
+        img.onerror = null;
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+        }
+      };
+
       // 로드 성공 시 임시 URL을 정리한다.
       img.onload = () => {
-        if (objectUrl) {
-          URL.revokeObjectURL(objectUrl); // Free memory
-        }
+        cleanup();
         resolve(img);
       };
 
       // 로드 실패 시에도 임시 URL을 정리하고 표준 오류로 감싼다.
       img.onerror = (error) => {
-        if (objectUrl) {
-          URL.revokeObjectURL(objectUrl); // Free memory even on error
-        }
+        cleanup();
         reject(
           new ImageProcessError(
             `SVG load failed: quality level ${qualityLevel}, size ${renderWidth}x${renderHeight}, error: ${error}`,
@@ -1325,12 +1339,18 @@ async function loadBlobUrl(blobUrl: string, options?: InternalSourceConverterOpt
     return new Promise((resolve, reject) => {
       const img = document.createElement('img');
       const objectUrl = URL.createObjectURL(blob);
-      img.onload = () => {
+      // Promise 결정 시 핸들러를 해제하고 Blob URL을 정리한다.
+      const cleanup = () => {
+        img.onload = null;
+        img.onerror = null;
         URL.revokeObjectURL(objectUrl);
+      };
+      img.onload = () => {
+        cleanup();
         resolve(img);
       };
       img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
+        cleanup();
         reject(new ImageProcessError(`Failed to load Blob URL image: ${blobUrl}`, 'SOURCE_LOAD_FAILED'));
       };
       img.src = objectUrl;
@@ -1361,8 +1381,19 @@ async function loadImageFromUrl(
         img.crossOrigin = crossOrigin;
       }
 
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new ImageProcessError(`Failed to load image: ${url}`, 'SOURCE_LOAD_FAILED'));
+      // Promise 결정 시 핸들러를 해제한다.
+      const cleanup = () => {
+        img.onload = null;
+        img.onerror = null;
+      };
+      img.onload = () => {
+        cleanup();
+        resolve(img);
+      };
+      img.onerror = () => {
+        cleanup();
+        reject(new ImageProcessError(`Failed to load image: ${url}`, 'SOURCE_LOAD_FAILED'));
+      };
 
       img.src = url;
     });
@@ -1435,12 +1466,18 @@ async function loadImageFromUrl(
           const img = document.createElement('img');
           const objectUrl = URL.createObjectURL(responseBlob);
 
-          img.onload = () => {
+          // Promise 결정 시 핸들러를 해제하고 Blob URL을 정리한다.
+          const cleanup = () => {
+            img.onload = null;
+            img.onerror = null;
             URL.revokeObjectURL(objectUrl);
+          };
+          img.onload = () => {
+            cleanup();
             resolve(img);
           };
           img.onerror = () => {
-            URL.revokeObjectURL(objectUrl);
+            cleanup();
             reject(new ImageProcessError(`Failed to load image: ${url}`, 'SOURCE_LOAD_FAILED'));
           };
 
@@ -1568,8 +1605,19 @@ async function convertCanvasToElement(canvas: HTMLCanvasElement): Promise<HTMLIm
     const img = document.createElement('img');
     const dataURL = canvas.toDataURL();
 
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new ImageProcessError('Failed to load Canvas image', 'SOURCE_LOAD_FAILED'));
+    // Promise 결정 시 핸들러를 해제한다.
+    const cleanup = () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+    img.onload = () => {
+      cleanup();
+      resolve(img);
+    };
+    img.onerror = () => {
+      cleanup();
+      reject(new ImageProcessError('Failed to load Canvas image', 'SOURCE_LOAD_FAILED'));
+    };
 
     img.src = dataURL;
   });
@@ -1615,13 +1663,19 @@ async function convertBlobToElement(blob: Blob, options?: InternalSourceConverte
     const img = document.createElement('img');
     const objectUrl = URL.createObjectURL(blob);
 
-    img.onload = () => {
+    // Promise 결정 시 핸들러를 해제하고 Blob URL을 정리한다.
+    const cleanup = () => {
+      img.onload = null;
+      img.onerror = null;
       URL.revokeObjectURL(objectUrl);
+    };
+    img.onload = () => {
+      cleanup();
       resolve(img);
     };
 
     img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
+      cleanup();
       reject(new ImageProcessError('Failed to load Blob image', 'SOURCE_LOAD_FAILED'));
     };
 
