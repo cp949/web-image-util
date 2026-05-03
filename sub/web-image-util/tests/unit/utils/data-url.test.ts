@@ -67,6 +67,20 @@ describe('data URL utilities', () => {
     expect(() => estimateDataURLPayloadByteLength('data:text/plain,%')).toThrow('유효한 Data URL이 아닙니다');
   });
 
+  it('malformed base64 alphabet과 padding은 payload byte length 추정에서 거부한다', () => {
+    expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,@@@@')).toThrow('유효한 Data URL이 아닙니다');
+    expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a===')).toThrow('유효한 Data URL이 아닙니다');
+    expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a=b=')).toThrow('유효한 Data URL이 아닙니다');
+    expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a=')).toThrow('유효한 Data URL이 아닙니다');
+  });
+
+  it('invalid 옵션이 null이면 malformed base64에서 null을 반환한다', () => {
+    expect(estimateDataURLPayloadByteLength('data:text/plain;base64,@@@@', { invalid: 'null' })).toBeNull();
+    expect(estimateDataURLPayloadByteLength('data:text/plain;base64,a===', { invalid: 'null' })).toBeNull();
+    expect(estimateDataURLPayloadByteLength('data:text/plain;base64,a=b=', { invalid: 'null' })).toBeNull();
+    expect(estimateDataURLPayloadByteLength('data:text/plain;base64,a=', { invalid: 'null' })).toBeNull();
+  });
+
   it('잘못된 Data URL은 명확한 오류를 던진다', () => {
     expect(() => dataURLToBlob('not-data-url')).toThrow('유효한 Data URL이 아닙니다');
     expect(() => estimateDataURLSize('not-data-url')).toThrow('유효한 Data URL이 아닙니다');

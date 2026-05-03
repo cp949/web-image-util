@@ -141,8 +141,20 @@ function estimateBase64PayloadByteLength(payload: string): number {
     throwInvalidDataURL();
   }
 
+  validateBase64PayloadShape(normalized);
+
   const padding = normalized.endsWith('==') ? 2 : normalized.endsWith('=') ? 1 : 0;
   return Math.floor((normalized.length * 3) / 4) - padding;
+}
+
+function validateBase64PayloadShape(payload: string): void {
+  if (!/^[A-Za-z\d+/]*={0,2}$/.test(payload)) {
+    throwInvalidDataURL();
+  }
+
+  if (payload.includes('=') && payload.length % 4 !== 0) {
+    throwInvalidDataURL();
+  }
 }
 
 function estimatePercentPayloadByteLength(payload: string): number {
