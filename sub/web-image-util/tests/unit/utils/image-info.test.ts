@@ -313,6 +313,67 @@ describe('image info utilities', () => {
     }
   });
 
+  it('fetchImageSourceBlob은 성공 후 timeout timer를 정리한다', async () => {
+    const originalFetch = globalThis.fetch;
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockResolvedValue(new Response(new Uint8Array([1])));
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      await fetchImageSourceBlob('https://example.com/image', { timeoutMs: 1000 });
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      globalThis.fetch = originalFetch;
+      vi.useRealTimers();
+    }
+  });
+
+  it('fetchImageSourceBlob은 성공 후 caller abort listener를 제거한다', async () => {
+    const originalFetch = globalThis.fetch;
+    const controller = new AbortController();
+    const addEventListenerSpy = vi.spyOn(controller.signal, 'addEventListener');
+    const removeEventListenerSpy = vi.spyOn(controller.signal, 'removeEventListener');
+    const fetchMock = vi.fn().mockResolvedValue(new Response(new Uint8Array([1])));
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      await fetchImageSourceBlob('https://example.com/image', { abortSignal: controller.signal });
+
+      const abortListenerCall = addEventListenerSpy.mock.calls.find(([type]) => type === 'abort');
+      expect(abortListenerCall).toBeDefined();
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('abort', abortListenerCall?.[1]);
+    } finally {
+      addEventListenerSpy.mockRestore();
+      removeEventListenerSpy.mockRestore();
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('fetchImageSourceBlob은 timeout으로 중단된 fetch를 SOURCE_LOAD_FAILED로 반환한다', async () => {
+    const originalFetch = globalThis.fetch;
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockImplementation(
+      (_url: string, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')), {
+            once: true,
+          });
+        })
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      const promise = fetchImageSourceBlob('https://example.com/image', { timeoutMs: 1000 });
+      const assertion = expect(promise).rejects.toMatchObject({ code: 'SOURCE_LOAD_FAILED' });
+      await vi.advanceTimersByTimeAsync(1000);
+      await assertion;
+      expect(fetchMock).toHaveBeenCalledWith('https://example.com/image', expect.objectContaining({ method: 'GET' }));
+    } finally {
+      globalThis.fetch = originalFetch;
+      vi.useRealTimers();
+    }
+  });
+
   it('fetchImageSourceBlob은 HTTP 실패를 SOURCE_LOAD_FAILED로 반환한다', async () => {
     const originalFetch = globalThis.fetch;
     const fetchMock = vi.fn().mockResolvedValue(new Response('missing', { status: 404 }));

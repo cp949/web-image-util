@@ -266,18 +266,34 @@ function assertFetchSourceProtocol(source: string, allowedProtocols: string[]): 
   }
 }
 
-function createFetchSourceAbortSignal(
+function createFetchSourceAbortController(
   timeoutMs: number | undefined,
   abortSignal: AbortSignal | undefined
-): AbortSignal | undefined {
+): { signal?: AbortSignal; cleanup: () => void } {
   if ((timeoutMs === undefined || timeoutMs === 0) && !abortSignal) {
-    return undefined;
+    return { cleanup: () => {} };
   }
 
   const controller = new AbortController();
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let isCleanedUp = false;
 
   const abort = () => controller.abort();
+  const cleanup = () => {
+    if (isCleanedUp) {
+      return;
+    }
+
+    isCleanedUp = true;
+
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+      timeoutId = undefined;
+    }
+
+    abortSignal?.removeEventListener('abort', abort);
+    controller.signal.removeEventListener('abort', cleanup);
+  };
 
   if (abortSignal) {
     if (abortSignal.aborted) {
@@ -291,18 +307,9 @@ function createFetchSourceAbortSignal(
     timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   }
 
-  controller.signal.addEventListener(
-    'abort',
-    () => {
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
-      }
-      abortSignal?.removeEventListener('abort', abort);
-    },
-    { once: true }
-  );
+  controller.signal.addEventListener('abort', cleanup, { once: true });
 
-  return controller.signal;
+  return { signal: controller.signal, cleanup };
 }
 
 function sanitizeFetchSourceOptions(
@@ -577,34 +584,39 @@ export async function fetchImageSourceBlob(
 
   assertFetchSourceProtocol(url, allowedProtocols);
 
-  const signal = createFetchSourceAbortSignal(options.timeoutMs, options.abortSignal);
+  const { signal, cleanup } = createFetchSourceAbortController(options.timeoutMs, options.abortSignal);
 
-  let response: Response;
   try {
-    response = await fetch(url, {
+    const response = await fetch(url, {
       ...sanitizeFetchSourceOptions(options.fetchOptions),
       method: 'GET',
       ...(signal ? { signal } : {}),
     });
+
+    if (!response.ok) {
+      throw new ImageProcessError(`Failed to load URL: ${response.status}`, 'SOURCE_LOAD_FAILED');
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    const { blob, bytes } = await readFetchSourceBlob(response, maxBytes, '이미지 URL');
+
+    return {
+      blob,
+      bytes,
+      contentType,
+      url,
+      responseUrl: response.url || url,
+      status: response.status,
+    };
   } catch (error) {
+    if (error instanceof ImageProcessError) {
+      throw error;
+    }
+
     throw new ImageProcessError('이미지 URL을 fetch할 수 없습니다', 'SOURCE_LOAD_FAILED', error as Error);
+  } finally {
+    cleanup();
   }
-
-  if (!response.ok) {
-    throw new ImageProcessError(`Failed to load URL: ${response.status}`, 'SOURCE_LOAD_FAILED');
-  }
-
-  const contentType = response.headers.get('content-type') ?? '';
-  const { blob, bytes } = await readFetchSourceBlob(response, maxBytes, '이미지 URL');
-
-  return {
-    blob,
-    bytes,
-    contentType,
-    url,
-    responseUrl: response.url || url,
-    status: response.status,
-  };
 }
 
 /** 이미지 소스의 가로/세로 비율을 반환한다. */
