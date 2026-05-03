@@ -199,6 +199,32 @@ await processImage(userProvidedSource, {
 | ID 충돌 방지 prefix | `prefixSvgIds(svg, prefix)` 같은 별도 유틸리티 |
 | 에디터 메타데이터 확장 제거 | `removeMetadata` 확장 옵션으로 `sodipodi:*`, `inkscape:*`, `dc:*` 계열 제거 |
 
+## CSS escape 우회 후보 검증 결과
+
+`stripExternalCssUrls()`의 CSS `url(...)` 정규식이 CSS 숫자 escape(`\68ttp://` → `http://`)로 스킴을 숨긴 페이로드를 차단하지 못하는 회귀를 발견하고 보강했다.
+
+### 발견된 우회 패턴
+
+| 패턴 | 예시 | 브라우저 해석 |
+| --- | --- | --- |
+| 단일 hex escape | `url(\68ttp://evil.example.com/)` | `url(http://...)` |
+| 0 패딩 hex escape | `url(\000068ttp://...)` | `url(http://...)` |
+| 문자별 분할 escape (공백 포함) | `url(\68 \74 \74 \70 ://...)` | `url(http://...)` |
+| escape된 따옴표 | `url(\22 http://...)` | `url("http://...")` |
+| image-set 내부 escape | `image-set(url(\68ttp://...))` | 외부 로딩 |
+| data URL 콜론 escape | `url(data\3a image/png;base64,...)` | `url(data:...)` |
+| 이중 백슬래시 | `url(\\68\\74...)` | `url(\h\t...)` — 외부 URL 아님 |
+
+### 적용된 보강 (2026-05-04)
+
+1. **`decodeCssEscapes()` 추가**: CSS 숫자 escape 시퀀스(`\68`, `\000068` 등)를 실제 문자로 복원하는 함수를 추가했다.
+2. **`isExternalCssUrl()` 보강**: 원본 값과 CSS escape 디코딩 후 앞뒤 따옴표·백슬래시를 strip한 값을 모두 검사하도록 수정했다.
+3. **unquoted URL 정규식 확장 (Option B)**: 기존 `([^"')[^\s)]*)`에서 `([^"')*)`로 변경해 공백을 포함하는 분할 escape 패턴도 캡처한다.
+
+이중 백슬래시 케이스(`\\68\\74...`)는 CSS 파서가 `\h\t...`로 해석하므로 실제 외부 URL이 되지 않는다. sanitizer가 이 케이스를 차단하지 않아도 보안상 정상이며, 회귀 테스트에서 호스트 포함 여부 검사를 제외했다.
+
+**회귀 테스트**: `sub/web-image-util/tests/security/svg-css-escape-bypass.test.ts`
+
 ## 보안 권장사항
 
 - 사용자 업로드 또는 외부 시스템 SVG에는 `svgSanitizer: 'strict'`를 사용하세요.

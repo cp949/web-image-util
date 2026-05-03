@@ -120,22 +120,52 @@ function isExternalHref(value: string): boolean {
 }
 
 /**
+ * CSS 숫자 escape 시퀀스를 실제 문자로 복원한다.
+ *
+ * CSS에서 `\68` 또는 `\000068`은 `h`를 나타낸다. 브라우저 CSS 파서가
+ * 이를 실제 문자로 해석하므로, 정책 비교 전에 디코딩이 필요하다.
+ *
+ * @param value 디코딩할 CSS 조각
+ * @returns CSS escape가 복원된 문자열
+ */
+function decodeCssEscapes(value: string): string {
+  return value.replace(/\\([0-9a-f]{1,6}\s?|.)/gi, (_match, escaped: string) => {
+    const hex = escaped.trim();
+    if (/^[0-9a-f]{1,6}$/i.test(hex)) {
+      try {
+        return String.fromCodePoint(Number.parseInt(hex, 16));
+      } catch {
+        return '';
+      }
+    }
+    return escaped;
+  });
+}
+
+/**
  * CSS `url()` 함수 내 값이 외부 참조인지 판정한다.
  *
  * 외부 참조로 간주하는 스킴: http://, https://, //..., data:, javascript:
  * 프래그먼트 참조(#...) 는 내부 참조이므로 허용한다.
+ * CSS escape(`\68ttp://` → `http://`)를 디코딩한 값도 함께 검사한다.
  *
  * @param urlValue `url()` 안쪽의 따옴표가 제거된 문자열
  * @returns 외부 참조이면 true
  */
 function isExternalCssUrl(urlValue: string): boolean {
   const normalized = normalizePolicyValue(urlValue);
-  return (
-    normalized.startsWith('//') ||
-    normalized.startsWith('http://') ||
-    normalized.startsWith('https://') ||
-    normalized.startsWith('data:') ||
-    normalized.startsWith('javascript:')
+  // CSS escape 디코딩 후 앞뒤 따옴표·백슬래시를 strip해서 추가 검사한다.
+  // 예: \22http://... -> "http://... -> strip -> http://...
+  // 예: \\68\\74... -> \h\t... -> startsWith('\') 이면 strip -> h\t... 는 외부 URL 아님
+  const decodedRaw = decodeCssEscapes(urlValue);
+  const decoded = normalizePolicyValue(decodedRaw.replace(/^[\\"']+/, ''));
+  return [normalized, decoded].some(
+    (value) =>
+      value.startsWith('//') ||
+      value.startsWith('http://') ||
+      value.startsWith('https://') ||
+      value.startsWith('data:') ||
+      value.startsWith('javascript:')
   );
 }
 
@@ -157,8 +187,8 @@ function stripExternalCssUrls(css: string): string {
     .replace(/url\s*\(\s*'([^']*)'\s*\)/gi, (_match, value: string) =>
       isExternalCssUrl(value) ? 'url(#invalid)' : _match
     )
-    .replace(/url\s*\(\s*([^"')[^\s)]*)\s*\)/gi, (_match, value: string) =>
-      isExternalCssUrl(value) ? 'url(#invalid)' : _match
+    .replace(/url\s*\(\s*([^"')]*)\s*\)/gi, (_match, value: string) =>
+      isExternalCssUrl(value.trim()) ? 'url(#invalid)' : _match
     );
 }
 
