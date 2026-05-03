@@ -78,6 +78,18 @@ export function estimateDataURLSize(dataURL: string): number {
   return decodeDataURLPayload(parsed).byteLength;
 }
 
+/**
+ * Data URL payload의 디코딩 후 byte 길이를 payload를 실제 디코딩하지 않고 추정한다.
+ *
+ * - base64 payload는 whitespace 제거 후 길이와 padding으로 계산한다.
+ * - percent-encoded payload는 `%XX`를 1 byte로 세고 escape되지 않은 문자는 UTF-8 byte 길이로 센다.
+ * - scheme 비교는 기본적으로 대소문자를 구분하지 않으며, `caseSensitiveScheme: true`로 엄격 모드를 사용할 수 있다.
+ * - malformed input은 기본적으로 `유효한 Data URL이 아닙니다`로 throw하며, `invalid: 'null'` 옵션을 주면 `null`을 반환한다.
+ *
+ * @param dataURL 검사할 Data URL 문자열
+ * @param options 동작 옵션
+ * @returns payload의 byte 수 또는 `null`
+ */
 export function estimateDataURLPayloadByteLength(
   dataURL: string,
   options: EstimateDataURLPayloadByteLengthOptions = {}
@@ -97,6 +109,18 @@ export function estimateDataURLPayloadByteLength(
   }
 }
 
+/**
+ * SVG Data URL을 동기적으로 UTF-8 text로 decode한다.
+ *
+ * - `image/svg+xml` MIME만 허용하며 scheme/MIME 비교는 대소문자를 구분하지 않는다.
+ * - percent-encoded와 base64 payload를 모두 지원한다.
+ * - DOMParser 검증, sanitizer, 브라우저 호환성 보정은 수행하지 않는다. 호출 측 정책에 위임한다.
+ * - malformed Data URL, non-SVG MIME, decode 실패, SVG root가 아닌 text는 `유효한 SVG Data URL이 아닙니다`로 throw한다.
+ *   원본 오류는 `Error.cause`에 보존되어 디버깅에 활용할 수 있다.
+ *
+ * @param source decode할 Data URL 문자열
+ * @returns decode된 SVG text와 메타데이터
+ */
 export function decodeSvgDataURL(source: string): DecodedSvgDataURL {
   try {
     const parsed = parseDataURL(source, { caseSensitiveScheme: false });

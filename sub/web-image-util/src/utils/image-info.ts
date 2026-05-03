@@ -582,6 +582,21 @@ export async function fetchImageFormat(
   }
 }
 
+/**
+ * URL을 fetch만 수행해 이미지 Blob과 응답 메타데이터를 반환한다.
+ *
+ * - 기본 허용 protocol은 `http:`, `https:`이며 `allowedProtocols`로 좁히거나 확장할 수 있다.
+ * - method는 항상 `GET`으로 강제된다. `fetchOptions`로 `credentials`, `mode`, `headers`, `referrerPolicy`, `cache` 등을 전달할 수 있고
+ *   `body`/`method`/`signal`은 무시된다.
+ * - `abortSignal`과 `timeoutMs`를 결합해 중단할 수 있다. 중단 시 image element fallback은 없다.
+ * - `Content-Length`가 `maxBytes`를 초과하면 본문을 읽기 전에 `SOURCE_BYTES_EXCEEDED`로 거부한다.
+ * - stream 누적 byte가 `maxBytes`를 초과하면 reader를 cancel하고 `SOURCE_BYTES_EXCEEDED`를 throw한다.
+ * - 네트워크 실패와 HTTP 에러는 `SOURCE_LOAD_FAILED`, 잘못된 URL/허용되지 않은 protocol은 `INVALID_SOURCE`로 throw한다.
+ *
+ * @param source fetch할 이미지 URL
+ * @param options 동작 옵션
+ * @returns 응답 Blob과 메타데이터
+ */
 export async function fetchImageSourceBlob(
   source: string,
   options: FetchImageSourceBlobOptions = {}
