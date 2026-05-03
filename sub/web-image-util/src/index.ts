@@ -88,6 +88,7 @@
 
 // browser-capabilities 모듈의 단일 감지 경로를 features 퍼사드에서 재사용한다
 import {
+  detectCanvasFormatSupport as _detectCanvasFormatSupport,
   detectSyncCapabilities as _detectSyncCapabilities,
   getCachedBrowserCapabilities as _getCachedBrowserCapabilities,
   getCachedFormatSupport as _getCachedFormatSupport,
@@ -241,39 +242,6 @@ export { extractSvgDimensions } from './utils/svg-dimensions';
 // SVG sanitize
 export { sanitizeSvg, sanitizeSvgForRendering } from './utils/svg-sanitizer';
 
-type LegacyFormatKey = 'webp' | 'avif';
-
-const legacyFormatSupportCache: Partial<Record<LegacyFormatKey, boolean>> = {};
-
-/**
- * 하위 호환 `features` 퍼사드를 위해 포맷 지원 여부를 동기적으로 판정한다.
- *
- * 비동기 capability 캐시가 비어 있는 첫 접근에서만 예전 Canvas 기반 판별을 수행하고,
- * 이후에는 모듈 내부 캐시를 재사용한다.
- */
-function detectLegacyFormatSupport(format: LegacyFormatKey): boolean {
-  const cached = legacyFormatSupportCache[format];
-  if (cached !== undefined) {
-    return cached;
-  }
-
-  try {
-    if (typeof globalThis.document === 'undefined') {
-      legacyFormatSupportCache[format] = false;
-      return false;
-    }
-
-    const canvas = globalThis.document.createElement('canvas');
-    const mimeType = `image/${format}`;
-    const supported = canvas.toDataURL(mimeType).startsWith(`data:${mimeType}`);
-    legacyFormatSupportCache[format] = supported;
-    return supported;
-  } catch {
-    legacyFormatSupportCache[format] = false;
-    return false;
-  }
-}
-
 /**
  * 브라우저 기능 지원 여부를 동기적으로 감지한다 (하위 호환 퍼사드).
  *
@@ -309,7 +277,7 @@ export const features = {
       return cachedCapabilities.webp;
     }
 
-    return _getCachedFormatSupport().webp ?? detectLegacyFormatSupport('webp');
+    return _getCachedFormatSupport().webp ?? _detectCanvasFormatSupport('webp');
   },
   /** AVIF 지원 여부 */
   get avif(): boolean {
@@ -318,7 +286,7 @@ export const features = {
       return cachedCapabilities.avif;
     }
 
-    return _getCachedFormatSupport().avif ?? detectLegacyFormatSupport('avif');
+    return _getCachedFormatSupport().avif ?? _detectCanvasFormatSupport('avif');
   },
   /** OffscreenCanvas 지원 여부 */
   get offscreenCanvas(): boolean {

@@ -29,6 +29,7 @@ import { validateResizeConfig } from './types/resize-config';
 import { BlobResultImpl, CanvasResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
 import type { ResizeOperation } from './types/shortcut-types';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
+import { detectCanvasFormatSupport } from './utils/browser-capabilities';
 import { formatToMimeType, mimeTypeToOutputFormat } from './utils/format-utils';
 import { createImageElement } from './utils/image-element';
 
@@ -341,20 +342,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * @private
    */
   private supportsFormat(format: ImageFormat): boolean {
-    if (typeof window === 'undefined') return false;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = 1;
-
-    try {
-      const mimeType = `image/${format}`;
-      // Check format support using Canvas toDataURL
-      const dataUrl = canvas.toDataURL(mimeType, 0.5);
-      // Unsupported formats are replaced with PNG
-      return dataUrl.startsWith(`data:${mimeType}`);
-    } catch {
-      return false;
-    }
+    return detectCanvasFormatSupport(format);
   }
 
   /**

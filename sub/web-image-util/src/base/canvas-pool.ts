@@ -4,7 +4,9 @@
  * Fabric.js 패턴을 참고한 동적 메모리 관리 시스템.
  */
 
+import { ImageProcessError } from '../types';
 import { debugLog } from '../utils/debug';
+
 export class CanvasPool {
   private static instance: CanvasPool;
   private pool: HTMLCanvasElement[] = [];
@@ -173,6 +175,25 @@ export class CanvasPool {
     // 메모리 해제를 위해 크기를 0으로 초기화
     canvas.width = 0;
     canvas.height = 0;
+  }
+
+  /**
+   * 메모리 압박 감지에 사용하는 임계값을 설정한다.
+   *
+   * @description 저사양 환경에서 더 낮은 임계값으로 풀 크기를 줄이거나,
+   *   고메모리 환경에서 임계값을 높여 풀 재사용을 늘릴 수 있다.
+   * @param bytes 임계값 바이트. 양수여야 한다.
+   */
+  setMemoryThreshold(bytes: number): void {
+    if (!Number.isFinite(bytes) || bytes <= 0) {
+      throw new ImageProcessError('memoryThreshold는 양수여야 합니다', 'INVALID_DIMENSIONS');
+    }
+    this.memoryThreshold = bytes;
+  }
+
+  /** 현재 임계값을 조회한다 (디버깅/테스트 용). */
+  getMemoryThreshold(): number {
+    return this.memoryThreshold;
   }
 
   /**

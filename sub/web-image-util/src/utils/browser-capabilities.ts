@@ -4,6 +4,7 @@
  * @description 현재 환경을 분석해 어떤 이미지 처리 경로가 적절한지 결정한다.
  */
 
+import type { ImageFormat } from '../types';
 import { createImageElement } from './image-element';
 
 // 브라우저 기능과 성능 판단에 쓰는 타입들이다.
@@ -84,6 +85,43 @@ class CapabilityCache {
 }
 
 const capabilityCache = new CapabilityCache();
+
+function getCanvasFormatCacheKey(format: ImageFormat): string {
+  return `canvas-format-support:${format}`;
+}
+
+function getCanvasMimeType(format: ImageFormat): string {
+  return format === 'jpg' ? 'image/jpeg' : `image/${format}`;
+}
+
+/**
+ * Canvas encoder가 특정 출력 포맷을 지원하는지 동기적으로 감지한다.
+ *
+ * @description `processImage().toBlob()`의 smart format 선택과 하위 호환
+ * `features` 퍼사드가 공유하는 Canvas 기반 encode 지원 캐시다. 비동기
+ * image-load 기반 `detectFormatSupport()`와 의미가 다르므로 별도 키를 쓴다.
+ */
+export function detectCanvasFormatSupport(format: ImageFormat): boolean {
+  const cached = capabilityCache.get<boolean>(getCanvasFormatCacheKey(format));
+  if (cached !== undefined) return cached;
+
+  if (capabilityCache.isServerSide) {
+    return false;
+  }
+
+  try {
+    const canvas = globalThis.document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+
+    const mimeType = getCanvasMimeType(format);
+    const supported = canvas.toDataURL(mimeType, 0.5).startsWith(`data:${mimeType}`);
+    capabilityCache.set(getCanvasFormatCacheKey(format), supported);
+    return supported;
+  } catch {
+    capabilityCache.set(getCanvasFormatCacheKey(format), false);
+    return false;
+  }
+}
 
 // ============================================================================
 // FEATURE DETECTION FUNCTIONS - Individual feature detection functions
