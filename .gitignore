@@ -113,6 +113,7 @@ Thumbs.db
 
 # Next.js build output
 .next
+apps/exam/next-env.d.ts
 
 # Nuxt.js build / generate output
 .nuxt

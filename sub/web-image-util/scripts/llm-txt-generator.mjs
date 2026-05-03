@@ -11,6 +11,7 @@ function collapseWhitespace(text) {
 
 function normalizeDeclarationText(text) {
   return collapseWhitespace(text)
+    .replace(/\s+private\s+[^;]+;/g, '')
     .replace(/^(declare\s+|export\s+)+/g, '')
     .replace(/^function\s+/, '')
     .replace(/\s*;\s*$/, '');
@@ -87,11 +88,15 @@ export function renderLlmTxt({ packageName, readmeText, modules }) {
     '- The main processing flow is async.',
     '- Preset helpers return `Promise<ResultBlob>` directly.',
     '- Utility functions are better for conversion, Data URL handling, source detection, metadata lookup, format resolution, transparency checks, or SVG sanitizing.',
+    "- Use `processImage(source, { svgSanitizer: 'strict' })` when untrusted SVG input should be sanitized only after the source is confirmed as SVG.",
+    '- Use the `@cp949/web-image-util/svg-sanitizer` subpath when you need explicit strict SVG sanitizing before processing.',
     '',
     '## Examples',
     "- `const blob = await processImage(file).resize({ fit: 'cover', width: 300, height: 200 }).toBlob({ format: 'webp', quality: 0.85 });`",
     "- `const avatar = await createAvatar(file, { size: 128, format: 'png' });`",
     "- `const safeSvg = sanitizeSvg(svgString);`",
+    "- `const strictBlob = await processImage(untrustedSvg, { svgSanitizer: 'strict' }).toBlob();`",
+    "- `const strictSvg = sanitizeSvgStrict(svgString);`",
     "- `const blob = await convertToBlob(canvas);`",
     "- `const info = await detectImageSourceInfo(file);`",
     "- `const format = await fetchImageFormat('https://example.com/image-without-extension');`",
@@ -101,7 +106,8 @@ export function renderLlmTxt({ packageName, readmeText, modules }) {
     '- Only use exported public APIs from the package root or exported subpaths.',
     '- `resize()` should be used as a single resize step in one processing chain.',
     '- `maxFit` and `minFit` require at least one of `width` or `height`.',
-    '- SVG safety-sensitive input should be sanitized before use when the source is untrusted.',
+    "- SVG input uses `svgSanitizer: 'lightweight'` by default; choose `'strict'` for untrusted SVG or `'skip'` only after trusted prior sanitizing.",
+    "- `unsafe_processImage()` is a compatibility escape hatch and is not the same as `svgSanitizer: 'skip'`.",
     '- Source detection helpers and `getImageFormat()` do not fetch remote URLs; use `fetchImageFormat()` when URL body sniffing is required.',
     '- This library targets browser environments with Canvas 2D API support.',
     '',

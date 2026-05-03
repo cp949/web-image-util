@@ -8,9 +8,15 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
-현재 배포 준비 버전: `2.0.32`
+현재 배포 준비 버전: `2.0.33`
 
 ## 배포 메모
+
+### 2.0.33
+
+- `processImage(source, { svgSanitizer })` 옵션을 추가해 SVG 입력에만 `lightweight`, `strict`, `skip` 정책을 선택 적용할 수 있습니다.
+- 신뢰할 수 없는 SVG는 source 타입을 직접 분기하지 않고 `svgSanitizer: 'strict'`로 DOMPurify 기반 strict 정제를 opt-in할 수 있습니다.
+- SVG 문자열, Data URL, URL 응답, Blob/File, Blob URL, ArrayBuffer/Uint8Array 입력별 strict 정책 테스트를 보강합니다.
 
 ### 2.0.32
 

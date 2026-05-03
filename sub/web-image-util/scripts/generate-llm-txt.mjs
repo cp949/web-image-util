@@ -13,9 +13,28 @@ async function readText(relativePath) {
 
 async function readDistDeclarations() {
   const distDir = path.join(packageRoot, 'dist');
-  const entries = await readdir(distDir);
-  const declarationFiles = entries.filter((entry) => entry.endsWith('.d.ts')).sort();
-  const declarationTexts = await Promise.all(declarationFiles.map((entry) => readText(path.join('dist', entry))));
+  const declarationFiles = [];
+
+  async function collectDeclarationFiles(directory) {
+    const entries = await readdir(directory, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await collectDeclarationFiles(fullPath);
+        continue;
+      }
+
+      if (entry.isFile() && entry.name.endsWith('.d.ts')) {
+        declarationFiles.push(path.relative(packageRoot, fullPath));
+      }
+    }
+  }
+
+  await collectDeclarationFiles(distDir);
+  declarationFiles.sort();
+
+  const declarationTexts = await Promise.all(declarationFiles.map((entry) => readText(entry)));
 
   return declarationTexts.join('\n');
 }
@@ -29,7 +48,8 @@ async function main() {
     {
       modulePath: 'dist/index.d.ts',
       moduleSpecifier: '@cp949/web-image-util',
-      keySymbols: ['processImage', 'ResizeConfig'],
+      keySymbols: ['processImage', 'unsafe_processImage', 'ProcessorOptions', 'SvgSanitizerMode', 'ResizeConfig'],
+      sourceText: distDeclarations,
     },
     {
       modulePath: 'dist/presets/index.d.ts',
@@ -54,6 +74,7 @@ async function main() {
         'detectImageSourceType',
         'detectImageStringSourceInfo',
         'detectImageStringSourceType',
+        'enhanceBrowserCompatibility',
         'enhanceSvgForBrowser',
         'ensureBlob',
         'ensureBlobDetailed',
@@ -79,8 +100,15 @@ async function main() {
         'replaceImageExtension',
         'resolveOutputFormat',
         'sanitizeSvg',
+        'sanitizeSvgForRendering',
+        'SvgOptimizer',
       ],
       sourceText: distDeclarations,
+    },
+    {
+      modulePath: 'dist/svg-sanitizer/index.d.ts',
+      moduleSpecifier: '@cp949/web-image-util/svg-sanitizer',
+      keySymbols: ['sanitizeSvgStrict', 'sanitizeSvgStrictDetailed'],
     },
   ].map(async (module) => ({
     ...module,
