@@ -90,11 +90,11 @@ export {
   blobToDataURL,
   dataURLToBlob,
   decodeSvgDataURL,
+  type DecodedSvgDataURL,
   estimateDataURLPayloadByteLength,
+  type EstimateDataURLPayloadByteLengthOptions,
   estimateDataURLSize,
   isDataURLString,
-  type DecodedSvgDataURL,
-  type EstimateDataURLPayloadByteLengthOptions,
 } from './data-url';
 /**
  * Image format conversion functions
@@ -121,10 +121,10 @@ export {
  */
 export {
   type FetchImageFormatOptions,
-  type FetchImageSourceBlobOptions,
-  type FetchImageSourceBlobResult,
   fetchImageFormat,
+  type FetchImageSourceBlobOptions,
   fetchImageSourceBlob,
+  type FetchImageSourceBlobResult,
   getImageAspectRatio,
   getImageDimensions,
   getImageFormat,

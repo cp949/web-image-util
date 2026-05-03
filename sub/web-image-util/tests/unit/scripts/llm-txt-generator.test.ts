@@ -49,7 +49,9 @@ declare function createThumbnail(source: ImageSource, options: ThumbnailOptions)
 
     expect(script).toContain("'blobToDataURL'");
     expect(script).toContain("'dataURLToBlob'");
+    expect(script).toContain("'decodeSvgDataURL'");
     expect(script).toContain("'detectImageSourceInfo'");
+    expect(script).toContain("'estimateDataURLPayloadByteLength'");
     expect(script).toContain("'formatToMimeType'");
     expect(script).toContain("'getImageAspectRatio'");
     expect(script).toContain("'getImageDimensions'");
@@ -57,6 +59,7 @@ declare function createThumbnail(source: ImageSource, options: ThumbnailOptions)
     expect(script).toContain("'getImageInfo'");
     expect(script).toContain("'hasTransparency'");
     expect(script).toContain("'fetchImageFormat'");
+    expect(script).toContain("'fetchImageSourceBlob'");
     expect(script).not.toContain("'getOrFetchImageFormat'");
     expect(script).toContain("'isInlineSvg'");
     expect(script).toContain("'resolveOutputFormat'");
