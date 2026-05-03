@@ -455,12 +455,15 @@ const instagramPost = await createSocialImage(photo, {
 import {
   blobToDataURL,
   dataURLToBlob,
+  decodeSvgDataURL,
   detectImageSourceInfo,
   detectImageSourceType,
   detectImageStringSourceInfo,
   detectImageStringSourceType,
+  estimateDataURLPayloadByteLength,
   estimateDataURLSize,
   fetchImageFormat,
+  fetchImageSourceBlob,
   formatToMimeType,
   getImageAspectRatio,
   getImageFormat,
@@ -469,6 +472,7 @@ import {
   hasTransparency,
   mimeTypeToImageFormat,
   resolveOutputFormat,
+  sanitizeSvgForRendering,
 } from '@cp949/web-image-util/utils';
 
 const format = await getImageFormat(file);
@@ -499,6 +503,35 @@ const lightweightType = detectImageSourceType(file);
 ```
 
 `getImageFormat()`은 네트워크 요청 없이 MIME 타입, 파일명/URL 확장자, Data URL 헤더, Blob/바이너리 시그니처만으로 포맷을 판정합니다. 원격 응답 기준으로 확인해야 하면 `fetchImageFormat()`을 사용합니다. `fetchImageFormat()`은 확장자를 신뢰하지 않고 응답 앞부분을 `fetch()`로 읽어 실제 포맷을 확인합니다. fetch 대상은 명시적 URL, protocol-relative URL, `blob:` URL, `/`, `./`, `../`로 시작하는 브라우저 경로이며, 응답 실패나 판정 실패는 `'unknown'`으로 반환합니다.
+
+### 입력 사전 검사 유틸리티
+
+큰 Data URL은 실제 byte 배열을 만들기 전에 payload 크기만 확인할 수 있습니다.
+
+```typescript
+const bytes = estimateDataURLPayloadByteLength(source, { invalid: 'null' });
+if (bytes !== null && bytes > 20 * 1024 * 1024) {
+  throw new Error('image_too_large');
+}
+```
+
+SVG Data URL은 동기적으로 text로 decode한 뒤 앱 고유의 DOMParser 검증이나 sanitizer 정책을 적용할 수 있습니다.
+
+```typescript
+const { text } = decodeSvgDataURL(source);
+const sanitized = sanitizeSvgForRendering(text);
+```
+
+URL 입력은 `processImage()` 파이프라인을 거치지 않고 fetch와 byte limit만 공통화할 수 있습니다.
+
+```typescript
+const { blob, bytes, contentType } = await fetchImageSourceBlob(url, {
+  allowedProtocols: ['http:', 'https:'],
+  fetchOptions: { credentials: 'omit', mode: 'cors' },
+  maxBytes: 20 * 1024 * 1024,
+  timeoutMs: 10_000,
+});
+```
 
 컨버터 계열은 기존 `convertToBlob()`, `convertToDataURL()`, `convertToFile()`과 상세 결과를 반환하는 `convertToBlobDetailed()`, `convertToDataURLDetailed()`, `convertToFileDetailed()`을 제공합니다. Blob/Data URL/File을 그대로 재사용할 수 있는 경우에는 `ensureBlob()`, `ensureDataURL()`, `ensureFile()` 계열을 사용할 수 있습니다.
 
