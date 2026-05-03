@@ -2,6 +2,23 @@
 
 이 파일은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따르며, 이 프로젝트는 [Semantic Versioning](https://semver.org/lang/ko/)을 사용합니다.
 
+## [2.0.35]
+
+### 추가
+
+- Canvas Pool의 최대 보관 크기와 브라우저 포맷 지원 캐시를 공개 API에서 조회할 수 있도록 보강합니다.
+
+### 변경
+
+- 브라우저 포맷 지원 판정을 메모이제이션해 반복 변환 시 불필요한 Canvas 생성 비용을 줄입니다.
+- `HTMLImageElement` 로딩 핸들러 정리 흐름을 통합해 성공/실패 경로의 이벤트 핸들러 해제를 더 일관되게 처리합니다.
+
+### 수정
+
+- fetch 폴백 경로에서 타이머가 남을 수 있는 문제를 수정합니다.
+- SVG CSS escape 우회 페이로드와 unquoted `url(...)` 파싱 경계를 보강합니다.
+- `toBlob()` 콜백 내부에서 예외가 발생해도 내부 Canvas가 Canvas Pool에 반환되도록 보장합니다.
+
 ## [2.0.34]
 
 ### 추가
