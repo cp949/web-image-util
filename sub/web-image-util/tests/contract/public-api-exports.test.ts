@@ -147,6 +147,7 @@ const UTILS_VALUE_EXPORTS = [
   'resolveOutputFormat',
   // 이미지 정보
   'fetchImageFormat',
+  'fetchImageSourceBlob',
   'getImageAspectRatio',
   'getImageDimensions',
   'getImageFormat',

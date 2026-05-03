@@ -121,7 +121,10 @@ export {
  */
 export {
   type FetchImageFormatOptions,
+  type FetchImageSourceBlobOptions,
+  type FetchImageSourceBlobResult,
   fetchImageFormat,
+  fetchImageSourceBlob,
   getImageAspectRatio,
   getImageDimensions,
   getImageFormat,

@@ -2,12 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   fetchImageFormat,
+  fetchImageSourceBlob,
   getImageAspectRatio,
   getImageDimensions,
   getImageFormat,
   getImageInfo,
   getImageOrientation,
 } from '../../../src/utils';
+import { ImageProcessError } from '../../../src';
 
 describe('image info utilities', () => {
   it('캔버스 치수는 이미지 변환 없이 캔버스 속성에서 바로 반환한다', async () => {
@@ -117,6 +119,115 @@ describe('image info utilities', () => {
     try {
       await expect(fetchImageFormat('https://example.com/image')).resolves.toBe('unknown');
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('fetchImageSourceBlob은 fetch만 수행하고 Blob metadata를 반환한다', async () => {
+    const originalFetch = globalThis.fetch;
+    const body = new Uint8Array([1, 2, 3]);
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(body, {
+        status: 200,
+        headers: {
+          'content-type': 'image/png',
+          'content-length': '3',
+        },
+      })
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      const result = await fetchImageSourceBlob('https://example.com/image', {
+        fetchOptions: { credentials: 'omit', mode: 'cors' },
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://example.com/image',
+        expect.objectContaining({
+          method: 'GET',
+          credentials: 'omit',
+          mode: 'cors',
+        })
+      );
+      expect(result.bytes).toBe(3);
+      expect(result.contentType).toBe('image/png');
+      expect(result.url).toBe('https://example.com/image');
+      expect(result.status).toBe(200);
+      expect(result.blob.type).toBe('image/png');
+      await expect(result.blob.arrayBuffer()).resolves.toHaveProperty('byteLength', 3);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('fetchImageSourceBlob은 허용되지 않은 protocol을 fetch 전에 거부한다', async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn();
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      await expect(fetchImageSourceBlob('data:image/png;base64,abc')).rejects.toMatchObject({
+        code: 'INVALID_SOURCE',
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('fetchImageSourceBlob은 Content-Length가 maxBytes를 초과하면 본문 읽기 전에 거부한다', async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response('too large', {
+        headers: { 'content-length': '9', 'content-type': 'image/png' },
+      })
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      await expect(fetchImageSourceBlob('https://example.com/image', { maxBytes: 8 })).rejects.toMatchObject({
+        code: 'SOURCE_BYTES_EXCEEDED',
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('fetchImageSourceBlob은 stream 누적 byte가 maxBytes를 초과하면 reader를 cancel한다', async () => {
+    const originalFetch = globalThis.fetch;
+    const cancelMock = vi.fn();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2]));
+        controller.enqueue(new Uint8Array([3, 4]));
+      },
+      cancel: cancelMock,
+    });
+    const fetchMock = vi.fn().mockResolvedValue(new Response(stream, { headers: { 'content-type': 'image/png' } }));
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      await expect(fetchImageSourceBlob('https://example.com/image', { maxBytes: 3 })).rejects.toMatchObject({
+        code: 'SOURCE_BYTES_EXCEEDED',
+      });
+      expect(cancelMock).toHaveBeenCalledTimes(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('fetchImageSourceBlob은 HTTP 실패를 SOURCE_LOAD_FAILED로 반환한다', async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn().mockResolvedValue(new Response('missing', { status: 404 }));
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      await expect(fetchImageSourceBlob('https://example.com/missing')).rejects.toBeInstanceOf(ImageProcessError);
+      await expect(fetchImageSourceBlob('https://example.com/missing')).rejects.toMatchObject({
+        code: 'SOURCE_LOAD_FAILED',
+      });
     } finally {
       globalThis.fetch = originalFetch;
     }

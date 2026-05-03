@@ -33,6 +33,7 @@ const USER_FRIENDLY_MESSAGES: Record<ImageErrorCodeType, string> = {
   INVALID_SOURCE: 'Invalid image source. Please use a valid image file or URL.',
   UNSUPPORTED_FORMAT: 'Unsupported image format. Please use standard formats like JPEG, PNG, WebP.',
   SOURCE_LOAD_FAILED: 'Failed to load image. Please check your network connection or file path.',
+  SOURCE_BYTES_EXCEEDED: 'Image source is too large.',
 
   // Processing-related errors
   CANVAS_CREATION_FAILED: 'Cannot create Canvas for image processing. Please verify that your browser supports Canvas.',
@@ -91,6 +92,12 @@ const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
     'Check your network connection status',
     'Verify that the image URL is accessible',
     'If blocked by CORS policy, check server configuration',
+  ],
+
+  SOURCE_BYTES_EXCEEDED: [
+    'Use a smaller source image.',
+    'Increase maxBytes only for trusted inputs.',
+    'Reject oversized remote images before processing.',
   ],
 
   CANVAS_CREATION_FAILED: [

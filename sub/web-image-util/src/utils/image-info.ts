@@ -1,6 +1,6 @@
 import { convertToImageElement, detectSourceType } from '../core/source-converter';
 import type { ImageFormat, ImageSource } from '../types';
-import { ImageFormats } from '../types';
+import { ImageFormats, ImageProcessError } from '../types';
 import { isInlineSvg } from './svg-detection';
 import { extractSvgDimensions } from './svg-dimensions';
 
@@ -24,10 +24,28 @@ export interface FetchImageFormatOptions {
   fetchOptions?: Omit<RequestInit, 'body' | 'method'>;
 }
 
+export interface FetchImageSourceBlobOptions {
+  allowedProtocols?: string[];
+  maxBytes?: number;
+  timeoutMs?: number;
+  abortSignal?: AbortSignal;
+  fetchOptions?: Omit<RequestInit, 'body' | 'method' | 'signal'>;
+}
+
+export interface FetchImageSourceBlobResult {
+  blob: Blob;
+  bytes: number;
+  contentType: string;
+  url: string;
+  responseUrl: string;
+  status: number;
+}
+
 /** 이미지 치수 기준 방향 값이다. */
 export type ImageOrientation = 'landscape' | 'portrait' | 'square';
 
 const DEFAULT_FORMAT_SNIFF_BYTES = 4096;
+const DEFAULT_FETCH_SOURCE_PROTOCOLS = ['http:', 'https:'];
 
 /** MIME 타입을 공개 이미지 포맷 값으로 변환한다. */
 function formatFromMimeType(mimeType: string): ImageInfo['format'] {
@@ -231,6 +249,132 @@ function formatFromResponsePrefix(bytes: Uint8Array, contentType: string): Image
   return formatFromMimeType(contentType);
 }
 
+function assertFetchSourceProtocol(source: string, allowedProtocols: string[]): void {
+  let url: URL;
+
+  try {
+    url = new URL(source);
+  } catch (error) {
+    throw new ImageProcessError(`유효한 URL이 아닙니다: ${source}`, 'INVALID_SOURCE', error as Error);
+  }
+
+  if (!allowedProtocols.includes(url.protocol)) {
+    throw new ImageProcessError(
+      `허용되지 않는 프로토콜입니다: ${url.protocol}. 허용 목록: ${allowedProtocols.join(', ')}`,
+      'INVALID_SOURCE'
+    );
+  }
+}
+
+function createFetchSourceAbortSignal(
+  timeoutMs: number | undefined,
+  abortSignal: AbortSignal | undefined
+): AbortSignal | undefined {
+  if ((timeoutMs === undefined || timeoutMs === 0) && !abortSignal) {
+    return undefined;
+  }
+
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const abort = () => controller.abort();
+
+  if (abortSignal) {
+    if (abortSignal.aborted) {
+      controller.abort();
+    } else {
+      abortSignal.addEventListener('abort', abort, { once: true });
+    }
+  }
+
+  if (timeoutMs !== undefined && timeoutMs > 0) {
+    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  }
+
+  controller.signal.addEventListener(
+    'abort',
+    () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+      abortSignal?.removeEventListener('abort', abort);
+    },
+    { once: true }
+  );
+
+  return controller.signal;
+}
+
+function throwSourceBytesExceeded(message: string): never {
+  throw new ImageProcessError(message, 'SOURCE_BYTES_EXCEEDED');
+}
+
+function checkFetchSourceContentLength(response: Response, maxBytes: number, label: string): void {
+  if (maxBytes === 0) return;
+
+  const contentLengthHeader = response.headers.get('content-length');
+  if (!contentLengthHeader) return;
+
+  const contentLength = Number(contentLengthHeader);
+  if (!Number.isFinite(contentLength)) return;
+
+  if (contentLength > maxBytes) {
+    throwSourceBytesExceeded(
+      `${label} 응답 크기(${contentLength} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`
+    );
+  }
+}
+
+async function readFetchSourceBlob(
+  response: Response,
+  maxBytes: number,
+  label: string
+): Promise<{ blob: Blob; bytes: number }> {
+  checkFetchSourceContentLength(response, maxBytes, label);
+
+  if (!response.body) {
+    const blob = await response.blob();
+
+    if (maxBytes > 0 && blob.size > maxBytes) {
+      throwSourceBytesExceeded(
+        `${label} 응답 크기(${blob.size} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`
+      );
+    }
+
+    return { blob, bytes: blob.size };
+  }
+
+  const reader = response.body.getReader();
+  const chunks: BlobPart[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      totalBytes += value.byteLength;
+
+      if (maxBytes > 0 && totalBytes > maxBytes) {
+        await reader.cancel();
+        throwSourceBytesExceeded(
+          `${label} 응답 크기(${totalBytes} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`
+        );
+      }
+
+      chunks.push(new Uint8Array(value));
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  return {
+    blob: new Blob(chunks, { type: contentType }),
+    bytes: totalBytes,
+  };
+}
+
 /** 이미지 요소가 이미 가진 치수 값을 읽는다. */
 function dimensionsFromElement(element: HTMLImageElement): ImageDimensions {
   return {
@@ -391,6 +535,46 @@ export async function fetchImageFormat(
   } catch {
     return 'unknown';
   }
+}
+
+export async function fetchImageSourceBlob(
+  source: string,
+  options: FetchImageSourceBlobOptions = {}
+): Promise<FetchImageSourceBlobResult> {
+  const url = source.trim();
+  const allowedProtocols = options.allowedProtocols ?? DEFAULT_FETCH_SOURCE_PROTOCOLS;
+  const maxBytes = options.maxBytes ?? 100 * 1024 * 1024;
+
+  assertFetchSourceProtocol(url, allowedProtocols);
+
+  const signal = createFetchSourceAbortSignal(options.timeoutMs, options.abortSignal);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options.fetchOptions,
+      method: 'GET',
+      ...(signal ? { signal } : {}),
+    });
+  } catch (error) {
+    throw new ImageProcessError('이미지 URL을 fetch할 수 없습니다', 'SOURCE_LOAD_FAILED', error as Error);
+  }
+
+  if (!response.ok) {
+    throw new ImageProcessError(`Failed to load URL: ${response.status}`, 'SOURCE_LOAD_FAILED');
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  const { blob, bytes } = await readFetchSourceBlob(response, maxBytes, '이미지 URL');
+
+  return {
+    blob,
+    bytes,
+    contentType,
+    url,
+    responseUrl: response.url || url,
+    status: response.status,
+  };
 }
 
 /** 이미지 소스의 가로/세로 비율을 반환한다. */
