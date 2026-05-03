@@ -79,6 +79,18 @@ await processImage(userProvidedSource, {
 - `@cp949/web-image-util/svg-sanitizer`의 `sanitizeSvgStrictDetailed()` 사용 시 라이브러리가 적용한 사전/후처리 경고 반환
 - 사용자가 strict 정책을 완화하는 DOMPurify 설정을 넘겨도 핵심 보안 설정은 강제
 
+##### strict 정책을 완화하는 DOMPurify 설정은 무시됩니다
+
+`domPurifyConfig`로 전달하더라도 라이브러리가 강제하는 strict 정책을 우회할 수 없습니다. 다음과 같은 설정은 무시되고 `warnings`에 기록됩니다.
+
+- `ALLOWED_TAGS`, `ALLOWED_ATTR`
+- `ADD_TAGS`, `ADD_ATTR`, `ADD_DATA_URI_TAGS`, `ADD_URI_SAFE_ATTR`
+- `ALLOW_UNKNOWN_PROTOCOLS`, `ALLOWED_URI_REGEXP`, `CUSTOM_ELEMENT_HANDLING`
+- `USE_PROFILES`, `SAFE_FOR_TEMPLATES`, `SAFE_FOR_XML`, `WHOLE_DOCUMENT`
+- `RETURN_DOM`, `RETURN_DOM_FRAGMENT`, `RETURN_TRUSTED_TYPE`, `IN_PLACE`, `KEEP_CONTENT`
+
+`FORBID_TAGS`와 `FORBID_ATTR`는 사용자 값과 라이브러리 강제 값(`script`, `foreignObject`, `on*`)이 union 머지됩니다.
+
 하지 않는 것:
 
 - SVG 보안을 완전히 보장하는 만능 필터

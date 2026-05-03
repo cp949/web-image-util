@@ -670,8 +670,6 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 
 `svgSanitizer`는 SVG로 판정된 입력에만 적용됩니다. 비-SVG 입력(PNG/JPEG/WebP 등)은 영향을 받지 않습니다.
 
-옵션별 보안 범위와 미지원 항목은 루트 [SVG-SECURITY.md](../../SVG-SECURITY.md)에 별도로 정리되어 있습니다.
-
 | 옵션 | 동작 |
 | --- | --- |
 | `'lightweight'` (기본값) | 렌더링 보호용 경량 정제 (현재 동작과 동일) |
@@ -679,6 +677,18 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 | `'skip'` | sanitizer/assert 건너뜀. 브라우저 호환성 보정은 유지됨. 자체 정제 완료 시만 사용 |
 
 `svgSanitizer: 'strict'`를 사용하면 source 타입을 직접 분기하지 않고도 SVG 입력에만 strict sanitizer가 적용됩니다.
+
+#### `svgSanitizer` 선택 기준
+
+| 상황 | 권장 옵션 |
+| --- | --- |
+| 앱 내부에서 만든 신뢰 가능한 SVG를 빠르게 이미지로 변환 | `lightweight` |
+| 사용자 업로드, 외부 URL, 외부 시스템에서 받은 SVG처럼 신뢰 경계 밖의 입력 | `strict` |
+| 호출처에서 이미 별도 보안 정제를 끝냈고 이 라이브러리의 호환성 보정은 유지하고 싶은 SVG | `skip` |
+
+보안만 보면 신뢰할 수 없는 SVG에는 `strict`가 맞습니다. 다만 기본값은 모든 SVG를 가장 강하게 정제하는 것이 아니라, 브라우저 이미지 처리 파이프라인에서 기존 SVG 렌더링을 가능한 한 보존하는 쪽에 맞춰져 있습니다. `strict`는 DOMPurify, DOMParser, XMLSerializer 기반 정제와 노드 수 검사를 수행하므로 대량 변환이나 신뢰 가능한 내부 에셋 처리에서는 추가 비용이 있고, 내부 프래그먼트가 아닌 `href`/`src`를 보수적으로 제거해 정상 SVG의 출력이 달라질 수 있습니다.
+
+따라서 운영 기준은 단순합니다. **신뢰할 수 없는 SVG에는 `strict`를 사용**하고, 신뢰 가능한 내부 에셋에는 기본 `lightweight`를 사용할 수 있습니다.
 
 #### 기본 경로 — `processImage()`의 경량 방어층
 
@@ -803,10 +813,11 @@ const result = await processImage(svg)
 
 DOMPurify 기반이라도 만능은 아닙니다. 1차 구현 범위에는 다음 항목이 **포함되지 않습니다**.
 
-- 중첩 깊이 제한
-- 비정상적으로 큰 `viewBox` 또는 좌표값 제한
+- 중첩 깊이 제한 (향후 제공 후보)
+- 비정상적으로 큰 `viewBox` 또는 좌표값 제한 (향후 제공 후보)
 - SMIL 무한 애니메이션 정밀 분석
 - `<use>`, `<filter>`, `<pattern>` 순환 참조 감지
+- ID 충돌 방지 prefix (향후 별도 유틸리티 후보)
 - 접근성 자동 보정
 - SVGO 수준의 최적화
 - 다크모드, RTL, Retina 같은 표시 품질 보정
