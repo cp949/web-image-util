@@ -2,7 +2,7 @@
  * 다양한 입력 소스를 HTMLImageElement로 정규화하는 변환기다.
  */
 
-import type { ImageSource, ProcessorOptions } from '../types';
+import type { ImageSource, ProcessorOptions, SvgSanitizerMode } from '../types';
 import { ImageProcessError } from '../types';
 import { debugLog, productionLog } from '../utils/debug';
 import { enhanceSvgForBrowser } from '../utils/svg-compatibility';
@@ -23,6 +23,31 @@ type InternalSourceConverterOptions = ProcessorOptions & {
 /** options에서 SVG passthrough 모드를 추출한다. 기본값은 안전한 'safe'다. */
 function resolvePassthroughMode(options: InternalSourceConverterOptions | undefined): SvgPassthroughMode {
   return options?.__svgPassthroughMode ?? 'safe';
+}
+
+/**
+ * strict sanitizer는 opt-in일 때만 로드한다.
+ *
+ * 기본 lightweight 경로에서 DOMPurify 기반 subpath를 top-level import하지 않기 위해
+ * 동적 import를 사용한다.
+ */
+async function sanitizeSvgStrictForProcessing(svgString: string): Promise<string> {
+  const { sanitizeSvgStrict } = await import('../svg-sanitizer');
+  return sanitizeSvgStrict(svgString);
+}
+
+/** options에서 SVG sanitizer 정책을 추출한다. 기본값은 기존 동작과 같은 lightweight다. */
+function resolveSvgSanitizerMode(options: InternalSourceConverterOptions | undefined): SvgSanitizerMode {
+  if (options?.__svgPassthroughMode === 'unsafe-pass-through') {
+    return 'skip';
+  }
+
+  const mode = options?.svgSanitizer ?? 'lightweight';
+  if (mode === 'lightweight' || mode === 'strict' || mode === 'skip') {
+    return mode;
+  }
+
+  throw new ImageProcessError(`지원하지 않는 SVG sanitizer 정책입니다: ${String(mode)}`, 'INVALID_SOURCE');
 }
 
 /**
@@ -619,6 +644,7 @@ async function convertStringToElement(
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
             passthroughMode: resolvePassthroughMode(options),
+            sanitizerMode: resolveSvgSanitizerMode(options),
           });
         }
         // 인라인 SVG 문자열은 경로 판정보다 먼저 공통 처리기로 보낸다.
@@ -627,6 +653,7 @@ async function convertStringToElement(
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
             passthroughMode: resolvePassthroughMode(options),
+            sanitizerMode: resolveSvgSanitizerMode(options),
           });
         }
         // 원격 SVG URL은 응답 본문을 검증한 뒤에만 로드한다.
@@ -666,6 +693,7 @@ async function convertStringToElement(
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
             passthroughMode: resolvePassthroughMode(options),
+            sanitizerMode: resolveSvgSanitizerMode(options),
           });
         }
         // 로컬 경로처럼 보이는 SVG도 fetch 응답을 검증한 뒤 처리한다.
@@ -710,6 +738,7 @@ async function convertStringToElement(
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
             passthroughMode: resolvePassthroughMode(options),
+            sanitizerMode: resolveSvgSanitizerMode(options),
           });
         }
         // 일반 문자열 SVG는 즉시 공통 처리기로 보낸다.
@@ -718,6 +747,7 @@ async function convertStringToElement(
             quality: 'auto',
             crossOrigin: options?.crossOrigin,
             passthroughMode: resolvePassthroughMode(options),
+            sanitizerMode: resolveSvgSanitizerMode(options),
           });
         }
       } else {
@@ -726,7 +756,8 @@ async function convertStringToElement(
         return convertSvgToElement(svgText, undefined, undefined, {
           quality: 'auto',
           crossOrigin: options?.crossOrigin,
-          passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
+          passthroughMode: resolvePassthroughMode(options),
+          sanitizerMode: resolveSvgSanitizerMode(options),
         });
       }
     case 'dataurl':
@@ -772,6 +803,8 @@ interface SvgRenderingOptions {
   crossOrigin?: string;
   /** SVG passthrough 모드 — unsafe는 sanitize와 호환성 보정을 건너뛴다 */
   passthroughMode?: SvgPassthroughMode;
+  /** SVG sanitizer 정책 */
+  sanitizerMode?: SvgSanitizerMode;
 }
 
 /**
@@ -1042,22 +1075,31 @@ async function convertSvgToElement(
   targetHeight?: number,
   options?: SvgRenderingOptions
 ): Promise<HTMLImageElement> {
-  const passthroughMode = options?.passthroughMode ?? 'safe';
+  const sanitizerMode =
+    options?.sanitizerMode ?? (options?.passthroughMode === 'unsafe-pass-through' ? 'skip' : 'lightweight');
 
-  if (passthroughMode !== 'unsafe-pass-through') {
+  if (sanitizerMode !== 'skip') {
     // sanitize 과정에서 제거될 콘텐츠로 원본 크기 제한을 우회하지 못하게 한다.
     checkSvgSizeLimit(svgString, '인라인 SVG');
   }
 
-  // safe 경로만 sanitize와 안전성 검사를 수행한다.
-  const svgForSafety = passthroughMode === 'unsafe-pass-through' ? svgString : sanitizeSvgForRendering(svgString);
+  let svgForSafety: string;
+  if (sanitizerMode === 'strict') {
+    svgForSafety = await sanitizeSvgStrictForProcessing(svgString);
+  } else if (sanitizerMode === 'lightweight') {
+    svgForSafety = sanitizeSvgForRendering(svgString);
+  } else if (sanitizerMode === 'skip') {
+    svgForSafety = svgString;
+  } else {
+    throw new ImageProcessError(`지원하지 않는 SVG sanitizer 정책입니다: ${String(sanitizerMode)}`, 'INVALID_SOURCE');
+  }
 
-  if (passthroughMode !== 'unsafe-pass-through') {
-    // 위험한 SVG 콘텐츠는 테스트 환경 우회 이전에 차단한다
+  if (sanitizerMode !== 'skip') {
+    // sanitizer 이후에도 Canvas 오염을 일으킬 수 있는 잔여 참조는 fail-closed로 차단한다.
     assertSafeSvgContent(svgForSafety);
   }
 
-  // 크기 초과 입력은 passthrough 경로에서도 차단한다.
+  // 크기 초과 입력은 skip 경로에서도 차단한다.
   checkSvgSizeLimit(svgForSafety, '인라인 SVG');
 
   // 테스트 환경에서는 실제 SVG 디코딩을 우회해 타임아웃을 방지한다.
@@ -1072,8 +1114,9 @@ async function convertSvgToElement(
   }
 
   try {
-    // safe 경로는 브라우저 호환성 보정을 수행하고, unsafe 경로는 원본을 그대로 사용한다.
-    const svgForLoad = passthroughMode === 'unsafe-pass-through' ? svgForSafety : enhanceSvgForBrowser(svgForSafety);
+    // unsafe 경로는 호환성 보정을 건너뛰고, 그 외 경로는 브라우저 호환성 보정을 수행한다.
+    const shouldSkipCompatibilityEnhancement = options?.passthroughMode === 'unsafe-pass-through';
+    const svgForLoad = shouldSkipCompatibilityEnhancement ? svgForSafety : enhanceSvgForBrowser(svgForSafety);
 
     // 2. 원본 SVG의 크기 정보를 추출한다.
     const dimensions = extractSvgDimensions(svgForLoad);
@@ -1215,7 +1258,8 @@ async function loadBlobUrl(blobUrl: string, options?: InternalSourceConverterOpt
         const svgContent = await blob.text();
         return convertSvgToElement(svgContent, undefined, undefined, {
           quality: 'auto',
-          passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
+          passthroughMode: resolvePassthroughMode(options),
+          sanitizerMode: resolveSvgSanitizerMode(options),
         });
       }
     }
@@ -1308,6 +1352,7 @@ async function loadImageFromUrl(
               quality: 'auto',
               crossOrigin: options?.crossOrigin,
               passthroughMode: resolvePassthroughMode(options),
+              sanitizerMode: resolveSvgSanitizerMode(options),
             });
           }
 
@@ -1319,6 +1364,7 @@ async function loadImageFromUrl(
               quality: 'auto',
               crossOrigin: options?.crossOrigin,
               passthroughMode: resolvePassthroughMode(options),
+              sanitizerMode: resolveSvgSanitizerMode(options),
             });
           }
 
@@ -1500,7 +1546,8 @@ async function convertBlobToElement(blob: Blob, options?: InternalSourceConverte
     const svgText = await blob.text();
     return convertSvgToElement(svgText, undefined, undefined, {
       quality: 'auto',
-      passthroughMode: (options as InternalSourceConverterOptions)?.__svgPassthroughMode ?? 'safe',
+      passthroughMode: resolvePassthroughMode(options),
+      sanitizerMode: resolveSvgSanitizerMode(options),
     });
   }
 

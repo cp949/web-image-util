@@ -390,6 +390,15 @@ export interface ResultCanvas extends ResultMetadata {
 // ============================================================================
 
 /**
+ * SVG sanitizer 적용 정책.
+ *
+ * - lightweight: 기본값. 빠른 렌더링 보호용 경량 guard를 적용한다.
+ * - strict: SVG로 판정된 입력에만 DOMPurify 기반 strict sanitizer를 적용한다.
+ * - skip: 호출처가 이미 정제한 SVG라고 보고 sanitizer와 SVG 보안 assert를 건너뛴다.
+ */
+export type SvgSanitizerMode = 'lightweight' | 'strict' | 'skip';
+
+/**
  * Processor global options
  */
 export interface ProcessorOptions {
@@ -409,6 +418,8 @@ export interface ProcessorOptions {
   allowedProtocols?: string[];
   /** 외부 fetch 취소용 AbortSignal. */
   abortSignal?: AbortSignal;
+  /** SVG 입력에 적용할 sanitizer 정책 (기본값: 'lightweight'). */
+  svgSanitizer?: SvgSanitizerMode;
   // 브라우저에서는 메모리 제한을 명시적으로 설정할 수 없음
 }
 

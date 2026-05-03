@@ -139,6 +139,7 @@ export type {
   SvgComplexityMetrics,
   // SVG utility types
   SvgDimensions,
+  SvgSanitizerMode,
 } from './types';
 // Error classes
 export { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
