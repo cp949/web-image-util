@@ -117,8 +117,12 @@ export function decodeSvgDataURL(source: string): DecodedSvgDataURL {
       text,
       isBase64: parsed.isBase64,
     };
-  } catch {
-    throwInvalidSvgDataURL();
+  } catch (error) {
+    // 내부에서 이미 INVALID_SVG_DATA_URL_MESSAGE로 throw한 경우 self-wrap을 피해 그대로 rethrow한다.
+    if (error instanceof Error && error.message === INVALID_SVG_DATA_URL_MESSAGE) {
+      throw error;
+    }
+    throwInvalidSvgDataURL(error);
   }
 }
 
@@ -334,6 +338,12 @@ function throwInvalidDataURL(): never {
   throw new Error(INVALID_DATA_URL_MESSAGE);
 }
 
-function throwInvalidSvgDataURL(): never {
-  throw new Error(INVALID_SVG_DATA_URL_MESSAGE);
+function throwInvalidSvgDataURL(cause?: unknown): never {
+  // 원본 오류를 cause에 보존해 호출자가 정확한 원인(예: malformed Data URL vs. non-SVG MIME)을 추적할 수 있게 한다.
+  // ES2020 lib에는 ErrorOptions가 없어 런타임에서 속성을 직접 부여한다.
+  const error = new Error(INVALID_SVG_DATA_URL_MESSAGE);
+  if (cause !== undefined) {
+    (error as Error & { cause?: unknown }).cause = cause;
+  }
+  throw error;
 }
