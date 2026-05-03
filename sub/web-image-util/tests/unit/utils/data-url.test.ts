@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   blobToDataURL,
   dataURLToBlob,
+  decodeSvgDataURL,
   estimateDataURLPayloadByteLength,
   estimateDataURLSize,
   isDataURLString,
@@ -54,6 +55,28 @@ describe('data URL utilities', () => {
     expect(estimateDataURLPayloadByteLength('data:text/plain;base64,aGVsbG8=')).toBe(5);
     expect(estimateDataURLPayloadByteLength('data:image/svg+xml,%3Csvg%3E%3C/svg%3E')).toBe(11);
     expect(estimateDataURLPayloadByteLength('data:text/plain,%ED%95%9C글')).toBe(6);
+  });
+
+  it('SVG Data URL을 동기적으로 UTF-8 text로 decode한다', () => {
+    expect(decodeSvgDataURL('data:image/svg+xml,%3Csvg%3E%3C/svg%3E')).toEqual({
+      mimeType: 'image/svg+xml',
+      text: '<svg></svg>',
+      isBase64: false,
+    });
+
+    expect(decodeSvgDataURL('DATA:image/svg+xml;base64,PHN2Zz48L3N2Zz4=')).toEqual({
+      mimeType: 'image/svg+xml',
+      text: '<svg></svg>',
+      isBase64: true,
+    });
+  });
+
+  it('SVG Data URL decode는 non-SVG와 malformed payload를 거부한다', () => {
+    expect(() => decodeSvgDataURL('data:text/plain,%3Csvg%3E%3C/svg%3E')).toThrow('유효한 SVG Data URL이 아닙니다');
+    expect(() => decodeSvgDataURL('data:image/svg+xml,%GG')).toThrow('유효한 SVG Data URL이 아닙니다');
+    expect(() => decodeSvgDataURL('data:image/svg+xml,%3Cdiv%3E%3C/div%3E')).toThrow(
+      '유효한 SVG Data URL이 아닙니다'
+    );
   });
 
   it('Data URL scheme은 기본적으로 대소문자를 구분하지 않는다', () => {

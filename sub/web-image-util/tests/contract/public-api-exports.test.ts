@@ -133,6 +133,7 @@ const UTILS_VALUE_EXPORTS = [
   // Data URL 유틸
   'blobToDataURL',
   'dataURLToBlob',
+  'decodeSvgDataURL',
   'estimateDataURLPayloadByteLength',
   'estimateDataURLSize',
   'isDataURLString',

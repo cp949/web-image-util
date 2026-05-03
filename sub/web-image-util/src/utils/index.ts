@@ -89,9 +89,11 @@ export {
 export {
   blobToDataURL,
   dataURLToBlob,
+  decodeSvgDataURL,
   estimateDataURLPayloadByteLength,
   estimateDataURLSize,
   isDataURLString,
+  type DecodedSvgDataURL,
   type EstimateDataURLPayloadByteLengthOptions,
 } from './data-url';
 /**

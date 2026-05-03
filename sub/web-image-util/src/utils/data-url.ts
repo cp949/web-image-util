@@ -2,7 +2,10 @@
  * Data URL 판정과 Blob 변환을 담당하는 유틸리티 모음이다.
  */
 
+import { isInlineSvg } from './svg-detection';
+
 const INVALID_DATA_URL_MESSAGE = '유효한 Data URL이 아닙니다';
+const INVALID_SVG_DATA_URL_MESSAGE = '유효한 SVG Data URL이 아닙니다';
 
 type ParsedDataURL = {
   isBase64: boolean;
@@ -13,6 +16,12 @@ type ParsedDataURL = {
 export interface EstimateDataURLPayloadByteLengthOptions {
   invalid?: 'throw' | 'null';
   caseSensitiveScheme?: boolean;
+}
+
+export interface DecodedSvgDataURL {
+  mimeType: 'image/svg+xml';
+  text: string;
+  isBase64: boolean;
 }
 
 type ParseDataURLOptions = {
@@ -85,6 +94,31 @@ export function estimateDataURLPayloadByteLength(
     }
 
     throw error;
+  }
+}
+
+export function decodeSvgDataURL(source: string): DecodedSvgDataURL {
+  try {
+    const parsed = parseDataURL(source, { caseSensitiveScheme: false });
+
+    if (parsed.mimeType !== 'image/svg+xml') {
+      throwInvalidSvgDataURL();
+    }
+
+    const bytes = decodeDataURLPayload(parsed);
+    const text = new TextDecoder().decode(bytes);
+
+    if (!isInlineSvg(text)) {
+      throwInvalidSvgDataURL();
+    }
+
+    return {
+      mimeType: 'image/svg+xml',
+      text,
+      isBase64: parsed.isBase64,
+    };
+  } catch {
+    throwInvalidSvgDataURL();
   }
 }
 
@@ -298,4 +332,8 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
 
 function throwInvalidDataURL(): never {
   throw new Error(INVALID_DATA_URL_MESSAGE);
+}
+
+function throwInvalidSvgDataURL(): never {
+  throw new Error(INVALID_SVG_DATA_URL_MESSAGE);
 }
