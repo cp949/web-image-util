@@ -860,7 +860,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
  * const thumbnail = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
  * const fullsize = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  *
- * // 신뢰할 수 없는 SVG에 strict sanitizer opt-in
+ * // SVG with strict sanitizer opt-in for untrusted input
  * await processImage(userProvidedSource, { svgSanitizer: 'strict' })
  *   .resize({ fit: 'cover', width: 300, height: 300 })
  *   .toBlob();

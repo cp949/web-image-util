@@ -972,7 +972,9 @@ describe('svgSanitizer strict 옵션 - 입력 형태별 검증', () => {
   it('svgSanitizer strict는 SVG Blob에 strict sanitizer를 적용한다', async () => {
     const { processImage, sanitizeSvgStrict } = await importProcessorWithStrictSpy();
     const blob = new Blob(
-      ['<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(1)</script><rect width="10" height="10"/></svg>'],
+      [
+        '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(1)</script><rect width="10" height="10"/></svg>',
+      ],
       { type: 'image/svg+xml' }
     );
 
@@ -986,7 +988,9 @@ describe('svgSanitizer strict 옵션 - 입력 형태별 검증', () => {
   it('svgSanitizer strict는 .svg File 입력에 strict sanitizer를 적용한다', async () => {
     const { processImage, sanitizeSvgStrict } = await importProcessorWithStrictSpy();
     const file = new File(
-      ['<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(1)</script><rect width="10" height="10"/></svg>'],
+      [
+        '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(1)</script><rect width="10" height="10"/></svg>',
+      ],
       'unsafe.svg',
       { type: '' }
     );
@@ -1015,9 +1019,9 @@ describe('svgSanitizer strict 옵션 - 입력 형태별 검증', () => {
     globalThis.fetch = fetchMock as typeof fetch;
 
     try {
-      await expect((processImage('blob:https://example.com/id', { svgSanitizer: 'strict' }) as any).toElement()).resolves.toBeInstanceOf(
-        HTMLImageElement
-      );
+      await expect(
+        (processImage('blob:https://example.com/id', { svgSanitizer: 'strict' }) as any).toElement()
+      ).resolves.toBeInstanceOf(HTMLImageElement);
       expect(sanitizeSvgStrict).toHaveBeenCalledTimes(1);
     } finally {
       globalThis.fetch = originalFetch;

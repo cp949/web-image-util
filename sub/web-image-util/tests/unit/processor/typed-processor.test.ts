@@ -6,12 +6,12 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import type { SvgSanitizerMode } from '../../../src';
 import { createFilterPlugin, FilterCategory } from '../../../src/advanced-index';
 import { AllFilterPlugins, BrightnessFilterPlugin } from '../../../src/filters/plugins';
 import { processImage } from '../../../src/processor';
 import { ImageProcessError } from '../../../src/types';
 import type { ProcessorFactory } from '../../../src/types/typed-processor';
-import type { SvgSanitizerMode } from '../../../src';
 import { createTestImageBlob } from '../../utils';
 
 describe('Type-safe processor tests', () => {

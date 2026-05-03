@@ -891,8 +891,15 @@ const debugOnly = await unsafe_processImage(svgXml)
 이미지 처리 체이닝을 시작하는 메인 진입 함수입니다.
 
 ```typescript
-function processImage(source: ImageSource): ImageProcessor
+function processImage(source: ImageSource, options?: ProcessorOptions): ImageProcessor
+
+interface ProcessorOptions {
+  // crossOrigin, defaultQuality, fetchTimeoutMs 등 기존 프로세서 옵션
+  svgSanitizer?: 'lightweight' | 'strict' | 'skip';
+}
 ```
+
+`ProcessorOptions.svgSanitizer`는 SVG로 판정된 입력에만 적용됩니다. 기본값은 빠른 렌더링 보호용 경량 정제인 `'lightweight'`이며, 신뢰할 수 없는 SVG에는 DOMPurify 기반 `'strict'`를 opt-in하세요. `'skip'`은 호출처가 이미 정제한 SVG에서 sanitizer/assert만 건너뛰고 브라우저 호환성 보정은 유지해야 할 때 사용합니다.
 
 ### `ImageProcessor` 클래스
 
