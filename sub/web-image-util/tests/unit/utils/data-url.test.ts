@@ -69,11 +69,24 @@ describe('data URL utilities', () => {
       text: '<svg></svg>',
       isBase64: true,
     });
+
+    expect(decodeSvgDataURL('data:IMAGE/SVG+XML,%3Csvg%3E%3C/svg%3E')).toEqual({
+      mimeType: 'image/svg+xml',
+      text: '<svg></svg>',
+      isBase64: false,
+    });
   });
 
   it('SVG Data URL decode는 non-SVG와 malformed payload를 거부한다', () => {
     expect(() => decodeSvgDataURL('data:text/plain,%3Csvg%3E%3C/svg%3E')).toThrow('유효한 SVG Data URL이 아닙니다');
     expect(() => decodeSvgDataURL('data:image/svg+xml,%GG')).toThrow('유효한 SVG Data URL이 아닙니다');
+    expect(() => decodeSvgDataURL('data:image/svg+xml,%3Csvg%3E%FF%3C/svg%3E')).toThrow(
+      '유효한 SVG Data URL이 아닙니다'
+    );
+    expect(() => decodeSvgDataURL('data:image/svg+xml;base64,PHN2Zz7/PC9zdmc+')).toThrow(
+      '유효한 SVG Data URL이 아닙니다'
+    );
+    expect(() => decodeSvgDataURL('data:image/svg+xml;base64,@@@@')).toThrow('유효한 SVG Data URL이 아닙니다');
     expect(() => decodeSvgDataURL('data:image/svg+xml,%3Cdiv%3E%3C/div%3E')).toThrow(
       '유효한 SVG Data URL이 아닙니다'
     );

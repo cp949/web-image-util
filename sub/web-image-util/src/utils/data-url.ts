@@ -106,7 +106,7 @@ export function decodeSvgDataURL(source: string): DecodedSvgDataURL {
     }
 
     const bytes = decodeDataURLPayload(parsed);
-    const text = new TextDecoder().decode(bytes);
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
 
     if (!isInlineSvg(text)) {
       throwInvalidSvgDataURL();
