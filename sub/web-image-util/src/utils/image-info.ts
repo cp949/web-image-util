@@ -333,7 +333,7 @@ function wrapFetchSourceBodyReadError(error: unknown): never {
   throw new ImageProcessError('이미지 URL 응답 본문을 읽을 수 없습니다', 'SOURCE_LOAD_FAILED', error as Error);
 }
 
-function checkFetchSourceContentLength(response: Response, maxBytes: number, label: string): void {
+async function checkFetchSourceContentLength(response: Response, maxBytes: number, label: string): Promise<void> {
   if (maxBytes === 0) return;
 
   const contentLengthHeader = response.headers.get('content-length');
@@ -343,6 +343,14 @@ function checkFetchSourceContentLength(response: Response, maxBytes: number, lab
   if (!Number.isFinite(contentLength)) return;
 
   if (contentLength > maxBytes) {
+    if (response.body) {
+      try {
+        await response.body.cancel();
+      } catch {
+        // 크기 초과 오류가 공개 error code로 안정적으로 전달되도록 cancel 실패는 삼킨다.
+      }
+    }
+
     throwSourceBytesExceeded(
       `${label} 응답 크기(${contentLength} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`
     );
@@ -354,7 +362,7 @@ async function readFetchSourceBlob(
   maxBytes: number,
   label: string
 ): Promise<{ blob: Blob; bytes: number }> {
-  checkFetchSourceContentLength(response, maxBytes, label);
+  await checkFetchSourceContentLength(response, maxBytes, label);
 
   if (!response.body) {
     let blob: Blob;

@@ -226,6 +226,32 @@ describe('image info utilities', () => {
     }
   });
 
+  it('fetchImageSourceBlob은 Content-Length 초과 시 body stream을 cancel한다', async () => {
+    const originalFetch = globalThis.fetch;
+    const cancelMock = vi.fn();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2, 3, 4]));
+      },
+      cancel: cancelMock,
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(stream, {
+        headers: { 'content-length': '9', 'content-type': 'image/png' },
+      })
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      await expect(fetchImageSourceBlob('https://example.com/image', { maxBytes: 8 })).rejects.toMatchObject({
+        code: 'SOURCE_BYTES_EXCEEDED',
+      });
+      expect(cancelMock).toHaveBeenCalledTimes(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('fetchImageSourceBlob은 stream 누적 byte가 maxBytes를 초과하면 reader를 cancel한다', async () => {
     const originalFetch = globalThis.fetch;
     const cancelMock = vi.fn();
