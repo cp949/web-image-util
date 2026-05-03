@@ -859,6 +859,11 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
  * // When multiple sizes needed: create separate instances
  * const thumbnail = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
  * const fullsize = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
+ *
+ * // 신뢰할 수 없는 SVG에 strict sanitizer opt-in
+ * await processImage(userProvidedSource, { svgSanitizer: 'strict' })
+ *   .resize({ fit: 'cover', width: 300, height: 300 })
+ *   .toBlob();
  * ```
  */
 export function processImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {
@@ -876,9 +881,9 @@ export function processImage(source: ImageSource, options?: ProcessorOptions): I
  * - 신뢰할 수 없는 SVG에는 절대 사용하지 않는다.
  * - `<script>`, `on*` 이벤트 핸들러, 외부 `href`/`xlink:href`/`src`,
  *   외부 CSS `url(...)`이 모두 그대로 통과되어 XSS와 canvas taint 위험이 발생한다.
- * - 신뢰할 수 없는 입력을 다뤄야 한다면 이 함수 대신
- *   `@cp949/web-image-util/svg-sanitizer`의 `sanitizeSvgStrict()`로 먼저 정제한 결과를
- *   `processImage()`에 넘긴다.
+ * - 신뢰할 수 없는 SVG는 `processImage(source, { svgSanitizer: 'strict' })`를 사용한다.
+ * - 이미 자체 정제를 끝냈고 sanitizer/assert만 건너뛰려면 `processImage(source, { svgSanitizer: 'skip' })`를 사용한다.
+ * - 이 API는 compatibility enhancement까지 건너뛰는 하위 호환 escape hatch이며, `svgSanitizer: 'skip'`과 동일하지 않다.
  *
  * 적용되는 제약:
  * - 브라우저의 CORS 및 tainted canvas 보안은 이 경로에서도 그대로 적용된다.

@@ -11,6 +11,7 @@ import { AllFilterPlugins, BrightnessFilterPlugin } from '../../../src/filters/p
 import { processImage } from '../../../src/processor';
 import { ImageProcessError } from '../../../src/types';
 import type { ProcessorFactory } from '../../../src/types/typed-processor';
+import type { SvgSanitizerMode } from '../../../src';
 import { createTestImageBlob } from '../../utils';
 
 describe('Type-safe processor tests', () => {
@@ -117,6 +118,22 @@ describe('Type-safe processor tests', () => {
       };
 
       expect(assertIndividualPluginTypes).toBeDefined();
+    });
+
+    it('svgSanitizer 옵션은 세 가지 유효 모드만 허용하고 SvgSanitizerMode 타입을 root에서 import할 수 있다', () => {
+      const assertSvgSanitizerModeTypes = () => {
+        processImage('<svg></svg>', { svgSanitizer: 'lightweight' });
+        processImage('<svg></svg>', { svgSanitizer: 'strict' });
+        processImage('<svg></svg>', { svgSanitizer: 'skip' });
+
+        const strictMode: SvgSanitizerMode = 'strict';
+        processImage('<svg></svg>', { svgSanitizer: strictMode });
+
+        // @ts-expect-error 유효하지 않은 SVG sanitizer 모드
+        processImage('<svg></svg>', { svgSanitizer: 'safe' });
+      };
+
+      expect(assertSvgSanitizerModeTypes).toBeDefined();
     });
 
     it('createFilterPlugin은 필터 분류와 검증 결과 타입을 제한한다', () => {
