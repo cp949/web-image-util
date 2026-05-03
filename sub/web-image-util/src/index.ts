@@ -231,7 +231,7 @@ export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from './utils/svg-c
 // SVG utility functions
 export { extractSvgDimensions } from './utils/svg-dimensions';
 // SVG sanitize
-export { sanitizeSvg } from './utils/svg-sanitizer';
+export { sanitizeSvg, sanitizeSvgForRendering } from './utils/svg-sanitizer';
 
 type LegacyFormatKey = 'webp' | 'avif';
 

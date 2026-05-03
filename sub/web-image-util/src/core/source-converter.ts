@@ -8,7 +8,7 @@ import { debugLog, productionLog } from '../utils/debug';
 import { enhanceSvgForBrowser } from '../utils/svg-compatibility';
 import { isInlineSvg } from '../utils/svg-detection';
 import { extractSvgDimensions } from '../utils/svg-dimensions';
-import { sanitizeSvg } from '../utils/svg-sanitizer';
+import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 import type { QualityLevel } from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
 
@@ -1050,7 +1050,7 @@ async function convertSvgToElement(
   }
 
   // safe 경로만 sanitize와 안전성 검사를 수행한다.
-  const svgForSafety = passthroughMode === 'unsafe-pass-through' ? svgString : sanitizeSvg(svgString);
+  const svgForSafety = passthroughMode === 'unsafe-pass-through' ? svgString : sanitizeSvgForRendering(svgString);
 
   if (passthroughMode !== 'unsafe-pass-through') {
     // 위험한 SVG 콘텐츠는 테스트 환경 우회 이전에 차단한다

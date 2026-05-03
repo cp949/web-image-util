@@ -28,6 +28,7 @@ import {
   resolveOutputFormat,
   ShortcutBuilder,
   sanitizeSvg,
+  sanitizeSvgForRendering,
   unsafe_processImage,
 } from '../../src';
 import { sanitizeSvgStrict, sanitizeSvgStrictDetailed } from '../../src/svg-sanitizer';
@@ -160,6 +161,15 @@ describe('SVG 유틸 계약', () => {
     const result = sanitizeSvg(SAMPLE_SVG);
     expect(typeof result).toBe('string');
     expect(result).toContain('<svg');
+  });
+
+  test('sanitizeSvgForRendering은 경량 렌더링 guard이며 sanitizeSvg alias와 같은 결과를 반환한다', () => {
+    const unsafeSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(1)</script><rect width="10" height="10"/></svg>';
+
+    expect(sanitizeSvgForRendering(unsafeSvg)).toBe(sanitizeSvg(unsafeSvg));
+    expect(sanitizeSvgForRendering(unsafeSvg)).not.toContain('<script');
+    expect(sanitizeSvgForRendering(unsafeSvg)).not.toContain('onload');
   });
 
   test('enhanceSvgForBrowser는 보강된 SVG 문자열을 반환한다', () => {

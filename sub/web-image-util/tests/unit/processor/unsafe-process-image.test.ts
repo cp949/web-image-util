@@ -43,7 +43,7 @@ describe('unsafe_processImage', () => {
       const actual = await vi.importActual<typeof import('../../../src/utils/svg-sanitizer')>(
         '../../../src/utils/svg-sanitizer'
       );
-      return { ...actual, sanitizeSvg };
+      return { ...actual, sanitizeSvg, sanitizeSvgForRendering: sanitizeSvg };
     });
 
     vi.doMock('../../../src/utils/svg-compatibility', async () => {
@@ -124,7 +124,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
         const actual = await vi.importActual<typeof import('../../../src/utils/svg-sanitizer')>(
           '../../../src/utils/svg-sanitizer'
         );
-        return { ...actual, sanitizeSvg };
+        return { ...actual, sanitizeSvg, sanitizeSvgForRendering: sanitizeSvg };
       });
 
       vi.doMock('../../../src/utils/svg-compatibility', async () => {
@@ -161,7 +161,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
       const actual = await vi.importActual<typeof import('../../../src/utils/svg-sanitizer')>(
         '../../../src/utils/svg-sanitizer'
       );
-      return { ...actual, sanitizeSvg };
+      return { ...actual, sanitizeSvg, sanitizeSvgForRendering: sanitizeSvg };
     });
 
     const { processImage, unsafe_processImage } = await import('../../../src');
@@ -192,7 +192,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
       const actual = await vi.importActual<typeof import('../../../src/utils/svg-sanitizer')>(
         '../../../src/utils/svg-sanitizer'
       );
-      return { ...actual, sanitizeSvg };
+      return { ...actual, sanitizeSvg, sanitizeSvgForRendering: sanitizeSvg };
     });
 
     const { processImage, unsafe_processImage } = await import('../../../src');

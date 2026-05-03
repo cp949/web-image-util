@@ -100,6 +100,7 @@ const ROOT_VALUE_EXPORTS = [
   'extractSvgDimensions',
   // SVG 정제
   'sanitizeSvg',
+  'sanitizeSvgForRendering',
   // 레거시 facade
   'features',
 ].sort();
@@ -161,6 +162,7 @@ const UTILS_VALUE_EXPORTS = [
   'enhanceSvgForBrowser',
   'isInlineSvg',
   'sanitizeSvg',
+  'sanitizeSvgForRendering',
   'SvgOptimizer',
 ].sort();
 

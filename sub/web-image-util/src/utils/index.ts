@@ -178,4 +178,4 @@ export { type OptimizationResult, type SvgOptimizationOptions, SvgOptimizer } fr
  * @description SVG 문자열에서 XSS 및 캔버스 오염을 유발할 수 있는
  * 위험 요소(script, foreignObject, 이벤트 핸들러, 외부 URL 참조)를 제거한다
  */
-export { sanitizeSvg } from './svg-sanitizer';
+export { sanitizeSvg, sanitizeSvgForRendering } from './svg-sanitizer';

@@ -187,7 +187,7 @@ const SVG_START_TAG_PATTERN = /<([a-z][a-z0-9:-]*)(\b(?:[^"'<>]|"[^"]*"|'[^']*')
  * 신뢰할 수 없는 SVG를 다루는 경우 `@cp949/web-image-util/svg-sanitizer`의
  * DOMPurify 기반 `sanitizeSvgStrict()`를 먼저 호출하는 것을 권장한다.
  */
-export function sanitizeSvg(svgString: string): string {
+export function sanitizeSvgForRendering(svgString: string): string {
   let result = svgString;
 
   // 1. <script> 요소 제거 — 자가 닫힘(`<script ... />`)과 블록 형태(`<script>...</script>`) 모두 처리한다
@@ -249,3 +249,9 @@ export function sanitizeSvg(svgString: string): string {
 
   return result;
 }
+
+/**
+ * @deprecated 새 코드에서는 `sanitizeSvgForRendering()`을 사용하세요.
+ * 이 함수는 보안 sanitizer가 아니라 SVG 렌더링 파이프라인 보호용 경량 guard입니다.
+ */
+export const sanitizeSvg = sanitizeSvgForRendering;
