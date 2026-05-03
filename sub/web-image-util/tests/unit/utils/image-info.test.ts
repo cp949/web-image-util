@@ -272,6 +272,47 @@ describe('image info utilities', () => {
     }
   });
 
+  it('fetchImageSourceBlob은 stream 본문 읽기 실패를 SOURCE_LOAD_FAILED로 반환한다', async () => {
+    const originalFetch = globalThis.fetch;
+    const stream = new ReadableStream<Uint8Array>({
+      pull() {
+        throw new Error('read failed');
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(new Response(stream, { headers: { 'content-type': 'image/png' } }));
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      await expect(fetchImageSourceBlob('https://example.com/image')).rejects.toMatchObject({
+        code: 'SOURCE_LOAD_FAILED',
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('fetchImageSourceBlob은 no-stream blob 읽기 실패를 SOURCE_LOAD_FAILED로 반환한다', async () => {
+    const originalFetch = globalThis.fetch;
+    const responseLike = {
+      body: null,
+      ok: true,
+      headers: new Headers({ 'content-type': 'image/png' }),
+      status: 200,
+      url: 'https://cdn.example.com/image',
+      blob: vi.fn().mockRejectedValue(new Error('blob failed')),
+    };
+    const fetchMock = vi.fn().mockResolvedValue(responseLike);
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      await expect(fetchImageSourceBlob('https://example.com/image')).rejects.toMatchObject({
+        code: 'SOURCE_LOAD_FAILED',
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('fetchImageSourceBlob은 HTTP 실패를 SOURCE_LOAD_FAILED로 반환한다', async () => {
     const originalFetch = globalThis.fetch;
     const fetchMock = vi.fn().mockResolvedValue(new Response('missing', { status: 404 }));

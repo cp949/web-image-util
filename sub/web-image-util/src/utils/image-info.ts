@@ -318,6 +318,14 @@ function throwSourceBytesExceeded(message: string): never {
   throw new ImageProcessError(message, 'SOURCE_BYTES_EXCEEDED');
 }
 
+function wrapFetchSourceBodyReadError(error: unknown): never {
+  if (error instanceof ImageProcessError && error.code === 'SOURCE_BYTES_EXCEEDED') {
+    throw error;
+  }
+
+  throw new ImageProcessError('이미지 URL 응답 본문을 읽을 수 없습니다', 'SOURCE_LOAD_FAILED', error as Error);
+}
+
 function checkFetchSourceContentLength(response: Response, maxBytes: number, label: string): void {
   if (maxBytes === 0) return;
 
@@ -342,7 +350,13 @@ async function readFetchSourceBlob(
   checkFetchSourceContentLength(response, maxBytes, label);
 
   if (!response.body) {
-    const blob = await response.blob();
+    let blob: Blob;
+
+    try {
+      blob = await response.blob();
+    } catch (error) {
+      wrapFetchSourceBodyReadError(error);
+    }
 
     if (maxBytes > 0 && blob.size > maxBytes) {
       throwSourceBytesExceeded(
@@ -378,6 +392,8 @@ async function readFetchSourceBlob(
 
       chunks.push(new Uint8Array(value));
     }
+  } catch (error) {
+    wrapFetchSourceBodyReadError(error);
   } finally {
     reader.releaseLock();
   }
