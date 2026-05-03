@@ -36,14 +36,18 @@ describe('unsafe_processImage', () => {
   it('ArrayBuffer SVG 입력은 safe 경로에서 차단되고 unsafe 경로는 sanitize만 우회한다', async () => {
     vi.resetModules();
 
-    const sanitizeSvg = vi.fn((svg: string) => svg);
+    const sanitizeSvgForRenderingSpy = vi.fn((svg: string) => svg);
     const enhanceSvgForBrowser = vi.fn((svg: string) => svg);
 
     vi.doMock('../../../src/utils/svg-sanitizer', async () => {
       const actual = await vi.importActual<typeof import('../../../src/utils/svg-sanitizer')>(
         '../../../src/utils/svg-sanitizer'
       );
-      return { ...actual, sanitizeSvg, sanitizeSvgForRendering: sanitizeSvg };
+      return {
+        ...actual,
+        sanitizeSvg: sanitizeSvgForRenderingSpy,
+        sanitizeSvgForRendering: sanitizeSvgForRenderingSpy,
+      };
     });
 
     vi.doMock('../../../src/utils/svg-compatibility', async () => {
@@ -65,14 +69,14 @@ describe('unsafe_processImage', () => {
           code: 'INVALID_SOURCE',
         }),
       });
-      expect(sanitizeSvg).toHaveBeenCalledTimes(1);
+      expect(sanitizeSvgForRenderingSpy).toHaveBeenCalledTimes(1);
       expect(enhanceSvgForBrowser).not.toHaveBeenCalled();
 
-      sanitizeSvg.mockClear();
+      sanitizeSvgForRenderingSpy.mockClear();
       enhanceSvgForBrowser.mockClear();
 
       await expect((unsafe_processImage(buffer) as any).toElement()).resolves.toBeInstanceOf(HTMLImageElement);
-      expect(sanitizeSvg).not.toHaveBeenCalled();
+      expect(sanitizeSvgForRenderingSpy).not.toHaveBeenCalled();
       expect(enhanceSvgForBrowser).not.toHaveBeenCalled();
     } finally {
       vi.restoreAllMocks();
@@ -117,14 +121,18 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
     try {
       (globalThis as any)._SVG_MOCK_MODE = false;
 
-      const sanitizeSvg = vi.fn((svg: string) => svg);
+      const sanitizeSvgForRenderingSpy = vi.fn((svg: string) => svg);
       const enhanceSvgForBrowser = vi.fn((svg: string) => svg);
 
       vi.doMock('../../../src/utils/svg-sanitizer', async () => {
         const actual = await vi.importActual<typeof import('../../../src/utils/svg-sanitizer')>(
           '../../../src/utils/svg-sanitizer'
         );
-        return { ...actual, sanitizeSvg, sanitizeSvgForRendering: sanitizeSvg };
+        return {
+          ...actual,
+          sanitizeSvg: sanitizeSvgForRenderingSpy,
+          sanitizeSvgForRendering: sanitizeSvgForRenderingSpy,
+        };
       });
 
       vi.doMock('../../../src/utils/svg-compatibility', async () => {
@@ -138,14 +146,14 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
       const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
 
       await (processImage(svg).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
-      expect(sanitizeSvg).toHaveBeenCalled();
+      expect(sanitizeSvgForRenderingSpy).toHaveBeenCalled();
       expect(enhanceSvgForBrowser).toHaveBeenCalled();
 
-      sanitizeSvg.mockClear();
+      sanitizeSvgForRenderingSpy.mockClear();
       enhanceSvgForBrowser.mockClear();
 
       await (unsafe_processImage(svg).resize({ fit: 'cover', width: 10, height: 10 }) as any).toElement();
-      expect(sanitizeSvg).not.toHaveBeenCalled();
+      expect(sanitizeSvgForRenderingSpy).not.toHaveBeenCalled();
       expect(enhanceSvgForBrowser).not.toHaveBeenCalled();
     } finally {
       (globalThis as any)._SVG_MOCK_MODE = previousSvgMockMode;
@@ -155,13 +163,17 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
   it('safe 경로만 상대 경로 참조 SVG를 차단하고 unsafe 경로는 해당 검사 단계를 건너뛴다', async () => {
     const svgWithRelativeHref =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="./assets/pattern.png" width="10" height="10"/></svg>';
-    const sanitizeSvg = vi.fn((svg: string) => svg);
+    const sanitizeSvgForRenderingSpy = vi.fn((svg: string) => svg);
 
     vi.doMock('../../../src/utils/svg-sanitizer', async () => {
       const actual = await vi.importActual<typeof import('../../../src/utils/svg-sanitizer')>(
         '../../../src/utils/svg-sanitizer'
       );
-      return { ...actual, sanitizeSvg, sanitizeSvgForRendering: sanitizeSvg };
+      return {
+        ...actual,
+        sanitizeSvg: sanitizeSvgForRenderingSpy,
+        sanitizeSvgForRendering: sanitizeSvgForRenderingSpy,
+      };
     });
 
     const { processImage, unsafe_processImage } = await import('../../../src');
@@ -172,27 +184,31 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
         code: 'INVALID_SOURCE',
       }),
     });
-    expect(sanitizeSvg).toHaveBeenCalledTimes(1);
+    expect(sanitizeSvgForRenderingSpy).toHaveBeenCalledTimes(1);
 
-    sanitizeSvg.mockClear();
+    sanitizeSvgForRenderingSpy.mockClear();
 
     await expect((unsafe_processImage(svgWithRelativeHref) as any).toElement()).resolves.toBeInstanceOf(
       HTMLImageElement
     );
-    expect(sanitizeSvg).not.toHaveBeenCalled();
+    expect(sanitizeSvgForRenderingSpy).not.toHaveBeenCalled();
   });
 
   it('SVG Blob 입력에서도 safe 경로만 보안 게이트에 걸리고 unsafe 경로는 passthrough 모드를 유지한다', async () => {
     const svgWithRelativeHref =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="./assets/pattern.png" width="10" height="10"/></svg>';
     const svgBlob = new Blob([svgWithRelativeHref], { type: 'image/svg+xml' });
-    const sanitizeSvg = vi.fn((svg: string) => svg);
+    const sanitizeSvgForRenderingSpy = vi.fn((svg: string) => svg);
 
     vi.doMock('../../../src/utils/svg-sanitizer', async () => {
       const actual = await vi.importActual<typeof import('../../../src/utils/svg-sanitizer')>(
         '../../../src/utils/svg-sanitizer'
       );
-      return { ...actual, sanitizeSvg, sanitizeSvgForRendering: sanitizeSvg };
+      return {
+        ...actual,
+        sanitizeSvg: sanitizeSvgForRenderingSpy,
+        sanitizeSvgForRendering: sanitizeSvgForRenderingSpy,
+      };
     });
 
     const { processImage, unsafe_processImage } = await import('../../../src');
@@ -203,12 +219,12 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
         code: 'INVALID_SOURCE',
       }),
     });
-    expect(sanitizeSvg).toHaveBeenCalledTimes(1);
+    expect(sanitizeSvgForRenderingSpy).toHaveBeenCalledTimes(1);
 
-    sanitizeSvg.mockClear();
+    sanitizeSvgForRenderingSpy.mockClear();
 
     await expect((unsafe_processImage(svgBlob) as any).toElement()).resolves.toBeInstanceOf(HTMLImageElement);
-    expect(sanitizeSvg).not.toHaveBeenCalled();
+    expect(sanitizeSvgForRenderingSpy).not.toHaveBeenCalled();
   });
 
   it('unsafe 경로에서도 oversized SVG 입력은 크기 제한으로 차단한다', async () => {
