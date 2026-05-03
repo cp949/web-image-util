@@ -9,9 +9,18 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 [![npm version](https://img.shields.io/npm/v/@cp949/web-image-util)](https://www.npmjs.com/package/@cp949/web-image-util)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-현재 배포 준비 버전: `2.0.33`
+현재 배포 준비 버전: `2.0.34`
 
 ## 배포 메모
+
+### 2.0.34
+
+- 호스트 앱이 입력을 사전 검사할 수 있도록 세 가지 공개 유틸리티 API를 추가합니다.
+  - `estimateDataURLPayloadByteLength()`: Data URL payload를 디코딩하지 않고 byte 크기만 추정합니다. `invalid: 'null'` 옵션으로 malformed 입력에서 throw 대신 `null`을 받을 수 있습니다.
+  - `decodeSvgDataURL()`: SVG Data URL을 동기적으로 UTF-8 text로 decode합니다. sanitizer/DOMParser는 호출 측 정책에 위임합니다.
+  - `fetchImageSourceBlob()`: URL을 fetch만 수행해 Blob과 응답 메타데이터를 반환합니다. `allowedProtocols`, `maxBytes`, `timeoutMs`, `abortSignal`을 모두 결합 지원합니다.
+- 새 에러 코드 `SOURCE_BYTES_EXCEEDED`를 추가합니다. `Content-Length` 사전 거부와 stream 누적 byte 초과 시 reader.cancel()이 모두 적용됩니다.
+- 신규 API의 한글 JSDoc과 README 사용 예시를 보강합니다.
 
 ### 2.0.33
 
