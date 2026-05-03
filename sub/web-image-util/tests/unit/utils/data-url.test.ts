@@ -58,7 +58,28 @@ describe('data URL utilities', () => {
 
   it('Data URL scheme은 기본적으로 대소문자를 구분하지 않는다', () => {
     expect(estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=')).toBe(2);
-    expect(estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=', { caseSensitiveScheme: true })).toBeNull();
+    expect(() =>
+      estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=', { caseSensitiveScheme: true })
+    ).toThrow('유효한 Data URL이 아닙니다');
+    expect(
+      estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=', {
+        caseSensitiveScheme: true,
+        invalid: 'null',
+      })
+    ).toBeNull();
+  });
+
+  it('base64 payload byte length 추정은 decode path를 호출하지 않는다', () => {
+    const originalAtob = globalThis.atob;
+    globalThis.atob = () => {
+      throw new Error('atob should not be called');
+    };
+
+    try {
+      expect(estimateDataURLPayloadByteLength('data:text/plain;base64,aGVsbG8=')).toBe(5);
+    } finally {
+      globalThis.atob = originalAtob;
+    }
   });
 
   it('invalid 옵션이 null이면 malformed Data URL에서 null을 반환한다', () => {

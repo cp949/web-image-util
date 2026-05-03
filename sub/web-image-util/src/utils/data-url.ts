@@ -74,10 +74,6 @@ export function estimateDataURLPayloadByteLength(
   options: EstimateDataURLPayloadByteLengthOptions = {}
 ): number | null {
   try {
-    if (options.caseSensitiveScheme === true && !dataURL.trimStart().startsWith('data:')) {
-      return null;
-    }
-
     const parsed = parseDataURL(dataURL, { caseSensitiveScheme: options.caseSensitiveScheme ?? false });
 
     return parsed.isBase64
@@ -131,34 +127,63 @@ function decodeDataURLPayload({ isBase64, payload }: ParsedDataURL): Uint8Array 
 }
 
 function estimateBase64PayloadByteLength(payload: string): number {
-  const normalized = payload.replace(/\s+/g, '');
+  let normalizedLength = 0;
+  let padding = 0;
+  let hasPadding = false;
 
-  if (normalized.length === 0) {
+  for (let index = 0; index < payload.length; index += 1) {
+    const character = payload[index];
+
+    if (isBase64IgnoredWhitespace(character)) {
+      continue;
+    }
+
+    normalizedLength += 1;
+
+    if (character === '=') {
+      hasPadding = true;
+      padding += 1;
+
+      if (padding > 2) {
+        throwInvalidDataURL();
+      }
+
+      continue;
+    }
+
+    if (hasPadding || !isBase64Character(character)) {
+      throwInvalidDataURL();
+    }
+  }
+
+  if (normalizedLength === 0) {
     return 0;
   }
 
-  if (normalized.length % 4 === 1) {
+  if (normalizedLength % 4 === 1 || (hasPadding && normalizedLength % 4 !== 0)) {
     throwInvalidDataURL();
   }
 
-  validateBase64PayloadShape(normalized);
-
-  const padding = normalized.endsWith('==') ? 2 : normalized.endsWith('=') ? 1 : 0;
-  return Math.floor((normalized.length * 3) / 4) - padding;
+  return Math.floor((normalizedLength * 3) / 4) - padding;
 }
 
-function validateBase64PayloadShape(payload: string): void {
-  if (!/^[A-Za-z\d+/]*={0,2}$/.test(payload)) {
-    throwInvalidDataURL();
-  }
+function isBase64Character(character: string): boolean {
+  const code = character.charCodeAt(0);
 
-  if (payload.includes('=') && payload.length % 4 !== 0) {
-    throwInvalidDataURL();
-  }
+  return (
+    (code >= 65 && code <= 90) ||
+    (code >= 97 && code <= 122) ||
+    (code >= 48 && code <= 57) ||
+    character === '+' ||
+    character === '/'
+  );
+}
+
+function isBase64IgnoredWhitespace(character: string): boolean {
+  return /\s/.test(character);
 }
 
 function estimatePercentPayloadByteLength(payload: string): number {
-  const encoder = new TextEncoder();
   let bytes = 0;
 
   for (let index = 0; index < payload.length; index += 1) {
@@ -182,7 +207,7 @@ function estimatePercentPayloadByteLength(payload: string): number {
       throwInvalidDataURL();
     }
 
-    bytes += encoder.encode(String.fromCodePoint(codePoint)).byteLength;
+    bytes += estimateUTF8CodePointByteLength(codePoint);
 
     if (codePoint > 0xffff) {
       index += 1;
@@ -190,6 +215,26 @@ function estimatePercentPayloadByteLength(payload: string): number {
   }
 
   return bytes;
+}
+
+function estimateUTF8CodePointByteLength(codePoint: number): number {
+  if (codePoint <= 0x7f) {
+    return 1;
+  }
+
+  if (codePoint <= 0x7ff) {
+    return 2;
+  }
+
+  if (codePoint <= 0xffff) {
+    return 3;
+  }
+
+  if (codePoint <= 0x10ffff) {
+    return 4;
+  }
+
+  throwInvalidDataURL();
 }
 
 function decodePercentEncodedPayload(payload: string): Uint8Array {
