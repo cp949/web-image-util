@@ -35,7 +35,7 @@ describe('package.json 배포 매니페스트', () => {
   });
 
   test('files 목록은 dist + 사용자 문서만 포함한다', () => {
-    expect(pkg.files).toEqual(['dist', 'README.md', 'llm.txt']);
+    expect(pkg.files).toEqual(['dist', 'README.md', 'CHANGELOG.md', 'llm.txt']);
   });
 
   test('exports 맵은 문서화된 서브패스를 모두 노출한다', () => {
