@@ -86,7 +86,14 @@ export {
  *
  * @description Blob과 Data URL 사이의 순수 변환 및 크기 추정 기능
  */
-export { blobToDataURL, dataURLToBlob, estimateDataURLSize, isDataURLString } from './data-url';
+export {
+  blobToDataURL,
+  dataURLToBlob,
+  estimateDataURLPayloadByteLength,
+  estimateDataURLSize,
+  isDataURLString,
+  type EstimateDataURLPayloadByteLengthOptions,
+} from './data-url';
 /**
  * Image format conversion functions
  *

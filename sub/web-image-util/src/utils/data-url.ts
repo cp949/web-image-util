@@ -10,6 +10,15 @@ type ParsedDataURL = {
   payload: string;
 };
 
+export interface EstimateDataURLPayloadByteLengthOptions {
+  invalid?: 'throw' | 'null';
+  caseSensitiveScheme?: boolean;
+}
+
+type ParseDataURLOptions = {
+  caseSensitiveScheme?: boolean;
+};
+
 /**
  * 값이 Data URL 문자열인지 판정한다.
  *
@@ -60,10 +69,37 @@ export function estimateDataURLSize(dataURL: string): number {
   return decodeDataURLPayload(parsed).byteLength;
 }
 
-function parseDataURL(dataURL: string): ParsedDataURL {
-  const normalizedDataURL = dataURL.trimStart();
+export function estimateDataURLPayloadByteLength(
+  dataURL: string,
+  options: EstimateDataURLPayloadByteLengthOptions = {}
+): number | null {
+  try {
+    if (options.caseSensitiveScheme === true && !dataURL.trimStart().startsWith('data:')) {
+      return null;
+    }
 
-  if (!isDataURLString(normalizedDataURL)) {
+    const parsed = parseDataURL(dataURL, { caseSensitiveScheme: options.caseSensitiveScheme ?? false });
+
+    return parsed.isBase64
+      ? estimateBase64PayloadByteLength(parsed.payload)
+      : estimatePercentPayloadByteLength(parsed.payload);
+  } catch (error) {
+    if (options.invalid === 'null') {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+function parseDataURL(dataURL: string, options: ParseDataURLOptions = {}): ParsedDataURL {
+  const normalizedDataURL = dataURL.trimStart();
+  const caseSensitiveScheme = options.caseSensitiveScheme ?? true;
+  const hasDataScheme = caseSensitiveScheme
+    ? normalizedDataURL.startsWith('data:')
+    : normalizedDataURL.toLowerCase().startsWith('data:');
+
+  if (!hasDataScheme) {
     throwInvalidDataURL();
   }
 
@@ -76,7 +112,7 @@ function parseDataURL(dataURL: string): ParsedDataURL {
   const metadata = normalizedDataURL.slice('data:'.length, commaIndex);
   const payload = normalizedDataURL.slice(commaIndex + 1);
   const metadataParts = metadata.split(';').filter(Boolean);
-  const mimeType = metadataParts[0]?.includes('/') ? metadataParts[0] : '';
+  const mimeType = metadataParts[0]?.includes('/') ? metadataParts[0].toLowerCase() : '';
   const isBase64 = metadataParts.some((part) => part.toLowerCase() === 'base64');
 
   return { isBase64, mimeType, payload };
@@ -92,6 +128,56 @@ function decodeDataURLPayload({ isBase64, payload }: ParsedDataURL): Uint8Array 
   } catch {
     throwInvalidDataURL();
   }
+}
+
+function estimateBase64PayloadByteLength(payload: string): number {
+  const normalized = payload.replace(/\s+/g, '');
+
+  if (normalized.length === 0) {
+    return 0;
+  }
+
+  if (normalized.length % 4 === 1) {
+    throwInvalidDataURL();
+  }
+
+  const padding = normalized.endsWith('==') ? 2 : normalized.endsWith('=') ? 1 : 0;
+  return Math.floor((normalized.length * 3) / 4) - padding;
+}
+
+function estimatePercentPayloadByteLength(payload: string): number {
+  const encoder = new TextEncoder();
+  let bytes = 0;
+
+  for (let index = 0; index < payload.length; index += 1) {
+    const character = payload[index];
+
+    if (character === '%') {
+      const hex = payload.slice(index + 1, index + 3);
+
+      if (!isHexByte(hex)) {
+        throwInvalidDataURL();
+      }
+
+      bytes += 1;
+      index += 2;
+      continue;
+    }
+
+    const codePoint = payload.codePointAt(index);
+
+    if (codePoint === undefined) {
+      throwInvalidDataURL();
+    }
+
+    bytes += encoder.encode(String.fromCodePoint(codePoint)).byteLength;
+
+    if (codePoint > 0xffff) {
+      index += 1;
+    }
+  }
+
+  return bytes;
 }
 
 function decodePercentEncodedPayload(payload: string): Uint8Array {

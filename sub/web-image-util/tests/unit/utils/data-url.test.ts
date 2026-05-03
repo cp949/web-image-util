@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { blobToDataURL, dataURLToBlob, estimateDataURLSize, isDataURLString } from '../../../src/utils';
+import {
+  blobToDataURL,
+  dataURLToBlob,
+  estimateDataURLPayloadByteLength,
+  estimateDataURLSize,
+  isDataURLString,
+} from '../../../src/utils';
 
 describe('data URL utilities', () => {
   it('Data URL 문자열을 판정한다', () => {
@@ -42,6 +48,23 @@ describe('data URL utilities', () => {
     expect(estimateDataURLSize('data:text/plain;base64,aGVsbG8=')).toBe(5);
     expect(estimateDataURLSize('data:image/svg+xml,%3Csvg%3E%3C/svg%3E')).toBe(11);
     expect(estimateDataURLSize('data:application/octet-stream,%FF')).toBe(1);
+  });
+
+  it('Data URL payload byte length를 payload materialize 없이 계산한다', () => {
+    expect(estimateDataURLPayloadByteLength('data:text/plain;base64,aGVsbG8=')).toBe(5);
+    expect(estimateDataURLPayloadByteLength('data:image/svg+xml,%3Csvg%3E%3C/svg%3E')).toBe(11);
+    expect(estimateDataURLPayloadByteLength('data:text/plain,%ED%95%9C글')).toBe(6);
+  });
+
+  it('Data URL scheme은 기본적으로 대소문자를 구분하지 않는다', () => {
+    expect(estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=')).toBe(2);
+    expect(estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=', { caseSensitiveScheme: true })).toBeNull();
+  });
+
+  it('invalid 옵션이 null이면 malformed Data URL에서 null을 반환한다', () => {
+    expect(estimateDataURLPayloadByteLength('not-data-url', { invalid: 'null' })).toBeNull();
+    expect(estimateDataURLPayloadByteLength('data:text/plain,%', { invalid: 'null' })).toBeNull();
+    expect(() => estimateDataURLPayloadByteLength('data:text/plain,%')).toThrow('유효한 Data URL이 아닙니다');
   });
 
   it('잘못된 Data URL은 명확한 오류를 던진다', () => {
