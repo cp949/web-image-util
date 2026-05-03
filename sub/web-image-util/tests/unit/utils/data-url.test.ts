@@ -87,9 +87,7 @@ describe('data URL utilities', () => {
       '유효한 SVG Data URL이 아닙니다'
     );
     expect(() => decodeSvgDataURL('data:image/svg+xml;base64,@@@@')).toThrow('유효한 SVG Data URL이 아닙니다');
-    expect(() => decodeSvgDataURL('data:image/svg+xml,%3Cdiv%3E%3C/div%3E')).toThrow(
-      '유효한 SVG Data URL이 아닙니다'
-    );
+    expect(() => decodeSvgDataURL('data:image/svg+xml,%3Cdiv%3E%3C/div%3E')).toThrow('유효한 SVG Data URL이 아닙니다');
   });
 
   it('Data URL scheme은 기본적으로 대소문자를 구분하지 않는다', () => {
