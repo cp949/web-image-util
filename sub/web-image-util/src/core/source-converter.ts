@@ -8,6 +8,7 @@ import { debugLog, productionLog } from '../utils/debug';
 import { enhanceSvgForBrowser } from '../utils/svg-compatibility';
 import { isInlineSvg } from '../utils/svg-detection';
 import { extractSvgDimensions } from '../utils/svg-dimensions';
+import { getCssPolicyValueVariants, normalizePolicyValue, visitCssUrlValues } from '../utils/svg-policy-utils';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 import type { QualityLevel } from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
@@ -382,64 +383,7 @@ function isSvgResourcePath(input: string): boolean {
  * @returns 공백 제거 및 소문자 정규화된 문자열
  */
 function normalizePolicyRef(ref: string): string {
-  const decoded = ref
-    .replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (_match, hex: string | undefined, decimal: string | undefined) => {
-      const codePoint = hex ? Number.parseInt(hex, 16) : Number.parseInt(decimal ?? '', 10);
-      if (!Number.isFinite(codePoint)) {
-        return '';
-      }
-
-      try {
-        return String.fromCodePoint(codePoint);
-      } catch {
-        return '';
-      }
-    })
-    .replace(/&(quot|amp|apos|lt|gt|tab|newline|colon);/gi, (_match, entity: string) => {
-      switch (entity.toLowerCase()) {
-        case 'quot':
-          return '"';
-        case 'amp':
-          return '&';
-        case 'apos':
-          return "'";
-        case 'lt':
-          return '<';
-        case 'gt':
-          return '>';
-        case 'tab':
-          return '\t';
-        case 'newline':
-          return '\n';
-        case 'colon':
-          return ':';
-        default:
-          return '';
-      }
-    });
-
-  return stripPolicyNoise(decoded).toLowerCase();
-}
-
-/**
- * 프로토콜 판별을 흐릴 수 있는 제어 문자와 공백을 제거한다.
- *
- * @param value 정리할 문자열
- * @returns 정책 비교용으로 정리된 문자열
- */
-function stripPolicyNoise(value: string): string {
-  let normalized = '';
-
-  for (const char of value) {
-    const codePoint = char.codePointAt(0) ?? 0;
-    if (char.trim().length === 0 || codePoint <= 0x20 || (codePoint >= 0x7f && codePoint <= 0x9f)) {
-      continue;
-    }
-
-    normalized += char;
-  }
-
-  return normalized;
+  return normalizePolicyValue(ref);
 }
 
 /**
@@ -1090,16 +1034,13 @@ function assertSafeSvgContent(svgString: string): void {
  * @returns 위험한 참조가 있으면 true
  */
 function _hasDangerousUrlRef(cssText: string): boolean {
-  const urlPattern = /url\(\s*["']?([^"')]+)["']?\s*\)/gi;
-  let m: RegExpExecArray | null;
-  m = urlPattern.exec(cssText);
-  while (m !== null) {
-    if (isBlockedSvgPolicyRef(m[1])) {
-      return true;
+  let hasDangerousUrlRef = false;
+  visitCssUrlValues(cssText, (value) => {
+    if (getCssPolicyValueVariants(value).some(isBlockedSvgPolicyRef)) {
+      hasDangerousUrlRef = true;
     }
-    m = urlPattern.exec(cssText);
-  }
-  return false;
+  });
+  return hasDangerousUrlRef;
 }
 
 /**

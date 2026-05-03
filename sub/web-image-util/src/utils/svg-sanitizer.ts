@@ -19,85 +19,7 @@
  * - `style` 속성 또는 `<style>` 본문 안의 외부 `url(...)` 참조
  */
 
-/**
- * HTML/XML 문자 참조를 실제 문자로 복원한다.
- *
- * 브라우저가 SVG를 파싱할 때 `jav&#x61;script:` 같은 값이 다시 `javascript:`로
- * 해석되므로, 정책 비교 전에 최소한의 엔티티 디코딩이 필요하다.
- *
- * @param value 디코딩할 속성값 또는 CSS 조각
- * @returns 문자 참조가 복원된 문자열
- */
-function decodeHtmlEntities(value: string): string {
-  return value
-    .replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (_match, hex: string | undefined, decimal: string | undefined) => {
-      const codePoint = hex ? Number.parseInt(hex, 16) : Number.parseInt(decimal ?? '', 10);
-      if (!Number.isFinite(codePoint)) {
-        return '';
-      }
-
-      try {
-        return String.fromCodePoint(codePoint);
-      } catch {
-        return '';
-      }
-    })
-    .replace(/&(quot|amp|apos|lt|gt|tab|newline|colon);/gi, (_match, entity: string) => {
-      switch (entity.toLowerCase()) {
-        case 'quot':
-          return '"';
-        case 'amp':
-          return '&';
-        case 'apos':
-          return "'";
-        case 'lt':
-          return '<';
-        case 'gt':
-          return '>';
-        case 'tab':
-          return '\t';
-        case 'newline':
-          return '\n';
-        case 'colon':
-          return ':';
-        default:
-          return '';
-      }
-    });
-}
-
-/**
- * 보안 정책 비교 전에 URI 조각을 정규화한다.
- *
- * 엔티티 디코딩 후 소문자화하고, 프로토콜 판별을 흐릴 수 있는 제어 문자와 공백을 제거한다.
- *
- * @param value 정규화할 문자열
- * @returns 정책 비교용 정규화 문자열
- */
-function normalizePolicyValue(value: string): string {
-  return stripPolicyNoise(decodeHtmlEntities(value)).toLowerCase();
-}
-
-/**
- * 프로토콜 판별을 흐릴 수 있는 제어 문자와 공백을 제거한다.
- *
- * @param value 정리할 문자열
- * @returns 정책 비교용으로 정리된 문자열
- */
-function stripPolicyNoise(value: string): string {
-  let normalized = '';
-
-  for (const char of value) {
-    const codePoint = char.codePointAt(0) ?? 0;
-    if (char.trim().length === 0 || codePoint <= 0x20 || (codePoint >= 0x7f && codePoint <= 0x9f)) {
-      continue;
-    }
-
-    normalized += char;
-  }
-
-  return normalized;
-}
+import { getCssPolicyValueVariants, normalizePolicyValue, replaceCssUrlValues } from './svg-policy-utils';
 
 /**
  * `href` 또는 `xlink:href` 속성값이 외부 URL인지 판정한다.
@@ -120,29 +42,6 @@ function isExternalHref(value: string): boolean {
 }
 
 /**
- * CSS 숫자 escape 시퀀스를 실제 문자로 복원한다.
- *
- * CSS에서 `\68` 또는 `\000068`은 `h`를 나타낸다. 브라우저 CSS 파서가
- * 이를 실제 문자로 해석하므로, 정책 비교 전에 디코딩이 필요하다.
- *
- * @param value 디코딩할 CSS 조각
- * @returns CSS escape가 복원된 문자열
- */
-function decodeCssEscapes(value: string): string {
-  return value.replace(/\\([0-9a-f]{1,6}\s?|.)/gi, (_match, escaped: string) => {
-    const hex = escaped.trim();
-    if (/^[0-9a-f]{1,6}$/i.test(hex)) {
-      try {
-        return String.fromCodePoint(Number.parseInt(hex, 16));
-      } catch {
-        return '';
-      }
-    }
-    return escaped;
-  });
-}
-
-/**
  * CSS `url()` 함수 내 값이 외부 참조인지 판정한다.
  *
  * 외부 참조로 간주하는 스킴: http://, https://, //..., data:, javascript:
@@ -153,20 +52,16 @@ function decodeCssEscapes(value: string): string {
  * @returns 외부 참조이면 true
  */
 function isExternalCssUrl(urlValue: string): boolean {
-  const normalized = normalizePolicyValue(urlValue);
-  // CSS escape 디코딩 후 앞뒤 따옴표·백슬래시를 strip해서 추가 검사한다.
-  // 예: \22http://... -> "http://... -> strip -> http://...
-  // 예: \\68\\74... -> \h\t... -> startsWith('\') 이면 strip -> h\t... 는 외부 URL 아님
-  const decodedRaw = decodeCssEscapes(urlValue);
-  const decoded = normalizePolicyValue(decodedRaw.replace(/^[\\"']+/, ''));
-  return [normalized, decoded].some(
-    (value) =>
-      value.startsWith('//') ||
-      value.startsWith('http://') ||
-      value.startsWith('https://') ||
-      value.startsWith('data:') ||
-      value.startsWith('javascript:')
-  );
+  return getCssPolicyValueVariants(urlValue)
+    .map(normalizePolicyValue)
+    .some(
+      (value) =>
+        value.startsWith('//') ||
+        value.startsWith('http://') ||
+        value.startsWith('https://') ||
+        value.startsWith('data:') ||
+        value.startsWith('javascript:')
+    );
 }
 
 /**
@@ -179,17 +74,7 @@ function isExternalCssUrl(urlValue: string): boolean {
  * @returns 외부 url() 참조가 제거된 CSS 텍스트
  */
 function stripExternalCssUrls(css: string): string {
-  // url("..."), url('...'), url(...) 세 가지 형식을 모두 처리한다
-  return css
-    .replace(/url\s*\(\s*"([^"]*)"\s*\)/gi, (_match, value: string) =>
-      isExternalCssUrl(value) ? 'url(#invalid)' : _match
-    )
-    .replace(/url\s*\(\s*'([^']*)'\s*\)/gi, (_match, value: string) =>
-      isExternalCssUrl(value) ? 'url(#invalid)' : _match
-    )
-    .replace(/url\s*\(\s*([^"')]*)\s*\)/gi, (_match, value: string) =>
-      isExternalCssUrl(value.trim()) ? 'url(#invalid)' : _match
-    );
+  return replaceCssUrlValues(css, (value, match) => (isExternalCssUrl(value.trim()) ? 'url(#invalid)' : match));
 }
 
 /**

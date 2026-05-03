@@ -211,6 +211,8 @@ await processImage(userProvidedSource, {
 | 0 패딩 hex escape | `url(\000068ttp://...)` | `url(http://...)` |
 | 문자별 분할 escape (공백 포함) | `url(\68 \74 \74 \70 ://...)` | `url(http://...)` |
 | escape된 따옴표 | `url(\22 http://...)` | `url("http://...")` |
+| 엔티티 따옴표 | `url(&quot;https://...&quot;)` | `url("https://...")` |
+| escape/엔티티 함수명 | `u\72l(...)`, `\55\52\4c(...)`, `u&#x72;l(...)`, `u\00007&#x32;l(...)` | `url(...)`, `URL(...)` |
 | image-set 내부 escape | `image-set(url(\68ttp://...))` | 외부 로딩 |
 | data URL 콜론 escape | `url(data\3a image/png;base64,...)` | `url(data:...)` |
 | 이중 백슬래시 | `url(\\68\\74...)` | `url(\h\t...)` — 외부 URL 아님 |
@@ -218,8 +220,9 @@ await processImage(userProvidedSource, {
 ### 적용된 보강 (2026-05-04)
 
 1. **`decodeCssEscapes()` 추가**: CSS 숫자 escape 시퀀스(`\68`, `\000068` 등)를 실제 문자로 복원하는 함수를 추가했다.
-2. **`isExternalCssUrl()` 보강**: 원본 값과 CSS escape 디코딩 후 앞뒤 따옴표·백슬래시를 strip한 값을 모두 검사하도록 수정했다.
-3. **unquoted URL 정규식 확장 (Option B)**: 기존 `([^"')[^\s)]*)`에서 `([^"')*)`로 변경해 공백을 포함하는 분할 escape 패턴도 캡처한다.
+2. **`isExternalCssUrl()` 보강**: 원본 값과 CSS escape 디코딩 값을 모두 검사하고, 엔티티/escape 디코딩 뒤 경계에 남은 따옴표를 제거하도록 수정했다.
+3. **escaped/entity `url` 함수명 인식**: `u\72l(...)`, `u&#x72;l(...)`, `u\00007&#x32;l(...)`처럼 함수명 일부를 CSS escape나 numeric entity 또는 두 방식의 조합으로 숨긴 호출도 `url(...)`로 인식해 동일하게 정제한다.
+4. **unquoted URL 정규식 확장 (Option B)**: 기존 `([^"')[^\s)]*)`에서 `([^"')]*)`로 변경해 공백을 포함하는 분할 escape 패턴도 캡처하되, 닫는 괄호 `)` 는 탐욕적 소비를 막기 위해 제외한다.
 
 이중 백슬래시 케이스(`\\68\\74...`)는 CSS 파서가 `\h\t...`로 해석하므로 실제 외부 URL이 되지 않는다. sanitizer가 이 케이스를 차단하지 않아도 보안상 정상이며, 회귀 테스트에서 호스트 포함 여부 검사를 제외했다.
 

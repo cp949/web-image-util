@@ -311,6 +311,34 @@ describe('보안: SVG 위험 요소 차단', () => {
     await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
   });
 
+  it('CSS escape로 숨긴 상대 경로 style URL도 외부 리소스로 간주해 거부한다', async () => {
+    const unsafeSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\2e \\2e /secret.png)"/></svg>';
+
+    await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
+  });
+
+  it('엔티티로 분할된 CSS escape 상대 경로 style URL도 거부한다', async () => {
+    const unsafeSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\00002&#x65; \\00002&#x65; /secret.png)"/></svg>';
+
+    await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
+  });
+
+  it('함수명과 값에 엔티티로 분할된 CSS escape가 있어도 상대 경로 style URL을 거부한다', async () => {
+    const unsafeSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:u\\00007&#x32;l(\\00002&#x65; \\00002&#x65; /secret.png)"/></svg>';
+
+    await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
+  });
+
+  it('CSS escape로 숨긴 루트 절대 경로 style URL도 외부 리소스로 간주해 거부한다', async () => {
+    const unsafeSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\2f assets/tracker.png)"/></svg>';
+
+    await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
+  });
+
   it('protocol-relative href가 포함된 SVG 문자열은 sanitize 후 렌더링된다', async () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href=//evil.example/pattern.png width="10" height="10"/></svg>';
