@@ -84,6 +84,8 @@ const banner = await processImage(source)
 
 더 자세한 예제와 API 설명은 [sub/web-image-util/README.md](sub/web-image-util/README.md)를 참고하세요.
 
+SVG sanitizer 옵션별 보안 범위는 [SVG-SECURITY.md](SVG-SECURITY.md)에 별도로 정리되어 있습니다.
+
 ## LLM 지원
 
 배포되는 패키지에는 `llm.txt` 파일이 함께 포함됩니다.

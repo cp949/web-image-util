@@ -146,41 +146,11 @@ const result = await processImage(file).shortcut.scale(0.8).toBlob();
 
 ## 🏗️ 아키텍처
 
-### 전체 흐름도
+### 전체 처리 방식
 
-```
-                         ┌────────────────────┐
-                         │  processImage()    │
-                         │    (팩토리 함수)   │
-                         └─────────┬──────────┘
-                                   │
-           ┌───────────────────────┴─────────────────────┐
-           │                                             │
-   ┌───────▼─────────┐                           ┌───────▼────────┐
-   │ SourceConverter │                           │ ImageProcessor │
-   │   (소스 변환)   │                           │   (체이닝 API) │
-   └───────┬─────────┘                           └───────┬────────┘
-           │                                             │
- ┌─────────▼──────────┐                          ┌───────▼────────┐
- │ SVG 감지           │                          │ LazyPipeline   │
- │ - isInlineSvg()    │                          │ - resize()     │
- │ - sniffSvgFromBlob │                          │ - blur()       │
- │ - MIME + Content   │                          └───────┬────────┘
- └─────────┬──────────┘                                  │
-           │                                             │
- ┌─────────▼──────────────┐                ┌─────────────▼─────────────┐
- │ convertSvgToElement    │                │ ResizeCalculator          │
- │ - SVG 정규화           │                │ - calculateFinalLayout()  │
- │ - 복잡도 분석          │                │ - fit 모드 계산           │
- │ - 품질 레벨 선택       │                └─────────────┬─────────────┘
- │ - 품질 보존 렌더링     │                              │
- └────────────────────────┘                ┌─────────────▼─────────────┐
-                                           │ OnehotRenderer            │
-                                           │ - drawImage() 1회 호출    │
-                                           │ - 품질 설정               │
-                                           │ - 배경색 처리             │
-                                           └───────────────────────────┘
-```
+`processImage()`는 입력 소스를 브라우저에서 렌더링 가능한 이미지 요소로 변환한 뒤, `ImageProcessor` 체이닝 API를 반환합니다. 문자열, URL, Blob/File, ArrayBuffer 계열 입력은 먼저 소스 타입을 판정하고, SVG 입력은 MIME과 내용 스니핑을 함께 확인한 다음 브라우저 렌더링에 맞게 정규화합니다.
+
+체이닝 단계에서는 `resize()`, `blur()` 같은 연산을 즉시 Canvas에 그리지 않고 `LazyPipeline`에 누적합니다. 최종 출력 메서드(`toBlob()`, `toDataURL()`, `toFile()`, `toCanvas()`)가 호출되면 `ResizeCalculator`가 fit 모드와 최종 레이아웃을 계산하고, `OnehotRenderer`가 한 번의 `drawImage()` 중심 렌더링으로 품질 설정, 배경색, 포맷 변환까지 처리합니다.
 
 ### 핵심 흐름
 
@@ -699,6 +669,8 @@ await processImage(enhanced).resize({ width: 300, height: 200 }).toBlob();
 `processImage()`의 기본 SVG 처리는 명백히 위험한 패턴을 제거하는 경량 방어층이며, 보안팀 수준의 sanitizer 역할을 약속하지 않습니다.
 
 `svgSanitizer`는 SVG로 판정된 입력에만 적용됩니다. 비-SVG 입력(PNG/JPEG/WebP 등)은 영향을 받지 않습니다.
+
+옵션별 보안 범위와 미지원 항목은 루트 [SVG-SECURITY.md](../../SVG-SECURITY.md)에 별도로 정리되어 있습니다.
 
 | 옵션 | 동작 |
 | --- | --- |
