@@ -305,6 +305,15 @@ function createFetchSourceAbortSignal(
   return controller.signal;
 }
 
+function sanitizeFetchSourceOptions(
+  fetchOptions: FetchImageSourceBlobOptions['fetchOptions'] | undefined
+): Omit<RequestInit, 'body' | 'method' | 'signal'> {
+  if (!fetchOptions) return {};
+
+  const { body: _body, method: _method, signal: _signal, ...safeOptions } = fetchOptions as RequestInit;
+  return safeOptions;
+}
+
 function throwSourceBytesExceeded(message: string): never {
   throw new ImageProcessError(message, 'SOURCE_BYTES_EXCEEDED');
 }
@@ -356,7 +365,12 @@ async function readFetchSourceBlob(
       totalBytes += value.byteLength;
 
       if (maxBytes > 0 && totalBytes > maxBytes) {
-        await reader.cancel();
+        try {
+          await reader.cancel();
+        } catch {
+          // 크기 초과 오류가 public contract이므로 스트림 정리 실패가 이를 가리지 않게 한다.
+        }
+
         throwSourceBytesExceeded(
           `${label} 응답 크기(${totalBytes} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`
         );
@@ -552,7 +566,7 @@ export async function fetchImageSourceBlob(
   let response: Response;
   try {
     response = await fetch(url, {
-      ...options.fetchOptions,
+      ...sanitizeFetchSourceOptions(options.fetchOptions),
       method: 'GET',
       ...(signal ? { signal } : {}),
     });
