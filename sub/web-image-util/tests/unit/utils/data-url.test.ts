@@ -58,6 +58,7 @@ describe('data URL utilities', () => {
 
   it('Data URL scheme은 기본적으로 대소문자를 구분하지 않는다', () => {
     expect(estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=')).toBe(2);
+    expect(estimateDataURLPayloadByteLength('DaTa:text/plain;base64,aGk=')).toBe(2);
     expect(() =>
       estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=', { caseSensitiveScheme: true })
     ).toThrow('유효한 Data URL이 아닙니다');
@@ -93,6 +94,9 @@ describe('data URL utilities', () => {
     expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a===')).toThrow('유효한 Data URL이 아닙니다');
     expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a=b=')).toThrow('유효한 Data URL이 아닙니다');
     expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a=')).toThrow('유효한 Data URL이 아닙니다');
+    expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,aGVs\u00A0bG8=')).toThrow(
+      '유효한 Data URL이 아닙니다'
+    );
   });
 
   it('invalid 옵션이 null이면 malformed base64에서 null을 반환한다', () => {
@@ -100,6 +104,7 @@ describe('data URL utilities', () => {
     expect(estimateDataURLPayloadByteLength('data:text/plain;base64,a===', { invalid: 'null' })).toBeNull();
     expect(estimateDataURLPayloadByteLength('data:text/plain;base64,a=b=', { invalid: 'null' })).toBeNull();
     expect(estimateDataURLPayloadByteLength('data:text/plain;base64,a=', { invalid: 'null' })).toBeNull();
+    expect(estimateDataURLPayloadByteLength('data:text/plain;base64,aGVs\u00A0bG8=', { invalid: 'null' })).toBeNull();
   });
 
   it('잘못된 Data URL은 명확한 오류를 던진다', () => {

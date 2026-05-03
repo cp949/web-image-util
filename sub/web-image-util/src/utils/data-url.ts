@@ -93,7 +93,7 @@ function parseDataURL(dataURL: string, options: ParseDataURLOptions = {}): Parse
   const caseSensitiveScheme = options.caseSensitiveScheme ?? true;
   const hasDataScheme = caseSensitiveScheme
     ? normalizedDataURL.startsWith('data:')
-    : normalizedDataURL.toLowerCase().startsWith('data:');
+    : normalizedDataURL.slice(0, 'data:'.length).toLowerCase() === 'data:';
 
   if (!hasDataScheme) {
     throwInvalidDataURL();
@@ -180,7 +180,7 @@ function isBase64Character(character: string): boolean {
 }
 
 function isBase64IgnoredWhitespace(character: string): boolean {
-  return /\s/.test(character);
+  return character === ' ' || character === '\t' || character === '\r' || character === '\n' || character === '\f';
 }
 
 function estimatePercentPayloadByteLength(payload: string): number {
