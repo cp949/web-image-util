@@ -325,19 +325,6 @@ describe('Processor Resize Integration Tests', () => {
       expect(result.height).toBe(200);
     });
 
-    it('should throw error on multiple resize calls', async () => {
-      const testBlob = await createTestImageBlob(400, 300, 'blue');
-      const processor = processImage(testBlob);
-
-      // First resize should succeed
-      processor.resize({ fit: 'cover', width: 200, height: 200 });
-
-      // Second resize should throw error
-      expect(() => {
-        processor.resize({ fit: 'cover', width: 100, height: 100 });
-      }).toThrow(expect.objectContaining({ code: 'MULTIPLE_RESIZE_NOT_ALLOWED' }));
-    });
-
     it('두 번째 resize() 호출은 MULTIPLE_RESIZE_NOT_ALLOWED 코드로 거부한다', async () => {
       const testBlob = await createTestImageBlob(400, 300, 'blue');
       const processor = processImage(testBlob);
