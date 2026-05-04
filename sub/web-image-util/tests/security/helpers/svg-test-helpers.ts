@@ -1,5 +1,12 @@
 export const SVG_LIMIT_BYTES = 10 * 1024 * 1024;
 
+// base64 인코딩된 data:image/svg+xml href에서 SVG 본문을 디코딩해 반환한다.
+export function extractDecodedNestedSvg(svg: string): string | null {
+  const match = svg.match(/href="data:image\/svg\+xml;base64,([^"]+)"/);
+  if (!match) return null;
+  return new TextDecoder().decode(Uint8Array.from(atob(match[1]), (char) => char.charCodeAt(0)));
+}
+
 /**
  * 스트리밍 응답 본문을 흉내 내는 최소 Reader 구현을 만든다.
  *
