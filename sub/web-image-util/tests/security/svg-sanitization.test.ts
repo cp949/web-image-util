@@ -490,6 +490,38 @@ describe('보안: SVG 위험 요소 차단', () => {
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
+  it('Fabric.js 형태의 data:image/svg+xml xlink:href 원격 SVG를 정제 후 보존한다', async () => {
+    const originalFetch = globalThis.fetch;
+    const nestedSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="81" height="114"/></svg>';
+    const nestedDataUrl = `data:image/svg+xml;base64,${btoa(nestedSvg)}`;
+    const remoteSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="81px" height="114px" viewBox="0 0 81 114">
+        <g transform="matrix(-1 0 0 1 40.5 57)">
+          <image xlink:href="${nestedDataUrl}" x="-40.5" y="-57" width="81" height="114"/>
+        </g>
+      </svg>
+    `;
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: {
+        get(name: string) {
+          return name.toLowerCase() === 'content-type' ? 'image/svg+xml' : null;
+        },
+      },
+      body: createStreamBody([remoteSvg]),
+    });
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      const element = await convertToElement('https://example.com/fabric.svg');
+      expect(element).toBeInstanceOf(HTMLImageElement);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('MIME 타입이 비어 있는 SVG Blob도 본문을 스니핑해 sanitize 후 렌더링한다', async () => {
     const svgBlob = new Blob(
       ['<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="10" height="10"/></svg>'],

@@ -9,6 +9,7 @@ import { enhanceSvgForBrowser } from '../utils/svg-compatibility';
 import { isInlineSvg } from '../utils/svg-detection';
 import { extractSvgDimensions } from '../utils/svg-dimensions';
 import { getCssPolicyValueVariants, normalizePolicyValue, visitCssUrlValues } from '../utils/svg-policy-utils';
+import { isSafeRasterDataImageRef, isSvgDataImageRef } from '../utils/svg-data-url-policy';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 import type { QualityLevel } from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
@@ -394,6 +395,13 @@ function normalizePolicyRef(ref: string): string {
  */
 function isBlockedSvgPolicyRef(ref: string): boolean {
   const normalizedRef = normalizePolicyRef(ref);
+
+  // sanitizer가 보존한 안전한 data:image/* 참조는 차단하지 않는다.
+  // raster는 그대로, data:image/svg+xml은 nested sanitizer를 거쳐 재인코딩된 결과만 통과한다.
+  if (normalizedRef.startsWith('data:') && (isSafeRasterDataImageRef(ref) || isSvgDataImageRef(ref))) {
+    return false;
+  }
+
   return (
     normalizedRef.startsWith('//') ||
     normalizedRef.startsWith('http://') ||
