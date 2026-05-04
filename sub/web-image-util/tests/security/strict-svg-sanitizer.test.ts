@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { ImageProcessError } from '../../src/errors';
 import { sanitizeSvgStrict, sanitizeSvgStrictDetailed } from '../../src/svg-sanitizer';
 import { MAX_EMBEDDED_DATA_IMAGE_BYTES, MAX_NESTED_SVG_DEPTH } from '../../src/utils/svg-data-url-policy';
 
@@ -11,13 +12,15 @@ describe('strict SVG sanitizer', () => {
   it('입력 바이트 크기가 maxBytes를 초과하면 정제 전에 차단한다', () => {
     const oversizedSvg = '<svg><text>가나다</text></svg>';
 
-    expect(() => sanitizeSvgStrict(oversizedSvg, { maxBytes: 20 })).toThrow(/maxBytes|입력 크기/);
+    expect(() => sanitizeSvgStrict(oversizedSvg, { maxBytes: 20 })).toThrow(ImageProcessError);
+    expect(() => sanitizeSvgStrict(oversizedSvg, { maxBytes: 20 })).toThrow(/SVG_BYTES_EXCEEDED|exceeds the maximum/);
   });
 
   it('정제 후 노드 개수가 maxNodeCount를 초과하면 차단한다', () => {
     const svg = '<svg><g><rect/><circle/></g></svg>';
 
-    expect(() => sanitizeSvgStrict(svg, { maxNodeCount: 2 })).toThrow(/노드 개수/);
+    expect(() => sanitizeSvgStrict(svg, { maxNodeCount: 2 })).toThrow(ImageProcessError);
+    expect(() => sanitizeSvgStrict(svg, { maxNodeCount: 2 })).toThrow(/SVG_NODE_COUNT_EXCEEDED|exceeds the configured maximum/);
   });
 
   it('DOCTYPE과 ENTITY 선언을 제거하고 경고를 반환한다', () => {

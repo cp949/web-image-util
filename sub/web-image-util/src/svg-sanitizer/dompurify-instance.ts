@@ -8,6 +8,8 @@
 
 import DOMPurify from 'dompurify';
 
+import { ImageProcessError } from '../errors';
+
 type DOMPurifyInstance = ReturnType<typeof DOMPurify>;
 
 /** DOMPurify 인스턴스 캐시 */
@@ -32,7 +34,10 @@ export function getDomPurify(): DOMPurifyInstance {
       return DOMPurify;
     }
 
-    throw new Error('sanitizeSvgStrict: DOMPurify를 초기화하려면 window 객체가 필요합니다.');
+    throw new ImageProcessError(
+      'sanitizeSvgStrict requires a DOM window to initialize DOMPurify',
+      'SVG_DOMPURIFY_INIT_FAILED'
+    );
   }
 
   domPurifyInstance = DOMPurify(globalThis.window);

@@ -6,6 +6,7 @@
  * 하위 모듈(`reference-policy`, `enforce-dom-policy`, `postprocess`)에 주입한다.
  */
 
+import { ImageProcessError } from '../errors';
 import { buildFinalConfig, sanitizeUserConfig } from './config';
 import { getDomPurify } from './dompurify-instance';
 import { assertSafeIntegerLimit, assertWithinMaxBytes } from './limits';
@@ -38,7 +39,9 @@ export function sanitizeSvgStrictCore(
 ): SanitizeSvgStrictDetailedResult {
   // 1. 입력 타입 검증
   if (typeof svg !== 'string') {
-    throw new TypeError('sanitizeSvgStrict: 입력은 string 타입이어야 합니다.');
+    throw new ImageProcessError('sanitizeSvgStrict expects a string input', 'SVG_INPUT_INVALID', {
+      details: { actualType: typeof svg },
+    });
   }
 
   const maxBytes = options?.maxBytes ?? DEFAULT_MAX_BYTES;
@@ -81,7 +84,11 @@ export function sanitizeSvgStrictCore(
     sanitizeSvgStrictCore
   );
   if (nodeCount > maxNodeCount) {
-    throw new Error(`정제 후 SVG 노드 개수(${nodeCount})가 최대 허용치(${maxNodeCount})를 초과했습니다.`);
+    throw new ImageProcessError(
+      `Sanitized SVG node count (${nodeCount}) exceeds the configured maximum (${maxNodeCount})`,
+      'SVG_NODE_COUNT_EXCEEDED',
+      { details: { actualCount: nodeCount, maxCount: maxNodeCount } }
+    );
   }
 
   return {

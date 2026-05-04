@@ -1,9 +1,11 @@
 /**
  * strict SVG sanitizer의 입력 크기/노드 한도 검증 헬퍼.
  *
- * 두 함수 모두 fail-fast로 Error를 던지며, 라이브러리 외부에서는 직접 호출할
+ * 두 함수 모두 fail-fast로 ImageProcessError를 던지며, 라이브러리 외부에서는 직접 호출할
  * 수 없다(서브패스 export 대상이 아님).
  */
+
+import { ImageProcessError } from '../errors';
 
 /**
  * 입력 SVG의 UTF-8 바이트 크기가 maxBytes를 초과하면 Error를 던진다.
@@ -16,8 +18,10 @@ export function assertWithinMaxBytes(svg: string, maxBytes: number): void {
   const byteLength = new TextEncoder().encode(svg).byteLength;
   if (byteLength > maxBytes) {
     const limitMb = Math.round(maxBytes / (1024 * 1024));
-    throw new Error(
-      `SVG 입력 크기(${byteLength} bytes)가 최대 허용치(${maxBytes} bytes, 약 ${limitMb}M)를 초과했습니다.`
+    throw new ImageProcessError(
+      `SVG input size (${byteLength} bytes) exceeds the maximum allowed (${maxBytes} bytes, ~${limitMb}MiB)`,
+      'SVG_BYTES_EXCEEDED',
+      { details: { actualBytes: byteLength, maxBytes } }
     );
   }
 }
@@ -31,6 +35,8 @@ export function assertWithinMaxBytes(svg: string, maxBytes: number): void {
  */
 export function assertSafeIntegerLimit(name: string, value: number, minimum: number): void {
   if (!Number.isSafeInteger(value) || value < minimum) {
-    throw new RangeError(`${name} 옵션은 ${minimum} 이상의 안전한 정수여야 합니다.`);
+    throw new ImageProcessError(`Option "${name}" must be a safe integer >= ${minimum}`, 'OPTION_INVALID', {
+      details: { option: name, minimum },
+    });
   }
 }
