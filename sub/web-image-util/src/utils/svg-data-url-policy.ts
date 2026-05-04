@@ -133,6 +133,25 @@ export function isSvgDataImageRef(value: string): boolean {
 }
 
 /**
+ * 값이 sanitizer가 emit한 canonical `data:image/svg+xml;base64,...` 형식인지 검사한다.
+ *
+ * `assertSafeSvgContent()` 같은 post-sanitizer guard에서 사용한다. sanitizer는 항상 base64로
+ * 재인코딩하므로 다른 형식의 `data:image/svg+xml`이 assert 단계에 도달했다는 것은 sanitizer가
+ * 우회되었거나 호출 순서가 깨졌다는 뜻이다. 그 경우 fail-closed로 차단한다.
+ *
+ * @param value 검사할 속성값
+ * @returns canonical form이면서 크기 한계를 통과하면 true
+ */
+export function isSanitizedSvgDataImageRef(value: string): boolean {
+  const info = parseSvgDataUrlRef(value);
+  if (!info) return false;
+  if (info.mimeType !== 'image/svg+xml') return false;
+  if (!info.isBase64) return false;
+  if (info.decodedBytes === null) return false;
+  return info.decodedBytes <= MAX_EMBEDDED_DATA_IMAGE_BYTES;
+}
+
+/**
  * `data:image/svg+xml` 참조의 nested SVG 본문을 UTF-8 문자열로 디코딩한다.
  *
  * 디코딩 가능한 크기 상한(`MAX_EMBEDDED_DATA_IMAGE_BYTES`)을 넘거나, base64/URL 디코딩이

@@ -9,7 +9,7 @@ import { enhanceSvgForBrowser } from '../utils/svg-compatibility';
 import { isInlineSvg } from '../utils/svg-detection';
 import { extractSvgDimensions } from '../utils/svg-dimensions';
 import { getCssPolicyValueVariants, normalizePolicyValue, visitCssUrlValues } from '../utils/svg-policy-utils';
-import { isSafeRasterDataImageRef, isSvgDataImageRef } from '../utils/svg-data-url-policy';
+import { isSafeRasterDataImageRef, isSanitizedSvgDataImageRef } from '../utils/svg-data-url-policy';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 import type { QualityLevel } from './svg-complexity-analyzer';
 import { analyzeSvgComplexity } from './svg-complexity-analyzer';
@@ -397,8 +397,10 @@ function isBlockedSvgPolicyRef(ref: string): boolean {
   const normalizedRef = normalizePolicyRef(ref);
 
   // sanitizer가 보존한 안전한 data:image/* 참조는 차단하지 않는다.
-  // raster는 그대로, data:image/svg+xml은 nested sanitizer를 거쳐 재인코딩된 결과만 통과한다.
-  if (normalizedRef.startsWith('data:') && (isSafeRasterDataImageRef(ref) || isSvgDataImageRef(ref))) {
+  // - raster는 원본 그대로 보존
+  // - data:image/svg+xml은 sanitizer가 항상 canonical base64 형식으로 재인코딩한다.
+  //   비-canonical 형식은 sanitizer가 우회되었을 가능성이 있으므로 fail-closed로 차단한다.
+  if (normalizedRef.startsWith('data:') && (isSafeRasterDataImageRef(ref) || isSanitizedSvgDataImageRef(ref))) {
     return false;
   }
 
