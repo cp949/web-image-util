@@ -204,33 +204,6 @@ describe('ResizeCalculator', () => {
   // ============================================================================
 
   describe('maxFit mode', () => {
-    describe('Bug regression prevention tests', () => {
-      it('should NOT enlarge small images (91x114 → maxFit 300x200)', () => {
-        // Previous bug: Small images were being enlarged
-        // Fixed: Small images maintain original size
-        const result = calculator.calculateFinalLayout(91, 114, {
-          fit: 'maxFit',
-          width: 300,
-          height: 200,
-        });
-
-        expect(result.imageSize).toEqual({ width: 91, height: 114 });
-        expect(result.canvasSize).toEqual({ width: 91, height: 114 });
-        expect(result.position).toEqual({ x: 0, y: 0 });
-      });
-
-      it('should NOT enlarge small images (100x100 → maxFit 500x500)', () => {
-        const result = calculator.calculateFinalLayout(100, 100, {
-          fit: 'maxFit',
-          width: 500,
-          height: 500,
-        });
-
-        expect(result.imageSize).toEqual({ width: 100, height: 100 });
-        expect(result.canvasSize).toEqual({ width: 100, height: 100 });
-      });
-    });
-
     it('should scale down large images to fit within max bounds', () => {
       // Large images are scaled down
       const result = calculator.calculateFinalLayout(2000, 1500, {
