@@ -19,7 +19,12 @@
  * - `style` 속성 또는 `<style>` 본문 안의 외부 `url(...)` 참조
  */
 
-import { isSafeRasterDataImageRef } from './svg-data-url-policy';
+import {
+  decodeSvgDataImageRef,
+  encodeSvgDataImageRef,
+  isSafeRasterDataImageRef,
+  isSvgDataImageRef,
+} from './svg-data-url-policy';
 import { getCssPolicyValueVariants, normalizePolicyValue, replaceCssUrlValues } from './svg-policy-utils';
 
 /**
@@ -45,6 +50,32 @@ function isExternalHref(value: string): boolean {
     normalized.startsWith('data:') ||
     normalized.startsWith('javascript:')
   );
+}
+
+/**
+ * `href`/`xlink:href`/`src` 속성값을 정책에 따라 정제한 결과를 반환한다.
+ *
+ * - 안전한 raster `data:image/*`는 원본 그대로 보존
+ * - `data:image/svg+xml`은 nested SVG를 디코드하고 lightweight sanitizer를 재귀 적용한 뒤
+ *   `data:image/svg+xml;base64,...` 형식으로 재인코딩 (디코드 실패는 fail-closed)
+ * - 그 외 외부 URL/javascript 등은 null로 표시해 호출처가 속성을 제거하게 함
+ *
+ * @param value 원본 속성값
+ * @returns 보존할 새 속성값(문자열) 또는 제거 의도(null)
+ */
+function sanitizeHrefValue(value: string): string | null {
+  if (isSafeRasterDataImageRef(value)) {
+    return value;
+  }
+
+  if (isSvgDataImageRef(value)) {
+    const nestedSvg = decodeSvgDataImageRef(value);
+    if (!nestedSvg) return null;
+    const sanitizedNestedSvg = sanitizeSvgForRendering(nestedSvg);
+    return encodeSvgDataImageRef(sanitizedNestedSvg);
+  }
+
+  return isExternalHref(value) ? null : value;
 }
 
 /**
@@ -133,15 +164,18 @@ export function sanitizeSvgForRendering(svgString: string): string {
       .replace(/\s+on[a-z0-9:-]+\s*=\s*"[^"]*"/gi, '')
       .replace(/\s+on[a-z0-9:-]+\s*=\s*'[^']*'/gi, '')
       .replace(/\s+on[a-z0-9:-]+\s*=\s*[^\s>]+/gi, '')
-      // 4. href, xlink:href, src 속성 중 외부 URL 값을 제거한다
-      .replace(/\s+(?:(?:xlink:)?href|src)\s*=\s*"([^"]*)"/gi, (attrMatch, value: string) => {
-        return isExternalHref(value) ? '' : attrMatch;
+      // 4. href, xlink:href, src 속성 중 외부 URL 값을 제거하고, 안전한 data:image/* 참조는 보존한다
+      .replace(/\s+((?:xlink:)?href|src)\s*=\s*"([^"]*)"/gi, (_attrMatch, attrName: string, value: string) => {
+        const sanitizedValue = sanitizeHrefValue(value);
+        return sanitizedValue === null ? '' : ` ${attrName}="${sanitizedValue}"`;
       })
-      .replace(/\s+(?:(?:xlink:)?href|src)\s*=\s*'([^']*)'/gi, (attrMatch, value: string) => {
-        return isExternalHref(value) ? '' : attrMatch;
+      .replace(/\s+((?:xlink:)?href|src)\s*=\s*'([^']*)'/gi, (_attrMatch, attrName: string, value: string) => {
+        const sanitizedValue = sanitizeHrefValue(value);
+        return sanitizedValue === null ? '' : ` ${attrName}='${sanitizedValue}'`;
       })
-      .replace(/\s+(?:(?:xlink:)?href|src)\s*=\s*(?!["'])([^\s>]+)/gi, (attrMatch, value: string) => {
-        return isExternalHref(value) ? '' : attrMatch;
+      .replace(/\s+((?:xlink:)?href|src)\s*=\s*(?!["'])([^\s>]+)/gi, (_attrMatch, attrName: string, value: string) => {
+        const sanitizedValue = sanitizeHrefValue(value);
+        return sanitizedValue === null ? '' : ` ${attrName}="${sanitizedValue}"`;
       })
       // 5. style 속성 내 외부 url() 참조를 제거한다
       .replace(/\s+style\s*=\s*"([^"]*)"/gi, (_attrMatch, cssValue: string) => {

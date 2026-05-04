@@ -229,13 +229,6 @@ describe('SVG sanitize 유틸', () => {
       expect(result).not.toMatch(/href=/i);
     });
 
-    it('data: href 속성을 제거한다', () => {
-      const input =
-        '<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/svg+xml;base64,abc" width="10" height="10"/></svg>';
-      const result = sanitizeSvg(input);
-      expect(result).not.toMatch(/href="data:/i);
-    });
-
     it('안전한 raster data:image href는 제거하지 않는다', () => {
       const input =
         '<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/png;base64,iVBORw0KGgo=" width="10" height="10"/></svg>';
@@ -253,6 +246,22 @@ describe('SVG sanitize 유틸', () => {
 
       expect(result).not.toContain('data:text/html');
       expect(result).not.toMatch(/\shref=/i);
+    });
+
+    it('data:image/svg+xml href는 nested SVG를 정제한 뒤 보존한다', () => {
+      const nestedSvg =
+        '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="10" height="10"/></svg>';
+      const nestedDataUrl = `data:image/svg+xml,${encodeURIComponent(nestedSvg)}`;
+      const input = `<svg xmlns="http://www.w3.org/2000/svg"><image href="${nestedDataUrl}" width="10" height="10"/></svg>`;
+
+      const result = sanitizeSvg(input);
+
+      expect(result).toContain('href="data:image/svg+xml;base64,');
+      const encoded = result.match(/href="data:image\/svg\+xml;base64,([^"]+)"/)?.[1];
+      expect(encoded).toBeDefined();
+      const decoded = new TextDecoder().decode(Uint8Array.from(atob(encoded as string), (char) => char.charCodeAt(0)));
+      expect(decoded).toContain('<rect');
+      expect(decoded).not.toContain('<script');
     });
 
     it('xlink:href 외부 참조도 제거한다', () => {

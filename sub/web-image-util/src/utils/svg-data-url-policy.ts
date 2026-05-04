@@ -106,6 +106,50 @@ export function isSvgDataImageRef(value: string): boolean {
 }
 
 /**
+ * `data:image/svg+xml` 참조의 nested SVG 본문을 UTF-8 문자열로 디코딩한다.
+ *
+ * 디코딩 가능한 크기 상한(`MAX_EMBEDDED_DATA_IMAGE_BYTES`)을 넘거나, base64/URL 디코딩이
+ * 실패하면 null을 반환해 호출처가 속성을 제거하도록 유도한다(fail-closed).
+ *
+ * @param value 검사할 속성값
+ * @returns 디코딩된 SVG 문자열 또는 null
+ */
+export function decodeSvgDataImageRef(value: string): string | null {
+  const info = parseSvgDataUrlRef(value);
+  if (!info || info.mimeType !== 'image/svg+xml') return null;
+  if (info.decodedBytes === null || info.decodedBytes > MAX_EMBEDDED_DATA_IMAGE_BYTES) return null;
+
+  try {
+    if (info.isBase64) {
+      const normalized = info.payload.replace(/\s+/g, '');
+      return new TextDecoder().decode(Uint8Array.from(atob(normalized), (char) => char.charCodeAt(0)));
+    }
+    return decodeURIComponent(info.payload);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 정제된 SVG 문자열을 `data:image/svg+xml;base64,...` 형식으로 다시 인코딩한다.
+ *
+ * 인코딩 형식을 base64로 통일해 다음을 보장한다.
+ * - URL 인코딩 단계가 추가되지 않으므로 `assertSafeSvgContent()`가 단일 정책으로 검사 가능
+ * - 결과 문자열이 sanitizer 정규식에 의해 다시 변형되지 않는다
+ *
+ * @param svg base64로 인코딩할 SVG 문자열
+ * @returns `data:image/svg+xml;base64,...` Data URL
+ */
+export function encodeSvgDataImageRef(svg: string): string {
+  const bytes = new TextEncoder().encode(svg);
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return `data:image/svg+xml;base64,${btoa(binary)}`;
+}
+
+/**
  * Data URL payload의 예상 디코딩 바이트 수를 계산한다.
  *
  * - base64: 화이트스페이스를 제거한 문자열의 길이로 디코딩 크기를 추정한다.
