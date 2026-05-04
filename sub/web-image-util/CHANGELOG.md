@@ -2,6 +2,26 @@
 
 이 파일은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따르며, 이 프로젝트는 [Semantic Versioning](https://semver.org/lang/ko/)을 사용합니다.
 
+## [Unreleased]
+
+### 변경
+
+- `ImageProcessError` 시그니처가 `(message, code, options?: { cause, details })`로 변경되었습니다. 기존 `originalError` 위치 인자는 제거되고 표준 `error.cause` 필드로 대체됩니다.
+- `ImageProcessError`와 `ImageErrorCode`의 런타임 정의를 경량 모듈 `src/errors.ts`로 분리했습니다. svg-sanitizer 서브패스는 이 경량 모듈을 사용합니다.
+- 모든 라이브러리 throw 메시지를 영어로 통일했습니다. 메시지 텍스트로 분기하던 코드는 `error.code`로 마이그레이션해야 합니다.
+- SVG 위험 요소 차단, URL 검증 실패, 크기 초과 등은 `error.details` 객체에 구조화된 컨텍스트(`reason`, `url`, `actualBytes`, `maxBytes` 등)를 함께 노출합니다.
+
+### 제거
+
+- `ImageProcessError`의 `originalError` 필드와 `suggestions[]` 필드.
+- `ImageSourceError`, `ImageConversionError`, `ImageCanvasError`, `ImageResizeError` 서브클래스. `ImageProcessError + code`로 대체합니다.
+- `utils/data-url`의 `INVALID_DATA_URL_MESSAGE`/`INVALID_SVG_DATA_URL_MESSAGE` 문자열 상수 export.
+
+### 추가
+
+- 새 에러 코드: `OPTION_INVALID`, `SVG_INPUT_INVALID`, `SVG_DOMPURIFY_INIT_FAILED`, `SVG_NODE_COUNT_EXCEEDED`, `SVG_BYTES_EXCEEDED`, `INVALID_DATA_URL`, `INVALID_SVG_DATA_URL`.
+- `ImageProcessError` 옵션 객체의 `details` 필드와 `ImageProcessErrorOptions`, `ImageErrorDetails`, `ImageErrorDetailsByCode` 타입 export.
+
 ## [2.0.36]
 
 ### 변경

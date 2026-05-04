@@ -310,7 +310,7 @@ export class LazyRenderPipeline {
         // 새 ResizeOperation variant 추가 시 컴파일 에러로 누락 감지
         const _exhaustive: never = operation;
         throw new ImageProcessError(
-          `알 수 없는 ResizeOperation 타입: ${(_exhaustive as { type?: unknown }).type ?? 'unknown'}`,
+          `Unknown ResizeOperation type: ${(_exhaustive as { type?: unknown }).type ?? 'unknown'}`,
           'INVALID_DIMENSIONS'
         );
       }

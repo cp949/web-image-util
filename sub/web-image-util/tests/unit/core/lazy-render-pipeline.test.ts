@@ -1,5 +1,4 @@
 import { LazyRenderPipeline } from '../../../src/core/lazy-render-pipeline';
-import { ImageProcessError } from '../../../src/types';
 
 // Create mock image for testing
 function createMockImage(width = 800, height = 600): HTMLImageElement {

@@ -193,18 +193,24 @@ const fetched = await fetchImageSourceBlob(url, { maxBytes: 20 * 1024 * 1024 });
 
 ## 에러 처리
 
-라이브러리 내부 에러는 `ImageProcessError` 또는 그 하위 타입으로 전달됩니다.
+라이브러리 내부 에러는 `ImageProcessError`로 전달됩니다. `error.code`로 분기하고, 추가 컨텍스트는 `error.details`에서 읽습니다.
 
 ```typescript
-import { ImageProcessError, processImage } from '@cp949/web-image-util';
+import { ImageProcessError } from '@cp949/web-image-util';
 
 try {
-  await processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
+  await processImage(src).resize({ fit: 'cover', width: 200 }).toBlob();
 } catch (error) {
   if (error instanceof ImageProcessError) {
     console.error(`[${error.code}] ${error.message}`);
-    console.log(error.suggestions);
+    if (error.code === 'INVALID_SOURCE' && error.details?.reason === 'script-tag') {
+      // SVG 안의 <script> 태그를 거부했습니다.
+    }
+    if (error.cause instanceof Error) {
+      console.error('원인:', error.cause);
+    }
   }
+  throw error;
 }
 ```
 
