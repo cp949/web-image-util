@@ -371,7 +371,7 @@ describe('원격 소스 로딩 보호: 최대 크기 제한', () => {
         convertToImageElement('http://example.com/large.png', {
           maxSourceBytes: maxBytes,
         })
-      ).rejects.toMatchObject({ code: 'SOURCE_LOAD_FAILED' });
+      ).rejects.toMatchObject({ code: 'SOURCE_BYTES_EXCEEDED' });
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -390,14 +390,11 @@ describe('원격 소스 로딩 보호: 최대 크기 제한', () => {
       await convertToImageElement('http://example.com/small.png', {
         maxSourceBytes: maxBytes,
       }).catch((err) => {
-        if (err instanceof ImageProcessError && err.code === 'SOURCE_LOAD_FAILED') {
+        if (err instanceof ImageProcessError) {
           // Content-Length 체크는 통과했지만 img 로드 실패는 허용
-          const isSizeError =
-            err.message.includes('크기') || err.message.includes('size') || err.message.includes('bytes');
-          if (isSizeError) throw err;
-        }
-        if (err instanceof ImageProcessError && err.code === 'INVALID_SOURCE') {
-          throw err;
+          if (err.code === 'SOURCE_BYTES_EXCEEDED' || err.code === 'INVALID_SOURCE') {
+            throw err;
+          }
         }
       });
     } finally {
@@ -425,7 +422,7 @@ describe('원격 소스 로딩 보호: 최대 크기 제한', () => {
         convertToImageElement('http://example.com/no-length.png', {
           maxSourceBytes: 1,
         })
-      ).rejects.toMatchObject({ code: 'SOURCE_LOAD_FAILED' });
+      ).rejects.toMatchObject({ code: 'SOURCE_BYTES_EXCEEDED' });
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -444,10 +441,8 @@ describe('원격 소스 로딩 보호: 최대 크기 제한', () => {
         maxSourceBytes: 0, // 무제한
       }).catch((err) => {
         // 크기 초과 오류가 아닌 한 허용
-        if (err instanceof ImageProcessError) {
-          const isSizeError =
-            err.message.includes('크기') || err.message.includes('size') || err.message.includes('bytes');
-          if (isSizeError) throw err;
+        if (err instanceof ImageProcessError && err.code === 'SOURCE_BYTES_EXCEEDED') {
+          throw err;
         }
       });
     } finally {
@@ -480,7 +475,7 @@ describe('원격 소스 로딩 보호: blob: URL', () => {
         convertToImageElement('blob:http://localhost/abc-123', {
           maxSourceBytes: maxBytes,
         })
-      ).rejects.toMatchObject({ code: 'SOURCE_LOAD_FAILED' });
+      ).rejects.toMatchObject({ code: 'SOURCE_BYTES_EXCEEDED' });
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -506,7 +501,7 @@ describe('원격 소스 로딩 보호: blob: URL', () => {
         convertToImageElement('blob:http://localhost/no-length-blob', {
           maxSourceBytes: 1,
         })
-      ).rejects.toMatchObject({ code: 'SOURCE_LOAD_FAILED' });
+      ).rejects.toMatchObject({ code: 'SOURCE_BYTES_EXCEEDED' });
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -553,7 +548,7 @@ describe('원격 소스 로딩 보호: SVG URL 경로', () => {
         convertToImageElement('https://example.com/image.svg', {
           maxSourceBytes: maxBytes,
         })
-      ).rejects.toMatchObject({ code: 'SOURCE_LOAD_FAILED' });
+      ).rejects.toMatchObject({ code: 'SOURCE_BYTES_EXCEEDED' });
     } finally {
       globalThis.fetch = originalFetch;
     }

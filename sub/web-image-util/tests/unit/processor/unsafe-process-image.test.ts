@@ -92,14 +92,14 @@ describe('unsafe_processImage', () => {
     await expect((processImage(uint8) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
       cause: expect.objectContaining({
-        code: 'INVALID_SOURCE',
+        code: 'SVG_BYTES_EXCEEDED',
       }),
     });
 
     await expect((unsafe_processImage(uint8) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
       cause: expect.objectContaining({
-        code: 'INVALID_SOURCE',
+        code: 'SVG_BYTES_EXCEEDED',
       }),
     });
   });
@@ -235,13 +235,13 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
     await expect((processImage(oversizedSvg) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
       cause: expect.objectContaining({
-        code: 'INVALID_SOURCE',
+        code: 'SVG_BYTES_EXCEEDED',
       }),
     });
     await expect((unsafe_processImage(oversizedSvg) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
       cause: expect.objectContaining({
-        code: 'INVALID_SOURCE',
+        code: 'SVG_BYTES_EXCEEDED',
       }),
     });
   });
@@ -288,7 +288,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
     await expect((processImage(oversized, { svgSanitizer: 'skip' }) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
       cause: expect.objectContaining({
-        code: 'INVALID_SOURCE',
+        code: 'SVG_BYTES_EXCEEDED',
       }),
     });
   });

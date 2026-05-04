@@ -32,7 +32,7 @@ describe('캔버스 풀 메모리 임계값', () => {
         pool.setMemoryThreshold(invalidThreshold);
       } catch (error) {
         expect(error).toBeInstanceOf(ImageProcessError);
-        expect((error as ImageProcessError).code).toBe('INVALID_DIMENSIONS');
+        expect((error as ImageProcessError).code).toBe('OPTION_INVALID');
       }
     }
   });

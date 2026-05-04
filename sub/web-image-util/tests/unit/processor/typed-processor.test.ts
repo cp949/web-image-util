@@ -205,7 +205,7 @@ describe('Type-safe processor tests', () => {
       }).toThrow(ImageProcessError);
     });
 
-    it('should include correct suggestions in error message', async () => {
+    it('두 번째 resize() 호출은 MULTIPLE_RESIZE_NOT_ALLOWED 코드로 거부한다', async () => {
       const testBlob = await createTestImageBlob(400, 300, 'cyan');
       const processor = processImage(testBlob);
 
@@ -217,7 +217,6 @@ describe('Type-safe processor tests', () => {
       } catch (error) {
         if (error instanceof ImageProcessError) {
           expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
-          expect(error.message).toContain('resize() can only be called once');
         }
       }
     });

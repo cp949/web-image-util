@@ -197,7 +197,13 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
 
       expect(() => {
         renderer.render(sourceCanvas, badLayout, { fit: 'cover', width: 200, height: 200 });
-      }).toThrow('Invalid canvas size');
+      }).toThrow(
+        expect.objectContaining({
+          name: 'ImageProcessError',
+          code: 'INVALID_DIMENSIONS',
+          details: { kind: 'invalid-canvas-size', width: 0, height: 0 },
+        })
+      );
     });
 
     it('should validate NaN coordinates', () => {
@@ -210,7 +216,13 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
 
       expect(() => {
         renderer.render(sourceCanvas, badLayout, { fit: 'cover', width: 200, height: 200 });
-      }).toThrow('Invalid position');
+      }).toThrow(
+        expect.objectContaining({
+          name: 'ImageProcessError',
+          code: 'INVALID_DIMENSIONS',
+          details: { kind: 'invalid-position', x: NaN, y: NaN },
+        })
+      );
     });
   });
 

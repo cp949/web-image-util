@@ -50,11 +50,7 @@ describe('LazyRenderPipeline', () => {
 
       expect(() => {
         pipeline.addResize({ fit: 'contain', width: 150, height: 150 });
-      }).toThrow(ImageProcessError);
-
-      expect(() => {
-        pipeline.addResize({ fit: 'contain', width: 150, height: 150 });
-      }).toThrow(/resize\(\) can only be called once/);
+      }).toThrow(expect.objectContaining({ code: 'MULTIPLE_RESIZE_NOT_ALLOWED' }));
     });
 
     it('should allow multiple blur() calls', () => {
@@ -175,7 +171,7 @@ describe('LazyRenderPipeline', () => {
         const img = createMockImage(100, 100);
         const pipeline = new LazyRenderPipeline(img);
 
-        await expect(pipeline.toBlob()).rejects.toThrow('canvas is not origin-clean');
+        await expect(pipeline.toBlob()).rejects.toMatchObject({ name: 'SecurityError' });
         expect(releaseSpy).toHaveBeenCalledTimes(1);
       } finally {
         toBlobSpy.mockRestore();

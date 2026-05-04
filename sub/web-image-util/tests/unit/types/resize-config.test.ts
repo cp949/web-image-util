@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ImageProcessError } from '../../../src/types';
 import {
   isContainConfig,
   isCoverConfig,
@@ -20,26 +19,22 @@ describe('ResizeConfig Types', () => {
 
       it('should throw error for cover config without width', () => {
         const config = { fit: 'cover', height: 200 } as any;
-        expect(() => validateResizeConfig(config)).toThrow(ImageProcessError);
-        expect(() => validateResizeConfig(config)).toThrow('cover requires both width and height');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
 
       it('should throw error for cover config without height', () => {
         const config = { fit: 'cover', width: 300 } as any;
-        expect(() => validateResizeConfig(config)).toThrow(ImageProcessError);
-        expect(() => validateResizeConfig(config)).toThrow('cover requires both width and height');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
 
       it('should throw error for cover config with negative width', () => {
         const config = { fit: 'cover', width: -300, height: 200 } as any;
-        expect(() => validateResizeConfig(config)).toThrow(ImageProcessError);
-        expect(() => validateResizeConfig(config)).toThrow('must be positive numbers');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
 
       it('should throw error for cover config with zero height', () => {
         const config = { fit: 'cover', width: 300, height: 0 } as any;
-        expect(() => validateResizeConfig(config)).toThrow(ImageProcessError);
-        expect(() => validateResizeConfig(config)).toThrow('must be positive numbers');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
     });
 
@@ -61,7 +56,7 @@ describe('ResizeConfig Types', () => {
 
       it('should throw error for contain config without width', () => {
         const config = { fit: 'contain', height: 200 } as any;
-        expect(() => validateResizeConfig(config)).toThrow('contain requires both width and height');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
     });
 
@@ -73,7 +68,7 @@ describe('ResizeConfig Types', () => {
 
       it('should throw error for fill config without height', () => {
         const config = { fit: 'fill', width: 300 } as any;
-        expect(() => validateResizeConfig(config)).toThrow('fill requires both width and height');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
     });
 
@@ -95,13 +90,12 @@ describe('ResizeConfig Types', () => {
 
       it('should throw error for maxFit config without width or height', () => {
         const config = { fit: 'maxFit' } as any;
-        expect(() => validateResizeConfig(config)).toThrow(ImageProcessError);
-        expect(() => validateResizeConfig(config)).toThrow('maxFit requires at least width or height');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
 
       it('should throw error for maxFit config with negative width', () => {
         const config = { fit: 'maxFit', width: -300 } as any;
-        expect(() => validateResizeConfig(config)).toThrow('must be positive numbers');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
     });
 
@@ -123,7 +117,7 @@ describe('ResizeConfig Types', () => {
 
       it('should throw error for minFit config without width or height', () => {
         const config = { fit: 'minFit' } as any;
-        expect(() => validateResizeConfig(config)).toThrow('minFit requires at least width or height');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
     });
 
@@ -155,7 +149,7 @@ describe('ResizeConfig Types', () => {
           height: 200,
           padding: -10,
         } as any;
-        expect(() => validateResizeConfig(config)).toThrow('padding must be non-negative');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
 
       it('should throw error for negative object padding values', () => {
@@ -165,7 +159,7 @@ describe('ResizeConfig Types', () => {
           height: 200,
           padding: { top: -10, right: 20 },
         } as any;
-        expect(() => validateResizeConfig(config)).toThrow('padding values must be non-negative');
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
     });
 

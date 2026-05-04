@@ -137,7 +137,7 @@ describe('Processor Resize Integration Tests', () => {
         await processImage(testBlob)
           .resize({ fit: 'maxFit' } as any)
           .toBlob();
-      }).rejects.toThrow(ImageProcessError);
+      }).rejects.toMatchObject({ code: 'INVALID_DIMENSIONS' });
     });
 
     it('should throw error for invalid minFit config (no width/height)', async () => {
@@ -147,7 +147,7 @@ describe('Processor Resize Integration Tests', () => {
         await processImage(testBlob)
           .resize({ fit: 'minFit' } as any)
           .toBlob();
-      }).rejects.toThrow(ImageProcessError);
+      }).rejects.toMatchObject({ code: 'INVALID_DIMENSIONS' });
     });
 
     it('should throw error for cover config without width', async () => {
@@ -157,7 +157,7 @@ describe('Processor Resize Integration Tests', () => {
         await processImage(testBlob)
           .resize({ fit: 'cover', height: 200 } as any)
           .toBlob();
-      }).rejects.toThrow('cover requires both width and height');
+      }).rejects.toMatchObject({ code: 'INVALID_DIMENSIONS' });
     });
 
     it('should throw error for negative padding', async () => {
@@ -167,7 +167,7 @@ describe('Processor Resize Integration Tests', () => {
         await processImage(testBlob)
           .resize({ fit: 'cover', width: 200, height: 200, padding: -10 } as any)
           .toBlob();
-      }).rejects.toThrow('padding must be non-negative');
+      }).rejects.toMatchObject({ code: 'INVALID_DIMENSIONS' });
     });
   });
 
@@ -335,10 +335,10 @@ describe('Processor Resize Integration Tests', () => {
       // Second resize should throw error
       expect(() => {
         processor.resize({ fit: 'cover', width: 100, height: 100 });
-      }).toThrow(ImageProcessError);
+      }).toThrow(expect.objectContaining({ code: 'MULTIPLE_RESIZE_NOT_ALLOWED' }));
     });
 
-    it('should provide helpful error message with suggestions', async () => {
+    it('두 번째 resize() 호출은 MULTIPLE_RESIZE_NOT_ALLOWED 코드로 거부한다', async () => {
       const testBlob = await createTestImageBlob(400, 300, 'blue');
       const processor = processImage(testBlob);
 
@@ -351,7 +351,6 @@ describe('Processor Resize Integration Tests', () => {
         expect(error).toBeInstanceOf(ImageProcessError);
         if (error instanceof ImageProcessError) {
           expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
-          expect(error.message).toContain('resize() can only be called once');
         }
       }
     });

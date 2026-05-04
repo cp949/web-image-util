@@ -8,6 +8,8 @@ import { convertToElement } from '../../src/utils/converters';
 import { sanitizeSvg } from '../../src/utils/svg-sanitizer';
 import { createTestImageBlob } from '../utils/image-helper';
 
+const SVG_LIMIT_BYTES = 10 * 1024 * 1024;
+
 /**
  * 스트리밍 응답 본문을 흉내 내는 최소 Reader 구현을 만든다.
  *
@@ -73,7 +75,7 @@ describe('보안: SVG 위험 요소 차단', () => {
     const svgSuffix = `${safeBody}</svg>`;
     const scriptPrefix = '<script>';
     const scriptSuffix = '</script>';
-    const limitBytes = 10 * 1024 * 1024;
+    const limitBytes = SVG_LIMIT_BYTES;
     const fixedBytes = new TextEncoder().encode(svgPrefix + scriptPrefix + scriptSuffix + svgSuffix).length;
     const scriptPayload = 'a'.repeat(limitBytes - fixedBytes + 1);
     const oversizedSvg = `${svgPrefix}${scriptPrefix}${scriptPayload}${scriptSuffix}${svgSuffix}`;
@@ -83,7 +85,11 @@ describe('보안: SVG 위험 요소 차단', () => {
     expect(new TextEncoder().encode(sanitizedSvg).length).toBeLessThan(limitBytes);
 
     await expect(convertToElement(oversizedSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
+      code: 'SVG_BYTES_EXCEEDED',
+      details: {
+        actualBytes: expect.any(Number),
+        maxBytes: SVG_LIMIT_BYTES,
+      },
     });
   });
 
@@ -176,7 +182,9 @@ describe('보안: SVG 위험 요소 차단', () => {
     globalThis.fetch = fetchMock as typeof fetch;
 
     try {
-      await expect(convertToElement('https://example.com/asset?id=broken-svg')).rejects.toThrow(/svg/i);
+      await expect(convertToElement('https://example.com/asset?id=broken-svg')).rejects.toMatchObject({
+        code: 'INVALID_SOURCE',
+      });
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(warnSpy).not.toHaveBeenCalled();
     } finally {
@@ -232,7 +240,9 @@ describe('보안: SVG 위험 요소 차단', () => {
     globalThis.fetch = fetchMock as typeof fetch;
 
     try {
-      await expect(convertToElement('https://example.com/image.svg')).rejects.toThrow(/svg/i);
+      await expect(convertToElement('https://example.com/image.svg')).rejects.toMatchObject({
+        code: 'INVALID_SOURCE',
+      });
       expect(fetchMock).toHaveBeenCalledTimes(1);
     } finally {
       globalThis.fetch = originalFetch;
@@ -272,7 +282,9 @@ describe('보안: SVG 위험 요소 차단', () => {
     globalThis.fetch = fetchMock as typeof fetch;
 
     try {
-      await expect(convertToElement('https://example.com/broken.svg')).rejects.toThrow(/svg/i);
+      await expect(convertToElement('https://example.com/broken.svg')).rejects.toMatchObject({
+        code: 'INVALID_SOURCE',
+      });
       expect(fetchMock).toHaveBeenCalledTimes(1);
     } finally {
       globalThis.fetch = originalFetch;
@@ -301,6 +313,7 @@ describe('보안: SVG 위험 요소 차단', () => {
 
     await expect(convertToElement(safeSvg)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
+      details: { reason: 'external-ref' },
     });
   });
 
@@ -308,35 +321,50 @@ describe('보안: SVG 위험 요소 차단', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href=./assets/pattern.png width="10" height="10"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
+    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+      details: { reason: 'external-ref' },
+    });
   });
 
   it('CSS escape로 숨긴 상대 경로 style URL도 외부 리소스로 간주해 거부한다', async () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\2e \\2e /secret.png)"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
+    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+      details: { reason: 'style-attribute-url' },
+    });
   });
 
   it('엔티티로 분할된 CSS escape 상대 경로 style URL도 거부한다', async () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\00002&#x65; \\00002&#x65; /secret.png)"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
+    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+      details: { reason: 'style-attribute-url' },
+    });
   });
 
   it('함수명과 값에 엔티티로 분할된 CSS escape가 있어도 상대 경로 style URL을 거부한다', async () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:u\\00007&#x32;l(\\00002&#x65; \\00002&#x65; /secret.png)"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
+    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+      details: { reason: 'style-attribute-url' },
+    });
   });
 
   it('CSS escape로 숨긴 루트 절대 경로 style URL도 외부 리소스로 간주해 거부한다', async () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\2f assets/tracker.png)"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
+    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+      details: { reason: 'style-attribute-url' },
+    });
   });
 
   it('protocol-relative href가 포함된 SVG 문자열은 sanitize 후 렌더링된다', async () => {
@@ -351,7 +379,10 @@ describe('보안: SVG 위험 요소 차단', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="/assets/pattern.png" width="10" height="10"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toThrow(/svg/i);
+    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+      details: { reason: 'external-ref' },
+    });
   });
 
   it('javascript: URI href가 포함된 SVG 문자열은 sanitize 후 렌더링된다', async () => {
@@ -559,18 +590,30 @@ describe('보안: SVG 위험 요소 차단', () => {
   describe('대용량 SVG 입력 방어', () => {
     it('10MB를 초과하는 SVG 문자열은 변환 시 reject한다', async () => {
       // 10MB를 초과하는 SVG 문자열을 생성한다
-      const svgString = `<svg xmlns="http://www.w3.org/2000/svg"><!-- ${'a'.repeat(10 * 1024 * 1024 + 1)} --><rect/></svg>`;
-      await expect(convertToElement(svgString)).rejects.toThrow();
+      const svgString = `<svg xmlns="http://www.w3.org/2000/svg"><!-- ${'a'.repeat(SVG_LIMIT_BYTES + 1)} --><rect/></svg>`;
+      await expect(convertToElement(svgString)).rejects.toMatchObject({
+        code: 'SVG_BYTES_EXCEEDED',
+        details: {
+          actualBytes: expect.any(Number),
+          maxBytes: SVG_LIMIT_BYTES,
+        },
+      });
     });
 
     it('문자 수는 10MB 미만이어도 UTF-8 바이트 수가 10MB를 초과하는 SVG 문자열은 reject한다', async () => {
       const multiBytePayload = '가'.repeat(4 * 1024 * 1024);
       const svgString = `<svg xmlns="http://www.w3.org/2000/svg"><text>${multiBytePayload}</text></svg>`;
 
-      expect(svgString.length).toBeLessThan(10 * 1024 * 1024);
-      expect(new TextEncoder().encode(svgString).length).toBeGreaterThan(10 * 1024 * 1024);
+      expect(svgString.length).toBeLessThan(SVG_LIMIT_BYTES);
+      expect(new TextEncoder().encode(svgString).length).toBeGreaterThan(SVG_LIMIT_BYTES);
 
-      await expect(convertToElement(svgString)).rejects.toThrow(/10M|초과/);
+      await expect(convertToElement(svgString)).rejects.toMatchObject({
+        code: 'SVG_BYTES_EXCEEDED',
+        details: {
+          actualBytes: expect.any(Number),
+          maxBytes: SVG_LIMIT_BYTES,
+        },
+      });
     });
 
     it('10MB를 초과하는 Data URL SVG는 변환 시 reject한다', async () => {
@@ -580,7 +623,13 @@ describe('보안: SVG 위험 요소 차단', () => {
         encodeURIComponent(
           `<svg xmlns="http://www.w3.org/2000/svg"><!-- ${'a'.repeat(10 * 1024 * 1024 + 1)} --></svg>`
         );
-      await expect(convertToElement(largeDataUrl)).rejects.toThrow();
+      await expect(convertToElement(largeDataUrl)).rejects.toMatchObject({
+        code: 'SVG_BYTES_EXCEEDED',
+        details: {
+          actualBytes: expect.any(Number),
+          maxBytes: SVG_LIMIT_BYTES,
+        },
+      });
     });
 
     it('URL 인코딩 길이가 길어도 디코딩 후 10MB 이하인 Data URL SVG는 허용한다', async () => {
@@ -589,8 +638,8 @@ describe('보안: SVG 위험 요소 차단', () => {
       const decodedLength = encodedSvg.length;
       const encodedLength = encodeURIComponent(encodedSvg).length;
 
-      expect(decodedLength).toBeLessThan(10 * 1024 * 1024);
-      expect(encodedLength).toBeGreaterThan(10 * 1024 * 1024);
+      expect(decodedLength).toBeLessThan(SVG_LIMIT_BYTES);
+      expect(encodedLength).toBeGreaterThan(SVG_LIMIT_BYTES);
 
       const dataUrl = `data:image/svg+xml,${encodeURIComponent(encodedSvg)}`;
       const element = await convertToElement(dataUrl);
@@ -604,7 +653,13 @@ describe('보안: SVG 위험 요소 차단', () => {
       const largeDataUrl = `data:image/svg+xml;base64,${largeBase64Payload}`;
 
       try {
-        await expect(convertToElement(largeDataUrl)).rejects.toThrow(/10M|초과/);
+        await expect(convertToElement(largeDataUrl)).rejects.toMatchObject({
+          code: 'SVG_BYTES_EXCEEDED',
+          details: {
+            actualBytes: expect.any(Number),
+            maxBytes: SVG_LIMIT_BYTES,
+          },
+        });
         expect(atobSpy).not.toHaveBeenCalled();
       } finally {
         atobSpy.mockRestore();
@@ -630,7 +685,13 @@ describe('보안: SVG 위험 요소 차단', () => {
       globalThis.fetch = fetchMock as typeof fetch;
 
       try {
-        await expect(convertToElement('https://example.com/text-only-large.svg')).rejects.toThrow(/10M|초과/);
+        await expect(convertToElement('https://example.com/text-only-large.svg')).rejects.toMatchObject({
+          code: 'SVG_BYTES_EXCEEDED',
+          details: {
+            actualBytes: expect.any(Number),
+            maxBytes: SVG_LIMIT_BYTES,
+          },
+        });
       } finally {
         globalThis.fetch = originalFetch;
       }
@@ -659,7 +720,13 @@ describe('보안: SVG 위험 요소 차단', () => {
       globalThis.fetch = fetchMock as typeof fetch;
 
       try {
-        await expect(convertToElement('https://example.com/header-large.xml')).rejects.toThrow(/10M|초과/);
+        await expect(convertToElement('https://example.com/header-large.xml')).rejects.toMatchObject({
+          code: 'SVG_BYTES_EXCEEDED',
+          details: {
+            actualBytes: expect.any(Number),
+            maxBytes: SVG_LIMIT_BYTES,
+          },
+        });
         expect(textSpy).not.toHaveBeenCalled();
       } finally {
         globalThis.fetch = originalFetch;
@@ -689,7 +756,13 @@ describe('보안: SVG 위험 요소 차단', () => {
       globalThis.fetch = fetchMock as typeof fetch;
 
       try {
-        await expect(convertToElement('https://example.com/header-large.svg')).rejects.toThrow(/10M|초과/);
+        await expect(convertToElement('https://example.com/header-large.svg')).rejects.toMatchObject({
+          code: 'SVG_BYTES_EXCEEDED',
+          details: {
+            actualBytes: expect.any(Number),
+            maxBytes: SVG_LIMIT_BYTES,
+          },
+        });
         expect(textSpy).not.toHaveBeenCalled();
       } finally {
         globalThis.fetch = originalFetch;
@@ -713,7 +786,13 @@ describe('보안: SVG 위험 요소 차단', () => {
       globalThis.fetch = fetchMock as typeof fetch;
 
       try {
-        await expect(convertToElement('https://example.com/large.svg')).rejects.toThrow(/10M|초과/);
+        await expect(convertToElement('https://example.com/large.svg')).rejects.toMatchObject({
+          code: 'SVG_BYTES_EXCEEDED',
+          details: {
+            actualBytes: expect.any(Number),
+            maxBytes: SVG_LIMIT_BYTES,
+          },
+        });
       } finally {
         globalThis.fetch = originalFetch;
       }
@@ -765,7 +844,13 @@ describe('보안: SVG 위험 요소 차단', () => {
       globalThis.fetch = fetchMock as typeof fetch;
 
       try {
-        await expect(convertToElement('https://example.com/stream-large.svg')).rejects.toThrow(/10M|초과/);
+        await expect(convertToElement('https://example.com/stream-large.svg')).rejects.toMatchObject({
+          code: 'SVG_BYTES_EXCEEDED',
+          details: {
+            actualBytes: expect.any(Number),
+            maxBytes: SVG_LIMIT_BYTES,
+          },
+        });
         expect(textSpy).not.toHaveBeenCalled();
         expect(cancelSpy).toHaveBeenCalledTimes(1);
         expect(readSpy).toHaveBeenCalledTimes(2);
@@ -874,7 +959,9 @@ describe('보안: SVG 위험 요소 차단', () => {
     globalThis.fetch = fetchMock as typeof fetch;
 
     try {
-      await expect(convertToElement('https://example.com/broken.xml')).rejects.toThrow(/xml|svg|차단/i);
+      await expect(convertToElement('https://example.com/broken.xml')).rejects.toMatchObject({
+        code: 'INVALID_SOURCE',
+      });
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(textSpy).not.toHaveBeenCalled();
     } finally {

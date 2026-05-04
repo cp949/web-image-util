@@ -66,7 +66,7 @@ describe('Type-Safe Processor Simple Test', () => {
       }).toThrow(ImageProcessError);
     });
 
-    it('should verify error message and code are correct', () => {
+    it('두 번째 resize() 호출은 code로 분기 가능한 오류를 던진다', () => {
       const testBlob = createSimpleBlob();
       const processor = processImage(testBlob);
 
@@ -78,7 +78,6 @@ describe('Type-Safe Processor Simple Test', () => {
       } catch (error) {
         if (error instanceof ImageProcessError) {
           expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
-          expect(error.message).toContain('resize() can only be called once');
         }
       }
     });
@@ -147,7 +146,7 @@ describe('Type-Safe Processor Simple Test', () => {
       }
     });
 
-    it('should include helpful suggestions', () => {
+    it('두 번째 resize() 호출은 MULTIPLE_RESIZE_NOT_ALLOWED 코드로 거부한다', () => {
       const testBlob = createSimpleBlob();
       const processor = processImage(testBlob);
 
@@ -158,8 +157,7 @@ describe('Type-Safe Processor Simple Test', () => {
         expect.fail('Error should be thrown');
       } catch (error) {
         if (error instanceof ImageProcessError) {
-          // 에러 메시지에 유용한 정보가 포함되어 있는지 확인
-          expect(error.message).toContain('resize() can only be called once');
+          expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
         }
       }
     });

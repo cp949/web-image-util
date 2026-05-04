@@ -57,6 +57,13 @@ export interface ImageErrorDetailsByCode {
   SVG_NODE_COUNT_EXCEEDED: { actualCount: number; maxCount: number };
   SVG_INPUT_INVALID: { actualType: string };
   OPTION_INVALID: { option: string; minimum?: number };
+  INVALID_DIMENSIONS: {
+    kind?: 'invalid-canvas-size' | 'invalid-image-size' | 'invalid-position';
+    width?: number;
+    height?: number;
+    x?: number;
+    y?: number;
+  };
   INVALID_DATA_URL: { kind: 'malformed' | 'invalid-base64' | 'invalid-percent' };
 }
 

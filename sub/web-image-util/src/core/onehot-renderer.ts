@@ -14,6 +14,7 @@
  */
 
 import { CanvasPool } from '../base/canvas-pool';
+import { ImageProcessError } from '../errors';
 import type { ResizeConfig } from '../types/resize-config';
 import { productionLog } from '../utils/debug';
 import type { LayoutResult } from './resize-calculator';
@@ -241,24 +242,36 @@ export class OnehotRenderer {
    * - Coordinates must not be NaN or Infinity
    *
    * @param layout Layout to validate
-   * @throws {Error} When layout is invalid
+   * @throws {ImageProcessError} When layout is invalid
    */
   private validateLayout(layout: LayoutResult): void {
     const { canvasSize, imageSize, position } = layout;
 
     // Validate canvas size
     if (canvasSize.width <= 0 || canvasSize.height <= 0) {
-      throw new Error(`Invalid canvas size: ${canvasSize.width}x${canvasSize.height}. Both dimensions must be > 0.`);
+      throw new ImageProcessError(
+        `Invalid canvas size: ${canvasSize.width}x${canvasSize.height}. Both dimensions must be > 0.`,
+        'INVALID_DIMENSIONS',
+        { details: { kind: 'invalid-canvas-size', width: canvasSize.width, height: canvasSize.height } }
+      );
     }
 
     // Validate image size
     if (imageSize.width <= 0 || imageSize.height <= 0) {
-      throw new Error(`Invalid image size: ${imageSize.width}x${imageSize.height}. Both dimensions must be > 0.`);
+      throw new ImageProcessError(
+        `Invalid image size: ${imageSize.width}x${imageSize.height}. Both dimensions must be > 0.`,
+        'INVALID_DIMENSIONS',
+        { details: { kind: 'invalid-image-size', width: imageSize.width, height: imageSize.height } }
+      );
     }
 
     // Validate coordinates (check for NaN or Infinity)
     if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) {
-      throw new Error(`Invalid position: (${position.x}, ${position.y}). Must be finite numbers.`);
+      throw new ImageProcessError(
+        `Invalid position: (${position.x}, ${position.y}). Must be finite numbers.`,
+        'INVALID_DIMENSIONS',
+        { details: { kind: 'invalid-position', x: position.x, y: position.y } }
+      );
     }
 
     // Warn if canvas size is too large (possible memory shortage)
