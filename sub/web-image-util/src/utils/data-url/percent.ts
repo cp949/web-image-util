@@ -11,7 +11,7 @@ import { throwInvalidDataURL } from './errors';
  * percent-encoded payload를 raw byte로 디코딩한다.
  *
  * @description `%XX`는 hex 한 byte로, escape되지 않은 문자는 UTF-8 byte로 변환한다.
- * 잘못된 hex나 codepoint를 만나면 INVALID_DATA_URL_MESSAGE로 throw한다.
+ * 잘못된 hex나 codepoint를 만나면 `INVALID_DATA_URL` code의 `ImageProcessError`로 throw한다.
  */
 export function decodePercentEncodedPayload(payload: string): Uint8Array {
   const bytes: number[] = [];
@@ -24,7 +24,7 @@ export function decodePercentEncodedPayload(payload: string): Uint8Array {
       const hex = payload.slice(index + 1, index + 3);
 
       if (!isHexByte(hex)) {
-        throwInvalidDataURL();
+        throwInvalidDataURL('invalid-percent');
       }
 
       bytes.push(Number.parseInt(hex, 16));
@@ -35,8 +35,9 @@ export function decodePercentEncodedPayload(payload: string): Uint8Array {
     // escape되지 않은 문자는 Data URL 규칙에 맞춰 UTF-8 바이트로 보존한다.
     const codePoint = payload.codePointAt(index);
 
+    // 순회 범위 내 인덱스이므로 실질적으로 도달 불가하지만, 타입 narrowing(number | undefined → number)을 위한 가드.
     if (codePoint === undefined) {
-      throwInvalidDataURL();
+      throwInvalidDataURL('invalid-percent');
     }
 
     const unescapedCharacter = String.fromCodePoint(codePoint);
@@ -63,7 +64,7 @@ export function estimatePercentPayloadByteLength(payload: string): number {
       const hex = payload.slice(index + 1, index + 3);
 
       if (!isHexByte(hex)) {
-        throwInvalidDataURL();
+        throwInvalidDataURL('invalid-percent');
       }
 
       bytes += 1;
@@ -73,8 +74,9 @@ export function estimatePercentPayloadByteLength(payload: string): number {
 
     const codePoint = payload.codePointAt(index);
 
+    // 순회 범위 내 인덱스이므로 실질적으로 도달 불가하지만, 타입 narrowing(number | undefined → number)을 위한 가드.
     if (codePoint === undefined) {
-      throwInvalidDataURL();
+      throwInvalidDataURL('invalid-percent');
     }
 
     bytes += estimateUTF8CodePointByteLength(codePoint);
@@ -104,7 +106,7 @@ function estimateUTF8CodePointByteLength(codePoint: number): number {
     return 4;
   }
 
-  throwInvalidDataURL();
+  throwInvalidDataURL('invalid-percent');
 }
 
 function isHexByte(value: string): boolean {

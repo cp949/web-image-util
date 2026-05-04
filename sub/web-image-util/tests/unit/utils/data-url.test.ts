@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ImageProcessError } from '../../../src/errors';
 import {
   blobToDataURL,
   dataURLToBlob,
@@ -7,6 +8,28 @@ import {
   estimateDataURLSize,
   isDataURLString,
 } from '../../../src/utils';
+
+/** ImageProcessError를 던지고 code/kind/cause 유무를 검증하는 헬퍼 */
+function expectImageProcessError(
+  fn: () => unknown,
+  expected: { code: string; kind?: string; hasCause?: boolean }
+): void {
+  let thrown: unknown;
+  try {
+    fn();
+  } catch (e) {
+    thrown = e;
+  }
+  expect(thrown).toBeInstanceOf(ImageProcessError);
+  const err = thrown as ImageProcessError;
+  expect(err.code).toBe(expected.code);
+  if (expected.kind !== undefined) {
+    expect((err.details as { kind?: string })?.kind).toBe(expected.kind);
+  }
+  if (expected.hasCause) {
+    expect(err.cause).toBeDefined();
+  }
+}
 
 describe('data URL utilities', () => {
   it('Data URL 문자열을 판정한다', () => {
@@ -78,24 +101,33 @@ describe('data URL utilities', () => {
   });
 
   it('SVG Data URL decode는 non-SVG와 malformed payload를 거부한다', () => {
-    expect(() => decodeSvgDataURL('data:text/plain,%3Csvg%3E%3C/svg%3E')).toThrow('유효한 SVG Data URL이 아닙니다');
-    expect(() => decodeSvgDataURL('data:image/svg+xml,%GG')).toThrow('유효한 SVG Data URL이 아닙니다');
-    expect(() => decodeSvgDataURL('data:image/svg+xml,%3Csvg%3E%FF%3C/svg%3E')).toThrow(
-      '유효한 SVG Data URL이 아닙니다'
-    );
-    expect(() => decodeSvgDataURL('data:image/svg+xml;base64,PHN2Zz7/PC9zdmc+')).toThrow(
-      '유효한 SVG Data URL이 아닙니다'
-    );
-    expect(() => decodeSvgDataURL('data:image/svg+xml;base64,@@@@')).toThrow('유효한 SVG Data URL이 아닙니다');
-    expect(() => decodeSvgDataURL('data:image/svg+xml,%3Cdiv%3E%3C/div%3E')).toThrow('유효한 SVG Data URL이 아닙니다');
+    expectImageProcessError(() => decodeSvgDataURL('data:text/plain,%3Csvg%3E%3C/svg%3E'), {
+      code: 'INVALID_SVG_DATA_URL',
+    });
+    expectImageProcessError(() => decodeSvgDataURL('data:image/svg+xml,%GG'), {
+      code: 'INVALID_SVG_DATA_URL',
+    });
+    expectImageProcessError(() => decodeSvgDataURL('data:image/svg+xml,%3Csvg%3E%FF%3C/svg%3E'), {
+      code: 'INVALID_SVG_DATA_URL',
+    });
+    expectImageProcessError(() => decodeSvgDataURL('data:image/svg+xml;base64,PHN2Zz7/PC9zdmc+'), {
+      code: 'INVALID_SVG_DATA_URL',
+    });
+    expectImageProcessError(() => decodeSvgDataURL('data:image/svg+xml;base64,@@@@'), {
+      code: 'INVALID_SVG_DATA_URL',
+    });
+    expectImageProcessError(() => decodeSvgDataURL('data:image/svg+xml,%3Cdiv%3E%3C/div%3E'), {
+      code: 'INVALID_SVG_DATA_URL',
+    });
   });
 
   it('Data URL scheme은 기본적으로 대소문자를 구분하지 않는다', () => {
     expect(estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=')).toBe(2);
     expect(estimateDataURLPayloadByteLength('DaTa:text/plain;base64,aGk=')).toBe(2);
-    expect(() =>
-      estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=', { caseSensitiveScheme: true })
-    ).toThrow('유효한 Data URL이 아닙니다');
+    expectImageProcessError(
+      () => estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=', { caseSensitiveScheme: true }),
+      { code: 'INVALID_DATA_URL' }
+    );
     expect(
       estimateDataURLPayloadByteLength('DATA:text/plain;base64,aGk=', {
         caseSensitiveScheme: true,
@@ -120,17 +152,26 @@ describe('data URL utilities', () => {
   it('invalid 옵션이 null이면 malformed Data URL에서 null을 반환한다', () => {
     expect(estimateDataURLPayloadByteLength('not-data-url', { invalid: 'null' })).toBeNull();
     expect(estimateDataURLPayloadByteLength('data:text/plain,%', { invalid: 'null' })).toBeNull();
-    expect(() => estimateDataURLPayloadByteLength('data:text/plain,%')).toThrow('유효한 Data URL이 아닙니다');
+    expectImageProcessError(() => estimateDataURLPayloadByteLength('data:text/plain,%'), { code: 'INVALID_DATA_URL' });
   });
 
   it('malformed base64 alphabet과 padding은 payload byte length 추정에서 거부한다', () => {
-    expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,@@@@')).toThrow('유효한 Data URL이 아닙니다');
-    expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a===')).toThrow('유효한 Data URL이 아닙니다');
-    expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a=b=')).toThrow('유효한 Data URL이 아닙니다');
-    expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a=')).toThrow('유효한 Data URL이 아닙니다');
-    expect(() => estimateDataURLPayloadByteLength('data:text/plain;base64,aGVs\u00A0bG8=')).toThrow(
-      '유효한 Data URL이 아닙니다'
-    );
+    expectImageProcessError(() => estimateDataURLPayloadByteLength('data:text/plain;base64,@@@@'), {
+      code: 'INVALID_DATA_URL',
+    });
+    expectImageProcessError(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a==='), {
+      code: 'INVALID_DATA_URL',
+    });
+    expectImageProcessError(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a=b='), {
+      code: 'INVALID_DATA_URL',
+    });
+    expectImageProcessError(() => estimateDataURLPayloadByteLength('data:text/plain;base64,a='), {
+      code: 'INVALID_DATA_URL',
+    });
+    // ASCII 공백은 무시되므로, non-breaking space( )를 사용해 invalid-base64를 유발한다.
+    expectImageProcessError(() => estimateDataURLPayloadByteLength('data:text/plain;base64,aGVs bG8='), {
+      code: 'INVALID_DATA_URL',
+    });
   });
 
   it('invalid 옵션이 null이면 malformed base64에서 null을 반환한다', () => {
@@ -138,13 +179,29 @@ describe('data URL utilities', () => {
     expect(estimateDataURLPayloadByteLength('data:text/plain;base64,a===', { invalid: 'null' })).toBeNull();
     expect(estimateDataURLPayloadByteLength('data:text/plain;base64,a=b=', { invalid: 'null' })).toBeNull();
     expect(estimateDataURLPayloadByteLength('data:text/plain;base64,a=', { invalid: 'null' })).toBeNull();
-    expect(estimateDataURLPayloadByteLength('data:text/plain;base64,aGVs\u00A0bG8=', { invalid: 'null' })).toBeNull();
+    // ASCII 공백은 무시되므로, non-breaking space( )를 사용해 invalid-base64를 유발한다.
+    expect(estimateDataURLPayloadByteLength('data:text/plain;base64,aGVs bG8=', { invalid: 'null' })).toBeNull();
   });
 
   it('잘못된 Data URL은 명확한 오류를 던진다', () => {
-    expect(() => dataURLToBlob('not-data-url')).toThrow('유효한 Data URL이 아닙니다');
-    expect(() => estimateDataURLSize('not-data-url')).toThrow('유효한 Data URL이 아닙니다');
-    expect(() => dataURLToBlob('data:text/plain,%GG')).toThrow('유효한 Data URL이 아닙니다');
-    expect(() => estimateDataURLSize('data:text/plain,%')).toThrow('유효한 Data URL이 아닙니다');
+    expectImageProcessError(() => dataURLToBlob('not-data-url'), { code: 'INVALID_DATA_URL', kind: 'malformed' });
+    expectImageProcessError(() => estimateDataURLSize('not-data-url'), { code: 'INVALID_DATA_URL' });
+    expectImageProcessError(() => dataURLToBlob('data:text/plain,%GG'), {
+      code: 'INVALID_DATA_URL',
+      kind: 'invalid-percent',
+    });
+    expectImageProcessError(() => estimateDataURLSize('data:text/plain,%'), { code: 'INVALID_DATA_URL' });
+    expectImageProcessError(() => dataURLToBlob('data:text/plain;base64,@@@@'), {
+      code: 'INVALID_DATA_URL',
+      kind: 'invalid-base64',
+      hasCause: true,
+    });
+  });
+
+  it('SVG Data URL: percent decode 실패는 cause를 포함한다', () => {
+    expectImageProcessError(() => decodeSvgDataURL('data:image/svg+xml,%GG'), {
+      code: 'INVALID_SVG_DATA_URL',
+      hasCause: true,
+    });
   });
 });

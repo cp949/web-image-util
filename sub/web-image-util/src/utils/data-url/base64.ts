@@ -10,7 +10,7 @@ import { throwInvalidDataURL } from './errors';
  * base64 payload를 디코딩해 raw byte로 반환한다.
  *
  * @description 예외 처리는 호출 측이 담당한다. 잘못된 base64는 `atob`이 던지는
- * 오류가 그대로 전파되며, 상위 `decodeDataURLPayload`에서 INVALID_DATA_URL_MESSAGE로 정규화한다.
+ * 오류가 그대로 전파되며, 상위 `decodeDataURLPayload`에서 `INVALID_DATA_URL` code로 정규화한다.
  */
 export function decodeBase64Payload(payload: string): Uint8Array {
   const binary = atob(payload);
@@ -27,7 +27,7 @@ export function decodeBase64Payload(payload: string): Uint8Array {
  * base64 payload의 디코딩 후 byte 길이를 실제 디코딩 없이 추정한다.
  *
  * @description whitespace는 제외하고, padding(`=`)은 최대 2개까지 허용하며 부적합한 문자가
- * 발견되면 `유효한 Data URL이 아닙니다`로 throw한다.
+ * 발견되면 `INVALID_DATA_URL` code의 `ImageProcessError`로 throw한다.
  */
 export function estimateBase64PayloadByteLength(payload: string): number {
   let normalizedLength = 0;
@@ -48,14 +48,14 @@ export function estimateBase64PayloadByteLength(payload: string): number {
       padding += 1;
 
       if (padding > 2) {
-        throwInvalidDataURL();
+        throwInvalidDataURL('invalid-base64');
       }
 
       continue;
     }
 
     if (hasPadding || !isBase64Character(character)) {
-      throwInvalidDataURL();
+      throwInvalidDataURL('invalid-base64');
     }
   }
 
@@ -64,7 +64,7 @@ export function estimateBase64PayloadByteLength(payload: string): number {
   }
 
   if (normalizedLength % 4 === 1 || (hasPadding && normalizedLength % 4 !== 0)) {
-    throwInvalidDataURL();
+    throwInvalidDataURL('invalid-base64');
   }
 
   return Math.floor((normalizedLength * 3) / 4) - padding;

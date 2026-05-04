@@ -1,8 +1,12 @@
 /**
  * SVG data: URL 파싱과 인코딩, Blob 본문 SVG 스니핑 헬퍼다.
+ *
+ * 이 모듈은 source-converter 레이어의 크기 제한 정책을 적용하기 위해
+ * `utils/data-url`의 `decodeSvgDataURL`과 독립적으로 운용된다.
+ * 오류 code는 source-converter 의미 체계(`INVALID_SOURCE`, `SOURCE_LOAD_FAILED`)를 따른다.
  */
 
-import { ImageProcessError } from '../../../types';
+import { ImageProcessError } from '../../../errors';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { MAX_SVG_BYTES } from '../options';
 import { checkSvgSizeLimit, createSvgSizeLimitError } from './safety';

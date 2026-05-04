@@ -66,7 +66,7 @@ export function estimateDataURLSize(dataURL: string): number {
  * - base64 payload는 whitespace 제거 후 길이와 padding으로 계산한다.
  * - percent-encoded payload는 `%XX`를 1 byte로 세고 escape되지 않은 문자는 UTF-8 byte 길이로 센다.
  * - scheme 비교는 기본적으로 대소문자를 구분하지 않으며, `caseSensitiveScheme: true`로 엄격 모드를 사용할 수 있다.
- * - malformed input은 기본적으로 `유효한 Data URL이 아닙니다`로 throw하며, `invalid: 'null'` 옵션을 주면 `null`을 반환한다.
+ * - malformed input은 기본적으로 `INVALID_DATA_URL` code의 `ImageProcessError`로 throw하며, `invalid: 'null'` 옵션을 주면 `null`을 반환한다.
  *
  * @param dataURL 검사할 Data URL 문자열
  * @param options 동작 옵션
