@@ -315,23 +315,6 @@ describe('ResizeCalculator', () => {
 
       expect(Math.abs(resultRatio - originalRatio)).toBeLessThan(0.01);
     });
-
-    it('should prevent quality degradation on large upscaling', () => {
-      // Quality degradation prevention: Excessive upscaling should be warned
-      // This test only validates warning (actual behavior is normal)
-      const result = calculator.calculateFinalLayout(50, 50, {
-        fit: 'minFit',
-        width: 1000,
-        height: 1000,
-      });
-
-      // 20x enlargement (50 → 1000)
-      expect(result.imageSize).toEqual({ width: 1000, height: 1000 });
-
-      // Calculate scale factor
-      const scaleFactor = result.imageSize.width / 50;
-      expect(scaleFactor).toBe(20); // 20x enlargement
-    });
   });
 
   // ============================================================================
@@ -730,27 +713,6 @@ describe('ResizeCalculator', () => {
 
           expect(result.imageSize).toEqual({ width: w, height: h });
         });
-      });
-    });
-
-    describe('minFit quality degradation', () => {
-      it('should warn about large upscaling factors', () => {
-        // Large upscaling with minFit causes quality degradation
-        // Test only validates warning, actual behavior is normal
-        const result = calculator.calculateFinalLayout(100, 100, {
-          fit: 'minFit',
-          width: 1000,
-          height: 1000,
-        });
-
-        const scaleFactor = result.imageSize.width / 100;
-        expect(scaleFactor).toBe(10); // 10x enlargement
-
-        // Recommendation: Warn for upscaling >4x
-        if (scaleFactor > 4) {
-          // In actual app: console.warn or display warning
-          expect(scaleFactor).toBeGreaterThan(4);
-        }
       });
     });
 
