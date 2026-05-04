@@ -1,34 +1,25 @@
-name: Deploy to NPM from Release Branch
+name: CI
 
 on:
   push:
     branches:
-      - 'release'
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    # Only run on release branch
-    if: github.ref == 'refs/heads/release'
-    environment:
-      name: production
-      url: https://www.npmjs.com/package/@cp949/web-image-util
-
-    strategy:
-      matrix:
-        node-version: [20.19.0]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: 'release'
-      - name: Use Node.js ${{ matrix.node-version }}
+
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          registry-url: https://registry.npmjs.org
-          scope: '@cp949'
+          node-version: 20
+
       - uses: pnpm/action-setup@v4
 
       - name: Install dependencies
@@ -42,19 +33,3 @@ jobs:
 
       - name: Check package subpath exports
         run: pnpm test:package-subpath
-
-      - name: Package for publishing
-        run: pnpm --filter @cp949/web-image-util package
-
-      - name: Check package contents
-        run: |
-          echo "Package contents:"
-          cd sub/web-image-util
-          npm pack --dry-run
-          echo "Package version:"
-          node -e "console.log('v' + require('./package.json').version)"
-
-      - name: Publish to NPM
-        run: cd sub/web-image-util && npm publish --access=public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
