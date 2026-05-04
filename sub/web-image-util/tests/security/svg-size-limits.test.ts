@@ -4,7 +4,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { convertToElement } from '../../src/utils/converters';
-import { SVG_LIMIT_BYTES, createStreamBody } from './helpers/svg-test-helpers';
+import { createStreamBody, SVG_LIMIT_BYTES } from './helpers/svg-test-helpers';
 
 afterEach(() => {
   vi.restoreAllMocks();

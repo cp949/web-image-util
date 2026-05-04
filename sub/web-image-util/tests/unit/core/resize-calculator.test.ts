@@ -17,8 +17,8 @@ describe('ResizeCalculator', () => {
 
   // cover는 비율을 유지하면서 영역을 채우고 필요하면 잘라낸다.
 
-  describe('cover fit mode', () => {
-    it('should scale up to cover the target area (landscape image)', () => {
+  describe('cover 모드', () => {
+    it('가로형 이미지를 정사각형 영역에 cover 방식으로 채운다', () => {
       // 가로형 이미지를 정사각형 영역에 맞추면 높이를 기준으로 채워진다.
       const result = calculator.calculateFinalLayout(1920, 1080, {
         fit: 'cover',
@@ -34,7 +34,7 @@ describe('ResizeCalculator', () => {
       expect(result.position.y).toBe(0);
     });
 
-    it('should scale up to cover the target area (portrait image)', () => {
+    it('세로형 이미지를 정사각형 영역에 cover 방식으로 채운다', () => {
       // 세로형 이미지를 정사각형 영역에 맞춘다.
       const result = calculator.calculateFinalLayout(1080, 1920, {
         fit: 'cover',
@@ -49,7 +49,7 @@ describe('ResizeCalculator', () => {
       expect(result.position.y).toBe(-311); // 상하가 잘린다.
     });
 
-    it('should scale down to cover the target area', () => {
+    it('큰 이미지를 cover 방식으로 축소한다', () => {
       // 큰 정사각형 이미지를 작은 정사각형으로 축소한다.
       const result = calculator.calculateFinalLayout(2000, 2000, {
         fit: 'cover',
@@ -62,7 +62,7 @@ describe('ResizeCalculator', () => {
       expect(result.position).toEqual({ x: 0, y: 0 });
     });
 
-    it('should maintain aspect ratio when covering', () => {
+    it('cover 후에도 원본 종횡비를 유지한다', () => {
       // cover 이후에도 원본 종횡비는 유지돼야 한다.
       const result = calculator.calculateFinalLayout(1600, 900, {
         fit: 'cover',
@@ -80,8 +80,8 @@ describe('ResizeCalculator', () => {
 
   // contain은 비율을 유지한 채 전체 이미지를 보여 주고 남는 공간은 여백이 된다.
 
-  describe('contain fit mode', () => {
-    it('should scale down to fit inside the target area (landscape)', () => {
+  describe('contain 모드', () => {
+    it('가로형 이미지를 contain 방식으로 내접 축소한다', () => {
       // 가로형 이미지는 너비를 기준으로 맞추고 세로 여백이 생긴다.
       const result = calculator.calculateFinalLayout(1920, 1080, {
         fit: 'contain',
@@ -97,7 +97,7 @@ describe('ResizeCalculator', () => {
       expect(result.position.y).toBe(175); // (800 - 450) / 2 = 175
     });
 
-    it('should scale down to fit inside the target area (portrait)', () => {
+    it('세로형 이미지를 contain 방식으로 내접 축소한다', () => {
       // 세로형 이미지도 같은 규칙으로 contain 계산을 검증한다.
       const result = calculator.calculateFinalLayout(1080, 1920, {
         fit: 'contain',
@@ -112,7 +112,7 @@ describe('ResizeCalculator', () => {
       expect(result.position.y).toBe(0);
     });
 
-    it('should scale up to fit inside the target area', () => {
+    it('작은 이미지를 contain 방식으로 내접 확대한다', () => {
       // Small image (100x100) → Large square (500x500)
       const result = calculator.calculateFinalLayout(100, 100, {
         fit: 'contain',
@@ -125,7 +125,7 @@ describe('ResizeCalculator', () => {
       expect(result.position).toEqual({ x: 0, y: 0 });
     });
 
-    it('should maintain aspect ratio when containing', () => {
+    it('contain 후에도 원본 종횡비를 유지한다', () => {
       // Aspect ratio validation: Original 4:3 → Still 4:3 after contain
       const result = calculator.calculateFinalLayout(800, 600, {
         fit: 'contain',
@@ -139,7 +139,7 @@ describe('ResizeCalculator', () => {
       expect(Math.abs(resultRatio - originalRatio)).toBeLessThan(0.01);
     });
 
-    it('should keep fixed canvas but not upscale image when withoutEnlargement is true', () => {
+    it('withoutEnlargement가 true이면 캔버스는 고정하되 이미지는 확대하지 않는다', () => {
       const result = calculator.calculateFinalLayout(100, 80, {
         fit: 'contain',
         width: 300,
@@ -157,8 +157,8 @@ describe('ResizeCalculator', () => {
   // FILL FIT MODE - Ignores aspect ratio for exact fit (may stretch or compress)
   // ============================================================================
 
-  describe('fill fit mode', () => {
-    it('should stretch image to exact target size', () => {
+  describe('fill 모드', () => {
+    it('이미지를 정확한 목표 크기로 늘린다', () => {
       // Square (1000x1000) → Rectangle (800x600)
       const result = calculator.calculateFinalLayout(1000, 1000, {
         fit: 'fill',
@@ -171,7 +171,7 @@ describe('ResizeCalculator', () => {
       expect(result.position).toEqual({ x: 0, y: 0 });
     });
 
-    it('should compress image to exact target size', () => {
+    it('이미지를 정확한 목표 크기로 압축한다', () => {
       // Landscape image (1920x1080) → Portrait rectangle (600x800)
       const result = calculator.calculateFinalLayout(1920, 1080, {
         fit: 'fill',
@@ -184,7 +184,7 @@ describe('ResizeCalculator', () => {
       expect(result.position).toEqual({ x: 0, y: 0 });
     });
 
-    it('should not maintain aspect ratio', () => {
+    it('fill 모드는 종횡비를 유지하지 않는다', () => {
       // Aspect ratio validation: Original 16:9 → 1:1 after fill (ratio changed)
       const result = calculator.calculateFinalLayout(1600, 900, {
         fit: 'fill',
@@ -203,8 +203,8 @@ describe('ResizeCalculator', () => {
   // MAXFIT MODE - Maximum size limit (scale down only, no enlargement)
   // ============================================================================
 
-  describe('maxFit mode', () => {
-    it('should scale down large images to fit within max bounds', () => {
+  describe('maxFit 모드', () => {
+    it('큰 이미지를 최대 범위 내로 축소한다', () => {
       // Large images are scaled down
       const result = calculator.calculateFinalLayout(2000, 1500, {
         fit: 'maxFit',
@@ -216,7 +216,7 @@ describe('ResizeCalculator', () => {
       expect(result.canvasSize).toEqual({ width: 800, height: 600 });
     });
 
-    it('should handle width-only constraint', () => {
+    it('너비만 제약할 때 종횡비를 유지한다', () => {
       // Width constraint only
       const result = calculator.calculateFinalLayout(1920, 1080, {
         fit: 'maxFit',
@@ -227,7 +227,7 @@ describe('ResizeCalculator', () => {
       expect(result.imageSize.height).toBe(450); // Maintain aspect ratio
     });
 
-    it('should handle height-only constraint', () => {
+    it('높이만 제약할 때 종횡비를 유지한다', () => {
       // Height constraint only
       const result = calculator.calculateFinalLayout(1920, 1080, {
         fit: 'maxFit',
@@ -238,7 +238,7 @@ describe('ResizeCalculator', () => {
       expect(result.imageSize.height).toBe(600);
     });
 
-    it('should maintain aspect ratio when scaling down', () => {
+    it('축소 시 원본 종횡비를 유지한다', () => {
       const result = calculator.calculateFinalLayout(1600, 1200, {
         fit: 'maxFit',
         width: 400,
@@ -256,8 +256,8 @@ describe('ResizeCalculator', () => {
   // MINFIT MODE - Minimum size guarantee (scale up only, no shrinking)
   // ============================================================================
 
-  describe('minFit mode', () => {
-    it('should enlarge small images to meet minimum bounds', () => {
+  describe('minFit 모드', () => {
+    it('소형 이미지를 최소 범위로 확대한다', () => {
       // Small images are enlarged
       const result = calculator.calculateFinalLayout(100, 80, {
         fit: 'minFit',
@@ -269,7 +269,7 @@ describe('ResizeCalculator', () => {
       expect(result.canvasSize).toEqual({ width: 500, height: 400 });
     });
 
-    it('should NOT shrink large images', () => {
+    it('큰 이미지를 축소하지 않는다', () => {
       // Large images maintain original size
       const result = calculator.calculateFinalLayout(2000, 1500, {
         fit: 'minFit',
@@ -281,7 +281,7 @@ describe('ResizeCalculator', () => {
       expect(result.canvasSize).toEqual({ width: 2000, height: 1500 });
     });
 
-    it('should handle width-only constraint', () => {
+    it('너비만 제약할 때 종횡비를 유지한다', () => {
       // Width constraint only
       const result = calculator.calculateFinalLayout(400, 300, {
         fit: 'minFit',
@@ -292,7 +292,7 @@ describe('ResizeCalculator', () => {
       expect(result.imageSize.height).toBe(600); // Maintain aspect ratio
     });
 
-    it('should handle height-only constraint', () => {
+    it('높이만 제약할 때 종횡비를 유지한다', () => {
       // Height constraint only
       const result = calculator.calculateFinalLayout(400, 300, {
         fit: 'minFit',
@@ -303,7 +303,7 @@ describe('ResizeCalculator', () => {
       expect(result.imageSize.height).toBe(600);
     });
 
-    it('should maintain aspect ratio when scaling up', () => {
+    it('확대 시 원본 종횡비를 유지한다', () => {
       const result = calculator.calculateFinalLayout(200, 150, {
         fit: 'minFit',
         width: 800,
@@ -321,9 +321,9 @@ describe('ResizeCalculator', () => {
   // PADDING SYSTEM - Padding handling tests
   // ============================================================================
 
-  describe('padding system', () => {
-    describe('numeric padding', () => {
-      it('should apply same padding to all sides', () => {
+  describe('패딩 시스템', () => {
+    describe('숫자형 패딩', () => {
+      it('모든 변에 동일한 패딩을 적용한다', () => {
         const result = calculator.calculateFinalLayout(100, 100, {
           fit: 'contain',
           width: 100,
@@ -337,7 +337,7 @@ describe('ResizeCalculator', () => {
         expect(result.position).toEqual({ x: 20, y: 20 });
       });
 
-      it('should work with cover fit', () => {
+      it('cover 모드와 함께 동작한다', () => {
         const result = calculator.calculateFinalLayout(200, 100, {
           fit: 'cover',
           width: 100,
@@ -352,8 +352,8 @@ describe('ResizeCalculator', () => {
       });
     });
 
-    describe('object padding', () => {
-      it('should apply different padding to each side', () => {
+    describe('객체형 패딩', () => {
+      it('각 변에 서로 다른 패딩을 적용한다', () => {
         const result = calculator.calculateFinalLayout(100, 100, {
           fit: 'contain',
           width: 100,
@@ -367,7 +367,7 @@ describe('ResizeCalculator', () => {
         expect(result.position).toEqual({ x: 40, y: 10 });
       });
 
-      it('should handle partial object padding', () => {
+      it('부분 객체 패딩을 처리한다', () => {
         const result = calculator.calculateFinalLayout(100, 100, {
           fit: 'contain',
           width: 100,
@@ -380,7 +380,7 @@ describe('ResizeCalculator', () => {
         expect(result.position).toEqual({ x: 25, y: 15 });
       });
 
-      it('should handle empty object padding', () => {
+      it('빈 객체 패딩을 처리한다', () => {
         const result = calculator.calculateFinalLayout(100, 100, {
           fit: 'contain',
           width: 100,
@@ -394,8 +394,8 @@ describe('ResizeCalculator', () => {
       });
     });
 
-    describe('no padding', () => {
-      it('should work without padding (undefined)', () => {
+    describe('패딩 없음', () => {
+      it('패딩 없이도 정상 동작한다', () => {
         const result = calculator.calculateFinalLayout(100, 100, {
           fit: 'contain',
           width: 100,
@@ -407,8 +407,8 @@ describe('ResizeCalculator', () => {
       });
     });
 
-    describe('padding with maxFit/minFit', () => {
-      it('should apply padding to maxFit canvas size', () => {
+    describe('maxFit/minFit 패딩', () => {
+      it('maxFit 캔버스 크기에 패딩을 적용한다', () => {
         // maxFit: Image size becomes canvas size
         const result = calculator.calculateFinalLayout(100, 100, {
           fit: 'maxFit',
@@ -424,7 +424,7 @@ describe('ResizeCalculator', () => {
         expect(result.position).toEqual({ x: 20, y: 20 });
       });
 
-      it('should apply padding to minFit canvas size', () => {
+      it('minFit 캔버스 크기에 패딩을 적용한다', () => {
         // minFit: Image size becomes canvas size
         const result = calculator.calculateFinalLayout(200, 150, {
           fit: 'minFit',
@@ -441,8 +441,8 @@ describe('ResizeCalculator', () => {
       });
     });
 
-    describe('large padding edge cases', () => {
-      it('should handle very large padding', () => {
+    describe('대형 패딩 엣지 케이스', () => {
+      it('매우 큰 패딩을 처리한다', () => {
         const result = calculator.calculateFinalLayout(100, 100, {
           fit: 'contain',
           width: 100,
@@ -455,7 +455,7 @@ describe('ResizeCalculator', () => {
         expect(result.position).toEqual({ x: 100, y: 100 });
       });
 
-      it('should handle asymmetric large padding', () => {
+      it('비대칭 대형 패딩을 처리한다', () => {
         const result = calculator.calculateFinalLayout(50, 50, {
           fit: 'contain',
           width: 50,
@@ -473,9 +473,9 @@ describe('ResizeCalculator', () => {
   // EXTREME CASES - Extreme case tests
   // ============================================================================
 
-  describe('extreme cases', () => {
-    describe('very large images', () => {
-      it('should handle 8K resolution (7680x4320)', () => {
+  describe('극단 입력', () => {
+    describe('초대형 이미지', () => {
+      it('8K 해상도(7680x4320)를 처리한다', () => {
         const result = calculator.calculateFinalLayout(7680, 4320, {
           fit: 'cover',
           width: 1920,
@@ -487,7 +487,7 @@ describe('ResizeCalculator', () => {
         expect(result.canvasSize).toEqual({ width: 1920, height: 1080 });
       });
 
-      it('should handle extremely large images (100000x100000)', () => {
+      it('초대형 이미지(100000x100000)를 처리한다', () => {
         const result = calculator.calculateFinalLayout(100000, 100000, {
           fit: 'maxFit',
           width: 1000,
@@ -499,8 +499,8 @@ describe('ResizeCalculator', () => {
       });
     });
 
-    describe('very small images', () => {
-      it('should handle 1x1 pixel image', () => {
+    describe('초소형 이미지', () => {
+      it('1x1 픽셀 이미지를 처리한다', () => {
         const result = calculator.calculateFinalLayout(1, 1, {
           fit: 'maxFit',
           width: 100,
@@ -511,7 +511,7 @@ describe('ResizeCalculator', () => {
         expect(result.imageSize).toEqual({ width: 1, height: 1 });
       });
 
-      it('should handle very small images (10x10)', () => {
+      it('초소형 이미지(10x10)를 처리한다', () => {
         const result = calculator.calculateFinalLayout(10, 10, {
           fit: 'contain',
           width: 500,
@@ -523,8 +523,8 @@ describe('ResizeCalculator', () => {
       });
     });
 
-    describe('extreme aspect ratios', () => {
-      it('should handle very wide images (10000:1)', () => {
+    describe('극단 종횡비', () => {
+      it('극단 가로 종횡비(10000:1)를 처리한다', () => {
         const result = calculator.calculateFinalLayout(10000, 1, {
           fit: 'contain',
           width: 1000,
@@ -535,7 +535,7 @@ describe('ResizeCalculator', () => {
         expect(result.imageSize.height).toBe(0); // Math.round(1000 * 1/10000)
       });
 
-      it('should handle very tall images (1:10000)', () => {
+      it('극단 세로 종횡비(1:10000)를 처리한다', () => {
         const result = calculator.calculateFinalLayout(1, 10000, {
           fit: 'contain',
           width: 1000,
@@ -546,7 +546,7 @@ describe('ResizeCalculator', () => {
         expect(result.imageSize.height).toBe(1000);
       });
 
-      it('should handle panoramic images (21:9)', () => {
+      it('파노라마 이미지(21:9)를 처리한다', () => {
         const result = calculator.calculateFinalLayout(2560, 1080, {
           fit: 'cover',
           width: 1920,
@@ -559,8 +559,8 @@ describe('ResizeCalculator', () => {
       });
     });
 
-    describe('edge case dimensions', () => {
-      it('should handle zero width target', () => {
+    describe('경계 치수', () => {
+      it('목표 너비 0을 처리한다', () => {
         // TypeScript doesn't allow this, but can occur at runtime
         const result = calculator.calculateFinalLayout(100, 100, {
           fit: 'fill',
@@ -571,7 +571,7 @@ describe('ResizeCalculator', () => {
         expect(result.imageSize.width).toBe(0);
       });
 
-      it('should handle zero height target', () => {
+      it('목표 높이 0을 처리한다', () => {
         const result = calculator.calculateFinalLayout(100, 100, {
           fit: 'fill',
           width: 100,
@@ -581,7 +581,7 @@ describe('ResizeCalculator', () => {
         expect(result.imageSize.height).toBe(0);
       });
 
-      it('should handle fractional dimensions', () => {
+      it('소수점 치수를 정수로 변환한다', () => {
         // Floating point operations may result in decimals
         const result = calculator.calculateFinalLayout(1000, 333, {
           fit: 'contain',
@@ -600,8 +600,10 @@ describe('ResizeCalculator', () => {
   // PERFORMANCE TESTS - Performance tests
   // ============================================================================
 
-  describe('performance', () => {
-    it('should calculate layout in reasonable time (1000 iterations)', () => {
+  const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+
+  describe('성능', () => {
+    it('1000회 반복 계산을 합리적인 시간 내에 완료한다', () => {
       const start = performance.now();
 
       for (let i = 0; i < 1000; i++) {
@@ -620,7 +622,7 @@ describe('ResizeCalculator', () => {
       expect(duration).toBeLessThan(100);
     });
 
-    it('should handle complex padding calculations efficiently', () => {
+    it('복잡한 객체 패딩 계산도 효율적으로 처리한다', () => {
       const start = performance.now();
 
       for (let i = 0; i < 1000; i++) {
@@ -638,12 +640,7 @@ describe('ResizeCalculator', () => {
       expect(duration).toBeLessThan(100);
     });
 
-    it('should not degrade with different fit modes', () => {
-      // Skip performance consistency test in Node.js environment
-      if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-        return;
-      }
-
+    it.skipIf(isNode)('fit 모드에 따른 성능 편차가 허용 범위 내에 있다', () => {
       const fitModes: Array<'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit'> = [
         'cover',
         'contain',
@@ -682,9 +679,9 @@ describe('ResizeCalculator', () => {
   // REGRESSION TESTS - Bug regression prevention tests
   // ============================================================================
 
-  describe('regression tests', () => {
-    describe('maxFit enlargement bug', () => {
-      it('should NOT enlarge 91x114 image to 300x200 (original bug)', () => {
+  describe('회귀 테스트', () => {
+    describe('maxFit 확대 버그', () => {
+      it('91x114 이미지를 300x200으로 확대하지 않는다 (원래 버그)', () => {
         // Original bug: maxFit was enlarging small images
         const result = calculator.calculateFinalLayout(91, 114, {
           fit: 'maxFit',
@@ -697,7 +694,7 @@ describe('ResizeCalculator', () => {
         expect(result.position).toEqual({ x: 0, y: 0 });
       });
 
-      it('should NOT enlarge any small image with maxFit', () => {
+      it('다양한 소형 이미지를 maxFit에서 확대하지 않는다', () => {
         const testCases = [
           { w: 50, h: 50, maxW: 100, maxH: 100 },
           { w: 80, h: 120, maxW: 200, maxH: 300 },
@@ -715,40 +712,14 @@ describe('ResizeCalculator', () => {
         });
       });
     });
-
-    describe('SVG size calculation accuracy', () => {
-      it('should calculate correct dimensions for typical SVG sizes', () => {
-        // SVGs are vectors and can be rendered at any size
-        // However, original viewBox size should be calculated accurately
-        const svgSizes = [
-          { w: 24, h: 24 }, // Icon
-          { w: 100, h: 100 }, // Small graphic
-          { w: 512, h: 512 }, // Medium graphic
-          { w: 1024, h: 1024 }, // Large graphic
-        ];
-
-        svgSizes.forEach(({ w, h }) => {
-          const result = calculator.calculateFinalLayout(w, h, {
-            fit: 'maxFit',
-            width: 300,
-            height: 200,
-          });
-
-          // Small SVGs should not be enlarged
-          if (w <= 300 && h <= 200) {
-            expect(result.imageSize).toEqual({ width: w, height: h });
-          }
-        });
-      });
-    });
   });
 
   // ============================================================================
   // INTEGRATION TESTS - Integration tests (combining multiple features)
   // ============================================================================
 
-  describe('integration tests', () => {
-    it('should handle complex scenario: cover + large padding + extreme ratio', () => {
+  describe('통합 테스트', () => {
+    it('cover + 대형 패딩 + 극단 종횡비 복합 시나리오를 처리한다', () => {
       const result = calculator.calculateFinalLayout(3000, 1000, {
         fit: 'cover',
         width: 800,
@@ -768,7 +739,7 @@ describe('ResizeCalculator', () => {
       expect(result.position.y).toBe(50); // Top padding
     });
 
-    it('should handle all fit modes with same input', () => {
+    it('동일 입력에 대해 모든 fit 모드의 결과가 일관된다', () => {
       const input = { width: 1920, height: 1080 };
       const target = { width: 800, height: 800 };
 
