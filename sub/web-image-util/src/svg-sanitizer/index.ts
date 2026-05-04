@@ -26,6 +26,12 @@
 
 import type { Config } from 'dompurify';
 import DOMPurify from 'dompurify';
+import {
+  decodeSvgDataImageRef,
+  encodeSvgDataImageRef,
+  isSafeRasterDataImageRef,
+  isSvgDataImageRef,
+} from '../utils/svg-data-url-policy';
 
 type DOMPurifyInstance = ReturnType<typeof DOMPurify>;
 
@@ -264,6 +270,47 @@ function isSafeInternalReference(value: string): boolean {
 }
 
 /**
+ * strict sanitizer가 nested SVG를 재귀 정제할 때 허용할 최대 깊이.
+ *
+ * data:image/svg+xml 안에 또 다른 data:image/svg+xml이 포함되는 경우를 한정한다.
+ * 이 한도를 넘으면 속성을 제거해 fail-closed로 처리한다.
+ */
+const STRICT_NESTED_SVG_DEPTH_LIMIT = 2;
+
+/**
+ * strict sanitizer의 href/xlink:href/src 값에 보존 정책을 적용한다.
+ *
+ * - 안전한 raster `data:image/*`는 원본 그대로 보존
+ * - `data:image/svg+xml`은 nested SVG를 strict sanitizer로 재귀 정제한 뒤
+ *   `data:image/svg+xml;base64,...`로 재인코딩 (`STRICT_NESTED_SVG_DEPTH_LIMIT` 깊이 제한)
+ * - 그 외에는 내부 프래그먼트(`#id`)만 허용하고 나머지는 제거 의도(null) 반환
+ *
+ * @param value 원본 속성값
+ * @param options 부모 sanitizer 옵션 (nested 호출에 그대로 전파)
+ * @param depth 현재 재귀 깊이
+ * @returns 새 속성값 또는 null(속성 제거)
+ */
+function sanitizeStrictUriValue(
+  value: string,
+  options: StrictSvgSanitizerOptions | undefined,
+  depth: number
+): string | null {
+  if (isSafeRasterDataImageRef(value)) {
+    return value;
+  }
+
+  if (isSvgDataImageRef(value)) {
+    if (depth >= STRICT_NESTED_SVG_DEPTH_LIMIT) return null;
+    const nestedSvg = decodeSvgDataImageRef(value);
+    if (!nestedSvg) return null;
+    const sanitizedNestedSvg = sanitizeSvgStrictCore(nestedSvg, options, depth + 1).svg;
+    return encodeSvgDataImageRef(sanitizedNestedSvg);
+  }
+
+  return isSafeInternalReference(value) ? value : null;
+}
+
+/**
  * CSS url() 값에서 허용할 수 있는 내부 참조인지 판정한다.
  *
  * @param value url(...) 내부 값
@@ -418,7 +465,13 @@ function collectInputPolicyWarnings(svg: string, warnings: string[]): void {
       }
 
       if (name === 'href' || name === 'xlink:href' || name === 'src' || localName === 'href' || localName === 'src') {
-        if (!isSafeInternalReference(attribute.value)) {
+        // 새 정책에서 안전한 data:image/* 참조는 보존되거나 nested sanitize 후 보존되므로 false-positive 경고를 내지 않는다.
+        // nested SVG 안의 위험 요소 제거는 enforceStrictDomPolicy에서 별도 경고로 보고된다.
+        if (
+          !isSafeInternalReference(attribute.value) &&
+          !isSafeRasterDataImageRef(attribute.value) &&
+          !isSvgDataImageRef(attribute.value)
+        ) {
           pushUniqueWarning(warnings, '외부 URI 참조 속성이 제거되었습니다.');
         }
         continue;
@@ -453,7 +506,12 @@ function collectInputPolicyWarnings(svg: string, warnings: string[]): void {
  * @param root 후처리 대상 SVG 루트
  * @param warnings 경고 누적 배열
  */
-function enforceStrictDomPolicy(root: Element, warnings: string[]): void {
+function enforceStrictDomPolicy(
+  root: Element,
+  warnings: string[],
+  options: StrictSvgSanitizerOptions | undefined,
+  depth: number
+): void {
   const elements = [root, ...Array.from(root.querySelectorAll('*'))];
 
   for (const element of elements) {
@@ -474,9 +532,13 @@ function enforceStrictDomPolicy(root: Element, warnings: string[]): void {
       }
 
       if (name === 'href' || name === 'xlink:href' || name === 'src' || localName === 'href' || localName === 'src') {
-        if (!isSafeInternalReference(attribute.value)) {
+        const sanitizedValue = sanitizeStrictUriValue(attribute.value, options, depth);
+        if (sanitizedValue === null) {
           element.removeAttribute(attribute.name);
           pushUniqueWarning(warnings, '외부 URI 참조 속성이 제거되었습니다.');
+        } else if (sanitizedValue !== attribute.value) {
+          element.setAttribute(attribute.name, sanitizedValue);
+          pushUniqueWarning(warnings, 'data:image/svg+xml 참조가 nested sanitizer로 정제되었습니다.');
         }
         continue;
       }
@@ -524,7 +586,9 @@ function enforceStrictDomPolicy(root: Element, warnings: string[]): void {
 function postProcessSanitized(
   sanitizedSvg: string,
   removeMetadata: boolean,
-  warnings: string[]
+  warnings: string[],
+  options: StrictSvgSanitizerOptions | undefined,
+  depth: number
 ): { svg: string; nodeCount: number } {
   // 빈 결과인 경우 즉시 반환
   if (!sanitizedSvg.trim()) {
@@ -553,7 +617,7 @@ function postProcessSanitized(
   }
 
   // DOMPurify 결과에 strict sanitizer 강제 정책을 재적용한다.
-  enforceStrictDomPolicy(root, warnings);
+  enforceStrictDomPolicy(root, warnings, options, depth);
 
   // metadata 제거 — 중첩 케이스도 DOM 트리 순회로 안전하게 처리
   if (removeMetadata) {
@@ -616,7 +680,8 @@ function assertSafeIntegerLimit(name: string, value: number, minimum: number): v
  */
 function sanitizeSvgStrictCore(
   svg: string,
-  options: StrictSvgSanitizerOptions | undefined
+  options: StrictSvgSanitizerOptions | undefined,
+  recursionDepth = 0
 ): SanitizeSvgStrictDetailedResult {
   // 1. 입력 타입 검증
   if (typeof svg !== 'string') {
@@ -654,7 +719,13 @@ function sanitizeSvgStrictCore(
   const sanitized = getDomPurify().sanitize(preprocessed, finalConfig) as string;
 
   // 7. 후처리 — DOMParser로 한 번 파싱해서 metadata 제거, parsererror 처리, 노드 개수 카운트를 일괄 수행
-  const { svg: finalSvg, nodeCount } = postProcessSanitized(sanitized, removeMetadata, warnings);
+  const { svg: finalSvg, nodeCount } = postProcessSanitized(
+    sanitized,
+    removeMetadata,
+    warnings,
+    options,
+    recursionDepth
+  );
   if (nodeCount > maxNodeCount) {
     throw new Error(`정제 후 SVG 노드 개수(${nodeCount})가 최대 허용치(${maxNodeCount})를 초과했습니다.`);
   }

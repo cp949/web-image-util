@@ -70,7 +70,7 @@ describe('strict SVG sanitizer', () => {
         <image href="https://example.com/tracker.png"/>
         <a href="javascript:alert(1)"><rect/></a>
         <image xlink:href="file:///tmp/secret.png"/>
-        <image src="data:image/svg+xml,%3Csvg%20onload%3Dalert(1)%3E"/>
+        <image href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20onload%3D%22alert(1)%22%3E%3Crect%2F%3E%3C%2Fsvg%3E"/>
       </svg>
     `);
 
@@ -78,7 +78,37 @@ describe('strict SVG sanitizer', () => {
     expect(result).not.toContain('https://example.com');
     expect(result).not.toContain('javascript:');
     expect(result).not.toContain('file:///');
-    expect(result).not.toContain('data:image');
+    // data:image/svg+xml은 nested sanitizer로 정제 후 base64로 보존된다 — 위험 요소만 제거되어야 한다
+    expect(result).toContain('data:image/svg+xml;base64,');
+    expect(result).not.toContain('onload');
+  });
+
+  it('비이미지 data: 참조는 strict sanitizer에서도 제거한다', () => {
+    const result = sanitizeSvgStrict(
+      '<svg><image href="data:text/html,%3Cscript%3Ealert(1)%3C/script%3E"/></svg>'
+    );
+
+    expect(result).not.toContain('data:text/html');
+    expect(result).not.toContain('<script');
+  });
+
+  it('safe raster data:image 참조는 strict sanitizer에서도 보존한다', () => {
+    const svg = '<svg><image href="data:image/png;base64,iVBORw0KGgo=" width="10" height="10"/></svg>';
+
+    const result = sanitizeSvgStrict(svg);
+
+    expect(result).toContain('data:image/png;base64,iVBORw0KGgo=');
+  });
+
+  it('data:image/svg+xml 참조는 nested strict sanitizer 적용 후 보존한다', () => {
+    const nestedSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="10" height="10"/></svg>';
+    const svg = `<svg><image href="data:image/svg+xml,${encodeURIComponent(nestedSvg)}" width="10" height="10"/></svg>`;
+
+    const result = sanitizeSvgStrict(svg);
+
+    expect(result).toContain('data:image/svg+xml;base64,');
+    expect(result).not.toContain('<script');
   });
 
   it('style 속성과 style 요소의 외부 URL 및 위험 CSS 구문을 제거한다', () => {
