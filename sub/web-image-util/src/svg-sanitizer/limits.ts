@@ -8,7 +8,7 @@
 import { ImageProcessError } from '../errors';
 
 /**
- * 입력 SVG의 UTF-8 바이트 크기가 maxBytes를 초과하면 Error를 던진다.
+ * 입력 SVG의 UTF-8 바이트 크기가 maxBytes를 초과하면 ImageProcessError를 던진다.
  *
  * @param svg 입력 SVG 문자열
  * @param maxBytes 최대 허용 바이트

@@ -20,7 +20,9 @@ describe('strict SVG sanitizer', () => {
     const svg = '<svg><g><rect/><circle/></g></svg>';
 
     expect(() => sanitizeSvgStrict(svg, { maxNodeCount: 2 })).toThrow(ImageProcessError);
-    expect(() => sanitizeSvgStrict(svg, { maxNodeCount: 2 })).toThrow(/SVG_NODE_COUNT_EXCEEDED|exceeds the configured maximum/);
+    expect(() => sanitizeSvgStrict(svg, { maxNodeCount: 2 })).toThrow(
+      /SVG_NODE_COUNT_EXCEEDED|exceeds the configured maximum/
+    );
   });
 
   it('DOCTYPE과 ENTITY 선언을 제거하고 경고를 반환한다', () => {
