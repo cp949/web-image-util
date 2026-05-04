@@ -90,11 +90,9 @@ export async function readCheckedTextResponse(response: Response, label: string)
         throw error;
       }
 
-      throw new ImageProcessError(
-        `${label} 본문을 안전하게 확인할 수 없어 로드를 차단합니다`,
-        'INVALID_SOURCE',
-        { cause: error }
-      );
+      throw new ImageProcessError(`${label} 본문을 안전하게 확인할 수 없어 로드를 차단합니다`, 'INVALID_SOURCE', {
+        cause: error,
+      });
     }
   }
 
@@ -129,11 +127,9 @@ export async function readCheckedTextResponse(response: Response, label: string)
       throw error;
     }
 
-    throw new ImageProcessError(
-      `${label} 본문을 안전하게 확인할 수 없어 로드를 차단합니다`,
-      'INVALID_SOURCE',
-      { cause: error }
-    );
+    throw new ImageProcessError(`${label} 본문을 안전하게 확인할 수 없어 로드를 차단합니다`, 'INVALID_SOURCE', {
+      cause: error,
+    });
   } finally {
     reader.releaseLock();
   }

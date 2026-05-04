@@ -18,7 +18,9 @@ export class ManagedCanvas {
     const ctx = this.canvas.getContext('2d');
     if (!ctx) {
       this.pool.release(this.canvas);
-      throw createImageError('CANVAS_CREATION_FAILED', { cause: new Error('Failed to create CanvasRenderingContext2D') });
+      throw createImageError('CANVAS_CREATION_FAILED', {
+        cause: new Error('Failed to create CanvasRenderingContext2D'),
+      });
     }
 
     this.ctx = ctx;

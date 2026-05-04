@@ -120,7 +120,10 @@ export class SteppedProcessor {
         currentCanvas.width = 0;
         currentCanvas.height = 0;
       }
-      throw createImageError('RESIZE_FAILED', { cause: error, context: { debug: { stage: 'stepped reduction processing' } } });
+      throw createImageError('RESIZE_FAILED', {
+        cause: error,
+        context: { debug: { stage: 'stepped reduction processing' } },
+      });
     }
   }
 

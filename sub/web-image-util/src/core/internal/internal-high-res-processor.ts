@@ -126,7 +126,10 @@ export class InternalHighResProcessor {
         quality: opts.quality,
       };
     } catch (error) {
-      throw createImageError('RESIZE_FAILED', { cause: error, context: { debug: { stage: 'high-resolution processing' } } });
+      throw createImageError('RESIZE_FAILED', {
+        cause: error,
+        context: { debug: { stage: 'high-resolution processing' } },
+      });
     }
   }
 
@@ -258,7 +261,9 @@ export class InternalHighResProcessor {
         });
 
       default:
-        throw createImageError('FEATURE_NOT_SUPPORTED', { cause: new Error(`Unsupported processing strategy: ${strategy}`) });
+        throw createImageError('FEATURE_NOT_SUPPORTED', {
+          cause: new Error(`Unsupported processing strategy: ${strategy}`),
+        });
     }
   }
 

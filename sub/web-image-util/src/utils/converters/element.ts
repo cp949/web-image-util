@@ -59,11 +59,9 @@ export async function ensureImageElementDetailed(source: ImageSource): Promise<R
     const element = await convertToImageElement(source);
     return new ElementResultImpl(element, element.width, element.height, Date.now() - startTime);
   } catch (error) {
-    throw new ImageProcessError(
-      'Error occurred while ensuring HTMLImageElement output',
-      'CONVERSION_FAILED',
-      { cause: error }
-    );
+    throw new ImageProcessError('Error occurred while ensuring HTMLImageElement output', 'CONVERSION_FAILED', {
+      cause: error,
+    });
   }
 }
 

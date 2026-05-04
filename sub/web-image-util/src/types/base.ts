@@ -129,8 +129,8 @@ export type ResizeBackground = string | { r: number; g: number; b: number; alpha
 // ERROR TYPES - Basic error-related types
 // ============================================================================
 
-export { ImageErrorCode as ImageErrorCodeConstants } from '../errors';
 export type { ImageErrorCodeType } from '../errors';
+export { ImageErrorCode as ImageErrorCodeConstants } from '../errors';
 
 // ============================================================================
 // GEOMETRY TYPES - Basic geometry-related types

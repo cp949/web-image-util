@@ -595,7 +595,9 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         undefined // Canvas has no format information
       );
     } catch (error) {
-      throw new ImageProcessError('Error occurred during detailed Canvas conversion', 'OUTPUT_FAILED', { cause: error });
+      throw new ImageProcessError('Error occurred during detailed Canvas conversion', 'OUTPUT_FAILED', {
+        cause: error,
+      });
     }
   }
 
@@ -662,7 +664,9 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
 
             img.src = objectUrl;
           } catch (error) {
-            reject(new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error }));
+            reject(
+              new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error })
+            );
           }
         });
       });

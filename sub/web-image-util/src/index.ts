@@ -113,7 +113,10 @@ export type {
   CoverConfig,
   FillConfig,
   ImageErrorCodeType,
+  ImageErrorDetails,
+  ImageErrorDetailsByCode,
   ImageFormat,
+  ImageProcessErrorOptions,
   // Input types
   ImageSource,
   MaxFitConfig,
@@ -145,11 +148,6 @@ export type {
 } from './types';
 // Error classes
 export { ImageErrorCode, ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
-export type {
-  ImageErrorDetails,
-  ImageErrorDetailsByCode,
-  ImageProcessErrorOptions,
-} from './types';
 export type {
   ConvertToBlobDetailedOptions,
   ConvertToBlobOptions,

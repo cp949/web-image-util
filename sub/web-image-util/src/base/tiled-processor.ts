@@ -345,7 +345,10 @@ export class TiledProcessor {
     }
 
     if (opts.tileSize <= 0) {
-      throw createImageError('RESIZE_FAILED', { cause: new Error('Invalid tile size'), context: { debug: { tileSize: opts.tileSize } } });
+      throw createImageError('RESIZE_FAILED', {
+        cause: new Error('Invalid tile size'),
+        context: { debug: { tileSize: opts.tileSize } },
+      });
     }
 
     if (opts.overlapSize < 0 || opts.overlapSize >= opts.tileSize) {

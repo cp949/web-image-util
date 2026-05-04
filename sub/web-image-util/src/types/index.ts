@@ -268,13 +268,13 @@ export interface OutputOptions {
 // IMAGE ERROR TYPES - Image error-related types
 // ============================================================================
 
-export { ImageErrorCode, ImageProcessError } from '../errors';
 export type {
   ImageErrorCodeType,
   ImageErrorDetails,
   ImageErrorDetailsByCode,
   ImageProcessErrorOptions,
 } from '../errors';
+export { ImageErrorCode, ImageProcessError } from '../errors';
 
 // Canvas API does not have margin/padding concepts like Sharp.js's extend feature
 // Users must directly adjust Canvas size if needed
@@ -453,7 +453,6 @@ export interface ProcessorSourceOptions {
  * Optimal quality settings by format
  */
 export const OPTIMAL_QUALITY_BY_FORMAT = OutputOptimalQuality;
-
 
 // ============================================================================
 // EXPORTS - Type guards and other utilities
