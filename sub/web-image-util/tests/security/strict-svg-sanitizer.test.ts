@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { sanitizeSvgStrict, sanitizeSvgStrictDetailed } from '../../src/svg-sanitizer';
+import { MAX_EMBEDDED_DATA_IMAGE_BYTES, MAX_NESTED_SVG_DEPTH } from '../../src/utils/svg-data-url-policy';
 
 describe('strict SVG sanitizer', () => {
   it('입력 바이트 크기가 maxBytes를 초과하면 정제 전에 차단한다', () => {
@@ -171,5 +172,60 @@ describe('strict SVG sanitizer', () => {
 
     expect(result.svg).toContain('<svg');
     expect(result.warnings).not.toEqual(expect.arrayContaining([expect.stringContaining('CSS')]));
+  });
+
+  describe('embedded data:image 정책 경계', () => {
+    /**
+     * data: 참조에서 base64 부분만 추출하여 디코딩한 SVG 본문을 반환한다.
+     */
+    function extractDecodedNestedSvg(svg: string): string | null {
+      const match = svg.match(/href="data:image\/svg\+xml;base64,([^"]+)"/);
+      if (!match) return null;
+      return new TextDecoder().decode(Uint8Array.from(atob(match[1]), (char) => char.charCodeAt(0)));
+    }
+
+    it('한계 크기의 raster data:image 참조는 strict에서도 보존한다', () => {
+      const payload = 'a'.repeat(MAX_EMBEDDED_DATA_IMAGE_BYTES);
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/png,${payload}" width="10" height="10"/></svg>`;
+
+      const result = sanitizeSvgStrict(svg);
+
+      expect(result).toContain('data:image/png,');
+    });
+
+    it('한계+1 크기의 raster data:image 참조는 strict에서 제거한다', () => {
+      const payload = 'a'.repeat(MAX_EMBEDDED_DATA_IMAGE_BYTES + 1);
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/png,${payload}" width="10" height="10"/></svg>`;
+
+      const result = sanitizeSvgStrict(svg);
+
+      expect(result).not.toContain('data:image/png');
+    });
+
+    it('잘못된 base64 data:image/svg+xml 참조는 strict에서 fail-closed로 제거한다', () => {
+      const result = sanitizeSvgStrict(
+        '<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/svg+xml;base64,!!!not_base64!!!" width="10" height="10"/></svg>'
+      );
+
+      expect(result).not.toContain('data:image/svg+xml');
+    });
+
+    it('재귀 깊이 한계를 넘는 nested data:image/svg+xml은 strict에서도 가장 깊은 href를 제거한다', () => {
+      let nested = '<svg xmlns="http://www.w3.org/2000/svg"><rect id="deepest" width="10" height="10"/></svg>';
+      for (let i = 0; i < MAX_NESTED_SVG_DEPTH + 1; i++) {
+        nested = `<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/svg+xml,${encodeURIComponent(nested)}" width="10" height="10"/></svg>`;
+      }
+
+      let current = sanitizeSvgStrict(nested);
+      let extractedHrefs = 0;
+      while (true) {
+        const decoded = extractDecodedNestedSvg(current);
+        if (decoded === null) break;
+        extractedHrefs++;
+        current = decoded;
+      }
+      expect(extractedHrefs).toBe(MAX_NESTED_SVG_DEPTH);
+      expect(current).not.toContain('deepest');
+    });
   });
 });
