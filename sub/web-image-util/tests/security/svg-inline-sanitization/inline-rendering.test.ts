@@ -1,42 +1,15 @@
 /**
- * 인라인 SVG 문자열·Blob·Data URL 입력에 대한 정화 파이프라인 보안 계약을 검증한다.
+ * 인라인 SVG 문자열 입력이 정화 후 렌더링되는 경로를 검증한다.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { convertToImageElement } from '../../src/core/source-converter';
-import { convertToElement } from '../../src/utils/converters';
-import { sanitizeSvg } from '../../src/utils/svg-sanitizer';
-import { SVG_LIMIT_BYTES } from './helpers/svg-test-helpers';
+import { convertToElement } from '../../../src/utils/converters';
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('보안: 인라인·Blob SVG 정화', () => {
-  it('safe 경로는 sanitize 후 10MiB 미만이 되는 과대 script SVG도 원본 기준으로 차단한다', async () => {
-    const safeBody = '<rect width="10" height="10"/>';
-    const svgPrefix = '<svg xmlns="http://www.w3.org/2000/svg">';
-    const svgSuffix = `${safeBody}</svg>`;
-    const scriptPrefix = '<script>';
-    const scriptSuffix = '</script>';
-    const limitBytes = SVG_LIMIT_BYTES;
-    const fixedBytes = new TextEncoder().encode(svgPrefix + scriptPrefix + scriptSuffix + svgSuffix).length;
-    const scriptPayload = 'a'.repeat(limitBytes - fixedBytes + 1);
-    const oversizedSvg = `${svgPrefix}${scriptPrefix}${scriptPayload}${scriptSuffix}${svgSuffix}`;
-    const sanitizedSvg = sanitizeSvg(oversizedSvg);
-
-    expect(new TextEncoder().encode(oversizedSvg).length).toBeGreaterThan(limitBytes);
-    expect(new TextEncoder().encode(sanitizedSvg).length).toBeLessThan(limitBytes);
-
-    await expect(convertToElement(oversizedSvg)).rejects.toMatchObject({
-      code: 'SVG_BYTES_EXCEEDED',
-      details: {
-        actualBytes: expect.any(Number),
-        maxBytes: SVG_LIMIT_BYTES,
-      },
-    });
-  });
-
+describe('보안: 인라인 SVG 정화 렌더링', () => {
   it('스크립트 요소가 포함된 SVG 문자열은 sanitize 후 렌더링된다', async () => {
     // sanitize 계층이 script 요소를 제거하므로 convertToElement는 성공한다
     const maliciousSvg =
@@ -71,82 +44,12 @@ describe('보안: 인라인·Blob SVG 정화', () => {
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
-  it('상대 경로 참조가 포함된 SVG 문자열은 외부 리소스로 간주해 거부한다', async () => {
-    const safeSvg =
-      '<svg xmlns="http://www.w3.org/2000/svg"><image href="./assets/pattern.png" width="10" height="10"/></svg>';
-
-    await expect(convertToElement(safeSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-      details: { reason: 'external-ref' },
-    });
-  });
-
-  it('따옴표 없는 상대 경로 href가 포함된 SVG 문자열도 외부 리소스로 간주해 거부한다', async () => {
-    const unsafeSvg =
-      '<svg xmlns="http://www.w3.org/2000/svg"><image href=./assets/pattern.png width="10" height="10"/></svg>';
-
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-      details: { reason: 'external-ref' },
-    });
-  });
-
-  it('CSS escape로 숨긴 상대 경로 style URL도 외부 리소스로 간주해 거부한다', async () => {
-    const unsafeSvg =
-      '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\2e \\2e /secret.png)"/></svg>';
-
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-      details: { reason: 'style-attribute-url' },
-    });
-  });
-
-  it('엔티티로 분할된 CSS escape 상대 경로 style URL도 거부한다', async () => {
-    const unsafeSvg =
-      '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\00002&#x65; \\00002&#x65; /secret.png)"/></svg>';
-
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-      details: { reason: 'style-attribute-url' },
-    });
-  });
-
-  it('함수명과 값에 엔티티로 분할된 CSS escape가 있어도 상대 경로 style URL을 거부한다', async () => {
-    const unsafeSvg =
-      '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:u\\00007&#x32;l(\\00002&#x65; \\00002&#x65; /secret.png)"/></svg>';
-
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-      details: { reason: 'style-attribute-url' },
-    });
-  });
-
-  it('CSS escape로 숨긴 루트 절대 경로 style URL도 외부 리소스로 간주해 거부한다', async () => {
-    const unsafeSvg =
-      '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\2f assets/tracker.png)"/></svg>';
-
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-      details: { reason: 'style-attribute-url' },
-    });
-  });
-
   it('protocol-relative href가 포함된 SVG 문자열은 sanitize 후 렌더링된다', async () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href=//evil.example/pattern.png width="10" height="10"/></svg>';
 
     const element = await convertToElement(unsafeSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
-  });
-
-  it('루트 절대 경로 참조가 포함된 SVG 문자열은 외부 리소스로 간주해 거부한다', async () => {
-    const unsafeSvg =
-      '<svg xmlns="http://www.w3.org/2000/svg"><image href="/assets/pattern.png" width="10" height="10"/></svg>';
-
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-      details: { reason: 'external-ref' },
-    });
   });
 
   it('javascript: URI href가 포함된 SVG 문자열은 sanitize 후 렌더링된다', async () => {
@@ -283,39 +186,5 @@ describe('보안: 인라인·Blob SVG 정화', () => {
 
     const element = await convertToElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
-  });
-
-  it('MIME 타입이 비어 있는 SVG Blob도 본문을 스니핑해 sanitize 후 렌더링한다', async () => {
-    const svgBlob = new Blob(
-      ['<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="10" height="10"/></svg>'],
-      { type: '' }
-    );
-
-    const element = await convertToElement(svgBlob);
-    expect(element).toBeInstanceOf(HTMLImageElement);
-  });
-
-  it('SVG Data URL은 allowedProtocols에 data:가 없으면 거부한다', async () => {
-    const dataSvg =
-      'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3C%2Fsvg%3E';
-
-    await expect(
-      convertToImageElement(dataSvg, {
-        allowedProtocols: ['http:', 'https:'],
-      })
-    ).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-    });
-  });
-
-  it('XML MIME 타입의 SVG Blob에 상대 경로 참조가 있으면 보안 게이트에서 차단한다', async () => {
-    const svgBlob = new Blob(
-      ['<svg xmlns="http://www.w3.org/2000/svg"><image href="./assets/pattern.png" width="10" height="10"/></svg>'],
-      { type: 'application/xml' }
-    );
-
-    await expect(convertToElement(svgBlob)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-    });
   });
 });
