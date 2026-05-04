@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.0.37] - 2026-05-05
+
 ### 변경
 
 - `ImageProcessError` 시그니처가 `(message, code, options?: { cause, details })`로 변경되었습니다. 기존 `originalError` 위치 인자는 제거되고 표준 `error.cause` 필드로 대체됩니다.

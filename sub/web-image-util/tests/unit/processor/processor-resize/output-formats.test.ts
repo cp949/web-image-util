@@ -49,7 +49,7 @@ describe('출력 포맷', () => {
       this: HTMLCanvasElement,
       callback: BlobCallback,
       type?: string,
-      _quality?: number,
+      _quality?: number
     ) {
       if (type === 'image/avif') {
         callback(new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer], { type: 'image/png' }));
@@ -79,7 +79,7 @@ describe('출력 포맷', () => {
       this: HTMLCanvasElement,
       callback: BlobCallback,
       type?: string,
-      _quality?: number,
+      _quality?: number
     ) {
       if (type === 'image/avif') {
         callback(null);
