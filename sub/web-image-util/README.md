@@ -196,7 +196,7 @@ const fetched = await fetchImageSourceBlob(url, { maxBytes: 20 * 1024 * 1024 });
 라이브러리 내부 에러는 `ImageProcessError`로 전달됩니다. `error.code`로 분기하고, 추가 컨텍스트는 `error.details`에서 읽습니다.
 
 ```typescript
-import { ImageProcessError } from '@cp949/web-image-util';
+import { ImageProcessError, processImage } from '@cp949/web-image-util';
 
 try {
   await processImage(src).resize({ fit: 'cover', width: 200 }).toBlob();
