@@ -10,7 +10,13 @@ export {
   createTestCanvas,
   getCanvasPixelData,
 } from './canvas-helper';
-
+export {
+  createAbortableFetchMock,
+  createByteStreamBody,
+  createSuccessResponse,
+  mockImgElement,
+  withFetchMock,
+} from './fetch-helper';
 export {
   compareBlobSizes,
   createTestImageBlob,
@@ -19,14 +25,6 @@ export {
   getCanvasDimensions,
   getImageDimensions,
 } from './image-helper';
-
-export {
-  createAbortableFetchMock,
-  createByteStreamBody,
-  createSuccessResponse,
-  mockImgElement,
-  withFetchMock,
-} from './fetch-helper';
 
 export {
   makeLargeSvg,

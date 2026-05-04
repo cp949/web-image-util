@@ -75,10 +75,7 @@ export function createAbortableFetchMock() {
 }
 
 // globalThis.fetch 교체·복원을 try/finally로 보장한다.
-export async function withFetchMock(
-  mock: ReturnType<typeof vi.fn>,
-  fn: () => Promise<void>
-): Promise<void> {
+export async function withFetchMock(mock: ReturnType<typeof vi.fn>, fn: () => Promise<void>): Promise<void> {
   const original = globalThis.fetch;
   globalThis.fetch = mock as typeof fetch;
   try {

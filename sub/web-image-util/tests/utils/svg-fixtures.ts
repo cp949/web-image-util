@@ -4,8 +4,7 @@
 export const VALID_SVG = '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
 
 /** rect 요소를 포함한 기본 SVG */
-export const VALID_SVG_WITH_RECT =
-  '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>';
+export const VALID_SVG_WITH_RECT = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>';
 
 /** 크기가 명시된 SVG */
 export const VALID_SVG_WITH_DIMENSIONS =
