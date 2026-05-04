@@ -30,12 +30,19 @@ function getUtf8ByteLength(value: string): number {
  * SVG 입력 크기 제한 초과 에러를 생성한다.
  *
  * @param label 에러 메시지에 포함할 입력 출처 레이블
+ * @param actualBytes 실제 입력 바이트 수
+ * @param maxBytes 최대 허용 바이트 수 (기본값: MAX_SVG_BYTES)
  * @returns 표준화된 크기 제한 초과 에러
  */
-export function createSvgSizeLimitError(label: string): ImageProcessError {
+export function createSvgSizeLimitError(
+  label: string,
+  actualBytes: number,
+  maxBytes = MAX_SVG_BYTES
+): ImageProcessError {
   return new ImageProcessError(
-    `SVG 입력이 최대 허용 크기(${MAX_SVG_BYTES / 1024 / 1024}MiB)를 초과합니다: ${label}`,
-    'INVALID_SOURCE'
+    `SVG input size (${actualBytes} bytes) exceeds the maximum allowed (${maxBytes} bytes): ${label}`,
+    'SVG_BYTES_EXCEEDED',
+    { details: { actualBytes, maxBytes, label } }
   );
 }
 
@@ -47,8 +54,9 @@ export function createSvgSizeLimitError(label: string): ImageProcessError {
  * @throws {ImageProcessError} 크기 초과 시
  */
 export function checkSvgSizeLimit(svgString: string, label: string): void {
-  if (getUtf8ByteLength(svgString) > MAX_SVG_BYTES) {
-    throw createSvgSizeLimitError(label);
+  const actualBytes = getUtf8ByteLength(svgString);
+  if (actualBytes > MAX_SVG_BYTES) {
+    throw createSvgSizeLimitError(label, actualBytes);
   }
 }
 
@@ -66,7 +74,7 @@ function checkSvgContentLengthHeader(response: Response, label: string): void {
 
   const parsedLength = Number.parseInt(declaredLength, 10);
   if (Number.isFinite(parsedLength) && parsedLength > MAX_SVG_BYTES) {
-    throw createSvgSizeLimitError(label);
+    throw createSvgSizeLimitError(label, parsedLength);
   }
 }
 
@@ -90,9 +98,11 @@ export async function readCheckedTextResponse(response: Response, label: string)
         throw error;
       }
 
-      throw new ImageProcessError(`${label} 본문을 안전하게 확인할 수 없어 로드를 차단합니다`, 'INVALID_SOURCE', {
-        cause: error,
-      });
+      throw new ImageProcessError(
+        `${label} response body could not be safely verified; load is blocked`,
+        'INVALID_SOURCE',
+        { cause: error, details: { label } }
+      );
     }
   }
 
@@ -113,7 +123,7 @@ export async function readCheckedTextResponse(response: Response, label: string)
       totalBytes += value.byteLength;
       if (totalBytes > MAX_SVG_BYTES) {
         await reader.cancel();
-        throw createSvgSizeLimitError(label);
+        throw createSvgSizeLimitError(label, totalBytes);
       }
 
       chunks.push(decodedChunk);
@@ -127,9 +137,11 @@ export async function readCheckedTextResponse(response: Response, label: string)
       throw error;
     }
 
-    throw new ImageProcessError(`${label} 본문을 안전하게 확인할 수 없어 로드를 차단합니다`, 'INVALID_SOURCE', {
-      cause: error,
-    });
+    throw new ImageProcessError(
+      `${label} response body could not be safely verified; load is blocked`,
+      'INVALID_SOURCE',
+      { cause: error, details: { label } }
+    );
   } finally {
     reader.releaseLock();
   }
@@ -145,7 +157,10 @@ export async function readCheckedTextResponse(response: Response, label: string)
 export async function readVerifiedSvgResponse(response: Response, label: string): Promise<string> {
   const responseText = await readCheckedTextResponse(response, label);
   if (!isInlineSvg(responseText)) {
-    throw new ImageProcessError('원격 응답이 유효한 SVG가 아닙니다', 'INVALID_SOURCE');
+    const contentType = response.headers.get('content-type') ?? null;
+    throw new ImageProcessError('Remote response is not a valid SVG', 'INVALID_SOURCE', {
+      details: { contentType, label },
+    });
   }
 
   return responseText;
@@ -167,6 +182,14 @@ function hasDangerousUrlRef(cssText: string): boolean {
   return hasDangerousRef;
 }
 
+type SvgUnsafeReason = 'script-tag' | 'event-handler' | 'external-ref' | 'style-attribute-url' | 'style-tag-url';
+
+function throwUnsafeSvg(reason: SvgUnsafeReason): never {
+  throw new ImageProcessError(`SVG content contains a forbidden construct: ${reason}`, 'INVALID_SOURCE', {
+    details: { reason },
+  });
+}
+
 /**
  * SVG 문자열에 위험한 콘텐츠가 포함되어 있는지 검사한다.
  *
@@ -184,12 +207,12 @@ export function assertSafeSvgContent(svgString: string): void {
 
   // 1. <script 태그 차단
   if (lower.includes('<script')) {
-    throw new ImageProcessError('SVG 콘텐츠에 위험한 요소가 포함되어 있습니다: <script> 태그', 'INVALID_SOURCE');
+    throwUnsafeSvg('script-tag');
   }
 
   // 2. onload / onclick 등 이벤트 핸들러 속성을 차단한다.
   if (/\son[a-z0-9:-]*\s*=/i.test(svgString)) {
-    throw new ImageProcessError('SVG 콘텐츠에 위험한 요소가 포함되어 있습니다: 이벤트 핸들러 속성', 'INVALID_SOURCE');
+    throwUnsafeSvg('event-handler');
   }
 
   // 3~4. 태그 내부 속성만 대상으로 외부 참조를 검사한다.
@@ -205,7 +228,7 @@ export function assertSafeSvgContent(svgString: string): void {
     while (refMatch !== null) {
       const refValue = refMatch[1] ?? refMatch[2] ?? refMatch[3];
       if (refValue && isBlockedSvgPolicyRef(refValue)) {
-        throw new ImageProcessError('SVG 콘텐츠에 위험한 요소가 포함되어 있습니다: 외부 리소스 참조', 'INVALID_SOURCE');
+        throwUnsafeSvg('external-ref');
       }
       refMatch = refAttrPattern.exec(attrs);
     }
@@ -217,30 +240,21 @@ export function assertSafeSvgContent(svgString: string): void {
     styleMatch = styleDoubleQuote.exec(attrs);
     while (styleMatch !== null) {
       if (hasDangerousUrlRef(styleMatch[1])) {
-        throw new ImageProcessError(
-          'SVG 콘텐츠에 위험한 요소가 포함되어 있습니다: style 속성의 외부 url() 참조',
-          'INVALID_SOURCE'
-        );
+        throwUnsafeSvg('style-attribute-url');
       }
       styleMatch = styleDoubleQuote.exec(attrs);
     }
     styleMatch = styleSingleQuote.exec(attrs);
     while (styleMatch !== null) {
       if (hasDangerousUrlRef(styleMatch[1])) {
-        throw new ImageProcessError(
-          'SVG 콘텐츠에 위험한 요소가 포함되어 있습니다: style 속성의 외부 url() 참조',
-          'INVALID_SOURCE'
-        );
+        throwUnsafeSvg('style-attribute-url');
       }
       styleMatch = styleSingleQuote.exec(attrs);
     }
     styleMatch = styleUnquoted.exec(attrs);
     while (styleMatch !== null) {
       if (hasDangerousUrlRef(styleMatch[1])) {
-        throw new ImageProcessError(
-          'SVG 콘텐츠에 위험한 요소가 포함되어 있습니다: style 속성의 외부 url() 참조',
-          'INVALID_SOURCE'
-        );
+        throwUnsafeSvg('style-attribute-url');
       }
       styleMatch = styleUnquoted.exec(attrs);
     }
@@ -255,10 +269,7 @@ export function assertSafeSvgContent(svgString: string): void {
   while (styleTagMatch !== null) {
     const styleContent = styleTagMatch[1];
     if (hasDangerousUrlRef(styleContent)) {
-      throw new ImageProcessError(
-        'SVG 콘텐츠에 위험한 요소가 포함되어 있습니다: <style> 태그의 외부 url() 참조',
-        'INVALID_SOURCE'
-      );
+      throwUnsafeSvg('style-tag-url');
     }
     styleTagMatch = styleTagPattern.exec(svgString);
   }

@@ -53,7 +53,7 @@ export interface ImageErrorDetailsByCode {
     kind?: 'aborted' | 'response-body' | 'fetch';
   };
   SOURCE_BYTES_EXCEEDED: { actualBytes: number; maxBytes: number; label?: string };
-  SVG_BYTES_EXCEEDED: { actualBytes: number; maxBytes: number };
+  SVG_BYTES_EXCEEDED: { actualBytes: number; maxBytes: number; label?: string };
   SVG_NODE_COUNT_EXCEEDED: { actualCount: number; maxCount: number };
   SVG_INPUT_INVALID: { actualType: string };
   OPTION_INVALID: { option: string; minimum?: number };

@@ -122,14 +122,11 @@ function assertFetchSourceProtocol(source: string, allowedProtocols: string[]): 
   try {
     url = new URL(source);
   } catch (error) {
-    throw new ImageProcessError(`유효한 URL이 아닙니다: ${source}`, 'INVALID_SOURCE', { cause: error });
+    throw new ImageProcessError(`Invalid URL: ${source}`, 'INVALID_SOURCE', { cause: error, details: { source } });
   }
 
   if (!allowedProtocols.includes(url.protocol)) {
-    throw new ImageProcessError(
-      `허용되지 않는 프로토콜입니다: ${url.protocol}. 허용 목록: ${allowedProtocols.join(', ')}`,
-      'INVALID_SOURCE'
-    );
+    throw new ImageProcessError(`Protocol not allowed: ${url.protocol}`, 'INVALID_SOURCE', { details: { source } });
   }
 }
 
@@ -188,8 +185,12 @@ function sanitizeFetchSourceOptions(
   return safeOptions;
 }
 
-function throwSourceBytesExceeded(message: string): never {
-  throw new ImageProcessError(message, 'SOURCE_BYTES_EXCEEDED');
+function throwSourceBytesExceeded(actualBytes: number, maxBytes: number, label: string): never {
+  throw new ImageProcessError(
+    `${label} response size (${actualBytes} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
+    'SOURCE_BYTES_EXCEEDED',
+    { details: { actualBytes, maxBytes, label } }
+  );
 }
 
 function wrapFetchSourceBodyReadError(error: unknown): never {
@@ -197,7 +198,10 @@ function wrapFetchSourceBodyReadError(error: unknown): never {
     throw error;
   }
 
-  throw new ImageProcessError('이미지 URL 응답 본문을 읽을 수 없습니다', 'SOURCE_LOAD_FAILED', { cause: error });
+  throw new ImageProcessError('Failed to read image URL response body', 'SOURCE_LOAD_FAILED', {
+    cause: error,
+    details: { kind: 'response-body' },
+  });
 }
 
 async function checkFetchSourceContentLength(response: Response, maxBytes: number, label: string): Promise<void> {
@@ -218,9 +222,7 @@ async function checkFetchSourceContentLength(response: Response, maxBytes: numbe
       }
     }
 
-    throwSourceBytesExceeded(
-      `${label} 응답 크기(${contentLength} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`
-    );
+    throwSourceBytesExceeded(contentLength, maxBytes, label);
   }
 }
 
@@ -241,9 +243,7 @@ async function readFetchSourceBlob(
     }
 
     if (maxBytes > 0 && blob.size > maxBytes) {
-      throwSourceBytesExceeded(
-        `${label} 응답 크기(${blob.size} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`
-      );
+      throwSourceBytesExceeded(blob.size, maxBytes, label);
     }
 
     return { blob, bytes: blob.size };
@@ -267,9 +267,7 @@ async function readFetchSourceBlob(
           // 크기 초과 오류가 public contract이므로 스트림 정리 실패가 이를 가리지 않게 한다.
         }
 
-        throwSourceBytesExceeded(
-          `${label} 응답 크기(${totalBytes} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`
-        );
+        throwSourceBytesExceeded(totalBytes, maxBytes, label);
       }
 
       chunks.push(new Uint8Array(value));
@@ -359,7 +357,7 @@ export async function fetchImageSourceBlob(
     }
 
     const contentType = response.headers.get('content-type') ?? '';
-    const { blob, bytes } = await readFetchSourceBlob(response, maxBytes, '이미지 URL');
+    const { blob, bytes } = await readFetchSourceBlob(response, maxBytes, 'image URL');
 
     return {
       blob,
@@ -374,7 +372,10 @@ export async function fetchImageSourceBlob(
       throw error;
     }
 
-    throw new ImageProcessError('이미지 URL을 fetch할 수 없습니다', 'SOURCE_LOAD_FAILED', { cause: error });
+    throw new ImageProcessError('Failed to fetch image URL', 'SOURCE_LOAD_FAILED', {
+      cause: error,
+      details: { url, kind: 'fetch' },
+    });
   } finally {
     cleanup();
   }

@@ -84,17 +84,22 @@ export async function convertStringToElement(
           }
 
           // 응답 크기가 최대 허용 바이트를 초과하면 차단한다.
-          checkResponseSize(response, maxBytes, '원격 SVG URL');
+          checkResponseSize(response, maxBytes, 'remote SVG URL');
 
-          svgContent = await readVerifiedSvgResponse(response, '원격 SVG 응답');
+          svgContent = await readVerifiedSvgResponse(response, 'remote SVG response');
         } catch (fetchError) {
           if (handle.signal?.aborted || isAbortLikeError(fetchError)) {
-            throw new ImageProcessError('원격 SVG 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', { cause: fetchError });
+            throw new ImageProcessError('Remote image load was aborted', 'SOURCE_LOAD_FAILED', {
+              cause: fetchError,
+              details: { url: source, kind: 'aborted' },
+            });
           }
           if (fetchError instanceof ImageProcessError) {
             throw fetchError;
           }
-          throw new ImageProcessError('SVG URL을 안전하게 확인할 수 없어 로드를 차단합니다', 'INVALID_SOURCE');
+          throw new ImageProcessError('SVG URL could not be safely verified; load is blocked', 'INVALID_SOURCE', {
+            details: { url: source },
+          });
         } finally {
           handle.dispose();
         }
@@ -116,7 +121,7 @@ export async function convertStringToElement(
           // URL 파싱 자체가 실패하는 상대 경로는 허용하되, 명시적으로 차단된 프로토콜은 거부한다.
           if (protocolError instanceof ImageProcessError && protocolError.code === 'INVALID_SOURCE') {
             // URL 파싱 실패(상대 경로)는 통과시키고, 프로토콜 차단만 전파한다.
-            const isProtocolBlocked = protocolError.message.includes('허용되지 않는 프로토콜');
+            const isProtocolBlocked = protocolError.message.includes('Protocol not allowed:');
             if (isProtocolBlocked) throw protocolError;
           }
         }
@@ -135,17 +140,22 @@ export async function convertStringToElement(
           }
 
           // 응답 크기가 최대 허용 바이트를 초과하면 차단한다.
-          checkResponseSize(response, maxBytes, 'SVG 리소스 경로');
+          checkResponseSize(response, maxBytes, 'SVG resource path');
 
-          svgContent = await readVerifiedSvgResponse(response, '원격 SVG 응답');
+          svgContent = await readVerifiedSvgResponse(response, 'remote SVG response');
         } catch (fetchError) {
           if (handle.signal?.aborted || isAbortLikeError(fetchError)) {
-            throw new ImageProcessError('원격 SVG 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', { cause: fetchError });
+            throw new ImageProcessError('Remote image load was aborted', 'SOURCE_LOAD_FAILED', {
+              cause: fetchError,
+              details: { url: source, kind: 'aborted' },
+            });
           }
           if (fetchError instanceof ImageProcessError) {
             throw fetchError;
           }
-          throw new ImageProcessError('SVG URL을 안전하게 확인할 수 없어 로드를 차단합니다', 'INVALID_SOURCE');
+          throw new ImageProcessError('SVG URL could not be safely verified; load is blocked', 'INVALID_SOURCE', {
+            details: { url: source },
+          });
         } finally {
           handle.dispose();
         }

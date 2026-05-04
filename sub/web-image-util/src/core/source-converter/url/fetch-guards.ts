@@ -102,8 +102,9 @@ export function checkResponseSize(response: Response, maxBytes: number, label: s
 
   if (contentLength > maxBytes) {
     throw new ImageProcessError(
-      `${label} 응답 크기(${contentLength} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`,
-      'SOURCE_LOAD_FAILED'
+      `${label} response size (${contentLength} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
+      'SOURCE_BYTES_EXCEEDED',
+      { details: { actualBytes: contentLength, maxBytes, label } }
     );
   }
 }
@@ -123,8 +124,9 @@ export async function readCheckedBlobResponse(response: Response, maxBytes: numb
     const blob = await response.blob();
     if (maxBytes > 0 && blob.size > maxBytes) {
       throw new ImageProcessError(
-        `${label} 응답 크기(${blob.size} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`,
-        'SOURCE_LOAD_FAILED'
+        `${label} response size (${blob.size} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
+        'SOURCE_BYTES_EXCEEDED',
+        { details: { actualBytes: blob.size, maxBytes, label } }
       );
     }
 
@@ -146,8 +148,9 @@ export async function readCheckedBlobResponse(response: Response, maxBytes: numb
       if (maxBytes > 0 && totalBytes > maxBytes) {
         await reader.cancel();
         throw new ImageProcessError(
-          `${label} 응답 크기(${totalBytes} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`,
-          'SOURCE_LOAD_FAILED'
+          `${label} response size (${totalBytes} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
+          'SOURCE_BYTES_EXCEEDED',
+          { details: { actualBytes: totalBytes, maxBytes, label } }
         );
       }
 

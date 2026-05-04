@@ -186,7 +186,9 @@ export class CanvasPool {
    */
   setMemoryThreshold(bytes: number): void {
     if (!Number.isFinite(bytes) || bytes <= 0) {
-      throw new ImageProcessError('memoryThreshold는 양수여야 합니다', 'INVALID_DIMENSIONS');
+      throw new ImageProcessError('memoryThreshold must be a positive number', 'OPTION_INVALID', {
+        details: { option: 'memoryThreshold' },
+      });
     }
     this.memoryThreshold = bytes;
   }

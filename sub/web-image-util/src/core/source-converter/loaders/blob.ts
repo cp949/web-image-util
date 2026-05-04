@@ -109,8 +109,9 @@ export async function convertBlobToElement(
   const maxBytes = options?.maxSourceBytes ?? DEFAULT_MAX_SOURCE_BYTES;
   if (maxBytes > 0 && blob.size > maxBytes) {
     throw new ImageProcessError(
-      `Blob 크기(${blob.size} bytes)가 최대 허용 크기(${maxBytes} bytes)를 초과합니다`,
-      'SOURCE_LOAD_FAILED'
+      `Blob size (${blob.size} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
+      'SOURCE_BYTES_EXCEEDED',
+      { details: { actualBytes: blob.size, maxBytes } }
     );
   }
 

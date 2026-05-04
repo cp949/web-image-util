@@ -31,7 +31,9 @@ export function resolveSvgSanitizerMode(options: InternalSourceConverterOptions 
     return mode;
   }
 
-  throw new ImageProcessError(`지원하지 않는 SVG sanitizer 정책입니다: ${String(mode)}`, 'INVALID_SOURCE');
+  throw new ImageProcessError(`Unsupported SVG sanitizer mode: ${String(mode)}`, 'INVALID_SOURCE', {
+    details: { mode },
+  });
 }
 
 /**

@@ -72,8 +72,9 @@ export function parseSvgFromDataUrl(dataUrl: string): string {
 
   // Base64 인코딩은 디코딩 예상 크기부터 확인해 과도한 메모리 사용을 막는다.
   if (header.includes('base64')) {
-    if (estimateBase64DecodedSize(content) > MAX_SVG_BYTES) {
-      throw createSvgSizeLimitError('Data URL SVG');
+    const estimatedBytes = estimateBase64DecodedSize(content);
+    if (estimatedBytes > MAX_SVG_BYTES) {
+      throw createSvgSizeLimitError('Data URL SVG', estimatedBytes);
     }
     try {
       svgContent = atob(content);

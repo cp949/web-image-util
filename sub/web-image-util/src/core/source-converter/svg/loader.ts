@@ -69,7 +69,7 @@ export async function convertSvgToElement(
 
   if (sanitizerMode !== 'skip') {
     // sanitize 과정에서 제거될 콘텐츠로 원본 크기 제한을 우회하지 못하게 한다.
-    checkSvgSizeLimit(svgString, '인라인 SVG');
+    checkSvgSizeLimit(svgString, 'inline SVG');
   }
 
   let svgForSafety: string;
@@ -80,7 +80,9 @@ export async function convertSvgToElement(
   } else if (sanitizerMode === 'skip') {
     svgForSafety = svgString;
   } else {
-    throw new ImageProcessError(`지원하지 않는 SVG sanitizer 정책입니다: ${String(sanitizerMode)}`, 'INVALID_SOURCE');
+    throw new ImageProcessError(`Unsupported SVG sanitizer mode: ${String(sanitizerMode)}`, 'INVALID_SOURCE', {
+      details: { mode: sanitizerMode },
+    });
   }
 
   if (sanitizerMode !== 'skip') {
@@ -89,7 +91,7 @@ export async function convertSvgToElement(
   }
 
   // 크기 초과 입력은 skip 경로에서도 차단한다.
-  checkSvgSizeLimit(svgForSafety, '인라인 SVG');
+  checkSvgSizeLimit(svgForSafety, 'inline SVG');
 
   // 테스트 환경에서는 실제 SVG 디코딩을 우회해 타임아웃을 방지한다.
   if (typeof globalThis !== 'undefined' && (globalThis as any)._SVG_MOCK_MODE) {

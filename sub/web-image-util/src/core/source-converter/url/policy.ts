@@ -88,14 +88,11 @@ export function checkAllowedProtocol(url: string, allowedProtocols: string[]): v
     protocol = new URL(url).protocol;
   } catch {
     // URL 파싱에 실패하면 잘못된 소스로 간주한다
-    throw new ImageProcessError(`유효하지 않은 URL 형식입니다: ${url}`, 'INVALID_SOURCE');
+    throw new ImageProcessError(`Invalid URL format: ${url}`, 'INVALID_SOURCE', { details: { url } });
   }
 
   if (!allowedProtocols.includes(protocol)) {
-    throw new ImageProcessError(
-      `허용되지 않는 프로토콜입니다: ${protocol}. 허용 목록: ${allowedProtocols.join(', ')}`,
-      'INVALID_SOURCE'
-    );
+    throw new ImageProcessError(`Protocol not allowed: ${protocol}`, 'INVALID_SOURCE', { details: { url } });
   }
 }
 

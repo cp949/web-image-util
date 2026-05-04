@@ -186,7 +186,7 @@ export async function loadImageFromUrl(
 
         if (isSvgMime || isXmlMime) {
           if (isSvgMime) {
-            const responseText = await readVerifiedSvgResponse(response, '원격 SVG 응답');
+            const responseText = await readVerifiedSvgResponse(response, 'remote SVG response');
             return convertSvgToElement(responseText, undefined, undefined, {
               quality: 'auto',
               crossOrigin: options?.crossOrigin,
@@ -195,7 +195,7 @@ export async function loadImageFromUrl(
             });
           }
 
-          const responseText = await readCheckedTextResponse(response, '원격 XML 응답');
+          const responseText = await readCheckedTextResponse(response, 'remote XML response');
           // XML MIME 응답은 실제 SVG 루트가 확인된 경우에만 SVG로 처리한다.
           const isActualSvg = isXmlMime && isInlineSvg(responseText);
           if (isActualSvg) {
@@ -241,11 +241,16 @@ export async function loadImageFromUrl(
         // 사용자가 취소했거나 타임아웃된 요청은 보안/제어 정책의 일부이므로
         // 브라우저 기본 이미지 로딩으로 우회하지 않는다.
         if (handle.signal?.aborted || isAbortLikeError(fetchError)) {
-          throw new ImageProcessError('원격 이미지 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', { cause: fetchError });
+          throw new ImageProcessError('Remote image load was aborted', 'SOURCE_LOAD_FAILED', {
+            cause: fetchError,
+            details: { url, kind: 'aborted' },
+          });
         }
         // .svg URL은 fetch 실패 시 직접 로드로 넘기지 않고 차단한다 (fail-closed)
         if (isSvgResourcePath(url)) {
-          throw new ImageProcessError('SVG URL을 안전하게 확인할 수 없어 로드를 차단합니다', 'INVALID_SOURCE');
+          throw new ImageProcessError('SVG URL could not be safely verified; load is blocked', 'INVALID_SOURCE', {
+            details: { url },
+          });
         }
         // 비-SVG URL은 기존 방식대로 직접 로드로 폴백한다
         productionLog.warn('Failed to check Content-Type, fallback to default image loading:', fetchError);
