@@ -20,6 +20,7 @@
  */
 
 import {
+  MAX_NESTED_SVG_DEPTH,
   decodeSvgDataImageRef,
   encodeSvgDataImageRef,
   isSafeRasterDataImageRef,
@@ -32,17 +33,15 @@ import { getCssPolicyValueVariants, normalizePolicyValue, replaceCssUrlValues } 
  *
  * 프래그먼트 참조(#...) 및 일반 상대 경로 이외의 경우를 위험으로 간주한다.
  * 단, 태스크 명세에 따라 여기서는 외부 URL(http://, https://, data:, javascript:)만 제거한다.
- * 예외적으로 크기 제한을 통과한 raster `data:image/*` 참조는 정상 embedded image로 보존한다.
+ *
+ * 안전한 raster `data:image/*` 참조는 호출처(`sanitizeHrefValue`)에서 이 함수에 도달하기 전에
+ * 분기로 처리되므로 여기서는 모든 `data:` 시작 값을 외부 참조로 간주한다.
  *
  * @param value 속성값 문자열
  * @returns 외부 URL이면 true
  */
 function isExternalHref(value: string): boolean {
   const normalized = normalizePolicyValue(value);
-  if (normalized.startsWith('data:') && isSafeRasterDataImageRef(value)) {
-    return false;
-  }
-
   return (
     normalized.startsWith('//') ||
     normalized.startsWith('http://') ||
@@ -61,17 +60,19 @@ function isExternalHref(value: string): boolean {
  * - 그 외 외부 URL/javascript 등은 null로 표시해 호출처가 속성을 제거하게 함
  *
  * @param value 원본 속성값
+ * @param depth 현재 nested SVG 재귀 깊이 (`MAX_NESTED_SVG_DEPTH` 이상이면 제거)
  * @returns 보존할 새 속성값(문자열) 또는 제거 의도(null)
  */
-function sanitizeHrefValue(value: string): string | null {
+function sanitizeHrefValue(value: string, depth: number): string | null {
   if (isSafeRasterDataImageRef(value)) {
     return value;
   }
 
   if (isSvgDataImageRef(value)) {
+    if (depth >= MAX_NESTED_SVG_DEPTH) return null;
     const nestedSvg = decodeSvgDataImageRef(value);
     if (!nestedSvg) return null;
-    const sanitizedNestedSvg = sanitizeSvgForRendering(nestedSvg);
+    const sanitizedNestedSvg = sanitizeSvgForRendering(nestedSvg, depth + 1);
     return encodeSvgDataImageRef(sanitizedNestedSvg);
   }
 
@@ -130,6 +131,7 @@ const SVG_START_TAG_PATTERN = /<([a-z][a-z0-9:-]*)(\b(?:[^"'<>]|"[^"]*"|'[^']*')
  * 5. `style` 속성 및 `<style>` 블록 내 외부 `url()` 참조 제거
  *
  * @param svgString 입력 SVG 문자열
+ * @param depth nested `data:image/svg+xml` 재귀 깊이. 외부 호출은 항상 0(기본값) 사용.
  * @returns 위험 요소가 제거된 SVG 문자열
  *
  * @remarks
@@ -139,7 +141,7 @@ const SVG_START_TAG_PATTERN = /<([a-z][a-z0-9:-]*)(\b(?:[^"'<>]|"[^"]*"|'[^']*')
  * 신뢰할 수 없는 SVG를 다루는 경우 `@cp949/web-image-util/svg-sanitizer`의
  * DOMPurify 기반 `sanitizeSvgStrict()`를 먼저 호출하는 것을 권장한다.
  */
-export function sanitizeSvgForRendering(svgString: string): string {
+export function sanitizeSvgForRendering(svgString: string, depth = 0): string {
   let result = svgString;
 
   // 1. <script> 요소 제거 — 자가 닫힘(`<script ... />`)과 블록 형태(`<script>...</script>`) 모두 처리한다
@@ -166,15 +168,15 @@ export function sanitizeSvgForRendering(svgString: string): string {
       .replace(/\s+on[a-z0-9:-]+\s*=\s*[^\s>]+/gi, '')
       // 4. href, xlink:href, src 속성 중 외부 URL 값을 제거하고, 안전한 data:image/* 참조는 보존한다
       .replace(/\s+((?:xlink:)?href|src)\s*=\s*"([^"]*)"/gi, (_attrMatch, attrName: string, value: string) => {
-        const sanitizedValue = sanitizeHrefValue(value);
+        const sanitizedValue = sanitizeHrefValue(value, depth);
         return sanitizedValue === null ? '' : ` ${attrName}="${sanitizedValue}"`;
       })
       .replace(/\s+((?:xlink:)?href|src)\s*=\s*'([^']*)'/gi, (_attrMatch, attrName: string, value: string) => {
-        const sanitizedValue = sanitizeHrefValue(value);
+        const sanitizedValue = sanitizeHrefValue(value, depth);
         return sanitizedValue === null ? '' : ` ${attrName}='${sanitizedValue}'`;
       })
       .replace(/\s+((?:xlink:)?href|src)\s*=\s*(?!["'])([^\s>]+)/gi, (_attrMatch, attrName: string, value: string) => {
-        const sanitizedValue = sanitizeHrefValue(value);
+        const sanitizedValue = sanitizeHrefValue(value, depth);
         return sanitizedValue === null ? '' : ` ${attrName}="${sanitizedValue}"`;
       })
       // 5. style 속성 내 외부 url() 참조를 제거한다

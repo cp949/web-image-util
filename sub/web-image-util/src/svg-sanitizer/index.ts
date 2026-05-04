@@ -27,6 +27,7 @@
 import type { Config } from 'dompurify';
 import DOMPurify from 'dompurify';
 import {
+  MAX_NESTED_SVG_DEPTH,
   decodeSvgDataImageRef,
   encodeSvgDataImageRef,
   isSafeRasterDataImageRef,
@@ -270,19 +271,11 @@ function isSafeInternalReference(value: string): boolean {
 }
 
 /**
- * strict sanitizer가 nested SVG를 재귀 정제할 때 허용할 최대 깊이.
- *
- * data:image/svg+xml 안에 또 다른 data:image/svg+xml이 포함되는 경우를 한정한다.
- * 이 한도를 넘으면 속성을 제거해 fail-closed로 처리한다.
- */
-const STRICT_NESTED_SVG_DEPTH_LIMIT = 2;
-
-/**
  * strict sanitizer의 href/xlink:href/src 값에 보존 정책을 적용한다.
  *
  * - 안전한 raster `data:image/*`는 원본 그대로 보존
  * - `data:image/svg+xml`은 nested SVG를 strict sanitizer로 재귀 정제한 뒤
- *   `data:image/svg+xml;base64,...`로 재인코딩 (`STRICT_NESTED_SVG_DEPTH_LIMIT` 깊이 제한)
+ *   `data:image/svg+xml;base64,...`로 재인코딩 (`MAX_NESTED_SVG_DEPTH` 깊이 제한)
  * - 그 외에는 내부 프래그먼트(`#id`)만 허용하고 나머지는 제거 의도(null) 반환
  *
  * @param value 원본 속성값
@@ -300,7 +293,7 @@ function sanitizeStrictUriValue(
   }
 
   if (isSvgDataImageRef(value)) {
-    if (depth >= STRICT_NESTED_SVG_DEPTH_LIMIT) return null;
+    if (depth >= MAX_NESTED_SVG_DEPTH) return null;
     const nestedSvg = decodeSvgDataImageRef(value);
     if (!nestedSvg) return null;
     const sanitizedNestedSvg = sanitizeSvgStrictCore(nestedSvg, options, depth + 1).svg;

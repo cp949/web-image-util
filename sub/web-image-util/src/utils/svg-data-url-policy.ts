@@ -36,6 +36,14 @@ const SAFE_RASTER_IMAGE_MIME_TYPES = new Set([
 export const MAX_EMBEDDED_DATA_IMAGE_BYTES = 2 * 1024 * 1024;
 
 /**
+ * sanitizer가 nested `data:image/svg+xml`을 재귀 정제할 때 허용할 최대 깊이.
+ *
+ * lightweight와 strict 양쪽 sanitizer가 동일한 한도를 공유한다.
+ * 이 한도를 넘으면 속성을 제거해 fail-closed로 처리한다.
+ */
+export const MAX_NESTED_SVG_DEPTH = 5;
+
+/**
  * `parseSvgDataUrlRef()` 결과 타입.
  *
  * @property mimeType    소문자로 정규화된 MIME 타입. metadata가 비어 있으면 `text/plain`.
