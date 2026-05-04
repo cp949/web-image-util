@@ -29,24 +29,28 @@ function valueExportKeys(mod: Record<string, unknown>): string[] {
 }
 
 const ROOT_VALUE_EXPORTS = [
-  // SVG 복잡도 분석
-  'analyzeSvgComplexity',
-  // 편의 preset
-  'createAvatar',
-  'createSocialImage',
-  'createThumbnail',
   // 핵심 API
   'ImageProcessor',
   'processImage',
   'unsafe_processImage',
   // 단축 API
   'ShortcutBuilder',
+  // 편의 preset
+  'createAvatar',
+  'createSocialImage',
+  'createThumbnail',
   // 에러 / 상수
   'ImageErrorCode',
   'ImageProcessError',
   'OPTIMAL_QUALITY_BY_FORMAT',
-  // /utils에서 재노출하는 유틸 함수
-  'blobToDataURL',
+  // 레거시 facade
+  'features',
+  // SVG 복잡도 분석 (루트 전용)
+  'analyzeSvgComplexity',
+  // SVG 크기 추출 (루트 전용)
+  'extractSvgDimensions',
+
+  // /utils 재노출 — 변환
   'convertToBlob',
   'convertToBlobDetailed',
   'convertToDataURL',
@@ -54,12 +58,6 @@ const ROOT_VALUE_EXPORTS = [
   'convertToElement',
   'convertToFile',
   'convertToFileDetailed',
-  'dataURLToBlob',
-  'decodeSvgDataURL',
-  'detectImageSourceInfo',
-  'detectImageSourceType',
-  'detectImageStringSourceInfo',
-  'detectImageStringSourceType',
   'ensureBlob',
   'ensureBlobDetailed',
   'ensureDataURL',
@@ -68,26 +66,43 @@ const ROOT_VALUE_EXPORTS = [
   'ensureFileDetailed',
   'ensureImageElement',
   'ensureImageElementDetailed',
+  // /utils 재노출 — Data URL
+  'blobToDataURL',
+  'dataURLToBlob',
+  'decodeSvgDataURL',
   'estimateDataURLPayloadByteLength',
   'estimateDataURLSize',
-  'fetchImageFormat',
-  'fetchImageSourceBlob',
-  'formatToMimeType',
-  'getImageAspectRatio',
-  'getImageDimensions',
-  'getImageFormat',
-  'getImageInfo',
-  'getImageOrientation',
-  'getOutputFilename',
-  'hasTransparency',
   'isDataURLString',
-  'isInlineSvg',
+  // /utils 재노출 — 포맷
+  'formatToMimeType',
+  'getOutputFilename',
   'isSupportedOutputFormat',
   'mimeTypeToImageFormat',
   'mimeTypeToOutputFormat',
   'replaceImageExtension',
   'resolveOutputFormat',
-  // 브라우저 기능 감지
+  // /utils 재노출 — 이미지 정보
+  'fetchImageFormat',
+  'fetchImageSourceBlob',
+  'getImageAspectRatio',
+  'getImageDimensions',
+  'getImageFormat',
+  'getImageInfo',
+  'getImageOrientation',
+  // /utils 재노출 — 이미지 검사
+  'hasTransparency',
+  // /utils 재노출 — 소스 판정
+  'detectImageSourceInfo',
+  'detectImageSourceType',
+  'detectImageStringSourceInfo',
+  'detectImageStringSourceType',
+  // /utils 재노출 — SVG
+  'enhanceBrowserCompatibility',
+  'enhanceSvgForBrowser',
+  'isInlineSvg',
+  'sanitizeSvg',
+  'sanitizeSvgForRendering',
+  // /utils 재노출 — 브라우저 기능 감지 (캐시 헬퍼는 /utils 서브패스 미노출)
   'analyzePerformanceFeatures',
   'BrowserCapabilityDetector',
   'DEFAULT_DETECTION_OPTIONS',
@@ -99,20 +114,10 @@ const ROOT_VALUE_EXPORTS = [
   'getCachedFormatSupport',
   'getOptimalProcessingMode',
   'PROCESSING_MODE_DESCRIPTIONS',
-  // SVG 호환성 보정
-  'enhanceBrowserCompatibility',
-  'enhanceSvgForBrowser',
-  // SVG 크기 추출
-  'extractSvgDimensions',
-  // SVG 정제
-  'sanitizeSvg',
-  'sanitizeSvgForRendering',
-  // 레거시 facade
-  'features',
 ].sort();
 
 const UTILS_VALUE_EXPORTS = [
-  // 브라우저 기능 감지 (utils 서브패스는 캐시 헬퍼를 노출하지 않는다)
+  // 브라우저 기능 감지 (캐시 헬퍼 미노출)
   'analyzePerformanceFeatures',
   'BrowserCapabilityDetector',
   'DEFAULT_DETECTION_OPTIONS',
@@ -122,7 +127,7 @@ const UTILS_VALUE_EXPORTS = [
   'FEATURE_PERFORMANCE_WEIGHTS',
   'getOptimalProcessingMode',
   'PROCESSING_MODE_DESCRIPTIONS',
-  // 변환 유틸
+  // 변환
   'convertToBlob',
   'convertToBlobDetailed',
   'convertToDataURL',
@@ -138,14 +143,14 @@ const UTILS_VALUE_EXPORTS = [
   'ensureFileDetailed',
   'ensureImageElement',
   'ensureImageElementDetailed',
-  // Data URL 유틸
+  // Data URL
   'blobToDataURL',
   'dataURLToBlob',
   'decodeSvgDataURL',
   'estimateDataURLPayloadByteLength',
   'estimateDataURLSize',
   'isDataURLString',
-  // 포맷 유틸
+  // 포맷
   'formatToMimeType',
   'getOutputFilename',
   'isSupportedOutputFormat',
@@ -163,12 +168,12 @@ const UTILS_VALUE_EXPORTS = [
   'getImageOrientation',
   // 이미지 검사
   'hasTransparency',
-  // 소스 판정 유틸
+  // 소스 판정
   'detectImageSourceInfo',
   'detectImageSourceType',
   'detectImageStringSourceInfo',
   'detectImageStringSourceType',
-  // SVG 호환성 / 감지 / 최적화 / 정제
+  // SVG
   'enhanceBrowserCompatibility',
   'enhanceSvgForBrowser',
   'isInlineSvg',
@@ -182,22 +187,22 @@ const PRESETS_VALUE_EXPORTS = ['createAvatar', 'createSocialImage', 'createThumb
 const SVG_SANITIZER_VALUE_EXPORTS = ['sanitizeSvgStrict', 'sanitizeSvgStrictDetailed'].sort();
 
 const FILTERS_VALUE_EXPORTS = [
-  // index.ts에서 직접 노출하는 함수와 모음
+  // 필터 시스템
   'AllFilterPlugins',
   'initializeFilterSystem',
   'registerDefaultFilters',
-  // blur-plugins 재노출
+  // blur 필터
   'BlurFilterPlugin',
   'BlurFilterPlugins',
   'EdgeDetectionFilterPlugin',
   'EmbossFilterPlugin',
   'SharpenFilterPlugin',
-  // color-plugins 재노출
+  // color 필터
   'BrightnessFilterPlugin',
   'ColorFilterPlugins',
   'ContrastFilterPlugin',
   'SaturationFilterPlugin',
-  // effect-plugins 재노출
+  // effect 필터
   'EffectFilterPlugins',
   'GrayscaleFilterPlugin',
   'InvertFilterPlugin',
