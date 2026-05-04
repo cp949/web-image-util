@@ -80,6 +80,8 @@ export {
   ensureDataURLDetailed,
   ensureFile,
   ensureFileDetailed,
+  ensureImageElement,
+  ensureImageElementDetailed,
 } from './converters';
 /**
  * Data URL 변환 유틸리티

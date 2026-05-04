@@ -65,6 +65,8 @@ const ROOT_VALUE_EXPORTS = [
   'ensureDataURLDetailed',
   'ensureFile',
   'ensureFileDetailed',
+  'ensureImageElement',
+  'ensureImageElementDetailed',
   'estimateDataURLPayloadByteLength',
   'estimateDataURLSize',
   'fetchImageFormat',
@@ -133,6 +135,8 @@ const UTILS_VALUE_EXPORTS = [
   'ensureDataURLDetailed',
   'ensureFile',
   'ensureFileDetailed',
+  'ensureImageElement',
+  'ensureImageElementDetailed',
   // Data URL 유틸
   'blobToDataURL',
   'dataURLToBlob',

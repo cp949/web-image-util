@@ -48,6 +48,7 @@ await processImage(userProvidedSource, {
 - `data:image/png`, `data:image/jpeg`, `data:image/webp` 등 raster embedded image는 크기 제한 안에서 보존
 - `data:image/svg+xml` embedded image는 nested SVG를 같은 sanitizer 정책으로 재정제한 뒤 보존
 - `style` 속성과 `<style>` 본문 안의 외부 `url(...)` 참조 제거
+- CSS `url(...)` 함수명과 값의 주요 CSS escape/문자 참조 우회 패턴 처리
 - 정제 후에도 상대 경로(`./`, `../`, `/`)나 외부 참조가 남으면 차단
 - 원본 및 정제 후 SVG 크기 제한 적용
 - 브라우저 호환성 보정 유지
@@ -55,7 +56,7 @@ await processImage(userProvidedSource, {
 하지 않는 것:
 
 - DOM 기반의 완전한 SVG sanitizer 역할
-- 모든 우회 기법, 문자 참조, CSS escape, 브라우저별 파서 차이까지 포괄하는 보안 보장
+- 모든 우회 기법, CSS 전체 문법, 브라우저별 파서 차이까지 포괄하는 보안 보장
 - DOCTYPE/ENTITY를 보안 정제 결과로 명시적으로 반환하거나 경고 제공
 - 정제 후 노드 개수 제한
 - 중첩 깊이, 거대한 `viewBox`/좌표값, 순환 참조, 무한 애니메이션 분석
@@ -74,6 +75,7 @@ await processImage(userProvidedSource, {
 - `href`, `xlink:href`, `src`는 `#id` 형태의 내부 프래그먼트와 크기 제한을 통과한 `data:image/*` 참조만 보존
 - `data:image/svg+xml`은 원문을 그대로 신뢰하지 않고 nested SVG sanitizer를 재귀 적용
 - CSS 속성값과 `<style>` 본문의 외부 `url(...)`, `image-set(...)`, `@import`, `expression(...)`, `-moz-binding` 제거
+- CSS escape로 숨긴 위험 CSS 함수/URL 패턴은 보수적으로 제거
 - BOM, XML 선언, HTML 주석 제거
 - DOCTYPE/ENTITY 제거로 XXE, XML bomb 계열 위험 완화
 - 입력 바이트 크기 제한

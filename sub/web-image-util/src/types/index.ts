@@ -385,6 +385,21 @@ export interface ResultCanvas extends ResultMetadata {
   toUint8Array(): Promise<Uint8Array>;
 }
 
+/**
+ * HTMLImageElement 결과 (메타데이터 포함)
+ */
+export interface ResultElement extends ResultMetadata {
+  element: HTMLImageElement;
+
+  // 직접 변환 메서드
+  toBlob(options?: OutputOptions): Promise<globalThis.Blob>;
+  toDataURL(options?: OutputOptions): Promise<string>;
+  toFile(filename: string, options?: OutputOptions): Promise<globalThis.File>;
+  toCanvas(): Promise<HTMLCanvasElement>;
+  toArrayBuffer(): Promise<ArrayBuffer>;
+  toUint8Array(): Promise<Uint8Array>;
+}
+
 // ============================================================================
 // PROCESSOR NAMESPACE - Processor-related types
 // ============================================================================

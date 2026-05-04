@@ -13,6 +13,7 @@ import type {
   ResultBlob,
   ResultCanvas,
   ResultDataURL,
+  ResultElement,
   ResultFile,
 } from './index';
 import { ImageProcessError } from './index';
@@ -391,6 +392,83 @@ export class CanvasResultImpl implements ResultCanvas {
   /**
    * Convert to Uint8Array
    */
+  async toUint8Array(): Promise<Uint8Array> {
+    const arrayBuffer = await this.toArrayBuffer();
+    return new Uint8Array(arrayBuffer);
+  }
+}
+
+/**
+ * HTMLImageElement 결과 객체 구현이다.
+ *
+ * @description 이미 로드된 element를 보유하고, 후속 변환에서 재사용한다.
+ */
+export class ElementResultImpl implements ResultElement {
+  constructor(
+    public element: HTMLImageElement,
+    public width: number,
+    public height: number,
+    public processingTime: number,
+    public originalSize?: GeometrySize,
+    public format?: OutputFormat
+  ) {}
+
+  /** Canvas로 변환한다. 이미 알고 있는 크기를 그대로 사용한다. */
+  async toCanvas(): Promise<HTMLCanvasElement> {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new ImageProcessError('Unable to create Canvas 2D context', 'CANVAS_CREATION_FAILED');
+    }
+
+    canvas.width = this.width;
+    canvas.height = this.height;
+    ctx.drawImage(this.element, 0, 0);
+    return canvas;
+  }
+
+  /** Blob으로 변환한다. */
+  async toBlob(options?: OutputOptions): Promise<globalThis.Blob> {
+    const canvas = await this.toCanvas();
+    return new Promise((resolve, reject) => {
+      const mimeType = options?.format ? `image/${options.format}` : 'image/png';
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new ImageProcessError('Blob conversion failed', 'CANVAS_TO_BLOB_FAILED'));
+          }
+        },
+        mimeType,
+        options?.quality
+      );
+    });
+  }
+
+  /** Data URL로 변환한다. */
+  async toDataURL(options?: OutputOptions): Promise<string> {
+    const canvas = await this.toCanvas();
+    const mimeType = options?.format ? `image/${options.format}` : 'image/png';
+    return canvas.toDataURL(mimeType, options?.quality);
+  }
+
+  /** File 객체로 변환한다. */
+  async toFile(filename: string, options?: OutputOptions): Promise<globalThis.File> {
+    const blob = await this.toBlob(options);
+    return new File([blob], filename, {
+      type: blob.type,
+      lastModified: Date.now(),
+    });
+  }
+
+  /** ArrayBuffer로 변환한다. */
+  async toArrayBuffer(): Promise<ArrayBuffer> {
+    const blob = await this.toBlob();
+    return await blob.arrayBuffer();
+  }
+
+  /** Uint8Array로 변환한다. */
   async toUint8Array(): Promise<Uint8Array> {
     const arrayBuffer = await this.toArrayBuffer();
     return new Uint8Array(arrayBuffer);
