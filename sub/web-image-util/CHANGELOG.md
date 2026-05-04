@@ -2,6 +2,18 @@
 
 이 파일은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따르며, 이 프로젝트는 [Semantic Versioning](https://semver.org/lang/ko/)을 사용합니다.
 
+## [2.0.36]
+
+### 변경
+
+- SVG sanitizer가 안전한 embedded `data:image/*` 참조를 보존하도록 정책을 보강합니다.
+- `data:image/svg+xml` 참조는 nested SVG를 재정제한 canonical base64 Data URL만 허용하도록 정리합니다.
+
+### 수정
+
+- Fabric.js 등에서 만든 SVG의 정상 embedded image가 sanitizer 이후 사라질 수 있는 문제를 수정합니다.
+- embedded Data URL의 크기 한도와 nested SVG 깊이 한도 회귀 테스트를 보강합니다.
+
 ## [2.0.35]
 
 ### 추가

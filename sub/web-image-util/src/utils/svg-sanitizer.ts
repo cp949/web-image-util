@@ -20,11 +20,11 @@
  */
 
 import {
-  MAX_NESTED_SVG_DEPTH,
   decodeSvgDataImageRef,
   encodeSvgDataImageRef,
   isSafeRasterDataImageRef,
   isSvgDataImageRef,
+  MAX_NESTED_SVG_DEPTH,
 } from './svg-data-url-policy';
 import { getCssPolicyValueVariants, normalizePolicyValue, replaceCssUrlValues } from './svg-policy-utils';
 

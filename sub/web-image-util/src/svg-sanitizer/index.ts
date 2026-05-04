@@ -27,11 +27,11 @@
 import type { Config } from 'dompurify';
 import DOMPurify from 'dompurify';
 import {
-  MAX_NESTED_SVG_DEPTH,
   decodeSvgDataImageRef,
   encodeSvgDataImageRef,
   isSafeRasterDataImageRef,
   isSvgDataImageRef,
+  MAX_NESTED_SVG_DEPTH,
 } from '../utils/svg-data-url-policy';
 
 type DOMPurifyInstance = ReturnType<typeof DOMPurify>;

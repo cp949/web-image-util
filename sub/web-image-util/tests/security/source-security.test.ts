@@ -138,8 +138,8 @@ describe('보안: SVG 입력 검증', () => {
   });
 });
 
-import { sanitizeSvg } from '../../src/utils/svg-sanitizer';
 import { MAX_EMBEDDED_DATA_IMAGE_BYTES, MAX_NESTED_SVG_DEPTH } from '../../src/utils/svg-data-url-policy';
+import { sanitizeSvg } from '../../src/utils/svg-sanitizer';
 
 describe('SVG sanitize 유틸', () => {
   describe('스크립트 노드 제거', () => {
