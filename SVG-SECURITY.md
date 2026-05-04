@@ -44,7 +44,9 @@ await processImage(userProvidedSource, {
 - `<script>` 요소 제거
 - `<foreignObject>` 요소 제거
 - `onload`, `onclick` 등 `on*` 이벤트 핸들러 속성 제거
-- `href`, `xlink:href`, `src`의 `http:`, `https:`, `//`, `data:`, `javascript:` 참조 제거
+- `href`, `xlink:href`, `src`의 `http:`, `https:`, `//`, 비이미지 `data:`, `javascript:` 참조 제거
+- `data:image/png`, `data:image/jpeg`, `data:image/webp` 등 raster embedded image는 크기 제한 안에서 보존
+- `data:image/svg+xml` embedded image는 nested SVG를 같은 sanitizer 정책으로 재정제한 뒤 보존
 - `style` 속성과 `<style>` 본문 안의 외부 `url(...)` 참조 제거
 - 정제 후에도 상대 경로(`./`, `../`, `/`)나 외부 참조가 남으면 차단
 - 원본 및 정제 후 SVG 크기 제한 적용
@@ -69,7 +71,8 @@ await processImage(userProvidedSource, {
 - DOMPurify SVG 프로필(`svg`, `svgFilters`) 기반 정제
 - `<script>`, `<foreignObject>` 강제 제거
 - `on*` 이벤트 핸들러 속성 강제 제거
-- `href`, `xlink:href`, `src`는 `#id` 형태의 내부 프래그먼트 참조만 보존
+- `href`, `xlink:href`, `src`는 `#id` 형태의 내부 프래그먼트와 크기 제한을 통과한 `data:image/*` 참조만 보존
+- `data:image/svg+xml`은 원문을 그대로 신뢰하지 않고 nested SVG sanitizer를 재귀 적용
 - CSS 속성값과 `<style>` 본문의 외부 `url(...)`, `image-set(...)`, `@import`, `expression(...)`, `-moz-binding` 제거
 - BOM, XML 선언, HTML 주석 제거
 - DOCTYPE/ENTITY 제거로 XXE, XML bomb 계열 위험 완화
@@ -172,7 +175,7 @@ await processImage(userProvidedSource, {
 | `<foreignObject>` 제거 | `lightweight`, `strict` 제공 |
 | 외부 `href`/`src` 참조 차단 | `lightweight`는 알려진 외부/실행형 참조 제거 후 잔여 위험 참조 차단, `strict`는 내부 프래그먼트만 보존 |
 | CSS 외부 URL 차단 | `lightweight`는 `url(...)` 중심, `strict`는 `url(...)`, `image-set(...)`, `@import` 등 추가 처리 |
-| `javascript:`/`data:` 등 위험 스킴 차단 | `lightweight`, `strict` 제공 |
+| `javascript:` 등 위험 스킴 차단, 비이미지 `data:` 제거, 이미지 `data:image/*`는 크기 제한 안에서 보존 | `lightweight`, `strict` 제공 |
 | DOCTYPE/ENTITY 제거 | `strict` 제공 |
 | 입력 파일 크기 제한 | 제공 |
 | 정제 후 노드 개수 제한 | `strict` 제공 |

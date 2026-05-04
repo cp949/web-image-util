@@ -84,9 +84,7 @@ describe('strict SVG sanitizer', () => {
   });
 
   it('비이미지 data: 참조는 strict sanitizer에서도 제거한다', () => {
-    const result = sanitizeSvgStrict(
-      '<svg><image href="data:text/html,%3Cscript%3Ealert(1)%3C/script%3E"/></svg>'
-    );
+    const result = sanitizeSvgStrict('<svg><image href="data:text/html,%3Cscript%3Ealert(1)%3C/script%3E"/></svg>');
 
     expect(result).not.toContain('data:text/html');
     expect(result).not.toContain('<script');

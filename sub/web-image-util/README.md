@@ -167,6 +167,8 @@ await processImage(userProvidedSource, { svgSanitizer: 'strict' })
 
 신뢰할 수 없는 SVG에는 `strict`를 사용하세요. `unsafe_processImage()`는 렌더링 문제를 재현하기 위한 개발/디버깅 전용 API이며, 사용자 입력이나 외부 SVG에는 사용하지 마세요. 상세 정책은 [SVG sanitizer 보안 정책](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md)을 참고하세요.
 
+Fabric.js, Illustrator, Figma export처럼 SVG 안에 `data:image/*`를 embedded image로 넣는 정상 SVG는 sanitizer가 이미지 Data URL만 제한적으로 보존합니다. 단, `data:image/svg+xml`은 nested SVG를 다시 정제한 결과만 보존하며, 비이미지 Data URL은 제거됩니다.
+
 ## 유틸리티
 
 자주 쓰는 유틸리티는 `@cp949/web-image-util/utils`에서 가져옵니다.

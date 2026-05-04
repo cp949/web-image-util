@@ -18,7 +18,7 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 - TypeScript 타입 지원
 - 브라우저 네이티브 API 기반 구현
 - SVG 입력 감지와 렌더링 지원
-- SVG sanitizer 정책 선택 지원
+- SVG sanitizer 정책 선택 지원 (정상 embedded `data:image/*` 보존, 비이미지 Data URL 차단)
 - 이미지 치수, 입력 포맷, 투명도, 소스 타입 조회 유틸리티
 - Data URL 변환과 출력 포맷/파일명 계산 유틸리티
 - WebP, JPEG, PNG 출력 지원
