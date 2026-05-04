@@ -37,7 +37,13 @@
 | 파일 | 역할 |
 | --- | --- |
 | `src/processor.ts` | `processImage()` 팩토리와 `ImageProcessor` 체이닝 API |
-| `src/core/source-converter.ts` | 입력 소스 감지, SVG 안전 경로, HTMLImageElement 변환 |
+| `src/core/source-converter.ts` | 위 서브모듈의 공개 API(`convertToImageElement`, `detectSourceType`, `getImageDimensions`)를 모은 배럴 |
+| `src/core/source-converter/index.ts` | `convertToImageElement` / `getImageDimensions` 오케스트레이션 |
+| `src/core/source-converter/detect.ts` | `detectSourceType()`과 `SourceType` 정의 |
+| `src/core/source-converter/options.ts` | 내부 옵션 타입과 `MAX_SVG_BYTES` 등 상수 |
+| `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.ts`, `loader.ts`, `safety.ts` |
+| `src/core/source-converter/url/` | HTTP/Blob URL 로더 — `policy.ts`, `fetch-guards.ts`, `loader.ts` |
+| `src/core/source-converter/loaders/` | 형태별 입력 변환기 — `string.ts`, `blob.ts`, `canvas.ts` |
 | `src/utils/svg-detection.ts` | `isInlineSvg()` 등 SVG 문자열 판정 |
 | `src/utils/svg-sanitizer.ts` | `sanitizeSvgForRendering()`, `sanitizeSvg()` (deprecated alias) |
 | `src/core/lazy-render-pipeline.ts` | 연산 누적과 최종 렌더링 트리거 |
@@ -47,13 +53,14 @@
 
 ## SVG 감지의 중요성
 
-`source-converter.ts`의 SVG 감지 로직은 이 라이브러리의 가장 중요한 기술입니다. 단순 문자열 검사(`includes('<svg')`나 `startsWith('<?xml')`)에 의존하지 않고 다음 단계로 이중 검증합니다.
+`source-converter/`의 SVG 감지 로직은 이 라이브러리의 가장 중요한 기술입니다. 단순 문자열 검사(`includes('<svg')`나 `startsWith('<?xml')`)에 의존하지 않고 다음 단계로 이중 검증합니다.
 
-- `detectSourceType()` — 소스 타입 감지
-- `isInlineSvg()` — 인라인 SVG 판정
-- `stripXmlPreambleAndNoise()` — BOM, XML 선언, 주석, DOCTYPE 제거 후 판정
-- `sniffSvgFromBlob()` — Blob 내용 스니핑(첫 4KB만 읽음)
-- `parseSvgFromDataUrl()` — Data URL SVG 검증
-- `convertSvgToElement()` — SVG 정규화와 고품질 브라우저 렌더링
+- `detectSourceType()` *(source-converter/detect.ts)* — 소스 타입 감지
+- `isInlineSvg()` *(utils/svg-detection.ts)* — 인라인 SVG 판정
+- `stripXmlPreambleAndNoise()` *(utils/svg-detection.ts)* — BOM, XML 선언, 주석, DOCTYPE 제거 후 판정
+- `sniffSvgFromBlob()` *(source-converter/svg/data-url.ts)* — Blob 내용 스니핑(첫 4KB만 읽음)
+- `parseSvgFromDataUrl()` *(source-converter/svg/data-url.ts)* — Data URL SVG 검증
+- `assertSafeSvgContent()` *(source-converter/svg/safety.ts)* — sanitize 후 잔여 외부 참조 fail-closed 차단
+- `convertSvgToElement()` *(source-converter/svg/loader.ts)* — SVG 정규화와 고품질 브라우저 렌더링
 
 수정 시 다양한 케이스 테스트, XSS·canvas 오염 방지를 함께 고려해야 합니다.

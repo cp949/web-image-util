@@ -272,7 +272,8 @@ describe('image loading regression safeguards', () => {
 
   it('processImage 경로는 strict SVG sanitizer를 자동 연결하지 않는다', async () => {
     const srcRoot = path.resolve(import.meta.dirname, '../../../src');
-    const sourceConverterPath = path.resolve(srcRoot, 'core/source-converter.ts');
+    // strict sanitizer 동적 import는 source-converter 서브모듈의 svg/loader.ts에 있다.
+    const svgLoaderPath = path.resolve(srcRoot, 'core/source-converter/svg/loader.ts');
     const processImagePathFiles = await collectReachableSourceFiles(path.resolve(srcRoot, 'processor.ts'));
     const offenders: string[] = [];
 
@@ -296,19 +297,19 @@ describe('image loading regression safeguards', () => {
 
     expect(offenders).toEqual([]);
 
-    // source-converter.ts는 strict sanitizer를 동적 import로만 로드해야 한다.
+    // svg/loader.ts는 strict sanitizer를 동적 import로만 로드해야 한다.
     // sanitizeSvgStrictForProcessing 함수 안에 정확히 하나의 동적 import가 있어야 한다.
-    const sourceConverterContent = await readFile(sourceConverterPath, 'utf8');
-    const dynamicImports = collectDynamicImportDetails(sourceConverterContent).filter((detail) => {
-      const resolved = path.resolve(path.dirname(sourceConverterPath), detail.specifier);
+    const svgLoaderContent = await readFile(svgLoaderPath, 'utf8');
+    const dynamicImports = collectDynamicImportDetails(svgLoaderContent).filter((detail) => {
+      const resolved = path.resolve(path.dirname(svgLoaderPath), detail.specifier);
       return detail.specifier.startsWith('.') && resolved.startsWith(strictSanitizerSourceRoot);
     });
     expect(dynamicImports).toHaveLength(1);
     expect(dynamicImports[0]).toEqual({
-      specifier: '../svg-sanitizer',
+      specifier: '../../../svg-sanitizer',
       enclosingFunctionName: 'sanitizeSvgStrictForProcessing',
     });
 
-    expect(collectDynamicImportSpecifiers(sourceConverterContent)).toContain('../svg-sanitizer');
+    expect(collectDynamicImportSpecifiers(svgLoaderContent)).toContain('../../../svg-sanitizer');
   });
 });
