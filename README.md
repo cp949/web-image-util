@@ -10,7 +10,7 @@ Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 
 
 이 저장소의 중심은 `@cp949/web-image-util` 패키지입니다. 브라우저 환경에서 이미지를 다루는 작업을 체이닝 API로 구성할 수 있고, SVG 입력 처리와 여러 출력 포맷 변환을 함께 제공합니다.
 
-루트 README는 저장소 전체를 소개하는 문서이고, 실제 라이브러리 사용법과 API는 [sub/web-image-util/README.md](sub/web-image-util/README.md)에 정리되어 있습니다.
+라이브러리 사용법과 API는 [sub/web-image-util/README.md](sub/web-image-util/README.md)에 정리되어 있습니다.
 
 ## 주요 특징
 
@@ -47,7 +47,7 @@ const banner = await processImage(source)
 
 더 자세한 예제와 API 설명은 [sub/web-image-util/README.md](sub/web-image-util/README.md)를 참고하세요.
 
-SVG sanitizer 옵션별 보안 범위는 [SVG-SECURITY.md](SVG-SECURITY.md)에 별도로 정리되어 있습니다.
+SVG sanitizer 옵션별 보안 범위는 [SVG-SECURITY.md](SVG-SECURITY.md)에 정리되어 있습니다.
 
 ## LLM 지원
 
@@ -76,21 +76,21 @@ pnpm dev:exam
 
 ## 개발 명령어
 
-| 목적 | 명령 |
-| --- | --- |
-| 배포 패키지 빌드 | `pnpm build` |
-| 빌드 watch | `pnpm build:watch` 또는 `pnpm dev` |
-| 예제 앱 실행 | `pnpm dev:exam` |
-| 타입체크 | `pnpm typecheck` |
-| lint / 자동 수정 | `pnpm lint` / `pnpm lint:fix` |
-| format / 검사 | `pnpm format` / `pnpm format:check` |
-| 테스트 | `pnpm test` |
-| 루트 운영 스크립트 테스트 | `pnpm test:scripts` |
-| 브라우저 테스트 | `pnpm test:browser` |
-| 커버리지 | `pnpm test:coverage` |
-| CI 검증 | `pnpm verify:ci` |
-| 릴리스 검증 | `pnpm verify:release` |
-| npm 배포 | `pnpm publish:npm` |
+| 목적                      | 명령                                |
+| ------------------------- | ----------------------------------- |
+| 배포 패키지 빌드          | `pnpm build`                        |
+| 빌드 watch                | `pnpm build:watch` 또는 `pnpm dev`  |
+| 예제 앱 실행              | `pnpm dev:exam`                     |
+| 타입체크                  | `pnpm typecheck`                    |
+| lint / 자동 수정          | `pnpm lint` / `pnpm lint:fix`       |
+| format / 검사             | `pnpm format` / `pnpm format:check` |
+| 테스트                    | `pnpm test`                         |
+| 루트 운영 스크립트 테스트 | `pnpm test:scripts`                 |
+| 브라우저 테스트           | `pnpm test:browser`                 |
+| 커버리지                  | `pnpm test:coverage`                |
+| CI 검증                   | `pnpm verify:ci`                    |
+| 릴리스 검증               | `pnpm verify:release`               |
+| npm 배포                  | `pnpm publish:npm`                  |
 
 `pnpm test:scripts`는 루트 운영 스크립트 테스트를 실행합니다. 루트 스크립트 테스트는 `tests/unit/scripts/**`에 두고, 패키지 라이브러리 테스트는 `sub/web-image-util/tests/**`에서 관리합니다. `pnpm verify:ci`는 `test:scripts`를 먼저 실행한 뒤 Turbo 기반 타입체크, lint, format 검사, Node 테스트, 계약 테스트를 실행합니다.
 

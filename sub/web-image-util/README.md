@@ -9,7 +9,6 @@ Canvas 2D API 위에서 리사이즈, SVG 렌더링, 포맷 변환을 체이닝 
 
 - 브라우저 전용 ESM 패키지
 - 체이닝 API + 최종 출력 시점의 1회 Canvas 렌더링
-- TypeScript discriminated union 기반 리사이즈 설정
 - SVG 자동 감지, 브라우저 호환성 보정, 선택형 strict sanitizer
 - 트리 셰이킹 가능한 서브패스 export
 
@@ -49,13 +48,13 @@ const avatar = await createAvatar(profilePhoto, { size: 128 });
 
 `resize()`는 한 체인에서 한 번만 호출할 수 있습니다. 최종 크기를 한 번에 지정하면 SVG를 포함한 입력을 목표 크기로 직접 렌더링합니다.
 
-| fit 모드 | 비율 유지 | 전체 표시 | 여백 | 크롭 | 확대/축소 | 사용 예시 |
-| --- | --- | --- | --- | --- | --- | --- |
-| `cover` | 예 | 아니오 | 아니오 | 예 | 둘 다 | 썸네일, 배경 이미지 |
-| `contain` | 예 | 예 | 예 | 아니오 | 둘 다 | 갤러리, 미리보기 |
-| `fill` | 아니오 | 예 | 아니오 | 아니오 | 둘 다 | 정확한 크기 |
-| `maxFit` | 예 | 예 | 아니오 | 아니오 | 축소만 | 최대 크기 제한 |
-| `minFit` | 예 | 예 | 아니오 | 아니오 | 확대만 | 최소 크기 보장 |
+| fit 모드  | 비율 유지 | 전체 표시 | 여백   | 크롭   | 확대/축소 | 사용 예시           |
+| --------- | --------- | --------- | ------ | ------ | --------- | ------------------- |
+| `cover`   | 예        | 아니오    | 아니오 | 예     | 둘 다     | 썸네일, 배경 이미지 |
+| `contain` | 예        | 예        | 예     | 아니오 | 둘 다     | 갤러리, 미리보기    |
+| `fill`    | 아니오    | 예        | 아니오 | 아니오 | 둘 다     | 정확한 크기         |
+| `maxFit`  | 예        | 예        | 아니오 | 아니오 | 축소만    | 최대 크기 제한      |
+| `minFit`  | 예        | 예        | 아니오 | 아니오 | 확대만    | 최소 크기 보장      |
 
 ```typescript
 // cover: 비율 유지, 전체 영역 채움
@@ -78,15 +77,15 @@ await processImage(source).resize({ fit: 'maxFit', width: 800 }).toBlob();
 
 자주 쓰이는 리사이즈 패턴은 `.shortcut`으로 짧게 표현할 수 있습니다.
 
-| 메서드 | 설명 |
-| --- | --- |
-| `coverBox(w, h, opts?)` | 박스를 가득 채움 |
-| `containBox(w, h, opts?)` | 박스 안에 전체 이미지 맞춤 |
-| `exactSize(w, h)` | 정확한 크기로 변환 |
-| `maxWidth(n)` / `maxHeight(n)` / `maxSize(...)` | 최대 크기 제한 |
-| `minWidth(n)` / `minHeight(n)` / `minSize(...)` | 최소 크기 보장 |
-| `scale(n)` / `scale({ sx?, sy? })` | 원본 크기 기준 스케일 |
-| `exactWidth(n)` / `exactHeight(n)` | 한쪽 치수만 지정 |
+| 메서드                                          | 설명                       |
+| ----------------------------------------------- | -------------------------- |
+| `coverBox(w, h, opts?)`                         | 박스를 가득 채움           |
+| `containBox(w, h, opts?)`                       | 박스 안에 전체 이미지 맞춤 |
+| `exactSize(w, h)`                               | 정확한 크기로 변환         |
+| `maxWidth(n)` / `maxHeight(n)` / `maxSize(...)` | 최대 크기 제한             |
+| `minWidth(n)` / `minHeight(n)` / `minSize(...)` | 최소 크기 보장             |
+| `scale(n)` / `scale({ sx?, sy? })`              | 원본 크기 기준 스케일      |
+| `exactWidth(n)` / `exactHeight(n)`              | 한쪽 치수만 지정           |
 
 ```typescript
 await processImage(source)
@@ -122,12 +121,12 @@ await processImage('data:image/jpeg;base64,/9j/4AAQ...').resize({ width: 300 }).
 await processImage('<svg width="100" height="100">...</svg>').resize({ width: 200 }).toBlob();
 ```
 
-| 출력 메서드 | 반환 | 용도 |
-| --- | --- | --- |
-| `.toBlob(options?)` | `{ blob, width, height, format, size, processingTime }` | 업로드, FormData |
-| `.toDataURL(options?)` | `{ dataURL, ... }` | `<img>` src |
-| `.toFile(filename, options?)` | `{ file, ... }` | 파일명이 필요한 출력 |
-| `.toCanvas()` | `HTMLCanvasElement` | 추가 Canvas 드로잉 |
+| 출력 메서드                   | 반환                                                    | 용도                 |
+| ----------------------------- | ------------------------------------------------------- | -------------------- |
+| `.toBlob(options?)`           | `{ blob, width, height, format, size, processingTime }` | 업로드, FormData     |
+| `.toDataURL(options?)`        | `{ dataURL, ... }`                                      | `<img>` src          |
+| `.toFile(filename, options?)` | `{ file, ... }`                                         | 파일명이 필요한 출력 |
+| `.toCanvas()`                 | `HTMLCanvasElement`                                     | 추가 Canvas 드로잉   |
 
 ```typescript
 const result = await processImage(source)
@@ -153,11 +152,11 @@ await processImage('<svg width="100" height="100">...</svg>')
 
 SVG 입력에는 `svgSanitizer` 옵션이 적용됩니다.
 
-| 옵션 | 용도 |
-| --- | --- |
-| `lightweight` | 기본값. 렌더링 파이프라인 보호용 경량 정제 |
-| `strict` | 신뢰할 수 없는 SVG용 DOMPurify 기반 정제 |
-| `skip` | 호출처에서 이미 정제를 끝낸 SVG에 한해 사용 |
+| 옵션          | 용도                                        |
+| ------------- | ------------------------------------------- |
+| `lightweight` | 기본값. 렌더링 파이프라인 보호용 경량 정제  |
+| `strict`      | 신뢰할 수 없는 SVG용 DOMPurify 기반 정제    |
+| `skip`        | 호출처에서 이미 정제를 끝낸 SVG에 한해 사용 |
 
 ```typescript
 await processImage(userProvidedSource, { svgSanitizer: 'strict' })
