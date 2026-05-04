@@ -29,7 +29,7 @@ import { validateResizeConfig } from './types/resize-config';
 import { BlobResultImpl, CanvasResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
 import type { ResizeOperation } from './types/shortcut-types';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
-import { detectCanvasFormatSupport } from './utils/browser-capabilities';
+import { detectCanvasFormatSupport } from './utils/browser-capabilities/index';
 import { formatToMimeType, mimeTypeToOutputFormat } from './utils/format-utils';
 import { createImageElement } from './utils/image-element';
 

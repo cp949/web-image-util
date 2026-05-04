@@ -57,7 +57,7 @@ export function mockImgElement() {
 }
 
 // abort signal에 반응하는 fetch mock — 타임아웃/AbortSignal 테스트에서 공통으로 사용한다.
-export function createAbortableFetchMock() {
+export function createAbortableFetchMock(): ReturnType<typeof vi.fn> {
   return vi.fn().mockImplementation(
     (_url: string, init?: RequestInit) =>
       new Promise<Response>((_resolve, reject) => {

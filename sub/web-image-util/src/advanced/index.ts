@@ -40,7 +40,7 @@
 // Browser Capability Detection and Optimization System
 // ============================================================================
 
-export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from '../utils/browser-capabilities';
+export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from '../utils/browser-capabilities/index';
 /**
  * Browser capability detection and performance analysis module
  *
@@ -57,7 +57,7 @@ export {
   FEATURE_PERFORMANCE_WEIGHTS,
   getOptimalProcessingMode,
   PROCESSING_MODE_DESCRIPTIONS,
-} from '../utils/browser-capabilities';
+} from '../utils/browser-capabilities/index';
 
 // ============================================================================
 // SVG Quality Analysis and Complexity System
@@ -78,7 +78,7 @@ export { analyzeSvgComplexity } from '../core/svg-complexity-analyzer';
  * @description Compatibility enhancement and size information extraction features
  * for consistent SVG rendering across various browsers
  */
-export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from '../utils/svg-compatibility';
+export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from '../utils/svg-compatibility/index';
 export type { SvgDimensions } from '../utils/svg-dimensions';
 export { extractSvgDimensions } from '../utils/svg-dimensions';
 
@@ -99,7 +99,7 @@ export { setupHighQualityCanvas } from '../base/canvas-utils';
 // ============================================================================
 
 import type { QualityLevel } from '../core/svg-complexity-analyzer';
-import type { BrowserCapabilities, PerformanceFeatures } from '../utils/browser-capabilities';
+import type { BrowserCapabilities, PerformanceFeatures } from '../utils/browser-capabilities/index';
 
 /**
  * System performance profile result interface

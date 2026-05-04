@@ -92,7 +92,7 @@ import {
   detectSyncCapabilities as _detectSyncCapabilities,
   getCachedBrowserCapabilities as _getCachedBrowserCapabilities,
   getCachedFormatSupport as _getCachedFormatSupport,
-} from './utils/browser-capabilities';
+} from './utils/browser-capabilities/index';
 
 // SVG complexity analysis
 export { analyzeSvgComplexity } from './core/svg-complexity-analyzer';
@@ -239,10 +239,10 @@ export {
   getOptimalProcessingMode,
   type PerformanceFeatures,
   PROCESSING_MODE_DESCRIPTIONS,
-} from './utils/browser-capabilities';
-export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility';
+} from './utils/browser-capabilities/index';
+export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility/index';
 // SVG compatibility functions
-export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from './utils/svg-compatibility';
+export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from './utils/svg-compatibility/index';
 // SVG utility functions
 export { extractSvgDimensions } from './utils/svg-dimensions';
 // SVG sanitize

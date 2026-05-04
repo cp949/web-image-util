@@ -542,7 +542,7 @@ export type { SvgDimensions } from '../utils/svg-dimensions';
 // (Removed: SvgProcessingOptions, SvgProcessingResult - unnecessary)
 
 // Browser capability detection system types
-export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from '../utils/browser-capabilities';
+export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from '../utils/browser-capabilities/index';
 
 // OffscreenCanvas + Web Worker high-performance processing types
 // (Types used by OffscreenSVGProcessor are defined in that module)

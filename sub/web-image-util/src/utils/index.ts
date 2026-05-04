@@ -47,7 +47,7 @@ export {
   getOptimalProcessingMode,
   type PerformanceFeatures,
   PROCESSING_MODE_DESCRIPTIONS,
-} from './browser-capabilities';
+} from './browser-capabilities/index';
 /**
  * Image format conversion functions
  *
@@ -82,7 +82,7 @@ export {
   ensureFileDetailed,
   ensureImageElement,
   ensureImageElementDetailed,
-} from './converters';
+} from './converters/index';
 /**
  * Data URL 변환 유틸리티
  *
@@ -97,7 +97,7 @@ export {
   estimateDataURLPayloadByteLength,
   estimateDataURLSize,
   isDataURLString,
-} from './data-url';
+} from './data-url/index';
 /**
  * Image format conversion functions
  *
@@ -135,7 +135,7 @@ export {
   type ImageDimensions,
   type ImageInfo,
   type ImageOrientation,
-} from './image-info';
+} from './image-info/index';
 /**
  * 이미지 투명도 검사 유틸리티
  *
@@ -157,7 +157,7 @@ export {
   type ImageSourceType,
   type ImageStringSourceInfo,
   type ImageStringSourceType,
-} from './source-utils';
+} from './source-utils/index';
 /**
  * SVG compatibility and browser normalization functions
  *
@@ -169,7 +169,7 @@ export {
   enhanceSvgForBrowser,
   type SvgCompatibilityOptions,
   type SvgCompatibilityReport,
-} from './svg-compatibility';
+} from './svg-compatibility/index';
 
 /**
  * SVG 문자열 감지 유틸리티
@@ -184,7 +184,7 @@ export { isInlineSvg } from './svg-detection';
  * @description Advanced optimization tools that reduce SVG file size
  * and improve rendering performance
  */
-export { type OptimizationResult, type SvgOptimizationOptions, SvgOptimizer } from './svg-optimizer';
+export { type OptimizationResult, type SvgOptimizationOptions, SvgOptimizer } from './svg-optimizer/index';
 
 /**
  * SVG 새니타이저
