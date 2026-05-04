@@ -19,6 +19,7 @@
  * - `style` 속성 또는 `<style>` 본문 안의 외부 `url(...)` 참조
  */
 
+import { isSafeRasterDataImageRef } from './svg-data-url-policy';
 import { getCssPolicyValueVariants, normalizePolicyValue, replaceCssUrlValues } from './svg-policy-utils';
 
 /**
@@ -26,12 +27,17 @@ import { getCssPolicyValueVariants, normalizePolicyValue, replaceCssUrlValues } 
  *
  * 프래그먼트 참조(#...) 및 일반 상대 경로 이외의 경우를 위험으로 간주한다.
  * 단, 태스크 명세에 따라 여기서는 외부 URL(http://, https://, data:, javascript:)만 제거한다.
+ * 예외적으로 크기 제한을 통과한 raster `data:image/*` 참조는 정상 embedded image로 보존한다.
  *
  * @param value 속성값 문자열
  * @returns 외부 URL이면 true
  */
 function isExternalHref(value: string): boolean {
   const normalized = normalizePolicyValue(value);
+  if (normalized.startsWith('data:') && isSafeRasterDataImageRef(value)) {
+    return false;
+  }
+
   return (
     normalized.startsWith('//') ||
     normalized.startsWith('http://') ||

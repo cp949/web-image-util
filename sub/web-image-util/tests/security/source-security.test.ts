@@ -236,6 +236,25 @@ describe('SVG sanitize 유틸', () => {
       expect(result).not.toMatch(/href="data:/i);
     });
 
+    it('안전한 raster data:image href는 제거하지 않는다', () => {
+      const input =
+        '<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/png;base64,iVBORw0KGgo=" width="10" height="10"/></svg>';
+
+      const result = sanitizeSvg(input);
+
+      expect(result).toContain('href="data:image/png;base64,iVBORw0KGgo="');
+    });
+
+    it('비이미지 data: href는 제거한다', () => {
+      const input =
+        '<svg xmlns="http://www.w3.org/2000/svg"><image href="data:text/html,%3Cscript%3Ealert(1)%3C/script%3E" width="10" height="10"/></svg>';
+
+      const result = sanitizeSvg(input);
+
+      expect(result).not.toContain('data:text/html');
+      expect(result).not.toMatch(/\shref=/i);
+    });
+
     it('xlink:href 외부 참조도 제거한다', () => {
       const input =
         '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="http://evil.com/symbols.svg#icon"/></svg>';
