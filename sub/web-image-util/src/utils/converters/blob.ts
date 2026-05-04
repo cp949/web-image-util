@@ -142,7 +142,7 @@ export async function convertToBlob(
     const canvas = await imageElementToCanvas(imageElement);
     return await canvasToBlob(canvas, options);
   } catch (error) {
-    throw new ImageProcessError('Error occurred during Blob conversion', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during Blob conversion', 'CONVERSION_FAILED', { cause: error });
   }
 }
 
@@ -207,6 +207,6 @@ export async function convertToBlobDetailed(
       height: imageElement.height,
     });
   } catch (error) {
-    throw new ImageProcessError('Error occurred during Blob conversion', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during Blob conversion', 'CONVERSION_FAILED', { cause: error });
   }
 }

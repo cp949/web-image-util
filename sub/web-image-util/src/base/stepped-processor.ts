@@ -43,14 +43,16 @@ export class SteppedProcessor {
 
     // Input validation
     if (targetWidth <= 0 || targetHeight <= 0) {
-      throw createImageError('RESIZE_FAILED', new Error('Invalid target dimensions'), {
-        dimensions: { width: targetWidth, height: targetHeight },
+      throw createImageError('RESIZE_FAILED', {
+        cause: new Error('Invalid target dimensions'),
+        context: { dimensions: { width: targetWidth, height: targetHeight } },
       });
     }
 
     if (sourceWidth <= 0 || sourceHeight <= 0) {
-      throw createImageError('RESIZE_FAILED', new Error('Invalid source dimensions'), {
-        dimensions: { width: sourceWidth, height: sourceHeight },
+      throw createImageError('RESIZE_FAILED', {
+        cause: new Error('Invalid source dimensions'),
+        context: { dimensions: { width: sourceWidth, height: sourceHeight } },
       });
     }
 
@@ -118,7 +120,7 @@ export class SteppedProcessor {
         currentCanvas.width = 0;
         currentCanvas.height = 0;
       }
-      throw createImageError('RESIZE_FAILED', error as Error, { debug: { stage: 'stepped reduction processing' } });
+      throw createImageError('RESIZE_FAILED', { cause: error, context: { debug: { stage: 'stepped reduction processing' } } });
     }
   }
 
@@ -307,8 +309,9 @@ export class SteppedProcessor {
 
           return result;
         } catch (error) {
-          throw createImageError('RESIZE_FAILED', error as Error, {
-            debug: { stage: 'batch processing', index: globalIndex },
+          throw createImageError('RESIZE_FAILED', {
+            cause: error,
+            context: { debug: { stage: 'batch processing', index: globalIndex } },
           });
         }
       });
@@ -339,10 +342,9 @@ export class SteppedProcessor {
     const targetPixels = targetWidth * targetHeight;
 
     if (targetPixels > maxPixels) {
-      throw createImageError(
-        'FILE_TOO_LARGE',
-        new Error(`Target image exceeds memory limit (limit: ${maxMemoryMB}MB)`)
-      );
+      throw createImageError('FILE_TOO_LARGE', {
+        cause: new Error(`Target image exceeds memory limit (limit: ${maxMemoryMB}MB)`),
+      });
     }
 
     // Stepped processing considering memory limitations

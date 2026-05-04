@@ -49,7 +49,7 @@ export async function ensureBlob(
     const outputOptions = source instanceof Blob ? getBlobReencodeOptions(source, options) : options;
     return await canvasToBlob(canvas, outputOptions);
   } catch (error) {
-    throw new ImageProcessError('Error occurred while ensuring Blob output', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred while ensuring Blob output', 'CONVERSION_FAILED', { cause: error });
   }
 }
 
@@ -87,7 +87,7 @@ export async function ensureBlobDetailed(
       height: imageElement.height,
     });
   } catch (error) {
-    throw new ImageProcessError('Error occurred while ensuring Blob output', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred while ensuring Blob output', 'CONVERSION_FAILED', { cause: error });
   }
 }
 
@@ -118,7 +118,7 @@ export async function ensureDataURL(
     const canvas = await imageElementToCanvas(imageElement);
     return canvasToDataURL(canvas, options);
   } catch (error) {
-    throw new ImageProcessError('Error occurred while ensuring Data URL output', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred while ensuring Data URL output', 'CONVERSION_FAILED', { cause: error });
   }
 }
 
@@ -155,7 +155,7 @@ export async function ensureDataURLDetailed(
       height: imageElement.height,
     });
   } catch (error) {
-    throw new ImageProcessError('Error occurred while ensuring Data URL output', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred while ensuring Data URL output', 'CONVERSION_FAILED', { cause: error });
   }
 }
 
@@ -185,7 +185,7 @@ export async function ensureFile(
       lastModified: Date.now(),
     });
   } catch (error) {
-    throw new ImageProcessError('Error occurred while ensuring File output', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred while ensuring File output', 'CONVERSION_FAILED', { cause: error });
   }
 }
 
@@ -225,6 +225,6 @@ export async function ensureFileDetailed(
       blobResult.originalSize
     );
   } catch (error) {
-    throw new ImageProcessError('Error occurred while ensuring File output', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred while ensuring File output', 'CONVERSION_FAILED', { cause: error });
   }
 }

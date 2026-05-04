@@ -55,7 +55,6 @@ export type DataUrlWithSize = {
 };
 
 // Export specialized error classes (basic error types imported from unified system)
-export { ImageCanvasError, ImageConversionError, ImageResizeError, ImageSourceError } from './errors';
 
 export type BlobWithSize = {
   blob: Blob;

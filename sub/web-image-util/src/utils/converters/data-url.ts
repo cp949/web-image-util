@@ -69,7 +69,7 @@ export async function convertToDataURL(
     const canvas = await imageElementToCanvas(imageElement);
     return canvasToDataURL(canvas, options);
   } catch (error) {
-    throw new ImageProcessError('Error occurred during Data URL conversion', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during Data URL conversion', 'CONVERSION_FAILED', { cause: error });
   }
 }
 
@@ -138,6 +138,6 @@ export async function convertToDataURLDetailed(
       height: imageElement.height,
     });
   } catch (error) {
-    throw new ImageProcessError('Error occurred during Data URL conversion', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during Data URL conversion', 'CONVERSION_FAILED', { cause: error });
   }
 }

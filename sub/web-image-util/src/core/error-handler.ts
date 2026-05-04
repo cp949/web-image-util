@@ -99,8 +99,8 @@ export class ImageErrorHandler {
       console.info('Context:', this.formatContext(context));
     }
 
-    if (error.originalError) {
-      console.error('Original Error:', error.originalError);
+    if (error.cause instanceof Error) {
+      console.error('Original Error:', error.cause);
     }
 
     console.error('Stack:', error.stack);

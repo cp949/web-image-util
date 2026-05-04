@@ -129,84 +129,8 @@ export type ResizeBackground = string | { r: number; g: number; b: number; alpha
 // ERROR TYPES - Basic error-related types
 // ============================================================================
 
-/**
- * Error codes (unified definition)
- */
-export type ImageErrorCodeType =
-  // Source-related errors
-  | 'INVALID_SOURCE'
-  | 'UNSUPPORTED_FORMAT'
-  | 'SOURCE_LOAD_FAILED'
-  | 'SOURCE_BYTES_EXCEEDED'
-  // Processing-related errors
-  | 'CANVAS_CREATION_FAILED'
-  | 'CANVAS_CONTEXT_FAILED'
-  | 'RESIZE_FAILED'
-  | 'CONVERSION_FAILED'
-  | 'BLUR_FAILED'
-  | 'PROCESSING_FAILED'
-  | 'SMART_RESIZE_FAILED'
-  // Size/dimension-related errors
-  | 'INVALID_DIMENSIONS'
-  | 'DIMENSION_TOO_LARGE'
-  // System resource-related errors
-  | 'MEMORY_ERROR'
-  | 'TIMEOUT_ERROR'
-  // SVG-related errors
-  | 'SVG_LOAD_FAILED'
-  | 'SVG_PROCESSING_FAILED'
-  // Output-related errors
-  | 'OUTPUT_FAILED'
-  | 'DOWNLOAD_FAILED'
-  | 'FILE_TOO_LARGE'
-  | 'CANVAS_TO_BLOB_FAILED'
-  | 'IMAGE_LOAD_FAILED'
-  | 'BLOB_TO_ARRAYBUFFER_FAILED'
-  | 'BLOB_CONVERSION_ERROR'
-  // LazyRenderPipeline-related errors
-  | 'MULTIPLE_RESIZE_NOT_ALLOWED'
-  | 'CANVAS_CONTEXT_ERROR'
-  // Browser compatibility errors
-  | 'BROWSER_NOT_SUPPORTED'
-  | 'FEATURE_NOT_SUPPORTED';
-
-/**
- * Error code constants (const assertion)
- */
-export const ImageErrorCodeConstants = {
-  // Source-related
-  INVALID_SOURCE: 'INVALID_SOURCE' as const,
-  UNSUPPORTED_FORMAT: 'UNSUPPORTED_FORMAT' as const,
-  SOURCE_LOAD_FAILED: 'SOURCE_LOAD_FAILED' as const,
-  SOURCE_BYTES_EXCEEDED: 'SOURCE_BYTES_EXCEEDED' as const,
-  // Processing-related
-  CANVAS_CREATION_FAILED: 'CANVAS_CREATION_FAILED' as const,
-  CANVAS_CONTEXT_FAILED: 'CANVAS_CONTEXT_FAILED' as const,
-  RESIZE_FAILED: 'RESIZE_FAILED' as const,
-  CONVERSION_FAILED: 'CONVERSION_FAILED' as const,
-  BLUR_FAILED: 'BLUR_FAILED' as const,
-  PROCESSING_FAILED: 'PROCESSING_FAILED' as const,
-  SMART_RESIZE_FAILED: 'SMART_RESIZE_FAILED' as const,
-  // Size/dimension-related
-  INVALID_DIMENSIONS: 'INVALID_DIMENSIONS' as const,
-  DIMENSION_TOO_LARGE: 'DIMENSION_TOO_LARGE' as const,
-  // System resource-related
-  MEMORY_ERROR: 'MEMORY_ERROR' as const,
-  TIMEOUT_ERROR: 'TIMEOUT_ERROR' as const,
-  // SVG-related
-  SVG_LOAD_FAILED: 'SVG_LOAD_FAILED' as const,
-  SVG_PROCESSING_FAILED: 'SVG_PROCESSING_FAILED' as const,
-  // Output-related
-  OUTPUT_FAILED: 'OUTPUT_FAILED' as const,
-  DOWNLOAD_FAILED: 'DOWNLOAD_FAILED' as const,
-  FILE_TOO_LARGE: 'FILE_TOO_LARGE' as const,
-  CANVAS_TO_BLOB_FAILED: 'CANVAS_TO_BLOB_FAILED' as const,
-  IMAGE_LOAD_FAILED: 'IMAGE_LOAD_FAILED' as const,
-  BLOB_TO_ARRAYBUFFER_FAILED: 'BLOB_TO_ARRAYBUFFER_FAILED' as const,
-  // Browser compatibility
-  BROWSER_NOT_SUPPORTED: 'BROWSER_NOT_SUPPORTED' as const,
-  FEATURE_NOT_SUPPORTED: 'FEATURE_NOT_SUPPORTED' as const,
-} as const;
+export { ImageErrorCode as ImageErrorCodeConstants } from '../errors';
+export type { ImageErrorCodeType } from '../errors';
 
 // ============================================================================
 // GEOMETRY TYPES - Basic geometry-related types

@@ -28,7 +28,7 @@ describe('toArrayBuffer 오류 원인 보존', () => {
     vi.restoreAllMocks();
   });
 
-  it('toBlob 콜백 내부 예외를 OUTPUT_FAILED로 감싸고 originalError를 보존한다', async () => {
+  it('toBlob 콜백 내부 예외를 OUTPUT_FAILED로 감싸고 cause를 보존한다', async () => {
     vi.useFakeTimers();
     const canvas = createCanvasWithAsyncBlob(new Blob(['output'], { type: 'image/png' }));
     const cause = new Error('canvas release failed');
@@ -39,7 +39,7 @@ describe('toArrayBuffer 오류 원인 보존', () => {
     const result = createProcessorWithCanvas(canvas).toArrayBuffer();
     const assertion = expect(result).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      originalError: cause,
+      cause: cause,
     });
 
     await vi.runAllTimersAsync();

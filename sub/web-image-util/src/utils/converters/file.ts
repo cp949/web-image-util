@@ -67,7 +67,7 @@ export async function convertToFile(
       lastModified: Date.now(),
     });
   } catch (error) {
-    throw new ImageProcessError('Error occurred during File object creation', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during File object creation', 'CONVERSION_FAILED', { cause: error });
   }
 }
 
@@ -126,6 +126,6 @@ export async function convertToFileDetailed(
       blobResult.originalSize
     );
   } catch (error) {
-    throw new ImageProcessError('Error occurred during File object creation', 'CONVERSION_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred during File object creation', 'CONVERSION_FAILED', { cause: error });
   }
 }

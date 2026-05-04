@@ -218,13 +218,6 @@ describe('Type-safe processor tests', () => {
         if (error instanceof ImageProcessError) {
           expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
           expect(error.message).toContain('resize() can only be called once');
-          expect(error.suggestions).toBeInstanceOf(Array);
-          expect(error.suggestions.length).toBeGreaterThan(0);
-
-          // Validate suggestion contents
-          const suggestionsText = error.suggestions.join(' ');
-          expect(suggestionsText).toContain('Include all resizing options in a single resize() call');
-          expect(suggestionsText).toContain('Create separate processImage() instances');
         }
       }
     });

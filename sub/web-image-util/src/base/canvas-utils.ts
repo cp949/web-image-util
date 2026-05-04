@@ -18,7 +18,7 @@ export class ManagedCanvas {
     const ctx = this.canvas.getContext('2d');
     if (!ctx) {
       this.pool.release(this.canvas);
-      throw createImageError('CANVAS_CREATION_FAILED', new Error('Failed to create CanvasRenderingContext2D'));
+      throw createImageError('CANVAS_CREATION_FAILED', { cause: new Error('Failed to create CanvasRenderingContext2D') });
     }
 
     this.ctx = ctx;
@@ -193,7 +193,7 @@ export function canvasToBlob(canvas: HTMLCanvasElement, type: string = 'image/pn
         if (blob) {
           resolve(blob);
         } else {
-          reject(createImageError('CONVERSION_FAILED', new Error(`Canvas to ${type} conversion failed`)));
+          reject(createImageError('CONVERSION_FAILED', { cause: new Error(`Canvas to ${type} conversion failed`) }));
         }
       },
       type,

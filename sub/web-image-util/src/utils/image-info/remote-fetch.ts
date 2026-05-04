@@ -122,7 +122,7 @@ function assertFetchSourceProtocol(source: string, allowedProtocols: string[]): 
   try {
     url = new URL(source);
   } catch (error) {
-    throw new ImageProcessError(`유효한 URL이 아닙니다: ${source}`, 'INVALID_SOURCE', error as Error);
+    throw new ImageProcessError(`유효한 URL이 아닙니다: ${source}`, 'INVALID_SOURCE', { cause: error });
   }
 
   if (!allowedProtocols.includes(url.protocol)) {
@@ -197,7 +197,7 @@ function wrapFetchSourceBodyReadError(error: unknown): never {
     throw error;
   }
 
-  throw new ImageProcessError('이미지 URL 응답 본문을 읽을 수 없습니다', 'SOURCE_LOAD_FAILED', error as Error);
+  throw new ImageProcessError('이미지 URL 응답 본문을 읽을 수 없습니다', 'SOURCE_LOAD_FAILED', { cause: error });
 }
 
 async function checkFetchSourceContentLength(response: Response, maxBytes: number, label: string): Promise<void> {
@@ -374,7 +374,7 @@ export async function fetchImageSourceBlob(
       throw error;
     }
 
-    throw new ImageProcessError('이미지 URL을 fetch할 수 없습니다', 'SOURCE_LOAD_FAILED', error as Error);
+    throw new ImageProcessError('이미지 URL을 fetch할 수 없습니다', 'SOURCE_LOAD_FAILED', { cause: error });
   } finally {
     cleanup();
   }

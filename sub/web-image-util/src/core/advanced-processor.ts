@@ -150,7 +150,7 @@ export class AdvancedImageProcessor {
         messages.push(`Applied ${filtersApplied} filter(s).`);
       } catch (error) {
         productionLog.error('Filter application failed:', error);
-        throw new ImageProcessError('Advanced filter processing failed.', 'PROCESSING_FAILED', error as Error);
+        throw new ImageProcessError('Advanced filter processing failed.', 'PROCESSING_FAILED', { cause: error });
       }
     }
 

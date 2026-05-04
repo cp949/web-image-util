@@ -22,7 +22,7 @@
  * **⚡ Key Features:**
  * - ResizeConfig discriminated union prevents invalid fit/dimension combinations
  * - Smart default values with optimal quality per format
- * - Comprehensive error types with actionable suggestions
+ * - Comprehensive error types with structured cause chaining
  * - Browser capability detection types
  *
  * @example Type-Safe Resize Configuration
@@ -76,7 +76,6 @@ export type {
   GeometryPoint,
   GeometryRectangle,
   GeometrySize,
-  ImageErrorCodeType,
   ImageFormat,
   ImageSource,
   OutputFormat,
@@ -121,8 +120,8 @@ export type {
 export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstants } from './base';
 
 // Re-import types from base.ts to make them available
-import type { GeometrySize, ImageErrorCodeType, OutputFormat, ResizeBackground } from './base';
-import { ImageErrorCodeConstants, ImageFormats, OutputFormats } from './base';
+import type { GeometrySize, OutputFormat, ResizeBackground } from './base';
+import { ImageFormats, OutputFormats } from './base';
 // Import ResizeConfig type for use in ImageProcessor
 import type { ResizeConfig } from './resize-config';
 
@@ -269,28 +268,13 @@ export interface OutputOptions {
 // IMAGE ERROR TYPES - Image error-related types
 // ============================================================================
 
-/**
- * Image processing error class (unified definition)
- */
-export class ImageProcessError extends globalThis.Error {
-  public name: string = 'ImageProcessError';
-  public suggestions: string[];
-
-  constructor(
-    message: string,
-    public code: ImageErrorCodeType,
-    public originalError?: globalThis.Error,
-    suggestions: string[] = []
-  ) {
-    super(message);
-    this.suggestions = suggestions;
-
-    // Set up stack trace
-    if ((globalThis.Error as any).captureStackTrace) {
-      (globalThis.Error as any).captureStackTrace(this, ImageProcessError);
-    }
-  }
-}
+export { ImageErrorCode, ImageProcessError } from '../errors';
+export type {
+  ImageErrorCodeType,
+  ImageErrorDetails,
+  ImageErrorDetailsByCode,
+  ImageProcessErrorOptions,
+} from '../errors';
 
 // Canvas API does not have margin/padding concepts like Sharp.js's extend feature
 // Users must directly adjust Canvas size if needed
@@ -470,10 +454,6 @@ export interface ProcessorSourceOptions {
  */
 export const OPTIMAL_QUALITY_BY_FORMAT = OutputOptimalQuality;
 
-/**
- * Error code constants (test compatibility)
- */
-export const ImageErrorCode = ImageErrorCodeConstants;
 
 // ============================================================================
 // EXPORTS - Type guards and other utilities

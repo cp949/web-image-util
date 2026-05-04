@@ -107,7 +107,7 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
     });
 
     reader.addEventListener('error', () => {
-      reject(createImageError('SOURCE_LOAD_FAILED', reader.error || new Error('File read failed')));
+      reject(createImageError('SOURCE_LOAD_FAILED', { cause: reader.error || new Error('File read failed') }));
     });
 
     reader.readAsDataURL(blob);
@@ -171,7 +171,7 @@ export function urlToElement(
 
     img.onerror = (event: Event | string) => {
       const error = event instanceof ErrorEvent ? event.error : new Error(String(event));
-      reject(createImageError('SOURCE_LOAD_FAILED', error, { sourceType: 'url', format: url }));
+      reject(createImageError('SOURCE_LOAD_FAILED', { cause: error, context: { sourceType: 'url', format: url } }));
     };
 
     img.src = url;

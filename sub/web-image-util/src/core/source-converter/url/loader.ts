@@ -110,7 +110,7 @@ export async function loadBlobUrl(
     if (error instanceof ImageProcessError) {
       throw error;
     }
-    throw new ImageProcessError('Error occurred while processing Blob URL', 'SOURCE_LOAD_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred while processing Blob URL', 'SOURCE_LOAD_FAILED', { cause: error });
   }
 }
 
@@ -241,7 +241,7 @@ export async function loadImageFromUrl(
         // 사용자가 취소했거나 타임아웃된 요청은 보안/제어 정책의 일부이므로
         // 브라우저 기본 이미지 로딩으로 우회하지 않는다.
         if (handle.signal?.aborted || isAbortLikeError(fetchError)) {
-          throw new ImageProcessError('원격 이미지 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', fetchError as Error);
+          throw new ImageProcessError('원격 이미지 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', { cause: fetchError });
         }
         // .svg URL은 fetch 실패 시 직접 로드로 넘기지 않고 차단한다 (fail-closed)
         if (isSvgResourcePath(url)) {
@@ -261,6 +261,6 @@ export async function loadImageFromUrl(
     if (error instanceof ImageProcessError) {
       throw error;
     }
-    throw new ImageProcessError('Error occurred while loading URL image', 'SOURCE_LOAD_FAILED', error as Error);
+    throw new ImageProcessError('Error occurred while loading URL image', 'SOURCE_LOAD_FAILED', { cause: error });
   }
 }

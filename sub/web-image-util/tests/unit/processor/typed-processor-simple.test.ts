@@ -79,8 +79,6 @@ describe('Type-Safe Processor Simple Test', () => {
         if (error instanceof ImageProcessError) {
           expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
           expect(error.message).toContain('resize() can only be called once');
-          expect(error.suggestions).toBeInstanceOf(Array);
-          expect(error.suggestions.length).toBeGreaterThan(0);
         }
       }
     });
@@ -160,12 +158,8 @@ describe('Type-Safe Processor Simple Test', () => {
         expect.fail('Error should be thrown');
       } catch (error) {
         if (error instanceof ImageProcessError) {
-          const suggestionsText = error.suggestions.join(' ');
-
-          // Verify practical suggestions are included
-          expect(suggestionsText).toContain('Include all resizing options in a single resize() call');
-          expect(suggestionsText).toContain('Create separate processImage() instances');
-          expect(suggestionsText).toContain('processImage(source).resize');
+          // 에러 메시지에 유용한 정보가 포함되어 있는지 확인
+          expect(error.message).toContain('resize() can only be called once');
         }
       }
     });

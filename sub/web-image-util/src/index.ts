@@ -144,7 +144,12 @@ export type {
   SvgSanitizerMode,
 } from './types';
 // Error classes
-export { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
+export { ImageErrorCode, ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
+export type {
+  ImageErrorDetails,
+  ImageErrorDetailsByCode,
+  ImageProcessErrorOptions,
+} from './types';
 export type {
   ConvertToBlobDetailedOptions,
   ConvertToBlobOptions,

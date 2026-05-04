@@ -110,7 +110,7 @@ export async function convertToImageElement(
     throw new ImageProcessError(
       'Unknown error occurred during source conversion',
       'SOURCE_LOAD_FAILED',
-      error as Error
+      { cause: error }
     );
   }
 }

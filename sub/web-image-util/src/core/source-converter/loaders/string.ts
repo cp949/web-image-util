@@ -89,7 +89,7 @@ export async function convertStringToElement(
           svgContent = await readVerifiedSvgResponse(response, '원격 SVG 응답');
         } catch (fetchError) {
           if (handle.signal?.aborted || isAbortLikeError(fetchError)) {
-            throw new ImageProcessError('원격 SVG 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', fetchError as Error);
+            throw new ImageProcessError('원격 SVG 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', { cause: fetchError });
           }
           if (fetchError instanceof ImageProcessError) {
             throw fetchError;
@@ -140,7 +140,7 @@ export async function convertStringToElement(
           svgContent = await readVerifiedSvgResponse(response, '원격 SVG 응답');
         } catch (fetchError) {
           if (handle.signal?.aborted || isAbortLikeError(fetchError)) {
-            throw new ImageProcessError('원격 SVG 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', fetchError as Error);
+            throw new ImageProcessError('원격 SVG 로딩이 중단되었습니다', 'SOURCE_LOAD_FAILED', { cause: fetchError });
           }
           if (fetchError instanceof ImageProcessError) {
             throw fetchError;

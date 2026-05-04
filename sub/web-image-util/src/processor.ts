@@ -159,13 +159,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
     if (this.hasResized) {
       throw new ImageProcessError(
         'resize() can only be called once. Use a single resize() call to prevent image quality degradation.',
-        'MULTIPLE_RESIZE_NOT_ALLOWED',
-        undefined,
-        [
-          'Include all resizing options in a single resize() call',
-          'Create separate processImage() instances for multiple sizes',
-          'Example: processImage(source).resize({ fit: "cover", width: 300, height: 200 }).toBlob()',
-        ]
+        'MULTIPLE_RESIZE_NOT_ALLOWED'
       );
     }
 
@@ -254,13 +248,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
     if (this.hasResized) {
       throw new ImageProcessError(
         'resize() can only be called once. Use a single resize operation to prevent image quality degradation.',
-        'MULTIPLE_RESIZE_NOT_ALLOWED',
-        undefined,
-        [
-          'Include all resizing options in a single resize operation',
-          'Create separate processImage() instances for multiple sizes',
-          'Example: processImage(source).shortcut.exactWidth(300).toBlob()',
-        ]
+        'MULTIPLE_RESIZE_NOT_ALLOWED'
       );
     }
 
@@ -427,7 +415,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       // 🆕 Return extended result object (includes direct conversion methods)
       return new BlobResultImpl(blob, result.width, result.height, result.processingTime, result.originalSize, format);
     } catch (error) {
-      throw new ImageProcessError('Error occurred during Blob conversion', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during Blob conversion', 'OUTPUT_FAILED', { cause: error });
     } finally {
       // blob 변환이 끝났으므로 pool-acquired canvas를 반환한다.
       CanvasPool.getInstance().release(canvas);
@@ -480,7 +468,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         metadata.format
       );
     } catch (error) {
-      throw new ImageProcessError('Error occurred during Data URL conversion', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during Data URL conversion', 'OUTPUT_FAILED', { cause: error });
     }
   }
 
@@ -551,7 +539,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         metadata.format
       );
     } catch (error) {
-      throw new ImageProcessError('Error occurred while creating File object', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred while creating File object', 'OUTPUT_FAILED', { cause: error });
     }
   }
 
@@ -580,7 +568,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         undefined // Canvas has no format information
       );
     } catch (error) {
-      throw new ImageProcessError('Error occurred during Canvas conversion', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during Canvas conversion', 'OUTPUT_FAILED', { cause: error });
     }
   }
 
@@ -607,7 +595,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         undefined // Canvas has no format information
       );
     } catch (error) {
-      throw new ImageProcessError('Error occurred during detailed Canvas conversion', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during detailed Canvas conversion', 'OUTPUT_FAILED', { cause: error });
     }
   }
 
@@ -656,7 +644,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
                 resolve(img);
               } catch (error) {
                 reject(
-                  new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', error as Error)
+                  new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error })
                 );
               }
             };
@@ -667,19 +655,19 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
                 reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
               } catch (error) {
                 reject(
-                  new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', error as Error)
+                  new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error })
                 );
               }
             };
 
             img.src = objectUrl;
           } catch (error) {
-            reject(new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', error as Error));
+            reject(new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error }));
           }
         });
       });
     } catch (error) {
-      throw new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error });
     }
   }
 
@@ -711,7 +699,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
             }
           } catch (error) {
             reject(
-              new ImageProcessError('Error occurred during ArrayBuffer conversion', 'OUTPUT_FAILED', error as Error)
+              new ImageProcessError('Error occurred during ArrayBuffer conversion', 'OUTPUT_FAILED', { cause: error })
             );
             return;
           }
@@ -721,13 +709,13 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
             resolve(arrayBuffer);
           } catch (error) {
             reject(
-              new ImageProcessError('ArrayBuffer conversion failed', 'BLOB_TO_ARRAYBUFFER_FAILED', error as Error)
+              new ImageProcessError('ArrayBuffer conversion failed', 'BLOB_TO_ARRAYBUFFER_FAILED', { cause: error })
             );
           }
         });
       });
     } catch (error) {
-      throw new ImageProcessError('Error occurred during ArrayBuffer conversion', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during ArrayBuffer conversion', 'OUTPUT_FAILED', { cause: error });
     }
   }
 
@@ -747,7 +735,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       const arrayBuffer = await this.toArrayBuffer();
       return new Uint8Array(arrayBuffer);
     } catch (error) {
-      throw new ImageProcessError('Error occurred during Uint8Array conversion', 'OUTPUT_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during Uint8Array conversion', 'OUTPUT_FAILED', { cause: error });
     }
   }
 
@@ -783,7 +771,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         throw error;
       }
 
-      throw new ImageProcessError('Error occurred during image processing', 'CANVAS_CREATION_FAILED', error as Error);
+      throw new ImageProcessError('Error occurred during image processing', 'CANVAS_CREATION_FAILED', { cause: error });
     }
   }
 

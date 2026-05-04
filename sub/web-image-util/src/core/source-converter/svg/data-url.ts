@@ -74,7 +74,7 @@ export function parseSvgFromDataUrl(dataUrl: string): string {
     try {
       svgContent = atob(content);
     } catch (error) {
-      throw new ImageProcessError('Failed to decode Base64 SVG', 'SOURCE_LOAD_FAILED', error as Error);
+      throw new ImageProcessError('Failed to decode Base64 SVG', 'SOURCE_LOAD_FAILED', { cause: error });
     }
   } else {
     // URL 인코딩 Data URL은 원문 길이가 아닌 디코딩 결과 기준으로 제한을 적용한다.

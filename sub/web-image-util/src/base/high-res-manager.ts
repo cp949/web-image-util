@@ -122,7 +122,7 @@ export class HighResolutionManager {
         quality: opts.quality,
       };
     } catch (error) {
-      throw createImageError('RESIZE_FAILED', error as Error, { debug: { stage: 'High-resolution processing' } });
+      throw createImageError('RESIZE_FAILED', { cause: error, context: { debug: { stage: 'High-resolution processing' } } });
     }
   }
 
@@ -254,7 +254,7 @@ export class HighResolutionManager {
         });
 
       default:
-        throw createImageError('FEATURE_NOT_SUPPORTED', new Error(`Unsupported processing strategy: ${strategy}`));
+        throw createImageError('FEATURE_NOT_SUPPORTED', { cause: new Error(`Unsupported processing strategy: ${strategy}`) });
     }
   }
 
@@ -502,8 +502,9 @@ export class HighResolutionManager {
 
           return result;
         } catch (error) {
-          throw createImageError('RESIZE_FAILED', error as Error, {
-            debug: { stage: 'Batch processing', index: globalIndex },
+          throw createImageError('RESIZE_FAILED', {
+            cause: error,
+            context: { debug: { stage: 'Batch processing', index: globalIndex } },
           });
         }
       });

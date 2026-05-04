@@ -5,7 +5,7 @@
  */
 
 import { globalErrorHandler } from '../core/error-handler';
-import { type ImageErrorCodeType, ImageProcessError } from '../types';
+import { type ImageErrorCodeType, type ImageErrorDetails, ImageProcessError } from '../types';
 
 /**
  * Error context information
@@ -70,144 +70,13 @@ const USER_FRIENDLY_MESSAGES: Record<ImageErrorCodeType, string> = {
   // Browser compatibility errors
   BROWSER_NOT_SUPPORTED: 'This feature is not supported in your current browser. Please use a modern browser.',
   FEATURE_NOT_SUPPORTED: 'The requested feature is not supported in the current environment.',
-};
-
-/**
- * Solution suggestions
- */
-const SOLUTION_SUGGESTIONS: Record<ImageErrorCodeType, string[]> = {
-  INVALID_SOURCE: [
-    'Use HTMLImageElement, Blob, or valid URL/Data URL',
-    'If CORS issue, check crossOrigin settings',
-    'For Base64 Data URL, verify correct format',
-  ],
-
-  UNSUPPORTED_FORMAT: [
-    'Use standard formats like JPEG, PNG, WebP',
-    'For modern formats like AVIF or HEIC, check browser support',
-    'For SVG, convert to raster image first',
-  ],
-
-  SOURCE_LOAD_FAILED: [
-    'Check your network connection status',
-    'Verify that the image URL is accessible',
-    'If blocked by CORS policy, check server configuration',
-  ],
-
-  SOURCE_BYTES_EXCEEDED: [
-    'Use a smaller source image.',
-    'Increase maxBytes only for trusted inputs.',
-    'Reject oversized remote images before processing.',
-  ],
-
-  CANVAS_CREATION_FAILED: [
-    'Use a browser that supports Canvas API',
-    'Try with a smaller image if memory is insufficient',
-    'Some features may be limited in private/incognito mode',
-  ],
-
-  CANVAS_CONTEXT_FAILED: [
-    'Try refreshing the browser or using a different browser',
-    'Too many WebGL contexts may have been used',
-    'Hardware acceleration may be disabled',
-  ],
-
-  PROCESSING_FAILED: [
-    'Check if the image file is corrupted',
-    'Try with different options',
-    'Test with a smaller image',
-  ],
-
-  SMART_RESIZE_FAILED: [
-    'For large images, try with a smaller size',
-    'Increase memory limits or use progressive processing',
-    'Try setting strategy option to "memory-efficient"',
-  ],
-
-  CONVERSION_FAILED: [
-    'Try a different output format (PNG, JPEG, etc.)',
-    'Reduce the image size',
-    'Lower the quality setting (0.1-1.0 range)',
-  ],
-
-  FILE_TOO_LARGE: [
-    'Reduce image size or lower quality',
-    'Use a more efficient format like WebP',
-    'Process in multiple steps',
-  ],
-
-  BROWSER_NOT_SUPPORTED: ['Use Chrome, Firefox, Safari, or Edge', 'For WebP support, use Chrome 32+ or Firefox 65+'],
-
-  // Basic solutions
-  RESIZE_FAILED: ['Check image size and try with smaller values'],
-  BLUR_FAILED: ['Try with smaller blur radius'],
-  OUTPUT_FAILED: ['Try a different output format'],
-  DOWNLOAD_FAILED: ['Check browser popup blocking settings'],
-  CANVAS_TO_BLOB_FAILED: [
-    'Try a different image format (PNG, JPEG, etc.)',
-    'Refresh the browser and try again',
-    'Adjust quality settings',
-  ],
-  IMAGE_LOAD_FAILED: [
-    'Check if the image file is corrupted',
-    'Check network connection status',
-    'Check CORS settings or permission issues',
-  ],
-  BLOB_TO_ARRAYBUFFER_FAILED: ['Try with smaller image if memory is insufficient', 'Refresh the browser and try again'],
-
-  // SVG-related solutions
-  SVG_LOAD_FAILED: [
-    'Verify that SVG syntax is correct',
-    'Check if xmlns namespace is included',
-    'Verify that SVG file has complete structure',
-  ],
-  SVG_PROCESSING_FAILED: [
-    'Try normalizing SVG content and retry',
-    'For complex SVGs, try simplifying the structure',
-    'Explicitly specify SVG size information (width, height, viewBox)',
-  ],
-
-  // Size/dimension-related solutions
-  INVALID_DIMENSIONS: [
-    'Verify that width and height are positive numbers',
-    'Check that size values are not 0 or negative',
-    'Round decimal values to integers if needed',
-  ],
-  DIMENSION_TOO_LARGE: [
-    'Reduce image size (recommended: 4096x4096 or smaller)',
-    'For large images with high memory usage, process progressively',
-    'Check browser Canvas size limitations',
-  ],
-
-  // System resource-related solutions
-  MEMORY_ERROR: [
-    'Try with smaller image',
-    'Refresh the browser to free up memory',
-    'Close other tabs to free up memory',
-    'Process image in multiple steps',
-  ],
-  TIMEOUT_ERROR: [
-    'Try with smaller image',
-    'Simplify processing options',
-    'Check network connection status',
-    'Check browser performance and pause other tasks',
-  ],
-
-  FEATURE_NOT_SUPPORTED: ['Try using a different approach or polyfill'],
-
-  BLOB_CONVERSION_ERROR: ['Refresh the browser and try again', 'Try with smaller image if memory is insufficient'],
-
-  MULTIPLE_RESIZE_NOT_ALLOWED: [
-    'Create a new processImage() instance',
-    'Set all options with a single resize() call',
-    'Process each size separately if multiple sizes are needed',
-  ],
-
-  CANVAS_CONTEXT_ERROR: [
-    'Use a browser that supports Canvas API',
-    'Refresh the browser and try again',
-    'Try a different browser or incognito mode',
-  ],
+  OPTION_INVALID: 'Invalid option value.',
+  SVG_INPUT_INVALID: 'SVG input must be a string.',
+  SVG_DOMPURIFY_INIT_FAILED: 'SVG sanitizer could not be initialized in this environment.',
+  SVG_NODE_COUNT_EXCEEDED: 'SVG node count exceeds the allowed limit.',
+  SVG_BYTES_EXCEEDED: 'SVG input exceeds the allowed size limit.',
+  INVALID_DATA_URL: 'Invalid Data URL format.',
+  INVALID_SVG_DATA_URL: 'Invalid SVG Data URL format.',
 };
 
 /**
@@ -223,44 +92,35 @@ function isDevelopmentMode(): boolean {
 /**
  * Error creation helper
  *
- * @description Creates errors with user-friendly messages and solutions
+ * @description 사용자 친화적 메시지로 에러를 생성한다
  */
 export function createImageError(
   code: ImageErrorCodeType,
-  originalError?: Error,
-  context?: ErrorContext
+  options?: { cause?: unknown; details?: ImageErrorDetails; context?: ErrorContext }
 ): ImageProcessError {
   const userMessage = USER_FRIENDLY_MESSAGES[code];
-  const suggestions = SOLUTION_SUGGESTIONS[code] || [];
-
-  // Provide more detailed information in development mode
   let message = userMessage;
-  if (isDevelopmentMode() && originalError) {
-    message += `\n\n🔧 Developer Info: ${originalError.message}`;
+
+  if (isDevelopmentMode() && options?.cause instanceof Error) {
+    message += `\n\n🔧 Developer Info: ${options.cause.message}`;
   }
 
-  if (suggestions.length > 0) {
-    message += '\n\n💡 Solutions:';
-    suggestions.forEach((suggestion, index) => {
-      message += `\n${index + 1}. ${suggestion}`;
-    });
-  }
-
-  // Add context information
-  if (context && isDevelopmentMode()) {
+  if (options?.context && isDevelopmentMode()) {
     message += '\n\n📋 Context:';
-    Object.entries(context).forEach(([key, value]) => {
+    Object.entries(options.context).forEach(([key, value]) => {
       if (value !== undefined) {
         message += `\n- ${key}: ${JSON.stringify(value)}`;
       }
     });
   }
 
-  const error = new ImageProcessError(message, code, originalError);
+  const error = new ImageProcessError(message, code, {
+    cause: options?.cause,
+    details: options?.details,
+  });
 
-  // Attach context to error object
-  if (context) {
-    (error as any).context = context;
+  if (options?.context) {
+    (error as any).context = options.context;
   }
 
   return error;
@@ -285,20 +145,23 @@ export async function withErrorRecovery<T>(
         console.warn('Primary method failed, trying fallback:', error);
         return await fallbackFunction();
       } catch (fallbackError) {
-        // Provide more detailed error when both methods fail
-        throw createImageError('CONVERSION_FAILED', fallbackError as Error, {
-          ...context,
-          debug: {
-            primaryError: (error as Error).message,
-            fallbackError: (fallbackError as Error).message,
+        // 두 방법 모두 실패했을 때 더 자세한 에러를 제공한다
+        throw createImageError('CONVERSION_FAILED', {
+          cause: fallbackError,
+          context: {
+            ...context,
+            debug: {
+              primaryError: (error as Error).message,
+              fallbackError: (fallbackError as Error).message,
+            },
           },
         });
       }
     }
 
-    // Wrap if not ImageProcessError
+    // ImageProcessError가 아니면 래핑한다
     if (!(error instanceof ImageProcessError)) {
-      throw createImageError('CONVERSION_FAILED', error as Error, context);
+      throw createImageError('CONVERSION_FAILED', { cause: error, context });
     }
 
     throw error;
@@ -368,8 +231,8 @@ export function logError(error: ImageProcessError, context?: any): void {
   console.error('Code:', error.code);
   console.error('Message:', error.message);
 
-  if (error.originalError) {
-    console.error('Original Error:', error.originalError);
+  if (error.cause instanceof Error) {
+    console.error('Original Error:', error.cause);
   }
 
   if (context) {
@@ -387,7 +250,7 @@ export function logError(error: ImageProcessError, context?: any): void {
  */
 export async function createAndHandleError(
   code: ImageErrorCodeType,
-  originalError?: Error,
+  cause?: unknown,
   operation?: string,
   context?: ErrorContext
 ): Promise<ImageProcessError> {
@@ -395,7 +258,7 @@ export async function createAndHandleError(
   const enhancedContext = globalErrorHandler.collectEnhancedContext(operation || 'unknown', context);
 
   // Use existing createImageError
-  const error = createImageError(code, originalError, enhancedContext);
+  const error = createImageError(code, { cause, context: enhancedContext });
 
   // Handle with centralized handler
   await globalErrorHandler.handleError(error, enhancedContext);
@@ -436,8 +299,8 @@ export async function withErrorHandling<T>(
 /**
  * Simple error creation (without handler)
  */
-export function createQuickError(code: ImageErrorCodeType, originalError?: Error): ImageProcessError {
-  return createImageError(code, originalError, { debug: { quickError: true } });
+export function createQuickError(code: ImageErrorCodeType, cause?: unknown): ImageProcessError {
+  return createImageError(code, { cause });
 }
 
 /**

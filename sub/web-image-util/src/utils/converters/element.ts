@@ -62,7 +62,7 @@ export async function ensureImageElementDetailed(source: ImageSource): Promise<R
     throw new ImageProcessError(
       'Error occurred while ensuring HTMLImageElement output',
       'CONVERSION_FAILED',
-      error as Error
+      { cause: error }
     );
   }
 }

@@ -47,8 +47,8 @@ export function isAbortLikeError(error: unknown): boolean {
     return true;
   }
 
-  if (error instanceof ImageProcessError && error.originalError) {
-    return isAbortLikeError(error.originalError);
+  if (error instanceof ImageProcessError && error.cause instanceof Error) {
+    return isAbortLikeError(error.cause);
   }
 
   return false;

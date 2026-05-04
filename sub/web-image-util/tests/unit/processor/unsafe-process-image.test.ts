@@ -65,7 +65,7 @@ describe('unsafe_processImage', () => {
 
       await expect((processImage(buffer) as any).toElement()).rejects.toMatchObject({
         code: 'OUTPUT_FAILED',
-        originalError: expect.objectContaining({
+        cause: expect.objectContaining({
           code: 'INVALID_SOURCE',
         }),
       });
@@ -91,14 +91,14 @@ describe('unsafe_processImage', () => {
 
     await expect((processImage(uint8) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      originalError: expect.objectContaining({
+      cause: expect.objectContaining({
         code: 'INVALID_SOURCE',
       }),
     });
 
     await expect((unsafe_processImage(uint8) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      originalError: expect.objectContaining({
+      cause: expect.objectContaining({
         code: 'INVALID_SOURCE',
       }),
     });
@@ -181,7 +181,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
 
     await expect((processImage(svgWithRelativeHref) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      originalError: expect.objectContaining({
+      cause: expect.objectContaining({
         code: 'INVALID_SOURCE',
       }),
     });
@@ -216,7 +216,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
 
     await expect((processImage(svgBlob) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      originalError: expect.objectContaining({
+      cause: expect.objectContaining({
         code: 'INVALID_SOURCE',
       }),
     });
@@ -234,13 +234,13 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
 
     await expect((processImage(oversizedSvg) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      originalError: expect.objectContaining({
+      cause: expect.objectContaining({
         code: 'INVALID_SOURCE',
       }),
     });
     await expect((unsafe_processImage(oversizedSvg) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      originalError: expect.objectContaining({
+      cause: expect.objectContaining({
         code: 'INVALID_SOURCE',
       }),
     });
@@ -287,7 +287,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
 
     await expect((processImage(oversized, { svgSanitizer: 'skip' }) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      originalError: expect.objectContaining({
+      cause: expect.objectContaining({
         code: 'INVALID_SOURCE',
       }),
     });
@@ -331,7 +331,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
 
     await expect((processImage(svg, { svgSanitizer: 'safe' } as any) as any).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      originalError: expect.objectContaining({
+      cause: expect.objectContaining({
         code: 'INVALID_SOURCE',
       }),
     });
@@ -375,7 +375,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
         (processImage('https://example.com/icon.svg', { svgSanitizer: 'skip' }) as any).toElement()
       ).rejects.toMatchObject({
         code: 'OUTPUT_FAILED',
-        originalError: expect.objectContaining({
+        cause: expect.objectContaining({
           code: 'INVALID_SOURCE',
         }),
       });
@@ -399,7 +399,7 @@ describe('unsafe_processImage — safe/unsafe 경로 차이', () => {
         (processImage('blob:https://example.com/icon', { svgSanitizer: 'skip' }) as any).toElement()
       ).rejects.toMatchObject({
         code: 'OUTPUT_FAILED',
-        originalError: expect.objectContaining({
+        cause: expect.objectContaining({
           code: 'SOURCE_LOAD_FAILED',
         }),
       });

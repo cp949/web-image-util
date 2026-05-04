@@ -352,9 +352,6 @@ describe('Processor Resize Integration Tests', () => {
         if (error instanceof ImageProcessError) {
           expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
           expect(error.message).toContain('resize() can only be called once');
-          expect(error.suggestions).toBeInstanceOf(Array);
-          expect(error.suggestions.length).toBeGreaterThan(0);
-          expect(error.suggestions[0]).toContain('Include all resizing options in a single resize() call');
         }
       }
     });
@@ -397,13 +394,8 @@ describe('Processor Resize Integration Tests', () => {
         expect.fail('Should have thrown error');
       } catch (error) {
         if (error instanceof ImageProcessError) {
-          // Error code allows programmatic handling
+          // 에러 코드로 프로그래매틱 처리 가능
           expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
-
-          // Verify suggestions are actually helpful
-          const hasSeparateInstance = error.suggestions.some((s) => s.includes('separate'));
-          const hasDirectSize = error.suggestions.some((s) => s.includes('directly'));
-          expect(hasSeparateInstance || hasDirectSize).toBe(true);
         }
       }
     });

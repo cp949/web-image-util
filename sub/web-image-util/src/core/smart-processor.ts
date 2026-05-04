@@ -67,7 +67,7 @@ export class SmartProcessor {
 
       return result.canvas;
     } catch (error) {
-      throw createImageError('PROCESSING_FAILED', error instanceof Error ? error : new Error(String(error)));
+      throw createImageError('PROCESSING_FAILED', { cause: error instanceof Error ? error : new Error(String(error)) });
     }
   }
 
@@ -101,7 +101,7 @@ export class SmartProcessor {
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
-      throw createImageError('CANVAS_CONTEXT_FAILED', new Error('Failed to get canvas context'));
+      throw createImageError('CANVAS_CONTEXT_FAILED', { cause: new Error('Failed to get canvas context') });
     }
 
     canvas.width = width;

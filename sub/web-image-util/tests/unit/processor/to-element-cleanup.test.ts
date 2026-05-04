@@ -105,7 +105,7 @@ describe('toElement cleanup 동작', () => {
     expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:processor-to-element');
   });
 
-  it('objectURL 생성 예외를 OUTPUT_FAILED로 감싸고 originalError를 보존한다', async () => {
+  it('objectURL 생성 예외를 OUTPUT_FAILED로 감싸고 cause를 보존한다', async () => {
     const canvas = createCanvasWithBlob(new Blob(['output'], { type: 'image/png' }));
     const cause = new Error('object url unavailable');
     createObjectURLSpy.mockImplementation(() => {
@@ -114,7 +114,7 @@ describe('toElement cleanup 동작', () => {
 
     await expect(createProcessorWithCanvas(canvas).toElement()).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      originalError: cause,
+      cause: cause,
     });
   });
 });

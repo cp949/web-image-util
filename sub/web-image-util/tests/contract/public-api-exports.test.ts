@@ -42,6 +42,7 @@ const ROOT_VALUE_EXPORTS = [
   // 단축 API
   'ShortcutBuilder',
   // 에러 / 상수
+  'ImageErrorCode',
   'ImageProcessError',
   'OPTIMAL_QUALITY_BY_FORMAT',
   // /utils에서 재노출하는 유틸 함수

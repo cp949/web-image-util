@@ -84,12 +84,11 @@ describe('preset 함수 계약', () => {
 });
 
 describe('에러 / 상수 계약', () => {
-  test('ImageProcessError는 Error 하위 클래스이며 code/suggestions 필드를 노출한다', () => {
+  test('ImageProcessError는 Error 하위 클래스이며 code 필드를 노출한다', () => {
     const err = new ImageProcessError('test failure', 'PROCESSING_FAILED');
     expect(err).toBeInstanceOf(Error);
     expect(err.name).toBe('ImageProcessError');
     expect(err.code).toBe('PROCESSING_FAILED');
-    expect(Array.isArray(err.suggestions)).toBe(true);
   });
 
   test('OPTIMAL_QUALITY_BY_FORMAT은 모든 출력 포맷의 기본 품질을 정의한다', () => {

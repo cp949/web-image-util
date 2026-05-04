@@ -159,8 +159,9 @@ export class TiledProcessor {
           completedTiles++;
           opts.onProgress?.(completedTiles, totalTiles);
         } catch (error) {
-          throw createImageError('RESIZE_FAILED', error as Error, {
-            debug: { stage: 'tile processing', x: tile.sourceX, y: tile.sourceY },
+          throw createImageError('RESIZE_FAILED', {
+            cause: error,
+            context: { debug: { stage: 'tile processing', x: tile.sourceX, y: tile.sourceY } },
           });
         }
       });
@@ -333,28 +334,31 @@ export class TiledProcessor {
     opts: Required<Omit<TiledProcessingOptions, 'onProgress'>>
   ): void {
     if (!img || img.width <= 0 || img.height <= 0) {
-      throw createImageError('INVALID_SOURCE', new Error('Invalid source image'));
+      throw createImageError('INVALID_SOURCE', { cause: new Error('Invalid source image') });
     }
 
     if (targetWidth <= 0 || targetHeight <= 0) {
-      throw createImageError('RESIZE_FAILED', new Error('Invalid target dimensions'), {
-        dimensions: { width: targetWidth, height: targetHeight },
+      throw createImageError('RESIZE_FAILED', {
+        cause: new Error('Invalid target dimensions'),
+        context: { dimensions: { width: targetWidth, height: targetHeight } },
       });
     }
 
     if (opts.tileSize <= 0) {
-      throw createImageError('RESIZE_FAILED', new Error('Invalid tile size'), { debug: { tileSize: opts.tileSize } });
+      throw createImageError('RESIZE_FAILED', { cause: new Error('Invalid tile size'), context: { debug: { tileSize: opts.tileSize } } });
     }
 
     if (opts.overlapSize < 0 || opts.overlapSize >= opts.tileSize) {
-      throw createImageError('RESIZE_FAILED', new Error('Invalid overlap size'), {
-        debug: { overlapSize: opts.overlapSize },
+      throw createImageError('RESIZE_FAILED', {
+        cause: new Error('Invalid overlap size'),
+        context: { debug: { overlapSize: opts.overlapSize } },
       });
     }
 
     if (opts.maxConcurrency <= 0) {
-      throw createImageError('RESIZE_FAILED', new Error('Invalid max concurrency'), {
-        debug: { maxConcurrency: opts.maxConcurrency },
+      throw createImageError('RESIZE_FAILED', {
+        cause: new Error('Invalid max concurrency'),
+        context: { debug: { maxConcurrency: opts.maxConcurrency } },
       });
     }
   }
