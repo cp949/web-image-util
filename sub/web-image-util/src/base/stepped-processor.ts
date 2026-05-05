@@ -299,9 +299,9 @@ export class SteppedProcessor {
     }
 
     // Process each chunk sequentially, but process items within chunk in parallel
-    for (const chunk of chunks) {
+    for (const [chunkIdx, chunk] of chunks.entries()) {
       const chunkPromises = chunk.map(async (img, chunkIndex) => {
-        const globalIndex = chunks.indexOf(chunk) * concurrency + chunkIndex;
+        const globalIndex = chunkIdx * concurrency + chunkIndex;
 
         try {
           const result = await SteppedProcessor.resizeWithSteps(img, targetWidth, targetHeight, processingOptions);
