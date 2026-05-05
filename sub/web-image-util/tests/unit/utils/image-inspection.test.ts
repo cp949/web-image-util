@@ -12,7 +12,7 @@ function mockAlphaData(ctx: CanvasRenderingContext2D, alphaValues: number[]): vo
     }) as ImageData;
 }
 
-describe('image inspection utilities', () => {
+describe('이미지 검사 유틸', () => {
   it('투명 픽셀이 있으면 true를 반환한다', async () => {
     const canvas = document.createElement('canvas');
     canvas.width = 2;

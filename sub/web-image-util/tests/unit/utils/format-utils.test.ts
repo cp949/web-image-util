@@ -9,7 +9,7 @@ import {
   resolveOutputFormat,
 } from '../../../src/utils';
 
-describe('format utilities', () => {
+describe('포맷 유틸', () => {
   it('이미지 포맷을 MIME 타입으로 변환한다', () => {
     expect(formatToMimeType('jpg')).toBe('image/jpeg');
     expect(formatToMimeType('jpeg')).toBe('image/jpeg');
