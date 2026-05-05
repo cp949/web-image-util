@@ -20,6 +20,7 @@ describe('ResizePerformance', () => {
       const result = ResizePerformance.getRecommendation(1, 1_000_000);
 
       expect(result.profile).toBe('fast');
+      expect(result.reason).toBe('Fast profile recommended due to high memory pressure');
     });
   });
 });
