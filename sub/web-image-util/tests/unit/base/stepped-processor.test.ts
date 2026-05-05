@@ -47,8 +47,6 @@ describe('SteppedProcessor.batchResizeWithSteps', () => {
 
     expect(results).toHaveLength(7);
     // 각 결과의 width가 원본 이미지 순서와 일치해야 한다
-    results.forEach((canvas, i) => {
-      expect(canvas.width).toBe(widths[i]);
-    });
+    expect(results.map((c) => c.width)).toEqual(widths);
   });
 });
