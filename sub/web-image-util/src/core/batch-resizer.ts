@@ -42,18 +42,19 @@ export class BatchResizer {
    * Process all jobs in batches
    */
   async processAll<T>(jobs: BatchResizeJob<T>[]): Promise<T[]> {
-    const { concurrency, timeout } = this.config;
+    const concurrency = this.config.concurrency ?? 2;
+    const timeout = this.config.timeout ?? 30;
     const results: T[] = [];
 
     // Process in chunks
-    for (let i = 0; i < jobs.length; i += concurrency!) {
-      const chunk = jobs.slice(i, i + concurrency!);
+    for (let i = 0; i < jobs.length; i += concurrency) {
+      const chunk = jobs.slice(i, i + concurrency);
 
       // Memory check
       await this.memoryManager.checkAndOptimize();
 
       // Concurrent processing (with timeout)
-      const chunkResults = await Promise.all(chunk.map((job) => this.runWithTimeout(job.operation, timeout! * 1000)));
+      const chunkResults = await Promise.all(chunk.map((job) => this.runWithTimeout(job.operation, timeout * 1000)));
 
       results.push(...chunkResults);
     }
