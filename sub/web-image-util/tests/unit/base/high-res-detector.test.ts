@@ -72,7 +72,9 @@ describe('HighResolutionDetector', () => {
 
       it('Canvas 한도를 초과하는 너비는 tiled 전략을 사용한다', () => {
         // Chrome UA로 설정해 maxSafeDimension = 32767
-        setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        setUserAgent(
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        );
         // 32768 > 32767 → tiled
         const img = createMockImage(32768, 100);
         const result = HighResolutionDetector.analyzeImage(img);
@@ -81,7 +83,9 @@ describe('HighResolutionDetector', () => {
 
       it('Canvas 한도를 초과하는 높이는 tiled 전략을 사용한다', () => {
         // Chrome UA로 설정해 maxSafeDimension = 32767
-        setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        setUserAgent(
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        );
         // 높이 32768 > 32767 → tiled
         const img = createMockImage(100, 32768);
         const result = HighResolutionDetector.analyzeImage(img);
@@ -172,7 +176,9 @@ describe('HighResolutionDetector', () => {
     });
 
     it('Chrome UA에서 32767을 반환한다', () => {
-      setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      );
       expect(HighResolutionDetector.getMaxSafeDimension()).toBe(32767);
     });
 
@@ -183,7 +189,9 @@ describe('HighResolutionDetector', () => {
 
     it('Safari UA에서 16384를 반환한다', () => {
       // chrome/chromium이 없고 safari만 있는 순수 Safari UA
-      setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15');
+      setUserAgent(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
+      );
       expect(HighResolutionDetector.getMaxSafeDimension()).toBe(16384);
     });
 

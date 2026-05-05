@@ -31,14 +31,12 @@ describe('SteppedProcessor.batchResizeWithSteps', () => {
     const widths = [10, 20, 30, 40, 50, 60, 70];
     const images = widths.map((w) => createMockImage(w, w));
 
-    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockImplementation(
-      async (img: HTMLImageElement) => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        return canvas;
-      }
-    );
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockImplementation(async (img: HTMLImageElement) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      return canvas;
+    });
 
     // concurrency=3으로 3개 청크가 생성된다 (3+3+1)
     const results = await SteppedProcessor.batchResizeWithSteps(images, 100, 100, {

@@ -150,12 +150,9 @@ describe('visitCssUrlValues()', () => {
 
   it('여러 url() 호출이 있으면 모두 방문한다', () => {
     const visited: string[] = [];
-    visitCssUrlValues(
-      'background: url("a.png"); border-image: url("b.png")',
-      (value) => {
-        visited.push(value);
-      }
-    );
+    visitCssUrlValues('background: url("a.png"); border-image: url("b.png")', (value) => {
+      visited.push(value);
+    });
     expect(visited).toEqual(['a.png', 'b.png']);
   });
 
