@@ -17,6 +17,13 @@ class MockCanvasRenderingContext2D {
   imageSmoothingQuality: 'low' | 'medium' | 'high' = 'high';
   lineWidth: number = 1;
   filter: string = 'none';
+  font: string = '10px sans-serif';
+  textBaseline: string = 'alphabetic';
+  textAlign: string = 'start';
+  shadowColor: string = 'rgba(0,0,0,0)';
+  shadowOffsetX: number = 0;
+  shadowOffsetY: number = 0;
+  shadowBlur: number = 0;
 
   constructor(canvas: any) {
     this.canvas = canvas;
@@ -55,6 +62,15 @@ class MockCanvasRenderingContext2D {
   clip() {}
   isPointInPath(x: number, y: number) {
     return false;
+  }
+  measureText(text: string) {
+    // 글자당 8px로 근사한다
+    return { width: text.length * 8 };
+  }
+  fillText(text: string, x: number, y: number, maxWidth?: number) {}
+  strokeText(text: string, x: number, y: number, maxWidth?: number) {}
+  createLinearGradient(x0: number, y0: number, x1: number, y1: number) {
+    return { addColorStop: (_offset: number, _color: string) => {} } as unknown as CanvasGradient;
   }
 }
 
