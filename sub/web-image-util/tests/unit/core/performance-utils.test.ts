@@ -31,12 +31,16 @@ describe('ResizePerformance', () => {
   });
 
   describe('getConfig', () => {
+    afterEach(() => {
+      // 전역 상태 초기화
+      ResizePerformance.setProfile('balanced');
+    });
+
     it('profile 인자 없이 호출하면 현재 전역 프로파일 config를 반환한다', () => {
       ResizePerformance.setProfile('fast');
       const config = ResizePerformance.getConfig();
       expect(config.concurrency).toBe(4);
       expect(config.memoryLimitMB).toBe(128);
-      ResizePerformance.setProfile('balanced');
     });
 
     it('profile 인자를 넘기면 해당 프로파일 config를 반환한다', () => {
