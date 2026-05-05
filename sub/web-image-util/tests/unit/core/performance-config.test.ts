@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  RESIZE_PROFILES,
-  ResizePerformanceOptions,
-  ResizeProfile,
   getPerformanceConfig,
+  RESIZE_PROFILES,
+  type ResizePerformanceOptions,
+  type ResizeProfile,
 } from '../../../src/core/performance-config';
 
 describe('RESIZE_PROFILES', () => {

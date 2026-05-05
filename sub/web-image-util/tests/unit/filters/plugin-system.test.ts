@@ -7,16 +7,16 @@
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
-  BlendMode,
-  FilterCategory,
-  FilterPluginManager,
   applyFilter,
   applyFilterChain,
+  BlendMode,
+  FilterCategory,
+  type FilterPlugin,
+  FilterPluginManager,
   filterManager,
   getAvailableFilters,
   getMissingFilterNames,
   registerFilter,
-  type FilterPlugin,
 } from '../../../src/filters/plugin-system';
 
 // Node 환경에서 ImageData 목을 설정한다.

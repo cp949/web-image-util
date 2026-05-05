@@ -6,10 +6,10 @@ import { describe, expect, it } from 'vitest';
 import { ImageWatermark } from '../../../src/composition/image-watermark';
 import { Position } from '../../../src/composition/position-types';
 import {
-  SimpleWatermark,
   addCopyright,
   addImageWatermark,
   addTextWatermark,
+  SimpleWatermark,
 } from '../../../src/composition/simple-watermark';
 import { TextWatermark } from '../../../src/composition/text-watermark';
 import { createTestCanvas } from '../../utils/canvas-helper';
