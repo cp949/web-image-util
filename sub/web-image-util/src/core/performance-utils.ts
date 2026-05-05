@@ -133,11 +133,11 @@ export class ResizePerformance {
   } {
     const memoryInfo = ResizePerformance.getMemoryInfo();
 
-    // High memory pressure situation
+    // 메모리 압박이 심한 경우 가장 가벼운 프로파일 추천
     if (memoryInfo.pressureLevel === 'high') {
       return {
-        profile: 'balanced',
-        reason: 'Balanced profile recommended due to high memory usage',
+        profile: 'fast',
+        reason: 'Fast profile recommended due to high memory pressure',
       };
     }
 
