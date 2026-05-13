@@ -125,6 +125,7 @@ export default defineConfig({
       'tests/unit/processor/processor-resize/fit-modes-jsdom.test.ts',
       'tests/unit/presets/presets-jsdom.test.ts',
       'tests/unit/processor/image-loading-regression-jsdom.test.ts',
+      'tests/security/svg-inline-sanitization/inline-rendering-jsdom.test.ts',
     ],
     globals: true,
     coverage: {
