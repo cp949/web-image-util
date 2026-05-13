@@ -8,6 +8,7 @@
 
 - Added: inspectSvg() under @cp949/web-image-util/utils — side-effect-free string SVG diagnostics returning report with environment, findings, and sanitizer recommendation.
 - Added: inspectSvgSanitization() under @cp949/web-image-util/svg-sanitizer — side-effect-free sanitizer policy impact diagnostics returning stage counts for lightweight, strict, and skip policies. Embedded image stage codes absorb the RM-003 scope into the same report.
+- Added: prefixSvgIds() under @cp949/web-image-util/utils — side-effect-free SVG id prefix utility with idempotent/collision detection and deopt-on-CSS policy.
 
 ## [2.0.37] - 2026-05-05
 

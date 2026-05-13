@@ -155,6 +155,20 @@ export {
   inspectSvg,
 } from './inspect-svg';
 /**
+ * SVG ID prefix 유틸리티
+ *
+ * @description SVG 문자열 내 모든 id 속성에 prefix를 붙이고 같은 문서 안의
+ * fragment 참조(href/xlink:href/src)도 함께 rewrite한다
+ */
+export {
+  prefixSvgIds,
+  type SvgIdPrefixDeoptReason,
+  type SvgIdPrefixReport,
+  type SvgIdPrefixResult,
+  type SvgIdPrefixWarning,
+  type SvgIdPrefixWarningCode,
+} from './prefix-svg-ids';
+/**
  * 이미지 소스 판정 유틸리티
  *
  * @description processImage에 넘길 소스의 입력 형태와 문자열 소스의 세부 유형을 판정한다

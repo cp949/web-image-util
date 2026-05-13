@@ -61,6 +61,13 @@ describe('공개 export 계약', () => {
     expect(builtUtils.fetchImageSourceBlob).toBeTypeOf('function');
   });
 
+  test('빌드된 `/utils` 서브패스에서 prefixSvgIds를 import하고 실행할 수 있다', async () => {
+    const builtUtils = await import('../../dist/utils/index.js');
+    expect(builtUtils.prefixSvgIds).toBeTypeOf('function');
+    const r = builtUtils.prefixSvgIds('<svg xmlns="http://www.w3.org/2000/svg"/>', 'p');
+    expect(r.report).toBeDefined();
+  });
+
   test('`/presets` 서브패스 value export 목록이 고정되어 있다', () => {
     expect(valueExportKeys(presets)).toEqual(PRESETS_VALUE_EXPORTS);
   });

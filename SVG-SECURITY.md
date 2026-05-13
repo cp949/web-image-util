@@ -126,6 +126,13 @@ await processImage(userProvidedSource, {
 
 신뢰할 수 없는 SVG에는 `skip`을 사용하지 마세요.
 
+## prefixSvgIds() — 정규화 유틸 경계
+
+`prefixSvgIds()`는 SVG의 `id`와 fragment reference를 일괄 prefix하는 정규화 유틸리티입니다. sanitizer를 호출하지 않으며 보안 경계가 되지 않습니다.
+
+- 신뢰할 수 없는 SVG는 `@cp949/web-image-util/svg-sanitizer`의 `sanitizeSvgStrict()`로 정제한 뒤 `prefixSvgIds()`를 호출합니다.
+- `<style>` 요소 또는 `style` 속성이 있는 입력은 rewrite를 전면 보류하고(`deoptimized: true`), 원본 SVG를 그대로 반환합니다.
+
 ## inspectSvg() — 진단 API
 
 `inspectSvg()`는 SVG 문자열을 부수효과 없이 진단하는 API입니다. sanitizer를 실행하지 않으며 보안 경계가 되지 않습니다. 신뢰할 수 없는 SVG에는 여전히 `svgSanitizer: 'strict'`를 사용하세요.

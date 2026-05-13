@@ -212,6 +212,28 @@ if (report.recommendation.sanitizer === 'strict') {
 }
 ```
 
+### SVG ID prefix
+
+여러 SVG를 같은 DOM에 inline 삽입할 때 `id` 충돌을 방지하려면 `prefixSvgIds()`를 사용합니다. 신뢰할 수 없는 SVG는 먼저 `sanitizeSvgStrict()`로 정제한 뒤 `prefixSvgIds()`를 호출합니다.
+
+```typescript
+import { prefixSvgIds } from '@cp949/web-image-util/utils';
+import { sanitizeSvgStrict } from '@cp949/web-image-util/svg-sanitizer';
+
+// 신뢰할 수 없는 SVG는 먼저 정제한다
+const cleanSvg = sanitizeSvgStrict(untrustedSvg);
+
+const { svg, report } = prefixSvgIds(cleanSvg, 'icon-a');
+
+if (report.deoptimized) {
+  // <style> 또는 style 속성이 있는 입력은 rewrite를 전면 보류한다
+  console.warn('id prefix 보류:', report.deoptReasons);
+} else {
+  // 변환된 SVG를 DOM에 삽입
+  container.innerHTML = svg;
+}
+```
+
 ### 기타 유틸리티
 
 ```typescript

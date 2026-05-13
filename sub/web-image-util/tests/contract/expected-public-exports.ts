@@ -156,6 +156,7 @@ export const UTILS_VALUE_EXPORTS = [
   'enhanceSvgForBrowser',
   'inspectSvg',
   'isInlineSvg',
+  'prefixSvgIds',
   'sanitizeSvg',
   'sanitizeSvgForRendering',
   'SvgOptimizer',

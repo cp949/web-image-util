@@ -26,6 +26,11 @@ import type {
   InspectSvgFinding,
   InspectSvgFindingCode,
   InspectSvgReport,
+  SvgIdPrefixDeoptReason,
+  SvgIdPrefixReport,
+  SvgIdPrefixResult,
+  SvgIdPrefixWarning,
+  SvgIdPrefixWarningCode,
 } from '@cp949/web-image-util/utils';
 import type { ImageErrorCodeType, ImageErrorDetails, ImageProcessErrorOptions } from '../../src';
 import type {
@@ -117,3 +122,20 @@ void sanitizationStrictImpact;
 void sanitizationSkipImpact;
 void sanitizationOptions;
 void sanitizationReport;
+
+const prefixWarningCode: SvgIdPrefixWarningCode = 'id-rewrite-skipped-idempotent';
+const prefixWarning: SvgIdPrefixWarning = { code: prefixWarningCode, count: 1 };
+const prefixDeoptReason: SvgIdPrefixDeoptReason = 'style-tag-present';
+const prefixReport: SvgIdPrefixReport = {
+  deoptimized: false,
+  deoptReasons: [],
+  bytes: 0,
+  byteLimit: 0,
+  environment: 'unknown',
+  prefixedIdCount: 0,
+  rewrittenReferenceCount: 0,
+  warnings: [prefixWarning],
+};
+const prefixResult: SvgIdPrefixResult = { svg: '<svg/>', report: prefixReport };
+void prefixDeoptReason;
+void prefixResult;
