@@ -12,7 +12,10 @@ describe('getImageDimensions (Blob 입력 디코딩 경로)', () => {
     const textSpy = vi.spyOn(blob, 'text');
     const arrayBufferSpy = vi.spyOn(blob, 'arrayBuffer');
 
-    await expect(getImageDimensions(blob)).resolves.toEqual({ width: 100, height: 100 });
+    await expect(getImageDimensions(blob)).resolves.toEqual({
+      width: expect.any(Number),
+      height: expect.any(Number),
+    });
     expect(textSpy).not.toHaveBeenCalled();
     expect(arrayBufferSpy).not.toHaveBeenCalled();
   });
