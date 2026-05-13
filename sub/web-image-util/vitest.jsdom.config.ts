@@ -95,6 +95,7 @@ export default defineConfig({
       'tests/unit/composition/watermark-convenience.test.ts',
       'tests/unit/composition/watermark-image.test.ts',
       'tests/unit/composition/watermark-simple.test.ts',
+      'tests/unit/scripts/llm-txt-generator.test.ts',
       'tests/contract/contract-config-smoke.test.ts',
       'tests/contract/public-api-exports.test.ts',
       'tests/contract/package-manifest.test.ts',
