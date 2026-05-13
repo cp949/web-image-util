@@ -10,6 +10,8 @@ import * as svgModule from './demos/03-svg';
 import svgSource from './demos/03-svg.ts?raw';
 import * as presetsModule from './demos/04-presets';
 import presetsSource from './demos/04-presets.ts?raw';
+import * as shortcutModule from './demos/05-shortcut';
+import shortcutSource from './demos/05-shortcut.ts?raw';
 import { DemoPage } from './shell/DemoPage';
 import { Sidebar, type SidebarItem } from './shell/Sidebar';
 
@@ -18,6 +20,7 @@ const items: SidebarItem[] = [
   { path: '/fit-modes', title: '02. Fit 모드 비교' },
   { path: '/svg', title: '03. SVG 처리' },
   { path: '/presets', title: '04. Presets' },
+  { path: '/shortcut', title: '05. Shortcut API' },
 ];
 
 export function App() {
@@ -33,6 +36,7 @@ export function App() {
             <Route path="/fit-modes" element={<DemoPage source={fitModesSource} module={fitModesModule} />} />
             <Route path="/svg" element={<DemoPage source={svgSource} module={svgModule} />} />
             <Route path="/presets" element={<DemoPage source={presetsSource} module={presetsModule} />} />
+            <Route path="/shortcut" element={<DemoPage source={shortcutSource} module={shortcutModule} />} />
           </Routes>
         </Box>
       </Box>
