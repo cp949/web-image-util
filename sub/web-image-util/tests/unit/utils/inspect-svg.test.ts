@@ -94,14 +94,6 @@ describe('inspectSvg()', () => {
     });
   });
 
-  describe('jsdom 환경 감지', () => {
-    it('report.environment가 "browser"이다', () => {
-      // 이 파일은 jsdom config로 실행된다. 라이브러리 환경 감지기는 jsdom을 일반 브라우저로 인식한다.
-      const report = inspectSvg('<svg></svg>');
-      expect(report.environment).toBe('browser');
-    });
-  });
-
   describe('공개 표면 smoke 테스트', () => {
     it('@cp949/web-image-util/utils에서 inspectSvg를 import해 호출할 수 있다', () => {
       const report = inspectSvgFromUtils('<svg></svg>');

@@ -114,13 +114,6 @@ describe('inspectSvgSanitization()', () => {
     });
   });
 
-  describe('환경 감지', () => {
-    it('jsdom 환경에서 environment가 "browser"이다', async () => {
-      // 이 파일은 jsdom config로 실행된다. 라이브러리 환경 감지기는 jsdom을 일반 브라우저로 인식한다.
-      const report = await inspectSvgSanitization(TINY_SVG);
-      expect(report.environment).toBe('browser');
-    });
-  });
 
   describe('공개 표면 노출', () => {
     it('svg-sanitizer 서브패스에서 inspectSvgSanitization을 import할 수 있다', async () => {

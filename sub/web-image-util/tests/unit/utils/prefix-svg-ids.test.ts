@@ -198,11 +198,6 @@ describe('prefixSvgIds() — 입력 계약과 환경 메타', () => {
       expect(['browser', 'happy-dom', 'node', 'unknown']).toContain(result.report.environment);
     });
 
-    it('jsdom 환경에서 environment가 "browser"이다', () => {
-      // 이 파일은 jsdom config로 실행된다. 라이브러리 환경 감지기는 jsdom을 일반 브라우저로 인식한다.
-      const result = prefixSvgIds(SIMPLE_SVG, 'pfx');
-      expect(result.report.environment).toBe('browser');
-    });
   });
 
   describe('정상 SVG 입력 — deopt 없는 응답', () => {

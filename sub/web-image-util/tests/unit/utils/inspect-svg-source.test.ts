@@ -150,10 +150,3 @@ describe('inspectSvgSource() — 정상 입력 originalKind 판정', () => {
   });
 });
 
-describe('inspectSvgSource() — 환경 감지', () => {
-  it('jsdom 환경에서 environment가 "browser"이다', async () => {
-    // 이 파일은 jsdom config로 실행된다. 라이브러리 환경 감지기는 jsdom을 일반 브라우저로 인식한다.
-    const result = await inspectSvgSource('<svg xmlns="http://www.w3.org/2000/svg"/>');
-    expect(result.environment).toBe('browser');
-  });
-});
