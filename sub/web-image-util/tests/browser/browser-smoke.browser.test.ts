@@ -257,3 +257,47 @@ describe('브라우저 스모크 테스트', () => {
     expectBlobMetadataMatchesActualMime(result);
   });
 });
+
+describe('브라우저 성능 스모크 테스트', () => {
+  it('대표 리사이즈가 브라우저 예산 안에 끝난다', async () => {
+    const source = createFixtureCanvas(800, 600);
+    const startTime = performance.now();
+
+    const result = await processImage(source).resize({ fit: 'contain', width: 200, height: 150 }).toBlob();
+
+    expect(performance.now() - startTime).toBeLessThan(1000);
+    expect(result.width).toBe(200);
+    expect(result.height).toBe(150);
+    expect(result.blob.size).toBeGreaterThan(0);
+  });
+
+  it('리사이즈와 blur 체인이 브라우저 예산 안에 끝난다', async () => {
+    const source = createFixtureCanvas(640, 480);
+    const startTime = performance.now();
+
+    const result = await processImage(source).resize({ fit: 'cover', width: 320, height: 240 }).blur(3).toBlob();
+
+    expect(performance.now() - startTime).toBeLessThan(1500);
+    expect(result.width).toBe(320);
+    expect(result.height).toBe(240);
+    expect(result.blob.size).toBeGreaterThan(0);
+  });
+
+  it('작은 병렬 배치가 브라우저 예산 안에 끝난다', async () => {
+    const source = createFixtureCanvas(400, 300);
+    const startTime = performance.now();
+    const jobs = Array.from({ length: 6 }, () =>
+      processImage(source).resize({ fit: 'cover', width: 160, height: 120 }).toBlob()
+    );
+
+    const results = await Promise.all(jobs);
+
+    expect(performance.now() - startTime).toBeLessThan(3000);
+    expect(results).toHaveLength(6);
+    for (const result of results) {
+      expect(result.width).toBe(160);
+      expect(result.height).toBe(120);
+      expect(result.blob.size).toBeGreaterThan(0);
+    }
+  });
+});
