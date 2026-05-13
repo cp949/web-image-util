@@ -6,12 +6,15 @@ import * as basicModule from './demos/01-basic';
 import basicSource from './demos/01-basic.ts?raw';
 import * as fitModesModule from './demos/02-fit-modes';
 import fitModesSource from './demos/02-fit-modes.ts?raw';
+import * as svgModule from './demos/03-svg';
+import svgSource from './demos/03-svg.ts?raw';
 import { DemoPage } from './shell/DemoPage';
 import { Sidebar, type SidebarItem } from './shell/Sidebar';
 
 const items: SidebarItem[] = [
   { path: '/basic', title: '01. 빠른 시작' },
   { path: '/fit-modes', title: '02. Fit 모드 비교' },
+  { path: '/svg', title: '03. SVG 처리' },
 ];
 
 export function App() {
@@ -25,6 +28,7 @@ export function App() {
             <Route path="/" element={<Navigate to="/basic" replace />} />
             <Route path="/basic" element={<DemoPage source={basicSource} module={basicModule} />} />
             <Route path="/fit-modes" element={<DemoPage source={fitModesSource} module={fitModesModule} />} />
+            <Route path="/svg" element={<DemoPage source={svgSource} module={svgModule} />} />
           </Routes>
         </Box>
       </Box>
