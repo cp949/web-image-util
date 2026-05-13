@@ -12,6 +12,8 @@ import * as presetsModule from './demos/04-presets';
 import presetsSource from './demos/04-presets.ts?raw';
 import * as shortcutModule from './demos/05-shortcut';
 import shortcutSource from './demos/05-shortcut.ts?raw';
+import * as chainModule from './demos/06-chain';
+import chainSource from './demos/06-chain.ts?raw';
 import { DemoPage } from './shell/DemoPage';
 import { Sidebar, type SidebarItem } from './shell/Sidebar';
 
@@ -21,6 +23,7 @@ const items: SidebarItem[] = [
   { path: '/svg', title: '03. SVG 처리' },
   { path: '/presets', title: '04. Presets' },
   { path: '/shortcut', title: '05. Shortcut API' },
+  { path: '/chain', title: '06. 체이닝 + Blur' },
 ];
 
 export function App() {
@@ -37,6 +40,7 @@ export function App() {
             <Route path="/svg" element={<DemoPage source={svgSource} module={svgModule} />} />
             <Route path="/presets" element={<DemoPage source={presetsSource} module={presetsModule} />} />
             <Route path="/shortcut" element={<DemoPage source={shortcutSource} module={shortcutModule} />} />
+            <Route path="/chain" element={<DemoPage source={chainSource} module={chainModule} />} />
           </Routes>
         </Box>
       </Box>
