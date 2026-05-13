@@ -8,5 +8,5 @@ root.render(
   <>
     <CssBaseline />
     <Typography sx={{ p: 4 }}>apps/demo bootstrap</Typography>
-  </>,
+  </>
 );
