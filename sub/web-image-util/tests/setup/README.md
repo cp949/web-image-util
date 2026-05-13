@@ -4,6 +4,21 @@
 
 장기적인 테스트 파일 배치와 이름 규칙은 [`../TESTING-GUIDE.md`](../TESTING-GUIDE.md)를 따른다.
 
+## 파일 구조
+
+`canvas-mock.ts`는 진입점이며, 실제 mock 구현은 책임별로 `mocks/` 하위에 분리되어 있다. 외부 vitest 설정은 진입점 경로(`./tests/setup/canvas-mock.ts`)만 참조한다.
+
+| 파일 | 책임 |
+| --- | --- |
+| [`canvas-mock.ts`](./canvas-mock.ts) | 진입점 — 아래 모듈을 side-effect import + SVG mock 플래그 |
+| [`mocks/canvas-element.ts`](./mocks/canvas-element.ts) | `HTMLCanvasElement`, `CanvasRenderingContext2D`, `toBlob`/`toDataURL` |
+| [`mocks/image-element.ts`](./mocks/image-element.ts) | `HTMLImageElement`, `Image` (src 설정 시 즉시 onload) |
+| [`mocks/document-globals.ts`](./mocks/document-globals.ts) | `document.createElement` 패치, `window`, `DOMParser`, `XMLSerializer` |
+| [`mocks/object-url.ts`](./mocks/object-url.ts) | `URL.createObjectURL` / `URL.revokeObjectURL` |
+| [`mocks/file-reader.ts`](./mocks/file-reader.ts) | `FileReader` (`readAsDataURL`/`readAsArrayBuffer`/`readAsText`) |
+
+import 순서는 의존성(canvas/image → document-globals) 때문에 진입점에서 고정한다.
+
 ## 이 mock이 맡는 것
 
 - `document.createElement('canvas')`, `document.createElement('img')`, `new Image()`를 예측 가능한 객체로 만든다.
