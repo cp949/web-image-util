@@ -662,14 +662,12 @@ describe('inspectSvgSanitization()', () => {
     function assertSamplesWhitelisted(stages: InspectSvgSanitizationStage[]): void {
       for (const stage of stages) {
         for (const sample of stage.samples) {
-          expect(
-            sample.length,
-            `stage ${stage.code} sample "${sample}" 길이는 32 이하여야 한다`
-          ).toBeLessThanOrEqual(32);
-          expect(
-            sample,
-            `stage ${stage.code} sample "${sample}"는 화이트리스트 정규식을 통과해야 한다`
-          ).toMatch(WHITELIST_PATTERN);
+          expect(sample.length, `stage ${stage.code} sample "${sample}" 길이는 32 이하여야 한다`).toBeLessThanOrEqual(
+            32
+          );
+          expect(sample, `stage ${stage.code} sample "${sample}"는 화이트리스트 정규식을 통과해야 한다`).toMatch(
+            WHITELIST_PATTERN
+          );
         }
       }
     }
