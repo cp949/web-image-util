@@ -132,6 +132,18 @@ await processImage(userProvidedSource, {
 
 happy-dom과 실제 브라우저 환경의 DOM 파싱 차이가 report `environment` 필드에 드러납니다. `environment === 'happy-dom'` 또는 `environment === 'browser'`로 테스트와 운영 환경의 finding 결과가 달라질 수 있습니다.
 
+## inspectSvgSanitization() — sanitizer 영향 진단 API
+
+`inspectSvgSanitization()`는 SVG 문자열에 sanitizer 정책을 적용했을 때 어떤 정책 stage가 발동(또는 발동할)했는지 진단합니다. `lightweight`는 실제 실행, `strict`는 동적 import 후 실제 실행, `skip`은 실행 없이 lightweight 시뮬레이션 결과를 `potentialStages`로만 노출합니다.
+
+보고서에는 SVG 원문, Data URL payload, 외부 URL 원본을 담지 않습니다. `samples`는 tagName/attrName/고정 토큰(`'style-tag'`, `'doctype'`, `'entity'`)/MIME 문자열만 노출하며, 각 항목은 최대 32자 이내이고 stage당 최대 3개입니다.
+
+이 API는 보안 경계가 아닙니다. 신뢰할 수 없는 SVG에는 여전히 `svgSanitizer: 'strict'`를 사용하세요. 진단 API는 호출 전에 "어떤 정책이 어떻게 영향을 주는지" 파악하는 용도이며, sanitize 자체를 대체하지 않습니다.
+
+`inspectSvg()`와 동일하게, happy-dom과 실제 브라우저 환경의 DOM 파싱 차이가 report `environment` 필드에 드러납니다. strict 정책의 실행 실패(byte 초과, node 개수 초과, DOMPurify 초기화 실패 등)는 throw 대신 `impact.status === 'failed'` + `failure.code`로 보고서에 담깁니다.
+
+`inspectSvgSanitization`은 `@cp949/web-image-util/svg-sanitizer` 서브패스에서 import합니다.
+
 ## `unsafe_processImage()`와의 차이
 
 `unsafe_processImage()`는 `svgSanitizer: 'skip'`과 다릅니다. `skip`은 sanitizer/assert만 건너뛰고 브라우저 호환성 보정은 유지하지만, `unsafe_processImage()`는 경량 방어층과 브라우저 호환성 보정을 모두 건너뛰고 원본 SVG를 최대한 그대로 로딩합니다.

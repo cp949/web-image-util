@@ -59,6 +59,7 @@
 | `src/utils/svg-detection.ts` | `isInlineSvg()` 등 SVG 문자열 판정 |
 | `src/utils/svg-sanitizer.ts` | `sanitizeSvgForRendering()`, `sanitizeSvg()` (deprecated alias) |
 | `src/utils/inspect-svg.ts` | SVG 문자열 진단 API — 부수효과 없이 findings·dimensions·sanitizer 추천을 반환하는 진단 레이어 |
+| `src/svg-sanitizer/inspect-sanitization.ts` | sanitizer 정책 영향 진단 API — `inspectSvgSanitization()`. 정책별 stage 카운트를 반환하며 파이프라인 외부의 진단 레이어다. strict는 동적 import. |
 | `src/core/lazy-render-pipeline.ts` | 연산 누적과 최종 렌더링 트리거 |
 | `src/core/single-renderer.ts` | 누적 연산 분석 및 단일 렌더링 진입점 |
 | `src/core/onehot-renderer.ts` | 최종 Canvas drawImage 렌더링 |

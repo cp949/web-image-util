@@ -168,6 +168,27 @@ await processImage(userProvidedSource, { svgSanitizer: 'strict' })
 
 Fabric.js, Illustrator, Figma export처럼 SVG 안에 `data:image/*`를 embedded image로 넣는 정상 SVG는 sanitizer가 이미지 Data URL만 제한적으로 보존합니다. 단, `data:image/svg+xml`은 nested SVG를 다시 정제한 결과만 보존하며, 비이미지 Data URL은 제거됩니다.
 
+### sanitizer 정책 영향 진단
+
+`inspectSvgSanitization()`는 SVG 문자열에 sanitizer 정책을 적용했을 때 어떤 stage가 발동(또는 발동할)했는지 호출 전에 진단합니다. 보고서에는 SVG 원문, Data URL payload, 외부 URL이 담기지 않으며, `samples`는 tagName/attrName/MIME 같은 짧은 식별자만 노출합니다. 보안 경계가 아니며, 신뢰할 수 없는 SVG에는 그대로 `svgSanitizer: 'strict'`를 사용하세요.
+
+```typescript
+import { inspectSvgSanitization } from '@cp949/web-image-util/svg-sanitizer';
+
+try {
+  const report = await inspectSvgSanitization(svgString, { policy: 'lightweight' });
+  if (report.impact.kind === 'lightweight') {
+    if (report.impact.stages.some((stage) => stage.code === 'external-href-removed')) {
+      console.warn('lightweight 적용 시 외부 href가 제거됩니다.');
+    }
+  }
+} catch (e) {
+  // 비문자열 입력 시 ImageProcessError(SVG_INPUT_INVALID)
+}
+```
+
+`policy`는 `'lightweight'`(기본, 실제 실행) / `'strict'`(동적 import 후 실제 실행) / `'skip'`(미실행 — lightweight 시뮬레이션 결과를 `potentialStages`로 노출) 중 하나입니다.
+
 ## 유틸리티
 
 자주 쓰는 유틸리티는 `@cp949/web-image-util/utils`에서 가져옵니다.
