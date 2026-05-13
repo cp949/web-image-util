@@ -13,6 +13,7 @@
 import { MAX_SVG_BYTES } from '../core/source-converter/options';
 import { isBlockedSvgPolicyRef } from '../core/source-converter/url/policy';
 import { ImageProcessError } from '../errors';
+import { isSafeRasterDataImageRef, parseSvgDataUrlRef } from '../utils/svg-data-url-policy';
 import { getCssPolicyValueVariants, normalizePolicyValue, visitCssUrlValues } from '../utils/svg-policy-utils';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 
@@ -344,6 +345,80 @@ function collectDoctypeAndEntityStages(
 }
 
 /**
+ * embedded image stage 3개를 한 번의 DOM 순회로 수집한다.
+ *
+ * 모든 element를 순회하며 `href` / `xlink:href` / `src` 속성값 후보(`getAttributeNS` 우선 +
+ * `getAttribute` 폴백)에 대해 다음 분기를 수행한다.
+ *
+ * 1. `value.trim().toLowerCase()`이 `data:`로 시작하지 않으면 본 헬퍼 범위 밖(외부 URL / 내부
+ *    fragment / 일반 상대 경로는 `collectAttributeStages`의 `external-href-removed` 또는 보존
+ *    대상).
+ * 2. `parseSvgDataUrlRef(value)`의 mimeType이 `'image/svg+xml'`이면 `nested-svg-resanitized`로
+ *    카운트하고 samples에 `'image/svg+xml'`를 추가한다.
+ * 3. `isSafeRasterDataImageRef(value)`가 true면 `data-image-preserved`로 카운트하고 samples에
+ *    `info.mimeType`(소문자)을 추가한다.
+ * 4. 그 외 `data:` 시작 값은 `data-image-blocked`로 카운트하고 samples에
+ *    `info?.mimeType ?? 'unknown'`을 추가한다. 미허용 MIME, 크기 초과, base64 디코딩 실패,
+ *    파싱 실패 모두 본 분기로 모인다.
+ *
+ * `parseSvgDataUrlRef`는 한 attribute 값당 한 번만 호출해 mimeType 분기와 blocked samples를
+ * 같이 결정한다(중복 manual parse 방지).
+ *
+ * `xlink:href`는 TASK-02 `collectAttributeStages`와 동일하게 namespace lookup을 우선한다.
+ */
+function collectEmbeddedImageStages(doc: Document): InspectSvgSanitizationStage[] {
+  const preserved = createAccumulator();
+  const blocked = createAccumulator();
+  const nested = createAccumulator();
+
+  const elements = doc.getElementsByTagName('*');
+  for (let i = 0; i < elements.length; i++) {
+    const element = elements[i];
+    if (!element) continue;
+
+    const attrNames = element.getAttributeNames();
+    for (const attrName of attrNames) {
+      const lowered = attrName.toLowerCase();
+      if (lowered !== 'href' && lowered !== 'xlink:href' && lowered !== 'src') continue;
+
+      let rawValue: string | null;
+      if (lowered === 'xlink:href') {
+        rawValue = element.getAttributeNS(XLINK_NAMESPACE, 'href');
+        if (rawValue === null) {
+          rawValue = element.getAttribute(attrName);
+        }
+      } else {
+        rawValue = element.getAttribute(attrName);
+      }
+
+      const value = rawValue ?? '';
+      if (value === '') continue;
+      if (!value.trim().toLowerCase().startsWith('data:')) continue;
+
+      const info = parseSvgDataUrlRef(value);
+      if (info?.mimeType === 'image/svg+xml') {
+        nested.count += 1;
+        addSample(nested, 'image/svg+xml');
+      } else if (isSafeRasterDataImageRef(value)) {
+        // info는 isSafeRasterDataImageRef 내부에서 다시 파싱되지만, 본 분기에 진입했다는 것은
+        // 해당 호출이 non-null info를 얻었다는 뜻이므로 외부 info도 mimeType을 보장한다.
+        preserved.count += 1;
+        addSample(preserved, info?.mimeType ?? 'unknown');
+      } else {
+        blocked.count += 1;
+        addSample(blocked, info?.mimeType ?? 'unknown');
+      }
+    }
+  }
+
+  const stages: InspectSvgSanitizationStage[] = [];
+  pushStage(stages, 'data-image-preserved', preserved);
+  pushStage(stages, 'data-image-blocked', blocked);
+  pushStage(stages, 'nested-svg-resanitized', nested);
+  return stages;
+}
+
+/**
  * 일반 정책 stage 7개를 수집한다(`script-removed` / `foreign-object-removed` /
  * `event-handler-removed` / `external-href-removed` / `external-css-removed` /
  * `doctype-removed` / `entity-removed`).
@@ -353,7 +428,7 @@ function collectDoctypeAndEntityStages(
  * 어차피 결과에서 제외된다).
  *
  * embedded image stage(`data-image-*`, `nested-svg-resanitized`)는 본 헬퍼 범위 밖이며,
- * TASK-03이 별도 헬퍼로 추가한다.
+ * `collectEmbeddedImageStages`가 별도로 수집해 합쳐진다.
  */
 function collectGeneralStages(
   svgString: string,
@@ -443,7 +518,8 @@ function buildStrictPlaceholderImpact(bytes: number): InspectSvgSanitizationImpa
 
 /**
  * lightweight 정책 경로. 입력 SVG에 `sanitizeSvgForRendering`을 동기 실행해 outputBytes를
- * 측정하고, 입력을 DOMParser로 파싱해 `collectGeneralStages('lightweight')`로 stage를 수집한다.
+ * 측정하고, 입력을 DOMParser로 파싱해 `collectGeneralStages('lightweight')`와
+ * `collectEmbeddedImageStages`로 stage를 수집해 합친다.
  *
  * 파싱 실패 또는 non-svg 루트라도 sanitize는 그대로 수행(정규식 기반이므로 파싱과 무관)하며,
  * stages는 빈 배열을 반환하고 status는 'ok'를 유지한다.
@@ -453,6 +529,9 @@ function runLightweightImpact(svgString: string): InspectSvgSanitizationImpact {
   const outputBytes = new TextEncoder().encode(sanitized).length;
   const doc = parseSvgDocument(svgString);
   const stages = collectGeneralStages(svgString, doc, 'lightweight');
+  if (doc !== null) {
+    stages.push(...collectEmbeddedImageStages(doc));
+  }
 
   return {
     kind: 'lightweight',
@@ -465,11 +544,15 @@ function runLightweightImpact(svgString: string): InspectSvgSanitizationImpact {
 
 /**
  * skip 정책 경로. sanitizer를 실행하지 않고 DOMParser로 입력만 파싱한 뒤
- * `collectGeneralStages('skip')`으로 "lightweight가 적용됐다면 발동했을" stage를 수집한다.
+ * `collectGeneralStages('skip')`와 `collectEmbeddedImageStages`로
+ * "lightweight가 적용됐다면 발동했을" stage를 수집해 합친다.
  */
 function runSkipImpact(svgString: string): InspectSvgSanitizationImpact {
   const doc = parseSvgDocument(svgString);
   const potentialStages = collectGeneralStages(svgString, doc, 'skip');
+  if (doc !== null) {
+    potentialStages.push(...collectEmbeddedImageStages(doc));
+  }
   return { kind: 'skip', status: 'not-applied', potentialStages };
 }
 
