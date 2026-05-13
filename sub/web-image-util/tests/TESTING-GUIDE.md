@@ -24,6 +24,8 @@
 
 새로 추가하는 테스트는 jsdom 환경을 가정하고 작성한다. 기존 happy-dom 테스트는 해당 영역을 수정하거나 새 테스트를 추가할 때 함께 jsdom으로 옮긴다(touch-and-migrate). 대규모 일괄 마이그레이션은 시도하지 않는다.
 
+jsdom은 실제 브라우저를 완벽하게 대체하는 환경이 아니다. DOM 표준 API와 브라우저 API 호출 계약을 빠르게 검증하기 위한 단위 테스트 환경으로 본다. 렌더링, 레이아웃, 이미지 디코딩, 브라우저별 인코딩 품질처럼 실제 브라우저 엔진이 필요한 결과는 jsdom 통과 여부를 production 동작의 증거로 삼지 않는다.
+
 장기 목표는 happy-dom 제거다. 마지막 happy-dom 테스트가 옮겨진 시점에 의존성과 setup mock을 제거한다. 그 전까지는 happy-dom과 jsdom 양쪽에서 의미가 흔들리지 않는 단정만 작성한다.
 
 happy-dom 고유의 비표준 동작에 의존하지 않는다. 대표 예시는 다음과 같다.
@@ -75,6 +77,18 @@ happy-dom 고유의 비표준 동작에 의존하지 않는다. 대표 예시는
 - DOM/`DOMParser`/`URL`/`fetch` 표준 동작: jsdom에서 재현되면 `tests/unit/**`에 둔다. 재현되지 않으면 browser 테스트로 옮긴다.
 - 단위 테스트 환경이 보장하지 않는 결과를 강하게 단정하지 않는다.
 
+테스트 위치를 판단할 때 다음 기준을 우선한다.
+
+| 검증하려는 것 | 권장 위치 | 이유 |
+| --- | --- | --- |
+| 옵션 정규화, 타입 계약, 에러 경로, 호출 순서 | `tests/unit/**` + jsdom | 실제 렌더링 없이도 계약을 검증할 수 있다. |
+| DOM 구조, 속성, `DOMParser`, URL 파싱, fetch guard | `tests/unit/**` + jsdom | jsdom이 제공하는 표준 DOM API 범위에 가깝다. |
+| Canvas API 호출 인자, pool 반환 여부, mock으로 표현 가능한 metadata | `tests/unit/**` + jsdom 또는 남은 happy-dom | 결과 품질이 아니라 호출 계약을 검증한다. |
+| `getBoundingClientRect()`, `offset*`, viewport 기반 가시성, CSS layout | `tests/browser/**` 또는 강한 단정 금지 | jsdom은 layout을 계산하지 않는다. |
+| `HTMLImageElement` 실제 로드, Blob/Data URL 이미지 디코딩, object URL 생명주기 | `tests/browser/**` | jsdom의 resource loader와 실제 브라우저 로더가 다르다. |
+| 픽셀 샘플, SVG 실제 렌더링, `canvas.toBlob()` MIME fallback, 압축 품질 | `tests/browser/**` | 브라우저 렌더링/인코딩 엔진의 책임이다. |
+| `window.location.href` 변경 같은 navigation | `tests/browser/**` 또는 별도 추상화 검증 | jsdom은 새 Window/Document로 navigation하지 않는다. |
+
 테스트 환경 차이를 맞추려고 production 동작을 바꾸지 않는다. production 표준 동작과 단위 테스트 환경이 어긋나면 production이 옳다고 본다. 환경이 미구현이라는 이유로 production 단정을 약화하지 않는다.
 
 ## 알려진 jsdom 제약
@@ -82,6 +96,9 @@ happy-dom 고유의 비표준 동작에 의존하지 않는다. 대표 예시는
 jsdom 29 환경에서 다음 동작은 지원되지 않거나 표준과 다르게 끝난다. 해당 단정이 필요한 테스트는 happy-dom에 남겨두거나 `tests/browser/**`로 옮긴다.
 
 - `URL.createObjectURL(blob)` + `HTMLImageElement` 로드: jsdom 자체에는 `URL.createObjectURL`이 없다. vitest 환경에서는 Node 전역 구현이 노출되지만 결과 URL이 `blob:nodedata:` 스킴이라 jsdom resource loader가 해석하지 못해 `img.onerror`가 즉시 발생한다. Blob → Object URL → Image 로드 자체가 동작하지 않는다.
+- layout/rendering: jsdom은 실제 레이아웃과 렌더링을 하지 않는다. `getBoundingClientRect()`, `offsetTop`, `offsetWidth` 같은 값은 실제 브라우저 배치 결과로 보지 않는다.
+- `pretendToBeVisual`: `requestAnimationFrame()`과 visibility 관련 값을 켜는 옵션일 뿐이다. 이 옵션을 사용해도 layout/rendering 엔진이 생기지 않는다.
+- subresource loading: 기본적으로 이미지, stylesheet, iframe, script를 로드하지 않는다. `resources: "usable"`을 켜도 이미지 로드는 `canvas` 패키지와 jsdom resource loader의 제약을 받는다.
+- navigation: `window.location.href` 변경이나 link click이 새 `Window`/`Document` 생성으로 이어지지 않는다. URL 값만 바꾸는 테스트와 실제 페이지 전환 테스트를 구분한다.
 
 이런 제약은 `tests/jsdom-limits/**`에 회귀 테스트로 박아둔다. 해당 테스트가 통과하면 제약이 그대로다. 실패한다면 jsdom이 해당 경로를 지원하기 시작했다는 신호이므로 위 정책과 마이그레이션 후보 목록을 재평가한다.
-
