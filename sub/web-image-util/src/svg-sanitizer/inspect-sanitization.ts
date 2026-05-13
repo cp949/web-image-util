@@ -141,6 +141,21 @@ const ENTITY_PATTERN = /<!ENTITY\b/gi;
 /** xlink namespace. happy-dom과 브라우저 모두에서 동일하다. */
 const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink';
 
+/** UTF-8 byte 길이 측정용 공용 인코더. 호출당 1회만 생성된다. */
+const UTF8_ENCODER = new TextEncoder();
+
+/**
+ * `href`/`xlink:href`/`src` 속성값을 namespace 우선으로 읽는다.
+ * 본 헬퍼는 `external-href-removed`와 embedded image stage 수집에서 동일 규칙으로 사용된다.
+ */
+function readRefAttribute(element: Element, attrName: string, lowered: string): string | null {
+  if (lowered === 'xlink:href') {
+    const ns = element.getAttributeNS(XLINK_NAMESPACE, 'href');
+    if (ns !== null) return ns;
+  }
+  return element.getAttribute(attrName);
+}
+
 /**
  * stage 단위 누적 상태. count는 발생 수, samples는 발생 순서 중복 제거(Set) 후 최대 3개.
  */
@@ -160,7 +175,7 @@ function addSample(acc: StageAccumulator, sample: string): void {
   acc.samples.add(normalized);
 }
 
-/** count > 0 이면 stage를 결과 배열에 추가한다. */
+/** count > 0 이면 stage를 결과 배열에 추가한다. samples 길이 상한은 addSample이 보장한다. */
 function pushStage(
   stages: InspectSvgSanitizationStage[],
   code: InspectSvgSanitizationStageCode,
@@ -170,7 +185,7 @@ function pushStage(
   stages.push({
     code,
     count: acc.count,
-    samples: Array.from(acc.samples).slice(0, MAX_SAMPLES_PER_STAGE),
+    samples: Array.from(acc.samples),
   });
 }
 
@@ -244,24 +259,13 @@ function collectAttributeStages(doc: Document, stages: InspectSvgSanitizationSta
     for (const attrName of attrNames) {
       const lowered = attrName.toLowerCase();
 
-      // event handler 속성
       if (EVENT_HANDLER_ATTR_PATTERN.test(attrName)) {
         eventHandler.count += 1;
         addSample(eventHandler, lowered);
       }
 
-      // href / xlink:href / src 속성값 검사
       if (lowered === 'href' || lowered === 'xlink:href' || lowered === 'src') {
-        let rawValue: string | null;
-        if (lowered === 'xlink:href') {
-          rawValue = element.getAttributeNS(XLINK_NAMESPACE, 'href');
-          if (rawValue === null) {
-            rawValue = element.getAttribute(attrName);
-          }
-        } else {
-          rawValue = element.getAttribute(attrName);
-        }
-        const value = rawValue ?? '';
+        const value = readRefAttribute(element, attrName, lowered) ?? '';
         if (shouldCountExternalHref(value)) {
           externalHref.count += 1;
           addSample(externalHref, lowered);
@@ -280,7 +284,6 @@ function collectAttributeStages(doc: Document, stages: InspectSvgSanitizationSta
 function collectExternalCssStage(doc: Document, stages: InspectSvgSanitizationStage[]): void {
   const acc = createAccumulator();
 
-  // style attribute 검사
   const elements = doc.getElementsByTagName('*');
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
@@ -295,7 +298,6 @@ function collectExternalCssStage(doc: Document, stages: InspectSvgSanitizationSt
     });
   }
 
-  // <style> 태그 본문 검사
   const styleTags = doc.getElementsByTagName('style');
   for (let i = 0; i < styleTags.length; i++) {
     const tag = styleTags[i];
@@ -381,17 +383,7 @@ function collectEmbeddedImageStages(doc: Document): InspectSvgSanitizationStage[
       const lowered = attrName.toLowerCase();
       if (lowered !== 'href' && lowered !== 'xlink:href' && lowered !== 'src') continue;
 
-      let rawValue: string | null;
-      if (lowered === 'xlink:href') {
-        rawValue = element.getAttributeNS(XLINK_NAMESPACE, 'href');
-        if (rawValue === null) {
-          rawValue = element.getAttribute(attrName);
-        }
-      } else {
-        rawValue = element.getAttribute(attrName);
-      }
-
-      const value = rawValue ?? '';
+      const value = readRefAttribute(element, attrName, lowered) ?? '';
       if (value === '') continue;
       if (!value.trim().toLowerCase().startsWith('data:')) continue;
 
@@ -626,7 +618,7 @@ async function runStrictImpact(svgString: string): Promise<InspectSvgSanitizatio
     };
   }
 
-  const outputBytes = new TextEncoder().encode(outcome.sanitizedSvg).length;
+  const outputBytes = UTF8_ENCODER.encode(outcome.sanitizedSvg).length;
   const outputNodeCount = countElementsInSanitizedSvg(outcome.sanitizedSvg);
 
   const doc = parseSvgDocument(svgString);
@@ -655,7 +647,7 @@ async function runStrictImpact(svgString: string): Promise<InspectSvgSanitizatio
  */
 function runLightweightImpact(svgString: string): InspectSvgSanitizationImpact {
   const sanitized = sanitizeSvgForRendering(svgString);
-  const outputBytes = new TextEncoder().encode(sanitized).length;
+  const outputBytes = UTF8_ENCODER.encode(sanitized).length;
   const doc = parseSvgDocument(svgString);
   const stages = collectGeneralStages(svgString, doc, 'lightweight');
   if (doc !== null) {
@@ -725,8 +717,7 @@ export async function inspectSvgSanitization(
 
   const policy: SvgSanitizerPolicy = policyOption ?? 'lightweight';
 
-  // UTF-8 바이트 측정 + 환경 감지
-  const bytes = new TextEncoder().encode(svgString).length;
+  const bytes = UTF8_ENCODER.encode(svgString).length;
   const environment = detectSanitizationEnvironment();
 
   // byte 초과 → 정책별 fallback
