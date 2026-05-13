@@ -13,7 +13,6 @@
 import { MAX_SVG_BYTES } from '../core/source-converter/options';
 import { isBlockedSvgPolicyRef } from '../core/source-converter/url/policy';
 import { ImageProcessError } from '../errors';
-import { isSafeRasterDataImageRef, isSvgDataImageRef } from '../utils/svg-data-url-policy';
 import { getCssPolicyValueVariants, normalizePolicyValue, visitCssUrlValues } from '../utils/svg-policy-utils';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 
@@ -181,16 +180,17 @@ function pushStage(
  * 내부 fragment(`#...`)와 일반 상대 경로(`./`, `../`, `/path`)는 보존한다. 본 stage는
  * lightweight 동작과 일관성을 유지하기 위해 동일한 경로들을 카운트에서 제외한다.
  *
- * raster `data:image/*`와 `data:image/svg+xml`은 TASK-03의 embedded image stage가 처리하므로
- * 본 stage에서는 카운트하지 않는다.
+ * `data:`로 시작하는 값은 TASK-03의 embedded image stage(`data-image-preserved` /
+ * `data-image-blocked` / `nested-svg-resanitized`)가 일괄 처리한다. 미허용 MIME / 크기 초과 등
+ * 정책상 차단되는 `data:` 값도 본 stage에서는 제외해 중복 카운트를 방지한다.
  */
 function shouldCountExternalHref(value: string): boolean {
   if (value === '') return false;
-  if (isSafeRasterDataImageRef(value)) return false;
-  if (isSvgDataImageRef(value)) return false;
 
   const normalized = normalizePolicyValue(value);
   if (normalized === '') return false;
+  // 모든 data: 값은 embedded image stage가 처리하므로 본 stage에서 제외
+  if (normalized.startsWith('data:')) return false;
   // 내부 fragment 참조는 제외
   if (normalized.startsWith('#')) return false;
   // 일반 상대 경로(./, ../) 제외
