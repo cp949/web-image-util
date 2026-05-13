@@ -107,7 +107,7 @@ describe('ResizePerformance', () => {
 
   describe('getMemoryInfo', () => {
     it('performance.memory가 없는 환경에서는 기본 pressureLevel low를 반환한다', () => {
-      // happy-dom은 performance.memory를 제공하지 않으므로 폴백 경로를 탄다
+      // jsdom은 performance.memory를 제공하지 않으므로 폴백 경로를 탄다
       const info = ResizePerformance.getMemoryInfo();
 
       expect(info.pressureLevel).toBe('low');

@@ -2,7 +2,7 @@
  * processImage 출력 포맷 검증 중 Canvas 입력만 사용해 jsdom에서 안전한 케이스를 모은다.
  *
  * 분리 기준:
- * - Blob 입력 흐름은 `output-formats.test.ts`(happy-dom)에 남긴다.
+ * - Blob 입력 흐름은 jsdom의 Blob URL 이미지 로딩 제약 때문에 이 파일에서 다루지 않는다.
  * - Canvas 입력은 source-converter가 그대로 통과시켜 출력 메서드까지 jsdom에서 동작한다.
  * - toBlob spy / fallback MIME mock 케이스는 출력 함수 호출 자체를 강제하므로 입력 타입에 무관하지만,
  *   일관성을 위해 jsdom 분리본도 Canvas 입력으로 통일한다.
@@ -44,9 +44,7 @@ describe('출력 포맷 (Canvas 입력, jsdom-safe)', () => {
     const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;
     const toBlobSpy = vi.spyOn(canvasPrototype, 'toBlob');
 
-    await processImage(canvas)
-      .resize({ fit: 'cover', width: 200, height: 200 })
-      .toBlob({ format: 'jpeg', quality: 0 });
+    await processImage(canvas).resize({ fit: 'cover', width: 200, height: 200 }).toBlob({ format: 'jpeg', quality: 0 });
 
     expect(toBlobSpy).toHaveBeenLastCalledWith(expect.any(Function), 'image/jpeg', 0);
     toBlobSpy.mockRestore();

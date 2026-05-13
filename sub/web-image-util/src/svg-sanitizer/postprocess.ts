@@ -48,7 +48,7 @@ export function postProcessSanitized(
     return { svg: '', nodeCount: 0 };
   }
 
-  // 파서 에러 처리 — 브라우저와 happy-dom의 표현 형태가 다르므로 두 조건을 OR로 둔다.
+  // 파서 에러 처리 — DOM 구현체별 표현 형태가 다르므로 두 조건을 OR로 둔다.
   if (root.tagName === 'parsererror' || root.querySelector('parsererror')) {
     return { svg: '', nodeCount: 0 };
   }

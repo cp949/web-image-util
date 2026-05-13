@@ -4,8 +4,8 @@ import { defineConfig } from 'vitest/config';
 /**
  * 실제 브라우저 Canvas/Image/Blob 동작을 확인하는 smoke test 설정이다.
  *
- * Node/happy-dom 테스트는 빠른 단위 테스트를 맡고, 이 설정은 mock이 숨길 수 있는
- * 브라우저 출력 MIME, SVG 렌더링, 이미지 입력 정규화 경로만 최소 범위로 검증한다.
+ * jsdom 단위 테스트가 보장하지 못하는 브라우저 출력 MIME, SVG 렌더링,
+ * Blob URL 이미지 로딩 경로만 최소 범위로 검증한다.
  */
 export default defineConfig({
   test: {

@@ -5,7 +5,7 @@
  * - 등록되지 않은 필터를 사전 검증 단계에서 거부하는 케이스(createAdvancedThumbnail /
  *   optimizeForSocial): 실제 이미지 처리에 진입하지 않으므로 jsdom 가능.
  * - AdvancedImageProcessor.processImage(image, ...)가 실제 처리 경로를 따라가는 케이스는
- *   `advanced-filter-initialization.test.ts`(happy-dom)에 남겨둔다.
+ *   browser 테스트에서 대표 실제 로딩 경로를 검증한다.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';

@@ -2,7 +2,7 @@
  * processImage fit 모드별 resize 검증 중 Canvas 입력만 사용해 jsdom에서 안전한 케이스를 모은다.
  *
  * 분리 기준:
- * - Blob 입력 흐름은 `fit-modes.test.ts`(happy-dom)에 남긴다.
+ * - Blob 입력 흐름은 jsdom의 Blob URL 이미지 로딩 제약 때문에 이 파일에서 다루지 않는다.
  * - Canvas 입력은 source-converter가 그대로 통과시켜 fit 모드 / padding / 런타임 검증 / 엣지 케이스가
  *   모두 jsdom에서 동작한다.
  */

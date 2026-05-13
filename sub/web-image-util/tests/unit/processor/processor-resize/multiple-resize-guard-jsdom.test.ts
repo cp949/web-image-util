@@ -2,7 +2,7 @@
  * processImage의 단일 resize 가드 검증 중 Canvas 입력만 사용해 jsdom에서 안전한 케이스를 모은다.
  *
  * 분리 기준:
- * - Blob 입력 흐름은 `multiple-resize-guard.test.ts`(happy-dom)에 남긴다.
+ * - Blob 입력 흐름은 jsdom의 Blob URL 이미지 로딩 제약 때문에 이 파일에서 다루지 않는다.
  * - 두 번째 resize는 출력 메서드까지 가지 않고 즉시 throw하므로 Canvas/Blob 차이가 없지만,
  *   일관성을 위해 jsdom 분리본도 Canvas 입력으로 통일한다.
  */

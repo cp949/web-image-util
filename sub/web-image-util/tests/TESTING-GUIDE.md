@@ -22,17 +22,15 @@
 
 ## 테스트 환경 정책
 
-새로 추가하는 테스트는 jsdom 환경을 가정하고 작성한다. 기존 happy-dom 테스트는 해당 영역을 수정하거나 새 테스트를 추가할 때 함께 jsdom으로 옮긴다(touch-and-migrate). 대규모 일괄 마이그레이션은 시도하지 않는다.
+새로 추가하는 테스트는 jsdom 환경을 가정하고 작성한다. jsdom에서 의미가 흔들리는 브라우저 로딩/렌더링 검증은 `tests/browser/**`로 옮긴다.
 
 jsdom은 실제 브라우저를 완벽하게 대체하는 환경이 아니다. DOM 표준 API와 브라우저 API 호출 계약을 빠르게 검증하기 위한 단위 테스트 환경으로 본다. 렌더링, 레이아웃, 이미지 디코딩, 브라우저별 인코딩 품질처럼 실제 브라우저 엔진이 필요한 결과는 jsdom 통과 여부를 production 동작의 증거로 삼지 않는다.
 
-장기 목표는 happy-dom 제거다. 마지막 happy-dom 테스트가 옮겨진 시점에 의존성과 setup mock을 제거한다. 그 전까지는 happy-dom과 jsdom 양쪽에서 의미가 흔들리지 않는 단정만 작성한다.
-
-happy-dom 고유의 비표준 동작에 의존하지 않는다. 대표 예시는 다음과 같다.
+특정 DOM 시뮬레이터 고유의 비표준 동작에 의존하지 않는다. 대표 예시는 다음과 같다.
 
 - `HTMLImageElement.onload`가 `src` 할당 직후 동기 호출되는 타이밍에 기반한 단정
 - 표준 브라우저와 다르게 동기적으로 끝나는 DOM 이벤트 흐름 가정
-- happy-dom이 미구현이라 비어 있는 결과를 "정상 동작"으로 단정
+- 단위 테스트 환경이 미구현이라 비어 있는 결과를 "정상 동작"으로 단정
 
 테스트 환경이 보장하지 않는 결과를 강하게 단정하지 않는다. 환경 차이가 의심되면 [환경 차이가 의심될 때](#환경-차이가-의심될-때)를 참고해 검증 위치를 옮긴다.
 
@@ -65,9 +63,9 @@ happy-dom 고유의 비표준 동작에 의존하지 않는다. 대표 예시는
 
 이 helper 묶음은 라이브러리가 실제로 접촉하는 브라우저 API 표면을 그대로 따라간다. 사용 데이터가 충분히 자라면 production 코드에 같은 모양의 추상화(예: BrowserRuntime adapter)를 도입할지 그때 판단한다. helper 사용 사례 없이 production 추상화를 먼저 만들지 않는다.
 
-## Node mock 신뢰 경계
+## jsdom 신뢰 경계
 
-`tests/setup/README.md`의 mock 신뢰 경계를 따른다. 단위 테스트 환경(happy-dom 또는 jsdom)은 실제 픽셀 품질이나 브라우저별 인코딩 동작을 보장하지 않는다. 그런 검증은 browser 테스트로 올린다.
+단위 테스트 환경(jsdom + canvas)은 실제 픽셀 품질이나 브라우저별 인코딩 동작을 보장하지 않는다. 그런 검증은 browser 테스트로 올린다.
 
 ## 환경 차이가 의심될 때
 
@@ -83,7 +81,7 @@ happy-dom 고유의 비표준 동작에 의존하지 않는다. 대표 예시는
 | --- | --- | --- |
 | 옵션 정규화, 타입 계약, 에러 경로, 호출 순서 | `tests/unit/**` + jsdom | 실제 렌더링 없이도 계약을 검증할 수 있다. |
 | DOM 구조, 속성, `DOMParser`, URL 파싱, fetch guard | `tests/unit/**` + jsdom | jsdom이 제공하는 표준 DOM API 범위에 가깝다. |
-| Canvas API 호출 인자, pool 반환 여부, mock으로 표현 가능한 metadata | `tests/unit/**` + jsdom 또는 남은 happy-dom | 결과 품질이 아니라 호출 계약을 검증한다. |
+| Canvas API 호출 인자, pool 반환 여부, metadata | `tests/unit/**` + jsdom | 결과 품질이 아니라 호출 계약을 검증한다. |
 | `getBoundingClientRect()`, `offset*`, viewport 기반 가시성, CSS layout | `tests/browser/**` 또는 강한 단정 금지 | jsdom은 layout을 계산하지 않는다. |
 | `HTMLImageElement` 실제 로드, Blob/Data URL 이미지 디코딩, object URL 생명주기 | `tests/browser/**` | jsdom의 resource loader와 실제 브라우저 로더가 다르다. |
 | 픽셀 샘플, SVG 실제 렌더링, `canvas.toBlob()` MIME fallback, 압축 품질 | `tests/browser/**` | 브라우저 렌더링/인코딩 엔진의 책임이다. |
@@ -93,7 +91,7 @@ happy-dom 고유의 비표준 동작에 의존하지 않는다. 대표 예시는
 
 ## 알려진 jsdom 제약
 
-jsdom 29 환경에서 다음 동작은 지원되지 않거나 표준과 다르게 끝난다. 해당 단정이 필요한 테스트는 happy-dom에 남겨두거나 `tests/browser/**`로 옮긴다.
+jsdom 29 환경에서 다음 동작은 지원되지 않거나 표준과 다르게 끝난다. 해당 단정이 필요한 테스트는 `tests/browser/**`로 옮긴다.
 
 - `URL.createObjectURL(blob)` + `HTMLImageElement` 로드: jsdom 자체에는 `URL.createObjectURL`이 없다. vitest 환경에서는 Node 전역 구현이 노출되지만 결과 URL이 `blob:nodedata:` 스킴이라 jsdom resource loader가 해석하지 못해 `img.onerror`가 즉시 발생한다. Blob → Object URL → Image 로드 자체가 동작하지 않는다.
 - layout/rendering: jsdom은 실제 레이아웃과 렌더링을 하지 않는다. `getBoundingClientRect()`, `offsetTop`, `offsetWidth` 같은 값은 실제 브라우저 배치 결과로 보지 않는다.

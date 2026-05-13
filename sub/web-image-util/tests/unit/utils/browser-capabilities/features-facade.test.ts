@@ -25,7 +25,7 @@ describe('features 퍼사드 일관성', () => {
     // features는 모듈 로드 시점에 평가된 값이므로 타입만 검증한다
     expect(typeof features.offscreenCanvas).toBe('boolean');
     expect(typeof syncResult.offscreenCanvas).toBe('boolean');
-    // happy-dom 환경에서는 동일해야 한다
+    // 같은 jsdom 환경에서는 동일해야 한다
     expect(features.offscreenCanvas).toBe(syncResult.offscreenCanvas);
   });
 

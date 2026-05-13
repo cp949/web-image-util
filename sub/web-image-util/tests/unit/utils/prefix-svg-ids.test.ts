@@ -197,7 +197,6 @@ describe('prefixSvgIds() — 입력 계약과 환경 메타', () => {
       const result = prefixSvgIds(SIMPLE_SVG, 'pfx');
       expect(['browser', 'happy-dom', 'node', 'unknown']).toContain(result.report.environment);
     });
-
   });
 
   describe('정상 SVG 입력 — deopt 없는 응답', () => {

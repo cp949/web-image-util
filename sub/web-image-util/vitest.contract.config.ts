@@ -3,15 +3,12 @@ import { defineConfig } from 'vitest/config';
 /**
  * 계약 테스트 전용 Vitest 설정
  *
- * Node.js 환경에서 브라우저 API 계약을 검증한다.
- * 실제 브라우저 API 대신 mock을 사용해 API 호출 형태, 인자 검증,
- * 표준 준수 여부를 확인한다.
+ * jsdom 환경에서 공개 패키지 계약과 브라우저 API 호출 형태를 검증한다.
  */
 export default defineConfig({
   test: {
     name: 'contract-tests',
-    environment: 'happy-dom',
-    setupFiles: ['./tests/setup/canvas-mock.ts'],
+    environment: 'jsdom',
     include: ['tests/contract/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/integration/**', 'tests/unit/**', 'tests/performance/**'],
     globals: true,

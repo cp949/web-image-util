@@ -2,7 +2,7 @@
 
 ## 배경
 
-`test:browser`는 실제 Chromium에서 Canvas, Image, Blob, SVG 렌더링 경로를 확인한다. 이 검증은 Node.js/happy-dom mock 테스트가 보장하지 못하는 실제 브라우저 동작을 다루므로 릴리스 전 신뢰도에 중요하다.
+`test:browser`는 실제 Chromium에서 Canvas, Image, Blob, SVG 렌더링 경로를 확인한다. 이 검증은 jsdom 단위 테스트가 보장하지 못하는 실제 브라우저 동작을 다루므로 릴리스 전 신뢰도에 중요하다.
 
 다만 Playwright Chromium 설치, 캐시 상태, CI 실행 환경에 영향을 받을 수 있어 현재 빠른 기본 CI gate인 `verify:ci`에 바로 포함하면 코드 변경과 무관한 실패 가능성이 커진다.
 

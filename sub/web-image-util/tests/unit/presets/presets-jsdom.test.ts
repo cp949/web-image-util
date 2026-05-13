@@ -2,9 +2,9 @@
  * 프리셋 API 검증 중 Canvas 입력만 사용해 jsdom에서 안전한 케이스를 모은다.
  *
  * 분리 기준:
- * - Blob 입력 흐름은 `presets.test.ts`(happy-dom)에 남긴다.
+ * - Blob 입력 흐름은 jsdom의 Blob URL 이미지 로딩 제약 때문에 이 파일에서 다루지 않는다.
  * - webp 포맷을 단정하는 케이스는 jsdom + canvas 패키지의 webp 미지원(PNG fallback) 때문에 빠진다.
- *   해당 케이스는 happy-dom 잔류본에서 webp MIME을 그대로 검증한다.
+ *   실제 브라우저 포맷 경로는 browser 스모크에서 검증한다.
  */
 
 import { describe, expect, it } from 'vitest';

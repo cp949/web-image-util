@@ -5,7 +5,7 @@
  *
  * LazyRenderPipeline + Canvas 입력 출력 흐름 케이스는 production이 내부적으로
  * drawImage(naturalWidth만 설정된 Image)를 호출해 jsdom에서 실패하므로
- * `canvas-pool-integration.test.ts`(happy-dom)에 남겨둔다.
+ * browser 테스트에서 대표 실제 로딩 경로를 검증한다.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

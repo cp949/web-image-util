@@ -1,7 +1,7 @@
 /**
  * getImageInfo 중 jsdom에서 안전한 케이스(SVG 입력 경로)만 모은다.
  * PNG Blob 입력 케이스는 production이 `createObjectURL(blob) + HTMLImageElement` 로드를 거쳐
- * jsdom에서 실패하므로 `get-image-info.test.ts`(happy-dom)에 남겨둔다.
+ * jsdom에서 실패하는 Blob URL 이미지 로딩 경로는 browser 테스트에서 다룬다.
  */
 
 import { describe, expect, it, vi } from 'vitest';

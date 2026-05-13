@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { processImage } from '../../src/index';
 
 /**
- * Node/happy-dom SVG 회귀 테스트다.
+ * jsdom SVG 회귀 테스트다.
  *
  * 이 파일은 Canvas/Image mock 환경에서 SVG 입력이 처리 파이프라인을 통과하고
  * 결과 크기와 Blob metadata가 유지되는지 확인한다. 실제 픽셀 품질, 텍스트 선명도,

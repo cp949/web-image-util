@@ -33,7 +33,7 @@ describe('원격 소스 로딩 보호: 프로토콜 차단', () => {
     mockImgElement();
 
     await withFetchMock(fetchMock, async () => {
-      // INVALID_SOURCE가 아닌 한 허용 (happy-dom에서 img 로드가 완전히 동작하지 않을 수 있다)
+      // INVALID_SOURCE가 아닌 한 허용 (jsdom에서 img 로드가 완전히 동작하지 않을 수 있다)
       await convertToImageElement('http://example.com/image.png', {}).catch((err) => {
         if (err instanceof ImageProcessError && err.code === 'INVALID_SOURCE') {
           throw err;

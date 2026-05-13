@@ -14,7 +14,7 @@ import { ImageProcessError } from '../errors';
  * @param maxBytes 최대 허용 바이트
  */
 export function assertWithinMaxBytes(svg: string, maxBytes: number): void {
-  // TextEncoder는 브라우저와 happy-dom 모두에서 사용 가능
+  // TextEncoder는 브라우저와 jsdom 테스트 환경 모두에서 사용 가능하다.
   const byteLength = new TextEncoder().encode(svg).byteLength;
   if (byteLength > maxBytes) {
     const limitMb = Math.round(maxBytes / (1024 * 1024));

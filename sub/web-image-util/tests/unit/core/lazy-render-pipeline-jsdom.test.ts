@@ -5,7 +5,7 @@
  * - operation 누적 / resize 1회 가드 / 체이닝 / addResize 단계에서 즉시 throw하는 경로는
  *   실제 렌더링까지 가지 않으므로 jsdom 가능.
  * - toCanvas() / toBlob() 같은 실제 출력 메서드는 내부에서 drawImage(src 없는 Image)를
- *   호출해 jsdom에서 실패하므로 `lazy-render-pipeline.test.ts`(happy-dom)에 남겨둔다.
+ *   호출해 jsdom에서 실패하므로 browser 테스트에서 대표 실제 로딩 경로를 검증한다.
  */
 
 import { LazyRenderPipeline } from '../../../src/core/lazy-render-pipeline';

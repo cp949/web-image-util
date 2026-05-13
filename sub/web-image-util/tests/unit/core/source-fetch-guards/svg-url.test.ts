@@ -83,7 +83,7 @@ describe('원격 소스 로딩 보호: SVG URL 경로', () => {
 
     await withFetchMock(fetchMock, async () => {
       // INVALID_SOURCE(프로토콜/크기 차단)가 아닌 한 성공으로 간주
-      // happy-dom에서 실제 SVG 처리는 완전히 동작하지 않을 수 있다.
+      // jsdom에서 실제 SVG 처리는 완전히 동작하지 않을 수 있다.
       await convertToImageElement('https://example.com/small.svg', {
         maxSourceBytes: 1024 * 1024,
         fetchTimeoutMs: 5000,

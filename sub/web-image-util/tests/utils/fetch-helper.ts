@@ -39,7 +39,7 @@ export function createByteStreamBody(chunks: Uint8Array[]) {
   };
 }
 
-// happy-dom에서는 onload가 자동으로 호출되지 않으므로 직접 트리거한다.
+// 일부 DOM 테스트 환경에서는 onload가 자동으로 호출되지 않으므로 직접 트리거한다.
 export function mockImgElement() {
   const originalCreate = document.createElement.bind(document);
   vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {

@@ -244,7 +244,7 @@ if (report.recommendation.sanitizer === 'strict') {
 }
 ```
 
-보안 경계가 아닙니다. SVG parse 실패 시 `report.valid === false` + 사유 finding으로 반환하며, 복잡도 휴리스틱 결과는 `report.complexity.recommendedQuality`(`'low' | 'medium' | 'high' | 'ultra'`)와 `report.complexity.complexityScore`(`0.0 ~ 1.0`)로 노출됩니다(복잡도 분석 실패 시 `report.complexity === null`). happy-dom과 실제 브라우저의 DOM 파싱 차이는 `report.environment` 필드에 드러납니다.
+보안 경계가 아닙니다. SVG parse 실패 시 `report.valid === false` + 사유 finding으로 반환하며, 복잡도 휴리스틱 결과는 `report.complexity.recommendedQuality`(`'low' | 'medium' | 'high' | 'ultra'`)와 `report.complexity.complexityScore`(`0.0 ~ 1.0`)로 노출됩니다(복잡도 분석 실패 시 `report.complexity === null`). 실행 환경별 DOM 파싱 차이는 `report.environment` 필드에 드러납니다.
 
 ### SVG 입력 source 진단
 

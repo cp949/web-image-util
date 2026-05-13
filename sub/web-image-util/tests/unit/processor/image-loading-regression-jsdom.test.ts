@@ -6,7 +6,7 @@
  *   DOM 의존성이 없어 jsdom에서 그대로 통과한다.
  *
  * toElement 흐름 케이스는 production이 내부에서 Blob → createObjectURL → Image.src 경로를 거쳐
- * jsdom + canvas 패키지에서 IMAGE_LOAD_FAILED로 거부되므로 `image-loading-regression.test.ts`(happy-dom)에 남긴다.
+ * jsdom + canvas 패키지에서 IMAGE_LOAD_FAILED로 거부되는 실제 Blob URL 이미지 로딩은 browser 테스트에서 다룬다.
  */
 
 import { readdir, readFile, stat } from 'node:fs/promises';

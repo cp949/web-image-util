@@ -242,7 +242,7 @@ describe('OnehotRenderer - Phase 2 Step 2', () => {
 
   describe('Large Canvas Warning', () => {
     it('should only warn for very large Canvas, not error (skip - memory issue)', () => {
-      // Note: Creating very large Canvas in happy-dom may cause timeout
+      // Note: Creating very large Canvas in jsdom may cause timeout
       // This test is safe only in actual browser environment
       expect(true).toBe(true);
     });

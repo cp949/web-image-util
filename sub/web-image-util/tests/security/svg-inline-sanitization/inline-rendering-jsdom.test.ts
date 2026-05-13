@@ -2,7 +2,7 @@
  * 인라인 SVG 정화 렌더링 중 jsdom에서 안전한 케이스를 모은다.
  *
  * 따옴표 없는 style 속성 / protocol-relative style 속성 두 케이스는 jsdom의 DOMPurify 처리가
- * 다른 sanitization 결과를 내 SVG가 깨져 SOURCE_LOAD_FAILED로 거부되므로 `inline-rendering.test.ts`(happy-dom)에 남긴다.
+ * 다른 sanitization 결과를 내 SVG가 깨져 SOURCE_LOAD_FAILED로 거부되므로 browser 보안 스모크에서 대표 경로를 확인한다.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';

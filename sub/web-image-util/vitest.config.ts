@@ -2,8 +2,12 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    // Test environment configuration
-    environment: 'node', // Fixed to Node.js environment
+    environment: 'jsdom',
+    environmentOptions: {
+      jsdom: {
+        resources: 'usable',
+      },
+    },
 
     // Test file patterns
     include: ['tests/**/*.{test,spec}.{js,ts}', 'src/**/*.{test,spec}.{js,ts}'],
@@ -40,8 +44,6 @@ export default defineConfig({
     // Reporter configuration
     reporters: process.env.CI ? ['junit', 'github-actions'] : ['verbose'],
 
-    // Setup files
-    setupFiles: ['./tests/setup.ts'],
   },
 
   // Vite configuration

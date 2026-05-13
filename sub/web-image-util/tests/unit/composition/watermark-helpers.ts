@@ -16,7 +16,7 @@ import { createTestCanvas } from '../../utils/canvas-helper';
  *
  * `new Image()`만 만들어 `src` 없이 노출하면 jsdom + canvas 패키지가 표준대로 `drawImage`를
  * "Image given has not completed loading" 으로 거부한다. canvas는 별도 로드 단계가 없어
- * happy-dom과 jsdom 양쪽에서 즉시 사용할 수 있다.
+ * jsdom에서 즉시 사용할 수 있다.
  *
  * `createTestCanvas`는 픽셀 버퍼를 한 번 채워둔다. drawImage src로 사용될 때 jsdom canvas
  * 패키지가 빈 픽셀 버퍼에서 hang하는 케이스가 있어 컬러 fill을 넣어둔다.

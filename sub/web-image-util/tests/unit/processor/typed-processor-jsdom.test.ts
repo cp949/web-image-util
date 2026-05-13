@@ -6,7 +6,7 @@
  * - resize() 가드 검증: resize() 두 번 호출이 즉시 throw하므로 Blob 로드까지 가지 않음. jsdom 가능.
  * - Data URL 입력 + 출력: jsdom + canvas로 통과.
  *
- * Blob 입력 + `.toBlob()` 호출까지 가는 케이스는 `typed-processor.test.ts`(happy-dom)에 있다.
+ * Blob 입력 + `.toBlob()` 호출까지 가는 실제 로딩 케이스는 browser 테스트에서 다룬다.
  */
 
 import { describe, expect, it } from 'vitest';

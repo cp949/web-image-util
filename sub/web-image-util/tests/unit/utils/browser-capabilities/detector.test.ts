@@ -23,7 +23,7 @@ describe('BrowserCapabilityDetector', () => {
   });
 
   describe('detectSyncFeatures', () => {
-    it('happy-dom 환경에서 정상 감지 결과를 반환한다', () => {
+    it('jsdom 환경에서 정상 감지 결과를 반환한다', () => {
       const result = detector.detectSyncFeatures();
 
       // 모든 필드가 존재해야 한다

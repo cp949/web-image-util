@@ -1,6 +1,6 @@
 /**
  * Canvas 입력으로 deprecated File 변환 API의 파일명/MIME/metadata 동작을 검증한다.
- * Blob 입력 + webp 같은 jsdom 미지원 포맷 케이스는 `converters-file.test.ts`(happy-dom)에서 다룬다.
+ * Blob 입력 + webp 같은 jsdom 미지원 포맷 케이스는 browser 스모크에서 다룬다.
  */
 
 import { describe, expect, it } from 'vitest';

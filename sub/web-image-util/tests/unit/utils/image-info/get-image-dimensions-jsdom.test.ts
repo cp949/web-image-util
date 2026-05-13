@@ -1,7 +1,7 @@
 /**
  * Canvas 입력 경로의 getImageDimensions 케이스만 jsdom으로 가져온다.
  * JPEG Blob 입력은 production이 내부에서 Image 로드를 거쳐 jsdom에서 실패하므로
- * `get-image-dimensions.test.ts`(happy-dom)에 남겨둔다.
+ * 브라우저 Blob URL 이미지 로딩 경로는 browser 테스트에서 다룬다.
  */
 
 import { describe, expect, it, vi } from 'vitest';

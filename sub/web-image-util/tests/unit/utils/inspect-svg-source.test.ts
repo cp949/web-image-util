@@ -149,4 +149,3 @@ describe('inspectSvgSource() — 정상 입력 originalKind 판정', () => {
     expect(result.source.originalKind).toBe('file');
   });
 });
-

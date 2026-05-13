@@ -4,7 +4,7 @@
  * @description
  * `processImage()` 내부에서 사용하는 경량 방어층이다. 이미지 로딩/Canvas 변환
  * 파이프라인을 보호하기 위해 SVG 문자열에서 명백히 위험한 패턴을 제거한다.
- * 브라우저와 Node.js(happy-dom) 양쪽에서 동작하도록 정규식 기반으로 구현한다.
+ * 브라우저와 jsdom 테스트 환경 양쪽에서 동작하도록 정규식 기반으로 구현한다.
  *
  * 이 모듈은 DOMPurify 같은 전용 strict sanitizer를 대체하지 않는다.
  * 신뢰할 수 없는 SVG를 다루는 경우 호출처에서 `@cp949/web-image-util/svg-sanitizer`의

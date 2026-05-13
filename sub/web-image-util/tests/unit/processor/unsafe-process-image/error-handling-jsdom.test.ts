@@ -2,7 +2,7 @@
  * unsafe_processImage 에러 처리 중 jsdom에서 안전하게 도는 케이스만 모은다.
  * Uint8Array SVG 입력 케이스는 production이 내부적으로 Image 로드 경로까지 진입하다가
  * jsdom에서 SOURCE_LOAD_FAILED를 먼저 던져 SVG_BYTES_EXCEEDED 단정이 깨지므로
- * `error-handling.test.ts`(happy-dom)에 남겨둔다.
+ * 브라우저 이미지 로딩이 필요한 대표 경로는 browser 보안 스모크에서 검증한다.
  */
 
 import { describe, expect, it, vi } from 'vitest';

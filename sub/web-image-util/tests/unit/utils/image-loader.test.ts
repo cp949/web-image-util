@@ -3,7 +3,7 @@ import { ImageProcessError } from '../../../src/types';
 import { loadImageElement } from '../../../src/utils/image-loader';
 
 /**
- * happy-dom은 img.src 할당 시 즉시 onload를 동기로 트리거한다.
+ * jsdom + canvas의 이미지 로딩 경계를 검증한다.
  * src setter를 가로채 자동 트리거를 막고, 테스트에서 직접 이벤트를 발생시킨다.
  */
 function createControlledImg(): { img: HTMLImageElement; triggerLoad: () => void; triggerError: () => void } {

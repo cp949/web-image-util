@@ -7,7 +7,7 @@
  * resource loader가 해석하지 못해 `img.onerror`가 즉시 발생한다.
  *
  * 이 테스트가 통과한다 = 제약이 그대로다. Blob → Image 로드를 단정해야 하는
- * 테스트는 happy-dom에 남기거나 `tests/browser/**`로 옮긴다.
+ * 테스트는 `tests/browser/**`로 옮긴다.
  *
  * 이 테스트가 실패한다 = jsdom이 해당 경로를 지원하기 시작했다는 신호다. 그
  * 시점에 가이드의 "알려진 jsdom 제약" 항목과 마이그레이션 정책을 재평가한다.

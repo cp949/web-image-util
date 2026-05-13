@@ -43,7 +43,7 @@
 
 ## 테스트 기준
 
-- Node/happy-dom 테스트는 타입 계약, 에러 경로, 호출 순서, 순수 계산 검증에 사용합니다.
+- jsdom 단위 테스트는 타입 계약, 에러 경로, 호출 순서, 순수 계산 검증에 사용합니다.
 - 실제 픽셀 품질, MIME fallback, 브라우저별 SVG 렌더링은 `test:browser`로 검증합니다.
 - SVG 보안 정책 변경은 `sub/web-image-util/tests/security/`와 `SVG-SECURITY.md`를 함께 갱신합니다.
 - 루트 운영 스크립트 테스트는 `tests/unit/scripts/`에 두고 라이브러리 동작 테스트와 섞지 않습니다.

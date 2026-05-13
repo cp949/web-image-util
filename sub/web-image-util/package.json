@@ -23,8 +23,8 @@
     "format": "biome format --write src tests",
     "format:check": "biome format src tests",
     "typecheck": "tsc --noEmit",
-    "test": "vitest --config vitest.node.config.ts",
-    "test:node": "vitest --config vitest.node.config.ts",
+    "test": "vitest --config vitest.jsdom.config.ts",
+    "test:node": "vitest --config vitest.jsdom.config.ts",
     "test:jsdom": "vitest --config vitest.jsdom.config.ts",
     "test:contract": "pnpm build && vitest --config vitest.contract.config.ts",
     "test:security": "vitest --config tests/security/vitest.config.ts",
@@ -32,9 +32,9 @@
     "test:package-subpath": "node --input-type=module -e \"const mod = await import('@cp949/web-image-util/svg-sanitizer'); if (typeof mod.sanitizeSvgStrict !== 'function' || typeof mod.sanitizeSvgStrictDetailed !== 'function') throw new Error('svg-sanitizer subpath export smoke failed');\"",
     "test:ui": "vitest --ui",
     "test:browser": "vitest run --config vitest.browser.config.ts",
-    "test:coverage": "vitest run --coverage --config vitest.node.config.ts",
+    "test:coverage": "vitest run --coverage --config vitest.jsdom.config.ts",
     "test:coverage:contract": "pnpm build && vitest --coverage --config vitest.contract.config.ts",
-    "test:types": "vitest --config vitest.node.config.ts tests/unit/types"
+    "test:types": "vitest --config vitest.jsdom.config.ts tests/unit/types"
   },
   "dependencies": {
     "dompurify": "^3.4.2"
@@ -46,7 +46,6 @@
     "@vitest/browser-playwright": "^4.1.5",
     "@vitest/coverage-v8": "^4.1.5",
     "canvas": "^3.2.3",
-    "happy-dom": "^20.9.0",
     "jest-image-snapshot": "^6.5.2",
     "jsdom": "^29.1.1",
     "playwright": "^1.59.1",

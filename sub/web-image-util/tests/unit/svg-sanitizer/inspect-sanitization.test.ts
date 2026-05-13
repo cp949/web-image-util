@@ -114,7 +114,6 @@ describe('inspectSvgSanitization()', () => {
     });
   });
 
-
   describe('공개 표면 노출', () => {
     it('svg-sanitizer 서브패스에서 inspectSvgSanitization을 import할 수 있다', async () => {
       const module = await import('@cp949/web-image-util/svg-sanitizer');

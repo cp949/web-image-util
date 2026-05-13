@@ -5,7 +5,7 @@
  * - Blob 입력은 production이 내부에서 createObjectURL → Image.src 흐름을 거쳐 jsdom에서 막힌다.
  * - Canvas 입력은 source-converter가 그대로 처리해 출력 메서드까지 jsdom에서 통과한다.
  *
- * Blob 입력 흐름은 `chaining.test.ts`(happy-dom)에 그대로 둔다.
+ * Blob 입력 흐름은 jsdom의 Blob URL 이미지 로딩 제약 때문에 이 파일에서 다루지 않는다.
  */
 
 import { describe, expect, it } from 'vitest';
