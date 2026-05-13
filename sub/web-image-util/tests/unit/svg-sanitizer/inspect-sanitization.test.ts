@@ -576,7 +576,7 @@ describe('inspectSvgSanitization()', () => {
     it('노드 개수 초과 입력은 status failed + failure.code "svg-node-count-exceeded"로 분기된다', async () => {
       // root svg 자체가 count 1로 잡히므로 +1로 한도 초과를 만든다
       const child = '<rect/>';
-      const input = '<svg xmlns="http://www.w3.org/2000/svg">' + child.repeat(DEFAULT_MAX_NODE_COUNT + 1) + '</svg>';
+      const input = `<svg xmlns="http://www.w3.org/2000/svg">${child.repeat(DEFAULT_MAX_NODE_COUNT + 1)}</svg>`;
       const report = await inspectSvgSanitization(input, { policy: 'strict' });
       expect(report.impact.kind).toBe('strict');
       if (report.impact.kind !== 'strict') return;
