@@ -13,12 +13,13 @@ const MINIMAL_SVG = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" hei
 
 /**
  * image/svg+xml 타입의 Response 픽스처를 생성한다.
+ *
+ * 본문은 fake ReadableStream으로 제공한다. 진짜 Response + Blob 본문은 환경별로
+ * 디코딩 동작이 미묘하게 달라 jsdom에서 `isInlineSvg` 검증을 통과하지 못하기 때문이다.
+ * 이 테스트의 단정 대상은 SVG 디코딩이 아니라 dispose/타이머 정리라서 fake 본문으로 충분하다.
  */
 function makeSvgResponse(): Response {
-  return new Response(new Blob([MINIMAL_SVG], { type: 'image/svg+xml' }), {
-    status: 200,
-    headers: { 'content-type': 'image/svg+xml' },
-  });
+  return makeObservedSvgResponse(() => {});
 }
 
 /**

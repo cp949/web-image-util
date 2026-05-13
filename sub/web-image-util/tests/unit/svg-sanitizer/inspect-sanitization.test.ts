@@ -115,9 +115,10 @@ describe('inspectSvgSanitization()', () => {
   });
 
   describe('환경 감지', () => {
-    it('happy-dom 기본 환경에서 environment가 "happy-dom"이다', async () => {
+    it('jsdom 환경에서 environment가 "browser"이다', async () => {
+      // 이 파일은 jsdom config로 실행된다. 라이브러리 환경 감지기는 jsdom을 일반 브라우저로 인식한다.
       const report = await inspectSvgSanitization(TINY_SVG);
-      expect(report.environment).toBe('happy-dom');
+      expect(report.environment).toBe('browser');
     });
   });
 

@@ -198,10 +198,10 @@ describe('prefixSvgIds() — 입력 계약과 환경 메타', () => {
       expect(['browser', 'happy-dom', 'node', 'unknown']).toContain(result.report.environment);
     });
 
-    it('happy-dom 환경에서 environment가 "happy-dom"이다', () => {
-      // Vitest 기본 실행 환경이 happy-dom이므로 이 테스트는 그대로 통과해야 한다
+    it('jsdom 환경에서 environment가 "browser"이다', () => {
+      // 이 파일은 jsdom config로 실행된다. 라이브러리 환경 감지기는 jsdom을 일반 브라우저로 인식한다.
       const result = prefixSvgIds(SIMPLE_SVG, 'pfx');
-      expect(result.report.environment).toBe('happy-dom');
+      expect(result.report.environment).toBe('browser');
     });
   });
 

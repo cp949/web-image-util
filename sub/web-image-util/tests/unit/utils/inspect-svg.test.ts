@@ -94,11 +94,11 @@ describe('inspectSvg()', () => {
     });
   });
 
-  describe('happy-dom 환경 감지', () => {
-    it('report.environment가 "happy-dom"이다', () => {
-      // Vitest 기본 환경은 happy-dom이므로 globalThis.happyDOM이 존재한다
+  describe('jsdom 환경 감지', () => {
+    it('report.environment가 "browser"이다', () => {
+      // 이 파일은 jsdom config로 실행된다. 라이브러리 환경 감지기는 jsdom을 일반 브라우저로 인식한다.
       const report = inspectSvg('<svg></svg>');
-      expect(report.environment).toBe('happy-dom');
+      expect(report.environment).toBe('browser');
     });
   });
 
