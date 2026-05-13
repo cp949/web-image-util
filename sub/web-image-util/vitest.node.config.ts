@@ -97,6 +97,8 @@ export default defineConfig({
       'tests/security/strict-svg-sanitizer.test.ts',
       'tests/security/svg-sanitizer-core.test.ts',
       'tests/security/svg-remote-fetch/fail-closed.test.ts',
+      'tests/unit/utils/converters-quality-canvas.test.ts',
+      'tests/unit/utils/converters-file-canvas.test.ts',
     ],
     globals: true,
     coverage: {

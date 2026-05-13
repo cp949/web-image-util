@@ -107,6 +107,8 @@ export default defineConfig({
       'tests/security/svg-remote-fetch/remote-svg-sanitization.test.ts',
       'tests/security/svg-sanitizer-core.test.ts',
       'tests/security/svg-remote-fetch/fail-closed.test.ts',
+      'tests/unit/utils/converters-quality-canvas.test.ts',
+      'tests/unit/utils/converters-file-canvas.test.ts',
     ],
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/browser/**'],
     passWithNoTests: true,
