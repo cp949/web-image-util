@@ -2,7 +2,7 @@
 
 `tests/setup.ts`는 Node.js/happy-dom 테스트에서 브라우저 API의 빈 부분을 보완하기 위해 `tests/setup/canvas-mock.ts`를 로드한다. 이 mock은 빠른 단위 테스트와 계약 테스트를 위한 편의 계층이며, 실제 브라우저 렌더링 품질을 보장하지 않는다.
 
-장기적인 테스트 파일 배치와 이름 규칙은 [`../TESTING-GUIDE.md`](../TESTING-GUIDE.md)를 따른다.
+장기적인 테스트 파일 배치, 이름 규칙, 테스트 환경 정책(jsdom/happy-dom), 전역 API 사용 규칙은 [`../TESTING-GUIDE.md`](../TESTING-GUIDE.md)를 따른다.
 
 ## 파일 구조
 
