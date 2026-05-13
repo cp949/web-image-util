@@ -68,6 +68,13 @@ describe('공개 export 계약', () => {
     expect(r.report).toBeDefined();
   });
 
+  test('빌드된 `/utils` 서브패스에서 inspectSvgSource를 import하고 실행할 수 있다', async () => {
+    const builtUtils = await import('../../dist/utils/index.js');
+    expect(builtUtils.inspectSvgSource).toBeTypeOf('function');
+    const result = await builtUtils.inspectSvgSource('<svg xmlns="http://www.w3.org/2000/svg"/>');
+    expect(result.kind).toBe('svg');
+  });
+
   test('`/presets` 서브패스 value export 목록이 고정되어 있다', () => {
     expect(valueExportKeys(presets)).toEqual(PRESETS_VALUE_EXPORTS);
   });

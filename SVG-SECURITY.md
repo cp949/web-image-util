@@ -20,6 +20,8 @@ await processImage(userProvidedSource, {
 }).toBlob();
 ```
 
+정책 적용 전에 어떤 stage가 발동할지 미리 확인하고 싶다면 `@cp949/web-image-util/svg-sanitizer`의 `inspectSvgSanitization()`을 사용해 보고서로 진단하세요. 보안 경계는 아닙니다.
+
 ## 왜 항상 `strict`가 기본값이 아닌가?
 
 보안만 보면 신뢰할 수 없는 SVG에는 `strict`가 맞습니다. 다만 이 라이브러리의 기본값은 모든 SVG를 보안상 가장 강하게 정제하는 것이 아니라, 브라우저 이미지 처리 파이프라인에서 기존 SVG 렌더링을 가능한 한 깨지지 않게 다루는 것입니다.
@@ -32,6 +34,19 @@ await processImage(userProvidedSource, {
 - **역할 분리**: 이 패키지는 브라우저 이미지 처리 라이브러리입니다. 보안 요구가 있는 호출처가 신뢰 경계를 판단해 `strict`를 명시적으로 선택하도록 설계했습니다.
 
 따라서 운영 기준은 단순합니다. **신뢰할 수 없는 SVG에는 항상 `strict`를 사용**하고, 신뢰 가능한 내부 에셋에는 기본 `lightweight`를 사용할 수 있습니다.
+
+## 금지 사용처
+
+보안 경계가 흐려질 수 있는 API와 옵션의 사용 가능 / 금지 시나리오를 한 표에 모읍니다. 본 표가 단일 출처이며 README/`docs/architecture.md`는 본 섹션을 link로만 가리킵니다.
+
+| API / 옵션 | 사용 가능 | 금지 | 사유 |
+| --- | --- | --- | --- |
+| `svgSanitizer: 'strict'` | 사용자 업로드, 외부 URL, 외부 시스템에서 받은 SVG 등 **신뢰 경계 밖의 모든 입력** | 없음(보수적 기본 선택) | DOMPurify SVG 프로필 + 라이브러리 강제 정책. 신뢰 경계 밖 입력의 기본 선택 |
+| `svgSanitizer: 'lightweight'` (기본값) | 앱 내부에서 만든 신뢰 가능한 SVG, 자체 sanitizer 사용 없이 빠르게 처리해야 하는 경로 | 사용자 업로드, 외부 URL 같은 신뢰 경계 밖의 입력 | DOM 기반 완전 sanitizer가 아니라 렌더링 파이프라인 경량 방어층. 우회 기법까지 완벽 보장하지 않음 |
+| `svgSanitizer: 'skip'` | 호출처가 이미 자체 정제를 끝낸 SVG, 또는 라이브러리 호환성 보정만 필요한 신뢰 가능 내부 에셋 | 사용자 업로드, 외부 URL, 외부 시스템 응답, 신뢰 경계 밖의 SVG | 위험 태그/이벤트/외부 URI 제거를 모두 건너뜀. 신뢰할 수 없는 입력에 사용하면 보안 우회 |
+| `unsafe_processImage()` | 렌더링 문제 재현, compatibility enhancement가 결과에 미치는 영향 확인 같은 **개발/디버깅**, 그리고 신뢰 가능한 SVG에 한정 | 사용자 업로드, 외부 URL, 외부 시스템 응답, **프로덕션 사용자에게 노출되는 모든 경로** | 경량 방어층과 브라우저 호환성 보정을 모두 건너뜀. `unsafe_processImage(source, { svgSanitizer: 'strict' })`처럼 호출해도 unsafe passthrough가 우선해 strict가 적용되지 않음 |
+
+각 항목의 자세한 동작은 아래 "옵션별 책임 범위" 섹션과 "`unsafe_processImage()`와의 차이" 섹션을 참고합니다.
 
 ## 옵션별 책임 범위
 
@@ -126,12 +141,37 @@ await processImage(userProvidedSource, {
 
 신뢰할 수 없는 SVG에는 `skip`을 사용하지 마세요.
 
+## embedded image 정책
+
+SVG 본문 안의 `<image>` / `<use>` 같은 요소가 `data:` URL로 raster 또는 nested SVG를 포함하는 경우, `lightweight`와 `strict` 두 정책이 동일한 MIME 분기를 적용합니다. 본 표가 embedded image 처리의 단일 출처입니다.
+
+| `data:` MIME | 처리 |
+| --- | --- |
+| `data:image/png` | 크기 제한 안에서 보존 |
+| `data:image/jpeg` | 크기 제한 안에서 보존 |
+| `data:image/webp` | 크기 제한 안에서 보존 |
+| `data:image/svg+xml` | nested SVG를 같은 sanitizer 정책으로 재귀 정제한 뒤 보존 |
+| 그 외 raster MIME (`data:image/gif`, `data:image/bmp` 등) | 제거 |
+| 비이미지 `data:` (`data:text/html`, `data:application/javascript`, 임의 텍스트 등) | 제거 |
+
+`data:image/svg+xml` 재정제는 같은 sanitizer 정책을 nested 입력에도 그대로 적용합니다. 재정제 도중 byte cap 초과 또는 parse 실패가 발생하면 nested SVG가 제거되며, 정제 후 외부 참조가 남으면 입력 전체가 `INVALID_SOURCE`로 차단됩니다.
+
+Fabric.js, Illustrator, Figma export처럼 정상 SVG가 embedded image를 포함하는 일반 사용 사례를 깨지 않으려는 정책입니다.
+
 ## prefixSvgIds() — 정규화 유틸 경계
 
 `prefixSvgIds()`는 SVG의 `id`와 fragment reference를 일괄 prefix하는 정규화 유틸리티입니다. sanitizer를 호출하지 않으며 보안 경계가 되지 않습니다.
 
 - 신뢰할 수 없는 SVG는 `@cp949/web-image-util/svg-sanitizer`의 `sanitizeSvgStrict()`로 정제한 뒤 `prefixSvgIds()`를 호출합니다.
 - `<style>` 요소 또는 `style` 속성이 있는 입력은 rewrite를 전면 보류하고(`deoptimized: true`), 원본 SVG를 그대로 반환합니다.
+
+## inspectSvgSource() — 입력 source 진단 API
+
+`inspectSvgSource()`는 `string | Blob | File | URL` 입력의 source 종류(SVG/비-SVG/불명)를 진단하는 API입니다. sanitizer를 실행하지 않으며 **보안 경계가 되지 않습니다**. 신뢰할 수 없는 입력에는 여전히 `svgSanitizer: 'strict'`를 사용하세요.
+
+- `fetch: 'body'` 모드는 byte cap(`byteLimit`)과 abort/timeout guard 위에서 응답 본문을 **1회만** 소비합니다. 소비 여부는 `report.source.consumed`로 확인합니다.
+- 보고서의 URL 표현(`report.source.url`)은 **origin + path**까지만 노출합니다. query string과 fragment는 자동으로 제거되며 보고서 어디에도 포함되지 않습니다.
+- Data URL의 base64 payload는 `report.source.url`에 `data:<mime>[;base64],[masked]` 형태로만 노출되며 payload 원문은 담기지 않습니다.
 
 ## inspectSvg() — 진단 API
 

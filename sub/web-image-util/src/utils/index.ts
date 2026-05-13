@@ -155,6 +155,24 @@ export {
   inspectSvg,
 } from './inspect-svg';
 /**
+ * SVG 입력 source 진단
+ *
+ * @description SVG 후보 입력(string/Blob/File/URL)의 source 종류를 진단한다.
+ * 기본 동작에서 네트워크 fetch를 수행하지 않는다.
+ */
+export {
+  type InspectSvgSourceFetchInfo,
+  type InspectSvgSourceFetchMode,
+  type InspectSvgSourceFinding,
+  type InspectSvgSourceFindingCode,
+  type InspectSvgSourceInput,
+  type InspectSvgSourceKind,
+  type InspectSvgSourceMeta,
+  type InspectSvgSourceOptions,
+  type InspectSvgSourceReport,
+  inspectSvgSource,
+} from './inspect-svg-source';
+/**
  * SVG ID prefix 유틸리티
  *
  * @description SVG 문자열 내 모든 id 속성에 prefix를 붙이고 같은 문서 안의

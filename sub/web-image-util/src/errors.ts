@@ -29,6 +29,7 @@ export const ImageErrorCode = {
   FEATURE_NOT_SUPPORTED: 'FEATURE_NOT_SUPPORTED',
   OPTION_INVALID: 'OPTION_INVALID',
   SVG_INPUT_INVALID: 'SVG_INPUT_INVALID',
+  SVG_SOURCE_INVALID: 'SVG_SOURCE_INVALID',
   SVG_DOMPURIFY_INIT_FAILED: 'SVG_DOMPURIFY_INIT_FAILED',
   SVG_NODE_COUNT_EXCEEDED: 'SVG_NODE_COUNT_EXCEEDED',
   SVG_BYTES_EXCEEDED: 'SVG_BYTES_EXCEEDED',
@@ -56,6 +57,7 @@ export interface ImageErrorDetailsByCode {
   SVG_BYTES_EXCEEDED: { actualBytes: number; maxBytes: number; label?: string };
   SVG_NODE_COUNT_EXCEEDED: { actualCount: number; maxCount: number };
   SVG_INPUT_INVALID: { actualType: string };
+  SVG_SOURCE_INVALID: { actualType: string };
   OPTION_INVALID: { option: string; minimum?: number };
   INVALID_DIMENSIONS: {
     kind?: 'invalid-canvas-size' | 'invalid-image-size' | 'invalid-position';

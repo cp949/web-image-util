@@ -72,6 +72,7 @@ const USER_FRIENDLY_MESSAGES: Record<ImageErrorCodeType, string> = {
   FEATURE_NOT_SUPPORTED: 'The requested feature is not supported in the current environment.',
   OPTION_INVALID: 'Invalid option value.',
   SVG_INPUT_INVALID: 'SVG input must be a string.',
+  SVG_SOURCE_INVALID: 'inspectSvgSource input must be a string, Blob, File, or URL.',
   SVG_DOMPURIFY_INIT_FAILED: 'SVG sanitizer could not be initialized in this environment.',
   SVG_NODE_COUNT_EXCEEDED: 'SVG node count exceeds the allowed limit.',
   SVG_BYTES_EXCEEDED: 'SVG input exceeds the allowed size limit.',

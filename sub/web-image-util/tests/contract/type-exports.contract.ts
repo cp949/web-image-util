@@ -26,6 +26,15 @@ import type {
   InspectSvgFinding,
   InspectSvgFindingCode,
   InspectSvgReport,
+  InspectSvgSourceFetchInfo,
+  InspectSvgSourceFetchMode,
+  InspectSvgSourceFinding,
+  InspectSvgSourceFindingCode,
+  InspectSvgSourceInput,
+  InspectSvgSourceKind,
+  InspectSvgSourceMeta,
+  InspectSvgSourceOptions,
+  InspectSvgSourceReport,
   SvgIdPrefixDeoptReason,
   SvgIdPrefixReport,
   SvgIdPrefixResult,
@@ -139,3 +148,34 @@ const prefixReport: SvgIdPrefixReport = {
 const prefixResult: SvgIdPrefixResult = { svg: '<svg/>', report: prefixReport };
 void prefixDeoptReason;
 void prefixResult;
+
+const srcInput: InspectSvgSourceInput = '<svg/>';
+const srcFetchMode: InspectSvgSourceFetchMode = 'never';
+const srcKind: InspectSvgSourceKind = 'svg';
+const srcFindingCode: InspectSvgSourceFindingCode = 'mime-mismatch';
+const srcFinding: InspectSvgSourceFinding = { code: srcFindingCode, message: '' };
+const srcMeta: InspectSvgSourceMeta = {
+  originalKind: 'string',
+  mime: null,
+  extension: null,
+  url: null,
+  bytes: 0,
+  consumed: false,
+};
+const srcFetchInfo: InspectSvgSourceFetchInfo = {
+  mode: srcFetchMode,
+  performed: false,
+  status: null,
+};
+const srcOptions: InspectSvgSourceOptions = { fetch: 'never', byteLimit: 1024 };
+const srcReport: InspectSvgSourceReport = {
+  kind: srcKind,
+  source: srcMeta,
+  fetch: srcFetchInfo,
+  svg: null,
+  findings: [srcFinding],
+  environment: 'unknown',
+};
+void srcInput;
+void srcOptions;
+void srcReport;

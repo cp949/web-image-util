@@ -110,6 +110,21 @@ const post = await createSocialImage(photo, { platform: 'instagram', format: 'jp
 
 `createSocialImage()`는 `twitter`, `facebook`, `instagram`, `linkedin`, `youtube`, `pinterest` 크기 프리셋을 제공합니다.
 
+## 서브패스 import 경로
+
+라이브러리는 트리 셰이킹을 전제로 6개 서브패스 export를 노출합니다. 사용 목적에 맞는 서브패스에서 단일 함수만 가져오면 됩니다.
+
+| npm 서브패스 | 주요 API | 책임 |
+| --- | --- | --- |
+| `@cp949/web-image-util` | `processImage`, `unsafe_processImage`, `ImageProcessor`, `ShortcutBuilder`, `ImageProcessError`, `extractSvgDimensions`, `analyzeSvgComplexity` | 메인 진입점, 체이닝 API |
+| `@cp949/web-image-util/utils` | 변환(`convertToBlob`/`ensureBlob`/...), 포맷(`formatToMimeType`/...), SVG 진단(`inspectSvg`, `inspectSvgSource`), SVG 정규화(`prefixSvgIds`), 브라우저 기능 감지 | 호출 시 단일 함수만 가져오는 가벼운 유틸 |
+| `@cp949/web-image-util/svg-sanitizer` | `sanitizeSvgStrict`, `sanitizeSvgStrictDetailed`, `inspectSvgSanitization` | DOMPurify 기반 strict sanitizer (동적 import) |
+| `@cp949/web-image-util/presets` | `createThumbnail`, `createAvatar`, `createSocialImage` | 편의 preset 함수 |
+| `@cp949/web-image-util/advanced` | `AdvancedImageProcessor`, `SmartFormatSelector`, `BatchResizer`, 필터 plugins 재노출 | 사용자가 명시적으로 선택하는 고급 API |
+| `@cp949/web-image-util/filters` | `BlurFilterPlugin`, `BrightnessFilterPlugin`, `GrayscaleFilterPlugin` 등 필터 plugin 클래스 | 필터 시스템 (advanced에서 재노출) |
+
+서브패스 책임 경계와 책임 분리는 [Architecture 문서의 공개 API 표면](https://github.com/cp949/web-image-util/blob/main/docs/architecture.md#공개-api-표면) 표를, sanitizer 관련 옵션의 사용 가능/금지 시나리오는 [SVG sanitizer 보안 정책의 "금지 사용처"](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md#금지-사용처) 표를 참고하세요.
+
 ## 입력과 출력
 
 `processImage()` 입력은 `HTMLImageElement`, `Blob`, `File`, `ArrayBuffer`, `Uint8Array`, `string`을 지원합니다. 문자열은 HTTP(S) URL, Data URL, SVG XML, 브라우저 경로를 자동 판별합니다.
@@ -164,9 +179,9 @@ await processImage(userProvidedSource, { svgSanitizer: 'strict' })
   .toBlob();
 ```
 
-신뢰할 수 없는 SVG에는 `strict`를 사용하세요. `unsafe_processImage()`는 렌더링 문제를 재현하기 위한 개발/디버깅 전용 API이며, 사용자 입력이나 외부 SVG에는 사용하지 마세요. 상세 정책은 [SVG sanitizer 보안 정책](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md)을 참고하세요.
+신뢰할 수 없는 SVG에는 `strict`를 사용하세요. `unsafe_processImage()`는 렌더링 문제를 재현하기 위한 개발/디버깅 전용 API이며, 사용자 입력이나 외부 SVG에는 사용하지 마세요. 어떤 옵션을 언제 사용 가능/금지하는지는 [SVG sanitizer 보안 정책의 "금지 사용처" 표](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md#금지-사용처)를, 옵션별 책임 범위 전체는 [SVG sanitizer 보안 정책](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md)을 참고하세요.
 
-Fabric.js, Illustrator, Figma export처럼 SVG 안에 `data:image/*`를 embedded image로 넣는 정상 SVG는 sanitizer가 이미지 Data URL만 제한적으로 보존합니다. 단, `data:image/svg+xml`은 nested SVG를 다시 정제한 결과만 보존하며, 비이미지 Data URL은 제거됩니다.
+Fabric.js, Illustrator, Figma export처럼 SVG 안에 `data:image/*`를 embedded image로 넣는 정상 SVG는 sanitizer가 raster 이미지 Data URL만 제한적으로 보존하고, `data:image/svg+xml`은 nested SVG를 재정제한 결과만 보존하며 비이미지 Data URL은 제거합니다. MIME별 처리 전체는 [SVG sanitizer 보안 정책의 "embedded image 정책"](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md#embedded-image-정책) 섹션을 참고하세요.
 
 ### sanitizer 정책 영향 진단
 
@@ -188,6 +203,23 @@ try {
 ```
 
 `policy`는 `'lightweight'`(기본, 실제 실행) / `'strict'`(동적 import 후 실제 실행) / `'skip'`(미실행 — lightweight 시뮬레이션 결과를 `potentialStages`로 노출) 중 하나입니다.
+
+### Strict sanitizer 직접 사용
+
+`processImage()`를 거치지 않고 SVG 문자열을 DOMPurify SVG 프로필 + 라이브러리 강제 정책으로 직접 정제하려면 `sanitizeSvgStrict()`를 사용합니다. `@cp949/web-image-util/svg-sanitizer` 서브패스에서 동적 import됩니다.
+
+```typescript
+import { sanitizeSvgStrict, sanitizeSvgStrictDetailed } from '@cp949/web-image-util/svg-sanitizer';
+
+// 정제된 SVG 문자열만 필요한 경우
+const clean = sanitizeSvgStrict(untrustedSvg);
+
+// 사전/후처리 경고와 함께 반환 — strict 정책을 완화하려는 DOMPurify 설정 등이 warnings에 기록됩니다
+const detailed = sanitizeSvgStrictDetailed(untrustedSvg, { removeMetadata: true });
+console.warn(detailed.warnings);
+```
+
+사용자가 `domPurifyConfig`로 strict 정책을 완화하는 설정을 넘기더라도 핵심 보안 설정은 강제되며 무시된 설정은 `warnings`로 노출됩니다. 자세한 정책은 [SVG sanitizer 보안 정책의 "옵션별 책임 범위 → `strict`"](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md#strict) 섹션을 참고하세요.
 
 ## 유틸리티
 
@@ -211,6 +243,35 @@ if (report.recommendation.sanitizer === 'strict') {
   await processImage(svgString).toBlob();
 }
 ```
+
+보안 경계가 아닙니다. SVG parse 실패 시 `report.valid === false` + 사유 finding으로 반환하며, 복잡도 휴리스틱 결과는 `report.complexity.recommendedQuality`(`'low' | 'medium' | 'high' | 'ultra'`)와 `report.complexity.complexityScore`(`0.0 ~ 1.0`)로 노출됩니다(복잡도 분석 실패 시 `report.complexity === null`). happy-dom과 실제 브라우저의 DOM 파싱 차이는 `report.environment` 필드에 드러납니다.
+
+### SVG 입력 source 진단
+
+`processImage()` 호출 전 입력 routing을 사전에 확인합니다. 기본 동작에서 네트워크 fetch를 수행하지 않습니다.
+
+```typescript
+import { inspectSvgSource } from '@cp949/web-image-util/utils';
+
+const report = await inspectSvgSource(input);
+
+if (report.kind === 'svg') {
+  // SVG로 확정 — processImage에 넘길 수 있다
+  await processImage(input).toBlob();
+} else if (report.kind === 'not-svg-source') {
+  // SVG가 아님 — 다른 경로로 처리한다
+} else {
+  // 'unknown' — 추가 확인이 필요하다
+}
+
+// URL 입력의 fetch 동작 제어
+const fetchReport = await inspectSvgSource(
+  new URL('https://cdn.example/icon.svg'),
+  { fetch: 'metadata' }   // HEAD 요청으로 MIME만 확인, 본문 미소비
+);
+```
+
+보안 경계가 아닙니다. `options.fetch`는 `'never'`(기본, fetch 없음) / `'metadata'`(HEAD) / `'body'`(GET, 본문 1회 소비) 3단계이며, fetch가 발생한 경우 `report.fetch.performed`와 `report.source.consumed`로 소비 여부를 확인할 수 있습니다. URL의 query string과 fragment는 `report.source.url`에서 자동 마스킹됩니다. byte cap 초과/fetch 실패/abort/timeout 같은 상황은 throw 없이 finding으로 보고됩니다.
 
 ### SVG ID prefix
 
