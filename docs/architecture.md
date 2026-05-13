@@ -22,6 +22,18 @@
 - **타입 안정성**: 잘못된 체이닝(예: `resize()` 중복 호출)을 컴파일 타임에 방지
 - **포맷 선택**: 브라우저 지원 여부를 바탕으로 적절한 포맷 선택
 
+## 아키텍처 불변조건
+
+아래 규칙은 기능 추가나 리팩터링 때 우선 확인합니다.
+
+- `resize()`, `blur()` 같은 체이닝 메서드는 Canvas에 즉시 그리지 않고 연산만 누적합니다.
+- 한 체인에서 `resize()`는 한 번만 허용합니다. 타입 상태와 런타임 가드를 함께 유지합니다.
+- 실제 Canvas 렌더링은 출력 메서드 호출 시점에 한 번만 수행합니다.
+- 내부 렌더링 Canvas는 `CanvasPool`을 통해 획득하고 반환합니다.
+- `toCanvas()`와 `toCanvasDetailed()`의 반환 Canvas는 사용자 소유이므로 pool에 반환하지 않습니다.
+- 공개 진입점은 `sub/web-image-util/package.json`의 `exports` 필드에 선언된 경로로 제한합니다.
+- SVG 입력은 단순 문자열 검사로 분기하지 않고 `source-converter/`의 다단계 판정 경로를 사용합니다.
+
 ## Canvas Pool
 
 라이브러리는 내부적으로 Canvas Pool을 사용해 Canvas 객체를 재사용합니다. 매 처리마다 새 Canvas를 생성·파괴하는 대신, 완료된 Canvas를 풀에 반환하여 다음 처리에 재사용합니다.
@@ -50,6 +62,19 @@
 | `src/core/single-renderer.ts` | 누적 연산 분석 및 단일 렌더링 진입점 |
 | `src/core/onehot-renderer.ts` | 최종 Canvas drawImage 렌더링 |
 | `src/types/resize-config.ts` | ResizeConfig 타입 시스템 |
+
+## 공개 API 표면
+
+새 export를 추가하거나 제거할 때는 `sub/web-image-util/package.json`의 `exports` 필드, 배럴 파일, contract 테스트를 함께 갱신합니다.
+
+| npm 경로 | 소스 진입점 |
+| --- | --- |
+| `@cp949/web-image-util` | `src/index.ts` |
+| `@cp949/web-image-util/advanced` | `src/advanced-index.ts` |
+| `@cp949/web-image-util/presets` | `src/presets/index.ts` |
+| `@cp949/web-image-util/utils` | `src/utils/index.ts` |
+| `@cp949/web-image-util/filters` | `src/filters/plugins/index.ts` |
+| `@cp949/web-image-util/svg-sanitizer` | `src/svg-sanitizer/index.ts` |
 
 ## SVG 감지의 중요성
 
