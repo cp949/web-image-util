@@ -128,6 +128,7 @@ export default defineConfig({
       'tests/unit/core/canvas-pool-integration-jsdom.test.ts',
       'tests/unit/core/lazy-render-pipeline-jsdom.test.ts',
       'tests/unit/core/advanced-filter-initialization-jsdom.test.ts',
+      'tests/unit/scripts/llm-txt-generator.test.ts',
     ],
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/browser/**'],
     passWithNoTests: true,
