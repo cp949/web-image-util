@@ -33,6 +33,20 @@ export function createImageData(
   return new ImageData(data, width, height);
 }
 
+/** 단일 픽셀 ImageData를 생성한다. */
+export function createSinglePixelImageData(r: number, g: number, b: number, a = 255): ImageData {
+  return new ImageData(new Uint8ClampedArray([r, g, b, a]), 1, 1);
+}
+
+/** RGBA 픽셀 배열로 ImageData를 생성한다. */
+export function createImageDataFromPixels(
+  width: number,
+  height: number,
+  pixels: [number, number, number, number][]
+): ImageData {
+  return new ImageData(new Uint8ClampedArray(pixels.flat()), width, height);
+}
+
 /** 테스트용 더미 필터 플러그인을 생성한다. R 채널에 value를 더한다. */
 export function createDummyPlugin(
   name: string,
