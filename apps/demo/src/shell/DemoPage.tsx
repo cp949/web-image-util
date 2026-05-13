@@ -19,18 +19,23 @@ export function DemoPage({ source, module }: Props) {
   useEffect(() => {
     const target = ref.current;
     if (!target) return;
-    target.innerHTML = '';
+    target.replaceChildren();
     let cancelled = false;
     module.run(target).catch((err) => {
       if (cancelled) return;
-      target.innerHTML = `<pre style="color:#b00;white-space:pre-wrap">${String(err)}</pre>`;
+      // 에러 표시는 DOM API + textContent로 처리해 XSS 가드를 유지한다.
+      const pre = document.createElement('pre');
+      pre.style.color = '#b00';
+      pre.style.whiteSpace = 'pre-wrap';
+      pre.textContent = String(err);
+      target.replaceChildren(pre);
     });
     return () => {
       cancelled = true;
       target.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
         if (img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
       });
-      target.innerHTML = '';
+      target.replaceChildren();
     };
   }, [module]);
 

@@ -12,9 +12,13 @@ export function CodePanel({ source }: Props) {
   const [copied, setCopied] = useState(false);
 
   const onCopy = async () => {
-    await navigator.clipboard.writeText(source);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(source);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // 권한 거부/포커스 미보유 등 — 무음 실패. 학습 데모에서는 토스트 생략.
+    }
   };
 
   return (
