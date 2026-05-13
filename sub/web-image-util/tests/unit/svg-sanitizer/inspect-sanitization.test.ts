@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options';
 import { ImageProcessError } from '../../../src/errors';
-import { inspectSvgSanitization } from '../../../src/svg-sanitizer/inspect-sanitization';
+import {
+  type InspectSvgSanitizationStage,
+  type InspectSvgSanitizationStageCode,
+  inspectSvgSanitization,
+} from '../../../src/svg-sanitizer/inspect-sanitization';
+import { sanitizeSvgForRendering } from '../../../src/utils/svg-sanitizer';
 
 const TINY_SVG = '<svg xmlns="http://www.w3.org/2000/svg"/>';
+
+/** stages 배열에서 특정 code의 stage를 찾는다. 없으면 undefined. */
+function findStage(
+  stages: InspectSvgSanitizationStage[],
+  code: InspectSvgSanitizationStageCode
+): InspectSvgSanitizationStage | undefined {
+  return stages.find((stage) => stage.code === code);
+}
 
 describe('inspectSvgSanitization()', () => {
   describe('비문자열 입력 검증', () => {
@@ -73,6 +86,7 @@ describe('inspectSvgSanitization()', () => {
   describe('정상 입력 — 정책별 placeholder 보고서', () => {
     it('lightweight: 보고서의 bytes·byteLimit·environment·impact 기본 형태가 일치한다', async () => {
       const report = await inspectSvgSanitization(TINY_SVG);
+      const sanitizedBytes = new TextEncoder().encode(sanitizeSvgForRendering(TINY_SVG)).length;
       expect(report.bytes).toBe(new TextEncoder().encode(TINY_SVG).length);
       expect(report.byteLimit).toBe(MAX_SVG_BYTES);
       expect(['browser', 'happy-dom', 'node', 'unknown']).toContain(report.environment);
@@ -80,7 +94,7 @@ describe('inspectSvgSanitization()', () => {
       expect(report.impact.kind).toBe('lightweight');
       if (report.impact.kind === 'lightweight') {
         expect(report.impact.status).toBe('ok');
-        expect(report.impact.outputBytes).toBe(report.bytes);
+        expect(report.impact.outputBytes).toBe(sanitizedBytes);
         expect(report.impact.stages).toEqual([]);
         expect(report.impact.failure).toBeNull();
       }
@@ -151,6 +165,156 @@ describe('inspectSvgSanitization()', () => {
     it('happy-dom 기본 환경에서 environment가 "happy-dom"이다', async () => {
       const report = await inspectSvgSanitization(TINY_SVG);
       expect(report.environment).toBe('happy-dom');
+    });
+  });
+
+  describe('lightweight 일반 stage 수집', () => {
+    it('script 요소가 있으면 script-removed stage가 잡힌다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+      );
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      const stage = findStage(report.impact.stages, 'script-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(1);
+      expect(stage?.samples).toEqual(['script']);
+    });
+
+    it('foreignObject 요소가 있으면 foreign-object-removed stage가 잡힌다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject></foreignObject></svg>'
+      );
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      const stage = findStage(report.impact.stages, 'foreign-object-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(1);
+      expect(stage?.samples).toEqual(['foreignobject']);
+    });
+
+    it('on* 속성이 있으면 event-handler-removed stage가 발생 attribute 수만큼 카운트된다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg" onload="x"><rect onclick="y"/></svg>'
+      );
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      const stage = findStage(report.impact.stages, 'event-handler-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(2);
+      expect(stage?.samples).toContain('onload');
+      expect(stage?.samples).toContain('onclick');
+    });
+
+    it('외부 xlink:href는 external-href-removed stage로 잡힌다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="http://evil.example.com/sprite#a"/></svg>'
+      );
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      const stage = findStage(report.impact.stages, 'external-href-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(1);
+      expect(stage?.samples).toEqual(['xlink:href']);
+    });
+
+    it('style 속성에 외부 url(...)이 있으면 external-css-removed stage가 잡힌다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect style="fill: url(http://evil.example.com/p.png)"/></svg>'
+      );
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      const stage = findStage(report.impact.stages, 'external-css-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(1);
+      expect(stage?.samples).toEqual(['style']);
+    });
+
+    it('<style> 본문에 외부 url(...)이 있으면 samples 토큰은 style-tag다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><style>rect { fill: url(http://evil.example.com/p.png); }</style></svg>'
+      );
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      const stage = findStage(report.impact.stages, 'external-css-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(1);
+      expect(stage?.samples).toEqual(['style-tag']);
+    });
+
+    it('lightweight 정책에서는 doctype-removed stage가 포함되지 않는다', async () => {
+      const report = await inspectSvgSanitization('<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg"></svg>');
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      expect(findStage(report.impact.stages, 'doctype-removed')).toBeUndefined();
+      expect(findStage(report.impact.stages, 'entity-removed')).toBeUndefined();
+    });
+
+    it('정상 SVG에서는 stages가 빈 배열이다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="10" height="10"/></svg>'
+      );
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      expect(report.impact.stages).toEqual([]);
+    });
+
+    it('outputBytes는 sanitizeSvgForRendering 결과 byte와 동일하다', async () => {
+      const input = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect/></svg>';
+      const report = await inspectSvgSanitization(input);
+      const expected = new TextEncoder().encode(sanitizeSvgForRendering(input)).length;
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      expect(report.impact.outputBytes).toBe(expected);
+    });
+
+    it('multi-occurrence 입력에서 event-handler/script count가 정확하다', async () => {
+      const input =
+        '<svg xmlns="http://www.w3.org/2000/svg" onload="a" onclick="b"><script>c</script><script>d</script></svg>';
+      const report = await inspectSvgSanitization(input);
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      const event = findStage(report.impact.stages, 'event-handler-removed');
+      const script = findStage(report.impact.stages, 'script-removed');
+      expect(event?.count).toBe(2);
+      expect(script?.count).toBe(2);
+    });
+
+    it('파싱 실패 입력도 status는 ok이고 stages는 빈 배열이며 outputBytes는 정제 결과 byte다', async () => {
+      const input = '<not-svg-root>broken<';
+      const report = await inspectSvgSanitization(input);
+      const expected = new TextEncoder().encode(sanitizeSvgForRendering(input)).length;
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      expect(report.impact.status).toBe('ok');
+      expect(report.impact.stages).toEqual([]);
+      expect(report.impact.outputBytes).toBe(expected);
+      expect(report.impact.failure).toBeNull();
+    });
+  });
+
+  describe('skip 정책 — potentialStages 시뮬레이션', () => {
+    it('script 요소가 있으면 potentialStages에 script-removed가 포함된다', async () => {
+      const report = await inspectSvgSanitization('<svg xmlns="http://www.w3.org/2000/svg"><script></script></svg>', {
+        policy: 'skip',
+      });
+      expect(report.impact.kind).toBe('skip');
+      if (report.impact.kind !== 'skip') return;
+      expect(report.impact.status).toBe('not-applied');
+      const stage = findStage(report.impact.potentialStages, 'script-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(1);
+      // outputBytes 필드는 타입상 skip impact에 존재하지 않음(컴파일 타임 보장).
+      expect('outputBytes' in report.impact).toBe(false);
+    });
+
+    it('skip 정책에서도 doctype-removed는 potentialStages에 포함되지 않는다', async () => {
+      const report = await inspectSvgSanitization('<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg"></svg>', {
+        policy: 'skip',
+      });
+      expect(report.impact.kind).toBe('skip');
+      if (report.impact.kind !== 'skip') return;
+      expect(findStage(report.impact.potentialStages, 'doctype-removed')).toBeUndefined();
     });
   });
 });
