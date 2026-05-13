@@ -134,6 +134,7 @@ export default defineConfig({
       'tests/unit/processor/processor-resize/output-formats-jsdom.test.ts',
       'tests/unit/processor/processor-resize/fit-modes-jsdom.test.ts',
       'tests/unit/presets/presets-jsdom.test.ts',
+      'tests/unit/processor/image-loading-regression-jsdom.test.ts',
     ],
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/browser/**'],
     passWithNoTests: true,
