@@ -17,6 +17,13 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'jsdom',
+    // jsdom 기본값은 외부 리소스 로드를 막아 blob/data URL 이미지 로드가 hang된다.
+    // 'usable'로 두면 canvas 패키지와 함께 Image element 로드가 동작한다.
+    environmentOptions: {
+      jsdom: {
+        resources: 'usable',
+      },
+    },
     include: [],
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/browser/**'],
     passWithNoTests: true,
