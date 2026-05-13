@@ -29,10 +29,12 @@
     "test:ui": "turbo run test:ui",
     "test:browser": "turbo run test:browser",
     "test:coverage": "turbo run test:coverage",
-    "verify:ci": "pnpm test:scripts && turbo run typecheck lint format:check test:node test:contract",
+    "verify:ci": "pnpm test:scripts && turbo run typecheck lint format:check test:node test:contract && pnpm build:demo",
     "verify:release": "node ./scripts/verify-release.mjs",
     "dev": "turbo run build:watch",
-    "dev:exam": "pnpm --filter @cp949/exam dev"
+    "dev:exam": "pnpm --filter @cp949/exam dev",
+    "dev:demo": "pnpm --filter @cp949/demo dev",
+    "build:demo": "pnpm --filter @cp949/demo build"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.11",
