@@ -136,6 +136,7 @@ export default defineConfig({
       'tests/unit/presets/presets-jsdom.test.ts',
       'tests/unit/processor/image-loading-regression-jsdom.test.ts',
       'tests/security/svg-inline-sanitization/inline-rendering-jsdom.test.ts',
+      'tests/unit/composition/image-composer.test.ts',
     ],
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/browser/**'],
     passWithNoTests: true,

@@ -4,12 +4,10 @@
 
 import { describe, expect, it } from 'vitest';
 import { ImageComposer } from '../../../src/composition/image-composer';
+import { createTestCanvas } from '../../utils/canvas-helper';
 
 function createTestImage(width = 100, height = 100): HTMLImageElement {
-  const img = new Image();
-  img.width = width;
-  img.height = height;
-  return img as HTMLImageElement;
+  return createTestCanvas(width, height) as unknown as HTMLImageElement;
 }
 
 describe('ImageComposer.composeLayers', () => {
