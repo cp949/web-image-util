@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### 추가
+
+- Added: inspectSvg() under @cp949/web-image-util/utils — side-effect-free string SVG diagnostics returning report with environment, findings, and sanitizer recommendation.
+
 ## [2.0.37] - 2026-05-05
 
 ### 변경

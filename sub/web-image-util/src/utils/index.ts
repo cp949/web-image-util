@@ -143,6 +143,18 @@ export {
  */
 export { hasTransparency, type TransparencyOptions } from './image-inspection';
 /**
+ * SVG 진단 리포트
+ *
+ * @description 문자열 SVG 한 개를 부수효과 없이 진단해 finding/recommendation 리포트를 반환한다.
+ */
+export {
+  type InspectSvgDimensions,
+  type InspectSvgFinding,
+  type InspectSvgFindingCode,
+  type InspectSvgReport,
+  inspectSvg,
+} from './inspect-svg';
+/**
  * 이미지 소스 판정 유틸리티
  *
  * @description processImage에 넘길 소스의 입력 형태와 문자열 소스의 세부 유형을 판정한다
@@ -170,14 +182,12 @@ export {
   type SvgCompatibilityOptions,
   type SvgCompatibilityReport,
 } from './svg-compatibility/index';
-
 /**
  * SVG 문자열 감지 유틸리티
  *
  * @description 문자열 입력이 실제 인라인 SVG XML 루트로 시작하는지 판정한다
  */
 export { isInlineSvg } from './svg-detection';
-
 /**
  * SVG vector optimization system
  *
@@ -185,7 +195,6 @@ export { isInlineSvg } from './svg-detection';
  * and improve rendering performance
  */
 export { type OptimizationResult, type SvgOptimizationOptions, SvgOptimizer } from './svg-optimizer/index';
-
 /**
  * SVG 새니타이저
  *

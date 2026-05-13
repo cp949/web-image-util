@@ -8,6 +8,12 @@
  * 타입으로 import 가능한지 확인한다.
  */
 
+import type {
+  InspectSvgDimensions,
+  InspectSvgFinding,
+  InspectSvgFindingCode,
+  InspectSvgReport,
+} from '@cp949/web-image-util/utils';
 import type { ImageErrorCodeType, ImageErrorDetails, ImageProcessErrorOptions } from '../../src';
 import type {
   ImageErrorCodeType as ImageErrorCodeTypeFromTypes,
@@ -27,3 +33,28 @@ const detailsFromTypes: ImageErrorDetailsFromTypes = details;
 void codeFromTypes;
 void optionsFromTypes;
 void detailsFromTypes;
+
+const inspectReport: InspectSvgReport = {
+  valid: true,
+  bytes: 0,
+  byteLimit: 0,
+  environment: 'unknown',
+  parse: { ok: true, message: null, locationAvailable: false },
+  root: 'svg',
+  dimensions: null,
+  complexity: null,
+  findings: [],
+  recommendation: { sanitizer: 'lightweight', reasons: [] },
+};
+const inspectFinding: InspectSvgFinding = { code: 'has-script-element', message: '' };
+const inspectFindingCode: InspectSvgFindingCode = 'has-script-element';
+const inspectDimensions: InspectSvgDimensions = {
+  widthAttr: { raw: null, numeric: null, unit: null },
+  heightAttr: { raw: null, numeric: null, unit: null },
+  viewBox: { raw: null, parsed: null },
+  effective: { width: 100, height: 100, source: 'fallback' },
+};
+void inspectReport;
+void inspectFinding;
+void inspectFindingCode;
+void inspectDimensions;

@@ -172,6 +172,27 @@ Fabric.js, Illustrator, Figma export처럼 SVG 안에 `data:image/*`를 embedded
 
 자주 쓰는 유틸리티는 `@cp949/web-image-util/utils`에서 가져옵니다.
 
+### SVG 진단
+
+변환 전에 SVG 문자열을 미리 진단하려면 `inspectSvg()`를 사용합니다. sanitizer를 실행하지 않고 위험 요소를 검사해 findings와 sanitizer 권장 사항을 반환합니다.
+
+```typescript
+import { inspectSvg } from '@cp949/web-image-util/utils';
+import { processImage } from '@cp949/web-image-util';
+
+const report = inspectSvg(svgString);
+
+if (report.recommendation.sanitizer === 'strict') {
+  // 위험 토큰 감지 — strict sanitizer 적용
+  await processImage(svgString, { svgSanitizer: 'strict' }).toBlob();
+} else {
+  // 위험 토큰 없음 — 기본 lightweight
+  await processImage(svgString).toBlob();
+}
+```
+
+### 기타 유틸리티
+
 ```typescript
 import {
   fetchImageSourceBlob,

@@ -154,6 +154,7 @@ export const UTILS_VALUE_EXPORTS = [
   // SVG
   'enhanceBrowserCompatibility',
   'enhanceSvgForBrowser',
+  'inspectSvg',
   'isInlineSvg',
   'sanitizeSvg',
   'sanitizeSvgForRendering',

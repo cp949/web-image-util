@@ -126,6 +126,12 @@ await processImage(userProvidedSource, {
 
 신뢰할 수 없는 SVG에는 `skip`을 사용하지 마세요.
 
+## inspectSvg() — 진단 API
+
+`inspectSvg()`는 SVG 문자열을 부수효과 없이 진단하는 API입니다. sanitizer를 실행하지 않으며 보안 경계가 되지 않습니다. 신뢰할 수 없는 SVG에는 여전히 `svgSanitizer: 'strict'`를 사용하세요.
+
+happy-dom과 실제 브라우저 환경의 DOM 파싱 차이가 report `environment` 필드에 드러납니다. `environment === 'happy-dom'` 또는 `environment === 'browser'`로 테스트와 운영 환경의 finding 결과가 달라질 수 있습니다.
+
 ## `unsafe_processImage()`와의 차이
 
 `unsafe_processImage()`는 `svgSanitizer: 'skip'`과 다릅니다. `skip`은 sanitizer/assert만 건너뛰고 브라우저 호환성 보정은 유지하지만, `unsafe_processImage()`는 경량 방어층과 브라우저 호환성 보정을 모두 건너뛰고 원본 SVG를 최대한 그대로 로딩합니다.
