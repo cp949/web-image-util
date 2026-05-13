@@ -217,6 +217,7 @@ export function assertSafeSvgContent(svgString: string): void {
 
   // 3~4. 태그 내부 속성만 대상으로 외부 참조를 검사한다.
   const tagPattern = SVG_START_TAG_PATTERN;
+  tagPattern.lastIndex = 0;
   let tagMatch: RegExpExecArray | null;
   tagMatch = tagPattern.exec(svgString);
   while (tagMatch !== null) {
