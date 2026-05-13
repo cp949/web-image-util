@@ -95,6 +95,8 @@ export default defineConfig({
       'tests/security/source-type-detection.test.ts',
       'tests/security/svg-css-escape-bypass.test.ts',
       'tests/security/strict-svg-sanitizer.test.ts',
+      'tests/security/svg-sanitizer-core.test.ts',
+      'tests/security/svg-remote-fetch/fail-closed.test.ts',
     ],
     globals: true,
     coverage: {

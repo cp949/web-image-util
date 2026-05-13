@@ -105,6 +105,8 @@ export default defineConfig({
       'tests/security/svg-css-escape-bypass.test.ts',
       'tests/security/strict-svg-sanitizer.test.ts',
       'tests/security/svg-remote-fetch/remote-svg-sanitization.test.ts',
+      'tests/security/svg-sanitizer-core.test.ts',
+      'tests/security/svg-remote-fetch/fail-closed.test.ts',
     ],
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/browser/**'],
     passWithNoTests: true,
