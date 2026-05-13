@@ -68,3 +68,18 @@ export function sanitizeSvgStrictDetailed(
 ): SanitizeSvgStrictDetailedResult {
   return sanitizeSvgStrictCore(svg, options);
 }
+
+export {
+  type InspectSvgSanitizationFailure,
+  type InspectSvgSanitizationFailureCode,
+  type InspectSvgSanitizationImpact,
+  type InspectSvgSanitizationLightweightImpact,
+  type InspectSvgSanitizationOptions,
+  type InspectSvgSanitizationReport,
+  type InspectSvgSanitizationSkipImpact,
+  type InspectSvgSanitizationStage,
+  type InspectSvgSanitizationStageCode,
+  type InspectSvgSanitizationStrictImpact,
+  inspectSvgSanitization,
+  type SvgSanitizerPolicy,
+} from './inspect-sanitization';

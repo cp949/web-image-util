@@ -163,7 +163,11 @@ export const UTILS_VALUE_EXPORTS = [
 
 export const PRESETS_VALUE_EXPORTS = ['createAvatar', 'createSocialImage', 'createThumbnail'].sort();
 
-export const SVG_SANITIZER_VALUE_EXPORTS = ['sanitizeSvgStrict', 'sanitizeSvgStrictDetailed'].sort();
+export const SVG_SANITIZER_VALUE_EXPORTS = [
+  'inspectSvgSanitization',
+  'sanitizeSvgStrict',
+  'sanitizeSvgStrictDetailed',
+].sort();
 
 export const FILTERS_VALUE_EXPORTS = [
   // 필터 시스템

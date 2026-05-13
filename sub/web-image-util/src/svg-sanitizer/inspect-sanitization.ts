@@ -504,14 +504,143 @@ function buildBytesExceededImpact(policy: SvgSanitizerPolicy): InspectSvgSanitiz
   };
 }
 
-/** strict 정책의 placeholder impact. strict 실제 실행은 TASK-04에서 채운다. */
-function buildStrictPlaceholderImpact(bytes: number): InspectSvgSanitizationImpact {
+/**
+ * `runStrictSanitization`의 반환 형태. 호출자는 `status`로 분기한다.
+ */
+type StrictSanitizationOutcome =
+  | { status: 'ok'; sanitizedSvg: string; warnings: string[] }
+  | { status: 'failed'; failure: InspectSvgSanitizationFailure };
+
+/**
+ * strict sanitizer를 동적 import로 실행한다.
+ *
+ * lazy 경계 유지를 위해 본 함수만 `await import('./core')`를 수행한다(D4 / D1).
+ * strict 내부에서 던진 `ImageProcessError`는 catch해 failure code로 매핑하며,
+ * 동적 import 자체가 실패하면 `svg-dompurify-init-failed`로 변환한다(D6).
+ *
+ * 옵션은 `undefined`로 전달해 `removeMetadata=false`, `domPurifyConfig` 없음,
+ * 기본 한도(`DEFAULT_MAX_BYTES`, `DEFAULT_MAX_NODE_COUNT`)를 그대로 사용한다.
+ * 외부 호출이므로 recursionDepth는 0으로 둔다.
+ */
+async function runStrictSanitization(svgString: string): Promise<StrictSanitizationOutcome> {
+  let sanitizeSvgStrictCore: typeof import('./core').sanitizeSvgStrictCore;
+  try {
+    ({ sanitizeSvgStrictCore } = await import('./core'));
+  } catch {
+    return {
+      status: 'failed',
+      failure: {
+        code: 'svg-dompurify-init-failed',
+        message: 'Strict sanitizer could not initialize DOMPurify in this environment.',
+      },
+    };
+  }
+
+  try {
+    const result = sanitizeSvgStrictCore(svgString, undefined, 0);
+    return { status: 'ok', sanitizedSvg: result.svg, warnings: result.warnings };
+  } catch (error) {
+    if (error instanceof ImageProcessError) {
+      switch (error.code) {
+        case 'SVG_INPUT_INVALID':
+          return {
+            status: 'failed',
+            failure: {
+              code: 'svg-input-invalid',
+              message: 'Strict sanitizer received a non-string input.',
+            },
+          };
+        case 'SVG_BYTES_EXCEEDED':
+          return {
+            status: 'failed',
+            failure: {
+              code: 'svg-bytes-exceeded',
+              message: 'SVG input size exceeds the configured byte limit.',
+            },
+          };
+        case 'SVG_NODE_COUNT_EXCEEDED':
+          return {
+            status: 'failed',
+            failure: {
+              code: 'svg-node-count-exceeded',
+              message: 'Strict sanitizer node count exceeds the configured maximum.',
+            },
+          };
+        case 'SVG_DOMPURIFY_INIT_FAILED':
+          return {
+            status: 'failed',
+            failure: {
+              code: 'svg-dompurify-init-failed',
+              message: 'Strict sanitizer could not initialize DOMPurify in this environment.',
+            },
+          };
+      }
+    }
+    return {
+      status: 'failed',
+      failure: {
+        code: 'svg-strict-internal-error',
+        message: 'Strict sanitizer raised an internal error while processing the input.',
+      },
+    };
+  }
+}
+
+/**
+ * sanitize된 SVG 문자열을 다시 파싱해 element 개수를 측정한다.
+ *
+ * strict의 `outputNodeCount`는 정제 결과의 element 수(`querySelectorAll('*').length`)로
+ * 정의된다. DOMParser가 없거나 파싱 실패면 0을 반환한다.
+ */
+function countElementsInSanitizedSvg(sanitizedSvg: string): number {
+  if (typeof DOMParser === 'undefined') return 0;
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(sanitizedSvg, 'image/svg+xml');
+    if (doc.getElementsByTagName('parsererror').length > 0) return 0;
+    const root = doc.documentElement;
+    if (!root) return 0;
+    return root.querySelectorAll('*').length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * strict 정책 경로. 동적 import로 strict sanitizer를 실행하고 결과를 측정한다.
+ *
+ * stage 수집은 **원본 svgString**의 DOM 순회로 수행한다(sanitize 결과를 diff하지 않는다).
+ * strict 정책 컨텍스트에서는 `doctype-removed`/`entity-removed`도 결과에 포함된다.
+ */
+async function runStrictImpact(svgString: string): Promise<InspectSvgSanitizationImpact> {
+  const outcome = await runStrictSanitization(svgString);
+
+  if (outcome.status === 'failed') {
+    return {
+      kind: 'strict',
+      status: 'failed',
+      outputBytes: null,
+      outputNodeCount: null,
+      stages: [],
+      failure: outcome.failure,
+    };
+  }
+
+  const outputBytes = new TextEncoder().encode(outcome.sanitizedSvg).length;
+  const outputNodeCount = countElementsInSanitizedSvg(outcome.sanitizedSvg);
+
+  const doc = parseSvgDocument(svgString);
+  const stages = collectGeneralStages(svgString, doc, 'strict');
+  if (doc !== null) {
+    stages.push(...collectEmbeddedImageStages(doc));
+  }
+
   return {
     kind: 'strict',
     status: 'ok',
-    outputBytes: bytes,
-    outputNodeCount: 0,
-    stages: [],
+    outputBytes,
+    outputNodeCount,
+    stages,
     failure: null,
   };
 }
@@ -615,14 +744,15 @@ export async function inspectSvgSanitization(
   // 정상 경로 — 정책별 분기.
   // - lightweight: sanitizer 동기 실행 + outputBytes 측정 + 일반 stage 수집
   // - skip: sanitizer 미실행, 일반 stage를 potentialStages로 수집
-  // - strict: TASK-04에서 동적 실행으로 교체. 현재는 placeholder.
+  // - strict: 동적 import로 sanitizer 실행 + outputBytes/outputNodeCount 측정 +
+  //   원본 DOM 순회 기반 stage 수집(strict 컨텍스트에서는 doctype/entity 포함)
   let impact: InspectSvgSanitizationImpact;
   if (policy === 'lightweight') {
     impact = runLightweightImpact(svgString);
   } else if (policy === 'skip') {
     impact = runSkipImpact(svgString);
   } else {
-    impact = buildStrictPlaceholderImpact(bytes);
+    impact = await runStrictImpact(svgString);
   }
 
   const report: InspectSvgSanitizationReport = {

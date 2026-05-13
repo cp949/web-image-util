@@ -9,6 +9,19 @@
  */
 
 import type {
+  InspectSvgSanitizationFailure,
+  InspectSvgSanitizationFailureCode,
+  InspectSvgSanitizationImpact,
+  InspectSvgSanitizationLightweightImpact,
+  InspectSvgSanitizationOptions,
+  InspectSvgSanitizationReport,
+  InspectSvgSanitizationSkipImpact,
+  InspectSvgSanitizationStage,
+  InspectSvgSanitizationStageCode,
+  InspectSvgSanitizationStrictImpact,
+  SvgSanitizerPolicy,
+} from '@cp949/web-image-util/svg-sanitizer';
+import type {
   InspectSvgDimensions,
   InspectSvgFinding,
   InspectSvgFindingCode,
@@ -58,3 +71,49 @@ void inspectReport;
 void inspectFinding;
 void inspectFindingCode;
 void inspectDimensions;
+
+const sanitizationPolicy: SvgSanitizerPolicy = 'lightweight';
+const sanitizationStageCode: InspectSvgSanitizationStageCode = 'script-removed';
+const sanitizationStage: InspectSvgSanitizationStage = {
+  code: sanitizationStageCode,
+  count: 1,
+  samples: ['script'],
+};
+const sanitizationFailureCode: InspectSvgSanitizationFailureCode = 'svg-bytes-exceeded';
+const sanitizationFailure: InspectSvgSanitizationFailure = {
+  code: sanitizationFailureCode,
+  message: 'SVG input size exceeds the configured byte limit.',
+};
+const sanitizationLightweightImpact: InspectSvgSanitizationLightweightImpact = {
+  kind: 'lightweight',
+  status: 'ok',
+  outputBytes: 0,
+  stages: [sanitizationStage],
+  failure: null,
+};
+const sanitizationStrictImpact: InspectSvgSanitizationStrictImpact = {
+  kind: 'strict',
+  status: 'failed',
+  outputBytes: null,
+  outputNodeCount: null,
+  stages: [],
+  failure: sanitizationFailure,
+};
+const sanitizationSkipImpact: InspectSvgSanitizationSkipImpact = {
+  kind: 'skip',
+  status: 'not-applied',
+  potentialStages: [sanitizationStage],
+};
+const sanitizationImpact: InspectSvgSanitizationImpact = sanitizationLightweightImpact;
+const sanitizationOptions: InspectSvgSanitizationOptions = { policy: sanitizationPolicy };
+const sanitizationReport: InspectSvgSanitizationReport = {
+  bytes: 0,
+  byteLimit: 0,
+  environment: 'unknown',
+  policy: sanitizationPolicy,
+  impact: sanitizationImpact,
+};
+void sanitizationStrictImpact;
+void sanitizationSkipImpact;
+void sanitizationOptions;
+void sanitizationReport;

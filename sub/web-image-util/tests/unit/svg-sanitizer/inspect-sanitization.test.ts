@@ -6,6 +6,7 @@ import {
   type InspectSvgSanitizationStageCode,
   inspectSvgSanitization,
 } from '../../../src/svg-sanitizer/inspect-sanitization';
+import { DEFAULT_MAX_NODE_COUNT } from '../../../src/svg-sanitizer/types';
 import { sanitizeSvgForRendering } from '../../../src/utils/svg-sanitizer';
 
 const TINY_SVG = '<svg xmlns="http://www.w3.org/2000/svg"/>';
@@ -100,13 +101,16 @@ describe('inspectSvgSanitization()', () => {
       }
     });
 
-    it('strict: impact.kind가 strict이고 outputNodeCount는 0(placeholder)이다', async () => {
+    it('strict: 정상 SVG는 ok status와 정확한 outputBytes/outputNodeCount를 반환한다', async () => {
       const report = await inspectSvgSanitization(TINY_SVG, { policy: 'strict' });
       expect(report.policy).toBe('strict');
       expect(report.impact.kind).toBe('strict');
       if (report.impact.kind === 'strict') {
         expect(report.impact.status).toBe('ok');
-        expect(report.impact.outputBytes).toBe(report.bytes);
+        // 빈 SVG도 정제 결과는 자기 자신과 동등한 마크업이므로 outputBytes > 0
+        expect(report.impact.outputBytes).not.toBeNull();
+        expect(report.impact.outputBytes ?? 0).toBeGreaterThan(0);
+        // querySelectorAll('*')는 root element를 제외하므로 자식이 없으면 0
         expect(report.impact.outputNodeCount).toBe(0);
         expect(report.impact.stages).toEqual([]);
         expect(report.impact.failure).toBeNull();
@@ -483,6 +487,114 @@ describe('inspectSvgSanitization()', () => {
       expect(stage?.samples).toHaveLength(3);
       expect(stage?.samples).toEqual(['image/png', 'image/jpeg', 'image/webp']);
       expect(stage?.samples).not.toContain('image/gif');
+    });
+  });
+
+  describe('strict 정책 — 동적 실행과 stage 수집', () => {
+    it('script 요소가 있는 입력은 script-removed stage가 잡히고 outputBytes/outputNodeCount가 채워진다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+        { policy: 'strict' }
+      );
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      expect(report.impact.status).toBe('ok');
+      expect(report.impact.outputBytes).not.toBeNull();
+      expect(report.impact.outputBytes ?? 0).toBeGreaterThan(0);
+      expect(report.impact.outputNodeCount).not.toBeNull();
+      expect(report.impact.outputNodeCount ?? -1).toBeGreaterThanOrEqual(0);
+      expect(report.impact.failure).toBeNull();
+      const stage = findStage(report.impact.stages, 'script-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(1);
+      expect(stage?.samples).toEqual(['script']);
+    });
+
+    it('foreignObject 요소가 있는 입력은 foreign-object-removed stage가 잡힌다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject></foreignObject></svg>',
+        { policy: 'strict' }
+      );
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      expect(report.impact.status).toBe('ok');
+      const stage = findStage(report.impact.stages, 'foreign-object-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(1);
+    });
+
+    it('DOCTYPE 선언이 있으면 strict 정책에서만 doctype-removed stage가 등장한다', async () => {
+      const input = '<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg"></svg>';
+      const strictReport = await inspectSvgSanitization(input, { policy: 'strict' });
+      expect(strictReport.impact.kind).toBe('strict');
+      if (strictReport.impact.kind !== 'strict') return;
+      const strictStage = findStage(strictReport.impact.stages, 'doctype-removed');
+      expect(strictStage).toBeDefined();
+      expect(strictStage?.count).toBeGreaterThanOrEqual(1);
+      expect(strictStage?.samples).toEqual(['doctype']);
+
+      // lightweight/skip 정책에서는 doctype-removed가 등장하지 않음을 다시 확인
+      const lightweightReport = await inspectSvgSanitization(input);
+      expect(lightweightReport.impact.kind).toBe('lightweight');
+      if (lightweightReport.impact.kind !== 'lightweight') return;
+      expect(findStage(lightweightReport.impact.stages, 'doctype-removed')).toBeUndefined();
+    });
+
+    it('ENTITY 선언이 있으면 strict 정책에서 entity-removed stage가 등장한다', async () => {
+      const input = '<!DOCTYPE svg [<!ENTITY xxe "test">]><svg xmlns="http://www.w3.org/2000/svg"></svg>';
+      const report = await inspectSvgSanitization(input, { policy: 'strict' });
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      const stage = findStage(report.impact.stages, 'entity-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBeGreaterThanOrEqual(1);
+      expect(stage?.samples).toEqual(['entity']);
+    });
+
+    it('정상 SVG는 strict 정책에서도 stages가 빈 배열이고 outputBytes/outputNodeCount가 정확하다', async () => {
+      const input = '<svg xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="10" height="10"/></svg>';
+      const report = await inspectSvgSanitization(input, { policy: 'strict' });
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      expect(report.impact.status).toBe('ok');
+      expect(report.impact.stages).toEqual([]);
+      expect(report.impact.outputBytes).not.toBeNull();
+      expect(report.impact.outputBytes ?? 0).toBeGreaterThan(0);
+      // rect 1개 → root 자식 1개
+      expect(report.impact.outputNodeCount).toBe(1);
+    });
+
+    it('strict outputNodeCount는 sanitizedSvg를 재파싱한 결과의 querySelectorAll("*").length와 의미가 일치한다', async () => {
+      const input = '<svg xmlns="http://www.w3.org/2000/svg"><g><rect/><circle/></g></svg>';
+      const report = await inspectSvgSanitization(input, { policy: 'strict' });
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      // g + rect + circle → root 기준 element 3개
+      expect(report.impact.outputNodeCount).toBe(3);
+    });
+
+    it('노드 개수 초과 입력은 status failed + failure.code "svg-node-count-exceeded"로 분기된다', async () => {
+      // root svg 자체가 count 1로 잡히므로 +1로 한도 초과를 만든다
+      const child = '<rect/>';
+      const input = '<svg xmlns="http://www.w3.org/2000/svg">' + child.repeat(DEFAULT_MAX_NODE_COUNT + 1) + '</svg>';
+      const report = await inspectSvgSanitization(input, { policy: 'strict' });
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      expect(report.impact.status).toBe('failed');
+      expect(report.impact.failure?.code).toBe('svg-node-count-exceeded');
+      expect(report.impact.outputBytes).toBeNull();
+      expect(report.impact.outputNodeCount).toBeNull();
+      expect(report.impact.stages).toEqual([]);
+    });
+  });
+
+  describe('공개 표면 노출', () => {
+    it('svg-sanitizer 서브패스에서 inspectSvgSanitization을 import할 수 있다', async () => {
+      const module = await import('@cp949/web-image-util/svg-sanitizer');
+      expect(typeof module.inspectSvgSanitization).toBe('function');
+      const report = await module.inspectSvgSanitization(TINY_SVG);
+      expect(report.policy).toBe('lightweight');
+      expect(report.impact.kind).toBe('lightweight');
     });
   });
 });
