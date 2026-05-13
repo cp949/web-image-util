@@ -12,7 +12,7 @@
 | `sub/web-image-util/src/svg-sanitizer/` | DOMPurify 기반 SVG strict 정화 |
 | `sub/web-image-util/tests/` | 라이브러리 단위, 통합, 계약, 보안, 브라우저 테스트 |
 | `tests/unit/scripts/` | 루트 운영 스크립트 테스트 |
-| `apps/exam/` | Next.js 기반 데모 앱 |
+| `apps/demo/` | Vite + React 기반 학습용 데모 앱 (큐레이션된 6개 데모) |
 
 ## 명령어
 
@@ -29,7 +29,8 @@
 | 루트 스크립트 테스트 | `pnpm test:scripts` |
 | CI 검증 | `pnpm verify:ci` |
 | 릴리스 검증 | `pnpm verify:release` |
-| 데모 앱 | `pnpm dev:exam` |
+| 데모 앱 | `pnpm dev:demo` |
+| 데모 앱 빌드 | `pnpm build:demo` |
 
 ## 작업 규칙
 
