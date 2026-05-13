@@ -24,7 +24,7 @@ export default defineConfig({
         resources: 'usable',
       },
     },
-    include: [],
+    include: ['tests/jsdom-limits/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/browser/**'],
     passWithNoTests: true,
     globals: true,

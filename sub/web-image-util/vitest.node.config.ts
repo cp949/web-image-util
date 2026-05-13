@@ -10,7 +10,13 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./tests/setup/canvas-mock.ts'],
     include: ['tests/**/*.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**', 'tests/browser/**'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      'tests/browser/**',
+      // jsdom 전용 (vitest.jsdom.config.ts include와 동기화)
+      'tests/jsdom-limits/**',
+    ],
     globals: true,
     coverage: {
       provider: 'v8',

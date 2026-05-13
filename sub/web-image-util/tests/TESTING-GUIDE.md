@@ -77,3 +77,11 @@ happy-dom 고유의 비표준 동작에 의존하지 않는다. 대표 예시는
 
 테스트 환경 차이를 맞추려고 production 동작을 바꾸지 않는다. production 표준 동작과 단위 테스트 환경이 어긋나면 production이 옳다고 본다. 환경이 미구현이라는 이유로 production 단정을 약화하지 않는다.
 
+## 알려진 jsdom 제약
+
+jsdom 29 환경에서 다음 동작은 지원되지 않거나 표준과 다르게 끝난다. 해당 단정이 필요한 테스트는 happy-dom에 남겨두거나 `tests/browser/**`로 옮긴다.
+
+- `URL.createObjectURL(blob)` + `HTMLImageElement` 로드: jsdom 자체에는 `URL.createObjectURL`이 없다. vitest 환경에서는 Node 전역 구현이 노출되지만 결과 URL이 `blob:nodedata:` 스킴이라 jsdom resource loader가 해석하지 못해 `img.onerror`가 즉시 발생한다. Blob → Object URL → Image 로드 자체가 동작하지 않는다.
+
+이런 제약은 `tests/jsdom-limits/**`에 회귀 테스트로 박아둔다. 해당 테스트가 통과하면 제약이 그대로다. 실패한다면 jsdom이 해당 경로를 지원하기 시작했다는 신호이므로 위 정책과 마이그레이션 후보 목록을 재평가한다.
+
