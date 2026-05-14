@@ -97,7 +97,7 @@ export function renderLlmTxt({ packageName, readmeText, modules }) {
     "- `const safeSvg = sanitizeSvg(svgString);`",
     "- `const strictBlob = await processImage(untrustedSvg, { svgSanitizer: 'strict' }).toBlob();`",
     "- `const strictSvg = sanitizeSvgStrict(svgString);`",
-    "- `const blob = await convertToBlob(canvas);`",
+    "- `const blob = await ensureBlob(canvas, { format: 'webp', quality: 0.85 });`",
     "- `const info = await detectImageSourceInfo(file);`",
     "- `const format = await fetchImageFormat('https://example.com/image-without-extension');`",
     "- `const format = resolveOutputFormat('avif', { supported: ['webp', 'png'] });`",

@@ -11,6 +11,11 @@
 - Added: prefixSvgIds() under @cp949/web-image-util/utils — side-effect-free SVG id prefix utility with idempotent/collision detection and deopt-on-CSS policy.
 - Added: inspectSvgSource() under @cp949/web-image-util/utils — async SVG source inspection covering string/Blob/File/URL with opt-in fetch and origin+path URL masking.
 
+### 제거
+
+- **BREAKING**: `convertToBlob` / `convertToDataURL` / `convertToFile` / `convertToElement`(및 각 `*Detailed`)를 제거했습니다. `ensure*` 계열(`ensureBlob` / `ensureDataURL` / `ensureFile` / `ensureImageElement`)로 대체하세요. `convertToElement`는 `ensureImageElement`와 동작이 동일하지만, 나머지 3쌍은 Blob 입력 시 `format`/`quality` 옵션을 무시하던 동작이 `ensure*`에서는 옵션을 적용하도록 바뀌었습니다.
+- **BREAKING**: `ConvertToBlobOptions` 등 `ConvertTo*Options` 타입을 제거했습니다. 대응되는 `Ensure*Options` 타입을 사용하세요.
+
 ## [2.0.37] - 2026-05-05
 
 ### 변경

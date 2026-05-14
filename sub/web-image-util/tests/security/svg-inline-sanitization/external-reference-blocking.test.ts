@@ -3,7 +3,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { convertToElement } from '../../../src/utils/converters';
+import { ensureImageElement } from '../../../src/utils/converters';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -14,7 +14,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const safeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="./assets/pattern.png" width="10" height="10"/></svg>';
 
-    await expect(convertToElement(safeSvg)).rejects.toMatchObject({
+    await expect(ensureImageElement(safeSvg)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
       details: { reason: 'external-ref' },
     });
@@ -24,7 +24,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href=./assets/pattern.png width="10" height="10"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+    await expect(ensureImageElement(unsafeSvg)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
       details: { reason: 'external-ref' },
     });
@@ -34,7 +34,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\2e \\2e /secret.png)"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+    await expect(ensureImageElement(unsafeSvg)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
       details: { reason: 'style-attribute-url' },
     });
@@ -44,7 +44,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\00002&#x65; \\00002&#x65; /secret.png)"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+    await expect(ensureImageElement(unsafeSvg)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
       details: { reason: 'style-attribute-url' },
     });
@@ -54,7 +54,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:u\\00007&#x32;l(\\00002&#x65; \\00002&#x65; /secret.png)"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+    await expect(ensureImageElement(unsafeSvg)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
       details: { reason: 'style-attribute-url' },
     });
@@ -64,7 +64,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\2f assets/tracker.png)"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+    await expect(ensureImageElement(unsafeSvg)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
       details: { reason: 'style-attribute-url' },
     });
@@ -74,7 +74,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="/assets/pattern.png" width="10" height="10"/></svg>';
 
-    await expect(convertToElement(unsafeSvg)).rejects.toMatchObject({
+    await expect(ensureImageElement(unsafeSvg)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
       details: { reason: 'external-ref' },
     });

@@ -34,9 +34,7 @@
 
 export { isDataURLString } from '../data-url';
 
-export { convertToBlob, convertToBlobDetailed } from './blob';
-export { convertToDataURL, convertToDataURLDetailed } from './data-url';
-export { convertToElement, ensureImageElement, ensureImageElementDetailed } from './element';
+export { ensureImageElement, ensureImageElementDetailed } from './element';
 export {
   ensureBlob,
   ensureBlobDetailed,
@@ -45,14 +43,7 @@ export {
   ensureFile,
   ensureFileDetailed,
 } from './ensure';
-export { convertToFile, convertToFileDetailed } from './file';
 export type {
-  ConvertToBlobDetailedOptions,
-  ConvertToBlobOptions,
-  ConvertToDataURLDetailedOptions,
-  ConvertToDataURLOptions,
-  ConvertToFileDetailedOptions,
-  ConvertToFileOptions,
   EnsureBlobDetailedOptions,
   EnsureBlobOptions,
   EnsureDataURLDetailedOptions,

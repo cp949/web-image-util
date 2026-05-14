@@ -3,7 +3,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { convertToElement } from '../../../src/utils/converters';
+import { ensureImageElement } from '../../../src/utils/converters';
 import { withFetchMock } from '../../utils';
 import { createStreamBody } from '../helpers/svg-test-helpers';
 
@@ -25,7 +25,7 @@ describe('보안: 원격 SVG fetch fail-closed', () => {
     });
 
     await withFetchMock(fetchMock, async () => {
-      await expect(convertToElement('https://example.com/asset?id=broken-svg')).rejects.toMatchObject({
+      await expect(ensureImageElement('https://example.com/asset?id=broken-svg')).rejects.toMatchObject({
         code: 'INVALID_SOURCE',
       });
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -37,7 +37,7 @@ describe('보안: 원격 SVG fetch fail-closed', () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error('cors blocked'));
 
     await withFetchMock(fetchMock, async () => {
-      await expect(convertToElement('https://example.com/image.svg')).rejects.toMatchObject({
+      await expect(ensureImageElement('https://example.com/image.svg')).rejects.toMatchObject({
         code: 'INVALID_SOURCE',
       });
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -49,7 +49,7 @@ describe('보안: 원격 SVG fetch fail-closed', () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error('cors blocked'));
 
     await withFetchMock(fetchMock, async () => {
-      await expect(convertToElement('https://example.com/image.svg?download=1')).rejects.toMatchObject({
+      await expect(ensureImageElement('https://example.com/image.svg?download=1')).rejects.toMatchObject({
         code: 'INVALID_SOURCE',
       });
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -69,7 +69,7 @@ describe('보안: 원격 SVG fetch fail-closed', () => {
     });
 
     await withFetchMock(fetchMock, async () => {
-      await expect(convertToElement('https://example.com/broken.svg')).rejects.toMatchObject({
+      await expect(ensureImageElement('https://example.com/broken.svg')).rejects.toMatchObject({
         code: 'INVALID_SOURCE',
       });
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -90,7 +90,7 @@ describe('보안: 원격 SVG fetch fail-closed', () => {
     });
 
     await withFetchMock(fetchMock, async () => {
-      await expect(convertToElement('https://example.com/broken.xml')).rejects.toMatchObject({
+      await expect(ensureImageElement('https://example.com/broken.xml')).rejects.toMatchObject({
         code: 'INVALID_SOURCE',
       });
       expect(fetchMock).toHaveBeenCalledTimes(1);

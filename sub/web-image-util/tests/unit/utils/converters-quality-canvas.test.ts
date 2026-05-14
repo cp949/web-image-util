@@ -4,14 +4,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  convertToBlob,
-  convertToDataURL,
-  ensureBlob,
-  ensureDataURL,
-  ensureFile,
-  isDataURLString,
-} from '../../../src/utils/converters';
+import { ensureBlob, ensureDataURL, ensureFile, isDataURLString } from '../../../src/utils/converters';
 
 describe('변환 유틸 quality 옵션 (jsdom-safe)', () => {
   afterEach(() => {
@@ -23,7 +16,7 @@ describe('변환 유틸 quality 옵션 (jsdom-safe)', () => {
     const canvasPrototype = Object.getPrototypeOf(canvas) as HTMLCanvasElement;
     const toBlobSpy = vi.spyOn(canvasPrototype, 'toBlob');
 
-    await convertToBlob(canvas, { format: 'jpeg', quality: 0 });
+    await ensureBlob(canvas, { format: 'jpeg', quality: 0 });
 
     expect(toBlobSpy).toHaveBeenLastCalledWith(expect.any(Function), 'image/jpeg', 0);
   });
@@ -33,7 +26,7 @@ describe('변환 유틸 quality 옵션 (jsdom-safe)', () => {
     const canvasPrototype = Object.getPrototypeOf(canvas) as HTMLCanvasElement;
     const toDataURLSpy = vi.spyOn(canvasPrototype, 'toDataURL');
 
-    await convertToDataURL(canvas, { format: 'webp', quality: 0 });
+    await ensureDataURL(canvas, { format: 'webp', quality: 0 });
 
     expect(toDataURLSpy).toHaveBeenLastCalledWith('image/webp', 0);
   });
@@ -49,15 +42,6 @@ describe('변환 유틸 quality 옵션 (jsdom-safe)', () => {
     const dataURL = 'data:image/png;base64,already-data-url';
 
     await expect(ensureDataURL(dataURL, { format: 'jpeg', quality: 0.95 })).resolves.toBe(dataURL);
-  });
-
-  it('convertToBlob은 quality만 제공된 Blob을 재인코딩하지 않는다', async () => {
-    const blob = new Blob(['mock'], { type: 'image/jpeg' });
-    const canvasPrototype = Object.getPrototypeOf(document.createElement('canvas')) as HTMLCanvasElement;
-    const toBlobSpy = vi.spyOn(canvasPrototype, 'toBlob');
-
-    await expect(convertToBlob(blob, { quality: 0.5 })).resolves.toBe(blob);
-    expect(toBlobSpy).not.toHaveBeenCalled();
   });
 
   it('Blob 출력에 재인코딩이 필요 없으면 원본 Blob을 재사용한다', async () => {

@@ -29,13 +29,6 @@ export const ROOT_VALUE_EXPORTS = [
   'extractSvgDimensions',
 
   // /utils 재노출 - 변환
-  'convertToBlob',
-  'convertToBlobDetailed',
-  'convertToDataURL',
-  'convertToDataURLDetailed',
-  'convertToElement',
-  'convertToFile',
-  'convertToFileDetailed',
   'ensureBlob',
   'ensureBlobDetailed',
   'ensureDataURL',
@@ -106,13 +99,6 @@ export const UTILS_VALUE_EXPORTS = [
   'getOptimalProcessingMode',
   'PROCESSING_MODE_DESCRIPTIONS',
   // 변환
-  'convertToBlob',
-  'convertToBlobDetailed',
-  'convertToDataURL',
-  'convertToDataURLDetailed',
-  'convertToElement',
-  'convertToFile',
-  'convertToFileDetailed',
   'ensureBlob',
   'ensureBlobDetailed',
   'ensureDataURL',

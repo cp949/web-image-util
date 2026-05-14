@@ -22,13 +22,13 @@ pnpm --filter @cp949/web-image-util test:coverage
 | --- | --- | --- | --- | --- |
 | `index.ts` | `processImage(src, options?)` | `ImageSource` → `ImageProcessor` 체이닝 인스턴스 (resize/blur/출력 메서드 노출) | 있음 | `tests/unit/processor/processor-resize/chaining-jsdom.test.ts`, `tests/contract/runtime-contract.test.ts` |
 | `index.ts` | `processImage().resize(config)` | `ResizeConfig` 누적 후 후속 체이닝 가능, 두 번째 호출 시 타입/런타임 에러 | 있음 | `tests/unit/processor/processor-resize/fit-modes-jsdom.test.ts`, `multiple-resize-guard-jsdom.test.ts` |
-| `index.ts` | `processImage().blur(radius?, options?)` | 블러 효과 누적 후 후속 체이닝 가능 | 부분 | `tests/unit/processor/processor-resize/chaining-jsdom.test.ts` (조합 검증 일부) |
+| `index.ts` | `processImage().blur(radius?, options?)` | 블러 효과 누적 후 후속 체이닝 가능 | 있음 | `tests/unit/processor/processor-resize/blur-output-jsdom.test.ts` (출력까지 행동 검증·다중 누적·radius 경계값), `chaining-jsdom.test.ts` |
 | `index.ts` | `processImage().resize().toBlob(format?, quality?)` | 입력 src + ResizeConfig → 지정 포맷 MIME Blob (포맷 미지정 시 추론, AVIF 미지원 시 fallback) | 있음 | `tests/unit/processor/processor-resize/output-formats-jsdom.test.ts` |
 | `index.ts` | `processImage().resize().toDataURL(format?, quality?)` | 입력 src + ResizeConfig → 지정 포맷 Data URL 문자열 | 있음 | `tests/unit/processor/processor-resize/output-formats-jsdom.test.ts` |
-| `index.ts` | `processImage().resize().toFile(filename, format?, quality?)` | 입력 src + ResizeConfig → 지정 파일명/MIME의 `File` 객체 | 없음 | 컨트랙트/타입 테스트만 존재 (`tests/contract/runtime-contract.test.ts`, `typed-processor-jsdom.test.ts`) |
+| `index.ts` | `processImage().resize().toFile(filename, format?, quality?)` | 입력 src + ResizeConfig → 지정 파일명/MIME의 `File` 객체 (파일명 확장자는 명시 포맷에 맞춰 정규화) | 있음 | `tests/unit/processor/processor-resize/to-file-jsdom.test.ts` (파일명 포맷 추론·명시 옵션 우선·quality 전달) |
 | `index.ts` | `processImage().resize().toCanvas()` | 입력 src + ResizeConfig → 사용자 소유 `HTMLCanvasElement` (풀에 반환 안 함) | 있음 | `tests/unit/processor/processor-resize/output-formats-jsdom.test.ts` |
-| `index.ts` | `processImage().resize().toCanvasDetailed()` | 입력 src + ResizeConfig → Canvas + 메타데이터 객체 | 없음 | 행동 테스트 누락 |
-| `index.ts` | `processImage().toElement()` | 출력 Blob을 `HTMLImageElement`로 디코드 (object URL 정리 포함) | 부분 | `tests/unit/processor/to-element-cleanup.test.ts` (cleanup 검증), 일반 입출력 케이스 부족 |
+| `index.ts` | `processImage().resize().toCanvasDetailed()` | 입력 src + ResizeConfig → Canvas + 메타데이터 객체 (풀에 반환 안 함) | 있음 | `tests/unit/processor/processor-resize/to-canvas-detailed-jsdom.test.ts` (메타데이터·풀 미반환·`toCanvas()` 동치) |
+| `index.ts` | `processImage().toElement()` | 출력 Blob을 `HTMLImageElement`로 디코드 (object URL 정리 포함) | 있음 | `tests/unit/processor/to-element-output-jsdom.test.ts` (정상 경로 반환 형태·`createObjectURL` 호출 계약·체이닝 도달성), `to-element-cleanup.test.ts` (cleanup 검증) |
 | `index.ts` | `unsafe_processImage(src, options?)` | strict sanitize 없이 동일 체이닝 API 반환 (위험 신뢰 입력 전용) | 있음 | `tests/unit/processor/unsafe-process-image/error-handling-jsdom.test.ts`, `export-contract.test.ts` |
 | `index.ts` | `ImageProcessor` (클래스 export) | 직접 인스턴스화 또는 타입 참조 진입점 | 없음 | 컨트랙트 export만 검증 |
 | `index.ts` | `createThumbnail(src, options)` | src + 크기/포맷/품질 → cover/contain fit의 썸네일 Blob (포맷 미지정 시 WebP→JPEG fallback) | 있음 | `tests/unit/presets/presets-jsdom.test.ts` |
@@ -42,7 +42,6 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `index.ts` | `detectBrowserCapabilities()` / `detectFormatSupport()` / `detectSyncCapabilities()` | 브라우저 환경 → 포맷/기능 지원 객체 (캐시 포함) | 있음 | `tests/unit/utils/browser-capabilities/detector.test.ts`, `ssr-safety.test.ts` |
 | `index.ts` | `getCachedBrowserCapabilities()` / `getCachedFormatSupport()` / `getOptimalProcessingMode()` / `analyzePerformanceFeatures()` | 캐시/우선순위 평가 결과 반환 | 부분 | `tests/unit/utils/browser-capabilities/**` (일부 함수만 검증) |
 | `index.ts` | `features` (deprecated 동기 퍼사드) | `.webp`/`.avif`/`.offscreenCanvas`/`.imageBitmap` → 동기 boolean | 있음 | `tests/unit/utils/browser-capabilities/features-facade.test.ts` |
-| `index.ts` | `convertToBlob` / `convertToDataURL` / `convertToFile` / `convertToElement` (+ `*Detailed`) | 이미지 입력 → 해당 포맷 변환 결과 | 부분 | `tests/unit/utils/converters-file-canvas.test.ts`, `converters-quality-canvas.test.ts` (file/canvas 위주) |
 | `index.ts` | `ensureBlob` / `ensureDataURL` / `ensureFile` / `ensureImageElement` (+ `*Detailed`) | 이미지 입력이 해당 포맷이 아닐 때만 변환, 같은 포맷이면 그대로 통과 | 부분 | `tests/unit/utils/converters-quality-canvas.test.ts`, `tests/security/svg-size-limits-jsdom.test.ts` (일부) |
 | `index.ts` | `blobToDataURL` / `dataURLToBlob` / `decodeSvgDataURL` / `estimateDataURLPayloadByteLength` / `estimateDataURLSize` / `isDataURLString` | Blob ↔ Data URL 순수 변환 및 크기 추정 | 있음 | `tests/unit/utils/data-url.test.ts` |
 | `index.ts` | `detectImageSourceType` / `detectImageSourceInfo` / `detectImageStringSourceType` / `detectImageStringSourceInfo` | 입력 → 소스 타입 분류 결과 | 있음 | `tests/unit/utils/source-utils.test.ts` |
@@ -83,11 +82,6 @@ pnpm --filter @cp949/web-image-util test:coverage
 
 | 영역 | 베이스라인 커버 | 추천 테스트 종류 | 의도 | 우선순위 |
 | --- | --- | --- | --- | --- |
-| `processImage().resize().toCanvasDetailed()` 행동 (Canvas + 메타데이터, 풀 반환 안 함) | 낮음 (행동 없음) | 행동 | 회귀 방지 | 높음 |
-| `processImage().blur()` 출력까지의 행동 (toBlob/toCanvas 조합) | 중간 (체이닝 일부만 검증) | 행동 | 회귀 방지 | 높음 |
-| `processImage().toElement()` 일반 입출력 경로 (디코드된 `HTMLImageElement` 반환, src 다양성) | 중간 (cleanup만 검증) | 행동 | 회귀 방지 | 높음 |
-| `core/lazy-render-pipeline.ts` 분기 (resize + blur 누적 후 단일 렌더 경로) | 낮음 (stmt 58 / branch 39) | 행동 (processor 경유) | 회귀 방지 | 높음 |
-| `convertToBlob` / `convertToDataURL` / `convertToFile` / `convertToElement` (+ `*Detailed`) 행동 | 중간 (file/canvas 위주) | 행동 | 회귀 방지 | 높음 |
 | `ensureBlob` / `ensureDataURL` / `ensureFile` / `ensureImageElement` (+ `*Detailed`) 행동 (no-op 경로 포함) | 중간 (일부만) | 행동 | 회귀 방지 | 높음 |
 | `getCachedBrowserCapabilities` / `getCachedFormatSupport` / `getOptimalProcessingMode` / `analyzePerformanceFeatures` 행동 | 중간 (일부 함수만) | 행동 | 회귀 방지 | 중간 |
 | `/advanced` `AdvancedImageProcessor.processImage` / `.batchProcess` 행동 (resize + filter + watermark + format auto 묶음) | 중간 (smart-processor 일부만) | 행동 | 회귀 방지 | 중간 |

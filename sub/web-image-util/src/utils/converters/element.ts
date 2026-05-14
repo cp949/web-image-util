@@ -1,8 +1,7 @@
 /**
- * HTMLImageElement 보장/변환 함수.
+ * HTMLImageElement 보장 변환 함수.
  *
  * @description 다양한 입력을 단일 HTMLImageElement로 정규화한다.
- * convertToElement는 deprecated 호환 alias.
  */
 
 import { convertToImageElement } from '../../core/source-converter';
@@ -63,25 +62,4 @@ export async function ensureImageElementDetailed(source: ImageSource): Promise<R
       cause: error,
     });
   }
-}
-
-/**
- * Convert image source to HTMLImageElement
- *
- * @param source Image source (HTMLImageElement, Blob, URL, Data URL, SVG XML, ArrayBuffer, etc.)
- * @returns HTMLImageElement Promise
- *
- * @deprecated 기존 호환성용 API입니다. 새 코드에서는 `ensureImageElement()`을 사용하세요.
- *
- * @example
- * ```typescript
- * import { convertToElement } from '@cp949/web-image-util/utils';
- *
- * const element = await convertToElement(blob);
- * const element2 = await convertToElement('https://example.com/image.jpg');
- * const element3 = await convertToElement('<svg>...</svg>');
- * ```
- */
-export async function convertToElement(source: ImageSource): Promise<HTMLImageElement> {
-  return ensureImageElement(source);
 }

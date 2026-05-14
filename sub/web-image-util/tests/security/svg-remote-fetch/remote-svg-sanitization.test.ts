@@ -3,7 +3,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { convertToElement } from '../../../src/utils/converters';
+import { ensureImageElement } from '../../../src/utils/converters';
 import { withFetchMock } from '../../utils';
 import { createStreamBody } from '../helpers/svg-test-helpers';
 
@@ -13,7 +13,7 @@ afterEach(() => {
 
 describe('보안: 원격 SVG fetch 정화', () => {
   it('외부 리소스를 참조하는 원격 SVG는 sanitize 후 렌더링된다', async () => {
-    // sanitize 계층이 외부 href 속성을 제거하므로 convertToElement는 성공한다
+    // sanitize 계층이 외부 href 속성을 제거하므로 ensureImageElement는 성공한다
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       headers: {
@@ -27,14 +27,14 @@ describe('보안: 원격 SVG fetch 정화', () => {
     });
 
     await withFetchMock(fetchMock, async () => {
-      const element = await convertToElement('https://example.com/unsafe.svg');
+      const element = await ensureImageElement('https://example.com/unsafe.svg');
       expect(element).toBeInstanceOf(HTMLImageElement);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 
   it('확장자가 없는 URL이라도 image/svg+xml 응답의 외부 href는 sanitize 후 렌더링된다', async () => {
-    // sanitize 계층이 외부 href 속성을 제거하므로 convertToElement는 성공한다
+    // sanitize 계층이 외부 href 속성을 제거하므로 ensureImageElement는 성공한다
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -49,7 +49,7 @@ describe('보안: 원격 SVG fetch 정화', () => {
     });
 
     await withFetchMock(fetchMock, async () => {
-      const element = await convertToElement('https://example.com/asset?id=unsafe');
+      const element = await ensureImageElement('https://example.com/asset?id=unsafe');
       expect(element).toBeInstanceOf(HTMLImageElement);
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(warnSpy).not.toHaveBeenCalled();
@@ -69,7 +69,7 @@ describe('보안: 원격 SVG fetch 정화', () => {
     });
 
     await withFetchMock(fetchMock, async () => {
-      const element = await convertToElement('https://example.com/text-only-svg');
+      const element = await ensureImageElement('https://example.com/text-only-svg');
       expect(element).toBeInstanceOf(HTMLImageElement);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
@@ -97,7 +97,7 @@ describe('보안: 원격 SVG fetch 정화', () => {
     });
 
     await withFetchMock(fetchMock, async () => {
-      const element = await convertToElement('https://example.com/fabric.svg');
+      const element = await ensureImageElement('https://example.com/fabric.svg');
       expect(element).toBeInstanceOf(HTMLImageElement);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });

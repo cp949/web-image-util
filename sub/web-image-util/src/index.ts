@@ -149,12 +149,6 @@ export type {
 // Error classes
 export { ImageErrorCode, ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
 export type {
-  ConvertToBlobDetailedOptions,
-  ConvertToBlobOptions,
-  ConvertToDataURLDetailedOptions,
-  ConvertToDataURLOptions,
-  ConvertToFileDetailedOptions,
-  ConvertToFileOptions,
   DecodedSvgDataURL,
   DetectImageSourceInfoOptions,
   EnsureBlobDetailedOptions,
@@ -182,13 +176,6 @@ export type {
 // Utility functions
 export {
   blobToDataURL,
-  convertToBlob,
-  convertToBlobDetailed,
-  convertToDataURL,
-  convertToDataURLDetailed,
-  convertToElement,
-  convertToFile,
-  convertToFileDetailed,
   dataURLToBlob,
   decodeSvgDataURL,
   detectImageSourceInfo,

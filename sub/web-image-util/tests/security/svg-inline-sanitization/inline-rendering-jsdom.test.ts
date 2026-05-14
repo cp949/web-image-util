@@ -6,7 +6,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { convertToElement } from '../../../src/utils/converters';
+import { ensureImageElement } from '../../../src/utils/converters';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -17,15 +17,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="10" height="10"/></svg>';
 
-    const element = await convertToElement(maliciousSvg);
-    expect(element).toBeInstanceOf(HTMLImageElement);
-  });
-
-  it('스크립트 요소가 제거된 SVG는 성공적으로 변환된다', async () => {
-    const maliciousSvg =
-      '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="10" height="10"/></svg>';
-
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -33,7 +25,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(https://evil.example/pattern.svg#id)"/></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -41,7 +33,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><style>rect{fill:url(https://evil.example/pattern.svg#id)}</style><rect width="10" height="10"/></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -49,7 +41,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href=//evil.example/pattern.png width="10" height="10"/></svg>';
 
-    const element = await convertToElement(unsafeSvg);
+    const element = await ensureImageElement(unsafeSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -57,7 +49,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript:alert(1)"><rect width="10" height="10"/></a></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -65,7 +57,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><rect width="10" height="10"/></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -73,7 +65,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" oNcLiCk="alert(1)"/></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -81,7 +73,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="HTTPS://evil.example/tracker.png" width="10" height="10"/></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -89,7 +81,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><a href="JaVaScRiPt:alert(1)"><rect width="10" height="10"/></a></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -97,7 +89,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><a href="jav&#x61;script:alert(1)"><rect width="10" height="10"/></a></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -105,7 +97,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\'https://evil.example/x.svg\')"/></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -113,7 +105,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(HTTPS://evil.example/x.svg)"/></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -121,14 +113,14 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(javascript:alert(1))"/></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
   it('텍스트 노드 안의 href= 문자열은 위험 속성으로 오인하지 않고 렌더링한다', async () => {
     const safeSvg = '<svg xmlns="http://www.w3.org/2000/svg"><text>x href=https://example.com y</text></svg>';
 
-    const element = await convertToElement(safeSvg);
+    const element = await ensureImageElement(safeSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -136,7 +128,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const safeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><text>x style=fill:url(https://example.com/pattern.svg#id) y</text></svg>';
 
-    const element = await convertToElement(safeSvg);
+    const element = await ensureImageElement(safeSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -144,7 +136,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image aria-label="1 > 0" href="https://evil.example/pattern.png" width="10" height="10"/></svg>';
 
-    const element = await convertToElement(unsafeSvg);
+    const element = await ensureImageElement(unsafeSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -152,7 +144,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const unsafeSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect aria-label="1 > 0" style="fill:url(https://evil.example/x.svg#id)" width="10" height="10"/></svg>';
 
-    const element = await convertToElement(unsafeSvg);
+    const element = await ensureImageElement(unsafeSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -160,7 +152,7 @@ describe('보안: 인라인 SVG 정화 렌더링 (jsdom-safe)', () => {
     const maliciousSvg =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/svg+xml;base64,PHN2Zz48c2NyaXB0PmFsZXJ0KDEpPC9zY3JpcHQ+PC9zdmc+" width="10" height="10"/></svg>';
 
-    const element = await convertToElement(maliciousSvg);
+    const element = await ensureImageElement(maliciousSvg);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 });

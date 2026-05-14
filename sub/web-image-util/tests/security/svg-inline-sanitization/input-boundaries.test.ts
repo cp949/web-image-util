@@ -4,7 +4,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { convertToImageElement } from '../../../src/core/source-converter';
-import { convertToElement } from '../../../src/utils/converters';
+import { ensureImageElement } from '../../../src/utils/converters';
 import { sanitizeSvg } from '../../../src/utils/svg-sanitizer';
 import { SVG_LIMIT_BYTES } from '../helpers/svg-test-helpers';
 
@@ -28,7 +28,7 @@ describe('보안: 인라인·Blob SVG 입력 경계', () => {
     expect(new TextEncoder().encode(oversizedSvg).length).toBeGreaterThan(limitBytes);
     expect(new TextEncoder().encode(sanitizedSvg).length).toBeLessThan(limitBytes);
 
-    await expect(convertToElement(oversizedSvg)).rejects.toMatchObject({
+    await expect(ensureImageElement(oversizedSvg)).rejects.toMatchObject({
       code: 'SVG_BYTES_EXCEEDED',
       details: {
         actualBytes: expect.any(Number),
@@ -43,7 +43,7 @@ describe('보안: 인라인·Blob SVG 입력 경계', () => {
       { type: '' }
     );
 
-    const element = await convertToElement(svgBlob);
+    const element = await ensureImageElement(svgBlob);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -66,7 +66,7 @@ describe('보안: 인라인·Blob SVG 입력 경계', () => {
       { type: 'application/xml' }
     );
 
-    await expect(convertToElement(svgBlob)).rejects.toMatchObject({
+    await expect(ensureImageElement(svgBlob)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
     });
   });

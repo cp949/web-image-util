@@ -18,10 +18,10 @@
  *
  * @example
  * ```typescript
- * import { convertToBlob, enhanceSvgForBrowser } from '@cp949/web-image-util/utils';
+ * import { ensureBlob, enhanceSvgForBrowser } from '@cp949/web-image-util/utils';
  *
  * // Simple format conversion
- * const blob = await convertToBlob(imageElement);
+ * const blob = await ensureBlob(imageElement);
  *
  * // SVG compatibility improvement
  * const enhancedSvg = enhanceSvgForBrowser(svgString);
@@ -55,19 +55,6 @@ export {
  * Suitable for fast and lightweight conversion tasks
  */
 export {
-  type ConvertToBlobDetailedOptions,
-  type ConvertToBlobOptions,
-  type ConvertToDataURLDetailedOptions,
-  type ConvertToDataURLOptions,
-  type ConvertToFileDetailedOptions,
-  type ConvertToFileOptions,
-  convertToBlob,
-  convertToBlobDetailed,
-  convertToDataURL,
-  convertToDataURLDetailed,
-  convertToElement,
-  convertToFile,
-  convertToFileDetailed,
   type EnsureBlobDetailedOptions,
   type EnsureBlobOptions,
   type EnsureDataURLDetailedOptions,

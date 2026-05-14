@@ -117,7 +117,7 @@ const post = await createSocialImage(photo, { platform: 'instagram', format: 'jp
 | npm 서브패스 | 주요 API | 책임 |
 | --- | --- | --- |
 | `@cp949/web-image-util` | `processImage`, `unsafe_processImage`, `ImageProcessor`, `ShortcutBuilder`, `ImageProcessError`, `extractSvgDimensions`, `analyzeSvgComplexity` | 메인 진입점, 체이닝 API |
-| `@cp949/web-image-util/utils` | 변환(`convertToBlob`/`ensureBlob`/...), 포맷(`formatToMimeType`/...), SVG 진단(`inspectSvg`, `inspectSvgSource`), SVG 정규화(`prefixSvgIds`), 브라우저 기능 감지 | 호출 시 단일 함수만 가져오는 가벼운 유틸 |
+| `@cp949/web-image-util/utils` | 변환(`ensureBlob`/`ensureImageElement`/...), 포맷(`formatToMimeType`/...), SVG 진단(`inspectSvg`, `inspectSvgSource`), SVG 정규화(`prefixSvgIds`), 브라우저 기능 감지 | 호출 시 단일 함수만 가져오는 가벼운 유틸 |
 | `@cp949/web-image-util/svg-sanitizer` | `sanitizeSvgStrict`, `sanitizeSvgStrictDetailed`, `inspectSvgSanitization` | DOMPurify 기반 strict sanitizer (동적 import) |
 | `@cp949/web-image-util/presets` | `createThumbnail`, `createAvatar`, `createSocialImage` | 편의 preset 함수 |
 | `@cp949/web-image-util/advanced` | `AdvancedImageProcessor`, `SmartFormatSelector`, `BatchResizer`, 필터 plugins 재노출 | 사용자가 명시적으로 선택하는 고급 API |
