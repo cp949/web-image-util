@@ -82,12 +82,6 @@ pnpm --filter @cp949/web-image-util test:coverage
 
 | 영역 | 베이스라인 커버 | 추천 테스트 종류 | 의도 | 우선순위 |
 | --- | --- | --- | --- | --- |
-| `ensureBlob` / `ensureDataURL` / `ensureFile` / `ensureImageElement` (+ `*Detailed`) 행동 (no-op 경로 포함) | 중간 (일부만) | 행동 | 회귀 방지 | 높음 |
-| `getCachedBrowserCapabilities` / `getCachedFormatSupport` / `getOptimalProcessingMode` / `analyzePerformanceFeatures` 행동 | 중간 (일부 함수만) | 행동 | 회귀 방지 | 중간 |
-| `/advanced` `AdvancedImageProcessor.processImage` / `.batchProcess` 행동 (resize + filter + watermark + format auto 묶음) | 중간 (smart-processor 일부만) | 행동 | 회귀 방지 | 중간 |
-| `/advanced` `smartResize` / `processWithFilters` / `addWatermarkAndOptimize` convenience 행동 | 낮음 (직접 호출 행동 없음) | 행동 | 회귀 방지 | 중간 |
-| `/advanced` `createAdvancedThumbnail` / `optimizeForSocial` / `batchOptimize` 행동 (happy-path) | 낮음 (sad-path만) | 행동 | 회귀 방지 | 중간 |
-| `/advanced` `TextWatermark` / `ImageWatermark` 세밀 제어 클래스 (위치/스타일 옵션) | 중간 (텍스트만) | 행동 | 회귀 방지 | 중간 |
 | `/advanced` `HighResolutionManager` 수동 제어 진입점 + `base/high-res-manager.ts` 분기 (~478줄 누락) | 중간 (자동 흐름만) | 행동 | 회귀 방지 | 중간 |
 | `/advanced` `createFilterPlugin(config)` 행동 (preview = apply 기본값 등) | 낮음 (행동 없음) | 행동 | 회귀 방지 | 중간 |
 | `/advanced` `getAdvancedFeatureInfo()` 환경별 반환 | 낮음 (행동 없음) | 행동 | 회귀 방지 | 낮음 |
