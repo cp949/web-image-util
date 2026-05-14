@@ -83,7 +83,6 @@ pnpm --filter @cp949/web-image-util test:coverage
 
 | 영역 | 베이스라인 커버 | 추천 테스트 종류 | 의도 | 우선순위 |
 | --- | --- | --- | --- | --- |
-| `processImage().resize().toFile()` 행동 (파일명/MIME/quality 반영) | 낮음 (행동 없음, 컨트랙트만) | 행동 | 회귀 방지 | 높음 |
 | `processImage().resize().toCanvasDetailed()` 행동 (Canvas + 메타데이터, 풀 반환 안 함) | 낮음 (행동 없음) | 행동 | 회귀 방지 | 높음 |
 | `processImage().blur()` 출력까지의 행동 (toBlob/toCanvas 조합) | 중간 (체이닝 일부만 검증) | 행동 | 회귀 방지 | 높음 |
 | `processImage().toElement()` 일반 입출력 경로 (디코드된 `HTMLImageElement` 반환, src 다양성) | 중간 (cleanup만 검증) | 행동 | 회귀 방지 | 높음 |
@@ -102,7 +101,6 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `errors.ts` / `core/error-handler.ts` 분기 (error code 매핑, cause 보존 분기) | 중간 (stmt 100 / branch 50) | 단위 | 분기 보충 | 중간 |
 | `core/internal/internal-high-res-processor.ts` 분기 (~480줄 누락, 내부 타일링 경로) | 낮음 (branch 0) | 단위 | 분기 보충 | 중간 |
 | `core/advanced-processor.ts` 분기 (~427줄 누락, 내부 advanced 파이프라인) | 낮음 (branch 0) | 단위 | 분기 보충 | 중간 |
-| `base/tiled-processor.ts` 분기 (~415줄 누락, 타일 분할 경로) | 낮음 (branch 0) | 단위 | 분기 보충 | 중간 |
 | `base/image-common.ts` 분기 (~370줄 누락) | 낮음 (0/0/0/0) | 단위 | 분기 보충 | 중간 |
 | `base/canvas-utils.ts` / `base/stepped-processor.ts` 분기 | 낮음 (stmt 26 / branch 9, branch 4.76) | 단위 | 분기 보충 | 낮음 |
 | `types/guards.ts` / `types/result-implementations.ts` 분기 (런타임 타입 가드) | 낮음 (branch 0) | 단위 | 분기 보충 | 낮음 |
