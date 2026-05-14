@@ -110,3 +110,5 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `utils/svg-compatibility/{internal,bbox/live,bbox/heuristic}.ts` 분기 (`enhanceSvgForBrowser` 내부 헬퍼) | 낮음 (0/0/0/0 또는 stmt 45) | 단위 | 분기 보충 | 낮음 |
 
 표 행은 위에서 아래로 우선순위 순. 새 작업을 만들 때 *높음* 행부터 묶어서 진행한다. 한 행이 너무 크면 분할하고, 너무 작으면 인접 행과 묶는다. 새 행을 추가할 때는 이 표의 5개 컬럼을 모두 채운다.
+
+표의 각 행은 *남은 일*만 표시한다. PLAN의 TASK가 머지되어 해당 행의 의도가 달성되면 그 행을 표에서 삭제한다. 완료 이력은 git log/blame이 보관소이며, 별도의 상태 컬럼이나 완료 표시를 두지 않는다. 잘못 삭제했을 때는 `pnpm --filter @cp949/web-image-util test:coverage`를 다시 돌려 빈 영역을 식별 후 행을 재추가한다.

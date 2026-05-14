@@ -353,6 +353,42 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
+   * 출력 포맷에 해당하는 권장 파일 확장자(소문자)를 반환한다.
+   *
+   * JPEG 계열은 일반적으로 더 흔히 쓰이는 `.jpg`로 통일한다.
+   * @private
+   */
+  private getCanonicalExtension(format: OutputFormat): string {
+    if (format === 'jpeg' || format === 'jpg') return 'jpg';
+    return format;
+  }
+
+  /**
+   * 명시된 출력 포맷에 맞춰 파일명 확장자를 정규화한다.
+   *
+   * - 기존 확장자가 같은 포맷을 나타내면(`photo.jpg` + `jpeg`) 그대로 유지한다.
+   * - 알려진 이미지 확장자(`.jpg/.jpeg/.png/.webp/.avif/.gif/.svg/.bmp/.ico/.tif/.tiff`)
+   *   가 있으면 포맷에 맞는 확장자로 교체한다.
+   * - 그 외에는 권장 확장자를 덧붙인다.
+   * @private
+   */
+  private applyFormatExtensionToFilename(filename: string, format: OutputFormat): string {
+    const currentFormat = this.getFormatFromFilename(filename);
+    const normalizedFormat: OutputFormat = format === 'jpg' ? 'jpeg' : format;
+    if (currentFormat === normalizedFormat) {
+      return filename;
+    }
+
+    const canonicalExt = this.getCanonicalExtension(format);
+    const imageExtensionPattern = /\.(jpg|jpeg|png|webp|avif|gif|svg|bmp|ico|tiff?)$/i;
+    if (imageExtensionPattern.test(filename)) {
+      return filename.replace(imageExtensionPattern, `.${canonicalExt}`);
+    }
+
+    return `${filename}.${canonicalExt}`;
+  }
+
+  /**
    * Convert to Blob (with metadata)
    *
    * @param options Output options
@@ -521,10 +557,15 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       finalOptions = optionsOrFormat;
     }
 
+    // 명시된 포맷이 있으면 파일명 확장자도 그에 맞춰 정규화한다.
+    const resolvedFilename = finalOptions.format
+      ? this.applyFormatExtensionToFilename(filename, finalOptions.format)
+      : filename;
+
     const { blob, ...metadata } = await this.toBlob(finalOptions);
 
     try {
-      const file = new File([blob], filename, {
+      const file = new File([blob], resolvedFilename, {
         type: blob.type,
         lastModified: Date.now(),
       });
