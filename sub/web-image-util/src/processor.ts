@@ -937,12 +937,16 @@ export function processImage(source: ImageSource, options?: ProcessorOptions): I
  * - 신뢰할 수 없는 SVG는 `processImage(source, { svgSanitizer: 'strict' })`를 사용한다.
  * - 이미 자체 정제를 끝냈고 sanitizer/assert만 건너뛰려면 `processImage(source, { svgSanitizer: 'skip' })`를 사용한다.
  * - 이 API는 compatibility enhancement까지 건너뛰는 하위 호환 escape hatch이며, `svgSanitizer: 'skip'`과 동일하지 않다.
+ * - `unsafe_processImage()`에는 `svgSanitizer` 옵션을 적용할 수 없다. sanitizer 정책이 필요하면 `processImage()`를 사용한다.
  *
  * 적용되는 제약:
  * - 브라우저의 CORS 및 tainted canvas 보안은 이 경로에서도 그대로 적용된다.
  * - SVG 크기 제한(약 10MiB)은 이 경로에서도 유지된다.
  */
-export function unsafe_processImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {
+export function unsafe_processImage(
+  source: ImageSource,
+  options?: Omit<ProcessorOptions, 'svgSanitizer'>
+): InitialProcessor {
   return new ImageProcessor<BeforeResize>(source, {
     ...options,
     __svgPassthroughMode: 'unsafe-pass-through',
