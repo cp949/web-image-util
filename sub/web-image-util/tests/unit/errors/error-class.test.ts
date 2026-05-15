@@ -103,3 +103,85 @@ describe('ImageProcessError 직렬화', () => {
     expect(str).toContain('처리 실패');
   });
 });
+
+describe('ImageProcessError options 조합 분기', () => {
+  it('cause만 전달하면 cause는 보존되고 details는 undefined이다', () => {
+    const cause = new Error('원인');
+    const err = new ImageProcessError('msg', ImageErrorCode.PROCESSING_FAILED, { cause });
+    expect(err.cause).toBe(cause);
+    expect(err.details).toBeUndefined();
+  });
+
+  it('details만 전달하면 details는 보존되고 cause는 undefined이다', () => {
+    const details = { actualBytes: 1024, maxBytes: 512 };
+    const err = new ImageProcessError('msg', ImageErrorCode.SOURCE_BYTES_EXCEEDED, { details });
+    expect(err.cause).toBeUndefined();
+    expect(err.details).toBe(details);
+  });
+
+  it('cause와 details 둘 다 전달하면 둘 다 보존된다', () => {
+    const cause = new Error('원인');
+    const details = { option: 'width', minimum: 1 };
+    const err = new ImageProcessError('msg', ImageErrorCode.OPTION_INVALID, { cause, details });
+    expect(err.cause).toBe(cause);
+    expect(err.details).toBe(details);
+  });
+});
+
+describe('ImageProcessError cause 타입별 보존 — 추가 케이스', () => {
+  it('일반 객체를 cause로 전달하면 원본 참조가 보존된다', () => {
+    const plainObj = { code: 42, reason: '네트워크 오류' };
+    const err = new ImageProcessError('msg', ImageErrorCode.SOURCE_LOAD_FAILED, { cause: plainObj });
+    expect(err.cause).toBe(plainObj);
+  });
+
+  it('null을 cause로 전달하면 null이 보존된다', () => {
+    const err = new ImageProcessError('msg', ImageErrorCode.PROCESSING_FAILED, { cause: null });
+    expect(err.cause).toBeNull();
+  });
+});
+
+describe('ImageProcessError details 코드별 분기', () => {
+  it('INVALID_SOURCE details에 url과 reason이 보존된다', () => {
+    const details = { url: 'https://example.com/img.png', reason: 'external-ref' as const };
+    const err = new ImageProcessError('msg', ImageErrorCode.INVALID_SOURCE, { details });
+    const d = err.details as typeof details;
+    expect(d.url).toBe('https://example.com/img.png');
+    expect(d.reason).toBe('external-ref');
+  });
+
+  it('OPTION_INVALID details에 option과 minimum이 보존된다', () => {
+    const details = { option: 'width', minimum: 1 };
+    const err = new ImageProcessError('msg', ImageErrorCode.OPTION_INVALID, { details });
+    const d = err.details as typeof details;
+    expect(d.option).toBe('width');
+    expect(d.minimum).toBe(1);
+  });
+
+  it('INVALID_DIMENSIONS details에 kind와 크기가 보존된다', () => {
+    const details = { kind: 'invalid-canvas-size' as const, width: 0, height: 0 };
+    const err = new ImageProcessError('msg', ImageErrorCode.INVALID_DIMENSIONS, { details });
+    const d = err.details as typeof details;
+    expect(d.kind).toBe('invalid-canvas-size');
+    expect(d.width).toBe(0);
+    expect(d.height).toBe(0);
+  });
+});
+
+describe('ImageProcessError captureStackTrace 없는 환경', () => {
+  it('captureStackTrace가 없어도 인스턴스 생성이 완료된다', () => {
+    // V8 전용 API가 없는 환경(Firefox 등)에서의 분기를 검증한다
+    const original = (globalThis.Error as any).captureStackTrace;
+    delete (globalThis.Error as any).captureStackTrace;
+    try {
+      const err = new ImageProcessError('msg', ImageErrorCode.PROCESSING_FAILED);
+      expect(err).toBeInstanceOf(ImageProcessError);
+      expect(err.code).toBe('PROCESSING_FAILED');
+      expect(err.name).toBe('ImageProcessError');
+    } finally {
+      if (original !== undefined) {
+        (globalThis.Error as any).captureStackTrace = original;
+      }
+    }
+  });
+});
