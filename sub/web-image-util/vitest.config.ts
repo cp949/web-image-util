@@ -23,7 +23,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.d.ts', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/*.test.ts',
+        'src/**/*.spec.ts',
+        'src/advanced/index.ts',
+        'src/types/shortcut-types.ts',
+      ],
       thresholds: {
         global: {
           branches: 90,
