@@ -573,9 +573,7 @@ describe('downloadBlob', () => {
     expect(clickSpy).not.toBeNull();
     expect(clickSpy!).toHaveBeenCalledTimes(1);
     // click 후 revoke 순서 보장 (click → revokeObjectURL)
-    expect(clickSpy!.mock.invocationCallOrder[0]).toBeLessThan(
-      revokeSpy.mock.invocationCallOrder[0],
-    );
+    expect(clickSpy!.mock.invocationCallOrder[0]).toBeLessThan(revokeSpy.mock.invocationCallOrder[0]);
     expect(revokeSpy).toHaveBeenCalledWith(fakeObjectUrl);
     expect(removeSpy).toHaveBeenCalled();
   });

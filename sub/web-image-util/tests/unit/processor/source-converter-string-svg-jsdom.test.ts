@@ -27,7 +27,8 @@ import { ImageProcessError } from '../../../src/types';
 const MINIMAL_SVG = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>';
 
 /** XML preamble과 선행 공백이 섞인 SVG 문자열 */
-const SVG_WITH_PREAMBLE = '   <?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg"><rect width="2" height="2"/></svg>';
+const SVG_WITH_PREAMBLE =
+  '   <?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg"><rect width="2" height="2"/></svg>';
 
 /** 1x1 투명 PNG data URL */
 const PNG_DATA_URL =

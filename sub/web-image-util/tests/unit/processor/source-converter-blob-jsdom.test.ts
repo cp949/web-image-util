@@ -455,9 +455,18 @@ describe('ArrayBuffer / Uint8Array 입력 경로', () => {
     // 처음 4바이트는 JPEG 시그니처(잘못된 범위를 보면 image/jpeg로 감지됨).
     // 4번 오프셋부터 PNG 시그니처 8바이트를 배치한다.
     const big = new Uint8Array(16);
-    big[0] = 0xff; big[1] = 0xd8; big[2] = 0xff; big[3] = 0x00; // JPEG
-    big[4] = 0x89; big[5] = 0x50; big[6] = 0x4e; big[7] = 0x47; // PNG 앞
-    big[8] = 0x0d; big[9] = 0x0a; big[10] = 0x1a; big[11] = 0x0a; // PNG 뒤
+    big[0] = 0xff;
+    big[1] = 0xd8;
+    big[2] = 0xff;
+    big[3] = 0x00; // JPEG
+    big[4] = 0x89;
+    big[5] = 0x50;
+    big[6] = 0x4e;
+    big[7] = 0x47; // PNG 앞
+    big[8] = 0x0d;
+    big[9] = 0x0a;
+    big[10] = 0x1a;
+    big[11] = 0x0a; // PNG 뒤
 
     // byteOffset=4인 뷰는 PNG 시그니처 구간만 노출한다.
     // slice(byteOffset, byteOffset+byteLength) 보정이 없으면 전체 버퍼를 읽어 image/jpeg로 감지된다.

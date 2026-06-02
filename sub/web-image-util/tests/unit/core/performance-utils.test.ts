@@ -174,6 +174,24 @@ describe('ResizePerformance', () => {
       expect(info.pressureLevel).toBe('high');
       expect(info.usedMB).toBe(900);
     });
+
+    it('압박 비율이 정확히 0.5이면 pressureLevel medium을 반환한다 (경계: < 0.5는 low)', () => {
+      // 500MB / 1000MB = 0.5 → `pressure < 0.5`가 false이므로 medium
+      restoreMemory = withPerformanceMemory(500 * 1024 * 1024, 1000 * 1024 * 1024);
+
+      const info = ResizePerformance.getMemoryInfo();
+
+      expect(info.pressureLevel).toBe('medium');
+    });
+
+    it('압박 비율이 정확히 0.8이면 pressureLevel high를 반환한다 (경계: < 0.8은 medium)', () => {
+      // 800MB / 1000MB = 0.8 → `pressure < 0.8`이 false이므로 high
+      restoreMemory = withPerformanceMemory(800 * 1024 * 1024, 1000 * 1024 * 1024);
+
+      const info = ResizePerformance.getMemoryInfo();
+
+      expect(info.pressureLevel).toBe('high');
+    });
   });
 
   describe('배치 프리셋 라우팅', () => {
@@ -182,9 +200,7 @@ describe('ResizePerformance', () => {
     });
 
     it('fastBatch는 SmartProcessor.resizeBatch에 fast performance/strategy를 전달한다', async () => {
-      const spy = vi
-        .spyOn(SmartProcessor, 'resizeBatch')
-        .mockResolvedValue([] as HTMLCanvasElement[]);
+      const spy = vi.spyOn(SmartProcessor, 'resizeBatch').mockResolvedValue([] as HTMLCanvasElement[]);
       const images = [] as HTMLImageElement[];
 
       await ResizePerformance.fastBatch(images, 300, 200);
@@ -196,9 +212,7 @@ describe('ResizePerformance', () => {
     });
 
     it('qualityBatch는 SmartProcessor.resizeBatch에 quality performance/strategy를 전달한다', async () => {
-      const spy = vi
-        .spyOn(SmartProcessor, 'resizeBatch')
-        .mockResolvedValue([] as HTMLCanvasElement[]);
+      const spy = vi.spyOn(SmartProcessor, 'resizeBatch').mockResolvedValue([] as HTMLCanvasElement[]);
       const images = [] as HTMLImageElement[];
 
       await ResizePerformance.qualityBatch(images, 300, 200);
@@ -210,14 +224,14 @@ describe('ResizePerformance', () => {
     });
 
     it('memoryEfficientBatch는 concurrency 1, canvas pool 비활성, 64MB 정책으로 BatchResizer를 구성한다', async () => {
-      // processAll spy 안에서 this.config로 생성자에 전달된 정책을 검증한다
+      // processAll spy 안에서 공개 getConfig()로 생성자에 전달된 정책을 검증한다(private 필드 비의존)
       let capturedConfig: Record<string, unknown> | undefined;
-      const processAllSpy = vi
-        .spyOn(BatchResizer.prototype, 'processAll')
-        .mockImplementation(async function (this: BatchResizer) {
-          capturedConfig = (this as unknown as { config: Record<string, unknown> }).config;
-          return [] as unknown[];
-        });
+      const processAllSpy = vi.spyOn(BatchResizer.prototype, 'processAll').mockImplementation(async function (
+        this: BatchResizer
+      ) {
+        capturedConfig = this.getConfig() as unknown as Record<string, unknown>;
+        return [] as unknown[];
+      });
       const processSpy = vi.spyOn(SmartProcessor, 'process').mockResolvedValue({} as HTMLCanvasElement);
 
       const images = [{}, {}] as HTMLImageElement[];

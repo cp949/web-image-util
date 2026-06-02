@@ -739,9 +739,10 @@ describe('CanvasResultImpl.toDataURL — MIME·quality 전달', () => {
 
     const spy = vi.spyOn(canvas, 'toDataURL').mockReturnValue('data:image/png;base64,mock');
 
-    await impl.toDataURL();
+    const result = await impl.toDataURL();
 
     expect(spy).toHaveBeenCalledWith('image/png', undefined);
+    expect(result).toBe('data:image/png;base64,mock');
   });
 });
 
@@ -760,7 +761,11 @@ describe('BlobResultImpl.toDataURL — toCanvas 실패 전파', () => {
     const loadError = new ImageProcessError('Image load failed', 'IMAGE_LOAD_FAILED');
     vi.spyOn(impl, 'toCanvas').mockRejectedValue(loadError);
 
+    // toCanvas 거부 후 어떤 canvas의 toDataURL도 호출되지 않아야 한다(제목의 "호출하지 않고" 입증)
+    const toDataURLSpy = vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL');
+
     await expect(impl.toDataURL()).rejects.toBe(loadError);
+    expect(toDataURLSpy).not.toHaveBeenCalled();
   });
 });
 

@@ -131,11 +131,11 @@ describe('canvasToBlob — toBlob fallback 경로', () => {
     const canvas = document.createElement('canvas');
     const expectedBlob = new Blob(['mock'], { type: 'image/png' });
 
-    const spy = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
-      (callback: BlobCallback, _type?: string, _quality?: number) => {
+    const spy = vi
+      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
+      .mockImplementation((callback: BlobCallback, _type?: string, _quality?: number) => {
         callback(expectedBlob);
-      }
-    );
+      });
 
     const result = await canvasToBlob(canvas, { format: 'png' });
 
@@ -148,11 +148,11 @@ describe('canvasToBlob — toBlob fallback 경로', () => {
     const canvas = document.createElement('canvas');
     const expectedBlob = new Blob(['mock'], { type: 'image/jpeg' });
 
-    const spy = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
-      (callback: BlobCallback, _type?: string, _quality?: number) => {
+    const spy = vi
+      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
+      .mockImplementation((callback: BlobCallback, _type?: string, _quality?: number) => {
         callback(expectedBlob);
-      }
-    );
+      });
 
     const result = await canvasToBlob(canvas, { format: 'jpeg', quality: 0.4 });
 
@@ -165,11 +165,11 @@ describe('canvasToBlob — toBlob fallback 경로', () => {
     const canvas = document.createElement('canvas');
     const defaultBlob = new Blob(['default'], { type: 'image/png' });
 
-    const spy = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
-      (callback: BlobCallback, _type?: string, _quality?: number) => {
+    const spy = vi
+      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
+      .mockImplementation((callback: BlobCallback, _type?: string, _quality?: number) => {
         callback(defaultBlob);
-      }
-    );
+      });
 
     const result = await canvasToBlob(canvas, {});
 
@@ -183,12 +183,12 @@ describe('canvasToBlob — toBlob fallback 경로', () => {
     const fallbackBlob = new Blob(['fb'], { type: 'image/png' });
     let callCount = 0;
 
-    const spy = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
-      (callback: BlobCallback, _type?: string, _quality?: number) => {
+    const spy = vi
+      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
+      .mockImplementation((callback: BlobCallback, _type?: string, _quality?: number) => {
         callCount++;
         callback(callCount === 1 ? null : fallbackBlob);
-      }
-    );
+      });
 
     const result = await canvasToBlob(canvas, { format: 'webp', fallbackFormat: 'png' });
 

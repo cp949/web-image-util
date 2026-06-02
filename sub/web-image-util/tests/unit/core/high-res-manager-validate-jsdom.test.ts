@@ -288,6 +288,10 @@ describe('HighResolutionManager.validateProcessingCapability — quality 기반 
 // ============================================================================
 
 describe('HighResolutionManager.validateProcessingCapability — detector limitations 전파', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('estimatedMemoryMB>512이면 detector의 High memory usage 제한이 warnings에 전파된다', () => {
     // 12000×12000×4 ≈ 549MB > 512 → detector limitations에 "High memory usage" 추가
     const img = createMockImage(12000, 12000);
