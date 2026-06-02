@@ -11,7 +11,7 @@ import { ProcessingStrategy } from '../../../src/base/high-res-detector';
 import { HighResolutionManager, type HighResolutionProgress } from '../../../src/base/high-res-manager';
 import { SteppedProcessor } from '../../../src/base/stepped-processor';
 import { TiledProcessor } from '../../../src/base/tiled-processor';
-import { createMockImage } from './high-res-manager-helpers';
+import { createMockImage, makeProcessingResult } from './high-res-manager-helpers';
 
 describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', () => {
   afterEach(() => {
@@ -281,6 +281,63 @@ describe('HighResolutionManager.smartResize — enableProgressTracking 진행률
     expect(progressCalls[0]?.stage).toBe('analyzing');
     // 시퀀스에 processing 단계가 최소 1회 포함되어야 한다
     expect(progressCalls.some((p) => p.stage === 'processing')).toBe(true);
+  });
+});
+
+describe('HighResolutionManager.batchSmartResize — 결과 순서/실패 전파/진행률', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('입력 이미지 순서대로 결과를 반환한다', async () => {
+    // smartResize를 mock해 각 이미지마다 고유한 크기의 canvas를 담은 결과를 반환한다
+    const sizes = [10, 20, 30, 40, 50];
+    const images = sizes.map((s) => createMockImage(s, s));
+
+    vi.spyOn(HighResolutionManager, 'smartResize').mockImplementation(async (img: HTMLImageElement) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      return makeProcessingResult({ canvas }) as any;
+    });
+
+    // concurrency=2 → 청크 [[10,20],[30,40],[50]], 결과는 전역 index 순서를 보존
+    const results = await HighResolutionManager.batchSmartResize(images, 100, 100, { concurrency: 2 });
+
+    expect(results).toHaveLength(5);
+    expect(results.map((r) => r.canvas.width)).toEqual(sizes);
+  });
+
+  it('특정 index 작업이 실패하면 Batch processing stage와 index context를 보존한다', async () => {
+    const images = [createMockImage(100, 100), createMockImage(200, 200), createMockImage(300, 300)];
+
+    vi.spyOn(HighResolutionManager, 'smartResize').mockImplementation(async (img: HTMLImageElement) => {
+      if (img.width === 200) {
+        throw new Error('index 1 실패');
+      }
+      return makeProcessingResult() as any;
+    });
+
+    // concurrency=3 → 한 청크에서 병렬 처리되고 index 1이 실패한다
+    await expect(HighResolutionManager.batchSmartResize(images, 50, 50, { concurrency: 3 })).rejects.toMatchObject({
+      code: 'RESIZE_FAILED',
+      context: { debug: { stage: 'Batch processing', index: 1 } },
+      cause: expect.objectContaining({ message: 'index 1 실패' }),
+    });
+  });
+
+  it('onBatchProgress가 완료 건수와 전체 건수를 보고하고 마지막에 전부 완료를 알린다', async () => {
+    const images = [createMockImage(10, 10), createMockImage(20, 20), createMockImage(30, 30)];
+    vi.spyOn(HighResolutionManager, 'smartResize').mockResolvedValue(makeProcessingResult() as any);
+
+    const progress: Array<[number, number]> = [];
+    await HighResolutionManager.batchSmartResize(images, 50, 50, {
+      concurrency: 2,
+      onBatchProgress: (completed, total) => progress.push([completed, total]),
+    });
+
+    expect(progress).toHaveLength(3);
+    expect(progress[progress.length - 1]).toEqual([3, 3]);
   });
 });
 

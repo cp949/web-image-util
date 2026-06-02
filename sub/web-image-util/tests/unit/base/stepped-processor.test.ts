@@ -209,6 +209,40 @@ describe('SteppedProcessor.estimateSteps', () => {
 });
 
 // ============================================================================
+// calculateOptimalSteps — 단계 배열 계산(private)
+// ============================================================================
+
+describe('SteppedProcessor.calculateOptimalSteps — 단계 배열 계산', () => {
+  it('minScale이 1 이상이면 축소 불필요로 [1]을 반환한다', () => {
+    // 확대(>1) 또는 동일 크기(=1)는 단계 분할 없이 [1]
+    expect((SteppedProcessor as any).calculateOptimalSteps(1, 10)).toEqual([1]);
+    expect((SteppedProcessor as any).calculateOptimalSteps(1.5, 10)).toEqual([1]);
+  });
+
+  it('minScale<1이면 targetSteps 길이 배열을 만들고 마지막 단계는 정확히 minScale이다', () => {
+    // minScale=0.1 → ceil(log2(10))=4단계, 마지막 단계는 정확한 목표 비율(minScale)
+    const steps = (SteppedProcessor as any).calculateOptimalSteps(0.1, 10) as number[];
+    expect(steps).toHaveLength(4);
+    expect(steps[steps.length - 1]).toBeCloseTo(0.1, 10);
+  });
+
+  it('마지막을 제외한 중간 단계는 0.5 이상으로 바닥을 적용한다', () => {
+    // 중간 단계는 Math.max(0.5, minScale**(i/targetSteps))로 한 번에 절반 이하로 줄지 않게 한다
+    const steps = (SteppedProcessor as any).calculateOptimalSteps(0.1, 10) as number[];
+    for (let i = 0; i < steps.length - 1; i++) {
+      expect(steps[i]).toBeGreaterThanOrEqual(0.5);
+    }
+  });
+
+  it('이론 단계 수가 maxSteps를 초과하면 maxSteps로 클램프한다', () => {
+    // minScale=0.0001 → 이론 ceil(log2(10000))=14단계, maxSteps=10 → 10으로 클램프
+    const steps = (SteppedProcessor as any).calculateOptimalSteps(0.0001, 10) as number[];
+    expect(steps).toHaveLength(10);
+    expect(steps[steps.length - 1]).toBeCloseTo(0.0001, 10);
+  });
+});
+
+// ============================================================================
 // resizeWithSteps — 잘못된 치수 입력 검증
 // ============================================================================
 

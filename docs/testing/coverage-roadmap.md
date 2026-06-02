@@ -82,17 +82,16 @@ pnpm --filter @cp949/web-image-util test:coverage
 
 | 영역 | 베이스라인 커버 | 추천 테스트 종류 | 의도 | 우선순위 |
 | --- | --- | --- | --- | --- |
-| `utils/svg-processor.ts` (`SVGProcessor`) 레거시 SVG 처리 파일 | 낮음 (미진입) | 단위 | 정리/분기 보충 | 높음 |
-| `types/result-implementations.ts` 결과 객체 간 변환 경로 (`toCanvas`/`toBlob`/`toFile`/`toElement` 등) | 낮음 (변환 분기 다수 미검증) | 행동 | 회귀 방지 | 높음 |
-| `core/source-converter/loaders/blob.ts` + `core/source-converter/index.ts` Blob/ArrayBuffer 변환 경로 | 낮음 (Blob SVG 스니핑·이미지 로딩 분기 부족) | 행동 | 회귀 방지 | 높음 |
-| `base/image-common.ts` 분기 (이미지 분류/변환/보정 공통 헬퍼) | 낮음 (함수·분기 다수 미검증) | 단위 | 분기 보충 | 중간 |
-| `core/lazy-render-pipeline.ts` 분기 (작업 누적·최종 레이아웃·오류 경계) | 중간 (분기 부족) | 단위 | 분기 보충 | 중간 |
-| `base/stepped-processor.ts` 단계적 리사이즈 분기 | 낮음 (stmt/branch 부족) | 단위 | 분기 보충 | 중간 |
-| `core/auto-high-res.ts` 자동 고해상도 처리 경계 | 중간 (함수 커버 부족) | 행동 | 회귀 방지 | 중간 |
-| `/advanced` `HighResolutionManager` 수동 제어 진입점 + `base/high-res-manager.ts` 잔여 분기 | 중간 (전략·메모리 경계 일부 잔여) | 행동 | 회귀 방지 | 중간 |
-| `utils/image-info/format-detection.ts` + `utils/image-inspection.ts` 이미지 메타/투명도 판정 분기 | 중간 (분기 부족) | 단위 | 분기 보충 | 낮음 |
-| `utils/converters/{canvas-bridge,policy}.ts` 변환 정책/브리지 경계 | 중간 (함수·분기 일부 부족) | 단위 | 분기 보충 | 낮음 |
-| `utils/svg-compatibility/bbox/{index,live}.ts` 브라우저 bbox 측정 경로 | 중간 (jsdom 한계로 live 경로 부족) | 단위 | 분기 보충 | 낮음 |
+| `core/performance-utils.ts` 성능 프리셋 편의 함수 | 낮음 (stmt/func 공백 큼) | 행동 | advanced resize 프리셋 회귀 방지 | 높음 |
+| `core/source-converter/{index,loaders/string,svg/loader}.ts` 문자열/SVG 변환 잔여 경로 | 낮음 (loader 함수·분기 잔여) | 행동 | 입력 분류·SVG 로딩 회귀 방지 | 높음 |
+| `types/result-implementations.ts` 결과 객체 변환 잔여 경로 | 중간 (statement/function 잔여) | 행동 | 출력 객체 변환 회귀 방지 | 높음 |
+| `base/image-common.ts` 공통 이미지 헬퍼 잔여 분기 | 낮음 (statement/branch/function 잔여) | 단위 | 공통 분기 보충 | 중간 |
+| `base/stepped-processor.ts` + `base/high-res-manager.ts` 고해상도/단계적 리사이즈 잔여 분기 | 중간 (전략·단계 계산 잔여) | 행동 | 고해상도 처리 회귀 방지 | 중간 |
+| `svg-sanitizer/{dompurify-instance,postprocess}.ts` strict sanitizer 환경·후처리 분기 | 중간 (branch 잔여) | 단위 | 정화 정책 회귀 방지 | 중간 |
+| `utils/image-inspection.ts` + `utils/image-info/{dimensions,format-detection}.ts` 이미지 메타/투명도 잔여 분기 | 중간 (branch/function 잔여) | 단위 | 판정 분기 보충 | 중간 |
+| `utils/data-url/percent.ts` + `utils/source-utils/{mime,path}.ts` 문자열 파서 경계 | 중간 (branch 잔여) | 단위 | 파싱 경계 보충 | 낮음 |
+| `core/smart-format.ts` 포맷 추천 edge case | 중간 (branch 잔여) | 단위 | 포맷 선택 회귀 방지 | 낮음 |
+| `utils/svg-compatibility/enhance.ts` SVG 호환성 보강 잔여 분기 | 중간 (stmt/line 잔여) | 단위 | SVG 보강 분기 보충 | 낮음 |
 
 표 행은 위에서 아래로 우선순위 순. 새 작업을 만들 때 *높음* 행부터 묶어서 진행한다. 한 행이 너무 크면 분할하고, 너무 작으면 인접 행과 묶는다. 새 행을 추가할 때는 이 표의 5개 컬럼을 모두 채운다.
 

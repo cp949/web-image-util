@@ -195,3 +195,112 @@ describe('HighResolutionManager.validateProcessingCapability', () => {
     expect(hasSizeWarning).toBe(false);
   });
 });
+
+// ============================================================================
+// 메모리 압박(isMemoryLow=true) 분기 — selectMemoryEfficientStrategy
+// ============================================================================
+
+describe('HighResolutionManager.validateProcessingCapability — isMemoryLow 메모리 압박 분기', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('메모리 부족이고 estimatedMemoryMB>128이면 TILED 전략을 추천한다', () => {
+    // jsdom에는 performance.memory가 없어 기본 isMemoryLow=false → 강제로 true 주입
+    vi.spyOn(HighResolutionManager as any, 'isMemoryLow').mockReturnValue(true);
+    // 6000×6000×4 ≈ 137MB > 128 → TILED
+    const img = createMockImage(6000, 6000);
+    const result = HighResolutionManager.validateProcessingCapability(img, 1000, 1000);
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.TILED);
+  });
+
+  it('메모리 부족이고 32<estimatedMemoryMB<=128이면 CHUNKED 전략을 추천한다', () => {
+    vi.spyOn(HighResolutionManager as any, 'isMemoryLow').mockReturnValue(true);
+    // 3700×3700×4 ≈ 52MB → 32<52<=128 → CHUNKED
+    const img = createMockImage(3700, 3700);
+    const result = HighResolutionManager.validateProcessingCapability(img, 500, 500);
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.CHUNKED);
+  });
+
+  it('메모리 부족이지만 estimatedMemoryMB<=32이면 DIRECT 전략을 추천한다', () => {
+    vi.spyOn(HighResolutionManager as any, 'isMemoryLow').mockReturnValue(true);
+    // 100×100×4 ≈ 0.04MB <= 32 → DIRECT
+    const img = createMockImage(100, 100);
+    const result = HighResolutionManager.validateProcessingCapability(img, 50, 50);
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.DIRECT);
+  });
+});
+
+// ============================================================================
+// quality 기반 전략 선택 — selectFastStrategy / selectHighQualityStrategy
+// ============================================================================
+
+describe('HighResolutionManager.validateProcessingCapability — quality 기반 전략 선택', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("quality='fast' + 소형 이미지(mem<=64) → DIRECT를 추천한다", () => {
+    // 100×100 ≈ 0.04MB <= 64 → DIRECT
+    const img = createMockImage(100, 100);
+    const result = HighResolutionManager.validateProcessingCapability(img, 50, 50, { quality: 'fast' });
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.DIRECT);
+  });
+
+  it("quality='fast' + 64<mem<=128 → CHUNKED를 추천한다", () => {
+    // 5000×5000×4 ≈ 95MB → 64<95<=128 → CHUNKED (자동 분석 STEPPED를 fast 분기가 덮어씀)
+    const img = createMockImage(5000, 5000);
+    const result = HighResolutionManager.validateProcessingCapability(img, 1000, 1000, { quality: 'fast' });
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.CHUNKED);
+  });
+
+  it("quality='fast' + mem>128 → TILED를 추천한다", () => {
+    // 6000×6000×4 ≈ 137MB > 128 → TILED
+    const img = createMockImage(6000, 6000);
+    const result = HighResolutionManager.validateProcessingCapability(img, 1000, 1000, { quality: 'fast' });
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.TILED);
+  });
+
+  it("quality='high' + 큰 축소비(scaleRatio<0.3) + mem<=256 → STEPPED를 추천한다", () => {
+    // 2000×2000(15MB) → scaleRatio=500/2000=0.25<0.3, mem<=256 → STEPPED
+    const img = createMockImage(2000, 2000);
+    const result = HighResolutionManager.validateProcessingCapability(img, 500, 500, { quality: 'high' });
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.STEPPED);
+  });
+
+  it("quality='high' + mem>256 → TILED를 추천한다", () => {
+    // 9000×9000×4 ≈ 309MB > 256 → scaleRatio 조건 무시하고 TILED
+    const img = createMockImage(9000, 9000);
+    const result = HighResolutionManager.validateProcessingCapability(img, 1000, 1000, { quality: 'high' });
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.TILED);
+  });
+
+  it("quality='high' + 완만한 축소비(scaleRatio>=0.3) → analysis.strategy 폴백(DIRECT)을 추천한다", () => {
+    // 2000×2000(15MB) → scaleRatio=1000/2000=0.5>=0.3 → STEPPED 조건 미충족, mem<=256 → 폴백 analysis.strategy=DIRECT
+    const img = createMockImage(2000, 2000);
+    const result = HighResolutionManager.validateProcessingCapability(img, 1000, 1000, { quality: 'high' });
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.DIRECT);
+  });
+});
+
+// ============================================================================
+// detector limitations 전파 — warnings 누적
+// ============================================================================
+
+describe('HighResolutionManager.validateProcessingCapability — detector limitations 전파', () => {
+  it('estimatedMemoryMB>512이면 detector의 High memory usage 제한이 warnings에 전파된다', () => {
+    // 12000×12000×4 ≈ 549MB > 512 → detector limitations에 "High memory usage" 추가
+    const img = createMockImage(12000, 12000);
+    const result = HighResolutionManager.validateProcessingCapability(img, 1000, 1000);
+    const hasHighMem = result.warnings.some((w) => w.includes('High memory usage'));
+    expect(hasHighMem).toBe(true);
+  });
+
+  it('처리 복잡도가 extreme이면 detector의 complex 처리 제한이 warnings에 전파된다', () => {
+    // 12000×12000 → mem>256 → TILED → complexity=extreme → "Very complex processing..." 제한
+    const img = createMockImage(12000, 12000);
+    const result = HighResolutionManager.validateProcessingCapability(img, 1000, 1000);
+    const hasComplex = result.warnings.some((w) => w.toLowerCase().includes('complex'));
+    expect(hasComplex).toBe(true);
+  });
+});
