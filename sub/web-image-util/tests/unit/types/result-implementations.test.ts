@@ -13,6 +13,7 @@ import {
   ElementResultImpl,
   FileResultImpl,
 } from '../../../src/types/result-implementations';
+import { ImageProcessError } from '../../../src/types';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 // ─── DataURLResultImpl ────────────────────────────────────────────────────
@@ -710,5 +711,81 @@ describe('ElementResultImpl 변환 메서드 — canvas mock 경유', () => {
     // mock canvas.toBlob이 'payload'(7바이트) Blob을 반환하므로 byteLength도 7이다
     expect(buf).toBeInstanceOf(ArrayBuffer);
     expect(buf.byteLength).toBe(7);
+  });
+});
+
+// ─── CanvasResultImpl.toDataURL — MIME·quality 전달 ──────────────────────
+
+describe('CanvasResultImpl.toDataURL — MIME·quality 전달', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('format·quality 옵션을 지정하면 canvas.toDataURL에 올바른 MIME 타입과 quality를 전달한다', async () => {
+    const canvas = createTestCanvas(100, 100, 'red');
+    const impl = new CanvasResultImpl(canvas, 100, 100, 5);
+
+    const spy = vi.spyOn(canvas, 'toDataURL').mockReturnValue('data:image/jpeg;base64,mock');
+
+    const result = await impl.toDataURL({ format: 'jpeg', quality: 0.8 });
+
+    expect(spy).toHaveBeenCalledWith('image/jpeg', 0.8);
+    expect(result).toBe('data:image/jpeg;base64,mock');
+  });
+
+  it('format 옵션이 없으면 canvas.toDataURL에 image/png를 기본값으로 전달한다', async () => {
+    const canvas = createTestCanvas(100, 100, 'blue');
+    const impl = new CanvasResultImpl(canvas, 100, 100, 5);
+
+    const spy = vi.spyOn(canvas, 'toDataURL').mockReturnValue('data:image/png;base64,mock');
+
+    await impl.toDataURL();
+
+    expect(spy).toHaveBeenCalledWith('image/png', undefined);
+  });
+});
+
+// ─── BlobResultImpl.toDataURL — toCanvas 실패 전파 ──────────────────────
+
+describe('BlobResultImpl.toDataURL — toCanvas 실패 전파', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('toCanvas가 실패하면 canvas.toDataURL을 호출하지 않고 오류를 그대로 전파한다', async () => {
+    const blob = new Blob(['data'], { type: 'image/png' });
+    const impl = new BlobResultImpl(blob, 100, 100, 0);
+
+    // 이미지 로드 실패 등으로 toCanvas가 거부되는 상황을 모사한다.
+    const loadError = new ImageProcessError('Image load failed', 'IMAGE_LOAD_FAILED');
+    vi.spyOn(impl, 'toCanvas').mockRejectedValue(loadError);
+
+    await expect(impl.toDataURL()).rejects.toBe(loadError);
+  });
+});
+
+// ─── DataURLResultImpl.toFile — format 옵션 재인코딩 MIME 반영 ───────────
+
+describe('DataURLResultImpl.toFile — format 옵션 재인코딩 MIME 반영', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('format 옵션을 지정하면 재인코딩된 blob.type이 File.type으로 전파된다', async () => {
+    const impl = new DataURLResultImpl('data:image/png;base64,abc', 100, 100, 0);
+
+    // toCanvas를 mock canvas로 교체해 실제 이미지 디코딩을 우회한다.
+    const mockCanvas = document.createElement('canvas');
+    vi.spyOn(mockCanvas, 'toBlob').mockImplementation((cb, type) => {
+      cb(new Blob(['re-encoded'], { type: type! }));
+    });
+    vi.spyOn(impl, 'toCanvas').mockResolvedValue(mockCanvas);
+
+    const file = await impl.toFile('output.jpg', { format: 'jpeg', quality: 0.85 });
+
+    expect(file).toBeInstanceOf(File);
+    expect(file.name).toBe('output.jpg');
+    // data URL은 canvas 재인코딩을 거치므로 File.type은 옵션 format을 따른다.
+    expect(file.type).toBe('image/jpeg');
   });
 });
