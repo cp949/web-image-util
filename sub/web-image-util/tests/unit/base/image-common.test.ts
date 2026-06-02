@@ -5,7 +5,7 @@
  * 네트워크 의존 함수(urlTo*)와 실제 이미지 디코딩 경로는 본 테스트 범위 밖이다.
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import {
   base64ToBuffer,
   blobToDataUrl,
@@ -545,7 +545,7 @@ describe('downloadBlob', () => {
     // createElement가 반환하는 anchor에 click spy를 심어 실제 탐색을 차단한다
     const realCreate = document.createElement.bind(document);
     let capturedAnchor: HTMLAnchorElement | null = null;
-    let clickSpy: ReturnType<typeof vi.spyOn<HTMLAnchorElement, 'click'>> | null = null;
+    let clickSpy: MockInstance | null = null;
     vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       const el = realCreate(tag);
       if (tag === 'a') {
@@ -580,7 +580,7 @@ describe('downloadBlob', () => {
     vi.spyOn(URL, 'revokeObjectURL');
 
     let capturedAnchor: HTMLAnchorElement | null = null;
-    let clickSpy: ReturnType<typeof vi.spyOn<HTMLAnchorElement, 'click'>> | null = null;
+    let clickSpy: MockInstance | null = null;
     const realCreate = document.createElement.bind(document);
     vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       const el = realCreate(tag);
@@ -616,7 +616,7 @@ describe('downloadLink', () => {
     const removeSpy = vi.spyOn(document.body, 'removeChild');
 
     let capturedAnchor: HTMLAnchorElement | null = null;
-    let clickSpy: ReturnType<typeof vi.spyOn<HTMLAnchorElement, 'click'>> | null = null;
+    let clickSpy: MockInstance | null = null;
     const realCreate = document.createElement.bind(document);
     vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       const el = realCreate(tag);
