@@ -30,7 +30,7 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `index.ts` | `processImage().resize().toCanvasDetailed()` | 입력 src + ResizeConfig → Canvas + 메타데이터 객체 (풀에 반환 안 함) | 있음 | `tests/unit/processor/processor-resize/to-canvas-detailed-jsdom.test.ts` (메타데이터·풀 미반환·`toCanvas()` 동치) |
 | `index.ts` | `processImage().toElement()` | 출력 Blob을 `HTMLImageElement`로 디코드 (object URL 정리 포함) | 있음 | `tests/unit/processor/to-element-output-jsdom.test.ts` (정상 경로 반환 형태·`createObjectURL` 호출 계약·체이닝 도달성), `to-element-cleanup.test.ts` (cleanup 검증) |
 | `index.ts` | `unsafe_processImage(src, options?)` | strict sanitize 없이 동일 체이닝 API 반환 (위험 신뢰 입력 전용) | 있음 | `tests/unit/processor/unsafe-process-image/error-handling-jsdom.test.ts`, `export-contract.test.ts` |
-| `index.ts` | `ImageProcessor` (클래스 export) | 직접 인스턴스화 또는 타입 참조 진입점 | 없음 | 컨트랙트 export만 검증 |
+| `index.ts` | `ImageProcessor` (클래스 export) | 직접 인스턴스화 또는 타입 참조 진입점 | 있음 | `tests/unit/processor/image-processor-class-jsdom.test.ts` |
 | `index.ts` | `createThumbnail(src, options)` | src + 크기/포맷/품질 → cover/contain fit의 썸네일 Blob (포맷 미지정 시 WebP→JPEG fallback) | 있음 | `tests/unit/presets/presets-jsdom.test.ts` |
 | `index.ts` | `createAvatar(src, options?)` | src + size → 정사각형 PNG/WebP 아바타 Blob (기본 64px, 투명 배경) | 있음 | `tests/unit/presets/presets-jsdom.test.ts` |
 | `index.ts` | `createSocialImage(src, options)` | src + 플랫폼 또는 customSize → 플랫폼 권장 크기 Blob (contain fit, 기본 JPEG) | 있음 | `tests/unit/presets/presets-jsdom.test.ts` |
@@ -51,7 +51,7 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `index.ts` | `hasTransparency(source, options?)` | Canvas/이미지 → alpha 채널 샘플링 후 투명 픽셀 존재 boolean | 있음 | `tests/unit/utils/image-inspection.test.ts` |
 | `index.ts` | `ImageProcessError` / `ImageErrorCode` / `OPTIMAL_QUALITY_BY_FORMAT` | 에러 클래스 생성 및 코드 매핑 | 있음 | `tests/unit/errors/error-class.test.ts` |
 | `/advanced` | `AdvancedImageProcessor.processImage` / `.batchProcess` | resize + filter + watermark + format auto 묶음 처리 → `{ canvas, blob, stats }` | 부분 | `tests/unit/core/smart-processor.test.ts` (일부 시나리오) |
-| `/advanced` | `smartResize` / `processWithFilters` / `addWatermarkAndOptimize` (advanced-processor convenience) | 단계별 advanced 편의 함수 | 없음 | 직접 호출 행동 테스트 부재 (`grep` 결과 expected-public-exports만) |
+| `/advanced` | `smartResize` / `processWithFilters` / `addWatermarkAndOptimize` (advanced-processor convenience) | 단계별 advanced 편의 함수 | 부분 | `tests/unit/core/advanced-convenience-jsdom.test.ts` |
 | `/advanced` | `AutoHighResProcessor` / `autoSmartResize` / `smartResizeWithProgress` | 고해상도 입력 → 메모리 안전한 단계적 다운스케일 결과 | 있음 | `tests/unit/core/auto-high-res.test.ts` |
 | `/advanced` | `BatchResizer` | 다중 입력 → 일괄 리사이즈 결과 배열 | 있음 | `tests/unit/core/batch-resizer.test.ts` |
 | `/advanced` | `SmartFormatSelector` / `autoOptimize` / `optimizeForWeb` / `optimizeForThumbnail` / `ImagePurpose` | 입력 + 용도 → 권장 포맷/품질 결정 | 있음 | `tests/unit/core/smart-format.test.ts` |
@@ -61,11 +61,11 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `/advanced` | `filterManager` / `registerFilter` / `applyFilter` / `applyFilterChain` / `getAvailableFilters` / `FilterCategory` | 필터 플러그인 등록/조회/적용 | 있음 | `tests/unit/filters/plugin-system-manager.test.ts`, `plugin-system-application.test.ts`, `plugin-system-convenience.test.ts` |
 | `/advanced` | `createAdvancedThumbnail` / `optimizeForSocial` / `batchOptimize` (advanced-index convenience) | 묶음 시나리오용 편의 함수 | 부분 | `tests/unit/core/advanced-filter-initialization-jsdom.test.ts` (등록되지 않은 필터 거부 sad-path만) |
 | `/advanced` | `FormatDetector` / `FORMAT_MIME_MAP` | MIME ↔ 포맷 매핑 및 감지 | 있음 | `tests/unit/base/format-detector.test.ts` |
-| `/advanced` | `HighResolutionManager` | 고해상도 처리 수동 제어 진입점 | 부분 | `tests/unit/core/auto-high-res.test.ts` (자동 흐름만) |
+| `/advanced` | `HighResolutionManager` | 고해상도 처리 수동 제어 진입점 | 부분 | `tests/unit/core/high-res-manager-*.test.ts`, `tests/unit/core/auto-high-res.test.ts` |
 | `/advanced` | `ImageErrorHandler` / `globalErrorHandler` / `withErrorHandling` / `createAndHandleError` / `createQuickError` / `getErrorStats` | 에러 통계 누적/래핑 | 있음 | `tests/unit/base/error-helpers.test.ts`, `tests/unit/core/error-handler.test.ts` |
 | `/advanced` | `initializeFilterSystem()` | 호출 시 기본 필터(blur/color/effect) 모두 `filterManager`에 등록 | 있음 | `tests/unit/filters/filter-init.test.ts`, `tests/unit/core/advanced-filter-initialization-jsdom.test.ts` |
-| `/advanced` | `createFilterPlugin(config)` | 입력 config → 표준 `FilterPlugin` 객체 (preview = apply 기본값) | 없음 | 행동 테스트 부재 |
-| `/advanced` | `getAdvancedFeatureInfo()` | 환경 → 기능 가용성 정보 객체 | 없음 | 행동 테스트 부재 |
+| `/advanced` | `createFilterPlugin(config)` | 입력 config → 표준 `FilterPlugin` 객체 (preview = apply 기본값) | 있음 | `tests/unit/filters/create-filter-plugin.test.ts` |
+| `/advanced` | `getAdvancedFeatureInfo()` | 환경 → 기능 가용성 정보 객체 | 있음 | `tests/unit/core/advanced-feature-info.test.ts` |
 | `/advanced` | `AllFilterPlugins` / `registerDefaultFilters` / `BlurFilterPlugins` / `ColorFilterPlugins` / `EffectFilterPlugins` | 카테고리별 기본 필터 플러그인 배열 export | 있음 | `tests/unit/filters/blur-plugins.test.ts`, `color-plugins.test.ts`, `effect-plugins.test.ts` |
 | `/presets` | `createThumbnail` / `createAvatar` / `createSocialImage` | (메인과 동일 — 서브패스 export) | 있음 | `tests/unit/presets/presets-jsdom.test.ts` |
 | `/utils` | (메인 `index.ts`와 동일 utility 집합) | 메인 export와 동일 동작 | 있음 | 메인 entry 행 참조 |
@@ -82,18 +82,17 @@ pnpm --filter @cp949/web-image-util test:coverage
 
 | 영역 | 베이스라인 커버 | 추천 테스트 종류 | 의도 | 우선순위 |
 | --- | --- | --- | --- | --- |
-| `/advanced` `HighResolutionManager` 수동 제어 진입점 + `base/high-res-manager.ts` 분기 (~478줄 누락) | 중간 (자동 흐름만) | 행동 | 회귀 방지 | 중간 |
-| `/advanced` `createFilterPlugin(config)` 행동 (preview = apply 기본값 등) | 낮음 (행동 없음) | 행동 | 회귀 방지 | 중간 |
-| `/advanced` `getAdvancedFeatureInfo()` 환경별 반환 | 낮음 (행동 없음) | 행동 | 회귀 방지 | 낮음 |
-| `ImageProcessor` 클래스 직접 인스턴스화/타입 참조 진입점 | 낮음 (컨트랙트만) | 행동 | 회귀 방지 | 낮음 |
-| `errors.ts` / `core/error-handler.ts` 분기 (error code 매핑, cause 보존 분기) | 중간 (stmt 100 / branch 50) | 단위 | 분기 보충 | 중간 |
-| `core/internal/internal-high-res-processor.ts` 분기 (~480줄 누락, 내부 타일링 경로) | 낮음 (branch 0) | 단위 | 분기 보충 | 중간 |
-| `core/advanced-processor.ts` 분기 (~427줄 누락, 내부 advanced 파이프라인) | 낮음 (branch 0) | 단위 | 분기 보충 | 중간 |
-| `base/image-common.ts` 분기 (~370줄 누락) | 낮음 (0/0/0/0) | 단위 | 분기 보충 | 중간 |
-| `base/canvas-utils.ts` / `base/stepped-processor.ts` 분기 | 낮음 (stmt 26 / branch 9, branch 4.76) | 단위 | 분기 보충 | 낮음 |
-| `types/guards.ts` / `types/result-implementations.ts` 분기 (런타임 타입 가드) | 낮음 (branch 0) | 단위 | 분기 보충 | 낮음 |
-| `utils/svg-optimizer/{optimize-gradients,remove-unused-defs,simplify-paths}.ts` 분기 (`SvgOptimizer` 공개 표면의 내부 최적화 패스) | 낮음 (stmt 14–28) | 단위 | 분기 보충 | 낮음 |
-| `utils/svg-compatibility/{internal,bbox/live,bbox/heuristic}.ts` 분기 (`enhanceSvgForBrowser` 내부 헬퍼) | 낮음 (0/0/0/0 또는 stmt 45) | 단위 | 분기 보충 | 낮음 |
+| `utils/svg-processor.ts` (`SVGProcessor`) 레거시 SVG 처리 파일 | 낮음 (미진입) | 단위 | 정리/분기 보충 | 높음 |
+| `types/result-implementations.ts` 결과 객체 간 변환 경로 (`toCanvas`/`toBlob`/`toFile`/`toElement` 등) | 낮음 (변환 분기 다수 미검증) | 행동 | 회귀 방지 | 높음 |
+| `core/source-converter/loaders/blob.ts` + `core/source-converter/index.ts` Blob/ArrayBuffer 변환 경로 | 낮음 (Blob SVG 스니핑·이미지 로딩 분기 부족) | 행동 | 회귀 방지 | 높음 |
+| `base/image-common.ts` 분기 (이미지 분류/변환/보정 공통 헬퍼) | 낮음 (함수·분기 다수 미검증) | 단위 | 분기 보충 | 중간 |
+| `core/lazy-render-pipeline.ts` 분기 (작업 누적·최종 레이아웃·오류 경계) | 중간 (분기 부족) | 단위 | 분기 보충 | 중간 |
+| `base/stepped-processor.ts` 단계적 리사이즈 분기 | 낮음 (stmt/branch 부족) | 단위 | 분기 보충 | 중간 |
+| `core/auto-high-res.ts` 자동 고해상도 처리 경계 | 중간 (함수 커버 부족) | 행동 | 회귀 방지 | 중간 |
+| `/advanced` `HighResolutionManager` 수동 제어 진입점 + `base/high-res-manager.ts` 잔여 분기 | 중간 (전략·메모리 경계 일부 잔여) | 행동 | 회귀 방지 | 중간 |
+| `utils/image-info/format-detection.ts` + `utils/image-inspection.ts` 이미지 메타/투명도 판정 분기 | 중간 (분기 부족) | 단위 | 분기 보충 | 낮음 |
+| `utils/converters/{canvas-bridge,policy}.ts` 변환 정책/브리지 경계 | 중간 (함수·분기 일부 부족) | 단위 | 분기 보충 | 낮음 |
+| `utils/svg-compatibility/bbox/{index,live}.ts` 브라우저 bbox 측정 경로 | 중간 (jsdom 한계로 live 경로 부족) | 단위 | 분기 보충 | 낮음 |
 
 표 행은 위에서 아래로 우선순위 순. 새 작업을 만들 때 *높음* 행부터 묶어서 진행한다. 한 행이 너무 크면 분할하고, 너무 작으면 인접 행과 묶는다. 새 행을 추가할 때는 이 표의 5개 컬럼을 모두 채운다.
 

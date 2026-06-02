@@ -171,4 +171,27 @@ describe('HighResolutionManager.validateProcessingCapability', () => {
     const hasMemWarning = result.warnings.some((w) => w.toLowerCase().includes('memory'));
     expect(hasMemWarning).toBe(true);
   });
+
+  it('target pixel 이 maxSafeDimension 제곱을 초과할 때 warnings 와 recommendedStrategy 를 함께 반환한다', () => {
+    const img = createMockImage(100, 100);
+    // jsdom UA 기준 maxSafeDimension=16384 → 20000×20000 초과
+    const result = HighResolutionManager.validateProcessingCapability(img, 20000, 20000);
+
+    // 브라우저 한계 경고가 포함된다
+    const hasSizeWarning = result.warnings.some(
+      (w) => w.toLowerCase().includes('limit') || w.toLowerCase().includes('browser') || w.includes('size')
+    );
+    expect(hasSizeWarning).toBe(true);
+    // 100×100 소스 + forceStrategy 미지정 → 자동 분석 경로에서 DIRECT
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.DIRECT);
+  });
+
+  it('target pixel 이 maxSafeDimension 제곱 이하(경계값)이면 "Target image size may exceed browser limits." 경고가 없다', () => {
+    const img = createMockImage(100, 100);
+    // maxSafeDimension=16384(jsdom UA 기본값) → 16384×16384 = maxSafePixels (> 조건 불충족)
+    const result = HighResolutionManager.validateProcessingCapability(img, 16384, 16384);
+
+    const hasSizeWarning = result.warnings.some((w) => w.includes('Target image size may exceed browser limits.'));
+    expect(hasSizeWarning).toBe(false);
+  });
 });

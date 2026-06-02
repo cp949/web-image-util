@@ -8,7 +8,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProcessingStrategy } from '../../../src/base/high-res-detector';
-import { HighResolutionManager } from '../../../src/base/high-res-manager';
+import { HighResolutionManager, type HighResolutionProgress } from '../../../src/base/high-res-manager';
 import { SteppedProcessor } from '../../../src/base/stepped-processor';
 import { TiledProcessor } from '../../../src/base/tiled-processor';
 import { createMockImage } from './high-res-manager-helpers';
@@ -182,5 +182,148 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
     // 'balanced' !== 'fast' → 'high'로 변환
     expect(opts?.quality).toBe('high');
     expect(opts?.maxConcurrency).toBe(2);
+  });
+});
+
+describe('HighResolutionManager.smartResize — enableProgressTracking 진행률 shape', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('enableProgressTracking=true 이면 onProgress 가 한 번 이상 호출된다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+    const progressCalls: HighResolutionProgress[] = [];
+    const img = createMockImage(300, 300);
+
+    await HighResolutionManager.smartResize(img, 50, 50, {
+      enableProgressTracking: true,
+      forceStrategy: ProcessingStrategy.STEPPED,
+      onProgress: (p) => progressCalls.push(p),
+    });
+
+    expect(progressCalls.length).toBeGreaterThan(0);
+  });
+
+  it('onProgress 의 각 호출은 stage/progress/timeElapsed/estimatedTimeRemaining/memoryUsageMB/currentStrategy 를 갖는다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+    const progressCalls: HighResolutionProgress[] = [];
+    const img = createMockImage(300, 300);
+
+    await HighResolutionManager.smartResize(img, 50, 50, {
+      enableProgressTracking: true,
+      forceStrategy: ProcessingStrategy.STEPPED,
+      onProgress: (p) => progressCalls.push(p),
+    });
+
+    const validStages = ['analyzing', 'processing', 'finalizing', 'completed'];
+    for (const p of progressCalls) {
+      expect(validStages).toContain(p.stage);
+      expect(p.progress).toBeGreaterThanOrEqual(0);
+      expect(p.progress).toBeLessThanOrEqual(100);
+      expect(typeof p.timeElapsed).toBe('number');
+      expect(typeof p.estimatedTimeRemaining).toBe('number');
+      expect(typeof p.memoryUsageMB).toBe('number');
+      expect(Object.values(ProcessingStrategy)).toContain(p.currentStrategy);
+    }
+  });
+
+  it('마지막 onProgress 호출은 stage="completed", progress=100 이다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+    const progressCalls: HighResolutionProgress[] = [];
+    const img = createMockImage(300, 300);
+
+    await HighResolutionManager.smartResize(img, 50, 50, {
+      enableProgressTracking: true,
+      forceStrategy: ProcessingStrategy.STEPPED,
+      onProgress: (p) => progressCalls.push(p),
+    });
+
+    const last = progressCalls[progressCalls.length - 1];
+    expect(last?.stage).toBe('completed');
+    expect(last?.progress).toBe(100);
+  });
+
+  it('enableProgressTracking=false(기본값) 이면 onProgress 가 호출되지 않는다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+    const onProgress = vi.fn();
+    const img = createMockImage(300, 300);
+
+    await HighResolutionManager.smartResize(img, 50, 50, {
+      forceStrategy: ProcessingStrategy.STEPPED,
+      onProgress,
+    });
+
+    expect(onProgress).not.toHaveBeenCalled();
+  });
+
+  it('진행률 시퀀스는 "analyzing" 으로 시작하고 "processing" 단계가 최소 1회 포함된다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+    const progressCalls: HighResolutionProgress[] = [];
+    const img = createMockImage(300, 300);
+
+    await HighResolutionManager.smartResize(img, 50, 50, {
+      enableProgressTracking: true,
+      forceStrategy: ProcessingStrategy.STEPPED,
+      onProgress: (p) => progressCalls.push(p),
+    });
+
+    // 첫 콜백은 반드시 analyzing 단계여야 한다
+    expect(progressCalls[0]?.stage).toBe('analyzing');
+    // 시퀀스에 processing 단계가 최소 1회 포함되어야 한다
+    expect(progressCalls.some((p) => p.stage === 'processing')).toBe(true);
+  });
+});
+
+describe('HighResolutionManager — getEstimatedUsage performance.memory 유무에 따른 안전값', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('performance.memory 없을 때 memoryPeakUsageMB 는 fallback 상수(64MB)에 근접한 값이다', async () => {
+    // memory 속성이 없는 performance 를 명시적으로 주입해 fallback 분기 진입을 보장한다
+    vi.stubGlobal('performance', { now: () => 0 });
+
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+    const img = createMockImage(300, 300);
+
+    const result = await HighResolutionManager.smartResize(img, 50, 50, {
+      forceStrategy: ProcessingStrategy.STEPPED,
+    });
+
+    // getEstimatedUsage fallback: used=64MB → getCurrentMemoryUsage()=64
+    expect(result.memoryPeakUsageMB).toBeCloseTo(64, 0);
+  });
+
+  it('performance.memory 존재 시 memoryPeakUsageMB 는 stubbed usedJSHeapSize 를 반영한다', async () => {
+    // performance.memory 는 비표준 — vi.stubGlobal 로 주입하고 afterEach 에서 복구한다
+    const fakeMemory = {
+      usedJSHeapSize: 128 * 1024 * 1024,
+      jsHeapSizeLimit: 512 * 1024 * 1024,
+      totalJSHeapSize: 256 * 1024 * 1024,
+    };
+    vi.stubGlobal('performance', { ...globalThis.performance, memory: fakeMemory });
+
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+    const img = createMockImage(300, 300);
+
+    const result = await HighResolutionManager.smartResize(img, 50, 50, {
+      forceStrategy: ProcessingStrategy.STEPPED,
+    });
+
+    // usedJSHeapSize=128MB → memoryPeakUsageMB ≈ 128
+    expect(result.memoryPeakUsageMB).toBeCloseTo(128, 0);
   });
 });

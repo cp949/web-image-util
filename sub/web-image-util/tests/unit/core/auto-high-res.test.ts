@@ -8,7 +8,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HighResolutionManager } from '../../../src/base/high-res-manager';
-import { AutoHighResProcessor } from '../../../src/core/auto-high-res';
+import {
+  AutoHighResProcessor,
+  type AutoProcessingResult,
+  smartResize,
+  smartResizeWithProgress,
+} from '../../../src/core/auto-high-res';
 
 // img.width / img.height 를 제어하는 헬퍼 (drawImage 불필요한 경우)
 function createMockImage(width: number, height: number): HTMLImageElement {
@@ -50,6 +55,26 @@ function makeProcessingResult(overrides: Partial<{ canvas: HTMLCanvasElement }> 
     memoryPeakUsageMB: 0,
     quality: 'balanced' as const,
     ...overrides,
+  };
+}
+
+// AutoProcessingResult 기본값 생성 헬퍼
+function makeAutoProcessingResult(canvas?: HTMLCanvasElement): AutoProcessingResult {
+  return {
+    canvas: canvas ?? document.createElement('canvas'),
+    optimizations: {
+      strategy: 'test',
+      memoryOptimized: false,
+      tileProcessing: false,
+      estimatedTimeSaved: 0,
+    },
+    stats: {
+      originalSize: { width: 100, height: 100 },
+      finalSize: { width: 50, height: 50 },
+      processingTime: 0,
+      memoryPeakUsage: 0,
+      qualityLevel: 'balanced',
+    },
   };
 }
 
@@ -244,6 +269,8 @@ describe('AutoHighResProcessor', () => {
       await AutoHighResProcessor.smartResize(img, 400, 300, { onProgress });
 
       expect(onProgress).toHaveBeenCalledWith(10, expect.any(String));
+      // 전략 결정 단계(20)도 사용자에게 전달되어야 한다
+      expect(onProgress).toHaveBeenCalledWith(20, expect.any(String));
       expect(onProgress).toHaveBeenCalledWith(100, expect.any(String));
     });
 
@@ -314,11 +341,14 @@ describe('AutoHighResProcessor', () => {
     });
 
     it('estimatedMemoryMB 가 autoTileThreshold(300MB) 미만이면 balanced 전략은 tileProcessing=false 를 반환한다', async () => {
-      // 7300×7300 ≈ 203MB < 300MB → isHighMem=false
+      // 7300×7300 ≈ 203MB < 300MB → isHighMem=false → memoryOptimized=false
       const img = createMockImage(7300, 7300);
       const result = await AutoHighResProcessor.smartResize(img, 800, 600);
       expect(result.optimizations.tileProcessing).toBe(false);
       expect(result.optimizations.memoryOptimized).toBe(false);
+      // isHighRes=true 이지만 memoryOptimized=false 이므로 userMessage 는 undefined 여야 한다
+      // `if (isHighRes || strategy.memoryOptimized)` 로 회귀하면 이 단정이 실패한다
+      expect(result.userMessage).toBeUndefined();
     });
 
     it('isHighRes && memoryOptimized 이면 userMessage 가 설정된다', async () => {
@@ -371,6 +401,308 @@ describe('AutoHighResProcessor', () => {
       await AutoHighResProcessor.smartResize(img, 800, 600);
 
       expect(highResSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // smartResize — 폴백 진행도 순서
+  // --------------------------------------------------------------------------
+  describe('smartResize — 폴백 진행도 순서', () => {
+    it('폴백 실패 시 onProgress(50) 이후 onProgress(100) 이 순서대로 호출된다', async () => {
+      vi.spyOn(HighResolutionManager, 'smartResize').mockRejectedValue(new Error('GPU 오류'));
+      const onProgress = vi.fn();
+      // drawable canvas + highResPixelThreshold=100_000 으로 고해상도 경로 진입 후 reject
+      const img = createDrawableImage(800, 600);
+      await AutoHighResProcessor.smartResize(img, 400, 300, {
+        thresholds: { highResPixelThreshold: 100_000 },
+        onProgress,
+      });
+      const progressValues = onProgress.mock.calls.map((args) => args[0] as number);
+      const idx50 = progressValues.indexOf(50);
+      const idx100 = progressValues.lastIndexOf(100);
+      // 50 이후 100 이 순서대로 호출되어야 한다
+      expect(idx50).toBeGreaterThanOrEqual(0);
+      expect(idx100).toBeGreaterThan(idx50);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // smartResize — onMemoryWarning 미호출 경로
+  // --------------------------------------------------------------------------
+  describe('smartResize — onMemoryWarning 미호출', () => {
+    it('메모리 추정치가 임계치 미만이면 onMemoryWarning 이 호출되지 않는다', async () => {
+      // 1000×1000 ≈ 3.8MB < 200MB 기본 임계치 → 경고 없음
+      const onMemoryWarning = vi.fn();
+      const img = createDrawableImage(1000, 1000);
+      await AutoHighResProcessor.smartResize(img, 400, 300, { onMemoryWarning });
+      expect(onMemoryWarning).not.toHaveBeenCalled();
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // smartResizeWithProgress (convenience 함수)
+  // --------------------------------------------------------------------------
+  describe('smartResizeWithProgress (convenience 함수)', () => {
+    beforeEach(() => {
+      vi.spyOn(HighResolutionManager, 'smartResize').mockResolvedValue(makeProcessingResult());
+    });
+
+    it('AutoProcessingResult 전체(canvas, optimizations, stats)를 반환한다', async () => {
+      const img = createDrawableImage(1000, 1000);
+      const result = await smartResizeWithProgress(img, 400, 300, vi.fn());
+      expect(result).toHaveProperty('canvas');
+      expect(result).toHaveProperty('optimizations');
+      expect(result).toHaveProperty('stats');
+    });
+
+    it('progress callback 이 진행도와 함께 호출된다', async () => {
+      const onProgress = vi.fn();
+      const img = createDrawableImage(1000, 1000);
+      await smartResizeWithProgress(img, 400, 300, onProgress);
+      expect(onProgress).toHaveBeenCalledWith(10, expect.any(String));
+      expect(onProgress).toHaveBeenCalledWith(100, expect.any(String));
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // smartResize (convenience 함수) — canvas 만 반환
+  // --------------------------------------------------------------------------
+  describe('smartResize (convenience 함수)', () => {
+    it('AutoProcessingResult.canvas 만 반환한다 (HTMLCanvasElement)', async () => {
+      const mockCanvas = document.createElement('canvas');
+      vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult(mockCanvas));
+      const img = createMockImage(1000, 1000);
+      const result = await smartResize(img, 400, 300);
+      expect(result).toBe(mockCanvas);
+      expect(result).toBeInstanceOf(HTMLCanvasElement);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // batchSmartResize
+  // --------------------------------------------------------------------------
+  describe('batchSmartResize', () => {
+    it('결과 배열이 입력 이미지 순서를 유지한다', async () => {
+      // 호출 순서대로 고유한 canvas 를 반환해 결과 인덱스 매핑을 추적한다
+      let callCount = 0;
+      vi.spyOn(AutoHighResProcessor, 'smartResize').mockImplementation(async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = ++callCount * 100;
+        return makeAutoProcessingResult(canvas);
+      });
+
+      const images = [
+        { img: createMockImage(100, 100), targetWidth: 50, targetHeight: 50, name: 'img0' },
+        { img: createMockImage(100, 100), targetWidth: 50, targetHeight: 50, name: 'img1' },
+        { img: createMockImage(100, 100), targetWidth: 50, targetHeight: 50, name: 'img2' },
+      ];
+
+      // concurrency=1 로 순서를 결정적으로 유지
+      const results = await AutoHighResProcessor.batchSmartResize(images, { concurrency: 1 });
+
+      expect(results).toHaveLength(3);
+      expect(results[0].canvas.width).toBe(100);
+      expect(results[1].canvas.width).toBe(200);
+      expect(results[2].canvas.width).toBe(300);
+    });
+
+    it('onProgress 에 완료 수, 전체 수, 이름을 순서대로 전달한다', async () => {
+      vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
+
+      const onProgress = vi.fn();
+      const images = [
+        { img: createMockImage(100, 100), targetWidth: 50, targetHeight: 50, name: 'alpha' },
+        { img: createMockImage(100, 100), targetWidth: 50, targetHeight: 50, name: 'beta' },
+      ];
+
+      await AutoHighResProcessor.batchSmartResize(images, { concurrency: 1, onProgress });
+
+      expect(onProgress).toHaveBeenCalledWith(1, 2, 'alpha');
+      expect(onProgress).toHaveBeenCalledWith(2, 2, 'beta');
+    });
+
+    it('onImageComplete 에 글로벌 인덱스와 결과를 전달한다', async () => {
+      vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
+
+      const onImageComplete = vi.fn();
+      const images = [
+        { img: createMockImage(100, 100), targetWidth: 50, targetHeight: 50, name: 'alpha' },
+        { img: createMockImage(100, 100), targetWidth: 50, targetHeight: 50, name: 'beta' },
+      ];
+
+      await AutoHighResProcessor.batchSmartResize(images, { concurrency: 1, onImageComplete });
+
+      expect(onImageComplete).toHaveBeenCalledWith(
+        0,
+        expect.objectContaining({ canvas: expect.any(HTMLCanvasElement) })
+      );
+      expect(onImageComplete).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ canvas: expect.any(HTMLCanvasElement) })
+      );
+    });
+
+    // concurrency=2: chunk 내부 Promise.all 에서 완료 순서가 입력 순서와 달라질 때
+    // results[globalIndex] = result 계약과 globalIndex 계산식을 모두 검증한다.
+
+    it('concurrency=2 환경에서 beta 가 먼저 완료돼도 결과 배열은 입력 순서(alpha→beta)를 유지한다', async () => {
+      const imgAlpha = createMockImage(100, 100);
+      const imgBeta = createMockImage(100, 100);
+      const alphaCanvas = document.createElement('canvas');
+      alphaCanvas.width = 111;
+      const betaCanvas = document.createElement('canvas');
+      betaCanvas.width = 222;
+
+      vi.spyOn(AutoHighResProcessor, 'smartResize').mockImplementation(async (img) => {
+        if (img === imgAlpha) {
+          // alpha 를 30ms 지연시켜 beta 가 먼저 완료되도록 유도
+          await new Promise<void>((resolve) => setTimeout(resolve, 30));
+          return makeAutoProcessingResult(alphaCanvas);
+        }
+        return makeAutoProcessingResult(betaCanvas);
+      });
+
+      const images = [
+        { img: imgAlpha, targetWidth: 50, targetHeight: 50, name: 'alpha' },
+        { img: imgBeta, targetWidth: 50, targetHeight: 50, name: 'beta' },
+      ];
+
+      const results = await AutoHighResProcessor.batchSmartResize(images, { concurrency: 2 });
+
+      // beta 가 먼저 완료됐어도 results[0] = alpha, results[1] = beta 여야 한다
+      expect(results[0].canvas.width).toBe(111);
+      expect(results[1].canvas.width).toBe(222);
+    });
+
+    it('concurrency=2 환경에서 onImageComplete 는 완료 순서와 무관하게 globalIndex 를 올바르게 전달한다', async () => {
+      const imgAlpha = createMockImage(100, 100);
+      const imgBeta = createMockImage(100, 100);
+      const alphaCanvas = document.createElement('canvas');
+      alphaCanvas.width = 111;
+      const betaCanvas = document.createElement('canvas');
+      betaCanvas.width = 222;
+
+      vi.spyOn(AutoHighResProcessor, 'smartResize').mockImplementation(async (img) => {
+        if (img === imgAlpha) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 30));
+          return makeAutoProcessingResult(alphaCanvas);
+        }
+        return makeAutoProcessingResult(betaCanvas);
+      });
+
+      const onImageComplete = vi.fn();
+      const images = [
+        { img: imgAlpha, targetWidth: 50, targetHeight: 50, name: 'alpha' },
+        { img: imgBeta, targetWidth: 50, targetHeight: 50, name: 'beta' },
+      ];
+
+      await AutoHighResProcessor.batchSmartResize(images, { concurrency: 2, onImageComplete });
+
+      // beta 가 먼저 완료돼도 globalIndex 0 = alpha, globalIndex 1 = beta 여야 한다
+      expect(onImageComplete).toHaveBeenCalledWith(0, expect.objectContaining({ canvas: alphaCanvas }));
+      expect(onImageComplete).toHaveBeenCalledWith(1, expect.objectContaining({ canvas: betaCanvas }));
+    });
+
+    it('한 항목이 처리 실패하면 전체 batchSmartResize Promise 가 reject 된다', async () => {
+      // catch 블록이 silent swallow 로 바뀌거나 제거되면 이 테스트가 실패한다
+      vi.spyOn(AutoHighResProcessor, 'smartResize').mockRejectedValue(new Error('처리 실패'));
+
+      const images = [{ img: createMockImage(100, 100), targetWidth: 50, targetHeight: 50, name: 'img0' }];
+
+      await expect(AutoHighResProcessor.batchSmartResize(images, { concurrency: 1 })).rejects.toThrow('처리 실패');
+    });
+
+    // ----- globalIndex 곱셈 계산 검증: 2 chunk 이상 케이스 -----
+    // globalIndex = chunks.indexOf(chunk) * concurrency + chunkIndex
+    // 단일 chunk(이미지 수 ≤ concurrency)에서는 곱셈항이 항상 0이라 회귀를 잡지 못한다.
+    // 3장·4장 케이스는 두 번째 chunk 를 만들어 곱셈항을 강제로 활성화한다.
+
+    it('concurrency=2 + 3장: 두 번째 chunk 의 globalIndex 가 concurrency(=2) 여야 한다', async () => {
+      // chunk[0]=[img0,img1], chunk[1]=[img2]
+      // img2 의 globalIndex: 정상=1*2+0=2, 버그(곱셈 누락)=1+0=1 → results[1] 덮어씀
+      const imgs = [0, 1, 2].map(() => createMockImage(100, 100));
+      const resultCanvases = [0, 1, 2].map((i) => {
+        const c = document.createElement('canvas');
+        c.width = (i + 1) * 100; // 100, 200, 300
+        return c;
+      });
+
+      vi.spyOn(AutoHighResProcessor, 'smartResize').mockImplementation(async (img) => {
+        const imgIndex = imgs.indexOf(img as HTMLImageElement);
+        return makeAutoProcessingResult(resultCanvases[imgIndex]);
+      });
+
+      const onImageComplete = vi.fn();
+      const images = imgs.map((img, i) => ({ img, targetWidth: 50, targetHeight: 50, name: `img${i}` }));
+      const results = await AutoHighResProcessor.batchSmartResize(images, { concurrency: 2, onImageComplete });
+
+      // results 순서: img0→100, img1→200, img2→300
+      expect(results).toHaveLength(3);
+      expect(results[0].canvas.width).toBe(100);
+      expect(results[1].canvas.width).toBe(200);
+      expect(results[2].canvas.width).toBe(300);
+
+      // onImageComplete 에 전달된 globalIndex 도 정확해야 한다
+      expect(onImageComplete).toHaveBeenCalledWith(0, expect.objectContaining({ canvas: resultCanvases[0] }));
+      expect(onImageComplete).toHaveBeenCalledWith(1, expect.objectContaining({ canvas: resultCanvases[1] }));
+      expect(onImageComplete).toHaveBeenCalledWith(2, expect.objectContaining({ canvas: resultCanvases[2] }));
+    });
+
+    it('concurrency=2 + 4장: 두 번째 chunk 가 꽉 찬 경우 globalIndex 3까지 정확히 매핑된다', async () => {
+      // chunk[0]=[img0,img1], chunk[1]=[img2,img3]
+      // img2 globalIndex=2, img3 globalIndex=3 을 검증한다
+      const imgs = [0, 1, 2, 3].map(() => createMockImage(100, 100));
+      const resultCanvases = [0, 1, 2, 3].map((i) => {
+        const c = document.createElement('canvas');
+        c.width = (i + 1) * 100; // 100, 200, 300, 400
+        return c;
+      });
+
+      vi.spyOn(AutoHighResProcessor, 'smartResize').mockImplementation(async (img) => {
+        const imgIndex = imgs.indexOf(img as HTMLImageElement);
+        return makeAutoProcessingResult(resultCanvases[imgIndex]);
+      });
+
+      const onImageComplete = vi.fn();
+      const images = imgs.map((img, i) => ({ img, targetWidth: 50, targetHeight: 50, name: `img${i}` }));
+      const results = await AutoHighResProcessor.batchSmartResize(images, { concurrency: 2, onImageComplete });
+
+      expect(results).toHaveLength(4);
+      expect(results[0].canvas.width).toBe(100);
+      expect(results[1].canvas.width).toBe(200);
+      expect(results[2].canvas.width).toBe(300);
+      expect(results[3].canvas.width).toBe(400);
+
+      expect(onImageComplete).toHaveBeenCalledWith(2, expect.objectContaining({ canvas: resultCanvases[2] }));
+      expect(onImageComplete).toHaveBeenCalledWith(3, expect.objectContaining({ canvas: resultCanvases[3] }));
+    });
+
+    it('concurrency=2 환경에서 onProgress 마지막 호출은 전체 완료 수와 마지막 완료 이름을 전달한다', async () => {
+      const imgAlpha = createMockImage(100, 100);
+      const imgBeta = createMockImage(100, 100);
+
+      vi.spyOn(AutoHighResProcessor, 'smartResize').mockImplementation(async (img) => {
+        if (img === imgAlpha) {
+          // alpha 가 늦게 완료 → 마지막 onProgress 호출 이름은 'alpha'
+          await new Promise<void>((resolve) => setTimeout(resolve, 30));
+        }
+        return makeAutoProcessingResult();
+      });
+
+      const onProgress = vi.fn();
+      const images = [
+        { img: imgAlpha, targetWidth: 50, targetHeight: 50, name: 'alpha' },
+        { img: imgBeta, targetWidth: 50, targetHeight: 50, name: 'beta' },
+      ];
+
+      await AutoHighResProcessor.batchSmartResize(images, { concurrency: 2, onProgress });
+
+      // beta 먼저 완료: onProgress(1, 2, 'beta'), alpha 나중 완료: onProgress(2, 2, 'alpha')
+      const calls = onProgress.mock.calls;
+      const lastCall = calls[calls.length - 1];
+      expect(lastCall[0]).toBe(2); // completed = total
+      expect(lastCall[1]).toBe(2); // total
+      expect(lastCall[2]).toBe('alpha'); // 마지막으로 완료된 항목 (지연된 alpha)
     });
   });
 });

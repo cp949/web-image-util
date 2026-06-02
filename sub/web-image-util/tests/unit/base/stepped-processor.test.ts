@@ -207,3 +207,165 @@ describe('SteppedProcessor.estimateSteps', () => {
     expect(SteppedProcessor.estimateSteps(100, 100, 49, 49)).toBe(2);
   });
 });
+
+// ============================================================================
+// resizeWithSteps — 잘못된 치수 입력 검증
+// ============================================================================
+
+describe('SteppedProcessor.resizeWithSteps — 잘못된 치수 입력', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('targetWidth가 0이면 RESIZE_FAILED 오류를 던지고 dimensions context를 포함한다', async () => {
+    const img = createMockImage(200, 200);
+    await expect(SteppedProcessor.resizeWithSteps(img, 0, 100)).rejects.toMatchObject({
+      code: 'RESIZE_FAILED',
+      context: { dimensions: { width: 0, height: 100 } },
+    });
+  });
+
+  it('targetHeight가 음수이면 RESIZE_FAILED 오류를 던지고 dimensions context를 포함한다', async () => {
+    const img = createMockImage(200, 200);
+    await expect(SteppedProcessor.resizeWithSteps(img, 100, -1)).rejects.toMatchObject({
+      code: 'RESIZE_FAILED',
+      context: { dimensions: { width: 100, height: -1 } },
+    });
+  });
+
+  it('source의 width가 0이면 RESIZE_FAILED 오류를 던지고 source dimensions context를 포함한다', async () => {
+    const img = createMockImage(0, 200);
+    await expect(SteppedProcessor.resizeWithSteps(img, 100, 100)).rejects.toMatchObject({
+      code: 'RESIZE_FAILED',
+      context: { dimensions: { width: 0, height: 200 } },
+    });
+  });
+
+  it('source의 height가 0이면 RESIZE_FAILED 오류를 던지고 source dimensions context를 포함한다', async () => {
+    const img = createMockImage(200, 0);
+    await expect(SteppedProcessor.resizeWithSteps(img, 100, 100)).rejects.toMatchObject({
+      code: 'RESIZE_FAILED',
+      context: { dimensions: { width: 200, height: 0 } },
+    });
+  });
+});
+
+// ============================================================================
+// performSteppedResize — canvasToCanvas 실패 래핑
+// ============================================================================
+
+describe('SteppedProcessor.performSteppedResize — canvasToCanvas 실패 래핑', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('canvasToCanvas가 실패하면 RESIZE_FAILED와 stage context로 래핑한다', async () => {
+    // imageToCanvas를 mock해 실제 drawImage 없이 stepped 경로만 타도록 한다
+    vi.spyOn(SteppedProcessor as any, 'imageToCanvas').mockResolvedValue(document.createElement('canvas'));
+    vi.spyOn(SteppedProcessor as any, 'canvasToCanvas').mockRejectedValue(new Error('drawImage 실패'));
+
+    // minScale = 10/1000 = 0.01 < 0.5, quality:'high' → performSteppedResize 경로
+    const img = createMockImage(1000, 1000);
+    await expect(SteppedProcessor.resizeWithSteps(img, 10, 10, { quality: 'high' })).rejects.toMatchObject({
+      code: 'RESIZE_FAILED',
+      context: { debug: { stage: 'stepped reduction processing' } },
+      cause: expect.objectContaining({ message: 'drawImage 실패' }),
+    });
+  });
+});
+
+// ============================================================================
+// batchResizeWithSteps — 특정 index 실패 시 context 보존
+// ============================================================================
+
+describe('SteppedProcessor.batchResizeWithSteps — 실패 index context 보존', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('index 1 이미지 실패 시 batch processing stage와 index=1 context를 보존한다', async () => {
+    const images = [createMockImage(100, 100), createMockImage(200, 200), createMockImage(300, 300)];
+
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockImplementation(async (img: HTMLImageElement) => {
+      if (img.width === 200) {
+        throw new Error('index 1 실패');
+      }
+      return document.createElement('canvas');
+    });
+
+    // concurrency=3으로 3개 이미지가 한 청크에서 병렬 처리되고 index 1이 실패한다
+    await expect(SteppedProcessor.batchResizeWithSteps(images, 50, 50, { concurrency: 3 })).rejects.toMatchObject({
+      code: 'RESIZE_FAILED',
+      context: { debug: { stage: 'batch processing', index: 1 } },
+      cause: expect.objectContaining({ message: 'index 1 실패' }),
+    });
+  });
+});
+
+// ============================================================================
+// memoryEfficientResize — 메모리 한도 및 stepped 옵션 분기
+// ============================================================================
+
+describe('SteppedProcessor.memoryEfficientResize', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('target pixels가 메모리 한도를 초과하면 FILE_TOO_LARGE를 던진다', async () => {
+    // maxMemoryMB=1 → maxPixels = 1*1024*1024/4 = 262,144
+    // target = 1000*1000 = 1,000,000 > 262,144 → FILE_TOO_LARGE
+    const img = createMockImage(5000, 5000);
+    await expect(SteppedProcessor.memoryEfficientResize(img, 1000, 1000, 1)).rejects.toMatchObject({
+      code: 'FILE_TOO_LARGE',
+    });
+  });
+
+  it('target pixels가 maxPixels와 정확히 같으면 FILE_TOO_LARGE를 던지지 않는다 (엄격 > 비교)', async () => {
+    // maxMemoryMB=1 → maxPixels=262144, 512*512=262144=maxPixels → 262144 > 262144 = false → 통과
+    // >=로 회귀하면 이 케이스에서 FILE_TOO_LARGE가 발생해 잡힌다
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(document.createElement('canvas'));
+    const img = createMockImage(5000, 5000);
+    await expect(SteppedProcessor.memoryEfficientResize(img, 512, 512, 1)).resolves.toBeDefined();
+  });
+
+  it('target pixels가 maxPixels를 초과하면 FILE_TOO_LARGE를 던진다 (경계 바로 위)', async () => {
+    // maxMemoryMB=1 → maxPixels=262144, 513*512=262656 > 262144 → 던짐
+    // < 또는 <= 로 회귀하면 이 케이스가 FILE_TOO_LARGE를 못 잡아 실패한다
+    const img = createMockImage(5000, 5000);
+    await expect(SteppedProcessor.memoryEfficientResize(img, 513, 512, 1)).rejects.toMatchObject({
+      code: 'FILE_TOO_LARGE',
+    });
+  });
+
+  it('source가 stepDimension 이하이면 resizeWithSteps에 quality:high만 전달한다 (maxSteps/minStepRatio 없음)', async () => {
+    // maxMemoryMB=1 → stepPixelLimit=min(10000, 209715.2)=10000, stepDimension=floor(sqrt(10000))=100
+    // max(100,100)=100 <= 100 → 직접 처리 분기: { quality: 'high' } 만 전달
+    // maxSteps:15 분기에 quality:high를 추가해도 엄격 매치에서 바로 잡힌다
+    const resizeWithStepsSpy = vi
+      .spyOn(SteppedProcessor, 'resizeWithSteps')
+      .mockResolvedValue(document.createElement('canvas'));
+
+    const img = createMockImage(100, 100);
+    await SteppedProcessor.memoryEfficientResize(img, 50, 50, 1);
+
+    expect(resizeWithStepsSpy).toHaveBeenCalledWith(img, 50, 50, { quality: 'high' });
+  });
+
+  it('source가 stepDimension보다 크면 resizeWithSteps에 maxSteps:15, minStepRatio:0.3을 전달한다', async () => {
+    // maxMemoryMB=1 → maxPixels=262144 → stepPixelLimit=min(1000000, 209715.2)=209715.2
+    // stepDimension=floor(sqrt(209715.2))=457
+    // max(1000,1000)=1000 > 457 → stepped 분기, target=100*100=10000 < 262144 → FILE_TOO_LARGE 아님
+    const resizeWithStepsSpy = vi
+      .spyOn(SteppedProcessor, 'resizeWithSteps')
+      .mockResolvedValue(document.createElement('canvas'));
+
+    const img = createMockImage(1000, 1000);
+    await SteppedProcessor.memoryEfficientResize(img, 100, 100, 1);
+
+    expect(resizeWithStepsSpy).toHaveBeenCalledWith(img, 100, 100, {
+      quality: 'high',
+      maxSteps: 15,
+      minStepRatio: 0.3,
+    });
+  });
+});

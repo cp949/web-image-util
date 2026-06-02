@@ -195,5 +195,29 @@ describe('HighResolutionManager.batchSmartResize', () => {
         expect(ctx?.debug?.index).toBe(0);
       }
     });
+
+    it('두 번째 이미지(index=1)가 실패하면 context.debug.index 가 1 이다', async () => {
+      const innerError = new Error('second boom');
+      // concurrency=1 → chunk[0]=[img0], chunk[1]=[img1]
+      // 첫 호출(img0) 성공, 두 번째 호출(img1) 실패 → globalIndex = 1*1+0 = 1
+      smartResizeSpy
+        .mockImplementationOnce(async (img: HTMLImageElement) => {
+          const canvas = document.createElement('canvas');
+          (canvas as any).__imageRef = img;
+          return makeProcessingResult({ canvas }) as any;
+        })
+        .mockRejectedValueOnce(innerError);
+
+      const images = [createMockImage(100, 100), createMockImage(200, 200)];
+
+      try {
+        await HighResolutionManager.batchSmartResize(images, 50, 50, { concurrency: 1 });
+        throw new Error('던져졌어야 한다');
+      } catch (err: unknown) {
+        const ctx = (err as { context?: { debug?: { stage?: unknown; index?: unknown } } }).context;
+        expect(ctx?.debug?.stage).toBe('Batch processing');
+        expect(ctx?.debug?.index).toBe(1);
+      }
+    });
   });
 });

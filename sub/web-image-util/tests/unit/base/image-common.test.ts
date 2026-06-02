@@ -5,15 +5,24 @@
  * 네트워크 의존 함수(urlTo*)와 실제 이미지 디코딩 경로는 본 테스트 범위 밖이다.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   base64ToBuffer,
+  blobToDataUrl,
+  blobToFile,
+  checkImageFormatFromString,
+  downloadBlob,
+  downloadLink,
   fixBlobFileExt,
   imageFormatFromDataUrl,
   isSvgDataUrl,
   sourceTypeFromString,
+  stringToBlob,
+  stringToDataUrl,
+  stringToFile,
   svgToBlob,
   svgToDataUrl,
+  urlToBuffer,
 } from '../../../src/base/image-common';
 
 // 테스트용 작은 SVG fixture
@@ -317,5 +326,355 @@ describe('base64ToBuffer', () => {
 
   it('@ 기호가 포함된 입력도 Promise를 거부한다', async () => {
     await expect(base64ToBuffer('@@@@')).rejects.toThrow();
+  });
+});
+
+// -----------------------------------------------------------------------
+// blobToFile
+// -----------------------------------------------------------------------
+
+describe('blobToFile', () => {
+  it('Blob에서 File 인스턴스를 반환한다', async () => {
+    const blob = new Blob([], { type: 'image/png' });
+    const file = await blobToFile(blob, 'photo.png');
+    expect(file).toBeInstanceOf(File);
+  });
+
+  it('PNG Blob의 타입이 보존된다', async () => {
+    const blob = new Blob([], { type: 'image/png' });
+    const file = await blobToFile(blob, 'photo.png');
+    expect(file.type).toBe('image/png');
+  });
+
+  it('MIME에 맞게 확장자가 보정된 파일명이 적용된다 (jpeg → jpg)', async () => {
+    const blob = new Blob([], { type: 'image/jpeg' });
+    const file = await blobToFile(blob, 'photo.png');
+    expect(file.name).toBe('photo.jpg');
+  });
+
+  it('SVG Blob은 type이 image/svg+xml인 File을 반환한다', async () => {
+    const blob = new Blob([SIMPLE_SVG], { type: 'image/svg+xml' });
+    const file = await blobToFile(blob, 'diagram.svg');
+    expect(file.type).toBe('image/svg+xml');
+    expect(file.name).toBe('diagram.svg');
+  });
+
+  it('WebP Blob + 잘못된 확장자는 .webp로 보정한다', async () => {
+    const blob = new Blob([], { type: 'image/webp' });
+    const file = await blobToFile(blob, 'photo.jpg');
+    expect(file.name).toBe('photo.webp');
+    expect(file.type).toBe('image/webp');
+  });
+
+  it('알 수 없는 MIME Blob은 원 파일명을 유지한다', async () => {
+    const blob = new Blob([], { type: 'application/octet-stream' });
+    const file = await blobToFile(blob, 'data.bin');
+    expect(file.name).toBe('data.bin');
+    expect(file.type).toBe('application/octet-stream');
+  });
+});
+
+// -----------------------------------------------------------------------
+// blobToDataUrl
+// -----------------------------------------------------------------------
+
+describe('blobToDataUrl', () => {
+  it('Blob을 Data URL 문자열로 변환한다', async () => {
+    const blob = new Blob(['hello'], { type: 'text/plain' });
+    const result = await blobToDataUrl(blob);
+    expect(typeof result).toBe('string');
+    expect(result.startsWith('data:')).toBe(true);
+  });
+
+  it('SVG Blob의 Data URL은 image/svg+xml MIME으로 시작한다', async () => {
+    const blob = new Blob([SIMPLE_SVG], { type: 'image/svg+xml' });
+    const result = await blobToDataUrl(blob);
+    expect(result.startsWith('data:image/svg+xml')).toBe(true);
+  });
+
+  it('Blob의 내용이 Data URL에 온전히 보존된다', async () => {
+    // 'Hello' = [72, 101, 108, 108, 111], Base64 = SGVsbG8=
+    const blob = new Blob(['Hello'], { type: 'text/plain' });
+    const dataUrl = await blobToDataUrl(blob);
+    const base64Part = dataUrl.split(',')[1];
+    const decoded = atob(base64Part);
+    const bytes = Array.from(decoded).map((c) => c.charCodeAt(0));
+    expect(bytes).toEqual([72, 101, 108, 108, 111]);
+  });
+});
+
+// -----------------------------------------------------------------------
+// urlToBuffer
+// -----------------------------------------------------------------------
+
+describe('urlToBuffer', () => {
+  it('Data URL을 Uint8Array로 변환한다', async () => {
+    // 'Hello' = [72, 101, 108, 108, 111], Base64 = SGVsbG8=
+    const dataUrl = 'data:application/octet-stream;base64,SGVsbG8=';
+    const result = await urlToBuffer(dataUrl);
+    expect(result).toBeInstanceOf(Uint8Array);
+    expect(Array.from(result)).toEqual([72, 101, 108, 108, 111]);
+  });
+
+  it('빈 Data URL은 빈 Uint8Array를 반환한다', async () => {
+    const dataUrl = 'data:application/octet-stream;base64,';
+    const result = await urlToBuffer(dataUrl);
+    expect(result).toBeInstanceOf(Uint8Array);
+    expect(result.length).toBe(0);
+  });
+});
+
+// -----------------------------------------------------------------------
+// stringToDataUrl
+// -----------------------------------------------------------------------
+
+// HTTP URL과 PATH 입력은 실제 네트워크 fetch가 필요하므로 이 테스트에서 다루지 않는다.
+describe('stringToDataUrl', () => {
+  it('미분류 문자열은 undefined를 반환한다', async () => {
+    expect(await stringToDataUrl('relative/path/image.png')).toBeUndefined();
+  });
+
+  it('빈 문자열은 undefined를 반환한다', async () => {
+    expect(await stringToDataUrl('')).toBeUndefined();
+  });
+
+  it('Data URL 입력은 동일한 URL을 그대로 반환한다', async () => {
+    const dataUrl = 'data:image/png;base64,abc123';
+    expect(await stringToDataUrl(dataUrl)).toBe(dataUrl);
+  });
+
+  it('SVG XML 입력은 data:image/svg+xml, Data URL을 반환한다', async () => {
+    const result = await stringToDataUrl(SIMPLE_SVG);
+    expect(result).toBeDefined();
+    expect(result!.startsWith('data:image/svg+xml,')).toBe(true);
+  });
+
+  it('SVG XML에서 생성된 Data URL은 isSvgDataUrl 검사를 통과한다', async () => {
+    const result = await stringToDataUrl(SIMPLE_SVG);
+    expect(isSvgDataUrl(result!)).toBe(true);
+  });
+});
+
+// -----------------------------------------------------------------------
+// stringToBlob
+// -----------------------------------------------------------------------
+
+// HTTP URL과 PATH 입력은 실제 네트워크 fetch가 필요하므로 이 테스트에서 다루지 않는다.
+describe('stringToBlob', () => {
+  it('미분류 문자열은 undefined를 반환한다', async () => {
+    expect(await stringToBlob('relative/path.png')).toBeUndefined();
+  });
+
+  it('빈 문자열은 undefined를 반환한다', async () => {
+    expect(await stringToBlob('')).toBeUndefined();
+  });
+
+  it('SVG XML 입력은 Blob 인스턴스를 반환한다', async () => {
+    const blob = await stringToBlob(SIMPLE_SVG);
+    expect(blob).toBeInstanceOf(Blob);
+  });
+
+  it('SVG XML에서 생성된 Blob의 타입은 image/svg+xml이다', async () => {
+    const blob = await stringToBlob(SIMPLE_SVG);
+    expect(blob!.type).toBe('image/svg+xml');
+  });
+
+  it('SVG XML에서 생성된 Blob의 내용에 SVG 마크업이 포함된다', async () => {
+    const blob = await stringToBlob(SIMPLE_SVG);
+    const text = await blob!.text();
+    expect(text).toContain('<svg');
+  });
+
+  it('Data URL 입력은 Blob 인스턴스를 반환한다', async () => {
+    // fetch로 Data URL을 Blob으로 변환한다
+    const dataUrl =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII=';
+    const blob = await stringToBlob(dataUrl);
+    expect(blob).toBeInstanceOf(Blob);
+  });
+});
+
+// -----------------------------------------------------------------------
+// stringToFile
+// -----------------------------------------------------------------------
+
+describe('stringToFile', () => {
+  it('미분류 문자열은 undefined를 반환한다', async () => {
+    expect(await stringToFile('relative.png', 'output.png')).toBeUndefined();
+  });
+
+  it('빈 문자열은 undefined를 반환한다', async () => {
+    expect(await stringToFile('', 'output.png')).toBeUndefined();
+  });
+
+  it('SVG XML 입력은 File 인스턴스를 반환한다', async () => {
+    const file = await stringToFile(SIMPLE_SVG, 'output.svg');
+    expect(file).toBeInstanceOf(File);
+  });
+
+  it('SVG XML에서 생성된 File의 타입은 image/svg+xml이다', async () => {
+    const file = await stringToFile(SIMPLE_SVG, 'output.svg');
+    expect(file!.type).toBe('image/svg+xml');
+  });
+
+  it('SVG XML에서 생성된 File의 파일명은 확장자가 .svg로 보정된다', async () => {
+    // SVG Blob이 되면 fixBlobFileExt가 .svg 확장자를 적용한다
+    const file = await stringToFile(SIMPLE_SVG, 'output.png');
+    expect(file!.name).toBe('output.svg');
+  });
+});
+
+// -----------------------------------------------------------------------
+// downloadBlob
+// -----------------------------------------------------------------------
+
+describe('downloadBlob', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('download 지원 환경에서 anchor 요소를 DOM에 추가하고 클릭 후 제거한다', () => {
+    const blob = new Blob(['data'], { type: 'image/png' });
+    const fakeObjectUrl = 'blob:http://localhost/test-fake-id';
+
+    const appendSpy = vi.spyOn(document.body, 'appendChild');
+    const removeSpy = vi.spyOn(document.body, 'removeChild');
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue(fakeObjectUrl);
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+
+    // createElement가 반환하는 anchor에 click spy를 심어 실제 탐색을 차단한다
+    const realCreate = document.createElement.bind(document);
+    let capturedAnchor: HTMLAnchorElement | null = null;
+    let clickSpy: ReturnType<typeof vi.spyOn<HTMLAnchorElement, 'click'>> | null = null;
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      const el = realCreate(tag);
+      if (tag === 'a') {
+        capturedAnchor = el as HTMLAnchorElement;
+        clickSpy = vi.spyOn(capturedAnchor, 'click').mockImplementation(() => {});
+      }
+      return el;
+    });
+
+    downloadBlob(blob, 'photo.png');
+
+    expect(document.createElement).toHaveBeenCalledWith('a');
+    expect(appendSpy).toHaveBeenCalled();
+    expect(URL.createObjectURL).toHaveBeenCalledWith(blob);
+    expect(capturedAnchor).not.toBeNull();
+    expect(capturedAnchor!.href).toBe(fakeObjectUrl);
+    expect(capturedAnchor!.download).toBe('photo.png');
+    expect(capturedAnchor!.type).toBe('image/png');
+    expect(clickSpy).not.toBeNull();
+    expect(clickSpy!).toHaveBeenCalledTimes(1);
+    // click 후 revoke 순서 보장 (click → revokeObjectURL)
+    expect(clickSpy!.mock.invocationCallOrder[0]).toBeLessThan(
+      revokeSpy.mock.invocationCallOrder[0],
+    );
+    expect(revokeSpy).toHaveBeenCalledWith(fakeObjectUrl);
+    expect(removeSpy).toHaveBeenCalled();
+  });
+
+  it('anchor에 crossorigin 속성이 anonymous로 설정된다', () => {
+    const blob = new Blob([], { type: 'image/png' });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:http://localhost/x');
+    vi.spyOn(URL, 'revokeObjectURL');
+
+    let capturedAnchor: HTMLAnchorElement | null = null;
+    let clickSpy: ReturnType<typeof vi.spyOn<HTMLAnchorElement, 'click'>> | null = null;
+    const realCreate = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      const el = realCreate(tag);
+      if (tag === 'a') {
+        capturedAnchor = el as HTMLAnchorElement;
+        clickSpy = vi.spyOn(capturedAnchor, 'click').mockImplementation(() => {});
+      }
+      return el;
+    });
+
+    downloadBlob(blob, 'image.png');
+
+    expect(capturedAnchor).not.toBeNull();
+    expect(capturedAnchor!.getAttribute('crossorigin')).toBe('anonymous');
+    expect(clickSpy).not.toBeNull();
+    expect(clickSpy!).toHaveBeenCalledTimes(1);
+  });
+});
+
+// -----------------------------------------------------------------------
+// downloadLink
+// -----------------------------------------------------------------------
+
+describe('downloadLink', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('download 지원 환경에서 anchor 요소를 DOM에 추가하고 클릭 후 제거한다', () => {
+    const href = 'https://example.com/file.bin';
+
+    const appendSpy = vi.spyOn(document.body, 'appendChild');
+    const removeSpy = vi.spyOn(document.body, 'removeChild');
+
+    let capturedAnchor: HTMLAnchorElement | null = null;
+    let clickSpy: ReturnType<typeof vi.spyOn<HTMLAnchorElement, 'click'>> | null = null;
+    const realCreate = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      const el = realCreate(tag);
+      if (tag === 'a') {
+        capturedAnchor = el as HTMLAnchorElement;
+        clickSpy = vi.spyOn(capturedAnchor, 'click').mockImplementation(() => {});
+      }
+      return el;
+    });
+
+    downloadLink(href);
+
+    expect(document.createElement).toHaveBeenCalledWith('a');
+    expect(appendSpy).toHaveBeenCalled();
+    expect(capturedAnchor).not.toBeNull();
+    expect(capturedAnchor!.href).toBe(href);
+    expect(capturedAnchor!.type).toBe('application/octet-stream');
+    expect(clickSpy).not.toBeNull();
+    expect(clickSpy!).toHaveBeenCalledTimes(1);
+    expect(removeSpy).toHaveBeenCalled();
+  });
+});
+
+// -----------------------------------------------------------------------
+// checkImageFormatFromString
+// -----------------------------------------------------------------------
+
+describe('checkImageFormatFromString', () => {
+  describe('Data URL 직접 판정 경로', () => {
+    it('PNG Data URL은 format: "png" 객체를 반환한다', async () => {
+      const dataUrl = 'data:image/png;base64,abc';
+      const result = await checkImageFormatFromString(dataUrl);
+      expect(result).toEqual({ format: 'png', src: dataUrl });
+    });
+
+    it('SVG Data URL은 format: "svg" 객체를 반환한다', async () => {
+      const dataUrl = 'data:image/svg+xml,<svg/>';
+      const result = await checkImageFormatFromString(dataUrl);
+      expect(result).toEqual({ format: 'svg', src: dataUrl });
+    });
+
+    it('알 수 없는 MIME의 Data URL은 undefined를 반환한다', async () => {
+      const result = await checkImageFormatFromString('data:image/avif;base64,abc');
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('Data URL 변환 후 판정 경로', () => {
+    it('SVG XML 입력은 Data URL로 변환 후 format: "svg"를 반환한다', async () => {
+      const result = await checkImageFormatFromString(SIMPLE_SVG);
+      expect(result).toBeDefined();
+      expect(result!.format).toBe('svg');
+      expect(result!.src.startsWith('data:image/svg+xml,')).toBe(true);
+    });
+
+    it('미분류 문자열은 undefined를 반환한다', async () => {
+      const result = await checkImageFormatFromString('relative/path.png');
+      expect(result).toBeUndefined();
+    });
   });
 });

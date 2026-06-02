@@ -76,4 +76,40 @@ describe('이미지 검사 유틸', () => {
 
     await expect(hasTransparency(canvas, { sampleStep: Number.NaN })).resolves.toBe(true);
   });
+
+  it('height가 0인 캔버스도 픽셀을 읽지 않고 false를 반환한다', async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 0;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context is required');
+    const getImageDataSpy = vi.spyOn(ctx, 'getImageData');
+
+    await expect(hasTransparency(canvas)).resolves.toBe(false);
+    expect(getImageDataSpy).not.toHaveBeenCalled();
+  });
+
+  it('sampleStep이 0이면 1로 보정해 투명 픽셀을 검사한다', async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context is required');
+    // x=0은 불투명, x=1은 투명 — sampleStep 1로 보정되면 x=1도 검사해 true
+    mockAlphaData(ctx, [255, 0]);
+
+    await expect(hasTransparency(canvas, { sampleStep: 0 })).resolves.toBe(true);
+  });
+
+  it('sampleStep이 음수이면 1로 보정해 투명 픽셀을 검사한다', async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context is required');
+    // sampleStep -5는 max(1, -5) = 1로 보정되어 모든 픽셀을 검사한다
+    mockAlphaData(ctx, [255, 0]);
+
+    await expect(hasTransparency(canvas, { sampleStep: -5 })).resolves.toBe(true);
+  });
 });
