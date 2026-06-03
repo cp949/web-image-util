@@ -3,6 +3,9 @@
  */
 
 import { debugLog, productionLog } from '../utils/debug';
+import { BlendMode } from './filter-blend-mode';
+import { applyBlendMode, applyOpacity } from './filter-blending';
+import { createFilterNotFoundError, createInvalidFilterParamsError } from './filter-errors';
 
 /**
  * 모든 필터 플러그인이 구현해야 하는 기본 계약이다.
@@ -80,23 +83,7 @@ export interface FilterOptions<TParams = unknown> {
   id?: string; // 체인 내부 식별자
 }
 
-/**
- * 필터 결과를 원본 이미지와 합성하는 방식이다.
- */
-export enum BlendMode {
-  NORMAL = 'normal',
-  MULTIPLY = 'multiply',
-  SCREEN = 'screen',
-  OVERLAY = 'overlay',
-  SOFT_LIGHT = 'soft-light',
-  HARD_LIGHT = 'hard-light',
-  COLOR_DODGE = 'color-dodge',
-  COLOR_BURN = 'color-burn',
-  DARKEN = 'darken',
-  LIGHTEN = 'lighten',
-  DIFFERENCE = 'difference',
-  EXCLUSION = 'exclusion',
-}
+export { BlendMode };
 
 /** 여러 필터를 순차 적용할 때 사용하는 체인 설정이다. */
 export interface FilterChain {
@@ -125,7 +112,7 @@ export function getMissingFilterNames(filters: Array<Pick<FilterOptions, 'name' 
  * 전역에서 동일한 필터 레지스트리를 공유하도록 싱글턴으로 동작한다.
  */
 export class FilterPluginManager {
-  private static instance: FilterPluginManager;
+  private static instance: FilterPluginManager | undefined;
   private plugins = new Map<string, FilterPlugin>();
   private categories = new Map<FilterCategory, Set<string>>();
 
@@ -228,7 +215,7 @@ export class FilterPluginManager {
   applyFilter(imageData: ImageData, filterOptions: FilterOptions): ImageData {
     const plugin = this.plugins.get(filterOptions.name);
     if (!plugin) {
-      throw new Error(`Filter '${filterOptions.name}' not found.`);
+      throw createFilterNotFoundError(filterOptions.name);
     }
 
     // Return original if filter is disabled
@@ -241,7 +228,7 @@ export class FilterPluginManager {
     // Parameter validation
     const validation = plugin.validate(filterOptions.params);
     if (!validation.valid) {
-      throw new Error(`Filter parameters are invalid: ${validation.errors?.join(', ')}`);
+      throw createInvalidFilterParamsError(validation.errors);
     }
 
     // Apply filter
@@ -249,11 +236,11 @@ export class FilterPluginManager {
 
     // Apply blending and opacity
     if (filterOptions.blend && filterOptions.blend !== BlendMode.NORMAL) {
-      result = this.applyBlendMode(imageData, result, filterOptions.blend);
+      result = applyBlendMode(imageData, result, filterOptions.blend);
     }
 
     if (filterOptions.opacity !== undefined && filterOptions.opacity < 1) {
-      result = this.applyOpacity(imageData, result, filterOptions.opacity);
+      result = applyOpacity(imageData, result, filterOptions.opacity);
     }
 
     return result;
@@ -330,75 +317,6 @@ export class FilterPluginManager {
   }
 
   /**
-   * Apply blend mode
-   * @param original - Original image data
-   * @param filtered - Filtered image data
-   * @param blendMode - Blend mode
-   * @returns Blended image data
-   */
-  private applyBlendMode(original: ImageData, filtered: ImageData, blendMode: BlendMode): ImageData {
-    const result = new Uint8ClampedArray(original.data.length);
-    const origData = original.data;
-    const filtData = filtered.data;
-
-    for (let i = 0; i < origData.length; i += 4) {
-      const [r1, g1, b1] = [origData[i] / 255, origData[i + 1] / 255, origData[i + 2] / 255];
-      const [r2, g2, b2] = [filtData[i] / 255, filtData[i + 1] / 255, filtData[i + 2] / 255];
-
-      let [rResult, gResult, bResult] = [r2, g2, b2];
-
-      switch (blendMode) {
-        case BlendMode.MULTIPLY:
-          rResult = r1 * r2;
-          gResult = g1 * g2;
-          bResult = b1 * b2;
-          break;
-        case BlendMode.SCREEN:
-          rResult = 1 - (1 - r1) * (1 - r2);
-          gResult = 1 - (1 - g1) * (1 - g2);
-          bResult = 1 - (1 - b1) * (1 - b2);
-          break;
-        case BlendMode.OVERLAY:
-          rResult = r1 < 0.5 ? 2 * r1 * r2 : 1 - 2 * (1 - r1) * (1 - r2);
-          gResult = g1 < 0.5 ? 2 * g1 * g2 : 1 - 2 * (1 - g1) * (1 - g2);
-          bResult = b1 < 0.5 ? 2 * b1 * b2 : 1 - 2 * (1 - b1) * (1 - b2);
-          break;
-        // Add other blend modes here
-      }
-
-      result[i] = Math.round(rResult * 255);
-      result[i + 1] = Math.round(gResult * 255);
-      result[i + 2] = Math.round(bResult * 255);
-      result[i + 3] = origData[i + 3]; // Preserve alpha
-    }
-
-    return new ImageData(result, original.width, original.height);
-  }
-
-  /**
-   * Apply opacity
-   * @param original - Original image data
-   * @param filtered - Filtered image data
-   * @param opacity - Opacity (0 ~ 1)
-   * @returns Image data with opacity applied
-   */
-  private applyOpacity(original: ImageData, filtered: ImageData, opacity: number): ImageData {
-    const result = new Uint8ClampedArray(original.data.length);
-    const origData = original.data;
-    const filtData = filtered.data;
-
-    for (let i = 0; i < origData.length; i += 4) {
-      // Linear interpolation
-      result[i] = origData[i] + opacity * (filtData[i] - origData[i]);
-      result[i + 1] = origData[i + 1] + opacity * (filtData[i + 1] - origData[i + 1]);
-      result[i + 2] = origData[i + 2] + opacity * (filtData[i + 2] - origData[i + 2]);
-      result[i + 3] = origData[i + 3]; // Preserve alpha
-    }
-
-    return new ImageData(result, original.width, original.height);
-  }
-
-  /**
    * Validate filter chain
    * @param filterChain - Filter chain to validate
    * @returns Validation result for the entire chain
@@ -459,7 +377,7 @@ export class FilterPluginManager {
       FilterPluginManager.instance.plugins.clear();
       FilterPluginManager.instance.categories.clear();
     }
-    FilterPluginManager.instance = undefined as any;
+    FilterPluginManager.instance = undefined;
   }
 }
 

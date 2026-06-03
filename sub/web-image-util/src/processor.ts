@@ -5,22 +5,18 @@
  */
 
 import { CanvasPool } from './base/canvas-pool';
-import { LazyRenderPipeline } from './core/lazy-render-pipeline';
+import type { LazyRenderPipeline } from './core/lazy-render-pipeline';
 import type { SvgPassthroughMode } from './core/source-converter';
-import { convertToImageElement } from './core/source-converter';
 import { canvasToBlobOutput } from './processor/blob-output';
 import { renderToCanvasResult } from './processor/canvas-output';
 import { blobToImageElement } from './processor/dom-output';
 import { blobResultToDataURL, blobResultToFile } from './processor/encoded-output';
 import { getBestFormat, getOptimalQuality } from './processor/format-helpers';
-import {
-  assertResizeNotCalled,
-  buildBlurOptions,
-  MULTIPLE_RESIZE_OPERATION_MESSAGE,
-  MULTIPLE_RESIZE_RESIZE_MESSAGE,
-} from './processor/operation-helpers';
+import { MULTIPLE_RESIZE_OPERATION_MESSAGE, MULTIPLE_RESIZE_RESIZE_MESSAGE } from './processor/operation-helpers';
 import { resolveFileOutput } from './processor/output-helpers';
 import { resolveOutputOptions } from './processor/output-options';
+import { setupLazyPipeline } from './processor/pipeline-setup';
+import { appendBlurState, applyResizeState, planResizeOperation } from './processor/state-helpers';
 import { ShortcutBuilder } from './shortcut/shortcut-builder';
 import type {
   BlurOptions,
@@ -38,7 +34,6 @@ import { ImageProcessError } from './types';
 import type { IImageProcessor, IShortcutBuilder } from './types/processor-interface';
 import type { AfterResizeCall, ProcessorState } from './types/processor-state';
 import type { ResizeConfig } from './types/resize-config';
-import { validateResizeConfig } from './types/resize-config';
 import { BlobResultImpl } from './types/result-implementations';
 import type { ResizeOperation } from './types/shortcut-types';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
@@ -70,7 +65,8 @@ import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './type
  */
 
 // 공개 ProcessorOptions를 확장하는 내부 전용 옵션 타입이다.
-type InternalProcessorOptions = ProcessorOptions & {
+// 내부 helper(pipeline-setup 등)에서 재사용하므로 export하되, index.ts에서 re-export하지 않는다.
+export type InternalProcessorOptions = ProcessorOptions & {
   __svgPassthroughMode?: SvgPassthroughMode;
 };
 
@@ -102,32 +98,28 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * 입력 소스를 HTMLImageElement로 정규화하고 지연 파이프라인을 준비한다.
    */
   private async ensureLazyPipeline(): Promise<void> {
+    // 이미 초기화됐으면 pending을 건드리지 않고 그대로 둔다.
     if (this.lazyPipeline) {
       return;
     }
 
-    // 입력 소스를 공통 이미지 요소로 바꾼다.
-    this.sourceImage = await convertToImageElement(this.source, this.options);
+    // source 로딩, pipeline 생성, pending 연산 반영은 helper가 담당한다.
+    const result = await setupLazyPipeline({
+      source: this.source,
+      options: this.options,
+      currentPipeline: this.lazyPipeline,
+      currentSourceImage: this.sourceImage,
+      pendingResizeConfig: this.pendingResizeConfig,
+      pendingResizeOperation: this.pendingResizeOperation,
+      pendingBlurOptions: this.pendingBlurOptions,
+    });
 
-    // 이후 연산을 쌓아 둘 지연 파이프라인을 만든다.
-    this.lazyPipeline = new LazyRenderPipeline(this.sourceImage);
+    this.lazyPipeline = result.lazyPipeline;
+    this.sourceImage = result.sourceImage;
 
-    // 초기화 전에 예약된 연산을 순서대로 반영한다.
-    if (this.pendingResizeConfig) {
-      this.lazyPipeline.addResize(this.pendingResizeConfig);
-      this.pendingResizeConfig = null;
-    }
-
-    // Shortcut API에서 예약한 리사이즈 연산도 이어서 반영한다.
-    if (this.pendingResizeOperation) {
-      this.lazyPipeline._addResizeOperation(this.pendingResizeOperation);
-      this.pendingResizeOperation = null;
-    }
-
-    // 대기 중인 블러 연산도 모두 연결한다.
-    for (const blurOption of this.pendingBlurOptions) {
-      this.lazyPipeline.addBlur(blurOption);
-    }
+    // helper가 반영을 끝냈으므로 pending 필드를 비운다.
+    this.pendingResizeConfig = null;
+    this.pendingResizeOperation = null;
     this.pendingBlurOptions = [];
   }
 
@@ -165,19 +157,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   resize(config: ResizeConfig): ImageProcessor<AfterResizeCall<TState>> {
-    // 1. Prevent multiple resize calls (prevent quality degradation)
-    assertResizeNotCalled(this.hasResized, MULTIPLE_RESIZE_RESIZE_MESSAGE);
-
-    // 2. Runtime validation
-    validateResizeConfig(config);
-
-    // 3. Record resize call
-    this.hasResized = true;
-
-    // 4. Add to LazyRenderPipeline
-    // LazyRenderPipeline will be initialized later in ensureLazyPipeline()
-    // Only store config here
-    this.pendingResizeConfig = config;
+    // 검증과 상태 전이는 helper에 위임하고, 결과만 필드에 반영한다.
+    const update = applyResizeState(this.hasResized, config, MULTIPLE_RESIZE_RESIZE_MESSAGE);
+    this.hasResized = update.hasResized;
+    this.pendingResizeConfig = update.pendingResizeConfig;
 
     return this as unknown as ImageProcessor<AfterResizeCall<TState>>;
   }
@@ -226,12 +209,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   blur(radius: number = 2, options: Partial<BlurOptions> = {}): ImageProcessor<TState> {
-    const blurOptions = buildBlurOptions(radius, options);
-
-    // Add to LazyRenderPipeline
-    // blur can be called multiple times, so manage with pending array
-    this.pendingBlurOptions = this.pendingBlurOptions || [];
-    this.pendingBlurOptions.push(blurOptions);
+    // blur 옵션 누적은 helper에 위임한다(호출 순서 보존).
+    this.pendingBlurOptions = appendBlurState(this.pendingBlurOptions, radius, options);
 
     return this as ImageProcessor<TState>;
   }
@@ -247,18 +226,16 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * @internal
    */
   _addResizeOperation(operation: ResizeOperation): void {
-    assertResizeNotCalled(this.hasResized, MULTIPLE_RESIZE_OPERATION_MESSAGE);
+    // resize 1회 제약 검사와 pending/즉시 적용 분기 결정은 helper에 위임한다.
+    const plan = planResizeOperation(this.hasResized, this.lazyPipeline !== null, MULTIPLE_RESIZE_OPERATION_MESSAGE);
 
     this.hasResized = true;
 
-    // Before LazyRenderPipeline initialization: store in pending state
-    // After LazyRenderPipeline initialization: pass directly
-    if (this.lazyPipeline) {
-      // If already initialized, pass directly
-      this.lazyPipeline._addResizeOperation(operation);
+    if (plan.mode === 'apply') {
+      // 이미 초기화된 경우 즉시 전달
+      this.lazyPipeline?._addResizeOperation(operation);
     } else {
-      // If not yet initialized, store in pending state
-      // Automatically applied during initialization in ensureLazyPipeline()
+      // 아직 초기화되지 않은 경우 pending 저장 (ensureLazyPipeline()에서 자동 반영)
       this.pendingResizeOperation = operation;
     }
   }

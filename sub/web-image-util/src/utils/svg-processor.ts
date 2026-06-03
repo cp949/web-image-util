@@ -6,6 +6,15 @@
 
 import { ImageProcessError } from '../types';
 import { enhanceSvgForBrowser } from './svg-compatibility';
+import {
+  applyMissingDimensions,
+  getSvgRoot,
+  hasParserError,
+  parseSvgDocument,
+  readSvgDimensions,
+  serializeSvgDocument,
+  wrapSvgContent,
+} from './svg-processor-dom';
 
 /** SVG 크기 정보다. */
 export interface SVGDimensions {
@@ -99,155 +108,63 @@ export class SVGProcessor {
    * @returns 추출한 크기 정보 또는 null
    */
   static extractSVGDimensions(svgString: string): SVGDimensions | null {
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(svgString, 'image/svg+xml');
-      const svgElement = doc.querySelector('svg');
-
-      if (!svgElement) {
-        return null;
-      }
-
-      // 1. width/height 속성에서 직접 추출한다.
-      const widthAttr = svgElement.getAttribute('width');
-      const heightAttr = svgElement.getAttribute('height');
-
-      if (widthAttr && heightAttr) {
-        const width = SVGProcessor.parseNumericValue(widthAttr);
-        const height = SVGProcessor.parseNumericValue(heightAttr);
-
-        if (width > 0 && height > 0) {
-          return { width, height };
-        }
-      }
-
-      // 2. viewBox가 있으면 그 값을 사용한다.
-      const viewBox = svgElement.getAttribute('viewBox');
-      if (viewBox) {
-        const values = viewBox.trim().split(/\s+/).map(Number);
-        if (values.length === 4 && values[2] > 0 && values[3] > 0) {
-          return {
-            width: values[2], // viewBox 너비
-            height: values[3], // viewBox 높이
-          };
-        }
-      }
-
-      // 3. style 속성도 보조적으로 확인한다.
-      const style = svgElement.getAttribute('style');
-      if (style) {
-        const widthMatch = style.match(/width\s*:\s*([^;]+)/);
-        const heightMatch = style.match(/height\s*:\s*([^;]+)/);
-
-        if (widthMatch && heightMatch) {
-          const width = SVGProcessor.parseNumericValue(widthMatch[1].trim());
-          const height = SVGProcessor.parseNumericValue(heightMatch[1].trim());
-
-          if (width > 0 && height > 0) {
-            return { width, height };
-          }
-        }
-      }
-
-      return null;
-    } catch (error) {
-      // Return null on parsing error
+    const doc = parseSvgDocument(svgString);
+    if (!doc) {
       return null;
     }
+
+    const svgElement = getSvgRoot(doc);
+    if (!svgElement) {
+      return null;
+    }
+
+    return readSvgDimensions(svgElement);
   }
 
   /**
-   * Add dimension information to SVG
+   * SVG 문자열에 크기 정보를 추가한다.
    *
-   * @param svgString Original SVG string
-   * @param width Width
-   * @param height Height
-   * @returns SVG string with dimension information added
+   * @description 기존 width/height/viewBox는 덮어쓰지 않고 누락된 속성만 채운다.
+   * @param svgString 원본 SVG 문자열
+   * @param width 너비
+   * @param height 높이
+   * @returns 크기 정보가 보강된 SVG 문자열
    */
   static addDimensionsToSVG(svgString: string, width: number, height: number): string {
+    const doc = parseSvgDocument(svgString);
+    if (!doc) {
+      return wrapSvgContent(svgString, width, height);
+    }
+
+    const svgElement = getSvgRoot(doc);
+    if (!svgElement) {
+      return wrapSvgContent(svgString, width, height);
+    }
+
+    applyMissingDimensions(svgElement, width, height);
+
     try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(svgString, 'image/svg+xml');
-      const svgElement = doc.querySelector('svg');
-
-      if (!svgElement) {
-        // Add wrapper when SVG element is not found
-        return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${svgString}</svg>`;
-      }
-
-      // Only add if existing size information is not present
-      if (!svgElement.getAttribute('width')) {
-        svgElement.setAttribute('width', String(width));
-      }
-      if (!svgElement.getAttribute('height')) {
-        svgElement.setAttribute('height', String(height));
-      }
-      if (!svgElement.getAttribute('viewBox')) {
-        svgElement.setAttribute('viewBox', `0 0 ${width} ${height}`);
-      }
-
-      return new XMLSerializer().serializeToString(doc);
-    } catch (error) {
-      // Add simple wrapper on parsing failure
-      return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${svgString}</svg>`;
+      return serializeSvgDocument(doc);
+    } catch {
+      // 직렬화 실패 시 원본 동작대로 단순 래퍼로 폴백한다.
+      return wrapSvgContent(svgString, width, height);
     }
   }
 
   /**
-   * Convert CSS size value to pixel unit number
+   * SVG 문자열의 유효성을 검사한다.
    *
-   * @param value CSS size value (e.g., "100px", "50%", "2em")
-   * @returns Pixel unit number or 0
-   */
-  private static parseNumericValue(value: string): number {
-    if (!value) return 0;
-
-    // When only numbers are present
-    const numOnly = parseFloat(value);
-    if (!Number.isNaN(numOnly) && Number.isFinite(numOnly)) {
-      return numOnly;
-    }
-
-    // Remove px unit
-    const pxMatch = value.match(/^([0-9.]+)px$/i);
-    if (pxMatch) {
-      const num = parseFloat(pxMatch[1]);
-      return !Number.isNaN(num) && Number.isFinite(num) ? num : 0;
-    }
-
-    // Handle % unit as default (accurate calculation not possible)
-    const percentMatch = value.match(/^([0-9.]+)%$/i);
-    if (percentMatch) {
-      return 0; // Do not process relative sizes
-    }
-
-    // Handle other units like em, rem, pt as default
-    return 0;
-  }
-
-  /**
-   * Validate SVG string
-   *
-   * @param svgString SVG string to validate
-   * @returns Whether it is a valid SVG
+   * @description parsererror가 있거나 svg 루트가 없으면 false를 반환한다.
+   * @param svgString 검사할 SVG 문자열
+   * @returns 유효한 SVG 여부
    */
   static isValidSVG(svgString: string): boolean {
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(svgString, 'image/svg+xml');
-
-      // Check for parsing errors
-      const parserError = doc.querySelector('parsererror');
-      if (parserError) {
-        return false;
-      }
-
-      // Check for SVG element existence
-      const svgElement = doc.querySelector('svg');
-      return svgElement !== null;
-    } catch (error) {
+    const doc = parseSvgDocument(svgString);
+    if (!doc || hasParserError(doc)) {
       return false;
     }
+
+    return getSvgRoot(doc) !== null;
   }
 
   /**
