@@ -3,7 +3,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { CanvasPool } from '../../../src/base/canvas-pool';
+import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { processImage } from '../../../src/processor';
 
 function createProcessingOutput(canvas: HTMLCanvasElement) {

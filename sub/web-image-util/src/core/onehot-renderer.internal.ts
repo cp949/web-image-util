@@ -13,7 +13,7 @@
  * - Considers Canvas 2D API compatibility
  */
 
-import { CanvasPool } from '../base/canvas-pool';
+import { CanvasPool } from '../base/canvas-pool.internal';
 import { ImageProcessError } from '../errors';
 import type { ResizeConfig } from '../types/resize-config';
 import { productionLog } from '../utils/debug.internal';

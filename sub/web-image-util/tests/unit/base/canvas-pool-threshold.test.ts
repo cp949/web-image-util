@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CanvasPool } from '../../../src/base/canvas-pool';
+import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { ImageProcessError } from '../../../src/types';
 
 describe('캔버스 풀 메모리 임계값', () => {

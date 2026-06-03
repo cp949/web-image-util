@@ -5,7 +5,7 @@
  * so users don't need to worry about memory management.
  */
 
-import { CanvasPool } from '../base/canvas-pool';
+import { CanvasPool } from '../base/canvas-pool.internal';
 import { debugLog, productionLog } from '../utils/debug.internal';
 
 /**

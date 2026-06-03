@@ -9,7 +9,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CanvasPool } from '../../../src/base/canvas-pool';
+import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { OnehotRenderer } from '../../../src/core/onehot-renderer.internal';
 import { ResizeCalculator } from '../../../src/core/resize-calculator.internal';
 import type { ResizeConfig } from '../../../src/types/resize-config';

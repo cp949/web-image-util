@@ -2,7 +2,7 @@
  * AutoMemoryManager 단위 테스트
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CanvasPool } from '../../../src/base/canvas-pool';
+import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { AutoMemoryManager } from '../../../src/core/auto-memory-manager.internal';
 
 describe('AutoMemoryManager', () => {

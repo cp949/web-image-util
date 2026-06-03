@@ -124,7 +124,7 @@ export class ImageErrorHandler {
 
     // Clean up Canvas Pool (if available)
     try {
-      const { CanvasPool } = await import('../base/canvas-pool');
+      const { CanvasPool } = await import('../base/canvas-pool.internal');
       CanvasPool.getInstance().clear();
       console.info('Canvas pool cleared due to critical error');
     } catch {

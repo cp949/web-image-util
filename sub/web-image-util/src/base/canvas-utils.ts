@@ -1,4 +1,4 @@
-import { CanvasPool } from './canvas-pool';
+import { CanvasPool } from './canvas-pool.internal';
 import { createImageError } from './error-helpers';
 
 /**

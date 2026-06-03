@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { canvasToBlob, canvasToDataUrl } from '../../../src/base/image-resizes';
+import { canvasToBlob, canvasToDataUrl } from '../../../src/base/image-resizes.internal';
 
 // ============================================================================
 // canvasToBlob

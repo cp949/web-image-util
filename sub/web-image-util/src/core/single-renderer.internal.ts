@@ -7,7 +7,7 @@
  * - Generates only final result without creating intermediate Canvas objects
  */
 
-import { CanvasPool } from '../base/canvas-pool';
+import { CanvasPool } from '../base/canvas-pool.internal';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import { debugLog } from '../utils/debug.internal';

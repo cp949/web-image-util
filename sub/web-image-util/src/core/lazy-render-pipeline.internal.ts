@@ -7,7 +7,7 @@
  * - Generate final result only without creating intermediate Canvas
  */
 
-import { CanvasPool } from '../base/canvas-pool';
+import { CanvasPool } from '../base/canvas-pool.internal';
 import type { BlurOptions, ResultMetadata } from '../types';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';

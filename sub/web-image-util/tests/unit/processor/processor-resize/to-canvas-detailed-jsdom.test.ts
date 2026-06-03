@@ -7,7 +7,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CanvasPool } from '../../../../src/base/canvas-pool';
+import { CanvasPool } from '../../../../src/base/canvas-pool.internal';
 import { ImageProcessor, processImage } from '../../../../src/processor';
 import { createTestCanvas } from '../../../utils/canvas-helper';
 

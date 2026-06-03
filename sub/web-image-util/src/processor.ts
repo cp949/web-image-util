@@ -4,7 +4,7 @@
  * @description Canvas 2D API를 바탕으로 브라우저 전용 이미지 처리 흐름을 구성한다.
  */
 
-import { CanvasPool } from './base/canvas-pool';
+import { CanvasPool } from './base/canvas-pool.internal';
 import type { LazyRenderPipeline } from './core/lazy-render-pipeline.internal';
 import type { SvgPassthroughMode } from './core/source-converter';
 import { canvasToBlobOutput } from './processor/blob-output.internal';

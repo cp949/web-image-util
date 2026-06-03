@@ -7,7 +7,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CanvasPool } from '../../../src/base/canvas-pool';
+import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import type { LazyOperation } from '../../../src/core/lazy-render-pipeline.internal';
 import {
   analyzeAllOperations,
