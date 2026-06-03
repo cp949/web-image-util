@@ -3,7 +3,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ElementResultImpl } from '../../../src/types/result-implementations';
+import { ElementResultImpl } from '../../../src/types/result-implementations.internal';
 
 describe('ElementResultImpl 속성 노출', () => {
   it('생성자 인자가 공개 속성으로 올바르게 노출된다', () => {

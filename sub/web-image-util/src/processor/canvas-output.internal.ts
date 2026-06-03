@@ -7,7 +7,7 @@
 
 import type { ResultCanvas } from '../types';
 import { ImageProcessError } from '../types';
-import { CanvasResultImpl } from '../types/result-implementations';
+import { CanvasResultImpl } from '../types/result-implementations.internal';
 
 /** executeProcessing()이 돌려주는 처리 결과 형태다. */
 export interface ProcessingOutcome {

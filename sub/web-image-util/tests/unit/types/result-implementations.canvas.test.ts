@@ -3,7 +3,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CanvasResultImpl } from '../../../src/types/result-implementations';
+import { CanvasResultImpl } from '../../../src/types/result-implementations.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 describe('CanvasResultImpl 속성 노출', () => {

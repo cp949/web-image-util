@@ -3,7 +3,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FileResultImpl } from '../../../src/types/result-implementations';
+import { FileResultImpl } from '../../../src/types/result-implementations.internal';
 import { createControlledImg } from './result-implementations.helpers';
 
 describe('FileResultImpl 속성 노출', () => {

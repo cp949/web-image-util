@@ -37,7 +37,7 @@ import { ImageProcessError } from './types';
 import type { IImageProcessor, IShortcutBuilder } from './types/processor-interface';
 import type { AfterResizeCall, ProcessorState } from './types/processor-state';
 import type { ResizeConfig } from './types/resize-config';
-import { BlobResultImpl } from './types/result-implementations';
+import { BlobResultImpl } from './types/result-implementations.internal';
 import type { ResizeOperation } from './types/shortcut-types';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
 

@@ -8,7 +8,7 @@
 
 import type { ResultBlob, ResultDataURL, ResultFile } from '../types';
 import { ImageProcessError } from '../types';
-import { DataURLResultImpl, FileResultImpl } from '../types/result-implementations';
+import { DataURLResultImpl, FileResultImpl } from '../types/result-implementations.internal';
 import { blobToDataURL } from './output-helpers.internal';
 
 /**

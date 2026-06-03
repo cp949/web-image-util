@@ -4,7 +4,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ImageProcessError } from '../../../src/types';
-import { BlobResultImpl } from '../../../src/types/result-implementations';
+import { BlobResultImpl } from '../../../src/types/result-implementations.internal';
 import { createControlledImg } from './result-implementations.helpers';
 
 describe('BlobResultImpl 속성 노출', () => {

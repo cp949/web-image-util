@@ -7,7 +7,7 @@
 import { convertToImageElement } from '../../core/source-converter';
 import type { ImageSource, ResultElement } from '../../types';
 import { ImageProcessError } from '../../types';
-import { ElementResultImpl } from '../../types/result-implementations';
+import { ElementResultImpl } from '../../types/result-implementations.internal';
 
 /**
  * 입력을 HTMLImageElement로 보장한다.

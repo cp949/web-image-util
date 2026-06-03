@@ -8,7 +8,7 @@
 import { convertToImageElement } from '../../core/source-converter';
 import type { ImageSource, ResultBlob, ResultDataURL, ResultFile } from '../../types';
 import { ImageProcessError } from '../../types';
-import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from '../../types/result-implementations';
+import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from '../../types/result-implementations.internal';
 import { isDataURLString } from '../data-url';
 import { canvasToBlob, canvasToDataURL, getBlobDimensions, imageElementToCanvas } from './canvas-bridge.internal';
 import {
