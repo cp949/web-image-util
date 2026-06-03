@@ -17,6 +17,7 @@ import type {
   ResultFile,
 } from './index';
 import { ImageProcessError } from './index';
+import { canvasToBlob, canvasToDataURL, createFileFromBlob } from './result-conversion-helpers.internal';
 
 /**
  * Data URL 결과 객체 구현이다.
@@ -52,29 +53,13 @@ export class DataURLResultImpl implements ResultDataURL {
   /** Blob으로 변환한다. */
   async toBlob(options?: OutputOptions): Promise<globalThis.Blob> {
     const canvas = await this.toCanvas();
-    return new Promise((resolve, reject) => {
-      const mimeType = options?.format ? `image/${options.format}` : 'image/png';
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new ImageProcessError('Blob conversion failed', 'CANVAS_TO_BLOB_FAILED'));
-          }
-        },
-        mimeType,
-        options?.quality
-      );
-    });
+    return canvasToBlob(canvas, options);
   }
 
   /** File 객체로 변환한다. */
   async toFile(filename: string, options?: OutputOptions): Promise<globalThis.File> {
     const blob = await this.toBlob(options);
-    return new File([blob], filename, {
-      type: blob.type,
-      lastModified: Date.now(),
-    });
+    return createFileFromBlob(blob, filename);
   }
 
   /** HTMLImageElement로 변환한다. */
@@ -137,8 +122,7 @@ export class BlobResultImpl implements ResultBlob {
    */
   async toDataURL(options?: OutputOptions): Promise<string> {
     const canvas = await this.toCanvas();
-    const mimeType = options?.format ? `image/${options.format}` : 'image/png';
-    return canvas.toDataURL(mimeType, options?.quality);
+    return canvasToDataURL(canvas, options);
   }
 
   /**
@@ -155,10 +139,7 @@ export class BlobResultImpl implements ResultBlob {
 
     // Re-convert if options are provided
     const newBlob = await this.toBlob(options);
-    return new File([newBlob], filename, {
-      type: newBlob.type,
-      lastModified: Date.now(),
-    });
+    return createFileFromBlob(newBlob, filename);
   }
 
   /**
@@ -170,20 +151,7 @@ export class BlobResultImpl implements ResultBlob {
     }
 
     const canvas = await this.toCanvas();
-    return new Promise((resolve, reject) => {
-      const mimeType = options.format ? `image/${options.format}` : this.blob.type;
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new ImageProcessError('Blob conversion failed', 'CANVAS_TO_BLOB_FAILED'));
-          }
-        },
-        mimeType,
-        options.quality
-      );
-    });
+    return canvasToBlob(canvas, options, this.blob.type);
   }
 
   /**
@@ -259,8 +227,7 @@ export class FileResultImpl implements ResultFile {
    */
   async toDataURL(options?: OutputOptions): Promise<string> {
     const canvas = await this.toCanvas();
-    const mimeType = options?.format ? `image/${options.format}` : 'image/png';
-    return canvas.toDataURL(mimeType, options?.quality);
+    return canvasToDataURL(canvas, options);
   }
 
   /**
@@ -272,20 +239,7 @@ export class FileResultImpl implements ResultFile {
     }
 
     const canvas = await this.toCanvas();
-    return new Promise((resolve, reject) => {
-      const mimeType = options.format ? `image/${options.format}` : this.file.type;
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new ImageProcessError('Blob conversion failed', 'CANVAS_TO_BLOB_FAILED'));
-          }
-        },
-        mimeType,
-        options.quality
-      );
-    });
+    return canvasToBlob(canvas, options, this.file.type);
   }
 
   /**
@@ -336,28 +290,14 @@ export class CanvasResultImpl implements ResultCanvas {
    * Convert to DataURL
    */
   async toDataURL(options?: OutputOptions): Promise<string> {
-    const mimeType = options?.format ? `image/${options.format}` : 'image/png';
-    return this.canvas.toDataURL(mimeType, options?.quality);
+    return canvasToDataURL(this.canvas, options);
   }
 
   /**
    * Convert to Blob
    */
   async toBlob(options?: OutputOptions): Promise<globalThis.Blob> {
-    return new Promise((resolve, reject) => {
-      const mimeType = options?.format ? `image/${options.format}` : 'image/png';
-      this.canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new ImageProcessError('Blob conversion failed', 'CANVAS_TO_BLOB_FAILED'));
-          }
-        },
-        mimeType,
-        options?.quality
-      );
-    });
+    return canvasToBlob(this.canvas, options);
   }
 
   /**
@@ -365,10 +305,7 @@ export class CanvasResultImpl implements ResultCanvas {
    */
   async toFile(filename: string, options?: OutputOptions): Promise<globalThis.File> {
     const blob = await this.toBlob(options);
-    return new File([blob], filename, {
-      type: blob.type,
-      lastModified: Date.now(),
-    });
+    return createFileFromBlob(blob, filename);
   }
 
   /**
@@ -430,36 +367,19 @@ export class ElementResultImpl implements ResultElement {
   /** Blob으로 변환한다. */
   async toBlob(options?: OutputOptions): Promise<globalThis.Blob> {
     const canvas = await this.toCanvas();
-    return new Promise((resolve, reject) => {
-      const mimeType = options?.format ? `image/${options.format}` : 'image/png';
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new ImageProcessError('Blob conversion failed', 'CANVAS_TO_BLOB_FAILED'));
-          }
-        },
-        mimeType,
-        options?.quality
-      );
-    });
+    return canvasToBlob(canvas, options);
   }
 
   /** Data URL로 변환한다. */
   async toDataURL(options?: OutputOptions): Promise<string> {
     const canvas = await this.toCanvas();
-    const mimeType = options?.format ? `image/${options.format}` : 'image/png';
-    return canvas.toDataURL(mimeType, options?.quality);
+    return canvasToDataURL(canvas, options);
   }
 
   /** File 객체로 변환한다. */
   async toFile(filename: string, options?: OutputOptions): Promise<globalThis.File> {
     const blob = await this.toBlob(options);
-    return new File([blob], filename, {
-      type: blob.type,
-      lastModified: Date.now(),
-    });
+    return createFileFromBlob(blob, filename);
   }
 
   /** ArrayBuffer로 변환한다. */
