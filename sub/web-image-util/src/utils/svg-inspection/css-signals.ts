@@ -3,7 +3,7 @@ import {
   getCssPolicyValueVariants,
   normalizePolicyValue,
   visitCssUrlValues,
-} from '../svg-policy-utils';
+} from '../svg-policy-utils.internal';
 import type { SvgInspectionPolicy } from './policy';
 import { pushCappedSample } from './sample-utils';
 

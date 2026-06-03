@@ -1,5 +1,5 @@
 import { isBlockedSvgPolicyRef } from '../../core/source-converter/url/policy.internal';
-import { getCssPolicyValueVariants, normalizePolicyValue } from '../svg-policy-utils';
+import { getCssPolicyValueVariants, normalizePolicyValue } from '../svg-policy-utils.internal';
 import type { SvgInspectionPolicy } from './policy';
 import { isReferenceAttribute, readReferenceAttribute } from './reference-attribute';
 import { pushCappedSample } from './sample-utils';

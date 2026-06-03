@@ -10,7 +10,7 @@ import {
   MAX_EMBEDDED_DATA_IMAGE_BYTES,
   MAX_NESTED_SVG_DEPTH,
   parseSvgDataUrlRef,
-} from '../../../src/utils/svg-data-url-policy';
+} from '../../../src/utils/svg-data-url-policy.internal';
 
 const ONE_PIXEL_PNG_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';

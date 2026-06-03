@@ -3,7 +3,7 @@ import {
   isRecognizedDataUrlMimeType,
   isSafeRasterDataImageRef,
   parseSvgDataUrlRef,
-} from '../../utils/svg-data-url-policy';
+} from '../../utils/svg-data-url-policy.internal';
 import {
   collectSvgCssReferenceSignals,
   collectSvgDomSecuritySignals,

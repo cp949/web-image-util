@@ -7,7 +7,7 @@
  * 신호를 알려줄 수 있게 하는 진단용 로직이다.
  */
 
-import { isSafeRasterDataImageRef, isSvgDataImageRef } from '../utils/svg-data-url-policy';
+import { isSafeRasterDataImageRef, isSvgDataImageRef } from '../utils/svg-data-url-policy.internal';
 import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
 import { isSafeInternalReference } from './reference-policy.internal';
 

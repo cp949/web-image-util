@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_EMBEDDED_DATA_IMAGE_BYTES, MAX_NESTED_SVG_DEPTH } from '../../src/utils/svg-data-url-policy';
+import { MAX_EMBEDDED_DATA_IMAGE_BYTES, MAX_NESTED_SVG_DEPTH } from '../../src/utils/svg-data-url-policy.internal';
 import { sanitizeSvg } from '../../src/utils/svg-sanitizer';
 import { extractDecodedNestedSvg } from './helpers/svg-test-helpers';
 

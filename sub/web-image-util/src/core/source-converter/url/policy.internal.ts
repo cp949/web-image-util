@@ -5,8 +5,8 @@
  */
 
 import { ImageProcessError } from '../../../types';
-import { isSafeRasterDataImageRef, isSanitizedSvgDataImageRef } from '../../../utils/svg-data-url-policy';
-import { normalizePolicyValue } from '../../../utils/svg-policy-utils';
+import { isSafeRasterDataImageRef, isSanitizedSvgDataImageRef } from '../../../utils/svg-data-url-policy.internal';
+import { normalizePolicyValue } from '../../../utils/svg-policy-utils.internal';
 
 /**
  * 입력 문자열이 명시적 스킴을 가진 절대 URL인지 판정한다.

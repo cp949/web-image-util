@@ -16,7 +16,7 @@ import {
   isSafeRasterDataImageRef,
   isSvgDataImageRef,
   MAX_NESTED_SVG_DEPTH,
-} from '../utils/svg-data-url-policy';
+} from '../utils/svg-data-url-policy.internal';
 import type { NestedSanitize, StrictSvgSanitizerOptions } from './types';
 
 /**

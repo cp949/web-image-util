@@ -17,7 +17,7 @@ import {
   pushCappedSample,
   readReferenceAttribute,
 } from '../svg-inspection';
-import { getCssPolicyValueVariants, visitCssUrlValues } from '../svg-policy-utils';
+import { getCssPolicyValueVariants, visitCssUrlValues } from '../svg-policy-utils.internal';
 
 const DIM_ATTR_REGEX = /^(\d+(?:\.\d+)?)\s*([a-z%]*)$/;
 const COMPLEXITY_FALLBACK_SENTINEL = 'Using default values due to analysis failure';

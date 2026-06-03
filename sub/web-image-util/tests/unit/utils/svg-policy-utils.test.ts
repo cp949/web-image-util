@@ -7,7 +7,7 @@ import {
   normalizePolicyValue,
   replaceCssUrlValues,
   visitCssUrlValues,
-} from '../../../src/utils/svg-policy-utils';
+} from '../../../src/utils/svg-policy-utils.internal';
 
 describe('decodeHtmlEntities()', () => {
   it('hex 문자 참조를 복원한다', () => {

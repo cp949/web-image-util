@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { sanitizeSvgStrict, sanitizeSvgStrictDetailed } from '../../src/svg-sanitizer';
-import { MAX_EMBEDDED_DATA_IMAGE_BYTES, MAX_NESTED_SVG_DEPTH } from '../../src/utils/svg-data-url-policy';
+import { MAX_EMBEDDED_DATA_IMAGE_BYTES, MAX_NESTED_SVG_DEPTH } from '../../src/utils/svg-data-url-policy.internal';
 
 describe('strict SVG sanitizer', () => {
   it('입력 바이트 크기가 maxBytes를 초과하면 정제 전에 차단한다', () => {

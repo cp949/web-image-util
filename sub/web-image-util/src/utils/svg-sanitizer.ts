@@ -25,8 +25,8 @@ import {
   isSafeRasterDataImageRef,
   isSvgDataImageRef,
   MAX_NESTED_SVG_DEPTH,
-} from './svg-data-url-policy';
-import { getCssPolicyValueVariants, normalizePolicyValue, replaceCssUrlValues } from './svg-policy-utils';
+} from './svg-data-url-policy.internal';
+import { getCssPolicyValueVariants, normalizePolicyValue, replaceCssUrlValues } from './svg-policy-utils.internal';
 
 /**
  * `href` 또는 `xlink:href` 속성값이 외부 URL인지 판정한다.
