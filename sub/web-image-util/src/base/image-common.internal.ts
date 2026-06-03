@@ -190,7 +190,9 @@ export function urlToBuffer(dataUrl: string): Promise<Uint8Array> {
 }
 
 export function urlToBlob(url: string): Promise<Blob> {
-  return fetch(url).then((res) => res.blob());
+  return fetch(url)
+    .then((res) => res.blob())
+    .then(async (blob) => new Blob([await blob.arrayBuffer()], { type: blob.type }));
 }
 
 export function urlToFile(url: string, fileName: string): Promise<File> {

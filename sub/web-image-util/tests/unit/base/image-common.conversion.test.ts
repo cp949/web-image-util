@@ -2,7 +2,8 @@
  * image-common.ts Blob/File/Data URL 변환과 파일명 보정 함수 단위 테스트.
  */
 
-import { describe, expect, it } from 'vitest';
+import { Blob as NodeBlob } from 'node:buffer';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   base64ToBuffer,
   blobToDataUrl,
@@ -17,6 +18,10 @@ import {
   urlToBuffer,
 } from '../../../src/base/image-common.internal';
 import { createImageBlob, SIMPLE_SVG } from './image-common.helpers';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('svgToDataUrl', () => {
   it('data:image/svg+xml, 접두사로 시작하는 문자열을 반환한다', () => {
@@ -285,6 +290,20 @@ describe('stringToBlob', () => {
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII=';
     const blob = await stringToBlob(dataUrl);
     expect(blob).toBeInstanceOf(Blob);
+  });
+
+  it('fetch가 다른 realm의 Blob을 반환해도 현재 realm Blob으로 정규화한다', async () => {
+    const foreignBlob = new NodeBlob([new Uint8Array([1, 2, 3])], { type: 'image/png' });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      blob: async () => foreignBlob,
+    } as Response);
+
+    const blob = await stringToBlob('data:image/png;base64,AQID');
+
+    expect(blob).toBeInstanceOf(Blob);
+    expect(blob).not.toBe(foreignBlob);
+    expect(blob!.type).toBe('image/png');
+    expect(new Uint8Array(await blob!.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
   });
 });
 
