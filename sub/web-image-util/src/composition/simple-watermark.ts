@@ -5,7 +5,12 @@
 
 import type { ImageWatermarkOptions } from './image-watermark';
 import { ImageWatermark } from './image-watermark';
-import { Position } from './position-types';
+import {
+  convertSimplePosition,
+  mapSimpleBlendMode,
+  resolveSimpleImageScale,
+  resolveSimpleTextStyle,
+} from './simple-watermark-helpers.internal';
 import type { TextStyle, TextWatermarkOptions } from './text-watermark';
 import { TextWatermark } from './text-watermark';
 
@@ -82,10 +87,10 @@ export class SimpleWatermark {
     } = options;
 
     // Convert simple position to internal Position
-    const internalPosition = SimpleWatermark.convertSimplePosition(position);
+    const internalPosition = convertSimplePosition(position);
 
     // Resolve style
-    const textStyle = SimpleWatermark.resolveTextStyle(style, size);
+    const textStyle = resolveSimpleTextStyle(style, size);
     if (opacity !== undefined) {
       textStyle.opacity = opacity;
     }
@@ -119,13 +124,13 @@ export class SimpleWatermark {
     } = options;
 
     // Convert simple position to internal Position
-    const internalPosition = SimpleWatermark.convertSimplePosition(position);
+    const internalPosition = convertSimplePosition(position);
 
     // Resolve size
-    const scale = SimpleWatermark.resolveImageSize(size, canvas, image);
+    const scale = resolveSimpleImageScale(size, canvas, image);
 
     // Map blend mode
-    const globalCompositeOperation = SimpleWatermark.mapBlendMode(blendMode);
+    const globalCompositeOperation = mapSimpleBlendMode(blendMode);
 
     // ImageWatermark configuration
     const watermarkOptions: ImageWatermarkOptions = {
@@ -165,7 +170,7 @@ export class SimpleWatermark {
     // Adaptive size adjustment
     return ImageWatermark.addWithAdaptiveSize(canvas, {
       watermarkImage: image,
-      position: SimpleWatermark.convertSimplePosition(position),
+      position: convertSimplePosition(position),
       maxWidthPercent: maxSize,
       maxHeightPercent: maxSize,
       opacity,
@@ -222,167 +227,17 @@ export class SimpleWatermark {
   ): HTMLCanvasElement {
     const { spacing = 200, opacity = 0.1, rotation = -45, stagger = true } = options;
 
-    const textStyle = SimpleWatermark.resolveTextStyle('subtle', 'medium');
+    const textStyle = resolveSimpleTextStyle('subtle', 'medium');
     textStyle.opacity = opacity;
 
     return TextWatermark.addRepeatingPattern(canvas, {
       text,
-      position: SimpleWatermark.convertSimplePosition('center'), // position ignored in pattern
+      position: convertSimplePosition('center'), // position ignored in pattern
       style: textStyle,
       rotation,
       spacing: { x: spacing, y: spacing },
       stagger,
     });
-  }
-
-  /**
-   * Convert simple position to internal Position enum
-   */
-  private static convertSimplePosition(position: SimplePosition): Position {
-    const positionMap: Record<SimplePosition, Position> = {
-      'top-left': Position.TOP_LEFT,
-      'top-center': Position.TOP_CENTER,
-      'top-right': Position.TOP_RIGHT,
-      'center-left': Position.MIDDLE_LEFT,
-      center: Position.MIDDLE_CENTER,
-      'center-right': Position.MIDDLE_RIGHT,
-      'bottom-left': Position.BOTTOM_LEFT,
-      'bottom-center': Position.BOTTOM_CENTER,
-      'bottom-right': Position.BOTTOM_RIGHT,
-    };
-
-    return positionMap[position] || Position.BOTTOM_RIGHT;
-  }
-
-  /**
-   * Resolve text style
-   */
-  private static resolveTextStyle(
-    style: PresetTextStyle | TextStyle,
-    size: 'small' | 'medium' | 'large' | number
-  ): TextStyle {
-    // If already a TextStyle object, apply size only and return
-    if (typeof style === 'object') {
-      const resolvedSize = SimpleWatermark.resolveTextSize(size);
-      return { ...style, fontSize: resolvedSize };
-    }
-
-    const fontSize = SimpleWatermark.resolveTextSize(size);
-
-    const presetStyles: Record<PresetTextStyle, TextStyle> = {
-      default: {
-        fontFamily: 'Arial, sans-serif',
-        fontSize,
-        color: '#000000',
-        opacity: 0.8,
-      },
-      'white-shadow': {
-        fontFamily: 'Arial, sans-serif',
-        fontSize,
-        color: '#ffffff',
-        shadow: {
-          color: 'rgba(0, 0, 0, 0.7)',
-          offsetX: 1,
-          offsetY: 1,
-          blur: 2,
-        },
-      },
-      'black-shadow': {
-        fontFamily: 'Arial, sans-serif',
-        fontSize,
-        color: '#000000',
-        shadow: {
-          color: 'rgba(255, 255, 255, 0.7)',
-          offsetX: 1,
-          offsetY: 1,
-          blur: 2,
-        },
-      },
-      'bold-white': {
-        fontFamily: 'Arial, sans-serif',
-        fontSize,
-        fontWeight: 'bold',
-        color: '#ffffff',
-      },
-      'bold-black': {
-        fontFamily: 'Arial, sans-serif',
-        fontSize,
-        fontWeight: 'bold',
-        color: '#000000',
-      },
-      outline: {
-        fontFamily: 'Arial, sans-serif',
-        fontSize,
-        color: '#ffffff',
-        strokeColor: '#000000',
-        strokeWidth: 2,
-      },
-      subtle: {
-        fontFamily: 'Arial, sans-serif',
-        fontSize,
-        color: '#666666',
-        opacity: 0.6,
-      },
-    };
-
-    return presetStyles[style] || presetStyles.default;
-  }
-
-  /**
-   * Resolve text size
-   */
-  private static resolveTextSize(size: 'small' | 'medium' | 'large' | number): number {
-    if (typeof size === 'number') {
-      return size;
-    }
-
-    const sizeMap = {
-      small: 12,
-      medium: 16,
-      large: 24,
-    };
-
-    return sizeMap[size] || sizeMap.medium;
-  }
-
-  /**
-   * Resolve image size
-   */
-  private static resolveImageSize(
-    size: 'small' | 'medium' | 'large' | number,
-    canvas: HTMLCanvasElement,
-    image: HTMLImageElement
-  ): number {
-    if (typeof size === 'number') {
-      return size;
-    }
-
-    // Calculate size relative to canvas
-    const canvasSize = Math.min(canvas.width, canvas.height);
-    const imageSize = Math.max(image.width, image.height);
-
-    const relativeSizes = {
-      small: 0.05, // 5% of canvas
-      medium: 0.1, // 10% of canvas
-      large: 0.2, // 20% of canvas
-    };
-
-    const targetSize = canvasSize * relativeSizes[size];
-    return targetSize / imageSize;
-  }
-
-  /**
-   * Map blend mode
-   */
-  private static mapBlendMode(blendMode: 'normal' | 'multiply' | 'overlay' | 'soft-light'): GlobalCompositeOperation {
-    const blendModeMap: Record<string, GlobalCompositeOperation> = {
-      normal: 'source-over',
-      multiply: 'multiply',
-      overlay: 'overlay',
-      'soft-light': 'soft-light',
-    };
-
-    return blendModeMap[blendMode] || 'source-over';
   }
 }
 
