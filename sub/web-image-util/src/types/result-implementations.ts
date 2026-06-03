@@ -5,7 +5,7 @@
  */
 
 import { createImageElement } from '../utils/image-element';
-import { loadImageElement } from '../utils/image-loader';
+import { loadImageElement } from '../utils/image-loader.internal';
 import type {
   GeometrySize,
   OutputFormat,

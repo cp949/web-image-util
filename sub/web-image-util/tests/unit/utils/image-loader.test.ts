@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ImageProcessError } from '../../../src/types';
-import { loadImageElement } from '../../../src/utils/image-loader';
+import { loadImageElement } from '../../../src/utils/image-loader.internal';
 
 /**
  * jsdom + canvas의 이미지 로딩 경계를 검증한다.
