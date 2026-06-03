@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { Position } from '../../../src/composition/position-types';
 import { TextWatermark } from '../../../src/composition/text-watermark';
+import { ImageProcessError } from '../../../src/errors';
 import { createTestCanvas } from '../../utils/canvas-helper';
 import { baseStyle } from './watermark-helpers';
 
@@ -71,6 +72,29 @@ describe('TextWatermark', () => {
     expect(result).toBe(canvas);
   });
 
+  it('addToCanvas: 2D context를 얻지 못하면 ImageProcessError를 던진다', () => {
+    const canvas = createTestCanvas(400, 300);
+    canvas.getContext = () => null;
+
+    expect(() =>
+      TextWatermark.addToCanvas(canvas, {
+        text: '실패',
+        position: Position.TOP_LEFT,
+        style: baseStyle,
+      })
+    ).toThrow(ImageProcessError);
+
+    try {
+      TextWatermark.addToCanvas(canvas, {
+        text: '실패',
+        position: Position.TOP_LEFT,
+        style: baseStyle,
+      });
+    } catch (error) {
+      expect(error).toMatchObject({ code: 'CANVAS_CONTEXT_FAILED' });
+    }
+  });
+
   it('addMultipleToCanvas: 여러 워터마크를 순차 적용하고 같은 Canvas를 반환한다', () => {
     const canvas = createTestCanvas(400, 300);
     const result = TextWatermark.addMultipleToCanvas(canvas, [
@@ -90,6 +114,20 @@ describe('TextWatermark', () => {
       spacing: { x: 150, y: 100 },
     });
     expect(result).toBe(canvas);
+  });
+
+  it('addRepeatingPattern: 2D context를 얻지 못하면 ImageProcessError를 던진다', () => {
+    const canvas = createTestCanvas(400, 300);
+    canvas.getContext = () => null;
+
+    expect(() =>
+      TextWatermark.addRepeatingPattern(canvas, {
+        text: '실패',
+        position: Position.MIDDLE_CENTER,
+        style: baseStyle,
+        spacing: { x: 150, y: 100 },
+      })
+    ).toThrow(ImageProcessError);
   });
 
   it('addRepeatingPattern: stagger=true 옵션을 처리한다', () => {

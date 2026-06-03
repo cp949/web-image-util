@@ -1,3 +1,4 @@
+import { requireCanvasContext, withCanvasState } from './canvas-drawing';
 import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 
@@ -50,8 +51,7 @@ export class TextWatermark {
    * Add text watermark to canvas
    */
   static addToCanvas(canvas: HTMLCanvasElement, options: TextWatermarkOptions): HTMLCanvasElement {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Failed to get Canvas 2D context');
+    const ctx = requireCanvasContext(canvas, 'TextWatermark.addToCanvas');
 
     const { text, position, customPosition, style, rotation = 0, margin = { x: 10, y: 10 } } = options;
 
@@ -75,35 +75,32 @@ export class TextWatermark {
       margin
     );
 
-    // Rotate and draw
-    ctx.save();
+    withCanvasState(ctx, () => {
+      if (rotation !== 0) {
+        const centerX = textPosition.x + textSize.width / 2;
+        const centerY = textPosition.y + textSize.height / 2;
+        ctx.translate(centerX, centerY);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.translate(-centerX, -centerY);
+      }
 
-    if (rotation !== 0) {
-      const centerX = textPosition.x + textSize.width / 2;
-      const centerY = textPosition.y + textSize.height / 2;
-      ctx.translate(centerX, centerY);
-      ctx.rotate((rotation * Math.PI) / 180);
-      ctx.translate(-centerX, -centerY);
-    }
+      // Apply shadow effect
+      if (style.shadow) {
+        ctx.shadowColor = style.shadow.color;
+        ctx.shadowOffsetX = style.shadow.offsetX;
+        ctx.shadowOffsetY = style.shadow.offsetY;
+        ctx.shadowBlur = style.shadow.blur;
+      }
 
-    // Apply shadow effect
-    if (style.shadow) {
-      ctx.shadowColor = style.shadow.color;
-      ctx.shadowOffsetX = style.shadow.offsetX;
-      ctx.shadowOffsetY = style.shadow.offsetY;
-      ctx.shadowBlur = style.shadow.blur;
-    }
+      // Draw text (using textPosition.y since textBaseline = 'top')
+      const drawY = textPosition.y;
 
-    // Draw text (using textPosition.y since textBaseline = 'top')
-    const drawY = textPosition.y;
+      if (style.strokeWidth && style.strokeColor) {
+        ctx.strokeText(text, textPosition.x, drawY);
+      }
 
-    if (style.strokeWidth && style.strokeColor) {
-      ctx.strokeText(text, textPosition.x, drawY);
-    }
-
-    ctx.fillText(text, textPosition.x, drawY);
-
-    ctx.restore();
+      ctx.fillText(text, textPosition.x, drawY);
+    });
 
     return canvas;
   }
@@ -160,8 +157,7 @@ export class TextWatermark {
       stagger?: boolean;
     }
   ): HTMLCanvasElement {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Failed to get Canvas 2D context');
+    const ctx = requireCanvasContext(canvas, 'TextWatermark.addRepeatingPattern');
 
     const { text, style, rotation = 0, spacing, stagger = false } = options;
 
@@ -170,26 +166,25 @@ export class TextWatermark {
     const textWidth = textMetrics.width;
     const textHeight = style.fontSize || 16;
 
-    ctx.save();
-
-    if (rotation !== 0) {
-      ctx.rotate((rotation * Math.PI) / 180);
-    }
-
-    let yOffset = 0;
-    for (let y = 0; y < canvas.height + textHeight; y += spacing.y) {
-      const xOffset = stagger && yOffset % 2 === 1 ? spacing.x / 2 : 0;
-
-      for (let x = -textWidth; x < canvas.width + textWidth; x += spacing.x) {
-        if (style.strokeWidth && style.strokeColor) {
-          ctx.strokeText(text, x + xOffset, y);
-        }
-        ctx.fillText(text, x + xOffset, y);
+    withCanvasState(ctx, () => {
+      if (rotation !== 0) {
+        ctx.rotate((rotation * Math.PI) / 180);
       }
-      yOffset++;
-    }
 
-    ctx.restore();
+      let yOffset = 0;
+      for (let y = 0; y < canvas.height + textHeight; y += spacing.y) {
+        const xOffset = stagger && yOffset % 2 === 1 ? spacing.x / 2 : 0;
+
+        for (let x = -textWidth; x < canvas.width + textWidth; x += spacing.x) {
+          if (style.strokeWidth && style.strokeColor) {
+            ctx.strokeText(text, x + xOffset, y);
+          }
+          ctx.fillText(text, x + xOffset, y);
+        }
+        yOffset++;
+      }
+    });
+
     return canvas;
   }
 }

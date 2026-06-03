@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { ImageWatermark } from '../../../src/composition/image-watermark';
 import { Position } from '../../../src/composition/position-types';
+import { ImageProcessError } from '../../../src/errors';
 import { createTestCanvas } from '../../utils/canvas-helper';
 import { createTestImage } from './watermark-helpers';
 
@@ -45,6 +46,27 @@ describe('ImageWatermark', () => {
     expect(result).toBe(canvas);
   });
 
+  it('addToCanvas: 2D context를 얻지 못하면 ImageProcessError를 던진다', () => {
+    const canvas = createTestCanvas(400, 300);
+    canvas.getContext = () => null;
+
+    expect(() =>
+      ImageWatermark.addToCanvas(canvas, {
+        watermarkImage: createTestImage(),
+        position: Position.TOP_LEFT,
+      })
+    ).toThrow(ImageProcessError);
+
+    try {
+      ImageWatermark.addToCanvas(canvas, {
+        watermarkImage: createTestImage(),
+        position: Position.TOP_LEFT,
+      });
+    } catch (error) {
+      expect(error).toMatchObject({ code: 'CANVAS_CONTEXT_FAILED' });
+    }
+  });
+
   it('addWithAdaptiveSize: 컨테이너 크기 비율로 스케일을 계산한다', () => {
     const canvas = createTestCanvas(400, 300);
     const result = ImageWatermark.addWithAdaptiveSize(canvas, {
@@ -73,6 +95,19 @@ describe('ImageWatermark', () => {
       spacing: { x: 80, y: 80 },
     });
     expect(result).toBe(canvas);
+  });
+
+  it('addRepeatingPattern: 2D context를 얻지 못하면 ImageProcessError를 던진다', () => {
+    const canvas = createTestCanvas(400, 300);
+    canvas.getContext = () => null;
+
+    expect(() =>
+      ImageWatermark.addRepeatingPattern(canvas, {
+        watermarkImage: createTestImage(20, 20),
+        position: Position.MIDDLE_CENTER,
+        spacing: { x: 80, y: 80 },
+      })
+    ).toThrow(ImageProcessError);
   });
 
   it('addRepeatingPattern: stagger=true·rotation 옵션을 처리한다', () => {

@@ -1,3 +1,4 @@
+import { requireCanvasContext, withCanvasState } from './canvas-drawing';
 import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 
@@ -29,8 +30,7 @@ export class ImageWatermark {
    * Add image watermark to canvas
    */
   static addToCanvas(canvas: HTMLCanvasElement, options: ImageWatermarkOptions): HTMLCanvasElement {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Failed to get Canvas 2D context');
+    const ctx = requireCanvasContext(canvas, 'ImageWatermark.addToCanvas');
 
     const {
       watermarkImage,
@@ -59,25 +59,30 @@ export class ImageWatermark {
       margin
     );
 
-    ctx.save();
+    withCanvasState(ctx, () => {
+      // Set blending mode and opacity
+      ctx.globalCompositeOperation = blendMode;
+      ctx.globalAlpha = opacity;
 
-    // Set blending mode and opacity
-    ctx.globalCompositeOperation = blendMode;
-    ctx.globalAlpha = opacity;
+      // Set rotation
+      if (rotation !== 0) {
+        const centerX = watermarkPosition.x + watermarkSize.width / 2;
+        const centerY = watermarkPosition.y + watermarkSize.height / 2;
+        ctx.translate(centerX, centerY);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.translate(-centerX, -centerY);
+      }
 
-    // Set rotation
-    if (rotation !== 0) {
-      const centerX = watermarkPosition.x + watermarkSize.width / 2;
-      const centerY = watermarkPosition.y + watermarkSize.height / 2;
-      ctx.translate(centerX, centerY);
-      ctx.rotate((rotation * Math.PI) / 180);
-      ctx.translate(-centerX, -centerY);
-    }
+      // Draw image
+      ctx.drawImage(
+        watermarkImage,
+        watermarkPosition.x,
+        watermarkPosition.y,
+        watermarkSize.width,
+        watermarkSize.height
+      );
+    });
 
-    // Draw image
-    ctx.drawImage(watermarkImage, watermarkPosition.x, watermarkPosition.y, watermarkSize.width, watermarkSize.height);
-
-    ctx.restore();
     return canvas;
   }
 
@@ -121,8 +126,7 @@ export class ImageWatermark {
       stagger?: boolean;
     }
   ): HTMLCanvasElement {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Failed to get Canvas 2D context');
+    const ctx = requireCanvasContext(canvas, 'ImageWatermark.addRepeatingPattern');
 
     const {
       watermarkImage,
@@ -137,33 +141,31 @@ export class ImageWatermark {
     const watermarkWidth = watermarkImage.width * scale;
     const watermarkHeight = watermarkImage.height * scale;
 
-    ctx.save();
-    ctx.globalCompositeOperation = blendMode;
-    ctx.globalAlpha = opacity;
+    withCanvasState(ctx, () => {
+      ctx.globalCompositeOperation = blendMode;
+      ctx.globalAlpha = opacity;
 
-    let yOffset = 0;
-    for (let y = -watermarkHeight; y < canvas.height + watermarkHeight; y += spacing.y) {
-      const xOffset = stagger && yOffset % 2 === 1 ? spacing.x / 2 : 0;
+      let yOffset = 0;
+      for (let y = -watermarkHeight; y < canvas.height + watermarkHeight; y += spacing.y) {
+        const xOffset = stagger && yOffset % 2 === 1 ? spacing.x / 2 : 0;
 
-      for (let x = -watermarkWidth; x < canvas.width + watermarkWidth; x += spacing.x) {
-        ctx.save();
+        for (let x = -watermarkWidth; x < canvas.width + watermarkWidth; x += spacing.x) {
+          withCanvasState(ctx, () => {
+            if (rotation !== 0) {
+              const centerX = x + xOffset + watermarkWidth / 2;
+              const centerY = y + watermarkHeight / 2;
+              ctx.translate(centerX, centerY);
+              ctx.rotate((rotation * Math.PI) / 180);
+              ctx.translate(-centerX, -centerY);
+            }
 
-        if (rotation !== 0) {
-          const centerX = x + xOffset + watermarkWidth / 2;
-          const centerY = y + watermarkHeight / 2;
-          ctx.translate(centerX, centerY);
-          ctx.rotate((rotation * Math.PI) / 180);
-          ctx.translate(-centerX, -centerY);
+            ctx.drawImage(watermarkImage, x + xOffset, y, watermarkWidth, watermarkHeight);
+          });
         }
-
-        ctx.drawImage(watermarkImage, x + xOffset, y, watermarkWidth, watermarkHeight);
-
-        ctx.restore();
+        yOffset++;
       }
-      yOffset++;
-    }
+    });
 
-    ctx.restore();
     return canvas;
   }
 }

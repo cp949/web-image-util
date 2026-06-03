@@ -461,7 +461,7 @@ describe('convertSvgToElement — svg/loader.ts 분기', () => {
     const img = stubImgCreation('load');
 
     // 50KB를 초과하도록 큰 주석을 채운 SVG를 만든다(skip 모드로 size limit 통과).
-    const filler = '<!--' + 'x'.repeat(60 * 1024) + '-->';
+    const filler = `<!--${'x'.repeat(60 * 1024)}-->`;
     const largeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">${filler}<rect width="1" height="1"/></svg>`;
 
     const result = await convertSvgToElement(largeSvg, undefined, undefined, {
@@ -486,7 +486,7 @@ describe('convertSvgToElement — svg/loader.ts 분기', () => {
     const { convertSvgToElement } = await import('../../../src/core/source-converter/svg/loader');
     const img = stubImgCreation('load');
 
-    const filler = '<!--' + 'x'.repeat(60 * 1024) + '-->';
+    const filler = `<!--${'x'.repeat(60 * 1024)}-->`;
     const largeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">${filler}<rect width="1" height="1"/></svg>`;
 
     const result = await convertSvgToElement(largeSvg, undefined, undefined, {

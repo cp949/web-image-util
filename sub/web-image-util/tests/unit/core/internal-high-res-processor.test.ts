@@ -13,6 +13,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessingStrategy } from '../../../src/base/high-res-detector';
+import { HighResolutionManager } from '../../../src/base/high-res-manager';
 import { SteppedProcessor } from '../../../src/base/stepped-processor';
 import { TiledProcessor } from '../../../src/base/tiled-processor';
 import { InternalHighResProcessor } from '../../../src/core/internal/internal-high-res-processor';
@@ -23,6 +24,16 @@ import {
   makeFakeCanvas,
   removeLowMemoryState,
 } from './internal-high-res-processor.helpers';
+
+describe('InternalHighResProcessor 구현 공유 계약', () => {
+  it('HighResolutionManager 와 동일한 static 처리 메서드를 공유한다', () => {
+    expect(InternalHighResProcessor.smartResize).toBe(HighResolutionManager.smartResize);
+    expect(InternalHighResProcessor.validateProcessingCapability).toBe(
+      HighResolutionManager.validateProcessingCapability
+    );
+    expect(InternalHighResProcessor.batchSmartResize).toBe(HighResolutionManager.batchSmartResize);
+  });
+});
 
 describe('validateProcessingCapability — 전략 추천 분기', () => {
   afterEach(() => {

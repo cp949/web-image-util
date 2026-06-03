@@ -1,5 +1,7 @@
 import { withManagedCanvas } from '../base/canvas-utils';
+import { ImageProcessError } from '../errors';
 import { productionLog } from '../utils/debug';
+import { calculateFitSize, calculateGridMetrics, rectanglesOverlap } from './image-composer-layout';
 import type { Rectangle, Size } from './position-types';
 
 /**
@@ -107,18 +109,21 @@ export class ImageComposer {
   static async composeGrid(images: HTMLImageElement[], options: GridLayoutOptions): Promise<HTMLCanvasElement> {
     const { rows, cols, spacing = 10, backgroundColor = '#ffffff', fit = 'contain' } = options;
 
-    if (images.length === 0) throw new Error('No images provided');
+    if (images.length === 0) {
+      throw new ImageProcessError('No images provided', 'INVALID_SOURCE', {
+        details: { label: 'empty-image-list' },
+      });
+    }
     if (images.length > rows * cols) {
       productionLog.warn(`Too many images (${images.length}). Grid size: ${rows}x${cols}`);
     }
 
     // Calculate grid size
-    const maxImages = Math.min(images.length, rows * cols);
-    const cellWidth = Math.max(...images.map((img) => img.width));
-    const cellHeight = Math.max(...images.map((img) => img.height));
-
-    const canvasWidth = cols * cellWidth + (cols + 1) * spacing;
-    const canvasHeight = rows * cellHeight + (rows + 1) * spacing;
+    const { maxImages, cellWidth, cellHeight, canvasWidth, canvasHeight } = calculateGridMetrics(images, {
+      rows,
+      cols,
+      spacing,
+    });
 
     return withManagedCanvas(canvasWidth, canvasHeight, (canvas, ctx) => {
       // Set background
@@ -135,13 +140,7 @@ export class ImageComposer {
         const cellY = spacing + row * (cellHeight + spacing);
 
         // Calculate image size adjustment
-        const { x, y, width, height } = ImageComposer.calculateFitSize(
-          image.width,
-          image.height,
-          cellWidth,
-          cellHeight,
-          fit
-        );
+        const { x, y, width, height } = calculateFitSize(image.width, image.height, cellWidth, cellHeight, fit);
 
         ctx.drawImage(image, cellX + x, cellY + y, width, height);
       }
@@ -196,7 +195,7 @@ export class ImageComposer {
         } while (
           !overlap &&
           attempts < maxAttempts &&
-          ImageComposer.isOverlapping({ x, y, width: scaledWidth, height: scaledHeight }, usedAreas)
+          rectanglesOverlap({ x, y, width: scaledWidth, height: scaledHeight }, usedAreas)
         );
 
         // Record area
@@ -228,61 +227,5 @@ export class ImageComposer {
 
       return canvas;
     });
-  }
-
-  /**
-   * Calculate image size fitting
-   */
-  private static calculateFitSize(
-    imageWidth: number,
-    imageHeight: number,
-    containerWidth: number,
-    containerHeight: number,
-    fit: 'contain' | 'cover' | 'fill'
-  ): { x: number; y: number; width: number; height: number } {
-    let width = imageWidth;
-    let height = imageHeight;
-    let x = 0;
-    let y = 0;
-
-    switch (fit) {
-      case 'contain': {
-        const scale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
-        width = imageWidth * scale;
-        height = imageHeight * scale;
-        x = (containerWidth - width) / 2;
-        y = (containerHeight - height) / 2;
-        break;
-      }
-
-      case 'cover': {
-        const scale = Math.max(containerWidth / imageWidth, containerHeight / imageHeight);
-        width = imageWidth * scale;
-        height = imageHeight * scale;
-        x = (containerWidth - width) / 2;
-        y = (containerHeight - height) / 2;
-        break;
-      }
-
-      case 'fill':
-        width = containerWidth;
-        height = containerHeight;
-        break;
-    }
-
-    return { x, y, width, height };
-  }
-
-  /**
-   * Check area overlap
-   */
-  private static isOverlapping(rect: Rectangle, areas: Rectangle[]): boolean {
-    return areas.some(
-      (area) =>
-        rect.x < area.x + area.width &&
-        rect.x + rect.width > area.x &&
-        rect.y < area.y + area.height &&
-        rect.y + rect.height > area.y
-    );
   }
 }

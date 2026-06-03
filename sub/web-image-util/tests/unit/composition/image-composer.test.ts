@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { ImageComposer } from '../../../src/composition/image-composer';
+import { ImageProcessError } from '../../../src/errors';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 function createTestImage(width = 100, height = 100): HTMLImageElement {
@@ -66,8 +67,12 @@ describe('ImageComposer.composeLayers', () => {
 });
 
 describe('ImageComposer.composeGrid', () => {
-  it('이미지 배열이 비어 있으면 에러를 던진다', async () => {
+  it('이미지 배열이 비어 있으면 ImageProcessError를 던진다', async () => {
     await expect(ImageComposer.composeGrid([], { rows: 2, cols: 2 })).rejects.toThrow('No images provided');
+    await expect(ImageComposer.composeGrid([], { rows: 2, cols: 2 })).rejects.toThrow(ImageProcessError);
+    await expect(ImageComposer.composeGrid([], { rows: 2, cols: 2 })).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+    });
   });
 
   it('기본 옵션으로 Canvas를 반환한다', async () => {
