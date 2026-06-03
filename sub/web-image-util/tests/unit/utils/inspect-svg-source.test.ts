@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options';
+import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options.internal';
 import { ImageProcessError } from '../../../src/errors';
 import { inspectSvgSource } from '../../../src/utils/inspect-svg-source';
 

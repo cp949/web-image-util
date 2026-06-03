@@ -10,7 +10,7 @@ import { ImageProcessError } from '../../types';
 import { convertBlobToElement, detectMimeTypeFromBuffer } from './loaders/blob.internal';
 import { convertCanvasToElement } from './loaders/canvas.internal';
 import { convertStringToElement } from './loaders/string.internal';
-import type { InternalSourceConverterOptions } from './options';
+import type { InternalSourceConverterOptions } from './options.internal';
 
 /**
  * Convert all ImageSource types to HTMLImageElement (main function)

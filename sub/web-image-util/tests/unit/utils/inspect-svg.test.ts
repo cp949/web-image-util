@@ -1,6 +1,6 @@
 import { inspectSvg as inspectSvgFromUtils } from '@cp949/web-image-util/utils';
 import { describe, expect, it } from 'vitest';
-import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options';
+import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options.internal';
 import { ImageProcessError } from '../../../src/errors';
 import { inspectSvg } from '../../../src/utils/inspect-svg';
 

@@ -1,4 +1,4 @@
-import { MAX_SVG_BYTES } from '../../core/source-converter/options';
+import { MAX_SVG_BYTES } from '../../core/source-converter/options.internal';
 import type { SvgIdPrefixDeoptReason, SvgIdPrefixResult, SvgIdPrefixWarning } from '../prefix-svg-ids';
 
 /** prefixSvgIds 실행 환경 표시. report.environment와 동일 규칙. */

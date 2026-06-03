@@ -1,4 +1,4 @@
-import { DEFAULT_ALLOWED_PROTOCOLS, DEFAULT_FETCH_TIMEOUT_MS } from '../../core/source-converter/options';
+import { DEFAULT_ALLOWED_PROTOCOLS, DEFAULT_FETCH_TIMEOUT_MS } from '../../core/source-converter/options.internal';
 import { checkResponseSize, createFetchAbortHandle } from '../../core/source-converter/url/fetch-guards.internal';
 import {
   checkAllowedProtocol,

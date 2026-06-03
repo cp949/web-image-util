@@ -8,4 +8,4 @@
 export type { SourceType } from './source-converter/detect.internal';
 export { detectSourceType } from './source-converter/detect.internal';
 export { convertToImageElement, getImageDimensions } from './source-converter/index';
-export type { SvgPassthroughMode } from './source-converter/options';
+export type { SvgPassthroughMode } from './source-converter/options.internal';

@@ -15,7 +15,7 @@ import {
   resolveFetchTimeoutMs,
   resolvePassthroughMode,
   resolveSvgSanitizerMode,
-} from '../options';
+} from '../options.internal';
 import { isDataUrlSvg, parseSvgFromDataUrl } from '../svg/data-url.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
 import { readVerifiedSvgResponse } from '../svg/safety.internal';

@@ -13,7 +13,7 @@ import { extractSvgDimensions } from '../../../utils/svg-dimensions';
 import { sanitizeSvgForRendering } from '../../../utils/svg-sanitizer';
 import type { QualityLevel } from '../../svg-complexity-analyzer';
 import { analyzeSvgComplexity } from '../../svg-complexity-analyzer';
-import type { SvgPassthroughMode } from '../options';
+import type { SvgPassthroughMode } from '../options.internal';
 import { createBase64DataUrl } from './data-url.internal';
 import { assertSafeSvgContent, checkSvgSizeLimit } from './safety.internal';
 

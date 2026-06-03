@@ -8,7 +8,7 @@
 
 import { ImageProcessError } from '../../../errors';
 import { isInlineSvg } from '../../../utils/svg-detection';
-import { MAX_SVG_BYTES } from '../options';
+import { MAX_SVG_BYTES } from '../options.internal';
 import { checkSvgSizeLimit, createSvgSizeLimitError } from './safety.internal';
 
 /**

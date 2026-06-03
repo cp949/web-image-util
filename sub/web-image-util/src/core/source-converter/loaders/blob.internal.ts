@@ -11,7 +11,7 @@ import {
   type InternalSourceConverterOptions,
   resolvePassthroughMode,
   resolveSvgSanitizerMode,
-} from '../options';
+} from '../options.internal';
 import { sniffSvgFromBlob } from '../svg/data-url.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
 

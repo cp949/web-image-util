@@ -10,7 +10,7 @@
  * contract 픽스처 갱신은 TASK-04에서 한 번에 수행한다.
  */
 
-import { MAX_SVG_BYTES } from '../core/source-converter/options';
+import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import { ImageProcessError } from '../errors';
 import { detectSvgInspectionEnvironment } from '../utils/svg-inspection';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';

@@ -1,4 +1,4 @@
-import { MAX_SVG_BYTES } from '../core/source-converter/options';
+import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import { ImageProcessError } from '../errors';
 import {
   detectPrefixEnvironment,

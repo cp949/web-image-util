@@ -1,4 +1,4 @@
-import { MAX_SVG_BYTES } from '../core/source-converter/options';
+import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import type { InspectSvgReport } from './inspect-svg';
 import { inspectSvg } from './inspect-svg';
 import { extractSvgBody } from './inspect-svg-source/body-extraction.internal';

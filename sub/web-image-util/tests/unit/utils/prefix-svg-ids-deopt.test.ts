@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options';
+import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options.internal';
 import { prefixSvgIds } from '../../../src/utils/prefix-svg-ids';
 
 // 본문 inline fixture로 한정한다. 한 파일에서만 쓰는 짧은 SVG는 helper로 빼지 않는다.
