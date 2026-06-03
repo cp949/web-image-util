@@ -1,16 +1,11 @@
 import { MAX_SVG_BYTES } from '../core/source-converter/options';
-import { isBlockedSvgPolicyRef } from '../core/source-converter/url/policy';
 import type { ComplexityAnalysisResult } from '../core/svg-complexity-analyzer';
-import { analyzeSvgComplexity } from '../core/svg-complexity-analyzer';
 import { ImageProcessError } from '../errors';
-import {
-  collectSvgDomSecuritySignals,
-  detectSvgInspectionEnvironment,
-  isReferenceAttribute,
-  pushCappedSample,
-  readReferenceAttribute,
-} from './svg-inspection';
-import { getCssPolicyValueVariants, visitCssUrlValues } from './svg-policy-utils';
+import { detectSvgInspectionEnvironment } from './svg-inspection';
+import { callComplexityWrapper, collectDomFindings, readInspectDimensions } from './svg-inspection/dom-analysis';
+import { collectRegexFindings } from './svg-inspection/fallback-analysis';
+import { parseAndClassifySvg } from './svg-inspection/parser';
+import { assembleInspectReport } from './svg-inspection/report';
 
 export type InspectSvgFindingCode =
   | 'svg-bytes-exceeded'
@@ -54,300 +49,9 @@ export interface InspectSvgReport {
   recommendation: { sanitizer: 'lightweight' | 'strict'; reasons: InspectSvgFindingCode[] };
 }
 
-const DIM_ATTR_REGEX = /^(\d+(?:\.\d+)?)\s*([a-z%]*)$/;
-const COMPLEXITY_FALLBACK_SENTINEL = 'Using default values due to analysis failure';
-
-function parseAttrValue(raw: string | null): { raw: string | null; numeric: number | null; unit: string | null } {
-  if (raw === null) {
-    return { raw: null, numeric: null, unit: null };
-  }
-  const match = DIM_ATTR_REGEX.exec(raw);
-  if (match) {
-    return { raw, numeric: parseFloat(match[1]), unit: match[2] };
-  }
-  return { raw, numeric: null, unit: raw };
-}
-
-function readInspectDimensions(svgElement: Element): InspectSvgDimensions {
-  const widthRaw = svgElement.getAttribute('width');
-  const heightRaw = svgElement.getAttribute('height');
-  const viewBoxRaw = svgElement.getAttribute('viewBox');
-
-  const widthAttr = parseAttrValue(widthRaw);
-  const heightAttr = parseAttrValue(heightRaw);
-
-  let viewBoxParsed: { x: number; y: number; width: number; height: number } | null = null;
-  if (viewBoxRaw !== null) {
-    const parts = viewBoxRaw.trim().split(/\s+/);
-    if (parts.length === 4) {
-      const nums = parts.map(Number);
-      if (nums.every((n) => !Number.isNaN(n))) {
-        viewBoxParsed = { x: nums[0], y: nums[1], width: nums[2], height: nums[3] };
-      }
-    }
-  }
-
-  const viewBox: InspectSvgDimensions['viewBox'] = { raw: viewBoxRaw, parsed: viewBoxParsed };
-
-  let effective: InspectSvgDimensions['effective'];
-  if (widthAttr.numeric !== null && widthAttr.numeric > 0 && heightAttr.numeric !== null && heightAttr.numeric > 0) {
-    effective = { width: widthAttr.numeric, height: heightAttr.numeric, source: 'explicit' };
-  } else if (viewBoxParsed !== null) {
-    effective = { width: viewBoxParsed.width, height: viewBoxParsed.height, source: 'viewBox' };
-  } else {
-    effective = { width: 100, height: 100, source: 'fallback' };
-  }
-
-  return { widthAttr, heightAttr, viewBox, effective };
-}
-
-function callComplexityWrapper(svgString: string): [ComplexityAnalysisResult | null, InspectSvgFinding[]] {
-  const result = analyzeSvgComplexity(svgString);
-  if (result.reasoning[0] === COMPLEXITY_FALLBACK_SENTINEL) {
-    return [
-      null,
-      [
-        {
-          code: 'complexity-analysis-failed',
-          message: 'SVG complexity analysis returned fallback values; result is unavailable.',
-        },
-      ],
-    ];
-  }
-  return [result, []];
-}
-
 /** 현재 실행 환경을 감지한다. 평가 순서는 happy-dom -> browser -> node -> unknown이다. */
 export function detectInspectEnvironment(): 'browser' | 'happy-dom' | 'node' | 'unknown' {
   return detectSvgInspectionEnvironment();
-}
-
-type ParseSvgFailure = { ok: false; message: string; locationAvailable: boolean; doc: null };
-type ParseSvgSuccess = { ok: true; message: null; locationAvailable: false; doc: Document };
-
-/** DOMParser로 SVG 문자열을 파싱하고 결과를 반환한다. */
-function parseSvgWithDomParser(svgString: string): ParseSvgFailure | ParseSvgSuccess {
-  if (typeof DOMParser === 'undefined') {
-    return {
-      ok: false,
-      message: 'DOMParser is not available in this environment.',
-      locationAvailable: false,
-      doc: null,
-    };
-  }
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, 'image/svg+xml');
-  const parseError = doc.querySelector('parsererror');
-
-  if (parseError !== null) {
-    const textContent = parseError.textContent ?? '';
-    const locationAvailable = /line\s*\d+/i.test(textContent) || /Line:\s*\d+/.test(textContent);
-    return {
-      ok: false,
-      message: 'XML parser reported an error while parsing the input as image/svg+xml.',
-      locationAvailable,
-      doc: null,
-    };
-  }
-
-  return { ok: true, message: null, locationAvailable: false, doc };
-}
-
-/**
- * 정규식으로 script/foreignObject/event-handler finding을 수집한다.
- * DOMParser 미가용 또는 파싱 실패 경로에서만 호출한다.
- */
-function collectRegexFindings(svgString: string): InspectSvgFinding[] {
-  const findings: InspectSvgFinding[] = [];
-
-  // script 요소 카운트
-  const scriptCount = (svgString.match(/<script\b[^>]*>/gi) ?? []).length;
-  if (scriptCount > 0) {
-    findings.push({
-      code: 'has-script-element',
-      message: 'Input contains <script> element(s); strict sanitizer is recommended.',
-      details: { count: scriptCount },
-    });
-  }
-
-  // foreignObject 요소 카운트
-  const foreignObjectCount = (svgString.match(/<foreignObject\b[^>]*>/gi) ?? []).length;
-  if (foreignObjectCount > 0) {
-    findings.push({
-      code: 'has-foreign-object',
-      message: 'Input contains <foreignObject> element(s); strict sanitizer is recommended.',
-      details: { count: foreignObjectCount },
-    });
-  }
-
-  // 시작 태그를 순회하며 event handler attribute 카운트
-  let eventHandlerCount = 0;
-  for (const tagMatch of svgString.matchAll(/<[a-zA-Z][^>]*>/g)) {
-    // 태그명 이후 attribute 영역 추출
-    const attrArea = tagMatch[0].replace(/^<[a-zA-Z][a-zA-Z0-9_:-]*/, '');
-    eventHandlerCount += (attrArea.match(/\son[a-z0-9:-]*\s*=/gi) ?? []).length;
-  }
-  if (eventHandlerCount > 0) {
-    findings.push({
-      code: 'has-event-handler',
-      message: 'Input contains on* event handler attribute(s); strict sanitizer is recommended.',
-      details: { count: eventHandlerCount },
-    });
-  }
-
-  return findings;
-}
-
-/** 보안 finding 코드 목록 — 이 중 하나라도 있으면 strict sanitizer 추천 */
-const SECURITY_FINDING_CODES = new Set<InspectSvgFindingCode>([
-  'has-script-element',
-  'has-foreign-object',
-  'has-event-handler',
-  'external-href',
-  'style-attribute-external-url',
-  'style-tag-external-url',
-]);
-
-/**
- * DOM 기반으로 보안 finding을 수집한다.
- * DOMParser 파싱 성공 + svg 루트 경로에서만 호출한다.
- *
- * script / foreignObject / event handler 신호는 공통 helper `collectSvgDomSecuritySignals`로
- * 위임한다. external-href와 CSS url() 참조 finding은 inspectSvg 고유 의미(embedded-image 단계
- * 부재로 data:/상대 경로도 보고)를 지켜야 하므로 본 함수가 직접 수집한다.
- */
-function collectDomFindings(doc: Document): InspectSvgFinding[] {
-  const findings: InspectSvgFinding[] = [];
-  const signals = collectSvgDomSecuritySignals(doc);
-
-  if (signals.scriptElementCount > 0) {
-    findings.push({
-      code: 'has-script-element',
-      message: 'Input contains <script> element(s); strict sanitizer is recommended.',
-      details: { count: signals.scriptElementCount },
-    });
-  }
-
-  if (signals.foreignObjectElementCount > 0) {
-    findings.push({
-      code: 'has-foreign-object',
-      message: 'Input contains <foreignObject> element(s); strict sanitizer is recommended.',
-      details: { count: signals.foreignObjectElementCount },
-    });
-  }
-
-  if (signals.eventHandlerAttributeCount > 0) {
-    findings.push({
-      code: 'has-event-handler',
-      message: 'Input contains on* event handler attribute(s); strict sanitizer is recommended.',
-      details: { count: signals.eventHandlerAttributeCount, samples: signals.eventHandlerAttributeSamples },
-    });
-  }
-
-  // external href/src 참조와 style attribute url() 검사.
-  // external-href와 CSS finding은 DOM 보안 신호 helper 범위 밖이며, inspectSvg는 embedded-image
-  // 단계가 없으므로 data:/상대 경로 참조도 정책 차단 대상이면 그대로 보고한다(sanitizer의
-  // external-href stage가 data:를 embedded-image로 위임하는 것과 의미가 다르다).
-  const allElements = doc.getElementsByTagName('*');
-  let externalHrefCount = 0;
-  const externalHrefSamples: string[] = [];
-  let styleAttrExternalUrlCount = 0;
-  let styleTagExternalUrlCount = 0;
-  for (let i = 0; i < allElements.length; i++) {
-    const el = allElements[i];
-    if (!el) continue;
-
-    // external href/src와 style attribute url()은 같은 element의 서로 다른 속성이므로
-    // 두 검사를 한 attribute 순회에서 모두 수행한다. external-href는 element당 한 번만
-    // 카운트하되(elementHrefCounted 플래그), 순회를 조기 종료(break)하지 않아야 뒤에 오는
-    // style 속성 검사가 누락되지 않는다.
-    let elementHrefCounted = false;
-    for (const attrName of el.getAttributeNames()) {
-      const lowered = attrName.toLowerCase();
-      const localName = el.getAttributeNode(attrName)?.localName.toLowerCase() ?? lowered;
-
-      // style attribute 내부 url() 검사
-      if (lowered === 'style' || localName === 'style') {
-        const styleAttr = el.getAttribute(attrName);
-        if (styleAttr) {
-          visitCssUrlValues(styleAttr, (urlValue) => {
-            if (getCssPolicyValueVariants(urlValue).some(isBlockedSvgPolicyRef)) {
-              styleAttrExternalUrlCount++;
-            }
-          });
-        }
-      }
-
-      // external href/xlink:href/src 검사 (element당 한 번만 카운트)
-      if (!elementHrefCounted && isReferenceAttribute(el, attrName)) {
-        const value = readReferenceAttribute(el, attrName);
-        if (value !== null && getCssPolicyValueVariants(value).some(isBlockedSvgPolicyRef)) {
-          externalHrefCount++;
-          pushCappedSample(externalHrefSamples, lowered);
-          elementHrefCounted = true;
-        }
-      }
-    }
-
-    // <style> 태그 내부 url() 검사
-    if (el.tagName.toLowerCase() === 'style') {
-      const cssText = el.textContent ?? '';
-      visitCssUrlValues(cssText, (urlValue) => {
-        if (getCssPolicyValueVariants(urlValue).some(isBlockedSvgPolicyRef)) {
-          styleTagExternalUrlCount++;
-        }
-      });
-    }
-  }
-
-  if (externalHrefCount > 0) {
-    findings.push({
-      code: 'external-href',
-      message: 'Input contains element(s) with external href/src references; strict sanitizer is recommended.',
-      details: { count: externalHrefCount, samples: externalHrefSamples },
-    });
-  }
-
-  if (styleAttrExternalUrlCount > 0) {
-    findings.push({
-      code: 'style-attribute-external-url',
-      message: 'Input contains style attribute(s) with external url() references; strict sanitizer is recommended.',
-      details: { count: styleAttrExternalUrlCount },
-    });
-  }
-
-  if (styleTagExternalUrlCount > 0) {
-    findings.push({
-      code: 'style-tag-external-url',
-      message: 'Input contains <style> tag(s) with external url() references; strict sanitizer is recommended.',
-      details: { count: styleTagExternalUrlCount },
-    });
-  }
-
-  return findings;
-}
-
-/**
- * finding 목록에서 sanitizer 추천을 도출한다.
- * 보안 finding이 하나라도 있으면 'strict', 없으면 'lightweight'.
- */
-function deriveRecommendation(findings: InspectSvgFinding[]): InspectSvgReport['recommendation'] {
-  const reasons: InspectSvgFindingCode[] = [];
-  const seen = new Set<InspectSvgFindingCode>();
-
-  for (const finding of findings) {
-    if (SECURITY_FINDING_CODES.has(finding.code) && !seen.has(finding.code)) {
-      reasons.push(finding.code);
-      seen.add(finding.code);
-    }
-  }
-
-  if (reasons.length > 0) {
-    return { sanitizer: 'strict', reasons };
-  }
-
-  return { sanitizer: 'lightweight', reasons: [] };
 }
 
 /**
@@ -381,24 +85,24 @@ export function inspectSvg(svgString: unknown): InspectSvgReport {
         details: { actualBytes: bytes, maxBytes: MAX_SVG_BYTES },
       },
     ];
-    return {
-      valid: false,
+    // byte 초과 경로도 동일 조립 함수를 사용한다. svg-bytes-exceeded는 invalidating
+    // 코드이므로 valid=false, 보안 코드가 아니므로 recommendation은 lightweight가 된다.
+    return assembleInspectReport({
+      environment,
       bytes,
       byteLimit: MAX_SVG_BYTES,
-      environment,
       parse: { ok: false, message: null, locationAvailable: false },
       root: 'unknown',
       dimensions: null,
       complexity: null,
       findings,
-      recommendation: { sanitizer: 'lightweight', reasons: [] },
-    };
+    });
   }
 
-  // DOMParser 파싱
-  const parseResult = parseSvgWithDomParser(svgString);
+  // DOMParser 파싱 + 루트 판정은 parser 경계가 캡슐화한다.
+  const parseResult = parseAndClassifySvg(svgString);
   const findings: InspectSvgFinding[] = [];
-  let root: InspectSvgReport['root'] = 'unknown';
+  const root: InspectSvgReport['root'] = parseResult.root;
   let dimensions: InspectSvgDimensions | null = null;
   let complexity: ComplexityAnalysisResult | null = null;
 
@@ -411,50 +115,36 @@ export function inspectSvg(svgString: unknown): InspectSvgReport {
     });
     // 파싱 실패 경로에서 정규식 기반 finding 수집
     findings.push(...collectRegexFindings(svgString));
-  } else {
-    // 파싱 성공: 루트 요소 검사
-    const docEl = parseResult.doc.documentElement;
-    if (docEl == null) {
-      root = 'none';
-    } else {
-      const tagLower = docEl.tagName.toLowerCase();
-      if (tagLower === 'svg') {
-        root = 'svg';
-        dimensions = readInspectDimensions(docEl);
-        if (dimensions.effective.source === 'fallback') {
-          findings.push({
-            code: 'dimensions-fallback',
-            message: 'SVG has no usable width/height or viewBox; defaulting to 100×100.',
-            details: { width: 100, height: 100 },
-          });
-        }
-        const [complexityResult, complexityFindings] = callComplexityWrapper(svgString);
-        complexity = complexityResult;
-        findings.push(...complexityFindings);
-        // DOM 기반 보안 finding 수집 (파싱 성공 + svg 루트 경로에서만)
-        findings.push(...collectDomFindings(parseResult.doc));
-      } else {
-        root = 'other';
-        findings.push({
-          code: 'not-svg-root',
-          message: 'Parsed XML root element is not <svg>.',
-          // root tag 이름은 입력 원문이므로 report details에 반사하지 않는다.
-          details: { rootTagName: 'non-svg-root' },
-        });
-      }
+  } else if (root === 'svg' && parseResult.svgElement !== null) {
+    // 파싱 성공 + svg 루트: dimension 읽기·finding 수집은 호출부 책임.
+    dimensions = readInspectDimensions(parseResult.svgElement);
+    if (dimensions.effective.source === 'fallback') {
+      findings.push({
+        code: 'dimensions-fallback',
+        message: 'SVG has no usable width/height or viewBox; defaulting to 100×100.',
+        details: { width: 100, height: 100 },
+      });
     }
+    const [complexityResult, complexityFindings] = callComplexityWrapper(svgString);
+    complexity = complexityResult;
+    findings.push(...complexityFindings);
+    // DOM 기반 보안 finding 수집 (파싱 성공 + svg 루트 경로에서만)
+    findings.push(...collectDomFindings(parseResult.doc));
+  } else if (root === 'other') {
+    findings.push({
+      code: 'not-svg-root',
+      message: 'Parsed XML root element is not <svg>.',
+      // root tag 이름은 입력 원문이므로 report details에 반사하지 않는다.
+      details: { rootTagName: 'non-svg-root' },
+    });
   }
+  // root === 'none' 경로는 finding을 추가하지 않는다(기존 동작 유지).
 
-  // svg-bytes-exceeded·svg-parse-failed·not-svg-root 중 하나라도 있으면 valid = false
-  const valid = !findings.some(
-    (f) => f.code === 'svg-bytes-exceeded' || f.code === 'svg-parse-failed' || f.code === 'not-svg-root'
-  );
-
-  return {
-    valid,
+  // valid·recommendation 계산과 최종 객체 조립은 report 경계가 담당한다.
+  return assembleInspectReport({
+    environment,
     bytes,
     byteLimit: MAX_SVG_BYTES,
-    environment,
     parse: {
       ok: parseResult.ok,
       message: parseResult.message,
@@ -464,6 +154,5 @@ export function inspectSvg(svgString: unknown): InspectSvgReport {
     dimensions,
     complexity,
     findings,
-    recommendation: deriveRecommendation(findings),
-  };
+  });
 }
