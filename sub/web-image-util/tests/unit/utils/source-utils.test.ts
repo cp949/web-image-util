@@ -10,6 +10,14 @@ import {
   detectImageStringSourceInfo,
   detectImageStringSourceType,
 } from '../../../src/utils';
+// path/mime 헬퍼는 공개 barrel에 노출되지 않는 내부 parser이므로 모듈에서 직접 import한다.
+import {
+  isSvgDataUrl,
+  isXmlMimeType,
+  normalizeMimeType,
+  parseDataUrlMimeType,
+} from '../../../src/utils/source-utils/mime';
+import { getFormatFromPath, getPathnameWithoutSuffix } from '../../../src/utils/source-utils/path';
 
 describe('source utilities', () => {
   describe('detectImageStringSourceType', () => {
@@ -185,6 +193,129 @@ describe('source utilities', () => {
       expect(detectImageStringSourceType('/icon.svg')).toBe('svg-path');
       expect(detectImageSourceTypeFromRoot('/photo.png')).toBe('path');
       await expect(detectImageSourceInfoFromRoot('/icon.svg')).resolves.toMatchObject({ type: 'svg-path' });
+    });
+  });
+});
+
+describe('path parser', () => {
+  describe('getPathnameWithoutSuffix', () => {
+    it('절대 URL은 쿼리/해시를 제외한 pathname을 반환한다', () => {
+      expect(getPathnameWithoutSuffix('https://example.com/dir/photo.png?v=1#frag')).toBe('/dir/photo.png');
+      expect(getPathnameWithoutSuffix('https://example.com/')).toBe('/');
+    });
+
+    it('protocol-relative URL은 base를 적용해 pathname을 추출한다', () => {
+      expect(getPathnameWithoutSuffix('//cdn.example.com/assets/icon.webp?cache=1')).toBe('/assets/icon.webp');
+    });
+
+    it('URL 파싱이 실패하면 해시/쿼리를 직접 잘라낸 원문을 반환한다', () => {
+      expect(getPathnameWithoutSuffix('./assets/photo.png?v=1#frag')).toBe('./assets/photo.png');
+      expect(getPathnameWithoutSuffix('relative/file.webp#section')).toBe('relative/file.webp');
+      expect(getPathnameWithoutSuffix('plain.jpg')).toBe('plain.jpg');
+    });
+
+    it('빈 문자열은 그대로 반환한다', () => {
+      expect(getPathnameWithoutSuffix('')).toBe('');
+    });
+  });
+
+  describe('getFormatFromPath', () => {
+    it('알려진 확장자를 ImageFormat으로 매핑한다', () => {
+      expect(getFormatFromPath('photo.png')).toBe('png');
+      expect(getFormatFromPath('photo.jpg')).toBe('jpg');
+      expect(getFormatFromPath('photo.jpeg')).toBe('jpeg');
+      expect(getFormatFromPath('icon.svg')).toBe('svg');
+      expect(getFormatFromPath('anim.gif')).toBe('gif');
+      expect(getFormatFromPath('pic.webp')).toBe('webp');
+      expect(getFormatFromPath('pic.avif')).toBe('avif');
+    });
+
+    it('대문자 확장자는 소문자로 정규화해 매핑한다', () => {
+      expect(getFormatFromPath('https://example.com/PHOTO.PNG?x=1')).toBe('png');
+      expect(getFormatFromPath('./Vector.SVG#frag')).toBe('svg');
+    });
+
+    it('쿼리/해시가 붙은 URL도 마지막 확장자를 본다', () => {
+      expect(getFormatFromPath('https://example.com/dir.with.dot/photo.webp?download=true')).toBe('webp');
+    });
+
+    it('알 수 없는 확장자는 unknown으로 반환한다', () => {
+      expect(getFormatFromPath('archive.zip')).toBe('unknown');
+      expect(getFormatFromPath('https://example.com/file.bmp')).toBe('unknown');
+    });
+
+    it('확장자가 없으면 unknown으로 반환한다', () => {
+      expect(getFormatFromPath('/assets/noext')).toBe('unknown');
+      expect(getFormatFromPath('https://example.com/dir/')).toBe('unknown');
+      expect(getFormatFromPath('')).toBe('unknown');
+    });
+
+    it('복수 dot 경로는 마지막 확장자만 인식한다', () => {
+      expect(getFormatFromPath('my.photo.backup.png')).toBe('png');
+      expect(getFormatFromPath('my.photo.tar.gz')).toBe('unknown');
+    });
+  });
+});
+
+describe('mime parser', () => {
+  describe('isSvgDataUrl', () => {
+    it('SVG data URL 헤더만 true로 판정한다', () => {
+      expect(isSvgDataUrl('data:image/svg+xml,%3Csvg%3E')).toBe(true);
+      expect(isSvgDataUrl('data:image/svg+xml;base64,PHN2Zz4=')).toBe(true);
+      expect(isSvgDataUrl('DATA:IMAGE/SVG+XML,%3Csvg%3E')).toBe(true);
+      expect(isSvgDataUrl('data:image/svg+xml')).toBe(true);
+    });
+
+    it('비SVG data URL과 유사 prefix는 false로 판정한다', () => {
+      expect(isSvgDataUrl('data:image/png;base64,AAAA')).toBe(false);
+      expect(isSvgDataUrl('data:image/svg+xmlfoo,%3Csvg%3E')).toBe(false);
+      expect(isSvgDataUrl('https://example.com/icon.svg')).toBe(false);
+      expect(isSvgDataUrl('')).toBe(false);
+    });
+  });
+
+  describe('parseDataUrlMimeType', () => {
+    it('data URL이 아니면 undefined를 반환한다', () => {
+      expect(parseDataUrlMimeType('https://example.com/photo.png')).toBeUndefined();
+      expect(parseDataUrlMimeType('')).toBeUndefined();
+    });
+
+    it('파라미터와 base64 마커를 제외한 MIME 토큰을 반환한다', () => {
+      expect(parseDataUrlMimeType('data:image/png;base64,AAAA')).toBe('image/png');
+      expect(parseDataUrlMimeType('data:image/svg+xml;charset=utf-8,%3Csvg%3E')).toBe('image/svg+xml');
+      expect(parseDataUrlMimeType('DATA:Image/PNG;base64,AAAA')).toBe('image/png');
+    });
+
+    it('콤마가 없는 헤더도 MIME 토큰을 추출한다', () => {
+      expect(parseDataUrlMimeType('data:image/webp')).toBe('image/webp');
+    });
+
+    it('MIME이 비어 있으면 undefined를 반환한다', () => {
+      expect(parseDataUrlMimeType('data:,payload')).toBeUndefined();
+      expect(parseDataUrlMimeType('data:;base64,AAAA')).toBeUndefined();
+    });
+  });
+
+  describe('normalizeMimeType', () => {
+    it('소문자/공백 제거 정규형으로 변환한다', () => {
+      expect(normalizeMimeType('  Image/PNG  ')).toBe('image/png');
+      expect(normalizeMimeType('TEXT/XML;charset=utf-8')).toBe('text/xml');
+      expect(normalizeMimeType('')).toBe('');
+    });
+  });
+
+  describe('isXmlMimeType', () => {
+    it('XML 계열 MIME만 true로 판정한다', () => {
+      expect(isXmlMimeType('text/xml')).toBe(true);
+      expect(isXmlMimeType('application/xml')).toBe(true);
+      expect(isXmlMimeType('image/svg+xml')).toBe(true);
+      expect(isXmlMimeType('application/rss+xml')).toBe(true);
+    });
+
+    it('비XML MIME은 false로 판정한다', () => {
+      expect(isXmlMimeType('image/png')).toBe(false);
+      expect(isXmlMimeType('text/html')).toBe(false);
+      expect(isXmlMimeType('')).toBe(false);
     });
   });
 });

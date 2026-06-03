@@ -8,6 +8,8 @@ import {
   estimateDataURLSize,
   isDataURLString,
 } from '../../../src/utils';
+// percent 헬퍼는 공개 barrel에 노출되지 않는 내부 함수이므로 모듈에서 직접 import한다.
+import { decodePercentEncodedPayload, estimatePercentPayloadByteLength } from '../../../src/utils/data-url/percent';
 
 /** ImageProcessError를 던지고 code/kind/cause 유무를 검증하는 헬퍼 */
 function expectImageProcessError(
@@ -202,6 +204,87 @@ describe('data URL utilities', () => {
     expectImageProcessError(() => decodeSvgDataURL('data:image/svg+xml,%GG'), {
       code: 'INVALID_SVG_DATA_URL',
       hasCause: true,
+    });
+  });
+});
+
+describe('percent payload 헬퍼', () => {
+  /** 기대 byte 배열로 단언하는 헬퍼 */
+  function expectBytes(actual: Uint8Array, expected: number[]): void {
+    expect(Array.from(actual)).toEqual(expected);
+  }
+
+  describe('decodePercentEncodedPayload', () => {
+    it('escape되지 않은 ASCII를 그대로 byte로 보존한다', () => {
+      expectBytes(decodePercentEncodedPayload('AB'), [65, 66]);
+    });
+
+    it('%XX hex를 한 byte로 디코딩한다', () => {
+      expectBytes(decodePercentEncodedPayload('%41%42'), [65, 66]);
+      expectBytes(decodePercentEncodedPayload('%ff'), [255]);
+    });
+
+    it('2-byte UTF-8 문자를 UTF-8 byte로 보존한다', () => {
+      expectBytes(decodePercentEncodedPayload('ñ'), Array.from(new TextEncoder().encode('ñ')));
+    });
+
+    it('3-byte UTF-8(BMP) 문자를 UTF-8 byte로 보존한다', () => {
+      expectBytes(decodePercentEncodedPayload('한'), [0xed, 0x95, 0x9c]);
+    });
+
+    it('astral(>0xFFFF) codepoint는 surrogate를 건너뛰고 4-byte로 보존한다', () => {
+      expectBytes(decodePercentEncodedPayload('😀'), [0xf0, 0x9f, 0x98, 0x80]);
+      // surrogate pair를 두 번 처리하지 않는지 길이로 재확인한다.
+      expect(decodePercentEncodedPayload('😀').length).toBe(4);
+    });
+
+    it('escape와 일반 문자가 섞인 payload를 순서대로 디코딩한다', () => {
+      expectBytes(decodePercentEncodedPayload('%3Csvg%3EA'), [0x3c, 0x73, 0x76, 0x67, 0x3e, 0x41]);
+    });
+
+    it('escape되지 않은 +는 공백이 아니라 리터럴 byte로 보존한다', () => {
+      // form-urlencoded와 달리 Data URL payload에서 +는 0x2B 그대로 둔다.
+      expectBytes(decodePercentEncodedPayload('a+b'), [0x61, 0x2b, 0x62]);
+    });
+
+    it('reserved 문자는 escape 없이 리터럴 byte로 통과시킨다', () => {
+      expectBytes(decodePercentEncodedPayload('=&/?'), [0x3d, 0x26, 0x2f, 0x3f]);
+    });
+
+    it('잘못된 hex escape는 invalid-percent로 거부한다', () => {
+      expectImageProcessError(() => decodePercentEncodedPayload('%GG'), {
+        code: 'INVALID_DATA_URL',
+        kind: 'invalid-percent',
+      });
+      // payload 끝의 잘린 escape도 거부한다.
+      expectImageProcessError(() => decodePercentEncodedPayload('%4'), {
+        code: 'INVALID_DATA_URL',
+        kind: 'invalid-percent',
+      });
+    });
+  });
+
+  describe('estimatePercentPayloadByteLength', () => {
+    it('ASCII와 %XX는 각각 1 byte로 센다', () => {
+      expect(estimatePercentPayloadByteLength('ABC')).toBe(3);
+      expect(estimatePercentPayloadByteLength('%41%42')).toBe(2);
+    });
+
+    it('UTF-8 byte 길이 구간을 디코딩 없이 추정한다', () => {
+      expect(estimatePercentPayloadByteLength('ñ')).toBe(2); // 0x80..0x7FF
+      expect(estimatePercentPayloadByteLength('한')).toBe(3); // 0x800..0xFFFF
+      expect(estimatePercentPayloadByteLength('😀')).toBe(4); // 0x10000..0x10FFFF
+    });
+
+    it('escape와 multi-byte 혼합 길이를 합산한다', () => {
+      expect(estimatePercentPayloadByteLength('%FFA한😀')).toBe(1 + 1 + 3 + 4);
+    });
+
+    it('잘못된 hex escape는 invalid-percent로 거부한다', () => {
+      expectImageProcessError(() => estimatePercentPayloadByteLength('%ZZ'), {
+        code: 'INVALID_DATA_URL',
+        kind: 'invalid-percent',
+      });
     });
   });
 });

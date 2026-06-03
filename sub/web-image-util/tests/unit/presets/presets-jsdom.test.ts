@@ -7,7 +7,7 @@
  *   실제 브라우저 포맷 경로는 browser 스모크에서 검증한다.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAvatar, createSocialImage, createThumbnail } from '../../../src/presets';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
@@ -52,5 +52,48 @@ describe('프리셋 이미지 생성 (Canvas 입력, jsdom-safe)', () => {
     expect(result.height).toBe(180);
     expect(result.blob.type).toBe('image/png');
     expect(result.format).toBe('png');
+  });
+
+  it('소셜 이미지는 customSize가 없으면 플랫폼 기본 크기를 적용한다', async () => {
+    const source = createTestCanvas(800, 600, 'purple');
+
+    // instagram 기본 크기 1080x1080 (정사각형)
+    const result = await createSocialImage(source, {
+      platform: 'instagram',
+      format: 'png',
+    });
+
+    expect(result.width).toBe(1080);
+    expect(result.height).toBe(1080);
+    expect(result.format).toBe('png');
+  });
+
+  it('썸네일은 webp 미지원 환경에서 jpeg 포맷으로 폴백한다', async () => {
+    const source = createTestCanvas(200, 200, 'red');
+    const originalToBlob = HTMLCanvasElement.prototype.toBlob;
+    // getOptimalFormat은 1x1 캔버스에 image/webp로 toBlob을 시도한다.
+    // webp만 null로 만들어 fallback(jpeg) 경로를 강제한다. 실제 출력(jpeg)은 원본 동작을 유지한다.
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (
+      this: HTMLCanvasElement,
+      callback: BlobCallback,
+      type?: string,
+      quality?: number
+    ) {
+      if (type === 'image/webp') {
+        callback(null);
+        return;
+      }
+      return originalToBlob.call(this, callback, type, quality);
+    });
+
+    // format 옵션을 주지 않으면 getOptimalFormat 결과(jpeg)가 사용된다.
+    const result = await createThumbnail(source, { size: 64 });
+
+    expect(result.format).toBe('jpeg');
+    expect(result.blob.type).toBe('image/jpeg');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 });

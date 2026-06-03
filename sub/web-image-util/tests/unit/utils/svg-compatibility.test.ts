@@ -8,6 +8,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { enhanceBrowserCompatibility } from '../../../src/utils/svg-compatibility';
 import { heuristicBBox, heuristicBBoxFromString, padBBox } from '../../../src/utils/svg-compatibility/bbox/heuristic';
 import { isBrowser, isValidBBox } from '../../../src/utils/svg-compatibility/bbox/live';
+import {
+  extractSizeHints,
+  getStyleLength,
+  parseCssLength,
+  sanitizeNum,
+} from '../../../src/utils/svg-compatibility/dimensions';
 import { toMsg } from '../../../src/utils/svg-compatibility/internal';
 
 describe('SVG 호환성 보정', () => {
@@ -285,5 +291,93 @@ describe('내부 헬퍼 — padBBox', () => {
 
   it('pct가 음수이면 원본 BBox 참조를 그대로 반환한다', () => {
     expect(padBBox(base, -0.1)).toBe(base);
+  });
+});
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** width/height/style 속성을 지정한 SVG 루트 요소를 만든다. */
+function createSvgRoot(attrs: Record<string, string>): SVGSVGElement {
+  const root = document.createElementNS(SVG_NS, 'svg');
+  for (const [name, value] of Object.entries(attrs)) {
+    root.setAttribute(name, value);
+  }
+  return root;
+}
+
+describe('치수 헬퍼 — parseCssLength', () => {
+  it('빈 값/null/undefined는 value·unit 모두 null이다', () => {
+    expect(parseCssLength(undefined)).toEqual({ value: null, unit: null });
+    expect(parseCssLength(null)).toEqual({ value: null, unit: null });
+    expect(parseCssLength('')).toEqual({ value: null, unit: null });
+  });
+
+  it('단위 없는 숫자는 user unit(unit=null)으로 본다', () => {
+    expect(parseCssLength('100')).toEqual({ value: 100, unit: null });
+  });
+
+  it('단위가 붙은 값은 소문자 단위로 분리한다', () => {
+    expect(parseCssLength('100PX')).toEqual({ value: 100, unit: 'px' });
+    expect(parseCssLength('50%')).toEqual({ value: 50, unit: '%' });
+  });
+
+  it('음수·소수·지수 표기를 모두 받아들인다', () => {
+    expect(parseCssLength('-1.5e-3')).toEqual({ value: -0.0015, unit: null });
+  });
+
+  it('형식에 맞지 않는 문자열은 null을 반환한다', () => {
+    expect(parseCssLength('abc')).toEqual({ value: null, unit: null });
+    expect(parseCssLength('10 20')).toEqual({ value: null, unit: null });
+  });
+
+  it('유한값이 아닌 결과(예: 1e999)는 null로 보정한다', () => {
+    expect(parseCssLength('1e999')).toEqual({ value: null, unit: null });
+  });
+});
+
+describe('치수 헬퍼 — getStyleLength', () => {
+  it('style 속성이 없으면 null을 반환한다', () => {
+    const root = createSvgRoot({});
+    expect(getStyleLength(root, 'width')).toBeNull();
+  });
+
+  it('style에서 해당 프로퍼티 값을 잘라 반환한다', () => {
+    const root = createSvgRoot({ style: 'width: 120px; height: 60px' });
+    expect(getStyleLength(root, 'width')).toBe('120px');
+    expect(getStyleLength(root, 'height')).toBe('60px');
+  });
+
+  it('style에 해당 프로퍼티가 없으면 null을 반환한다', () => {
+    const root = createSvgRoot({ style: 'fill: red' });
+    expect(getStyleLength(root, 'width')).toBeNull();
+  });
+});
+
+describe('치수 헬퍼 — extractSizeHints', () => {
+  it('width/height attribute를 우선 사용한다', () => {
+    const root = createSvgRoot({ width: '200', height: '100' });
+    expect(extractSizeHints(root)).toEqual({ wAttr: '200', hAttr: '100' });
+  });
+
+  it('attribute가 없으면 style 길이로 폴백한다', () => {
+    const root = createSvgRoot({ style: 'width: 80px; height: 40px' });
+    expect(extractSizeHints(root)).toEqual({ wAttr: '80px', hAttr: '40px' });
+  });
+
+  it('attribute와 style이 모두 없으면 undefined를 반환한다', () => {
+    const root = createSvgRoot({});
+    expect(extractSizeHints(root)).toEqual({ wAttr: undefined, hAttr: undefined });
+  });
+});
+
+describe('치수 헬퍼 — sanitizeNum', () => {
+  it('유한값은 소수점 6자리로 정리한다', () => {
+    expect(sanitizeNum(1.23456789)).toBe(1.234568);
+    expect(sanitizeNum(10)).toBe(10);
+  });
+
+  it('유한값이 아니면 0으로 보정한다', () => {
+    expect(sanitizeNum(Number.POSITIVE_INFINITY)).toBe(0);
+    expect(sanitizeNum(Number.NaN)).toBe(0);
   });
 });
