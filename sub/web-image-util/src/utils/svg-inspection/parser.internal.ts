@@ -9,7 +9,7 @@
  * 이 모듈은 public export가 아니다(`package.json` exports 비대상).
  */
 
-import type { InspectParseResult, ParseSvgFailure, ParseSvgSuccess } from './types';
+import type { InspectParseResult, ParseSvgFailure, ParseSvgSuccess } from './types.internal';
 
 /** DOMParser로 SVG 문자열을 파싱한다. parsererror 감지까지 수행한다. */
 function parseSvgWithDomParser(svgString: string): ParseSvgFailure | ParseSvgSuccess {
