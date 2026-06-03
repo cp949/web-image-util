@@ -5,7 +5,7 @@ import {
   formatFromBytes,
   formatFromMimeType,
   formatFromPath,
-} from '../../../../src/utils/image-info/format-detection';
+} from '../../../../src/utils/image-info/format-detection.internal';
 
 describe('getImageFormat', () => {
   it('Blob MIME만으로 포맷을 단독 조회한다', async () => {

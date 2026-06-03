@@ -2,7 +2,7 @@
  * 입력 소스의 이미지 포맷을 판정하는 순수 함수 모음.
  *
  * MIME, 파일 경로 확장자, Data URL 헤더, 바이너리 매직바이트 순으로 가벼운 검증부터 시도한다.
- * 네트워크 fetch와 결합된 응답 prefix 기반 판정은 [`./remote-fetch.ts`]가 담당한다.
+ * 네트워크 fetch와 결합된 응답 prefix 기반 판정은 [`./remote-fetch.internal.ts`]가 담당한다.
  */
 
 import { detectSourceType } from '../../core/source-converter';

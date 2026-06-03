@@ -10,7 +10,7 @@ import { convertToImageElement, detectSourceType } from '../../core/source-conve
 import type { ImageSource } from '../../types';
 import { ImageFormats } from '../../types';
 import { extractSvgDimensions } from '../svg-dimensions';
-import { formatFromPath } from './format-detection';
+import { formatFromPath } from './format-detection.internal';
 import type { ImageDimensions, ImageOrientation } from './types';
 
 /** 이미지 요소가 이미 가진 치수 값을 읽는다. */

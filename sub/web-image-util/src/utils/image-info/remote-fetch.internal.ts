@@ -10,7 +10,7 @@
 
 import { ImageFormats, ImageProcessError } from '../../types';
 import { isInlineSvg } from '../svg-detection';
-import { formatFromBytes, formatFromMimeType } from './format-detection';
+import { formatFromBytes, formatFromMimeType } from './format-detection.internal';
 import type {
   FetchImageFormatOptions,
   FetchImageSourceBlobOptions,
