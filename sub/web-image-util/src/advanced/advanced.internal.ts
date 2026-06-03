@@ -86,13 +86,13 @@ export { extractSvgDimensions } from '../utils/svg-dimensions';
 // Canvas High-Quality Rendering Configuration
 // ============================================================================
 
-export type { HighQualityCanvasOptions } from '../base/canvas-utils';
+export type { HighQualityCanvasOptions } from '../base/canvas-utils.internal';
 /**
  * Canvas high-quality rendering configuration
  *
  * @description Canvas rendering optimization options for image quality enhancement
  */
-export { setupHighQualityCanvas } from '../base/canvas-utils';
+export { setupHighQualityCanvas } from '../base/canvas-utils.internal';
 
 // ============================================================================
 // Convenience Functions and Integrated API

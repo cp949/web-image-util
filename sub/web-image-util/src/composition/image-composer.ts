@@ -1,4 +1,4 @@
-import { withManagedCanvas } from '../base/canvas-utils';
+import { withManagedCanvas } from '../base/canvas-utils.internal';
 import { ImageProcessError } from '../errors.internal';
 import { productionLog } from '../utils/debug.internal';
 import { calculateFitSize, calculateGridMetrics, rectanglesOverlap } from './image-composer-layout.internal';

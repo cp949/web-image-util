@@ -1,5 +1,5 @@
 import { productionLog } from '../utils/debug.internal';
-import { withManagedCanvas } from './canvas-utils';
+import { withManagedCanvas } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
 import type { ImageAnalysis } from './high-res-detector.internal';
 import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector.internal';

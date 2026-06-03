@@ -534,7 +534,7 @@ export interface PerformanceConfig {
 // ============================================================================
 
 // Re-export SVG size information and Canvas high-quality setting types
-export type { HighQualityCanvasOptions } from '../base/canvas-utils';
+export type { HighQualityCanvasOptions } from '../base/canvas-utils.internal';
 // SVG complexity analysis and quality system types
 export type { ComplexityAnalysisResult, QualityLevel, SvgComplexityMetrics } from '../core/svg-complexity-analyzer';
 export type { SvgDimensions } from '../utils/svg-dimensions';

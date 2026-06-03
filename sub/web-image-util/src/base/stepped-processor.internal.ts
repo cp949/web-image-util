@@ -1,4 +1,4 @@
-import { withManagedCanvas } from './canvas-utils';
+import { withManagedCanvas } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
 
 /**

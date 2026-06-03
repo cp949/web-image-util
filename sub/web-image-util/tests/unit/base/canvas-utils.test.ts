@@ -18,7 +18,7 @@ import {
   setupHighQualityCanvas,
   withManagedCanvas,
   withMultipleManagedCanvas,
-} from '../../../src/base/canvas-utils';
+} from '../../../src/base/canvas-utils.internal';
 import { ImageProcessError } from '../../../src/types';
 
 // ============================================================================
