@@ -34,7 +34,7 @@
 
 export { isDataURLString } from '../data-url';
 
-export { ensureImageElement, ensureImageElementDetailed } from './element';
+export { ensureImageElement, ensureImageElementDetailed } from './element.internal';
 export {
   ensureBlob,
   ensureBlobDetailed,
@@ -42,7 +42,7 @@ export {
   ensureDataURLDetailed,
   ensureFile,
   ensureFileDetailed,
-} from './ensure';
+} from './ensure.internal';
 export type {
   EnsureBlobDetailedOptions,
   EnsureBlobOptions,

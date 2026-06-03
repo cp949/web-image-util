@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { ensureFile, ensureFileDetailed } from '../../../src/utils/converters/ensure';
+import { ensureFile, ensureFileDetailed } from '../../../src/utils/converters/ensure.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 describe('File 변환 유틸 (jsdom-safe)', () => {
