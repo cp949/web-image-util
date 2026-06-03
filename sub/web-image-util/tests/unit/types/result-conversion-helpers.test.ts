@@ -4,6 +4,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  blobToArrayBuffer,
+  blobToUint8Array,
   canvasToBlob,
   canvasToDataURL,
   createFileFromBlob,
@@ -66,5 +68,21 @@ describe('result 변환 내부 헬퍼', () => {
     expect(file).toBeInstanceOf(File);
     expect(file.name).toBe('output.png');
     expect(file.type).toBe('image/png');
+  });
+
+  it('blobToArrayBuffer: Blob 내용을 ArrayBuffer로 변환한다', async () => {
+    const blob = new Blob([new Uint8Array([1, 2, 3])], { type: 'application/octet-stream' });
+
+    const arrayBuffer = await blobToArrayBuffer(blob);
+
+    expect(Array.from(new Uint8Array(arrayBuffer))).toEqual([1, 2, 3]);
+  });
+
+  it('blobToUint8Array: Blob 내용을 Uint8Array로 변환한다', async () => {
+    const blob = new Blob([new Uint8Array([4, 5, 6])], { type: 'application/octet-stream' });
+
+    const bytes = await blobToUint8Array(blob);
+
+    expect(Array.from(bytes)).toEqual([4, 5, 6]);
   });
 });

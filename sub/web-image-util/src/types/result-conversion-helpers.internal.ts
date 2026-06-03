@@ -39,3 +39,12 @@ export function createFileFromBlob(blob: globalThis.Blob, filename: string): glo
     lastModified: Date.now(),
   });
 }
+
+export async function blobToArrayBuffer(blob: globalThis.Blob): Promise<ArrayBuffer> {
+  return await blob.arrayBuffer();
+}
+
+export async function blobToUint8Array(blob: globalThis.Blob): Promise<Uint8Array> {
+  const arrayBuffer = await blobToArrayBuffer(blob);
+  return new Uint8Array(arrayBuffer);
+}

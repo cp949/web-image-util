@@ -17,7 +17,13 @@ import type {
   ResultFile,
 } from './index';
 import { ImageProcessError } from './index';
-import { canvasToBlob, canvasToDataURL, createFileFromBlob } from './result-conversion-helpers.internal';
+import {
+  blobToArrayBuffer,
+  blobToUint8Array,
+  canvasToBlob,
+  canvasToDataURL,
+  createFileFromBlob,
+} from './result-conversion-helpers.internal';
 
 /**
  * Data URL 결과 객체 구현이다.
@@ -72,13 +78,13 @@ export class DataURLResultImpl implements ResultDataURL {
   /** ArrayBuffer로 변환한다. */
   async toArrayBuffer(): Promise<ArrayBuffer> {
     const blob = await this.toBlob();
-    return await blob.arrayBuffer();
+    return await blobToArrayBuffer(blob);
   }
 
   /** Uint8Array로 변환한다. */
   async toUint8Array(): Promise<Uint8Array> {
-    const arrayBuffer = await this.toArrayBuffer();
-    return new Uint8Array(arrayBuffer);
+    const blob = await this.toBlob();
+    return await blobToUint8Array(blob);
   }
 }
 
@@ -173,15 +179,14 @@ export class BlobResultImpl implements ResultBlob {
    * Convert to ArrayBuffer
    */
   async toArrayBuffer(): Promise<ArrayBuffer> {
-    return await this.blob.arrayBuffer();
+    return await blobToArrayBuffer(this.blob);
   }
 
   /**
    * Convert to Uint8Array
    */
   async toUint8Array(): Promise<Uint8Array> {
-    const arrayBuffer = await this.toArrayBuffer();
-    return new Uint8Array(arrayBuffer);
+    return await blobToUint8Array(this.blob);
   }
 }
 
@@ -261,15 +266,14 @@ export class FileResultImpl implements ResultFile {
    * Convert to ArrayBuffer
    */
   async toArrayBuffer(): Promise<ArrayBuffer> {
-    return await this.file.arrayBuffer();
+    return await blobToArrayBuffer(this.file);
   }
 
   /**
    * Convert to Uint8Array
    */
   async toUint8Array(): Promise<Uint8Array> {
-    const arrayBuffer = await this.toArrayBuffer();
-    return new Uint8Array(arrayBuffer);
+    return await blobToUint8Array(this.file);
   }
 }
 
@@ -323,15 +327,15 @@ export class CanvasResultImpl implements ResultCanvas {
    */
   async toArrayBuffer(): Promise<ArrayBuffer> {
     const blob = await this.toBlob();
-    return await blob.arrayBuffer();
+    return await blobToArrayBuffer(blob);
   }
 
   /**
    * Convert to Uint8Array
    */
   async toUint8Array(): Promise<Uint8Array> {
-    const arrayBuffer = await this.toArrayBuffer();
-    return new Uint8Array(arrayBuffer);
+    const blob = await this.toBlob();
+    return await blobToUint8Array(blob);
   }
 }
 
@@ -385,12 +389,12 @@ export class ElementResultImpl implements ResultElement {
   /** ArrayBuffer로 변환한다. */
   async toArrayBuffer(): Promise<ArrayBuffer> {
     const blob = await this.toBlob();
-    return await blob.arrayBuffer();
+    return await blobToArrayBuffer(blob);
   }
 
   /** Uint8Array로 변환한다. */
   async toUint8Array(): Promise<Uint8Array> {
-    const arrayBuffer = await this.toArrayBuffer();
-    return new Uint8Array(arrayBuffer);
+    const blob = await this.toBlob();
+    return await blobToUint8Array(blob);
   }
 }
