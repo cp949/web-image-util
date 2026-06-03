@@ -6,6 +6,32 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool';
 import { processImage } from '../../../src/processor';
 
+function createProcessingOutput(canvas: HTMLCanvasElement) {
+  return {
+    canvas,
+    result: {
+      width: canvas.width,
+      height: canvas.height,
+      processingTime: 0,
+      originalSize: {
+        width: canvas.width,
+        height: canvas.height,
+      },
+      operations: [],
+    },
+  };
+}
+
+function createCanvasWithBlob(blob: Blob): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = 10;
+  canvas.height = 10;
+  vi.spyOn(canvas, 'toBlob').mockImplementation((callback) => {
+    callback(blob);
+  });
+  return canvas;
+}
+
 function createCanvasWithAsyncBlob(blob: Blob): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 10;
@@ -18,7 +44,7 @@ function createCanvasWithAsyncBlob(blob: Blob): HTMLCanvasElement {
 
 function createProcessorWithCanvas(canvas: HTMLCanvasElement): any {
   const processor = processImage(new Blob(['input'], { type: 'image/png' }));
-  vi.spyOn(processor as any, 'executeProcessing').mockResolvedValue({ canvas });
+  vi.spyOn(processor as any, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
   return processor;
 }
 
@@ -45,5 +71,14 @@ describe('toArrayBuffer 오류 원인 보존', () => {
     await vi.runAllTimersAsync();
 
     await assertion;
+  });
+
+  it('Blob 획득은 png 출력 경로를 사용하고 ArrayBuffer를 반환한다', async () => {
+    const canvas = createCanvasWithBlob(new Blob(['output'], { type: 'image/png' }));
+
+    const result = await createProcessorWithCanvas(canvas).toArrayBuffer();
+
+    expect(result.byteLength).toBe(6);
+    expect(canvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png', expect.any(Number));
   });
 });

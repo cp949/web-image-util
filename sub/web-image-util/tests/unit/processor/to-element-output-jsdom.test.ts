@@ -11,13 +11,29 @@ import { processImage } from '../../../src/processor';
 
 const originalDocumentCreateElement = document.createElement;
 
+function createProcessingOutput(canvas: HTMLCanvasElement) {
+  return {
+    canvas,
+    result: {
+      width: canvas.width,
+      height: canvas.height,
+      processingTime: 0,
+      originalSize: {
+        width: canvas.width,
+        height: canvas.height,
+      },
+      operations: [],
+    },
+  };
+}
+
 /**
  * controlled canvas를 반환하는 processor를 만든다. executeProcessing을 spy로 대체한다.
  * toElement()는 공개 TypedImageProcessor 인터페이스에 없어 any로 반환한다.
  */
 function createProcessorWithCanvas(canvas: HTMLCanvasElement): any {
   const processor = processImage(new Blob(['input'], { type: 'image/png' }));
-  vi.spyOn(processor as any, 'executeProcessing').mockResolvedValue({ canvas });
+  vi.spyOn(processor as any, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
   return processor;
 }
 
@@ -176,6 +192,7 @@ describe('toElement() URL.createObjectURL 호출 계약', () => {
     const calledBlob = createObjectURLSpy.mock.calls[0][0] as Blob;
     expect(calledBlob).toBeInstanceOf(Blob);
     expect(calledBlob.type).toBe('image/png');
+    expect(canvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png', expect.any(Number));
   });
 
   it('Promise 해결 후 URL.revokeObjectURL이 동일한 ObjectURL로 1회 호출된다', async () => {
@@ -221,7 +238,7 @@ describe('toElement() 체이닝 도달성', () => {
     // resize()를 거쳐 executeProcessing이 호출되는 경로를 spy로 우회한다.
     const blob = new Blob(['input'], { type: 'image/png' });
     const processor: any = processImage(blob).resize({ fit: 'cover', width: 200, height: 200 });
-    vi.spyOn(processor, 'executeProcessing').mockResolvedValue({ canvas });
+    vi.spyOn(processor, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
 
     let result: HTMLImageElement;
     try {
@@ -244,7 +261,7 @@ describe('toElement() 체이닝 도달성', () => {
 
     const blob = new Blob(['input'], { type: 'image/png' });
     const processor: any = processImage(blob).blur(2).resize({ fit: 'cover', width: 200, height: 200 });
-    vi.spyOn(processor, 'executeProcessing').mockResolvedValue({ canvas });
+    vi.spyOn(processor, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
 
     let result: HTMLImageElement;
     try {
@@ -267,7 +284,7 @@ describe('toElement() 체이닝 도달성', () => {
 
     const blob = new Blob(['input'], { type: 'image/png' });
     const processor: any = processImage(blob).blur(2);
-    vi.spyOn(processor, 'executeProcessing').mockResolvedValue({ canvas });
+    vi.spyOn(processor, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
 
     let result: HTMLImageElement;
     try {

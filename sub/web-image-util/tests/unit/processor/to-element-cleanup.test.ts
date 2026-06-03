@@ -10,6 +10,22 @@ import { ImageProcessError } from '../../../src/types';
 
 const originalDocumentCreateElement = document.createElement;
 
+function createProcessingOutput(canvas: HTMLCanvasElement) {
+  return {
+    canvas,
+    result: {
+      width: canvas.width,
+      height: canvas.height,
+      processingTime: 0,
+      originalSize: {
+        width: canvas.width,
+        height: canvas.height,
+      },
+      operations: [],
+    },
+  };
+}
+
 function createCanvasWithBlob(blob: Blob | null): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 10;
@@ -42,7 +58,7 @@ function createControlledImage(result: 'load' | 'error'): HTMLImageElement {
 
 function createProcessorWithCanvas(canvas: HTMLCanvasElement): any {
   const processor = processImage(new Blob(['input'], { type: 'image/png' }));
-  vi.spyOn(processor as any, 'executeProcessing').mockResolvedValue({ canvas });
+  vi.spyOn(processor as any, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
   return processor;
 }
 

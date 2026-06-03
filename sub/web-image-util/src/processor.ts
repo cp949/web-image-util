@@ -8,7 +8,10 @@ import { CanvasPool } from './base/canvas-pool';
 import { LazyRenderPipeline } from './core/lazy-render-pipeline';
 import type { SvgPassthroughMode } from './core/source-converter';
 import { convertToImageElement } from './core/source-converter';
+import { canvasToBlobOutput } from './processor/blob-output';
 import { renderToCanvasResult } from './processor/canvas-output';
+import { blobToImageElement } from './processor/dom-output';
+import { blobResultToDataURL, blobResultToFile } from './processor/encoded-output';
 import { getBestFormat, getOptimalQuality } from './processor/format-helpers';
 import {
   assertResizeNotCalled,
@@ -16,7 +19,8 @@ import {
   MULTIPLE_RESIZE_OPERATION_MESSAGE,
   MULTIPLE_RESIZE_RESIZE_MESSAGE,
 } from './processor/operation-helpers';
-import { blobToDataURL, resolveFileOutput } from './processor/output-helpers';
+import { resolveFileOutput } from './processor/output-helpers';
+import { resolveOutputOptions } from './processor/output-options';
 import { ShortcutBuilder } from './shortcut/shortcut-builder';
 import type {
   BlurOptions,
@@ -35,11 +39,9 @@ import type { IImageProcessor, IShortcutBuilder } from './types/processor-interf
 import type { AfterResizeCall, ProcessorState } from './types/processor-state';
 import type { ResizeConfig } from './types/resize-config';
 import { validateResizeConfig } from './types/resize-config';
-import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
+import { BlobResultImpl } from './types/result-implementations';
 import type { ResizeOperation } from './types/shortcut-types';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
-import { formatToMimeType, mimeTypeToOutputFormat } from './utils/format-utils';
-import { createImageElement } from './utils/image-element';
 
 /**
  * 타입 안전한 이미지 처리 체이닝 API를 제공한다.
@@ -340,34 +342,17 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   async toBlob(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultBlob> {
     // ✅ All sources use the same pipeline (SVG branching removed)
 
-    // If string, treat as format and apply optimal quality
-    const options: OutputOptions =
-      typeof optionsOrFormat === 'string'
-        ? {
-            format: optionsOrFormat,
-            quality: this.getOptimalQuality(optionsOrFormat),
-          }
-        : optionsOrFormat;
-
-    // Smart default format selection: WebP if supported, otherwise PNG
-    const smartFormat = this.getBestFormat();
-
-    const outputOptions: Required<OutputOptions> = {
-      format: smartFormat,
-      quality: this.getOptimalQuality(smartFormat),
-      fallbackFormat: 'png',
-      ...options,
-    };
-
-    // If user provided options but no quality, use format-optimized quality
-    if (options.format && options.quality === undefined) {
-      outputOptions.quality = this.getOptimalQuality(options.format);
-    }
+    // 옵션 정규화를 헬퍼에 위임한다.
+    const outputOptions = resolveOutputOptions({
+      optionsOrFormat,
+      getBestFormat: () => this.getBestFormat(),
+      getOptimalQuality: (f) => this.getOptimalQuality(f),
+    });
 
     const { canvas, result } = await this.executeProcessing();
 
     try {
-      const { blob, format } = await this.canvasToBlob(canvas, outputOptions);
+      const { blob, format } = await canvasToBlobOutput(canvas, outputOptions);
 
       // 🆕 Return extended result object (includes direct conversion methods)
       return new BlobResultImpl(blob, result.width, result.height, result.processingTime, result.originalSize, format);
@@ -406,27 +391,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   async toDataURL(options?: OutputOptions): Promise<ResultDataURL>;
   async toDataURL(format: OutputFormat): Promise<ResultDataURL>;
   async toDataURL(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultDataURL> {
-    // Select appropriate toBlob call method based on type
-    const { blob, ...metadata } =
-      typeof optionsOrFormat === 'string'
-        ? await this.toBlob(optionsOrFormat) // OutputFormat type
-        : await this.toBlob(optionsOrFormat); // OutputOptions type
-
-    try {
-      const dataURL = await blobToDataURL(blob);
-
-      // 🆕 Return extended result object (includes direct conversion methods)
-      return new DataURLResultImpl(
-        dataURL,
-        metadata.width,
-        metadata.height,
-        metadata.processingTime,
-        metadata.originalSize,
-        metadata.format
-      );
-    } catch (error) {
-      throw new ImageProcessError('Error occurred during Data URL conversion', 'OUTPUT_FAILED', { cause: error });
-    }
+    const blobResult = await this.toBlob(optionsOrFormat as OutputOptions);
+    return blobResultToDataURL(blobResult);
   }
 
   /**
@@ -465,27 +431,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       optionsOrFormat,
       this.options.defaultQuality
     );
-
-    const { blob, ...metadata } = await this.toBlob(finalOptions);
-
-    try {
-      const file = new File([blob], resolvedFilename, {
-        type: blob.type,
-        lastModified: Date.now(),
-      });
-
-      // 🆕 Return extended result object (includes direct conversion methods)
-      return new FileResultImpl(
-        file,
-        metadata.width,
-        metadata.height,
-        metadata.processingTime,
-        metadata.originalSize,
-        metadata.format
-      );
-    } catch (error) {
-      throw new ImageProcessError('Error occurred while creating File object', 'OUTPUT_FAILED', { cause: error });
-    }
+    const blobResult = await this.toBlob(finalOptions);
+    return blobResultToFile(blobResult, resolvedFilename);
   }
 
   /**
@@ -533,65 +480,14 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   async toElement(): Promise<HTMLImageElement> {
+    let blobResult: ResultBlob;
     try {
-      const { canvas } = await this.executeProcessing();
-
-      return new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          try {
-            // blob 변환 시도 후 canvas는 더 이상 필요하지 않으므로 pool에 반환한다.
-            CanvasPool.getInstance().release(canvas);
-
-            if (!blob) {
-              reject(new ImageProcessError('Blob creation failed', 'CANVAS_TO_BLOB_FAILED'));
-              return;
-            }
-
-            const objectUrl = URL.createObjectURL(blob);
-            const img = createImageElement();
-
-            // loadImageElement 헬퍼 미사용: objectURL revoke 책임이 이 콜백 안에 있으므로
-            // 헬퍼 서명(img, src, errorCode)으로는 objectURL 정리를 포함할 수 없다.
-            // Promise 결정 시 핸들러를 해제하고 objectURL을 정리한다.
-            const cleanup = () => {
-              img.onload = null;
-              img.onerror = null;
-              URL.revokeObjectURL(objectUrl);
-            };
-
-            img.onload = () => {
-              try {
-                cleanup();
-                resolve(img);
-              } catch (error) {
-                reject(
-                  new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error })
-                );
-              }
-            };
-
-            img.onerror = () => {
-              try {
-                cleanup();
-                reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
-              } catch (error) {
-                reject(
-                  new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error })
-                );
-              }
-            };
-
-            img.src = objectUrl;
-          } catch (error) {
-            reject(
-              new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error })
-            );
-          }
-        });
-      });
+      blobResult = await this.toBlob('png');
     } catch (error) {
       throw new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error });
     }
+
+    return blobToImageElement(blobResult.blob);
   }
 
   /**
@@ -608,36 +504,18 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    */
   async toArrayBuffer(): Promise<ArrayBuffer> {
     try {
-      const { canvas } = await this.executeProcessing();
+      const blobResult = await this.toBlob('png');
 
-      return new Promise((resolve, reject) => {
-        canvas.toBlob(async (blob) => {
-          try {
-            // blob 변환 시도 후 canvas는 더 이상 필요하지 않으므로 pool에 반환한다.
-            CanvasPool.getInstance().release(canvas);
-
-            if (!blob) {
-              reject(new ImageProcessError('Blob creation failed', 'CANVAS_TO_BLOB_FAILED'));
-              return;
-            }
-          } catch (error) {
-            reject(
-              new ImageProcessError('Error occurred during ArrayBuffer conversion', 'OUTPUT_FAILED', { cause: error })
-            );
-            return;
-          }
-
-          try {
-            const arrayBuffer = await blob.arrayBuffer();
-            resolve(arrayBuffer);
-          } catch (error) {
-            reject(
-              new ImageProcessError('ArrayBuffer conversion failed', 'BLOB_TO_ARRAYBUFFER_FAILED', { cause: error })
-            );
-          }
-        });
-      });
+      try {
+        return await blobResult.blob.arrayBuffer();
+      } catch (error) {
+        throw new ImageProcessError('ArrayBuffer conversion failed', 'BLOB_TO_ARRAYBUFFER_FAILED', { cause: error });
+      }
     } catch (error) {
+      if (error instanceof ImageProcessError && error.code === 'BLOB_TO_ARRAYBUFFER_FAILED') {
+        throw error;
+      }
+
       throw new ImageProcessError('Error occurred during ArrayBuffer conversion', 'OUTPUT_FAILED', { cause: error });
     }
   }
@@ -696,45 +574,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
 
       throw new ImageProcessError('Error occurred during image processing', 'CANVAS_CREATION_FAILED', { cause: error });
     }
-  }
-
-  /**
-   * Convert Canvas to Blob
-   */
-  private async canvasToBlob(
-    canvas: HTMLCanvasElement,
-    options: Required<OutputOptions>
-  ): Promise<{ blob: Blob; format: OutputFormat }> {
-    const mimeType = formatToMimeType(options.format);
-
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            // 브라우저가 요청 포맷 대신 다른 MIME으로 Blob을 반환할 수 있으므로 실제 type 기준으로 포맷을 결정한다.
-            const actualFormat = mimeTypeToOutputFormat(blob.type) ?? options.format;
-            resolve({ blob, format: actualFormat });
-          } else {
-            // 요청 포맷 미지원 시 fallback 포맷으로 재시도한다.
-            const fallbackMimeType = formatToMimeType(options.fallbackFormat);
-            canvas.toBlob(
-              (fallbackBlob) => {
-                if (fallbackBlob) {
-                  const actualFallbackFormat = mimeTypeToOutputFormat(fallbackBlob.type) ?? options.fallbackFormat;
-                  resolve({ blob: fallbackBlob, format: actualFallbackFormat });
-                } else {
-                  reject(new Error('Failed to create Blob'));
-                }
-              },
-              fallbackMimeType,
-              options.quality
-            );
-          }
-        },
-        mimeType,
-        options.quality
-      );
-    });
   }
 
   // ==============================================
