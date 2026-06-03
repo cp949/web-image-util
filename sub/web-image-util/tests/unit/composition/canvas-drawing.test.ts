@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { requireCanvasContext, withCanvasState } from '../../../src/composition/canvas-drawing';
+import { requireCanvasContext, withCanvasState } from '../../../src/composition/canvas-drawing.internal';
 import { ImageProcessError } from '../../../src/errors';
 import { createTestCanvas } from '../../utils/canvas-helper';
 

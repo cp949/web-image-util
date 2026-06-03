@@ -1,4 +1,4 @@
-import { requireCanvasContext, withCanvasState } from './canvas-drawing';
+import { requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
 import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 

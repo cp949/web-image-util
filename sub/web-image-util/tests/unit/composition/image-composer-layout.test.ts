@@ -7,7 +7,7 @@ import {
   calculateFitSize,
   calculateGridMetrics,
   rectanglesOverlap,
-} from '../../../src/composition/image-composer-layout';
+} from '../../../src/composition/image-composer-layout.internal';
 
 describe('image-composer-layout', () => {
   it('contain fit은 비율을 유지하고 셀 중앙에 배치한다', () => {
