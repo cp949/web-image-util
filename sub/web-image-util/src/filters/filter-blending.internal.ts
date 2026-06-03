@@ -2,7 +2,7 @@
  * 필터 적용 결과를 원본 픽셀과 합성하는 순수 helper다.
  */
 
-import { BlendMode } from './filter-blend-mode';
+import { BlendMode } from './filter-blend-mode.internal';
 
 /** 블렌드 모드에 따라 원본과 필터 결과를 합성한다. */
 export function applyBlendMode(original: ImageData, filtered: ImageData, blendMode: BlendMode): ImageData {

@@ -3,8 +3,8 @@
  */
 
 import { debugLog, productionLog } from '../utils/debug';
-import { BlendMode } from './filter-blend-mode';
-import { applyBlendMode, applyOpacity } from './filter-blending';
+import { BlendMode } from './filter-blend-mode.internal';
+import { applyBlendMode, applyOpacity } from './filter-blending.internal';
 import { createFilterNotFoundError, createInvalidFilterParamsError } from './filter-errors.internal';
 
 /**

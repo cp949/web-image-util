@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { applyBlendMode, applyOpacity } from '../../../src/filters/filter-blending';
+import { applyBlendMode, applyOpacity } from '../../../src/filters/filter-blending.internal';
 import { BlendMode } from '../../../src/filters/plugin-system';
 import { createSinglePixelImageData } from './plugin-system-helpers';
 
