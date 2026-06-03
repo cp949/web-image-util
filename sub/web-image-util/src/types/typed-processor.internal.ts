@@ -16,11 +16,11 @@ import type {
   ResultFile,
 } from '../types';
 import type { IShortcutBuilder } from './processor-interface';
-import type { AfterResize, BeforeResize, ProcessorState } from './processor-state';
+import type { AfterResize, BeforeResize, ProcessorState } from './processor-state.internal';
 import type { ResizeConfig } from './resize-config';
 
 // Re-export for use by other modules
-export type { AfterResize, BeforeResize } from './processor-state';
+export type { AfterResize, BeforeResize } from './processor-state.internal';
 
 /**
  * Type-safe image processor interface

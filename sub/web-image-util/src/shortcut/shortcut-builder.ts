@@ -26,7 +26,7 @@
  */
 
 import type { IImageProcessor, IShortcutBuilder } from '../types/processor-interface';
-import type { AfterResize, ProcessorState } from '../types/processor-state';
+import type { AfterResize, ProcessorState } from '../types/processor-state.internal';
 import type { ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig } from '../types/resize-config';
 import type { ScaleOperation } from '../types/shortcut-types';
 

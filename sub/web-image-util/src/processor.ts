@@ -35,11 +35,11 @@ import type {
 } from './types';
 import { ImageProcessError } from './types';
 import type { IImageProcessor, IShortcutBuilder } from './types/processor-interface';
-import type { AfterResizeCall, ProcessorState } from './types/processor-state';
+import type { AfterResizeCall, ProcessorState } from './types/processor-state.internal';
 import type { ResizeConfig } from './types/resize-config';
 import { BlobResultImpl } from './types/result-implementations.internal';
 import type { ResizeOperation } from './types/shortcut-types';
-import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
+import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor.internal';
 
 /**
  * 타입 안전한 이미지 처리 체이닝 API를 제공한다.

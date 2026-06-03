@@ -106,7 +106,7 @@ export type {
 //   ProcessorState,
 //   ProcessorStateType,
 //   ResizeAlreadyCalledError,
-// } from './processor-state';
+// } from './processor-state.internal';
 //
 // export type {
 //   CanCallResize,
@@ -115,7 +115,7 @@ export type {
 //   ProcessorFactory,
 //   ResizedProcessor,
 //   TypedImageProcessor,
-// } from './typed-processor';
+// } from './typed-processor.internal';
 
 export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstants } from './base';
 

@@ -14,7 +14,7 @@ import type {
   ResultDataURL,
   ResultFile,
 } from './index';
-import type { AfterResize, BeforeResize, ProcessorState } from './processor-state';
+import type { AfterResize, BeforeResize, ProcessorState } from './processor-state.internal';
 import type { ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig, ResizeConfig } from './resize-config';
 import type { ResizeOperation, ScaleOperation } from './shortcut-types';
 

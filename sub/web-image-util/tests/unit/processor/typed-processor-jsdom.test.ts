@@ -15,7 +15,7 @@ import { createFilterPlugin, FilterCategory } from '../../../src/advanced-index'
 import { AllFilterPlugins, BrightnessFilterPlugin } from '../../../src/filters/plugins';
 import { processImage } from '../../../src/processor';
 import { ImageProcessError } from '../../../src/types';
-import type { ProcessorFactory } from '../../../src/types/typed-processor';
+import type { ProcessorFactory } from '../../../src/types/typed-processor.internal';
 import { createTestImageBlob } from '../../utils';
 
 describe('Type-safe processor tests (jsdom-safe)', () => {
