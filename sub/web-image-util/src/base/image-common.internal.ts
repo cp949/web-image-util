@@ -4,7 +4,12 @@
 
 import { debugLog } from '../utils/debug.internal';
 import { createImageElement } from '../utils/image-element.internal';
-import type { ImageFileExt, ImageSource, ImageSourceConvertOptions, ImageStringSourceType } from './common-types';
+import type {
+  ImageFileExt,
+  ImageSource,
+  ImageSourceConvertOptions,
+  ImageStringSourceType,
+} from './common-types.internal';
 import { createImageError } from './error-helpers';
 
 const IMAGE_TYPE_TO_EXTENSION: Record<string, string> = {

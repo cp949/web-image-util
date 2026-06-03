@@ -10,7 +10,7 @@ import {
   stringToElement,
   urlToDataUrl,
   urlToElement,
-} from '../../../src/base/image-common';
+} from '../../../src/base/image-common.internal';
 import { ImageProcessError } from '../../../src/types';
 import { createControlledImg, SIMPLE_SVG, spyCreateImg } from './image-common.helpers';
 

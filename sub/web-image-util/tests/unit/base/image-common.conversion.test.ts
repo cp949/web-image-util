@@ -15,7 +15,7 @@ import {
   svgToBlob,
   svgToDataUrl,
   urlToBuffer,
-} from '../../../src/base/image-common';
+} from '../../../src/base/image-common.internal';
 import { createImageBlob, SIMPLE_SVG } from './image-common.helpers';
 
 describe('svgToDataUrl', () => {

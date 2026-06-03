@@ -8,7 +8,7 @@ import {
   imageFormatFromDataUrl,
   isSvgDataUrl,
   sourceTypeFromString,
-} from '../../../src/base/image-common';
+} from '../../../src/base/image-common.internal';
 import { SIMPLE_SVG } from './image-common.helpers';
 
 describe('sourceTypeFromString', () => {

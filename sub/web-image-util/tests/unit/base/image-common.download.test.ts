@@ -3,7 +3,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { downloadBlob, downloadLink } from '../../../src/base/image-common';
+import { downloadBlob, downloadLink } from '../../../src/base/image-common.internal';
 import { createImageBlob, spyCreateAnchor } from './image-common.helpers';
 
 describe('downloadBlob', () => {
