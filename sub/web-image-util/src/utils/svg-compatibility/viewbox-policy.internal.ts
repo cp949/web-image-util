@@ -6,7 +6,7 @@
  * 기존 속성 보존 → 휴리스틱/라이브 BBox 계산 → defaultSize 폴백 순서로 동작한다.
  */
 
-import { computeBBox } from './bbox';
+import { computeBBox } from './bbox/compute.internal';
 import { padBBox } from './bbox/heuristic.internal';
 import { extractSizeHints, getStyleLength, parseCssLength, sanitizeNum } from './dimensions.internal';
 import type { SvgCompatibilityOptions, SvgCompatibilityReport } from './options';

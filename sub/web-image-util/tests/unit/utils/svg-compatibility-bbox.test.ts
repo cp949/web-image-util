@@ -12,12 +12,12 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { computeBBox } from '../../../src/utils/svg-compatibility/bbox/compute.internal';
 import {
   heuristicBBox,
   heuristicBBoxFromString,
   padBBox,
 } from '../../../src/utils/svg-compatibility/bbox/heuristic.internal';
-import { computeBBox } from '../../../src/utils/svg-compatibility/bbox/index';
 import { liveGetBBox } from '../../../src/utils/svg-compatibility/bbox/live.internal';
 import type { SvgCompatibilityReport } from '../../../src/utils/svg-compatibility/options';
 
