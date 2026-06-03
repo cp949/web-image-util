@@ -13,9 +13,9 @@ export {
   detectSyncCapabilities,
   getCachedBrowserCapabilities,
   getOptimalProcessingMode,
-} from './detector';
+} from './detector.internal';
 
-export { detectCanvasFormatSupport, detectFormatSupport, getCachedFormatSupport } from './format-detection';
+export { detectCanvasFormatSupport, detectFormatSupport, getCachedFormatSupport } from './format-detection.internal';
 
-export { FEATURE_PERFORMANCE_WEIGHTS, PROCESSING_MODE_DESCRIPTIONS } from './performance';
+export { FEATURE_PERFORMANCE_WEIGHTS, PROCESSING_MODE_DESCRIPTIONS } from './performance.internal';
 export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from './types';

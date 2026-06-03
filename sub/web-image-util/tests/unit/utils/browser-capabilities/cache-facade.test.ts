@@ -19,7 +19,7 @@ import {
 import {
   analyzePerformanceFeaturesInternal,
   determineOptimalProcessingMode,
-} from '../../../../src/utils/browser-capabilities/performance';
+} from '../../../../src/utils/browser-capabilities/performance.internal';
 import type { BrowserCapabilities } from '../../../../src/utils/browser-capabilities/types';
 
 // 테스트용 BrowserCapabilities 기본값 생성 헬퍼 (모든 플래그 false)

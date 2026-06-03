@@ -15,8 +15,8 @@ import {
   detectWebWorkers,
   getDevicePixelRatio,
 } from './feature-detection.internal';
-import { detectAVIFSupport, detectFormatSupport, detectWebPSupport } from './format-detection';
-import { analyzePerformanceFeaturesInternal } from './performance';
+import { detectAVIFSupport, detectFormatSupport, detectWebPSupport } from './format-detection.internal';
+import { analyzePerformanceFeaturesInternal } from './performance.internal';
 import type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from './types';
 
 const CAPABILITIES_CACHE_KEY = 'browser-capabilities';
