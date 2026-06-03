@@ -9,7 +9,7 @@ import { SimpleWatermark } from '../composition/simple-watermark';
 import type { FilterChain } from '../filters/plugin-system';
 import { filterManager, getMissingFilterNames } from '../filters/plugin-system';
 import { ImageProcessError } from '../types';
-import { productionLog } from '../utils/debug';
+import { productionLog } from '../utils/debug.internal';
 import type { AutoProcessingResult } from './auto-high-res';
 import { AutoHighResProcessor } from './auto-high-res';
 import type { SmartFormatOptions } from './smart-format';

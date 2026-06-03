@@ -1,7 +1,7 @@
 // 통합 타입 시스템에서 ImageFormat을 가져온다.
 import type { ImageFormat } from '../types';
 import { ImageFormats } from '../types';
-import { createImageElement } from '../utils/image-element';
+import { createImageElement } from '../utils/image-element.internal';
 
 export type { ImageFormat };
 

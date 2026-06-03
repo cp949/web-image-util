@@ -4,7 +4,7 @@
  * @description 이미 알고 있는 크기 정보를 재사용해 후속 변환 비용을 줄인다.
  */
 
-import { createImageElement } from '../utils/image-element';
+import { createImageElement } from '../utils/image-element.internal';
 import { loadImageElement } from '../utils/image-loader.internal';
 import type {
   GeometrySize,

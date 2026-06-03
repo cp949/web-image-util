@@ -82,7 +82,7 @@ afterEach(() => {
   vi.doUnmock('../../../src/utils/svg-compatibility/index');
   vi.doUnmock('../../../src/svg-sanitizer');
   vi.doUnmock('../../../src/core/svg-complexity-analyzer');
-  vi.doUnmock('../../../src/utils/debug');
+  vi.doUnmock('../../../src/utils/debug.internal');
   vi.doUnmock('../../../src/utils/svg-dimensions');
   vi.resetModules();
   document.createElement = originalDocumentCreateElement;
@@ -476,7 +476,7 @@ describe('convertSvgToElement — svg/loader.ts 분기', () => {
 
   it('Blob URL 생성이 실패하면 Base64로 폴백하고 경고를 남긴다', async () => {
     const warnSpy = vi.fn();
-    vi.doMock('../../../src/utils/debug', () => ({
+    vi.doMock('../../../src/utils/debug.internal', () => ({
       debugLog: { log: vi.fn() },
       productionLog: { warn: warnSpy },
     }));

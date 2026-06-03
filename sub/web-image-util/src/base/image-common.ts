@@ -2,8 +2,8 @@
  * 브라우저 환경의 이미지 변환과 입출력을 돕는 공통 유틸리티다.
  */
 
-import { debugLog } from '../utils/debug';
-import { createImageElement } from '../utils/image-element';
+import { debugLog } from '../utils/debug.internal';
+import { createImageElement } from '../utils/image-element.internal';
 import type { ImageFileExt, ImageSource, ImageSourceConvertOptions, ImageStringSourceType } from './common-types';
 import { createImageError } from './error-helpers';
 

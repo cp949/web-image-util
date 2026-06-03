@@ -7,7 +7,7 @@
 
 import type { SvgSanitizerMode } from '../../../types';
 import { ImageProcessError } from '../../../types';
-import { debugLog, productionLog } from '../../../utils/debug';
+import { debugLog, productionLog } from '../../../utils/debug.internal';
 import { enhanceSvgForBrowser } from '../../../utils/svg-compatibility/index';
 import { extractSvgDimensions } from '../../../utils/svg-dimensions';
 import { sanitizeSvgForRendering } from '../../../utils/svg-sanitizer';

@@ -6,7 +6,7 @@
  */
 
 import { CanvasPool } from '../base/canvas-pool';
-import { debugLog, productionLog } from '../utils/debug';
+import { debugLog, productionLog } from '../utils/debug.internal';
 
 /**
  * Memory status information

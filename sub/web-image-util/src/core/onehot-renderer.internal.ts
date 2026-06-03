@@ -16,7 +16,7 @@
 import { CanvasPool } from '../base/canvas-pool';
 import { ImageProcessError } from '../errors';
 import type { ResizeConfig } from '../types/resize-config';
-import { productionLog } from '../utils/debug';
+import { productionLog } from '../utils/debug.internal';
 import type { LayoutResult } from './resize-calculator.internal';
 
 // ============================================================================

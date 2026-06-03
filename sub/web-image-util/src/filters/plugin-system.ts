@@ -2,7 +2,7 @@
  * 필터 등록과 실행을 담당하는 플러그인 기반 필터 시스템이다.
  */
 
-import { debugLog, productionLog } from '../utils/debug';
+import { debugLog, productionLog } from '../utils/debug.internal';
 import { BlendMode } from './filter-blend-mode.internal';
 import { applyBlendMode, applyOpacity } from './filter-blending.internal';
 import { createFilterNotFoundError, createInvalidFilterParamsError } from './filter-errors.internal';

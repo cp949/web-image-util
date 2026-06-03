@@ -10,7 +10,7 @@
 import { CanvasPool } from '../base/canvas-pool';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
-import { debugLog } from '../utils/debug';
+import { debugLog } from '../utils/debug.internal';
 import type { FinalLayout, LazyOperation } from './lazy-render-pipeline.internal';
 import { ResizeCalculator } from './resize-calculator.internal';
 

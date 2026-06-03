@@ -8,7 +8,7 @@
 import type { OutputOptions } from '../../types';
 import { ImageProcessError } from '../../types';
 import { formatToMimeType } from '../format-utils';
-import { createImageElement } from '../image-element';
+import { createImageElement } from '../image-element.internal';
 
 /**
  * Convert Canvas to Blob

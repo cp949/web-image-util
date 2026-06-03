@@ -8,11 +8,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // createImageElement mock 선언 — vitest에 의해 호이스팅된다
-vi.mock('../../../src/utils/image-element');
+vi.mock('../../../src/utils/image-element.internal');
 
 import { FORMAT_MIME_MAP, FormatDetector } from '../../../src/base/format-detector';
 import { ImageFormats } from '../../../src/types';
-import { createImageElement } from '../../../src/utils/image-element';
+import { createImageElement } from '../../../src/utils/image-element.internal';
 
 // -----------------------------------------------------------------------
 // 헬퍼

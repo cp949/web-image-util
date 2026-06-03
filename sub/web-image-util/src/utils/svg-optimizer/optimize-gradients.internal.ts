@@ -6,7 +6,7 @@
  * DOMParser가 없거나 파싱이 실패하면 원본을 그대로 반환한다.
  */
 
-import { productionLog } from '../debug';
+import { productionLog } from '../debug.internal';
 
 /** 그라디언트의 형태/속성/정지점을 합쳐 동일성 키를 만든다. */
 function hashGradient(gradient: Element): string {

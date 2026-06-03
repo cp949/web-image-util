@@ -6,7 +6,7 @@
 import { HighResolutionDetector } from '../base/high-res-detector';
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
-import { productionLog } from '../utils/debug';
+import { productionLog } from '../utils/debug.internal';
 
 /**
  * Automatic processing thresholds

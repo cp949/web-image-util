@@ -8,7 +8,7 @@
  * 외부 공개 API는 `SvgOptimizer` 클래스로 유지된다(기존 정적 메서드 호환).
  */
 
-import { productionLog } from '../debug';
+import { productionLog } from '../debug.internal';
 import { cleanupWhitespace } from './cleanup-whitespace.internal';
 import { optimizeGradients } from './optimize-gradients.internal';
 import { removeMetadata } from './remove-metadata.internal';

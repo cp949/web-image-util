@@ -6,7 +6,7 @@
  */
 
 import { ImageProcessError } from '../types';
-import { createImageElement } from '../utils/image-element';
+import { createImageElement } from '../utils/image-element.internal';
 
 /**
  * Blob을 로드된 HTMLImageElement로 변환한다.

@@ -5,7 +5,7 @@
  */
 
 import { ImageProcessError } from '../types';
-import { debugLog } from '../utils/debug';
+import { debugLog } from '../utils/debug.internal';
 
 export class CanvasPool {
   private static instance: CanvasPool;

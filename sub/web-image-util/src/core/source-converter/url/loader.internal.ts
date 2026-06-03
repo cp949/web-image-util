@@ -6,7 +6,7 @@
  */
 
 import { ImageProcessError } from '../../../types';
-import { productionLog } from '../../../utils/debug';
+import { productionLog } from '../../../utils/debug.internal';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import {
   DEFAULT_ALLOWED_PROTOCOLS,

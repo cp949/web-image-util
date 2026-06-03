@@ -1,4 +1,4 @@
-import { productionLog } from '../utils/debug';
+import { productionLog } from '../utils/debug.internal';
 import { withManagedCanvas } from './canvas-utils';
 import { createImageError } from './error-helpers';
 import type { ImageAnalysis } from './high-res-detector';

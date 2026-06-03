@@ -4,7 +4,7 @@
  * 새 기본 필터를 추가하면 해당 카테고리 모듈(blur/color/effect)의 export만 늘리면 자동으로 노출된다.
  */
 
-import { debugLog, productionLog } from '../../utils/debug';
+import { debugLog, productionLog } from '../../utils/debug.internal';
 import type { FilterPlugin } from '../plugin-system';
 import { filterManager, registerFilter } from '../plugin-system';
 import { BlurFilterPlugins } from './blur-plugins';

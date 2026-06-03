@@ -7,7 +7,7 @@
  */
 
 import type { ImageFormat } from '../../types';
-import { createImageElement } from '../image-element';
+import { createImageElement } from '../image-element.internal';
 import { capabilityCache } from './cache.internal';
 import type { BrowserCapabilities } from './types';
 

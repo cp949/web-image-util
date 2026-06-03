@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { debugLog, isDevelopmentMode, productionLog } from '../../../src/utils/debug';
+import { debugLog, isDevelopmentMode, productionLog } from '../../../src/utils/debug.internal';
 
 /**
  * debug 유틸 환경 분기 테스트.

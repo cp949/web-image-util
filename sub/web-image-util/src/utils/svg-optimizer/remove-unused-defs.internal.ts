@@ -7,7 +7,7 @@
  * 원본을 그대로 반환한다.
  */
 
-import { productionLog } from '../debug';
+import { productionLog } from '../debug.internal';
 
 /** ID 하나가 문서에서 참조되는지 검사할 때 사용할 속성 셀렉터 목록. */
 const REFERENCE_ATTRIBUTES = [

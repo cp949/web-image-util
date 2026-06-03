@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createImageElement } from '../../../src/utils/image-element';
+import { createImageElement } from '../../../src/utils/image-element.internal';
 
 describe('createImageElement', () => {
   it('크기 인자가 없으면 빈 img 요소를 만든다', () => {
