@@ -4,7 +4,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { requireCanvasContext, withCanvasState } from '../../../src/composition/canvas-drawing.internal';
-import { ImageProcessError } from '../../../src/errors';
+import { ImageProcessError } from '../../../src/errors.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 describe('canvas-drawing', () => {

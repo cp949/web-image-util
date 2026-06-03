@@ -1,5 +1,5 @@
 import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
-import { ImageProcessError } from '../errors';
+import { ImageProcessError } from '../errors.internal';
 import {
   detectPrefixEnvironment,
   detectStyleDeoptReasons,

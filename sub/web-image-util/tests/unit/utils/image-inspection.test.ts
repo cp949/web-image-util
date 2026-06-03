@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ImageProcessError } from '../../../src/errors';
+import { ImageProcessError } from '../../../src/errors.internal';
 import { hasTransparency } from '../../../src/utils';
 
 // Node 테스트용 Canvas 목이 픽셀 저장을 하지 않으므로 검사할 alpha 값을 직접 주입한다.

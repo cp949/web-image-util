@@ -273,8 +273,8 @@ export type {
   ImageErrorDetails,
   ImageErrorDetailsByCode,
   ImageProcessErrorOptions,
-} from '../errors';
-export { ImageErrorCode, ImageProcessError } from '../errors';
+} from '../errors.internal';
+export { ImageErrorCode, ImageProcessError } from '../errors.internal';
 
 // Canvas API does not have margin/padding concepts like Sharp.js's extend feature
 // Users must directly adjust Canvas size if needed

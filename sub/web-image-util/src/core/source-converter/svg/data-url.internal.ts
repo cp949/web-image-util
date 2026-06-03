@@ -6,7 +6,7 @@
  * 오류 code는 source-converter 의미 체계(`INVALID_SOURCE`, `SOURCE_LOAD_FAILED`)를 따른다.
  */
 
-import { ImageProcessError } from '../../../errors';
+import { ImageProcessError } from '../../../errors.internal';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { MAX_SVG_BYTES } from '../options.internal';
 import { checkSvgSizeLimit, createSvgSizeLimitError } from './safety.internal';

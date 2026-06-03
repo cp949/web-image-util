@@ -3,7 +3,7 @@
  *
  * 모든 throw는 `ImageProcessError`를 통해 이뤄지며, 호출자는 `code`로 분기한다.
  */
-import { ImageProcessError } from '../../errors';
+import { ImageProcessError } from '../../errors.internal';
 
 export type InvalidDataUrlKind = 'malformed' | 'invalid-base64' | 'invalid-percent';
 

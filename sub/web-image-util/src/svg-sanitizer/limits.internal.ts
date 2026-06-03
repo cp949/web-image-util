@@ -5,7 +5,7 @@
  * 수 없다(서브패스 export 대상이 아님).
  */
 
-import { ImageProcessError } from '../errors';
+import { ImageProcessError } from '../errors.internal';
 
 /**
  * 입력 SVG의 UTF-8 바이트 크기가 maxBytes를 초과하면 ImageProcessError를 던진다.

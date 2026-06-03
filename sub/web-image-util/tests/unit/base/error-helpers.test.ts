@@ -19,7 +19,7 @@ import {
   withErrorRecovery,
 } from '../../../src/base/error-helpers';
 import { ImageErrorHandler } from '../../../src/core/error-handler';
-import { ImageErrorCode, ImageProcessError } from '../../../src/errors';
+import { ImageErrorCode, ImageProcessError } from '../../../src/errors.internal';
 
 describe('createImageError', () => {
   it('반환값은 ImageProcessError 인스턴스이다', () => {

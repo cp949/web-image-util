@@ -5,7 +5,7 @@
  * 보정은 호출 측 정책에 위임한다.
  */
 
-import { ImageProcessError } from '../../errors';
+import { ImageProcessError } from '../../errors.internal';
 import { isInlineSvg } from '../svg-detection';
 import { throwInvalidSvgDataURL } from './errors.internal';
 import { decodeDataURLPayload, parseDataURL } from './parse.internal';

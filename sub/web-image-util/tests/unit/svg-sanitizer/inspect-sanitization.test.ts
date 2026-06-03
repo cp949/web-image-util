@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options.internal';
-import { ImageProcessError } from '../../../src/errors';
+import { ImageProcessError } from '../../../src/errors.internal';
 import { inspectSvgSanitization } from '../../../src/svg-sanitizer/inspect-sanitization';
 import { sanitizeSvgForRendering } from '../../../src/utils/svg-sanitizer';
 import { encodedByteLength, TINY_SVG } from './inspect-sanitization-helpers';

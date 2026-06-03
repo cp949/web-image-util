@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ImageProcessError } from '../../../src/errors';
+import { ImageProcessError } from '../../../src/errors.internal';
 import {
   blobToDataURL,
   dataURLToBlob,

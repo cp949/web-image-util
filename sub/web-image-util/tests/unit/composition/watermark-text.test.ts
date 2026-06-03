@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { Position } from '../../../src/composition/position-types';
 import { TextWatermark } from '../../../src/composition/text-watermark';
-import { ImageProcessError } from '../../../src/errors';
+import { ImageProcessError } from '../../../src/errors.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 import { baseStyle } from './watermark-helpers';
 

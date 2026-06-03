@@ -6,7 +6,7 @@
  * 하위 모듈(`reference-policy`, `enforce-dom-policy.internal`, `postprocess`)에 주입한다.
  */
 
-import { ImageProcessError } from '../errors';
+import { ImageProcessError } from '../errors.internal';
 import { buildFinalConfig, sanitizeUserConfig } from './config.internal';
 import { getDomPurify } from './dompurify-instance.internal';
 import { assertSafeIntegerLimit, assertWithinMaxBytes } from './limits.internal';

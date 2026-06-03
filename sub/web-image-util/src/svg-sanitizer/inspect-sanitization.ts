@@ -11,7 +11,7 @@
  */
 
 import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
-import { ImageProcessError } from '../errors';
+import { ImageProcessError } from '../errors.internal';
 import { detectSvgInspectionEnvironment } from '../utils/svg-inspection';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 import { collectEmbeddedImageStages, collectGeneralStages } from './inspect-sanitization/stage-collectors.internal';

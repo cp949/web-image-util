@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options.internal';
-import { ImageProcessError } from '../../../src/errors';
+import { ImageProcessError } from '../../../src/errors.internal';
 import { inspectSvgSource } from '../../../src/utils/inspect-svg-source';
 
 // 책임이 더 큰 분기는 다음 파일로 분리되어 있다.

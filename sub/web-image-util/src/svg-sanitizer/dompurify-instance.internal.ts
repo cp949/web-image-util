@@ -8,7 +8,7 @@
 
 import DOMPurify from 'dompurify';
 
-import { ImageProcessError } from '../errors';
+import { ImageProcessError } from '../errors.internal';
 
 type DOMPurifyInstance = ReturnType<typeof DOMPurify>;
 

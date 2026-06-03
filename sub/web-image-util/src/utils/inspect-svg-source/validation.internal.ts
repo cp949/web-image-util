@@ -1,5 +1,5 @@
 import { MAX_SVG_BYTES } from '../../core/source-converter/options.internal';
-import { ImageProcessError } from '../../errors';
+import { ImageProcessError } from '../../errors.internal';
 // 타입만 import — JS 런타임 순환 차단. 런타임 값 import 추가 시 순환이 남는다.
 import type { InspectSvgSourceInput, InspectSvgSourceOptions } from '../inspect-svg-source';
 

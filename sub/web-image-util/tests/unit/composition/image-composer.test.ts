@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { ImageComposer } from '../../../src/composition/image-composer';
-import { ImageProcessError } from '../../../src/errors';
+import { ImageProcessError } from '../../../src/errors.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 function createTestImage(width = 100, height = 100): HTMLImageElement {
