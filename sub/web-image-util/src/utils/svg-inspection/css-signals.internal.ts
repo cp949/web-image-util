@@ -5,7 +5,7 @@ import {
   visitCssUrlValues,
 } from '../svg-policy-utils.internal';
 import type { SvgInspectionPolicy } from './policy';
-import { pushCappedSample } from './sample-utils';
+import { pushCappedSample } from './sample-utils.internal';
 
 const CSS_URL_PRESENTATION_ATTRIBUTES = new Set([
   'clip-path',
