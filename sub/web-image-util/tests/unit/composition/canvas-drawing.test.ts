@@ -3,7 +3,12 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { requireCanvasContext, withCanvasState } from '../../../src/composition/canvas-drawing.internal';
+import {
+  drawImageLayer,
+  drawShadowedImage,
+  requireCanvasContext,
+  withCanvasState,
+} from '../../../src/composition/canvas-drawing.internal';
 import { ImageProcessError } from '../../../src/errors.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
@@ -39,5 +44,67 @@ describe('canvas-drawing', () => {
 
     expect(saveSpy).toHaveBeenCalledTimes(1);
     expect(restoreSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('레이어 이미지의 투명도·블렌드·회전을 적용한 뒤 Canvas 상태를 복구한다', () => {
+    const canvas = createTestCanvas(100, 100);
+    const image = createTestCanvas(20, 10) as unknown as HTMLImageElement;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+
+    const saveSpy = vi.spyOn(ctx, 'save');
+    const restoreSpy = vi.spyOn(ctx, 'restore');
+    const translateSpy = vi.spyOn(ctx, 'translate');
+    const rotateSpy = vi.spyOn(ctx, 'rotate');
+    const drawImageSpy = vi.spyOn(ctx, 'drawImage');
+
+    drawImageLayer(ctx, {
+      image,
+      x: 10,
+      y: 15,
+      width: 20,
+      height: 10,
+      opacity: 0.5,
+      blendMode: 'multiply',
+      rotation: 90,
+    });
+
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    expect(restoreSpy).toHaveBeenCalledTimes(1);
+    expect(translateSpy).toHaveBeenNthCalledWith(1, 20, 20);
+    expect(rotateSpy).toHaveBeenCalledWith(Math.PI / 2);
+    expect(drawImageSpy).toHaveBeenCalledWith(image, 10, 15, 20, 10);
+    expect(ctx.globalAlpha).toBe(1);
+    expect(ctx.globalCompositeOperation).toBe('source-over');
+  });
+
+  it('그림자 이미지도 실패 여부와 무관하게 Canvas 상태 범위 안에서 그린다', () => {
+    const canvas = createTestCanvas(100, 100);
+    const image = createTestCanvas(20, 10) as unknown as HTMLImageElement;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+    const initialShadowColor = ctx.shadowColor;
+
+    const saveSpy = vi.spyOn(ctx, 'save');
+    const restoreSpy = vi.spyOn(ctx, 'restore');
+    const drawImageSpy = vi.spyOn(ctx, 'drawImage');
+
+    drawShadowedImage(ctx, image, {
+      x: 5,
+      y: 7,
+      width: 20,
+      height: 10,
+      rotation: 0,
+    });
+
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    expect(restoreSpy).toHaveBeenCalledTimes(1);
+    expect(drawImageSpy).toHaveBeenCalledWith(image, 5, 7, 20, 10);
+    expect(ctx.shadowBlur).toBe(0);
+    expect(ctx.shadowColor).toBe(initialShadowColor);
   });
 });

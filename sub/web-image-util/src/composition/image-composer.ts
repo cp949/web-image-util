@@ -1,6 +1,7 @@
 import { withManagedCanvas } from '../base/canvas-utils.internal';
 import { ImageProcessError } from '../errors.internal';
 import { productionLog } from '../utils/debug.internal';
+import { drawImageLayer, drawPlacedImage, drawShadowedImage, fillCanvasBackground } from './canvas-drawing.internal';
 import { calculateFitSize, calculateGridMetrics, rectanglesOverlap } from './image-composer-layout.internal';
 import type { Rectangle, Size } from './position-types';
 
@@ -62,41 +63,12 @@ export class ImageComposer {
     const { width, height, backgroundColor } = options;
 
     return withManagedCanvas(width, height, (canvas, ctx) => {
-      // Set background color
-      if (backgroundColor) {
-        ctx.fillStyle = backgroundColor;
-        ctx.fillRect(0, 0, width, height);
-      }
+      fillCanvasBackground(ctx, width, height, backgroundColor);
 
-      // Draw each layer
       for (const layer of layers) {
         if (layer.visible === false) continue;
 
-        ctx.save();
-
-        // Set opacity and blending mode
-        ctx.globalAlpha = layer.opacity || 1;
-        ctx.globalCompositeOperation = layer.blendMode || 'source-over';
-
-        // Set rotation
-        if (layer.rotation) {
-          const centerX = layer.x + (layer.width || layer.image.width) / 2;
-          const centerY = layer.y + (layer.height || layer.image.height) / 2;
-          ctx.translate(centerX, centerY);
-          ctx.rotate((layer.rotation * Math.PI) / 180);
-          ctx.translate(-centerX, -centerY);
-        }
-
-        // Draw image
-        ctx.drawImage(
-          layer.image,
-          layer.x,
-          layer.y,
-          layer.width || layer.image.width,
-          layer.height || layer.image.height
-        );
-
-        ctx.restore();
+        drawImageLayer(ctx, layer);
       }
 
       return canvas;
@@ -126,11 +98,8 @@ export class ImageComposer {
     });
 
     return withManagedCanvas(canvasWidth, canvasHeight, (canvas, ctx) => {
-      // Set background
-      ctx.fillStyle = backgroundColor;
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      fillCanvasBackground(ctx, canvasWidth, canvasHeight, backgroundColor);
 
-      // Place images
       for (let i = 0; i < maxImages; i++) {
         const row = Math.floor(i / cols);
         const col = i % cols;
@@ -139,10 +108,9 @@ export class ImageComposer {
         const cellX = spacing + col * (cellWidth + spacing);
         const cellY = spacing + row * (cellHeight + spacing);
 
-        // Calculate image size adjustment
         const { x, y, width, height } = calculateFitSize(image.width, image.height, cellWidth, cellHeight, fit);
 
-        ctx.drawImage(image, cellX + x, cellY + y, width, height);
+        drawPlacedImage(ctx, image, { x: cellX + x, y: cellY + y, width, height });
       }
 
       return canvas;
@@ -165,17 +133,13 @@ export class ImageComposer {
     const { backgroundColor = '#ffffff', randomRotation = true, maxRotation = 15, overlap = true } = options;
 
     return withManagedCanvas(canvasSize.width, canvasSize.height, (canvas, ctx) => {
-      // Set background
-      ctx.fillStyle = backgroundColor;
-      ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
+      fillCanvasBackground(ctx, canvasSize.width, canvasSize.height, backgroundColor);
 
-      // Randomly place images
       const usedAreas: Rectangle[] = [];
 
       for (let i = 0; i < images.length; i++) {
         const image = images[i];
 
-        // Scale adjustment (15-30% of canvas size)
         const minScale = 0.15;
         const maxScale = 0.3;
         const scale = minScale + Math.random() * (maxScale - minScale);
@@ -183,7 +147,6 @@ export class ImageComposer {
         const scaledWidth = image.width * scale;
         const scaledHeight = image.height * scale;
 
-        // Determine position
         let x: number, y: number;
         let attempts = 0;
         const maxAttempts = 50;
@@ -198,31 +161,15 @@ export class ImageComposer {
           rectanglesOverlap({ x, y, width: scaledWidth, height: scaledHeight }, usedAreas)
         );
 
-        // Record area
         usedAreas.push({ x, y, width: scaledWidth, height: scaledHeight });
 
-        ctx.save();
-
-        // Rotation
-        if (randomRotation) {
-          const rotation = (Math.random() - 0.5) * 2 * maxRotation;
-          const centerX = x + scaledWidth / 2;
-          const centerY = y + scaledHeight / 2;
-          ctx.translate(centerX, centerY);
-          ctx.rotate((rotation * Math.PI) / 180);
-          ctx.translate(-centerX, -centerY);
-        }
-
-        // Shadow effect
-        ctx.shadowColor = 'rgba(0,0,0,0.3)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetX = 3;
-        ctx.shadowOffsetY = 3;
-
-        // Draw image
-        ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
-
-        ctx.restore();
+        drawShadowedImage(ctx, image, {
+          x,
+          y,
+          width: scaledWidth,
+          height: scaledHeight,
+          rotation: randomRotation ? (Math.random() - 0.5) * 2 * maxRotation : undefined,
+        });
       }
 
       return canvas;
