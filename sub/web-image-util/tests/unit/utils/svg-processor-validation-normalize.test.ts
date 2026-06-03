@@ -4,7 +4,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { enhanceSvgForBrowser } from '../../../src/utils/svg-compatibility';
-import { SVGProcessor } from '../../../src/utils/svg-processor';
+import { SVGProcessor } from '../../../src/utils/svg-processor.internal';
 import { BROKEN_XML, NOT_SVG, VALID_SVG } from './svg-processor.helpers';
 
 vi.mock('../../../src/utils/svg-compatibility', async (importOriginal) => {

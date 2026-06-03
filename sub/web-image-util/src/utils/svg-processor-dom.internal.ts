@@ -1,4 +1,4 @@
-import type { SVGDimensions } from './svg-processor';
+import type { SVGDimensions } from './svg-processor.internal';
 
 const SVG_MIME_TYPE = 'image/svg+xml';
 

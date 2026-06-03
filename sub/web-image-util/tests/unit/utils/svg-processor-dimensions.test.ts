@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { SVGProcessor } from '../../../src/utils/svg-processor';
+import { SVGProcessor } from '../../../src/utils/svg-processor.internal';
 import {
   BROKEN_XML,
   NOT_SVG,

@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { SVGProcessor } from '../../../src/utils/svg-processor';
+import { SVGProcessor } from '../../../src/utils/svg-processor.internal';
 import { SVG_NO_DIMS, SVG_WITH_VIEWBOX, SVG_WITH_WH } from './svg-processor.helpers';
 
 describe('SVGProcessor.addDimensionsToSVG()', () => {

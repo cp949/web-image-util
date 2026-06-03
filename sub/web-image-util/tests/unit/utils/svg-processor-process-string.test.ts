@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImageProcessError } from '../../../src/types';
 import { enhanceSvgForBrowser } from '../../../src/utils/svg-compatibility';
-import { SVGProcessor } from '../../../src/utils/svg-processor';
+import { SVGProcessor } from '../../../src/utils/svg-processor.internal';
 import { createControlledImage, SVG_NO_DIMS, SVG_WITH_WH, VALID_SVG } from './svg-processor.helpers';
 
 vi.mock('../../../src/utils/svg-compatibility', async (importOriginal) => {
