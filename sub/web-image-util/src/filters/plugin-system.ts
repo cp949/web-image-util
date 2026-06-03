@@ -5,7 +5,7 @@
 import { debugLog, productionLog } from '../utils/debug';
 import { BlendMode } from './filter-blend-mode';
 import { applyBlendMode, applyOpacity } from './filter-blending';
-import { createFilterNotFoundError, createInvalidFilterParamsError } from './filter-errors';
+import { createFilterNotFoundError, createInvalidFilterParamsError } from './filter-errors.internal';
 
 /**
  * 모든 필터 플러그인이 구현해야 하는 기본 계약이다.
