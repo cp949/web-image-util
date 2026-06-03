@@ -7,9 +7,9 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AutoMemoryManager } from '../../../src/core/auto-memory-manager';
-import { InternalHighResProcessor } from '../../../src/core/internal/internal-high-res-processor';
-import { SmartProcessor } from '../../../src/core/smart-processor';
+import { AutoMemoryManager } from '../../../src/core/auto-memory-manager.internal';
+import { InternalHighResProcessor } from '../../../src/core/internal/internal-high-res-processor.internal';
+import { SmartProcessor } from '../../../src/core/smart-processor.internal';
 
 // img.width / img.height 를 제어하는 헬퍼 (고해상도 경로, 모킹됨)
 function createMockImage(width: number, height: number): HTMLImageElement {

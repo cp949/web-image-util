@@ -8,9 +8,9 @@
 import { createImageError } from '../base/error-helpers';
 import type { ProcessingStrategy } from '../base/high-res-detector';
 import type { SmartResizeOptions } from '../types';
-import { AutoMemoryManager } from './auto-memory-manager';
+import { AutoMemoryManager } from './auto-memory-manager.internal';
 import { type BatchResizeJob, BatchResizer } from './batch-resizer';
-import { InternalHighResProcessor } from './internal/internal-high-res-processor';
+import { InternalHighResProcessor } from './internal/internal-high-res-processor.internal';
 import type { ResizeProfile } from './performance-config';
 
 /**

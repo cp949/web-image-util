@@ -6,7 +6,7 @@
 
 import { BatchResizer } from './batch-resizer';
 import { getPerformanceConfig, type ResizeProfile } from './performance-config';
-import { SmartProcessor } from './smart-processor';
+import { SmartProcessor } from './smart-processor.internal';
 
 /**
  * Global performance configuration

@@ -3,7 +3,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool';
-import { AutoMemoryManager } from '../../../src/core/auto-memory-manager';
+import { AutoMemoryManager } from '../../../src/core/auto-memory-manager.internal';
 
 describe('AutoMemoryManager', () => {
   let manager: AutoMemoryManager;

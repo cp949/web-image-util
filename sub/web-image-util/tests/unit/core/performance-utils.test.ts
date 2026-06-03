@@ -4,7 +4,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BatchResizer } from '../../../src/core/batch-resizer';
 import { autoResize, fastResize, qualityResize, ResizePerformance } from '../../../src/core/performance-utils';
-import { SmartProcessor } from '../../../src/core/smart-processor';
+import { SmartProcessor } from '../../../src/core/smart-processor.internal';
 
 /**
  * performance.memory를 복구 가능한 방식으로 주입한다.

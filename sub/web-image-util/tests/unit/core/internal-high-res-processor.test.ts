@@ -16,7 +16,7 @@ import { ProcessingStrategy } from '../../../src/base/high-res-detector';
 import { HighResolutionManager } from '../../../src/base/high-res-manager';
 import { SteppedProcessor } from '../../../src/base/stepped-processor';
 import { TiledProcessor } from '../../../src/base/tiled-processor';
-import { InternalHighResProcessor } from '../../../src/core/internal/internal-high-res-processor';
+import { InternalHighResProcessor } from '../../../src/core/internal/internal-high-res-processor.internal';
 import {
   applyLowMemoryState,
   createDrawableCanvas,

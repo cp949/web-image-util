@@ -4,7 +4,7 @@
  * @description Efficiently processes multiple images without complex monitoring
  */
 
-import { AutoMemoryManager } from './auto-memory-manager';
+import { AutoMemoryManager } from './auto-memory-manager.internal';
 import type { ResizePerformanceOptions } from './performance-config';
 import { getPerformanceConfig, type ResizeProfile } from './performance-config';
 
