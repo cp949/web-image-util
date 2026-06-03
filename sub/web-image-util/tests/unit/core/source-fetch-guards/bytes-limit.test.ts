@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { convertToImageElement } from '../../../../src/core/source-converter';
+import { convertToImageElement } from '../../../../src/core/source-converter.internal';
 import { ImageProcessError } from '../../../../src/types';
 import { createByteStreamBody, createSuccessResponse, mockImgElement, withFetchMock } from './helpers';
 

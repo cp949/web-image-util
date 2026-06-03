@@ -2,7 +2,7 @@
  * 이미지 픽셀 데이터를 직접 검사하는 유틸리티다.
  */
 
-import { convertToImageElement } from '../core/source-converter';
+import { convertToImageElement } from '../core/source-converter.internal';
 import type { ImageSource } from '../types';
 import { ImageProcessError } from '../types';
 

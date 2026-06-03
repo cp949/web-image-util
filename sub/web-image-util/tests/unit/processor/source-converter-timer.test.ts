@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { convertToImageElement } from '../../../src/core/source-converter';
+import { convertToImageElement } from '../../../src/core/source-converter.internal';
 
 // SVG fetch 응답에 사용할 최소 유효 SVG 문자열
 const MINIMAL_SVG = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>';

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { processImage, unsafe_processImage } from '../../src';
-import { convertToImageElement } from '../../src/core/source-converter';
+import { convertToImageElement } from '../../src/core/source-converter.internal';
 import { ImageProcessError } from '../../src/types';
 
 const unsafeSvg =

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectSourceType } from '../../src/core/source-converter';
+import { detectSourceType } from '../../src/core/source-converter.internal';
 import { isInlineSvg } from '../../src/utils/svg-detection';
 
 describe('보안: SVG 입력 검증', () => {
