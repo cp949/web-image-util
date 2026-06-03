@@ -7,9 +7,9 @@
 
 import type { ImageSource, ProcessorOptions } from '../../types';
 import { ImageProcessError } from '../../types';
-import { convertBlobToElement, detectMimeTypeFromBuffer } from './loaders/blob';
-import { convertCanvasToElement } from './loaders/canvas';
-import { convertStringToElement } from './loaders/string';
+import { convertBlobToElement, detectMimeTypeFromBuffer } from './loaders/blob.internal';
+import { convertCanvasToElement } from './loaders/canvas.internal';
+import { convertStringToElement } from './loaders/string.internal';
 import type { InternalSourceConverterOptions } from './options';
 
 /**

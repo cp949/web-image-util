@@ -11,10 +11,10 @@ import {
   isSvgBlobByMetadata,
   shouldSniffBlobForSvg,
   sniffSvgFromBlob,
-} from './blob-sniff';
-import { normalizeMimeType } from './mime';
-import { detectImageStringSourceInfo, detectImageStringSourceType } from './string-detection';
-import { isBlobSource, isCanvasElementSource, isImageElementSource } from './type-guards';
+} from './blob-sniff.internal';
+import { normalizeMimeType } from './mime.internal';
+import { detectImageStringSourceInfo, detectImageStringSourceType } from './string-detection.internal';
+import { isBlobSource, isCanvasElementSource, isImageElementSource } from './type-guards.internal';
 import type { DetectImageSourceInfoOptions, ImageSourceInfo, ImageSourceType, ImageStringSourceType } from './types';
 
 /**

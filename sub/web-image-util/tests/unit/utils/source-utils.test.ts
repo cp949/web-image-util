@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -16,8 +17,8 @@ import {
   isXmlMimeType,
   normalizeMimeType,
   parseDataUrlMimeType,
-} from '../../../src/utils/source-utils/mime';
-import { getFormatFromPath, getPathnameWithoutSuffix } from '../../../src/utils/source-utils/path';
+} from '../../../src/utils/source-utils/mime.internal';
+import { getFormatFromPath, getPathnameWithoutSuffix } from '../../../src/utils/source-utils/path.internal';
 
 describe('source utilities', () => {
   describe('detectImageStringSourceType', () => {
@@ -193,6 +194,16 @@ describe('source utilities', () => {
       expect(detectImageStringSourceType('/icon.svg')).toBe('svg-path');
       expect(detectImageSourceTypeFromRoot('/photo.png')).toBe('path');
       await expect(detectImageSourceInfoFromRoot('/icon.svg')).resolves.toMatchObject({ type: 'svg-path' });
+    });
+
+    it('공개 배럴과 공개 타입을 제외한 구현 파일은 internal 파일명을 사용한다', () => {
+      const allowedPublicFiles = new Set(['index.ts', 'types.ts']);
+      const sourceUtilsDir = `${process.cwd()}/src/utils/source-utils`;
+      const implementationFiles = readdirSync(sourceUtilsDir).filter(
+        (fileName) => fileName.endsWith('.ts') && !allowedPublicFiles.has(fileName)
+      );
+
+      expect(implementationFiles.filter((fileName) => !fileName.endsWith('.internal.ts'))).toEqual([]);
     });
   });
 });

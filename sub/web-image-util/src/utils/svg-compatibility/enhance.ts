@@ -5,10 +5,10 @@
  * 한 곳에서 조립한다. 이미지 처리 파이프라인용 facade(`enhanceSvgForBrowser`)도 함께 둔다.
  */
 
-import { addPAR, addRequiredNamespaces, modernizeSvgSyntax } from './attributes';
+import { addPAR, addRequiredNamespaces, modernizeSvgSyntax } from './attributes.internal';
 import { toMsg } from './internal';
 import { DEFAULT_OPTIONS, type SvgCompatibilityOptions, type SvgCompatibilityReport } from './options';
-import { applyViewBoxPolicy } from './viewbox-policy';
+import { applyViewBoxPolicy } from './viewbox-policy.internal';
 
 /**
  * SVG 문자열을 Canvas 렌더링과 크로스브라우저 호환에 맞게 보강한다.

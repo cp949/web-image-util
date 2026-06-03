@@ -13,7 +13,7 @@ import {
   getStyleLength,
   parseCssLength,
   sanitizeNum,
-} from '../../../src/utils/svg-compatibility/dimensions';
+} from '../../../src/utils/svg-compatibility/dimensions.internal';
 import { toMsg } from '../../../src/utils/svg-compatibility/internal';
 
 describe('SVG 호환성 보정', () => {

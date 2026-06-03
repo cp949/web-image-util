@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDeoptResult, buildPrefixWarnings } from '../../../src/utils/prefix-svg-ids/report-utils';
+import { buildDeoptResult, buildPrefixWarnings } from '../../../src/utils/prefix-svg-ids/report-utils.internal';
 
 describe('report-utils helper', () => {
   describe('buildPrefixWarnings', () => {

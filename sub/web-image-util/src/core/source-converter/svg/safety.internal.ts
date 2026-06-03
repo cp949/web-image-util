@@ -9,7 +9,7 @@ import { ImageProcessError } from '../../../types';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../../../utils/svg-policy-utils';
 import { MAX_SVG_BYTES } from '../options';
-import { isBlockedSvgPolicyRef } from '../url/policy';
+import { isBlockedSvgPolicyRef } from '../url/policy.internal';
 
 /**
  * 따옴표 안의 `>` 문자를 태그 종료로 오인하지 않도록 SVG 시작 태그를 순회하는 패턴이다.

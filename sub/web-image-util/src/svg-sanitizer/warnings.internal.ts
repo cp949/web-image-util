@@ -8,8 +8,8 @@
  */
 
 import { isSafeRasterDataImageRef, isSvgDataImageRef } from '../utils/svg-data-url-policy';
-import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy';
-import { isSafeInternalReference } from './reference-policy';
+import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
+import { isSafeInternalReference } from './reference-policy.internal';
 
 /**
  * 같은 경고가 반복 삽입되지 않도록 warnings 배열에 한 번만 추가한다.

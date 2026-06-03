@@ -24,7 +24,7 @@
  * processImage()에 결과를 넘긴다.
  */
 
-import { sanitizeSvgStrictCore } from './core';
+import { sanitizeSvgStrictCore } from './core.internal';
 import type { SanitizeSvgStrictDetailedResult, StrictSvgSanitizerOptions } from './types';
 
 export type { SanitizeSvgStrictDetailedResult, StrictSvgSanitizerOptions } from './types';

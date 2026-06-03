@@ -8,7 +8,7 @@
 
 import type { ImageFormat } from '../../types';
 import { createImageElement } from '../image-element';
-import { capabilityCache } from './cache';
+import { capabilityCache } from './cache.internal';
 import type { BrowserCapabilities } from './types';
 
 function getCanvasFormatCacheKey(format: ImageFormat): string {

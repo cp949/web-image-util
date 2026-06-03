@@ -3,7 +3,7 @@ import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options';
 import {
   assertInspectSvgSourceInput,
   assertInspectSvgSourceOptions,
-} from '../../../src/utils/inspect-svg-source/validation';
+} from '../../../src/utils/inspect-svg-source/validation.internal';
 
 describe('assertInspectSvgSourceInput() — 비허용 입력 throw', () => {
   it('null 입력 시 code가 SVG_SOURCE_INVALID이고 actualType이 "null"이다', () => {

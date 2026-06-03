@@ -9,11 +9,11 @@
  */
 
 import { productionLog } from '../debug';
-import { cleanupWhitespace } from './cleanup-whitespace';
-import { optimizeGradients } from './optimize-gradients';
-import { removeMetadata } from './remove-metadata';
-import { removeUnusedDefs } from './remove-unused-defs';
-import { simplifyPaths } from './simplify-paths';
+import { cleanupWhitespace } from './cleanup-whitespace.internal';
+import { optimizeGradients } from './optimize-gradients.internal';
+import { removeMetadata } from './remove-metadata.internal';
+import { removeUnusedDefs } from './remove-unused-defs.internal';
+import { simplifyPaths } from './simplify-paths.internal';
 import type { OptimizationResult, SvgOptimizationOptions } from './types';
 
 /**

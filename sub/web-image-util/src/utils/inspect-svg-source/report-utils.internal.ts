@@ -1,4 +1,4 @@
-import { normalizePolicyUrl } from '../../core/source-converter/url/policy';
+import { normalizePolicyUrl } from '../../core/source-converter/url/policy.internal';
 import type { InspectSvgSourceFinding, InspectSvgSourceInput, InspectSvgSourceMeta } from '../inspect-svg-source';
 
 /**

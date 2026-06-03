@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   collectEmbeddedImageStages,
   collectGeneralStages,
-} from '../../../src/svg-sanitizer/inspect-sanitization/stage-collectors';
+} from '../../../src/svg-sanitizer/inspect-sanitization/stage-collectors.internal';
 import { findStage } from './inspect-sanitization-helpers';
 
 function parseSvgDocument(svgString: string): Document {

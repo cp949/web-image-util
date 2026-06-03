@@ -7,7 +7,7 @@
  * 이 모듈은 public export가 아니다(`package.json` exports 비대상).
  */
 
-import { isBlockedSvgPolicyRef } from '../../core/source-converter/url/policy';
+import { isBlockedSvgPolicyRef } from '../../core/source-converter/url/policy.internal';
 import type { ComplexityAnalysisResult } from '../../core/svg-complexity-analyzer';
 import { analyzeSvgComplexity } from '../../core/svg-complexity-analyzer';
 import type { InspectSvgDimensions, InspectSvgFinding } from '../inspect-svg';

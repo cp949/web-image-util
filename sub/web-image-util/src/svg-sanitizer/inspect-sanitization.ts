@@ -3,7 +3,7 @@
  *
  * 입력 SVG 문자열 한 개와 정책 한 개를 받아 부수효과 없이 진단해
  * `InspectSvgSanitizationReport`를 반환한다. 네트워크 fetch, Canvas 렌더링,
- * DOMPurify의 top-level import를 수행하지 않는다. strict 경로만 `await import('./core')`로
+ * DOMPurify의 top-level import를 수행하지 않는다. strict 경로만 `await import('./core.internal')`로
  * DOMPurify에 동적 접근한다.
  *
  * 본 모듈은 TASK-01 시점에 외부로 노출되지 않는다. `svg-sanitizer/index.ts` 추가와
@@ -14,7 +14,7 @@ import { MAX_SVG_BYTES } from '../core/source-converter/options';
 import { ImageProcessError } from '../errors';
 import { detectSvgInspectionEnvironment } from '../utils/svg-inspection';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
-import { collectEmbeddedImageStages, collectGeneralStages } from './inspect-sanitization/stage-collectors';
+import { collectEmbeddedImageStages, collectGeneralStages } from './inspect-sanitization/stage-collectors.internal';
 
 /** sanitizer 정책. processImage()의 `svgSanitizer` 옵션과 동일한 3개 값을 받는다. */
 export type SvgSanitizerPolicy = 'lightweight' | 'strict' | 'skip';
@@ -175,7 +175,7 @@ type StrictSanitizationOutcome =
 /**
  * strict sanitizer를 동적 import로 실행한다.
  *
- * lazy 경계 유지를 위해 본 함수만 `await import('./core')`를 수행한다(D4 / D1).
+ * lazy 경계 유지를 위해 본 함수만 `await import('./core.internal')`를 수행한다(D4 / D1).
  * strict 내부에서 던진 `ImageProcessError`는 catch해 failure code로 매핑하며,
  * 동적 import 자체가 실패하면 `svg-dompurify-init-failed`로 변환한다(D6).
  *
@@ -184,9 +184,9 @@ type StrictSanitizationOutcome =
  * 외부 호출이므로 recursionDepth는 0으로 둔다.
  */
 async function runStrictSanitization(svgString: string): Promise<StrictSanitizationOutcome> {
-  let sanitizeSvgStrictCore: typeof import('./core').sanitizeSvgStrictCore;
+  let sanitizeSvgStrictCore: typeof import('./core.internal').sanitizeSvgStrictCore;
   try {
-    ({ sanitizeSvgStrictCore } = await import('./core'));
+    ({ sanitizeSvgStrictCore } = await import('./core.internal'));
   } catch {
     return {
       status: 'failed',

@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { postProcessSanitized } from '../../../src/svg-sanitizer/postprocess';
+import { postProcessSanitized } from '../../../src/svg-sanitizer/postprocess.internal';
 import type { NestedSanitize } from '../../../src/svg-sanitizer/types';
 
 // metadata/위험요소 없는 입력에서는 호출되지 않으므로 빈 결과 stub로 둔다.

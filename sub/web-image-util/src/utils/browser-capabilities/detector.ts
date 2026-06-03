@@ -6,7 +6,7 @@
  * 종합 결과를 보관해 반복 호출 비용을 제거한다.
  */
 
-import { capabilityCache } from './cache';
+import { capabilityCache } from './cache.internal';
 import {
   detectImageBitmap,
   detectOffscreenCanvas,
@@ -14,7 +14,7 @@ import {
   detectTransferableObjects,
   detectWebWorkers,
   getDevicePixelRatio,
-} from './feature-detection';
+} from './feature-detection.internal';
 import { detectAVIFSupport, detectFormatSupport, detectWebPSupport } from './format-detection';
 import { analyzePerformanceFeaturesInternal } from './performance';
 import type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from './types';

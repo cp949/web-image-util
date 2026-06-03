@@ -3,7 +3,7 @@
  * url-string의 fetch 본문 읽기는 orchestrator가 별도 fetch 블록에서 처리하므로 이 함수 범위 밖이다.
  */
 
-import { parseSvgFromDataUrl } from '../../core/source-converter/svg/data-url';
+import { parseSvgFromDataUrl } from '../../core/source-converter/svg/data-url.internal';
 // 타입만 import — JS 런타임 순환 차단. 런타임 값 import 추가 시 순환이 남는다.
 import type { InspectSvgSourceMeta } from '../inspect-svg-source';
 

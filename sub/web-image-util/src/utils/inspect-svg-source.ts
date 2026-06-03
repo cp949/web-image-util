@@ -1,17 +1,17 @@
 import { MAX_SVG_BYTES } from '../core/source-converter/options';
 import type { InspectSvgReport } from './inspect-svg';
 import { inspectSvg } from './inspect-svg';
-import { extractSvgBody } from './inspect-svg-source/body-extraction';
-import { handleUrlSvgSourceFetch } from './inspect-svg-source/fetch-source';
-import { deduplicateFindings, maskSourceUrl } from './inspect-svg-source/report-utils';
+import { extractSvgBody } from './inspect-svg-source/body-extraction.internal';
+import { handleUrlSvgSourceFetch } from './inspect-svg-source/fetch-source.internal';
+import { deduplicateFindings, maskSourceUrl } from './inspect-svg-source/report-utils.internal';
 import {
   decideSvgFromSniff,
   detectInspectSourceEnvironment,
   detectMimeAndExtension,
   detectOriginalKind,
   estimateSourceBytes,
-} from './inspect-svg-source/source-metadata';
-import { assertInspectSvgSourceInput, assertInspectSvgSourceOptions } from './inspect-svg-source/validation';
+} from './inspect-svg-source/source-metadata.internal';
+import { assertInspectSvgSourceInput, assertInspectSvgSourceOptions } from './inspect-svg-source/validation.internal';
 
 /** SVG로 판정할 수 있는 입력 타입. HTMLImageElement / Canvas 등은 비-허용(D2). */
 export type InspectSvgSourceInput = string | Blob | File | URL;

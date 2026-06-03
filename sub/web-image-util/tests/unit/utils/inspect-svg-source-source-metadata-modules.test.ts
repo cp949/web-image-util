@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { detectInspectSourceEnvironment } from '../../../src/utils/inspect-svg-source/environment';
-import { detectMimeAndExtension } from '../../../src/utils/inspect-svg-source/mime-extension';
-import { decideSvgFromSniff } from '../../../src/utils/inspect-svg-source/sniff-decision';
-import { detectOriginalKind, estimateSourceBytes } from '../../../src/utils/inspect-svg-source/source-kind';
+import { detectInspectSourceEnvironment } from '../../../src/utils/inspect-svg-source/environment.internal';
+import { detectMimeAndExtension } from '../../../src/utils/inspect-svg-source/mime-extension.internal';
+import { decideSvgFromSniff } from '../../../src/utils/inspect-svg-source/sniff-decision.internal';
+import { detectOriginalKind, estimateSourceBytes } from '../../../src/utils/inspect-svg-source/source-kind.internal';
 
 describe('inspect-svg-source metadata 내부 모듈', () => {
   it('source-kind 모듈은 File을 Blob보다 먼저 분류하고 byte를 추정한다', () => {

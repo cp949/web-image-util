@@ -210,7 +210,7 @@ describe('image loading regression safeguards (정적 분석, jsdom-safe)', () =
 
   it('processImage 경로는 strict SVG sanitizer를 자동 연결하지 않는다', async () => {
     const srcRoot = path.resolve(import.meta.dirname, '../../../src');
-    const svgLoaderPath = path.resolve(srcRoot, 'core/source-converter/svg/loader.ts');
+    const svgLoaderPath = path.resolve(srcRoot, 'core/source-converter/svg/loader.internal.ts');
     const processImagePathFiles = await collectReachableSourceFiles(path.resolve(srcRoot, 'processor.ts'));
     const offenders: string[] = [];
 

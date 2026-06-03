@@ -12,8 +12,8 @@ import {
   resolvePassthroughMode,
   resolveSvgSanitizerMode,
 } from '../options';
-import { sniffSvgFromBlob } from '../svg/data-url';
-import { convertSvgToElement } from '../svg/loader';
+import { sniffSvgFromBlob } from '../svg/data-url.internal';
+import { convertSvgToElement } from '../svg/loader.internal';
 
 /**
  * Auto-detect MIME type from ArrayBuffer

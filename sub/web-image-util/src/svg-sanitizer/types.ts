@@ -77,7 +77,7 @@ export const FORBIDDEN_OVERRIDE_KEYS = [
 /**
  * nested `data:image/svg+xml`을 재귀 정제할 때 호출되는 callback 시그니처.
  *
- * `reference-policy` → `enforce-dom-policy` → `postprocess` 체인이 `core`의
+ * `reference-policy` → `enforce-dom-policy.internal` → `postprocess` 체인이 `core`의
  * `sanitizeSvgStrictCore`를 직접 import 하면 순환 의존이 생기므로, core가 자기
  * 자신을 callback으로 주입한다.
  */

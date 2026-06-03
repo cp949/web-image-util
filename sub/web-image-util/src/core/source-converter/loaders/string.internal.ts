@@ -16,18 +16,18 @@ import {
   resolvePassthroughMode,
   resolveSvgSanitizerMode,
 } from '../options';
-import { isDataUrlSvg, parseSvgFromDataUrl } from '../svg/data-url';
-import { convertSvgToElement } from '../svg/loader';
-import { readVerifiedSvgResponse } from '../svg/safety';
-import { checkResponseSize, createFetchAbortHandle } from '../url/fetch-guards';
-import { loadBlobUrl, loadImageFromUrl } from '../url/loader';
+import { isDataUrlSvg, parseSvgFromDataUrl } from '../svg/data-url.internal';
+import { convertSvgToElement } from '../svg/loader.internal';
+import { readVerifiedSvgResponse } from '../svg/safety.internal';
+import { checkResponseSize, createFetchAbortHandle } from '../url/fetch-guards.internal';
+import { loadBlobUrl, loadImageFromUrl } from '../url/loader.internal';
 import {
   checkAllowedProtocol,
   isAbortLikeError,
   isProtocolRelativeUrl,
   isSvgResourcePath,
   normalizePolicyUrl,
-} from '../url/policy';
+} from '../url/policy.internal';
 
 /** 문자열 기반 입력을 HTMLImageElement로 변환한다. */
 export async function convertStringToElement(

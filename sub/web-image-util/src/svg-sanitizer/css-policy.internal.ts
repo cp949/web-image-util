@@ -7,7 +7,7 @@
  * 보존한다. CSS escape(예: `u\72l(...)`)도 디코드해 같은 정책으로 판정한다.
  */
 
-import { isSafeInternalReference } from './reference-policy';
+import { isSafeInternalReference } from './reference-policy.internal';
 
 /**
  * CSS 값으로 해석되며 URL 참조를 가질 수 있는 SVG presentation 속성 목록.

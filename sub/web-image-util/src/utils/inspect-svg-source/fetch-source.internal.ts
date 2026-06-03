@@ -1,6 +1,10 @@
 import { DEFAULT_ALLOWED_PROTOCOLS, DEFAULT_FETCH_TIMEOUT_MS } from '../../core/source-converter/options';
-import { checkResponseSize, createFetchAbortHandle } from '../../core/source-converter/url/fetch-guards';
-import { checkAllowedProtocol, isAbortLikeError, normalizePolicyUrl } from '../../core/source-converter/url/policy';
+import { checkResponseSize, createFetchAbortHandle } from '../../core/source-converter/url/fetch-guards.internal';
+import {
+  checkAllowedProtocol,
+  isAbortLikeError,
+  normalizePolicyUrl,
+} from '../../core/source-converter/url/policy.internal';
 import type { InspectSvgReport } from '../inspect-svg';
 import { inspectSvg } from '../inspect-svg';
 import type {
@@ -10,7 +14,7 @@ import type {
   InspectSvgSourceKind,
   InspectSvgSourceOptions,
 } from '../inspect-svg-source';
-import { decideSvgFromSniff } from './source-metadata';
+import { decideSvgFromSniff } from './source-metadata.internal';
 
 const textEncoder = new TextEncoder();
 

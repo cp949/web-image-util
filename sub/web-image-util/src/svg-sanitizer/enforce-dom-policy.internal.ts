@@ -9,10 +9,10 @@
  *   `expression()`, `-moz-binding`
  */
 
-import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy';
-import { sanitizeStrictUriValue } from './reference-policy';
+import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
+import { sanitizeStrictUriValue } from './reference-policy.internal';
 import type { NestedSanitize, StrictSvgSanitizerOptions } from './types';
-import { pushUniqueWarning } from './warnings';
+import { pushUniqueWarning } from './warnings.internal';
 
 /**
  * DOMPurify 결과에 라이브러리 강제 strict 정책을 한 번 더 적용한다.

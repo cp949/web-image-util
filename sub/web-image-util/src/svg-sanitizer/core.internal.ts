@@ -3,22 +3,22 @@
  *
  * 입력 검증 → 전처리 → DOMPurify 정제 → 후처리(강제 정책 + metadata + 노드 카운트)
  * 흐름을 단일 함수로 묶는다. nested SVG 재귀를 위해 자기 자신을 callback으로
- * 하위 모듈(`reference-policy`, `enforce-dom-policy`, `postprocess`)에 주입한다.
+ * 하위 모듈(`reference-policy`, `enforce-dom-policy.internal`, `postprocess`)에 주입한다.
  */
 
 import { ImageProcessError } from '../errors';
-import { buildFinalConfig, sanitizeUserConfig } from './config';
-import { getDomPurify } from './dompurify-instance';
-import { assertSafeIntegerLimit, assertWithinMaxBytes } from './limits';
-import { postProcessSanitized } from './postprocess';
-import { preprocessSvgInput } from './preprocess';
+import { buildFinalConfig, sanitizeUserConfig } from './config.internal';
+import { getDomPurify } from './dompurify-instance.internal';
+import { assertSafeIntegerLimit, assertWithinMaxBytes } from './limits.internal';
+import { postProcessSanitized } from './postprocess.internal';
+import { preprocessSvgInput } from './preprocess.internal';
 import {
   DEFAULT_MAX_BYTES,
   DEFAULT_MAX_NODE_COUNT,
   type SanitizeSvgStrictDetailedResult,
   type StrictSvgSanitizerOptions,
 } from './types';
-import { collectInputPolicyWarnings } from './warnings';
+import { collectInputPolicyWarnings } from './warnings.internal';
 
 /**
  * 공통 정제 로직: 전처리 → DOMPurify 정제 → 노드 개수 검증.

@@ -7,8 +7,8 @@
 
 import { ImageProcessError } from '../../errors';
 import { isInlineSvg } from '../svg-detection';
-import { throwInvalidSvgDataURL } from './errors';
-import { decodeDataURLPayload, parseDataURL } from './parse';
+import { throwInvalidSvgDataURL } from './errors.internal';
+import { decodeDataURLPayload, parseDataURL } from './parse.internal';
 import type { DecodedSvgDataURL } from './types';
 
 /**

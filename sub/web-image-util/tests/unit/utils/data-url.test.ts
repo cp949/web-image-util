@@ -9,7 +9,10 @@ import {
   isDataURLString,
 } from '../../../src/utils';
 // percent 헬퍼는 공개 barrel에 노출되지 않는 내부 함수이므로 모듈에서 직접 import한다.
-import { decodePercentEncodedPayload, estimatePercentPayloadByteLength } from '../../../src/utils/data-url/percent';
+import {
+  decodePercentEncodedPayload,
+  estimatePercentPayloadByteLength,
+} from '../../../src/utils/data-url/percent.internal';
 
 /** ImageProcessError를 던지고 code/kind/cause 유무를 검증하는 헬퍼 */
 function expectImageProcessError(

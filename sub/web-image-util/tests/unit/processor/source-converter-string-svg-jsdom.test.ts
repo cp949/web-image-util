@@ -10,17 +10,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // svg/loader와 url/loader를 mock해 convertStringToElement의 분기 위임을 spy한다.
 // vi.mock은 import 문보다 앞으로 자동 hoisting된다.
-vi.mock('../../../src/core/source-converter/svg/loader', () => ({
+vi.mock('../../../src/core/source-converter/svg/loader.internal', () => ({
   convertSvgToElement: vi.fn(),
 }));
-vi.mock('../../../src/core/source-converter/url/loader', () => ({
+vi.mock('../../../src/core/source-converter/url/loader.internal', () => ({
   loadImageFromUrl: vi.fn(),
   loadBlobUrl: vi.fn(),
 }));
 
-import { convertStringToElement } from '../../../src/core/source-converter/loaders/string';
-import { convertSvgToElement } from '../../../src/core/source-converter/svg/loader';
-import { loadBlobUrl, loadImageFromUrl } from '../../../src/core/source-converter/url/loader';
+import { convertStringToElement } from '../../../src/core/source-converter/loaders/string.internal';
+import { convertSvgToElement } from '../../../src/core/source-converter/svg/loader.internal';
+import { loadBlobUrl, loadImageFromUrl } from '../../../src/core/source-converter/url/loader.internal';
 import { ImageProcessError } from '../../../src/types';
 
 /** 스니핑 판정에 충분한 최소 인라인 SVG 문자열 */

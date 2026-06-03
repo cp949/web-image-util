@@ -2,10 +2,14 @@ import { MAX_SVG_BYTES } from '../core/source-converter/options';
 import type { ComplexityAnalysisResult } from '../core/svg-complexity-analyzer';
 import { ImageProcessError } from '../errors';
 import { detectSvgInspectionEnvironment } from './svg-inspection';
-import { callComplexityWrapper, collectDomFindings, readInspectDimensions } from './svg-inspection/dom-analysis';
-import { collectRegexFindings } from './svg-inspection/fallback-analysis';
-import { parseAndClassifySvg } from './svg-inspection/parser';
-import { assembleInspectReport } from './svg-inspection/report';
+import {
+  callComplexityWrapper,
+  collectDomFindings,
+  readInspectDimensions,
+} from './svg-inspection/dom-analysis.internal';
+import { collectRegexFindings } from './svg-inspection/fallback-analysis.internal';
+import { parseAndClassifySvg } from './svg-inspection/parser.internal';
+import { assembleInspectReport } from './svg-inspection/report.internal';
 
 export type InspectSvgFindingCode =
   | 'svg-bytes-exceeded'

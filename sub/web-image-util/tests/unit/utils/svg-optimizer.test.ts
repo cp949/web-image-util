@@ -4,9 +4,9 @@
 
 import { describe, expect, it } from 'vitest';
 import { SvgOptimizer } from '../../../src/utils/svg-optimizer';
-import { optimizeGradients } from '../../../src/utils/svg-optimizer/optimize-gradients';
-import { removeUnusedDefs } from '../../../src/utils/svg-optimizer/remove-unused-defs';
-import { simplifyPaths } from '../../../src/utils/svg-optimizer/simplify-paths';
+import { optimizeGradients } from '../../../src/utils/svg-optimizer/optimize-gradients.internal';
+import { removeUnusedDefs } from '../../../src/utils/svg-optimizer/remove-unused-defs.internal';
+import { simplifyPaths } from '../../../src/utils/svg-optimizer/simplify-paths.internal';
 
 describe('SVG 최적화', () => {
   it('기본 옵션은 안전한 단계들을 켜고 요소 병합은 끈다', () => {

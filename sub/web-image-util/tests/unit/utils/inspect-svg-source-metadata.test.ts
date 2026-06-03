@@ -5,7 +5,7 @@ import {
   detectMimeAndExtension,
   detectOriginalKind,
   estimateSourceBytes,
-} from '../../../src/utils/inspect-svg-source/source-metadata';
+} from '../../../src/utils/inspect-svg-source/source-metadata.internal';
 
 describe('detectOriginalKind', () => {
   it('File 인스턴스는 Blob보다 먼저 "file"로 분류된다', () => {

@@ -5,8 +5,8 @@
 import type { ImageSource } from '../../types';
 import { ImageProcessError } from '../../types';
 import { isInlineSvg } from '../../utils/svg-detection';
-import { isDataUrlSvg } from './svg/data-url';
-import { isProtocolRelativeUrl, isSvgResourcePath } from './url/policy';
+import { isDataUrlSvg } from './svg/data-url.internal';
+import { isProtocolRelativeUrl, isSvgResourcePath } from './url/policy.internal';
 
 /** 지원하는 이미지 입력 소스 타입이다. */
 export type SourceType =

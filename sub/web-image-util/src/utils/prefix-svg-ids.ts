@@ -5,10 +5,10 @@ import {
   detectStyleDeoptReasons,
   parseSvgDocument,
   serializeSvgDocument,
-} from './prefix-svg-ids/dom-utils';
-import { applyIdRewrites, collectIdElements, planIdRewrites } from './prefix-svg-ids/id-rewrite';
-import { rewriteFragmentReferences } from './prefix-svg-ids/reference-rewrite';
-import { buildDeoptResult, buildPrefixWarnings } from './prefix-svg-ids/report-utils';
+} from './prefix-svg-ids/dom-utils.internal';
+import { applyIdRewrites, collectIdElements, planIdRewrites } from './prefix-svg-ids/id-rewrite.internal';
+import { rewriteFragmentReferences } from './prefix-svg-ids/reference-rewrite.internal';
+import { buildDeoptResult, buildPrefixWarnings } from './prefix-svg-ids/report-utils.internal';
 
 /** rewrite를 보류한 사유. 같은 호출에서 여러 사유가 중복 누적될 수 있다. */
 export type SvgIdPrefixDeoptReason =

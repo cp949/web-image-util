@@ -5,7 +5,7 @@ import {
   rewriteFragmentReferences,
   writeReferenceAttribute,
   XLINK_NAMESPACE,
-} from '../../../src/utils/prefix-svg-ids/reference-rewrite';
+} from '../../../src/utils/prefix-svg-ids/reference-rewrite.internal';
 
 /** 테스트용 SVG 문서를 파싱한다. */
 function parse(svg: string): Document {

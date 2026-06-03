@@ -13,8 +13,12 @@ import {
   canvasToDataURL,
   getBlobDimensions,
   imageElementToCanvas,
-} from '../../../src/utils/converters/canvas-bridge';
-import { getBlobReencodeOptions, shouldReencodeBlob, shouldReuseFile } from '../../../src/utils/converters/policy';
+} from '../../../src/utils/converters/canvas-bridge.internal';
+import {
+  getBlobReencodeOptions,
+  shouldReencodeBlob,
+  shouldReuseFile,
+} from '../../../src/utils/converters/policy.internal';
 
 // ─────────────────────────────────────────────
 // shouldReencodeBlob

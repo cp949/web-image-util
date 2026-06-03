@@ -10,7 +10,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const MODULE_PATH = '../../../src/svg-sanitizer/dompurify-instance';
+const MODULE_PATH = '../../../src/svg-sanitizer/dompurify-instance.internal';
 
 afterEach(() => {
   vi.unstubAllGlobals();

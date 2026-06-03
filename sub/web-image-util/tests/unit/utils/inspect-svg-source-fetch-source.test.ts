@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { handleUrlSvgSourceFetch } from '../../../src/utils/inspect-svg-source/fetch-source';
+import { handleUrlSvgSourceFetch } from '../../../src/utils/inspect-svg-source/fetch-source.internal';
 
 describe('handleUrlSvgSourceFetch()', () => {
   afterEach(() => {

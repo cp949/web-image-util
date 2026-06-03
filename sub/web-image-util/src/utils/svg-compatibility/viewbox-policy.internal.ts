@@ -8,7 +8,7 @@
 
 import { computeBBox } from './bbox';
 import { padBBox } from './bbox/heuristic';
-import { extractSizeHints, getStyleLength, parseCssLength, sanitizeNum } from './dimensions';
+import { extractSizeHints, getStyleLength, parseCssLength, sanitizeNum } from './dimensions.internal';
 import type { SvgCompatibilityOptions, SvgCompatibilityReport } from './options';
 
 /**

@@ -6,8 +6,8 @@
 
 import { mimeTypeToImageFormat } from '../format-utils';
 import { isInlineSvg } from '../svg-detection';
-import { isSvgDataUrl, parseDataUrlMimeType } from './mime';
-import { getFormatFromPath } from './path';
+import { isSvgDataUrl, parseDataUrlMimeType } from './mime.internal';
+import { getFormatFromPath } from './path.internal';
 import type { ImageStringSourceInfo, ImageStringSourceType } from './types';
 
 /**

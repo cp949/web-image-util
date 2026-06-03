@@ -3,9 +3,9 @@
  * `<metadata>` 제거, parsererror 처리, 노드 카운트를 일괄 수행한다.
  */
 
-import { enforceStrictDomPolicy } from './enforce-dom-policy';
+import { enforceStrictDomPolicy } from './enforce-dom-policy.internal';
 import type { NestedSanitize, StrictSvgSanitizerOptions } from './types';
-import { pushUniqueWarning } from './warnings';
+import { pushUniqueWarning } from './warnings.internal';
 
 /**
  * 정제된 SVG 문자열을 DOMParser로 한 번 파싱해 후처리를 일괄 수행한다.

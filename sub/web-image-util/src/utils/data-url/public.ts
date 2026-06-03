@@ -2,12 +2,12 @@
  * Data URL 공개 API.
  *
  * Blob 변환과 payload 크기 추정 등 외부에서 직접 호출하는 함수만 모았다.
- * SVG 전용 디코더는 {@link ./svg}, 파싱/디코딩 코어는 {@link ./parse}에 위치한다.
+ * SVG 전용 디코더는 {@link ./svg}, 파싱/디코딩 코어는 {@link ./parse.internal}에 위치한다.
  */
 
-import { estimateBase64PayloadByteLength } from './base64';
-import { decodeDataURLPayload, parseDataURL } from './parse';
-import { estimatePercentPayloadByteLength } from './percent';
+import { estimateBase64PayloadByteLength } from './base64.internal';
+import { decodeDataURLPayload, parseDataURL } from './parse.internal';
+import { estimatePercentPayloadByteLength } from './percent.internal';
 import type { EstimateDataURLPayloadByteLengthOptions } from './types';
 
 /**

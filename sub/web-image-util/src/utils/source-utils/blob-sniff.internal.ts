@@ -8,9 +8,9 @@
 import type { ImageFormat } from '../../types';
 import { mimeTypeToImageFormat } from '../format-utils';
 import { isInlineSvg } from '../svg-detection';
-import { isXmlMimeType, normalizeMimeType } from './mime';
-import { getFormatFromPath } from './path';
-import { canReadBlobText } from './type-guards';
+import { isXmlMimeType, normalizeMimeType } from './mime.internal';
+import { getFormatFromPath } from './path.internal';
+import { canReadBlobText } from './type-guards.internal';
 
 /** SVG sniffing에 읽을 기본 바이트 수. */
 export const DEFAULT_SVG_SNIFF_BYTES = 4096;

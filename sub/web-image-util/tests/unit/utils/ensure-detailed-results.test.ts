@@ -12,12 +12,12 @@ import {
   ensureFileDetailed,
   ensureImageElement,
 } from '../../../src/utils/converters';
-import * as canvasBridge from '../../../src/utils/converters/canvas-bridge';
+import * as canvasBridge from '../../../src/utils/converters/canvas-bridge.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 // jsdom에서 blob: URL 이미지 로딩이 불가하므로 getBlobDimensions만 mock으로 대체한다.
-vi.mock('../../../src/utils/converters/canvas-bridge', async (importActual) => {
-  const actual = await importActual<typeof import('../../../src/utils/converters/canvas-bridge')>();
+vi.mock('../../../src/utils/converters/canvas-bridge.internal', async (importActual) => {
+  const actual = await importActual<typeof import('../../../src/utils/converters/canvas-bridge.internal')>();
   return { ...actual, getBlobDimensions: vi.fn() };
 });
 

@@ -4,7 +4,7 @@ import {
   detectStyleDeoptReasons,
   parseSvgDocument,
   serializeSvgDocument,
-} from '../../../src/utils/prefix-svg-ids/dom-utils';
+} from '../../../src/utils/prefix-svg-ids/dom-utils.internal';
 
 /** 테스트용 SVG 문서를 파싱한다(정상 입력 가정). */
 function parseDoc(svg: string): Document {

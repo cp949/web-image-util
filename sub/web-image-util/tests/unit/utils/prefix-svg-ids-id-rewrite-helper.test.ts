@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { applyIdRewrites, collectIdElements, planIdRewrites } from '../../../src/utils/prefix-svg-ids/id-rewrite';
+import {
+  applyIdRewrites,
+  collectIdElements,
+  planIdRewrites,
+} from '../../../src/utils/prefix-svg-ids/id-rewrite.internal';
 
 /** 테스트용 SVG 문서를 파싱한다. */
 function parse(svg: string): Document {

@@ -10,8 +10,14 @@ import type { ImageSource, ResultBlob, ResultDataURL, ResultFile } from '../../t
 import { ImageProcessError } from '../../types';
 import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from '../../types/result-implementations';
 import { isDataURLString } from '../data-url';
-import { canvasToBlob, canvasToDataURL, getBlobDimensions, imageElementToCanvas } from './canvas-bridge';
-import { getBlobReencodeOptions, getFinalFilename, isFileSource, shouldReencodeBlob, shouldReuseFile } from './policy';
+import { canvasToBlob, canvasToDataURL, getBlobDimensions, imageElementToCanvas } from './canvas-bridge.internal';
+import {
+  getBlobReencodeOptions,
+  getFinalFilename,
+  isFileSource,
+  shouldReencodeBlob,
+  shouldReuseFile,
+} from './policy.internal';
 import type {
   EnsureBlobDetailedOptions,
   EnsureBlobOptions,

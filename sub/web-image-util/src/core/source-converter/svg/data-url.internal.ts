@@ -9,7 +9,7 @@
 import { ImageProcessError } from '../../../errors';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { MAX_SVG_BYTES } from '../options';
-import { checkSvgSizeLimit, createSvgSizeLimitError } from './safety';
+import { checkSvgSizeLimit, createSvgSizeLimitError } from './safety.internal';
 
 /**
  * 문자열이 SVG Data URL 형식인지 판정한다.

@@ -4,7 +4,7 @@
  * 실제 디코딩과 디코딩 없이 byte 길이만 추정하는 fast-path를 함께 제공한다.
  */
 
-import { throwInvalidDataURL } from './errors';
+import { throwInvalidDataURL } from './errors.internal';
 
 /**
  * base64 payload를 디코딩해 raw byte로 반환한다.

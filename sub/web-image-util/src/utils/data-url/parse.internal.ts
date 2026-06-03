@@ -5,9 +5,9 @@
  * - {@link decodeDataURLPayload} parsed 결과의 base64/percent 여부에 맞춰 디코딩 모듈을 호출한다.
  */
 
-import { decodeBase64Payload } from './base64';
-import { throwInvalidDataURL } from './errors';
-import { decodePercentEncodedPayload } from './percent';
+import { decodeBase64Payload } from './base64.internal';
+import { throwInvalidDataURL } from './errors.internal';
+import { decodePercentEncodedPayload } from './percent.internal';
 import type { ParseDataURLOptions, ParsedDataURL } from './types';
 
 /**

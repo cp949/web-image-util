@@ -5,7 +5,7 @@
  * 실제 디코딩 함수와 디코딩 없이 byte 길이만 추정하는 fast-path를 함께 제공한다.
  */
 
-import { throwInvalidDataURL } from './errors';
+import { throwInvalidDataURL } from './errors.internal';
 
 /**
  * percent-encoded payload를 raw byte로 디코딩한다.

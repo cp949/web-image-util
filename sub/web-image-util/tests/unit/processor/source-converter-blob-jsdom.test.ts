@@ -9,13 +9,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // svg/loader를 mock해 convertSvgToElement 호출 여부를 spy한다.
 // vi.mock은 import 문보다 앞으로 자동 hoisting된다.
-vi.mock('../../../src/core/source-converter/svg/loader', () => ({
+vi.mock('../../../src/core/source-converter/svg/loader.internal', () => ({
   convertSvgToElement: vi.fn(),
 }));
 
 import { convertToImageElement } from '../../../src/core/source-converter';
-import { detectMimeTypeFromBuffer } from '../../../src/core/source-converter/loaders/blob';
-import { convertSvgToElement } from '../../../src/core/source-converter/svg/loader';
+import { detectMimeTypeFromBuffer } from '../../../src/core/source-converter/loaders/blob.internal';
+import { convertSvgToElement } from '../../../src/core/source-converter/svg/loader.internal';
 import { ImageProcessError } from '../../../src/types';
 
 /** 스니핑 판정에 충분한 최소 SVG 문자열 (ASCII 범위) */

@@ -5,7 +5,7 @@
  * SSR 환경에서는 모든 함수가 보수적인 false/기본값을 반환한다.
  */
 
-import { capabilityCache } from './cache';
+import { capabilityCache } from './cache.internal';
 
 /**
  * Detect OffscreenCanvas support

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { InspectSvgSourceFinding } from '../../../src/utils/inspect-svg-source';
-import { deduplicateFindings, maskSourceUrl } from '../../../src/utils/inspect-svg-source/report-utils';
+import { deduplicateFindings, maskSourceUrl } from '../../../src/utils/inspect-svg-source/report-utils.internal';
 
 describe('maskSourceUrl()', () => {
   describe('URL query/fragment 제거', () => {

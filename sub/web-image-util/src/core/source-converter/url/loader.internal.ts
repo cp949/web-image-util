@@ -16,10 +16,10 @@ import {
   resolvePassthroughMode,
   resolveSvgSanitizerMode,
 } from '../options';
-import { sniffSvgFromBlob } from '../svg/data-url';
-import { convertSvgToElement } from '../svg/loader';
-import { readCheckedTextResponse, readVerifiedSvgResponse } from '../svg/safety';
-import { createFetchAbortHandle, readCheckedBlobResponse } from './fetch-guards';
+import { sniffSvgFromBlob } from '../svg/data-url.internal';
+import { convertSvgToElement } from '../svg/loader.internal';
+import { readCheckedTextResponse, readVerifiedSvgResponse } from '../svg/safety.internal';
+import { createFetchAbortHandle, readCheckedBlobResponse } from './fetch-guards.internal';
 import {
   checkAllowedProtocol,
   hasExplicitUrlScheme,
@@ -27,7 +27,7 @@ import {
   isProtocolRelativeUrl,
   isSvgResourcePath,
   normalizePolicyUrl,
-} from './policy';
+} from './policy.internal';
 
 /**
  * Blob URL 응답을 읽어 HTMLImageElement로 변환한다.

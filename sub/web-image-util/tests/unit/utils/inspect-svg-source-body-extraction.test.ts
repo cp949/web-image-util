@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractSvgBody } from '../../../src/utils/inspect-svg-source/body-extraction';
+import { extractSvgBody } from '../../../src/utils/inspect-svg-source/body-extraction.internal';
 
 const VALID_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>';
 
