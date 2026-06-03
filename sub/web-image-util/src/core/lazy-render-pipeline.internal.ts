@@ -12,7 +12,7 @@ import type { BlurOptions, ResultMetadata } from '../types';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import type { ResizeOperation, ScaleOperation } from '../types/shortcut-types';
-import { analyzeAllOperations, debugLayout, renderAllOperationsOnce } from './single-renderer';
+import { analyzeAllOperations, debugLayout, renderAllOperationsOnce } from './single-renderer.internal';
 
 /**
  * Operation definition for lazy execution

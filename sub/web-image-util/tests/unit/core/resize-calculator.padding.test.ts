@@ -5,7 +5,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ResizeCalculator } from '../../../src/core/resize-calculator';
+import { ResizeCalculator } from '../../../src/core/resize-calculator.internal';
 
 describe('ResizeCalculator - 패딩', () => {
   let calculator: ResizeCalculator;

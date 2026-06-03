@@ -8,8 +8,12 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool';
-import type { LazyOperation } from '../../../src/core/lazy-render-pipeline';
-import { analyzeAllOperations, calculateAllFilters, renderAllOperationsOnce } from '../../../src/core/single-renderer';
+import type { LazyOperation } from '../../../src/core/lazy-render-pipeline.internal';
+import {
+  analyzeAllOperations,
+  calculateAllFilters,
+  renderAllOperationsOnce,
+} from '../../../src/core/single-renderer.internal';
 
 // naturalWidth / naturalHeight 를 제어하는 헬퍼
 function createMockImage(naturalWidth: number, naturalHeight: number): HTMLImageElement {

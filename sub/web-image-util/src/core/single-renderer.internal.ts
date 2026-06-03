@@ -11,8 +11,8 @@ import { CanvasPool } from '../base/canvas-pool';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import { debugLog } from '../utils/debug';
-import type { FinalLayout, LazyOperation } from './lazy-render-pipeline';
-import { ResizeCalculator } from './resize-calculator';
+import type { FinalLayout, LazyOperation } from './lazy-render-pipeline.internal';
+import { ResizeCalculator } from './resize-calculator.internal';
 
 /**
  * Analyze all operations to calculate final layout

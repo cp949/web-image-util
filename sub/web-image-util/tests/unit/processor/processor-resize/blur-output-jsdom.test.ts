@@ -11,7 +11,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { LazyRenderPipeline } from '../../../../src/core/lazy-render-pipeline';
+import { LazyRenderPipeline } from '../../../../src/core/lazy-render-pipeline.internal';
 import { processImage } from '../../../../src/processor';
 import { createTestCanvas } from '../../../utils/canvas-helper';
 

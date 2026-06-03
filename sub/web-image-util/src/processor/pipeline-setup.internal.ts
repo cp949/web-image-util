@@ -8,7 +8,7 @@
  * 새 public export는 만들지 않는다(index.ts에서 re-export 금지).
  */
 
-import { LazyRenderPipeline } from '../core/lazy-render-pipeline';
+import { LazyRenderPipeline } from '../core/lazy-render-pipeline.internal';
 import { convertToImageElement } from '../core/source-converter';
 import type { InternalProcessorOptions } from '../processor';
 import type { BlurOptions, ImageSource } from '../types';

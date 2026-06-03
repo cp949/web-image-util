@@ -495,7 +495,7 @@ export type { AvatarOptions, SocialImageOptions, SocialPlatform, ThumbnailOption
 // ============================================================================
 
 // Re-export Size type defined in LazyRenderPipeline
-export type { Size } from '../core/lazy-render-pipeline';
+export type { Size } from '../core/lazy-render-pipeline.internal';
 export type { IImageProcessor, InitialProcessorInterface, ResizedProcessorInterface } from './processor-interface';
 export type { DirectResizeConfig, ResizeOperation, ScaleOperation } from './shortcut-types';
 export { isScaleX, isScaleXY, isScaleY, isUniformScale } from './shortcut-types';

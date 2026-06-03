@@ -10,8 +10,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool';
-import { OnehotRenderer } from '../../../src/core/onehot-renderer';
-import { ResizeCalculator } from '../../../src/core/resize-calculator';
+import { OnehotRenderer } from '../../../src/core/onehot-renderer.internal';
+import { ResizeCalculator } from '../../../src/core/resize-calculator.internal';
 import type { ResizeConfig } from '../../../src/types/resize-config';
 
 function createMockCanvas(width: number, height: number): HTMLCanvasElement {

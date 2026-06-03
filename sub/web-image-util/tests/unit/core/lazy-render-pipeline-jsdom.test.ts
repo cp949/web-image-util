@@ -11,12 +11,12 @@
  */
 
 import { CanvasPool } from '../../../src/base/canvas-pool';
-import type { FinalLayout } from '../../../src/core/lazy-render-pipeline';
-import { LazyRenderPipeline } from '../../../src/core/lazy-render-pipeline';
-import * as singleRenderer from '../../../src/core/single-renderer';
+import type { FinalLayout } from '../../../src/core/lazy-render-pipeline.internal';
+import { LazyRenderPipeline } from '../../../src/core/lazy-render-pipeline.internal';
+import * as singleRenderer from '../../../src/core/single-renderer.internal';
 import { ImageProcessError } from '../../../src/types';
 
-vi.mock('../../../src/core/single-renderer', () => ({
+vi.mock('../../../src/core/single-renderer.internal', () => ({
   renderAllOperationsOnce: vi.fn(),
   analyzeAllOperations: vi.fn(),
   debugLayout: vi.fn(),

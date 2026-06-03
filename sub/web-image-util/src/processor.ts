@@ -5,7 +5,7 @@
  */
 
 import { CanvasPool } from './base/canvas-pool';
-import type { LazyRenderPipeline } from './core/lazy-render-pipeline';
+import type { LazyRenderPipeline } from './core/lazy-render-pipeline.internal';
 import type { SvgPassthroughMode } from './core/source-converter';
 import { canvasToBlobOutput } from './processor/blob-output.internal';
 import { renderToCanvasResult } from './processor/canvas-output.internal';

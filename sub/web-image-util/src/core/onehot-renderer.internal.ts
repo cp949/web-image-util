@@ -17,7 +17,7 @@ import { CanvasPool } from '../base/canvas-pool';
 import { ImageProcessError } from '../errors';
 import type { ResizeConfig } from '../types/resize-config';
 import { productionLog } from '../utils/debug';
-import type { LayoutResult } from './resize-calculator';
+import type { LayoutResult } from './resize-calculator.internal';
 
 // ============================================================================
 // INTERFACES - Interface definitions
