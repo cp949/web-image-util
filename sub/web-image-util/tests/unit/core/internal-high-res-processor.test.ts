@@ -12,10 +12,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProcessingStrategy } from '../../../src/base/high-res-detector';
+import { ProcessingStrategy } from '../../../src/base/high-res-detector.internal';
 import { HighResolutionManager } from '../../../src/base/high-res-manager';
-import { SteppedProcessor } from '../../../src/base/stepped-processor';
-import { TiledProcessor } from '../../../src/base/tiled-processor';
+import { SteppedProcessor } from '../../../src/base/stepped-processor.internal';
+import { TiledProcessor } from '../../../src/base/tiled-processor.internal';
 import { InternalHighResProcessor } from '../../../src/core/internal/internal-high-res-processor.internal';
 import {
   applyLowMemoryState,

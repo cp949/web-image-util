@@ -9,7 +9,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ProcessingStrategy } from '../../../src/base/high-res-detector';
+import { ProcessingStrategy } from '../../../src/base/high-res-detector.internal';
 import { HighResolutionManager } from '../../../src/base/high-res-manager';
 import { createDrawableImage } from './high-res-manager-helpers';
 

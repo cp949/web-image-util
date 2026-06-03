@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TiledProcessor } from '../../../src/base/tiled-processor';
+import { TiledProcessor } from '../../../src/base/tiled-processor.internal';
 import { ImageProcessError } from '../../../src/types';
 import { createMockImage } from './tiled-processor.helpers';
 

@@ -1,4 +1,4 @@
-import { TiledProcessor, type TileInfo } from '../../../src/base/tiled-processor';
+import { TiledProcessor, type TileInfo } from '../../../src/base/tiled-processor.internal';
 
 type TiledProcessorPrivate = Record<string, (...args: unknown[]) => unknown>;
 

@@ -2,7 +2,7 @@
  * SteppedProcessor 단위 테스트
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SteppedProcessor } from '../../../src/base/stepped-processor';
+import { SteppedProcessor } from '../../../src/base/stepped-processor.internal';
 
 // ============================================================================
 // 헬퍼

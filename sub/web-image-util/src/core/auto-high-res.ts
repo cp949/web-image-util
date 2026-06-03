@@ -3,7 +3,7 @@
  * Transparent system that automatically processes high-resolution images
  */
 
-import { HighResolutionDetector } from '../base/high-res-detector';
+import { HighResolutionDetector } from '../base/high-res-detector.internal';
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
 import { productionLog } from '../utils/debug.internal';

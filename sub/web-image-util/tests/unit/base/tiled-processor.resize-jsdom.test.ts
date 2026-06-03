@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TiledProcessor } from '../../../src/base/tiled-processor';
+import { TiledProcessor } from '../../../src/base/tiled-processor.internal';
 import { createDrawableImage } from './tiled-processor.helpers';
 
 describe('TiledProcessor.resizeInTiles', () => {

@@ -4,7 +4,7 @@
  * 분리된 high-res-manager-*-jsdom.test.ts 파일에서 공유한다.
  */
 
-import { ProcessingStrategy } from '../../../src/base/high-res-detector';
+import { ProcessingStrategy } from '../../../src/base/high-res-detector.internal';
 
 // width / height 를 Object.defineProperty 로 제어하는 mock 이미지
 // drawImage 소스로 사용하지 않는 경우(analyzeImage, validateProcessingCapability 등)에 사용

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TiledProcessor, type TileInfo } from '../../../src/base/tiled-processor';
+import { TiledProcessor, type TileInfo } from '../../../src/base/tiled-processor.internal';
 import { createDrawableImage } from './tiled-processor.helpers';
 
 describe('TiledProcessor.processInTiles', () => {

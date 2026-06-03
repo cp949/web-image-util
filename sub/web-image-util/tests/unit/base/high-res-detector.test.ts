@@ -2,7 +2,7 @@
  * HighResolutionDetector 단위 테스트
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { HighResolutionDetector } from '../../../src/base/high-res-detector';
+import { HighResolutionDetector } from '../../../src/base/high-res-detector.internal';
 
 // ============================================================================
 // 헬퍼

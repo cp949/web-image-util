@@ -7,10 +7,10 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ProcessingStrategy } from '../../../src/base/high-res-detector';
+import { ProcessingStrategy } from '../../../src/base/high-res-detector.internal';
 import { HighResolutionManager, type HighResolutionProgress } from '../../../src/base/high-res-manager';
-import { SteppedProcessor } from '../../../src/base/stepped-processor';
-import { TiledProcessor } from '../../../src/base/tiled-processor';
+import { SteppedProcessor } from '../../../src/base/stepped-processor.internal';
+import { TiledProcessor } from '../../../src/base/tiled-processor.internal';
 import { createMockImage, makeProcessingResult } from './high-res-manager-helpers';
 
 describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', () => {

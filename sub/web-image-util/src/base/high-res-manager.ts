@@ -1,11 +1,11 @@
 import { productionLog } from '../utils/debug.internal';
 import { withManagedCanvas } from './canvas-utils';
 import { createImageError } from './error-helpers';
-import type { ImageAnalysis } from './high-res-detector';
-import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector';
+import type { ImageAnalysis } from './high-res-detector.internal';
+import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector.internal';
 // Memory management optimized for browser environment
-import { SteppedProcessor } from './stepped-processor';
-import { TiledProcessor } from './tiled-processor';
+import { SteppedProcessor } from './stepped-processor.internal';
+import { TiledProcessor } from './tiled-processor.internal';
 
 /**
  * High-resolution processing options

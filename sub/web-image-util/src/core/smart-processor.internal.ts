@@ -6,7 +6,7 @@
  */
 
 import { createImageError } from '../base/error-helpers';
-import type { ProcessingStrategy } from '../base/high-res-detector';
+import type { ProcessingStrategy } from '../base/high-res-detector.internal';
 import type { SmartResizeOptions } from '../types';
 import { AutoMemoryManager } from './auto-memory-manager.internal';
 import { type BatchResizeJob, BatchResizer } from './batch-resizer';
