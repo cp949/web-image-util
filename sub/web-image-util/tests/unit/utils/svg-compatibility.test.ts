@@ -6,8 +6,12 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { enhanceBrowserCompatibility } from '../../../src/utils/svg-compatibility';
-import { heuristicBBox, heuristicBBoxFromString, padBBox } from '../../../src/utils/svg-compatibility/bbox/heuristic';
-import { isBrowser, isValidBBox } from '../../../src/utils/svg-compatibility/bbox/live';
+import {
+  heuristicBBox,
+  heuristicBBoxFromString,
+  padBBox,
+} from '../../../src/utils/svg-compatibility/bbox/heuristic.internal';
+import { isBrowser, isValidBBox } from '../../../src/utils/svg-compatibility/bbox/live.internal';
 import {
   extractSizeHints,
   getStyleLength,

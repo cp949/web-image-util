@@ -12,9 +12,13 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { heuristicBBox, heuristicBBoxFromString, padBBox } from '../../../src/utils/svg-compatibility/bbox/heuristic';
+import {
+  heuristicBBox,
+  heuristicBBoxFromString,
+  padBBox,
+} from '../../../src/utils/svg-compatibility/bbox/heuristic.internal';
 import { computeBBox } from '../../../src/utils/svg-compatibility/bbox/index';
-import { liveGetBBox } from '../../../src/utils/svg-compatibility/bbox/live';
+import { liveGetBBox } from '../../../src/utils/svg-compatibility/bbox/live.internal';
 import type { SvgCompatibilityReport } from '../../../src/utils/svg-compatibility/options';
 
 // jsdom이 SVGGraphicsElement.prototype.getBBox를 구현하지 않을 수 있으므로

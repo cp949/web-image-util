@@ -6,8 +6,8 @@
 
 import { toMsg } from '../internal';
 import type { SvgCompatibilityOptions, SvgCompatibilityReport } from '../options';
-import { heuristicBBox, heuristicBBoxFromString } from './heuristic';
-import { isBrowser, liveGetBBox } from './live';
+import { heuristicBBox, heuristicBBoxFromString } from './heuristic.internal';
+import { isBrowser, liveGetBBox } from './live.internal';
 
 /**
  * 옵션에 따라 가장 정확한 BBox 계산 전략을 선택한다.
