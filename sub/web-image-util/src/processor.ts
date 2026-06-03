@@ -8,6 +8,15 @@ import { CanvasPool } from './base/canvas-pool';
 import { LazyRenderPipeline } from './core/lazy-render-pipeline';
 import type { SvgPassthroughMode } from './core/source-converter';
 import { convertToImageElement } from './core/source-converter';
+import { renderToCanvasResult } from './processor/canvas-output';
+import { getBestFormat, getOptimalQuality } from './processor/format-helpers';
+import {
+  assertResizeNotCalled,
+  buildBlurOptions,
+  MULTIPLE_RESIZE_OPERATION_MESSAGE,
+  MULTIPLE_RESIZE_RESIZE_MESSAGE,
+} from './processor/operation-helpers';
+import { blobToDataURL, resolveFileOutput } from './processor/output-helpers';
 import { ShortcutBuilder } from './shortcut/shortcut-builder';
 import type {
   BlurOptions,
@@ -21,15 +30,14 @@ import type {
   ResultDataURL,
   ResultFile,
 } from './types';
-import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
+import { ImageProcessError } from './types';
 import type { IImageProcessor, IShortcutBuilder } from './types/processor-interface';
 import type { AfterResizeCall, ProcessorState } from './types/processor-state';
 import type { ResizeConfig } from './types/resize-config';
 import { validateResizeConfig } from './types/resize-config';
-import { BlobResultImpl, CanvasResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
+import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from './types/result-implementations';
 import type { ResizeOperation } from './types/shortcut-types';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor';
-import { detectCanvasFormatSupport } from './utils/browser-capabilities/index';
 import { formatToMimeType, mimeTypeToOutputFormat } from './utils/format-utils';
 import { createImageElement } from './utils/image-element';
 
@@ -156,12 +164,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    */
   resize(config: ResizeConfig): ImageProcessor<AfterResizeCall<TState>> {
     // 1. Prevent multiple resize calls (prevent quality degradation)
-    if (this.hasResized) {
-      throw new ImageProcessError(
-        'resize() can only be called once. Use a single resize() call to prevent image quality degradation.',
-        'MULTIPLE_RESIZE_NOT_ALLOWED'
-      );
-    }
+    assertResizeNotCalled(this.hasResized, MULTIPLE_RESIZE_RESIZE_MESSAGE);
 
     // 2. Runtime validation
     validateResizeConfig(config);
@@ -221,10 +224,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   blur(radius: number = 2, options: Partial<BlurOptions> = {}): ImageProcessor<TState> {
-    const blurOptions: BlurOptions = {
-      radius,
-      ...options,
-    };
+    const blurOptions = buildBlurOptions(radius, options);
 
     // Add to LazyRenderPipeline
     // blur can be called multiple times, so manage with pending array
@@ -245,12 +245,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * @internal
    */
   _addResizeOperation(operation: ResizeOperation): void {
-    if (this.hasResized) {
-      throw new ImageProcessError(
-        'resize() can only be called once. Use a single resize operation to prevent image quality degradation.',
-        'MULTIPLE_RESIZE_NOT_ALLOWED'
-      );
-    }
+    assertResizeNotCalled(this.hasResized, MULTIPLE_RESIZE_OPERATION_MESSAGE);
 
     this.hasResized = true;
 
@@ -299,93 +294,19 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   // ==============================================
 
   /**
-   * Select optimal format based on browser support
+   * 브라우저 지원에 따라 최적 출력 포맷을 선택한다.
    * @private
    */
   private getBestFormat(): OutputFormat {
-    // Check WebP support
-    if (this.supportsFormat('webp')) {
-      return 'webp';
-    }
-
-    // Default: PNG (lossless, transparency support)
-    return 'png';
+    return getBestFormat();
   }
 
   /**
-   * Return optimal quality for each format
+   * 포맷별 권장 품질을 반환한다. (defaultQuality 기반 fallback 포함)
    * @private
    */
   private getOptimalQuality(format: ImageFormat): number {
-    // Get optimal quality value from OPTIMAL_QUALITY_BY_FORMAT constant
-    // Use default value for unsupported output formats like gif, svg
-    if (format === 'gif' || format === 'svg') {
-      return this.options.defaultQuality ?? 0.8;
-    }
-    return OPTIMAL_QUALITY_BY_FORMAT[format as OutputFormat] ?? this.options.defaultQuality ?? 0.8;
-  }
-
-  /**
-   * Check browser format support
-   * @private
-   */
-  private supportsFormat(format: ImageFormat): boolean {
-    return detectCanvasFormatSupport(format);
-  }
-
-  /**
-   * Extract format from filename
-   * @private
-   */
-  private getFormatFromFilename(filename: string): OutputFormat | null {
-    const ext = filename.toLowerCase().split('.').pop();
-
-    // Map only supported formats
-    const formatMap: Record<string, OutputFormat> = {
-      jpg: 'jpeg',
-      jpeg: 'jpeg',
-      png: 'png',
-      webp: 'webp',
-      avif: 'avif',
-    };
-
-    return formatMap[ext || ''] || null;
-  }
-
-  /**
-   * 출력 포맷에 해당하는 권장 파일 확장자(소문자)를 반환한다.
-   *
-   * JPEG 계열은 일반적으로 더 흔히 쓰이는 `.jpg`로 통일한다.
-   * @private
-   */
-  private getCanonicalExtension(format: OutputFormat): string {
-    if (format === 'jpeg' || format === 'jpg') return 'jpg';
-    return format;
-  }
-
-  /**
-   * 명시된 출력 포맷에 맞춰 파일명 확장자를 정규화한다.
-   *
-   * - 기존 확장자가 같은 포맷을 나타내면(`photo.jpg` + `jpeg`) 그대로 유지한다.
-   * - 알려진 이미지 확장자(`.jpg/.jpeg/.png/.webp/.avif/.gif/.svg/.bmp/.ico/.tif/.tiff`)
-   *   가 있으면 포맷에 맞는 확장자로 교체한다.
-   * - 그 외에는 권장 확장자를 덧붙인다.
-   * @private
-   */
-  private applyFormatExtensionToFilename(filename: string, format: OutputFormat): string {
-    const currentFormat = this.getFormatFromFilename(filename);
-    const normalizedFormat: OutputFormat = format === 'jpg' ? 'jpeg' : format;
-    if (currentFormat === normalizedFormat) {
-      return filename;
-    }
-
-    const canonicalExt = this.getCanonicalExtension(format);
-    const imageExtensionPattern = /\.(jpg|jpeg|png|webp|avif|gif|svg|bmp|ico|tiff?)$/i;
-    if (imageExtensionPattern.test(filename)) {
-      return filename.replace(imageExtensionPattern, `.${canonicalExt}`);
-    }
-
-    return `${filename}.${canonicalExt}`;
+    return getOptimalQuality(format, this.options.defaultQuality);
   }
 
   /**
@@ -492,7 +413,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         : await this.toBlob(optionsOrFormat); // OutputOptions type
 
     try {
-      const dataURL = await this.blobToDataURL(blob);
+      const dataURL = await blobToDataURL(blob);
 
       // 🆕 Return extended result object (includes direct conversion methods)
       return new DataURLResultImpl(
@@ -538,29 +459,12 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   async toFile(filename: string, options?: OutputOptions): Promise<ResultFile>;
   async toFile(filename: string, format: OutputFormat): Promise<ResultFile>;
   async toFile(filename: string, optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultFile> {
-    // Auto-detect format from file extension
-    const formatFromFilename = this.getFormatFromFilename(filename);
-
-    // If options are empty, extract format from filename
-    let finalOptions: OutputOptions;
-    if (typeof optionsOrFormat === 'string') {
-      // String format specified
-      finalOptions = { format: optionsOrFormat };
-    } else if (Object.keys(optionsOrFormat).length === 0 && formatFromFilename) {
-      // Empty object and format detectable from filename
-      finalOptions = {
-        format: formatFromFilename,
-        quality: this.getOptimalQuality(formatFromFilename),
-      };
-    } else {
-      // Use provided options
-      finalOptions = optionsOrFormat;
-    }
-
-    // 명시된 포맷이 있으면 파일명 확장자도 그에 맞춰 정규화한다.
-    const resolvedFilename = finalOptions.format
-      ? this.applyFormatExtensionToFilename(filename, finalOptions.format)
-      : filename;
+    // 포맷/파일명 해석은 헬퍼에 위임한다.
+    const { finalOptions, resolvedFilename } = resolveFileOutput(
+      filename,
+      optionsOrFormat,
+      this.options.defaultQuality
+    );
 
     const { blob, ...metadata } = await this.toBlob(finalOptions);
 
@@ -598,19 +502,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   async toCanvas(): Promise<ResultCanvas> {
-    try {
-      const { canvas, result } = await this.executeProcessing();
-      return new CanvasResultImpl(
-        canvas,
-        result.width,
-        result.height,
-        result.processingTime,
-        result.originalSize,
-        undefined // Canvas has no format information
-      );
-    } catch (error) {
-      throw new ImageProcessError('Error occurred during Canvas conversion', 'OUTPUT_FAILED', { cause: error });
-    }
+    return renderToCanvasResult(() => this.executeProcessing(), 'Error occurred during Canvas conversion');
   }
 
   /**
@@ -625,21 +517,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   async toCanvasDetailed(): Promise<ResultCanvas> {
-    try {
-      const { canvas, result } = await this.executeProcessing();
-      return new CanvasResultImpl(
-        canvas,
-        result.width,
-        result.height,
-        result.processingTime,
-        result.originalSize,
-        undefined // Canvas has no format information
-      );
-    } catch (error) {
-      throw new ImageProcessError('Error occurred during detailed Canvas conversion', 'OUTPUT_FAILED', {
-        cause: error,
-      });
-    }
+    return renderToCanvasResult(() => this.executeProcessing(), 'Error occurred during detailed Canvas conversion');
   }
 
   /**
@@ -856,18 +734,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         mimeType,
         options.quality
       );
-    });
-  }
-
-  /**
-   * Convert Blob to Data URL
-   */
-  private async blobToDataURL(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(new Error('Failed to convert to Data URL'));
-      reader.readAsDataURL(blob);
     });
   }
 
