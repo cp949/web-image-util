@@ -570,5 +570,5 @@ export interface PerformanceBenchmark {
   recommendation: 'standard' | 'offscreen';
 }
 
-// SystemPerformanceProfile is directly defined in advanced/index.ts
+// SystemPerformanceProfile is directly defined in advanced/advanced.internal.ts
 // Only re-export is performed here to resolve type dependency issues
