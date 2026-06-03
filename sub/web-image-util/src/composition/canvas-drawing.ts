@@ -1,4 +1,4 @@
-import { createCanvasContextError } from './errors';
+import { createCanvasContextError } from './errors.internal';
 
 export function requireCanvasContext(canvas: HTMLCanvasElement, operation: string): CanvasRenderingContext2D {
   const ctx = canvas.getContext('2d');
