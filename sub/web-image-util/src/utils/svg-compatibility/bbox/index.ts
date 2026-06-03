@@ -4,7 +4,7 @@
  * @description 옵션에 따라 라이브 getBBox → 휴리스틱 → 문자열 휴리스틱 순서로 폴백한다.
  */
 
-import { toMsg } from '../internal';
+import { toMsg } from '../message.internal';
 import type { SvgCompatibilityOptions, SvgCompatibilityReport } from '../options';
 import { heuristicBBox, heuristicBBoxFromString } from './heuristic.internal';
 import { isBrowser, liveGetBBox } from './live.internal';

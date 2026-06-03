@@ -6,7 +6,7 @@
  */
 
 import { addPAR, addRequiredNamespaces, modernizeSvgSyntax } from './attributes.internal';
-import { toMsg } from './internal';
+import { toMsg } from './message.internal';
 import { DEFAULT_OPTIONS, type SvgCompatibilityOptions, type SvgCompatibilityReport } from './options';
 import { applyViewBoxPolicy } from './viewbox-policy.internal';
 

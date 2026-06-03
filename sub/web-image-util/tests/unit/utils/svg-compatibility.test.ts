@@ -18,7 +18,7 @@ import {
   parseCssLength,
   sanitizeNum,
 } from '../../../src/utils/svg-compatibility/dimensions.internal';
-import { toMsg } from '../../../src/utils/svg-compatibility/internal';
+import { toMsg } from '../../../src/utils/svg-compatibility/message.internal';
 
 describe('SVG 호환성 보정', () => {
   it('xlink:href만 있는 참조를 href로 현대화하고 legacy 속성을 제거한다', () => {
