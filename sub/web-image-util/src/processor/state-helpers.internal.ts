@@ -9,7 +9,7 @@
 import type { BlurOptions } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import { validateResizeConfig } from '../types/resize-config';
-import { assertResizeNotCalled, buildBlurOptions } from './operation-helpers';
+import { assertResizeNotCalled, buildBlurOptions } from './operation-helpers.internal';
 
 /**
  * `resize()`의 상태 변경 결과다.

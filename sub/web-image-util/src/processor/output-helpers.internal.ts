@@ -6,7 +6,7 @@
  */
 
 import type { OutputFormat, OutputOptions } from '../types';
-import { applyFormatExtensionToFilename, getFormatFromFilename, getOptimalQuality } from './format-helpers';
+import { applyFormatExtensionToFilename, getFormatFromFilename, getOptimalQuality } from './format-helpers.internal';
 
 /**
  * Blob을 Data URL 문자열로 변환한다.

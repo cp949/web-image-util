@@ -7,16 +7,19 @@
 import { CanvasPool } from './base/canvas-pool';
 import type { LazyRenderPipeline } from './core/lazy-render-pipeline';
 import type { SvgPassthroughMode } from './core/source-converter';
-import { canvasToBlobOutput } from './processor/blob-output';
-import { renderToCanvasResult } from './processor/canvas-output';
-import { blobToImageElement } from './processor/dom-output';
-import { blobResultToDataURL, blobResultToFile } from './processor/encoded-output';
-import { getBestFormat, getOptimalQuality } from './processor/format-helpers';
-import { MULTIPLE_RESIZE_OPERATION_MESSAGE, MULTIPLE_RESIZE_RESIZE_MESSAGE } from './processor/operation-helpers';
-import { resolveFileOutput } from './processor/output-helpers';
-import { resolveOutputOptions } from './processor/output-options';
-import { setupLazyPipeline } from './processor/pipeline-setup';
-import { appendBlurState, applyResizeState, planResizeOperation } from './processor/state-helpers';
+import { canvasToBlobOutput } from './processor/blob-output.internal';
+import { renderToCanvasResult } from './processor/canvas-output.internal';
+import { blobToImageElement } from './processor/dom-output.internal';
+import { blobResultToDataURL, blobResultToFile } from './processor/encoded-output.internal';
+import { getBestFormat, getOptimalQuality } from './processor/format-helpers.internal';
+import {
+  MULTIPLE_RESIZE_OPERATION_MESSAGE,
+  MULTIPLE_RESIZE_RESIZE_MESSAGE,
+} from './processor/operation-helpers.internal';
+import { resolveFileOutput } from './processor/output-helpers.internal';
+import { resolveOutputOptions } from './processor/output-options.internal';
+import { setupLazyPipeline } from './processor/pipeline-setup.internal';
+import { appendBlurState, applyResizeState, planResizeOperation } from './processor/state-helpers.internal';
 import { ShortcutBuilder } from './shortcut/shortcut-builder';
 import type {
   BlurOptions,

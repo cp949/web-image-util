@@ -9,7 +9,7 @@
 import type { ResultBlob, ResultDataURL, ResultFile } from '../types';
 import { ImageProcessError } from '../types';
 import { DataURLResultImpl, FileResultImpl } from '../types/result-implementations';
-import { blobToDataURL } from './output-helpers';
+import { blobToDataURL } from './output-helpers.internal';
 
 /**
  * ResultBlob을 ResultDataURL로 변환한다.
