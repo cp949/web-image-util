@@ -14,7 +14,7 @@ import {
   readSvgDimensions,
   serializeSvgDocument,
   wrapSvgContent,
-} from './svg-processor-dom';
+} from './svg-processor-dom.internal';
 
 /** SVG 크기 정보다. */
 export interface SVGDimensions {
