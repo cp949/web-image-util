@@ -32,6 +32,17 @@ describe('inspectSvgSource() — fetch: "never" 모드', () => {
     expect(json).not.toContain('frag');
   });
 
+  it('protocol-relative .svg URL → 허용 protocol로 정규화해 SVG 후보로 판정한다', async () => {
+    const result = await inspectSvgSource('//cdn.example.com/path/to/foo.svg?token=SECRET#frag', { fetch: 'never' });
+    const expected = new URL('//cdn.example.com/path/to/foo.svg', globalThis.location?.href ?? 'http://localhost');
+
+    expect(result.kind).toBe('svg');
+    expect(result.source.extension).toBe('svg');
+    expect(result.source.url).toBe(`${expected.origin}${expected.pathname}`);
+    expect(result.findings.some((f) => f.code === 'fetch-protocol-disallowed')).toBe(false);
+    expect(JSON.stringify(result)).not.toContain('SECRET');
+  });
+
   it('fetch: 옵션 미지정 시 기본 never 모드로 동작해 svg가 null이다', async () => {
     const result = await inspectSvgSource('https://example.com/icon.svg');
     expect(result.svg).toBeNull();
@@ -73,6 +84,26 @@ describe('inspectSvgSource() — fetch: "metadata" 모드', () => {
     );
     const result = await inspectSvgSource('https://example.com/foo.svg', { fetch: 'metadata' });
     expect(result.findings.some((f) => f.code === 'fetch-status-error')).toBe(true);
+  });
+
+  it('protocol-relative URL은 정규화된 URL로 HEAD 요청한다', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 200,
+        headers: { 'Content-Type': 'image/svg+xml' },
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await inspectSvgSource('//cdn.example.com/foo.svg?token=SECRET#frag', { fetch: 'metadata' });
+    const expected = new URL(
+      '//cdn.example.com/foo.svg?token=SECRET#frag',
+      globalThis.location?.href ?? 'http://localhost'
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(expected.toString(), expect.objectContaining({ method: 'HEAD' }));
+    expect(result.kind).toBe('svg');
+    expect(result.findings.some((f) => f.code === 'fetch-protocol-disallowed')).toBe(false);
   });
 });
 
