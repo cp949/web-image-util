@@ -8,10 +8,10 @@
  * - {@link ./optimize-gradients.internal} 중복 그라디언트 병합
  * - {@link ./remove-unused-defs.internal} 미사용 `<defs>` 정의 제거
  * - {@link ./cleanup-whitespace.internal} 마크업 공백 축약
- * - {@link ./optimizer}          단계 모듈을 결합하는 `SvgOptimizer` 오케스트레이터
+ * - {@link ./optimizer.internal} 단계 모듈을 결합하는 `SvgOptimizer` 오케스트레이터
  *
  * 외부에서는 이 배럴만 import해서 사용한다.
  */
 
-export { SvgOptimizer } from './optimizer';
+export { SvgOptimizer } from './optimizer.internal';
 export type { OptimizationResult, SvgOptimizationOptions } from './types';
