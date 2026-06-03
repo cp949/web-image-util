@@ -5,7 +5,7 @@
  * 본 파일은 외부 import 호환을 위한 배럴 역할만 한다.
  */
 
-export type { SourceType } from './source-converter/detect';
-export { detectSourceType } from './source-converter/detect';
+export type { SourceType } from './source-converter/detect.internal';
+export { detectSourceType } from './source-converter/detect.internal';
 export { convertToImageElement, getImageDimensions } from './source-converter/index';
 export type { SvgPassthroughMode } from './source-converter/options';

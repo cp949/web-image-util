@@ -78,7 +78,7 @@ afterEach(() => {
   vi.doUnmock('../../../src/core/source-converter/loaders/canvas.internal');
   vi.doUnmock('../../../src/core/source-converter/loaders/blob.internal');
   vi.doUnmock('../../../src/core/source-converter/loaders/string.internal');
-  vi.doUnmock('../../../src/core/source-converter/detect');
+  vi.doUnmock('../../../src/core/source-converter/detect.internal');
   vi.doUnmock('../../../src/utils/svg-compatibility/index');
   vi.doUnmock('../../../src/svg-sanitizer');
   vi.doUnmock('../../../src/core/svg-complexity-analyzer');
@@ -286,7 +286,7 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
 
   it('detectSourceType이 알 수 없는 타입을 반환하면 INVALID_SOURCE로 거부한다', async () => {
     // detect를 mock해 switch default(L184)를 결정적으로 실행한다.
-    vi.doMock('../../../src/core/source-converter/detect', () => ({
+    vi.doMock('../../../src/core/source-converter/detect.internal', () => ({
       detectSourceType: vi.fn(() => 'arrayBuffer'),
     }));
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');

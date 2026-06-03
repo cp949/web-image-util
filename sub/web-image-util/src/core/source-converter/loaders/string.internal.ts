@@ -7,7 +7,7 @@
 
 import { ImageProcessError } from '../../../types';
 import { isInlineSvg } from '../../../utils/svg-detection';
-import { detectSourceType } from '../detect';
+import { detectSourceType } from '../detect.internal';
 import {
   DEFAULT_ALLOWED_PROTOCOLS,
   DEFAULT_MAX_SOURCE_BYTES,
