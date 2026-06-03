@@ -179,10 +179,10 @@ describe('inspectSvg() 파싱 경계', () => {
       expect(report.root).toBe('other');
     });
 
-    it('루트가 <html>인 XML → not-svg-root finding의 details.rootTagName이 "html"이다', () => {
+    it('루트가 <html>인 XML → not-svg-root finding의 details.rootTagName이 고정 토큰이다', () => {
       const report = inspectSvg('<html></html>');
       const finding = report.findings.find((f) => f.code === 'not-svg-root');
-      expect(finding?.details?.rootTagName).toBe('html');
+      expect(finding?.details?.rootTagName).toBe('non-svg-root');
     });
 
     it('루트가 <html>인 XML → not-svg-root finding 존재', () => {

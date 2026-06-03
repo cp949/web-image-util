@@ -3,6 +3,13 @@ import { isBlockedSvgPolicyRef } from '../core/source-converter/url/policy';
 import type { ComplexityAnalysisResult } from '../core/svg-complexity-analyzer';
 import { analyzeSvgComplexity } from '../core/svg-complexity-analyzer';
 import { ImageProcessError } from '../errors';
+import {
+  collectSvgDomSecuritySignals,
+  detectSvgInspectionEnvironment,
+  isReferenceAttribute,
+  pushCappedSample,
+  readReferenceAttribute,
+} from './svg-inspection';
 import { getCssPolicyValueVariants, visitCssUrlValues } from './svg-policy-utils';
 
 export type InspectSvgFindingCode =
@@ -110,18 +117,9 @@ function callComplexityWrapper(svgString: string): [ComplexityAnalysisResult | n
   return [result, []];
 }
 
-/** 현재 실행 환경을 감지한다. 평가 순서는 계획.md "환경 감지 규칙" 그대로. */
+/** 현재 실행 환경을 감지한다. 평가 순서는 happy-dom -> browser -> node -> unknown이다. */
 export function detectInspectEnvironment(): 'browser' | 'happy-dom' | 'node' | 'unknown' {
-  if ((globalThis as unknown as Record<string, unknown>).happyDOM != null) {
-    return 'happy-dom';
-  }
-  if (typeof window !== 'undefined' && typeof document !== 'undefined' && typeof DOMParser !== 'undefined') {
-    return 'browser';
-  }
-  if (typeof process !== 'undefined' && process.versions?.node) {
-    return 'node';
-  }
-  return 'unknown';
+  return detectSvgInspectionEnvironment();
 }
 
 type ParseSvgFailure = { ok: false; message: string; locationAvailable: boolean; doc: null };
@@ -211,90 +209,103 @@ const SECURITY_FINDING_CODES = new Set<InspectSvgFindingCode>([
   'style-tag-external-url',
 ]);
 
-/** on* 이벤트 핸들러 attribute 이름 패턴 */
-const EVENT_HANDLER_ATTR_REGEX = /^on[a-z0-9:-]+$/i;
-
 /**
  * DOM 기반으로 보안 finding을 수집한다.
  * DOMParser 파싱 성공 + svg 루트 경로에서만 호출한다.
+ *
+ * script / foreignObject / event handler 신호는 공통 helper `collectSvgDomSecuritySignals`로
+ * 위임한다. external-href와 CSS url() 참조 finding은 inspectSvg 고유 의미(embedded-image 단계
+ * 부재로 data:/상대 경로도 보고)를 지켜야 하므로 본 함수가 직접 수집한다.
  */
 function collectDomFindings(doc: Document): InspectSvgFinding[] {
   const findings: InspectSvgFinding[] = [];
+  const signals = collectSvgDomSecuritySignals(doc);
 
-  // <script> 요소 검사
-  const scriptCount = doc.getElementsByTagName('script').length;
-  if (scriptCount > 0) {
+  if (signals.scriptElementCount > 0) {
     findings.push({
       code: 'has-script-element',
       message: 'Input contains <script> element(s); strict sanitizer is recommended.',
-      details: { count: scriptCount },
+      details: { count: signals.scriptElementCount },
     });
   }
 
-  // <foreignObject> 요소 검사
-  const foreignObjectCount = doc.getElementsByTagName('foreignObject').length;
-  if (foreignObjectCount > 0) {
+  if (signals.foreignObjectElementCount > 0) {
     findings.push({
       code: 'has-foreign-object',
       message: 'Input contains <foreignObject> element(s); strict sanitizer is recommended.',
-      details: { count: foreignObjectCount },
+      details: { count: signals.foreignObjectElementCount },
     });
   }
 
-  // 모든 element 순회
-  const allElements = doc.getElementsByTagName('*');
-  let eventHandlerCount = 0;
-  let externalHrefCount = 0;
-  let styleAttrExternalUrlCount = 0;
+  if (signals.eventHandlerAttributeCount > 0) {
+    findings.push({
+      code: 'has-event-handler',
+      message: 'Input contains on* event handler attribute(s); strict sanitizer is recommended.',
+      details: { count: signals.eventHandlerAttributeCount, samples: signals.eventHandlerAttributeSamples },
+    });
+  }
 
+  // external href/src 참조와 style attribute url() 검사.
+  // external-href와 CSS finding은 DOM 보안 신호 helper 범위 밖이며, inspectSvg는 embedded-image
+  // 단계가 없으므로 data:/상대 경로 참조도 정책 차단 대상이면 그대로 보고한다(sanitizer의
+  // external-href stage가 data:를 embedded-image로 위임하는 것과 의미가 다르다).
+  const allElements = doc.getElementsByTagName('*');
+  let externalHrefCount = 0;
+  const externalHrefSamples: string[] = [];
+  let styleAttrExternalUrlCount = 0;
+  let styleTagExternalUrlCount = 0;
   for (let i = 0; i < allElements.length; i++) {
     const el = allElements[i];
     if (!el) continue;
 
-    // on* 이벤트 핸들러 attribute 검사
+    // external href/src와 style attribute url()은 같은 element의 서로 다른 속성이므로
+    // 두 검사를 한 attribute 순회에서 모두 수행한다. external-href는 element당 한 번만
+    // 카운트하되(elementHrefCounted 플래그), 순회를 조기 종료(break)하지 않아야 뒤에 오는
+    // style 속성 검사가 누락되지 않는다.
+    let elementHrefCounted = false;
     for (const attrName of el.getAttributeNames()) {
-      if (EVENT_HANDLER_ATTR_REGEX.test(attrName)) {
-        eventHandlerCount++;
+      const lowered = attrName.toLowerCase();
+      const localName = el.getAttributeNode(attrName)?.localName.toLowerCase() ?? lowered;
+
+      // style attribute 내부 url() 검사
+      if (lowered === 'style' || localName === 'style') {
+        const styleAttr = el.getAttribute(attrName);
+        if (styleAttr) {
+          visitCssUrlValues(styleAttr, (urlValue) => {
+            if (getCssPolicyValueVariants(urlValue).some(isBlockedSvgPolicyRef)) {
+              styleAttrExternalUrlCount++;
+            }
+          });
+        }
+      }
+
+      // external href/xlink:href/src 검사 (element당 한 번만 카운트)
+      if (!elementHrefCounted && isReferenceAttribute(el, attrName)) {
+        const value = readReferenceAttribute(el, attrName);
+        if (value !== null && getCssPolicyValueVariants(value).some(isBlockedSvgPolicyRef)) {
+          externalHrefCount++;
+          pushCappedSample(externalHrefSamples, lowered);
+          elementHrefCounted = true;
+        }
       }
     }
 
-    // external href/xlink:href/src 검사
-    const hrefCandidates = [
-      el.getAttribute('href'),
-      el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') ?? el.getAttribute('xlink:href'),
-      el.getAttribute('src'),
-    ];
-    for (const val of hrefCandidates) {
-      if (val !== null && getCssPolicyValueVariants(val).some(isBlockedSvgPolicyRef)) {
-        externalHrefCount++;
-        break; // element당 한 번만 카운트
-      }
-    }
-
-    // style attribute 내부 url() 검사
-    const styleAttr = el.getAttribute('style');
-    if (styleAttr) {
-      visitCssUrlValues(styleAttr, (urlValue) => {
+    // <style> 태그 내부 url() 검사
+    if (el.tagName.toLowerCase() === 'style') {
+      const cssText = el.textContent ?? '';
+      visitCssUrlValues(cssText, (urlValue) => {
         if (getCssPolicyValueVariants(urlValue).some(isBlockedSvgPolicyRef)) {
-          styleAttrExternalUrlCount++;
+          styleTagExternalUrlCount++;
         }
       });
     }
-  }
-
-  if (eventHandlerCount > 0) {
-    findings.push({
-      code: 'has-event-handler',
-      message: 'Input contains on* event handler attribute(s); strict sanitizer is recommended.',
-      details: { count: eventHandlerCount },
-    });
   }
 
   if (externalHrefCount > 0) {
     findings.push({
       code: 'external-href',
       message: 'Input contains element(s) with external href/src references; strict sanitizer is recommended.',
-      details: { count: externalHrefCount },
+      details: { count: externalHrefCount, samples: externalHrefSamples },
     });
   }
 
@@ -303,20 +314,6 @@ function collectDomFindings(doc: Document): InspectSvgFinding[] {
       code: 'style-attribute-external-url',
       message: 'Input contains style attribute(s) with external url() references; strict sanitizer is recommended.',
       details: { count: styleAttrExternalUrlCount },
-    });
-  }
-
-  // <style> 태그 내부 url() 검사
-  const styleTags = doc.getElementsByTagName('style');
-  let styleTagExternalUrlCount = 0;
-  for (let i = 0; i < styleTags.length; i++) {
-    const styleEl = styleTags[i];
-    if (!styleEl) continue;
-    const cssText = styleEl.textContent ?? '';
-    visitCssUrlValues(cssText, (urlValue) => {
-      if (getCssPolicyValueVariants(urlValue).some(isBlockedSvgPolicyRef)) {
-        styleTagExternalUrlCount++;
-      }
     });
   }
 
@@ -441,7 +438,8 @@ export function inspectSvg(svgString: unknown): InspectSvgReport {
         findings.push({
           code: 'not-svg-root',
           message: 'Parsed XML root element is not <svg>.',
-          details: { rootTagName: tagLower },
+          // root tag 이름은 입력 원문이므로 report details에 반사하지 않는다.
+          details: { rootTagName: 'non-svg-root' },
         });
       }
     }

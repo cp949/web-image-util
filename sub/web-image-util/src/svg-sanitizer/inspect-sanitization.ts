@@ -11,10 +11,22 @@
  */
 
 import { MAX_SVG_BYTES } from '../core/source-converter/options';
-import { isBlockedSvgPolicyRef } from '../core/source-converter/url/policy';
 import { ImageProcessError } from '../errors';
-import { isSafeRasterDataImageRef, parseSvgDataUrlRef } from '../utils/svg-data-url-policy';
-import { getCssPolicyValueVariants, normalizePolicyValue, visitCssUrlValues } from '../utils/svg-policy-utils';
+import {
+  decodeSvgDataImageRef,
+  isRecognizedDataUrlMimeType,
+  isSafeRasterDataImageRef,
+  parseSvgDataUrlRef,
+} from '../utils/svg-data-url-policy';
+import {
+  collectSvgCssReferenceSignals,
+  collectSvgDomSecuritySignals,
+  detectSvgInspectionEnvironment,
+  isReferenceAttribute,
+  MAX_SAMPLE_LENGTH,
+  MAX_SAMPLES_PER_STAGE,
+  readReferenceAttribute,
+} from '../utils/svg-inspection';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 
 /** sanitizer 정책. processImage()의 `svgSanitizer` 옵션과 동일한 3개 값을 받는다. */
@@ -103,58 +115,18 @@ export interface InspectSvgSanitizationOptions {
   policy?: SvgSanitizerPolicy;
 }
 
-/**
- * 현재 실행 환경을 감지한다.
- *
- * inspectSvg의 `detectInspectEnvironment`와 동일한 평가 순서지만, `utils ↔ svg-sanitizer`
- * 서브패스 간 의존성 추가를 피하기 위해 본 모듈에 인라인으로 둔다.
- *
- * 1. globalThis.happyDOM 이 존재하면 'happy-dom'
- * 2. window / document / DOMParser 모두 존재하면 'browser'
- * 3. process.versions.node 이 존재하면 'node'
- * 4. 그 외 'unknown'
- */
+/** 현재 실행 환경을 감지한다. 평가 순서는 happy-dom -> browser -> node -> unknown이다. */
 function detectSanitizationEnvironment(): 'browser' | 'happy-dom' | 'node' | 'unknown' {
-  if ((globalThis as unknown as Record<string, unknown>).happyDOM != null) {
-    return 'happy-dom';
-  }
-  if (typeof window !== 'undefined' && typeof document !== 'undefined' && typeof DOMParser !== 'undefined') {
-    return 'browser';
-  }
-  if (typeof process !== 'undefined' && process.versions?.node) {
-    return 'node';
-  }
-  return 'unknown';
+  return detectSvgInspectionEnvironment();
 }
 
-/** samples 토큰 최대 길이. 모든 고정 토큰은 32자 이하이며 동적 식별자는 잘라낸다. */
-const MAX_SAMPLE_LENGTH = 32;
-/** stage 당 samples 배열 최대 길이. */
-const MAX_SAMPLES_PER_STAGE = 3;
-
-/** event handler 속성 이름 패턴. `on=` 단독은 매치되지 않도록 접미사 1자 이상을 요구한다. */
-const EVENT_HANDLER_ATTR_PATTERN = /^on[a-z0-9:-]+$/i;
 /** doctype 선언 정규식. */
 const DOCTYPE_PATTERN = /<!DOCTYPE\b/gi;
 /** entity 선언 정규식. */
 const ENTITY_PATTERN = /<!ENTITY\b/gi;
-/** xlink namespace. happy-dom과 브라우저 모두에서 동일하다. */
-const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink';
 
 /** UTF-8 byte 길이 측정용 공용 인코더. 호출당 1회만 생성된다. */
 const UTF8_ENCODER = new TextEncoder();
-
-/**
- * `href`/`xlink:href`/`src` 속성값을 namespace 우선으로 읽는다.
- * 본 헬퍼는 `external-href-removed`와 embedded image stage 수집에서 동일 규칙으로 사용된다.
- */
-function readRefAttribute(element: Element, attrName: string, lowered: string): string | null {
-  if (lowered === 'xlink:href') {
-    const ns = element.getAttributeNS(XLINK_NAMESPACE, 'href');
-    if (ns !== null) return ns;
-  }
-  return element.getAttribute(attrName);
-}
 
 /**
  * stage 단위 누적 상태. count는 발생 수, samples는 발생 순서 중복 제거(Set) 후 최대 3개.
@@ -190,129 +162,55 @@ function pushStage(
 }
 
 /**
- * `href`/`xlink:href`/`src` 속성값이 `external-href-removed` stage에 카운트되어야 하는지 판정한다.
+ * count > 0 이면 미리 계산된 count/samples로 stage를 추가한다.
+ * 공통 DOM 보안 신호 helper가 산출한 결과를 그대로 stage로 옮길 때 사용한다.
+ */
+function pushCountStage(
+  stages: InspectSvgSanitizationStage[],
+  code: InspectSvgSanitizationStageCode,
+  count: number,
+  samples: string[] = []
+): void {
+  if (count <= 0) return;
+  stages.push({ code, count, samples });
+}
+
+/**
+ * `script-removed` / `foreign-object-removed` / `event-handler-removed` / `external-href-removed`
+ * stage를 공통 DOM 보안 신호 helper로 수집한다.
  *
- * lightweight sanitizer는 외부 URL(http/https/data/javascript/protocol-relative)만 제거하며,
- * 내부 fragment(`#...`)와 일반 상대 경로(`./`, `../`, `/path`)는 보존한다. 본 stage는
- * lightweight 동작과 일관성을 유지하기 위해 동일한 경로들을 카운트에서 제외한다.
- *
- * `data:`로 시작하는 값은 TASK-03의 embedded image stage(`data-image-preserved` /
- * `data-image-blocked` / `nested-svg-resanitized`)가 일괄 처리한다. 미허용 MIME / 크기 초과 등
- * 정책상 차단되는 `data:` 값도 본 stage에서는 제외해 중복 카운트를 방지한다.
+ * external-href 판정은 helper가 담당한다. lightweight/skip은 렌더링 guard 기준으로, strict는
+ * strict URI 정책 기준으로 센다. `data:` 값은 embedded image stage가 별도로 처리하므로 본
+ * stage에서는 제외돼 중복 카운트가 발생하지 않는다.
  */
-function shouldCountExternalHref(value: string): boolean {
-  if (value === '') return false;
-
-  const normalized = normalizePolicyValue(value);
-  if (normalized === '') return false;
-  // 모든 data: 값은 embedded image stage가 처리하므로 본 stage에서 제외
-  if (normalized.startsWith('data:')) return false;
-  // 내부 fragment 참조는 제외
-  if (normalized.startsWith('#')) return false;
-  // 일반 상대 경로(./, ../) 제외
-  if (normalized.startsWith('./') || normalized.startsWith('../')) return false;
-  // 절대 경로(/path)는 보존 대상. protocol-relative(//host)는 차단 대상이므로 분리한다.
-  if (normalized.startsWith('/') && !normalized.startsWith('//')) return false;
-
-  return getCssPolicyValueVariants(value).some(isBlockedSvgPolicyRef);
+function collectDomSecurityStages(
+  doc: Document,
+  stages: InspectSvgSanitizationStage[],
+  policy: 'lightweight' | 'skip' | 'strict'
+): void {
+  const signals = collectSvgDomSecuritySignals(doc, { policy: policy === 'strict' ? 'strict' : 'lightweight' });
+  pushCountStage(stages, 'script-removed', signals.scriptElementCount, ['script']);
+  pushCountStage(stages, 'foreign-object-removed', signals.foreignObjectElementCount, ['foreignobject']);
+  pushCountStage(
+    stages,
+    'event-handler-removed',
+    signals.eventHandlerAttributeCount,
+    signals.eventHandlerAttributeSamples
+  );
+  pushCountStage(stages, 'external-href-removed', signals.externalHrefCount, signals.externalHrefSamples);
 }
 
 /**
- * `script-removed` 카운트와 samples를 수집한다.
+ * `external-css-removed` 카운트를 공통 CSS 참조 신호 helper로 수집한다.
+ * style 속성과 `<style>` 본문 양쪽을 검사한다.
  */
-function collectScriptStage(doc: Document, stages: InspectSvgSanitizationStage[]): void {
-  const acc = createAccumulator();
-  const scripts = doc.getElementsByTagName('script');
-  if (scripts.length > 0) {
-    acc.count = scripts.length;
-    addSample(acc, 'script');
-  }
-  pushStage(stages, 'script-removed', acc);
-}
-
-/**
- * `foreign-object-removed` 카운트와 samples를 수집한다.
- */
-function collectForeignObjectStage(doc: Document, stages: InspectSvgSanitizationStage[]): void {
-  const acc = createAccumulator();
-  const elements = doc.getElementsByTagName('foreignObject');
-  if (elements.length > 0) {
-    acc.count = elements.length;
-    addSample(acc, 'foreignobject');
-  }
-  pushStage(stages, 'foreign-object-removed', acc);
-}
-
-/**
- * `event-handler-removed`, `external-href-removed` 카운트를 한 번의 DOM 순회로 수집한다.
- */
-function collectAttributeStages(doc: Document, stages: InspectSvgSanitizationStage[]): void {
-  const eventHandler = createAccumulator();
-  const externalHref = createAccumulator();
-
-  const elements = doc.getElementsByTagName('*');
-  for (let i = 0; i < elements.length; i++) {
-    const element = elements[i];
-    if (!element) continue;
-
-    const attrNames = element.getAttributeNames();
-    for (const attrName of attrNames) {
-      const lowered = attrName.toLowerCase();
-
-      if (EVENT_HANDLER_ATTR_PATTERN.test(attrName)) {
-        eventHandler.count += 1;
-        addSample(eventHandler, lowered);
-      }
-
-      if (lowered === 'href' || lowered === 'xlink:href' || lowered === 'src') {
-        const value = readRefAttribute(element, attrName, lowered) ?? '';
-        if (shouldCountExternalHref(value)) {
-          externalHref.count += 1;
-          addSample(externalHref, lowered);
-        }
-      }
-    }
-  }
-
-  pushStage(stages, 'event-handler-removed', eventHandler);
-  pushStage(stages, 'external-href-removed', externalHref);
-}
-
-/**
- * `external-css-removed` 카운트를 수집한다. style 속성과 `<style>` 본문 양쪽을 검사한다.
- */
-function collectExternalCssStage(doc: Document, stages: InspectSvgSanitizationStage[]): void {
-  const acc = createAccumulator();
-
-  const elements = doc.getElementsByTagName('*');
-  for (let i = 0; i < elements.length; i++) {
-    const element = elements[i];
-    if (!element) continue;
-    const styleValue = element.getAttribute('style');
-    if (styleValue === null || styleValue === '') continue;
-    visitCssUrlValues(styleValue, (urlValue) => {
-      if (getCssPolicyValueVariants(urlValue).some(isBlockedSvgPolicyRef)) {
-        acc.count += 1;
-        addSample(acc, 'style');
-      }
-    });
-  }
-
-  const styleTags = doc.getElementsByTagName('style');
-  for (let i = 0; i < styleTags.length; i++) {
-    const tag = styleTags[i];
-    if (!tag) continue;
-    const text = tag.textContent ?? '';
-    if (text === '') continue;
-    visitCssUrlValues(text, (urlValue) => {
-      if (getCssPolicyValueVariants(urlValue).some(isBlockedSvgPolicyRef)) {
-        acc.count += 1;
-        addSample(acc, 'style-tag');
-      }
-    });
-  }
-
-  pushStage(stages, 'external-css-removed', acc);
+function collectExternalCssStage(
+  doc: Document,
+  stages: InspectSvgSanitizationStage[],
+  policy: 'lightweight' | 'skip' | 'strict'
+): void {
+  const signals = collectSvgCssReferenceSignals(doc, { policy: policy === 'strict' ? 'strict' : 'lightweight' });
+  pushCountStage(stages, 'external-css-removed', signals.externalCssCount, signals.externalCssSamples);
 }
 
 /**
@@ -353,20 +251,21 @@ function collectDoctypeAndEntityStages(
  * `getAttribute` 폴백)에 대해 다음 분기를 수행한다.
  *
  * 1. `value.trim().toLowerCase()`이 `data:`로 시작하지 않으면 본 헬퍼 범위 밖(외부 URL / 내부
- *    fragment / 일반 상대 경로는 `collectAttributeStages`의 `external-href-removed` 또는 보존
+ *    fragment / 일반 상대 경로는 `collectDomSecurityStages`의 `external-href-removed` 또는 보존
  *    대상).
  * 2. `parseSvgDataUrlRef(value)`의 mimeType이 `'image/svg+xml'`이면 `nested-svg-resanitized`로
  *    카운트하고 samples에 `'image/svg+xml'`를 추가한다.
  * 3. `isSafeRasterDataImageRef(value)`가 true면 `data-image-preserved`로 카운트하고 samples에
  *    `info.mimeType`(소문자)을 추가한다.
- * 4. 그 외 `data:` 시작 값은 `data-image-blocked`로 카운트하고 samples에
- *    `info?.mimeType ?? 'unknown'`을 추가한다. 미허용 MIME, 크기 초과, base64 디코딩 실패,
+ * 4. 그 외 `data:` 시작 값은 `data-image-blocked`로 카운트한다. samples에는 `info.mimeType`이
+ *    인식된 MIME(`isRecognizedDataUrlMimeType`)일 때만 그 값을, 아니면 `'unknown'`을 추가한다
+ *    (metadata 위치의 임의 입력 누출 차단). 미허용 MIME, 크기 초과, base64 디코딩 실패,
  *    파싱 실패 모두 본 분기로 모인다.
  *
  * `parseSvgDataUrlRef`는 한 attribute 값당 한 번만 호출해 mimeType 분기와 blocked samples를
  * 같이 결정한다(중복 manual parse 방지).
  *
- * `xlink:href`는 TASK-02 `collectAttributeStages`와 동일하게 namespace lookup을 우선한다.
+ * `xlink:href`는 공통 DOM 보안 신호 helper와 동일하게 namespace lookup을 우선한다.
  */
 function collectEmbeddedImageStages(doc: Document): InspectSvgSanitizationStage[] {
   const preserved = createAccumulator();
@@ -380,15 +279,14 @@ function collectEmbeddedImageStages(doc: Document): InspectSvgSanitizationStage[
 
     const attrNames = element.getAttributeNames();
     for (const attrName of attrNames) {
-      const lowered = attrName.toLowerCase();
-      if (lowered !== 'href' && lowered !== 'xlink:href' && lowered !== 'src') continue;
+      if (!isReferenceAttribute(element, attrName)) continue;
 
-      const value = readRefAttribute(element, attrName, lowered) ?? '';
+      const value = readReferenceAttribute(element, attrName) ?? '';
       if (value === '') continue;
       if (!value.trim().toLowerCase().startsWith('data:')) continue;
 
       const info = parseSvgDataUrlRef(value);
-      if (info?.mimeType === 'image/svg+xml') {
+      if (info?.mimeType === 'image/svg+xml' && decodeSvgDataImageRef(value) !== null) {
         nested.count += 1;
         addSample(nested, 'image/svg+xml');
       } else if (isSafeRasterDataImageRef(value)) {
@@ -397,8 +295,10 @@ function collectEmbeddedImageStages(doc: Document): InspectSvgSanitizationStage[
         preserved.count += 1;
         addSample(preserved, info?.mimeType ?? 'unknown');
       } else {
+        // info.mimeType은 data: metadata 위치의 무검증 값이므로, 인식된 MIME일 때만 sample로
+        // echo하고 그 외(공격자가 심은 임의 텍스트 포함)는 'unknown'으로 치환해 누출을 막는다.
         blocked.count += 1;
-        addSample(blocked, info?.mimeType ?? 'unknown');
+        addSample(blocked, info && isRecognizedDataUrlMimeType(info.mimeType) ? info.mimeType : 'unknown');
       }
     }
   }
@@ -430,10 +330,8 @@ function collectGeneralStages(
   const stages: InspectSvgSanitizationStage[] = [];
 
   if (doc !== null) {
-    collectScriptStage(doc, stages);
-    collectForeignObjectStage(doc, stages);
-    collectAttributeStages(doc, stages);
-    collectExternalCssStage(doc, stages);
+    collectDomSecurityStages(doc, stages, policy);
+    collectExternalCssStage(doc, stages, policy);
   }
 
   collectDoctypeAndEntityStages(svgString, policy, stages);

@@ -95,6 +95,26 @@ describe('inspectSvgSanitization() embedded image stage 수집', () => {
     expect(stage?.samples).toEqual(['image/svg+xml']);
   });
 
+  it('디코딩할 수 없는 SVG data URL은 resanitized가 아니라 blocked stage로 잡힌다', async () => {
+    const stages = await inspectLightweightStages(svgWith('<image href="data:image/svg+xml;base64,%%%"/>'));
+    expect(findStage(stages, 'nested-svg-resanitized')).toBeUndefined();
+    expect(findStage(stages, 'data-image-blocked')).toEqual({
+      code: 'data-image-blocked',
+      count: 1,
+      samples: ['image/svg+xml'],
+    });
+  });
+
+  it('namespace prefix가 달라도 localName이 href인 data URL을 embedded image stage로 센다', async () => {
+    const stages = await inspectLightweightStages(
+      svgWith(`<image foo:href="data:image/png;base64,${TINY_PNG_BASE64}"/>`, 'xmlns:foo="http://example.test/foo"')
+    );
+    const stage = findStage(stages, 'data-image-preserved');
+    expect(stage).toBeDefined();
+    expect(stage?.count).toBe(1);
+    expect(stage?.samples).toEqual(['image/png']);
+  });
+
   it('외부 URL과 raster data URL이 같이 있으면 두 stage가 각각 1로 분리되어 카운트된다', async () => {
     const stages = await inspectLightweightStages(
       svgWith(`<image href="http://evil.example.com/a.png"/><image href="data:image/png;base64,${TINY_PNG_BASE64}"/>`)

@@ -110,5 +110,19 @@ describe('inspectSvgSanitization() 누출 방지 회귀', () => {
       const report = await inspectSvgSanitization(dangerousSvg, { policy });
       assertSamplesWhitelisted(stagesOf(report));
     });
+
+    it(`${policy} 정책: blocked data: URL의 metadata(MIME) 위치 임의 텍스트는 unknown으로 치환되어 누출되지 않는다`, async () => {
+      // 기존 dangerousSvg는 sentinel을 payload(쉼표 뒤)에만 두므로 metadata 위치 경로를 덮지 못한다.
+      // 인식되지 않은 MIME 위치 값은 그대로 echo되면 누출이므로 'unknown'으로 치환돼야 한다.
+      const mimeSentinel = 'leak-canary-mime-secret/x';
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg"><image href="data:${mimeSentinel};base64,QQ=="/></svg>`;
+      const report = await inspectSvgSanitization(svg, { policy });
+      const blocked = stagesOf(report).find((stage) => stage.code === 'data-image-blocked');
+      expect(blocked, `${policy} 정책: data-image-blocked stage가 있어야 한다`).toBeDefined();
+      expect(blocked?.samples, `${policy} 정책: blocked sample은 unknown이어야 한다`).toEqual(['unknown']);
+      expect(JSON.stringify(report), `${policy} 정책: MIME 위치 sentinel을 누출하면 안 된다`).not.toContain(
+        'leak-canary-mime-secret'
+      );
+    });
   }
 });

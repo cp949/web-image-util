@@ -29,6 +29,32 @@ const SAFE_RASTER_IMAGE_MIME_TYPES = new Set([
 ]);
 
 /**
+ * 진단 리포트의 sample 토큰으로 그대로 노출해도 안전한, 인식된 MIME 타입 집합.
+ *
+ * `data:` URL의 metadata 위치(예: `data:<여기>,...`)는 공격자가 임의 텍스트를 심을 수 있는
+ * 자리다. blocked/diagnostic sample이 이 위치 값을 무검증으로 echo하면 진단 리포트에 원본
+ * 입력이 누출된다. 따라서 이 allowlist에 속한 알려진 MIME만 sample로 노출하고, 그 외 값은
+ * 호출처가 `'unknown'`으로 치환해 누출을 차단한다(fail-closed).
+ *
+ * 보존 대상 raster(`SAFE_RASTER_IMAGE_MIME_TYPES`)에 더해, 차단되더라도 진단상 식별 가치가 있는
+ * 알려진 타입을 포함한다.
+ */
+const RECOGNIZED_DATA_URL_MIME_TYPES = new Set<string>([
+  ...SAFE_RASTER_IMAGE_MIME_TYPES,
+  'image/svg+xml',
+  'image/tiff',
+  'image/heic',
+  'image/heif',
+  'image/jxl',
+  'application/octet-stream',
+  'application/pdf',
+  'application/x-shockwave-flash',
+  'text/html',
+  'text/xml',
+  'text/plain',
+]);
+
+/**
  * 단일 embedded Data URL이 가질 수 있는 최대 디코딩 바이트 수.
  *
  * SVG 전체 크기 제한과 별개로, 한 개의 `data:` 참조가 비정상적으로 크지 않도록 추가 상한을 둔다.
@@ -102,6 +128,19 @@ export function parseSvgDataUrlRef(value: string): SvgDataUrlInfo | null {
     decodedBytes: decoded?.bytes ?? null,
     decodedText: decoded?.text ?? null,
   };
+}
+
+/**
+ * MIME 타입 문자열이 진단 sample로 노출해도 안전한 인식된 타입인지 판정한다.
+ *
+ * `parseSvgDataUrlRef()`가 반환하는 `mimeType`은 `data:` metadata 위치의 무검증 값이므로,
+ * blocked stage 등에서 sample로 echo하기 전에 본 함수로 걸러 임의 입력 누출을 막는다.
+ *
+ * @param mimeType 소문자로 정규화된 MIME 타입 문자열
+ * @returns allowlist에 속하면 true
+ */
+export function isRecognizedDataUrlMimeType(mimeType: string): boolean {
+  return RECOGNIZED_DATA_URL_MIME_TYPES.has(mimeType);
 }
 
 /**

@@ -17,9 +17,33 @@ describe('inspectSvgSanitization() stage 수집', () => {
       expect(stage?.samples).toEqual(['script']);
     });
 
+    it('대소문자가 다른 script 요소도 script-removed stage로 잡힌다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><SCRIPT>alert(1)</SCRIPT></svg>'
+      );
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      const stage = findStage(report.impact.stages, 'script-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(1);
+      expect(stage?.samples).toEqual(['script']);
+    });
+
     it('foreignObject 요소가 있으면 foreign-object-removed stage가 잡힌다', async () => {
       const report = await inspectSvgSanitization(
         '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject></foreignObject></svg>'
+      );
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      const stage = findStage(report.impact.stages, 'foreign-object-removed');
+      expect(stage).toBeDefined();
+      expect(stage?.count).toBe(1);
+      expect(stage?.samples).toEqual(['foreignobject']);
+    });
+
+    it('대소문자가 다른 foreignObject 요소도 foreign-object-removed stage로 잡힌다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><foreignobject></foreignobject></svg>'
       );
       expect(report.impact.kind).toBe('lightweight');
       if (report.impact.kind !== 'lightweight') return;
@@ -93,6 +117,16 @@ describe('inspectSvgSanitization() stage 수집', () => {
       expect(report.impact.kind).toBe('lightweight');
       if (report.impact.kind !== 'lightweight') return;
       expect(report.impact.stages).toEqual([]);
+    });
+
+    it('lightweight 정책에서는 상대 href와 상대 CSS url을 제거 stage로 보고하지 않는다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><use href="../sprite.svg#a"/><rect style="fill:url(/mask.svg#m)"/></svg>'
+      );
+      expect(report.impact.kind).toBe('lightweight');
+      if (report.impact.kind !== 'lightweight') return;
+      expect(findStage(report.impact.stages, 'external-href-removed')).toBeUndefined();
+      expect(findStage(report.impact.stages, 'external-css-removed')).toBeUndefined();
     });
 
     it('outputBytes는 sanitizeSvgForRendering 결과 byte와 동일하다', async () => {
@@ -223,6 +257,81 @@ describe('inspectSvgSanitization() stage 수집', () => {
       if (report.impact.kind !== 'strict') return;
       // g + rect + circle → root 기준 element 3개
       expect(report.impact.outputNodeCount).toBe(3);
+    });
+
+    it('strict 정책에서는 상대 href와 상대 CSS url을 제거 stage로 보고한다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><use href="../sprite.svg#a"/><rect style="fill:url(/mask.svg#m)"/></svg>',
+        { policy: 'strict' }
+      );
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      expect(findStage(report.impact.stages, 'external-href-removed')).toEqual({
+        code: 'external-href-removed',
+        count: 1,
+        samples: ['href'],
+      });
+      expect(findStage(report.impact.stages, 'external-css-removed')).toEqual({
+        code: 'external-css-removed',
+        count: 1,
+        samples: ['style'],
+      });
+    });
+
+    it('strict 정책에서는 namespace prefix가 달라도 localName이 href인 외부 참조를 제거 stage로 보고한다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:foo="http://example.test/foo"><use foo:href="https://example.test/sprite.svg#id"/></svg>',
+        { policy: 'strict' }
+      );
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      expect(findStage(report.impact.stages, 'external-href-removed')).toEqual({
+        code: 'external-href-removed',
+        count: 1,
+        samples: ['foo:href'],
+      });
+    });
+
+    it('strict 정책에서는 presentation 속성 CSS URL도 제거 stage로 보고한다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect fill="url(https://example.test/pattern.svg#p)"/></svg>',
+        { policy: 'strict' }
+      );
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      expect(findStage(report.impact.stages, 'external-css-removed')).toEqual({
+        code: 'external-css-removed',
+        count: 1,
+        samples: ['fill'],
+      });
+    });
+
+    it('strict 정책에서는 image-set 외부 URL 문자열도 제거 stage로 보고한다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect style=\'background-image:image-set("https://example.test/a.png" 1x)\'/></svg>',
+        { policy: 'strict' }
+      );
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      expect(findStage(report.impact.stages, 'external-css-removed')).toEqual({
+        code: 'external-css-removed',
+        count: 1,
+        samples: ['style'],
+      });
+    });
+
+    it('strict 정책에서는 image-set 내부 url을 external-css stage에서 중복 카운트하지 않는다', async () => {
+      const report = await inspectSvgSanitization(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect style="background-image:image-set(url(https://example.test/a.png) 1x)"/></svg>',
+        { policy: 'strict' }
+      );
+      expect(report.impact.kind).toBe('strict');
+      if (report.impact.kind !== 'strict') return;
+      expect(findStage(report.impact.stages, 'external-css-removed')).toEqual({
+        code: 'external-css-removed',
+        count: 1,
+        samples: ['style'],
+      });
     });
   });
 });
