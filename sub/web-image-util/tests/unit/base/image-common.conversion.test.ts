@@ -307,6 +307,46 @@ describe('stringToBlob', () => {
   });
 });
 
+describe('stringToBlob — Blob URL', () => {
+  const blobUrl = 'blob:https://example.com/image-id';
+
+  it('Blob URL은 fetch 결과 Blob을 반환한다', async () => {
+    const blob = new Blob(['hello'], { type: 'image/png' });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({ blob: async () => blob } as Response);
+
+    const result = await stringToBlob(blobUrl);
+
+    expect(result).toBeInstanceOf(Blob);
+    expect(result!.type).toBe('image/png');
+    expect(fetch).toHaveBeenCalledWith(blobUrl);
+  });
+
+  it('앞뒤 공백이 있는 Blob URL은 trim된 URL로 fetch한다', async () => {
+    const blob = new Blob(['hello'], { type: 'image/png' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ blob: async () => blob } as Response);
+
+    const result = await stringToBlob(`  ${blobUrl}  `);
+
+    expect(result).toBeInstanceOf(Blob);
+    // 분류가 trim 기준이므로 디스패치도 trim된 URL을 fetch해야 한다(분류·디스패치 입력 일치).
+    expect(fetchSpy).toHaveBeenCalledWith(blobUrl);
+  });
+});
+
+describe('stringToDataUrl — Blob URL', () => {
+  const blobUrl = 'blob:https://example.com/image-id';
+
+  it('Blob URL은 fetch 결과 Blob을 Data URL로 변환한다', async () => {
+    const blob = new Blob(['hello'], { type: 'image/png' });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({ blob: async () => blob } as Response);
+
+    const result = await stringToDataUrl(blobUrl);
+
+    expect(result).toMatch(/^data:image\/png/);
+    expect(fetch).toHaveBeenCalledWith(blobUrl);
+  });
+});
+
 describe('stringToFile', () => {
   it.each([
     ['미분류 문자열', 'relative.png'],
@@ -329,5 +369,18 @@ describe('stringToFile', () => {
     // SVG Blob이 되면 fixBlobFileExt가 .svg 확장자를 적용한다.
     const file = await stringToFile(SIMPLE_SVG, 'output.png');
     expect(file!.name).toBe('output.svg');
+  });
+
+  it('Blob URL 입력은 fetch 결과 Blob으로 File을 만들고 MIME에 맞게 확장자를 보정한다', async () => {
+    const blobUrl = 'blob:https://example.com/image-id';
+    const blob = new Blob(['hello'], { type: 'image/webp' });
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ blob: async () => blob } as Response);
+
+    const file = await stringToFile(blobUrl, 'output.png');
+
+    expect(file).toBeInstanceOf(File);
+    expect(file!.name).toBe('output.webp');
+    expect(file!.type).toBe('image/webp');
+    expect(fetchSpy).toHaveBeenCalledWith(blobUrl);
   });
 });

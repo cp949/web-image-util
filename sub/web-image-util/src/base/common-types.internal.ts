@@ -18,7 +18,7 @@ export interface ImageSourceConvertOptions {
  *
  * @description Type representing the kind of image source expressed as string
  */
-export type ImageStringSourceType = 'SVG_XML' | 'DATA_URL' | 'HTTP_URL' | 'PATH';
+export type ImageStringSourceType = 'SVG_XML' | 'DATA_URL' | 'HTTP_URL' | 'BLOB_URL' | 'PATH';
 
 /**
  * Image file extensions

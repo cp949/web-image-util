@@ -2,7 +2,7 @@
  * image-common.ts 문자열 분류와 이미지 형식 판정 함수 분기 단위 테스트.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   checkImageFormatFromString,
   imageFormatFromDataUrl,
@@ -30,6 +30,21 @@ describe('sourceTypeFromString', () => {
       ['속성 없는 SVG 마크업', '<svg></svg>'],
     ] as const)('%s은 SVG_XML을 반환한다', (_label, src) => {
       expect(sourceTypeFromString(src)).toBe('SVG_XML');
+    });
+  });
+
+  describe('Blob URL 분기', () => {
+    it('blob:으로 시작하는 문자열은 BLOB_URL을 반환한다', () => {
+      expect(sourceTypeFromString('blob:https://example.com/image-id')).toBe('BLOB_URL');
+    });
+
+    it('앞뒤 공백이 있는 blob: 문자열도 BLOB_URL을 반환한다', () => {
+      expect(sourceTypeFromString(' blob:https://example.com/image-id ')).toBe('BLOB_URL');
+    });
+
+    it('SVG 마크업 안에 blob: 텍스트가 있어도 SVG_XML이 우선한다', () => {
+      // startsWith('blob:')만 검사하므로 본문에 포함된 blob: 텍스트는 URL로 오판하지 않는다.
+      expect(sourceTypeFromString('<svg><image href="blob:https://example.com/image-id"/></svg>')).toBe('SVG_XML');
     });
   });
 
@@ -152,6 +167,62 @@ describe('checkImageFormatFromString', () => {
     it('미분류 문자열은 undefined를 반환한다', async () => {
       const result = await checkImageFormatFromString('relative/path.png');
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('Blob URL MIME 기반 판정 경로', () => {
+    const blobUrl = 'blob:https://example.com/image-id';
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('Blob MIME이 image/png이면 format: "png"와 원본 blob URL을 src로 반환하고 원본 URL을 fetch한다', async () => {
+      const blob = new Blob(['fake'], { type: 'image/png' });
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ blob: async () => blob } as Response);
+
+      const result = await checkImageFormatFromString(blobUrl);
+
+      expect(result).toEqual({ format: 'png', src: blobUrl });
+      expect(fetchSpy).toHaveBeenCalledWith(blobUrl);
+    });
+
+    it('MIME에 charset 파라미터가 붙어도 essence로 format을 판정한다', async () => {
+      const blob = new Blob(['<svg/>'], { type: 'image/svg+xml; charset=utf-8' });
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({ blob: async () => blob } as Response);
+
+      const result = await checkImageFormatFromString(blobUrl);
+
+      expect(result).toEqual({ format: 'svg', src: blobUrl });
+    });
+
+    it('Blob MIME이 image/svg+xml이면 format: "svg"를 반환한다', async () => {
+      const blob = new Blob(['<svg/>'], { type: 'image/svg+xml' });
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({ blob: async () => blob } as Response);
+
+      const result = await checkImageFormatFromString(blobUrl);
+
+      expect(result).toEqual({ format: 'svg', src: blobUrl });
+    });
+
+    it('빈 MIME Blob은 undefined를 반환한다', async () => {
+      const blob = new Blob(['fake']);
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({ blob: async () => blob } as Response);
+
+      expect(await checkImageFormatFromString(blobUrl)).toBeUndefined();
+    });
+
+    it('미인식 MIME Blob은 undefined를 반환한다', async () => {
+      const blob = new Blob(['fake'], { type: 'image/avif' });
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({ blob: async () => blob } as Response);
+
+      expect(await checkImageFormatFromString(blobUrl)).toBeUndefined();
+    });
+
+    it('fetch 실패는 undefined를 반환한다', async () => {
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network error'));
+
+      expect(await checkImageFormatFromString(blobUrl)).toBeUndefined();
     });
   });
 });

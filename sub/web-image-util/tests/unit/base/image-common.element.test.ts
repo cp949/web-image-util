@@ -161,4 +161,17 @@ describe('stringToElement', () => {
 
     expect(result).toBeUndefined();
   });
+
+  it('Blob URL은 fetch 없이 img.src로 직접 로드한다', async () => {
+    const img = createControlledImg('load');
+    spyCreateImg(img);
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const result = await stringToElement('blob:https://example.com/image-id', { crossOrigin: 'anonymous' });
+
+    expect(result).toBe(img);
+    expect(img.src).toBe('blob:https://example.com/image-id');
+    expect(img.crossOrigin).toBe('anonymous');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });
