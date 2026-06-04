@@ -127,11 +127,12 @@ const post = await createSocialImage(photo, { platform: 'instagram', format: 'jp
 
 ## 입력과 출력
 
-`processImage()` 입력은 `HTMLImageElement`, `Blob`, `File`, `ArrayBuffer`, `Uint8Array`, `string`을 지원합니다. 문자열은 HTTP(S) URL, Data URL, SVG XML, 브라우저 경로를 자동 판별합니다.
+`processImage()` 입력은 `HTMLImageElement`, `Blob`, `File`, `ArrayBuffer`, `Uint8Array`, `string`을 지원합니다. 문자열은 HTTP(S) URL, Blob URL, Data URL, SVG XML, 브라우저 경로를 자동 판별합니다.
 
 ```typescript
 await processImage(file).resize({ width: 300, height: 200 }).toBlob();
 await processImage('https://example.com/photo.jpg').resize({ width: 300 }).toBlob();
+await processImage(URL.createObjectURL(file)).resize({ width: 300 }).toBlob();
 await processImage('data:image/jpeg;base64,/9j/4AAQ...').resize({ width: 300 }).toBlob();
 await processImage('<svg width="100" height="100">...</svg>').resize({ width: 200 }).toBlob();
 ```

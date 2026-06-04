@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### 추가
+
+- Added: image-common 문자열 입력에서 Blob URL(`blob:`)을 지원합니다. `processImage()`와 문자열 변환 유틸은 fetch된 Blob의 MIME 타입을 기준으로 Blob/Data URL/File/Element 출력을 생성합니다.
+
 ## [3.0.0] - 2026-06-04
 
 ### 추가
