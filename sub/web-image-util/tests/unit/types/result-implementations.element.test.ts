@@ -5,6 +5,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ElementResultImpl } from '../../../src/types/result-implementations.internal';
 
+// 각 테스트 후 spy/mock을 일괄 복원한다
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('ElementResultImpl 속성 노출', () => {
   it('생성자 인자가 공개 속성으로 올바르게 노출된다', () => {
     const img = document.createElement('img');
@@ -28,10 +33,6 @@ describe('ElementResultImpl 속성 노출', () => {
 });
 
 describe('ElementResultImpl.toCanvas — 정상 경로', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('canvas.width/height가 인스턴스 값으로 설정되고 ctx.drawImage가 (element, 0, 0)으로 호출된다', async () => {
     const img = document.createElement('img') as HTMLImageElement;
     const impl = new ElementResultImpl(img, 200, 150, 0);
@@ -59,10 +60,6 @@ describe('ElementResultImpl.toCanvas — 정상 경로', () => {
 });
 
 describe('ElementResultImpl.toCanvas — 2D context 부재 경계', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('canvas.getContext("2d")가 null이면 CANVAS_CREATION_FAILED 오류를 던진다', async () => {
     const img = document.createElement('img') as HTMLImageElement;
     const impl = new ElementResultImpl(img, 100, 100, 0);
@@ -85,10 +82,6 @@ describe('ElementResultImpl.toCanvas — 2D context 부재 경계', () => {
 });
 
 describe('ElementResultImpl 변환 메서드 — canvas mock 경유', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   /** toCanvas를 mock canvas로 교체한 ElementResultImpl과 spy를 반환한다. */
   function buildElementImplWithMockCanvas(w = 100, h = 100) {
     const img = document.createElement('img') as HTMLImageElement;

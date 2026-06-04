@@ -6,6 +6,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CanvasResultImpl } from '../../../src/types/result-implementations.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
+// 각 테스트 후 spy/mock을 일괄 복원한다
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('CanvasResultImpl 속성 노출', () => {
   it('생성자 인자가 공개 속성으로 올바르게 노출된다', () => {
     const canvas = createTestCanvas(200, 150, 'green');
@@ -21,10 +26,6 @@ describe('CanvasResultImpl 속성 노출', () => {
 });
 
 describe('CanvasResultImpl.toBlob — MIME·quality 전달', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('format·quality 옵션을 지정하면 canvas.toBlob에 올바른 MIME 타입과 quality를 전달한다', async () => {
     const canvas = createTestCanvas(100, 100, 'red');
     const impl = new CanvasResultImpl(canvas, 100, 100, 5);
@@ -64,10 +65,6 @@ describe('CanvasResultImpl.toBlob — MIME·quality 전달', () => {
 });
 
 describe('CanvasResultImpl.toFile — 파일명 및 MIME 타입', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('지정한 파일명과 canvas.toBlob의 타입을 가진 File을 반환한다', async () => {
     const canvas = createTestCanvas(100, 100, 'red');
     const impl = new CanvasResultImpl(canvas, 100, 100, 5);
@@ -99,10 +96,6 @@ describe('CanvasResultImpl.toFile — 파일명 및 MIME 타입', () => {
 });
 
 describe('CanvasResultImpl.toDataURL — MIME·quality 전달', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('format·quality 옵션을 지정하면 canvas.toDataURL에 올바른 MIME 타입과 quality를 전달한다', async () => {
     const canvas = createTestCanvas(100, 100, 'red');
     const impl = new CanvasResultImpl(canvas, 100, 100, 5);

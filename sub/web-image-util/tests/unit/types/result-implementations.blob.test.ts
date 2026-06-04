@@ -7,6 +7,11 @@ import { ImageProcessError } from '../../../src/types';
 import { BlobResultImpl } from '../../../src/types/result-implementations.internal';
 import { createControlledImg } from './result-implementations.helpers';
 
+// 각 테스트 후 spy/mock을 일괄 복원한다
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('BlobResultImpl 속성 노출', () => {
   it('생성자 인자가 공개 속성으로 올바르게 노출된다', () => {
     const blob = new Blob(['mock'], { type: 'image/jpeg' });
@@ -46,10 +51,6 @@ describe('BlobResultImpl no-option 경로', () => {
 });
 
 describe('BlobResultImpl.toBlob — format 옵션 지정 시 canvas 재인코딩', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('format 옵션을 지정하면 toCanvas 결과에서 올바른 MIME·quality로 canvas.toBlob을 호출한다', async () => {
     const blob = new Blob(['data'], { type: 'image/png' });
     const impl = new BlobResultImpl(blob, 100, 100, 0);
@@ -84,10 +85,6 @@ describe('BlobResultImpl.toBlob — format 옵션 지정 시 canvas 재인코딩
 });
 
 describe('BlobResultImpl.toElement — object URL 라이프사이클', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('toElement() 성공 시 objectURL을 생성하고 이미지 load 후 revoke한다', async () => {
     const blob = new Blob(['data'], { type: 'image/png' });
     const impl = new BlobResultImpl(blob, 100, 100, 0);
@@ -135,10 +132,6 @@ describe('BlobResultImpl.toElement — object URL 라이프사이클', () => {
 });
 
 describe('BlobResultImpl.toFile — format 옵션 재인코딩 분기', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('format 옵션 지정 시 toBlob을 경유해 재인코딩하고 반환 File의 name·type이 올바르다', async () => {
     const blob = new Blob(['data'], { type: 'image/png' });
     const impl = new BlobResultImpl(blob, 100, 100, 0);
@@ -157,10 +150,6 @@ describe('BlobResultImpl.toFile — format 옵션 재인코딩 분기', () => {
 });
 
 describe('BlobResultImpl.toDataURL — format/quality 분기', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('옵션 없음 → canvas.toDataURL을 image/png, undefined로 호출한다', async () => {
     const blob = new Blob(['data'], { type: 'image/jpeg' });
     const impl = new BlobResultImpl(blob, 100, 100, 0);
@@ -191,10 +180,6 @@ describe('BlobResultImpl.toDataURL — format/quality 분기', () => {
 });
 
 describe('BlobResultImpl.toDataURL — toCanvas 실패 전파', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('toCanvas가 실패하면 canvas.toDataURL을 호출하지 않고 오류를 그대로 전파한다', async () => {
     const blob = new Blob(['data'], { type: 'image/png' });
     const impl = new BlobResultImpl(blob, 100, 100, 0);

@@ -5,6 +5,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DataURLResultImpl } from '../../../src/types/result-implementations.internal';
 
+// 각 테스트 후 spy/mock을 일괄 복원한다
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('DataURLResultImpl 속성 노출', () => {
   it('생성자 인자가 공개 속성으로 올바르게 노출된다', () => {
     const impl = new DataURLResultImpl('data:image/png;base64,abc', 320, 240, 12, { width: 640, height: 480 }, 'png');
@@ -26,10 +31,6 @@ describe('DataURLResultImpl 속성 노출', () => {
 });
 
 describe('DataURLResultImpl 변환 메서드 — canvas 경유 검증', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   /** toCanvas를 mock canvas로 교체한 impl과 canvas spy를 반환한다. */
   function buildImplWithMockCanvas(dataURL = 'data:image/png;base64,abc', w = 100, h = 100) {
     const impl = new DataURLResultImpl(dataURL, w, h, 0);
@@ -82,10 +83,6 @@ describe('DataURLResultImpl 변환 메서드 — canvas 경유 검증', () => {
 });
 
 describe('DataURLResultImpl.toFile — format 옵션 재인코딩 MIME 반영', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('format 옵션을 지정하면 재인코딩된 blob.type이 File.type으로 전파된다', async () => {
     const impl = new DataURLResultImpl('data:image/png;base64,abc', 100, 100, 0);
 

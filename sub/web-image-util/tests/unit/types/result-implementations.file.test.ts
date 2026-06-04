@@ -6,6 +6,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FileResultImpl } from '../../../src/types/result-implementations.internal';
 import { createControlledImg } from './result-implementations.helpers';
 
+// 각 테스트 후 spy/mock을 일괄 복원한다
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('FileResultImpl 속성 노출', () => {
   it('생성자 인자가 공개 속성으로 올바르게 노출된다', () => {
     const file = new File(['content'], 'photo.jpg', { type: 'image/jpeg' });
@@ -33,10 +38,6 @@ describe('FileResultImpl no-option 경로', () => {
 });
 
 describe('FileResultImpl.toBlob — format 옵션 지정 시 canvas 재인코딩', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('format 옵션을 지정하면 toCanvas 결과에서 올바른 MIME 타입으로 canvas.toBlob을 호출한다', async () => {
     const file = new File(['data'], 'photo.png', { type: 'image/png' });
     const impl = new FileResultImpl(file, 100, 100, 0);
@@ -70,10 +71,6 @@ describe('FileResultImpl.toBlob — format 옵션 지정 시 canvas 재인코딩
 });
 
 describe('FileResultImpl.toElement — object URL 라이프사이클', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('toElement() 성공 시 file을 인자로 objectURL을 생성하고 load 후 revoke한다', async () => {
     const file = new File(['data'], 'photo.png', { type: 'image/png' });
     const impl = new FileResultImpl(file, 100, 100, 0);
@@ -121,10 +118,6 @@ describe('FileResultImpl.toElement — object URL 라이프사이클', () => {
 });
 
 describe('FileResultImpl.toDataURL — format/quality 분기', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('옵션 없음 → canvas.toDataURL을 image/png, undefined로 호출한다', async () => {
     const file = new File(['data'], 'photo.jpeg', { type: 'image/jpeg' });
     const impl = new FileResultImpl(file, 100, 100, 0);
