@@ -37,7 +37,7 @@
     "test:types": "vitest run --config vitest.jsdom.config.ts tests/unit/types"
   },
   "dependencies": {
-    "dompurify": "^3.4.2"
+    "dompurify": "^3.4.9"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
