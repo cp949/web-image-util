@@ -75,6 +75,8 @@ describe('SVG 진단 판정 축 ↔ 실제 동작 층 정합', () => {
       ['style 태그 url(http)', styleTag('.a{fill:url(http://example.com/x.png)}'), true],
       ['style 태그 url(./)', styleTag('.a{fill:url(./rel.png)}'), true],
       ['style 태그 @import', styleTag('@import "http://example.com/x.css";'), false],
+      ['style 속성 -moz-binding url(#내부)', styleAttr('-moz-binding:url(#internal)'), false],
+      ['style 속성 image-set 문자열 인자', styleAttr("background:image-set('http://example.com/a.png' 1x)"), false],
       ['presentation 속성 fill=url(http)', presAttr('fill', 'url(http://example.com/x.png)'), false],
       ['presentation 속성 clip-path=url(./)', presAttr('clip-path', 'url(./c.svg#c)'), false],
     ];
@@ -87,11 +89,15 @@ describe('SVG 진단 판정 축 ↔ 실제 동작 층 정합', () => {
 
   describe('inspectSvgSanitization lightweight stage ↔ lightweight sanitizer 실제 치환', () => {
     // [label, svg, sanitizer가 치환하는가]
-    // data:image/svg+xml 케이스는 external stage 없이도 재인코딩으로 출력이 변해 별개 축이므로 제외한다.
+    // data:image/svg+xml(재인코딩으로 출력 변화)과 비허용 MIME data:(embedded stage로 차단) 케이스는
+    // external stage 축 밖에서 출력이 변하므로 이 등가 관계로 표현할 수 없어 제외한다.
     const cases: Array<[string, string, boolean]> = [
       ['href http 외부 URL', href('http://example.com/a.png'), true],
+      ['href protocol-relative', href('//cdn.example.com/a.png'), true],
       ['href javascript URI', href('javascript:alert(1)'), true],
       ['href 상대 경로 ./', href('./rel.png'), false],
+      ['href 상대 경로 ../', href('../up.png'), false],
+      ['href 절대 경로 /', href('/abs.png'), false],
       ['href 접두어 없는 상대 경로', href('bare.png'), false],
       ['href 내부 fragment', href('#frag'), false],
       ['href 안전 raster data URL', href('data:image/png;base64,iVBORw0KGgo='), false],
@@ -99,7 +105,10 @@ describe('SVG 진단 판정 축 ↔ 실제 동작 층 정합', () => {
       ['style 속성 url(./)', styleAttr('fill:url(./rel.png)'), false],
       ['style 속성 url(#id)', styleAttr('fill:url(#id)'), false],
       ['style 속성 url(안전 raster data)', styleAttr('fill:url(data:image/png;base64,iVBORw0KGgo=)'), true],
+      ['style 속성 -moz-binding url(#내부)', styleAttr('-moz-binding:url(#internal)'), false],
+      ['style 속성 image-set 문자열 인자', styleAttr("background:image-set('http://example.com/a.png' 1x)"), false],
       ['style 태그 url(http)', styleTag('.a{fill:url(http://example.com/x.png)}'), true],
+      ['style 태그 url(./)', styleTag('.a{fill:url(./rel.png)}'), false],
       ['style 태그 @import', styleTag('@import "http://example.com/x.css";'), false],
       ['presentation 속성 fill=url(http)', presAttr('fill', 'url(http://example.com/x.png)'), false],
     ];
