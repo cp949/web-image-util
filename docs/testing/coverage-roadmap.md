@@ -62,7 +62,7 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `/advanced` | `createAdvancedThumbnail` / `optimizeForSocial` / `batchOptimize` (advanced-index convenience) | 묶음 시나리오용 편의 함수 | 부분 | `tests/unit/core/advanced-filter-initialization-jsdom.test.ts` (등록되지 않은 필터 거부 sad-path만) |
 | `/advanced` | `FormatDetector` / `FORMAT_MIME_MAP` | MIME ↔ 포맷 매핑 및 감지 | 있음 | `tests/unit/base/format-detector.test.ts` |
 | `/advanced` | `HighResolutionManager` | 고해상도 처리 수동 제어 진입점 | 부분 | `tests/unit/core/high-res-manager-*.test.ts`, `tests/unit/core/auto-high-res.test.ts` |
-| `/advanced` | `ImageErrorHandler` / `globalErrorHandler` / `withErrorHandling` / `createAndHandleError` / `createQuickError` / `getErrorStats` | 에러 통계 누적/래핑 | 있음 | `tests/unit/base/error-helpers.test.ts`, `tests/unit/core/error-handler.test.ts` |
+| `/advanced` | `ImageErrorHandler` / `globalErrorHandler` / `withErrorHandling` / `createAndHandleError` / `createQuickError` / `getErrorStats` | 에러 통계 누적/래핑 | 있음 | `tests/unit/base/error-helpers.test.ts`, `tests/unit/base/error-handler.test.ts` |
 | `/advanced` | `initializeFilterSystem()` | 호출 시 기본 필터(blur/color/effect) 모두 `filterManager`에 등록 | 있음 | `tests/unit/filters/filter-init.test.ts`, `tests/unit/core/advanced-filter-initialization-jsdom.test.ts` |
 | `/advanced` | `createFilterPlugin(config)` | 입력 config → 표준 `FilterPlugin` 객체 (preview = apply 기본값) | 있음 | `tests/unit/filters/create-filter-plugin.test.ts` |
 | `/advanced` | `getAdvancedFeatureInfo()` | 환경 → 기능 가용성 정보 객체 | 있음 | `tests/unit/core/advanced-feature-info.test.ts` |
