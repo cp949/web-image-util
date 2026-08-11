@@ -1,5 +1,5 @@
 // 타입만 import — JS 런타임 순환 차단. 런타임 값 import 추가 시 순환이 남는다.
-import type { InspectSvgSourceFinding, InspectSvgSourceKind, InspectSvgSourceMeta } from '../inspect-svg-source';
+import type { InspectSvgSourceFinding, InspectSvgSourceKind, InspectSvgSourceMeta } from './types.internal';
 
 export interface DecideSvgFromSniffParams {
   originalKind: InspectSvgSourceMeta['originalKind'];

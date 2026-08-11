@@ -1,5 +1,5 @@
 import { normalizePolicyUrl } from '../../core/source-converter/url/policy.internal';
-import type { InspectSvgSourceFinding, InspectSvgSourceInput, InspectSvgSourceMeta } from '../inspect-svg-source';
+import type { InspectSvgSourceFinding, InspectSvgSourceInput, InspectSvgSourceMeta } from './types.internal';
 
 /**
  * source.url에 노출할 마스킹된 URL 표현을 반환한다(D10).

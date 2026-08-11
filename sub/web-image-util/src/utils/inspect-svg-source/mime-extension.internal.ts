@@ -1,7 +1,7 @@
 import { isDataUrlSvg } from '../../core/source-converter/svg/data-url.internal';
 import { normalizePolicyUrl } from '../../core/source-converter/url/policy.internal';
 // 타입만 import — JS 런타임 순환 차단. 런타임 값 import 추가 시 순환이 남는다.
-import type { InspectSvgSourceInput, InspectSvgSourceMeta } from '../inspect-svg-source';
+import type { InspectSvgSourceInput, InspectSvgSourceMeta } from './types.internal';
 
 /**
  * 입력의 MIME 타입과 파일 확장자를 추출한다.

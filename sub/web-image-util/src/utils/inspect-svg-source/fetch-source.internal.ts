@@ -7,14 +7,14 @@ import {
 } from '../../core/source-converter/url/policy.internal';
 import type { InspectSvgReport } from '../inspect-svg';
 import { inspectSvg } from '../inspect-svg';
+import { decideSvgFromSniff } from './sniff-decision.internal';
 import type {
   InspectSvgSourceFetchInfo,
   InspectSvgSourceFinding,
   InspectSvgSourceInput,
   InspectSvgSourceKind,
   InspectSvgSourceOptions,
-} from '../inspect-svg-source';
-import { decideSvgFromSniff } from './sniff-decision.internal';
+} from './types.internal';
 
 const textEncoder = new TextEncoder();
 
