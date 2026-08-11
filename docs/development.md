@@ -42,6 +42,28 @@
 - 내부 에러는 `ImageProcessError` 또는 에러 헬퍼를 통해 코드 기반으로 다룹니다.
 - 새 공개 API는 `package.json` exports와 contract 테스트를 함께 갱신합니다.
 
+## 의존성 관리
+
+### DOMPurify는 dependencies에 둔다
+
+`dompurify`는 `peerDependencies`로 옮기지 않습니다. `@cp949/web-image-util/svg-sanitizer`의
+`sanitizeSvgStrict()`가 내부에서 직접 import하는 보안 구현 의존성이며, 호출자가 주입하는
+plugin/adapter가 아닙니다.
+
+- DOMPurify 취약점이 발견되면 `@cp949/web-image-util`도 함께 dependency bump, lockfile 갱신, 보안 테스트 검증, 패치 릴리스를 수행합니다.
+- peer dependency로 바꾸면 소비자가 DOMPurify 설치와 버전 선택 책임을 갖게 되어, `sanitizeSvgStrict()`의 "설치하면 동작하는 보안 API" 계약이 약해집니다.
+- strict sanitizer는 DOMPurify 결과 위에 라이브러리 강제 정책을 후처리로 적용합니다. DOMPurify 버전 변화는 정제 결과에 영향을 줄 수 있으므로 이 패키지의 검증 범위에 포함합니다.
+- 기본 SVG 처리 경로는 lightweight이며, strict 경로에서만 DOMPurify 기반 서브패스를 동적으로 로드합니다. 번들 크기 최적화와 dependency 소유권은 별개입니다.
+
+### jsdom 30 업그레이드 보류
+
+`jsdom@30.0.1`은 현재 바로 올리지 않습니다.
+
+- `jsdom@30`의 Node engine은 `^22.22.2 || ^24.15.0 || >=26.0.0`입니다. 이 저장소의 현재 package engine은 `>=20.19.0`이므로 런타임 계약이 맞지 않습니다.
+- 별도 worktree 실험에서 `jsdom@30.0.1`로 `build`와 `typecheck`는 통과했지만, `pnpm --filter @cp949/web-image-util test:node`에서 jsdom+canvas 이미지 처리 경로가 timeout으로 회귀했습니다.
+- 대표 회귀: `detectFormatSupport` 캐시 값이 `undefined`로 남는 케이스, SVG URL 성공 로더 timeout, `processImage(...).resize(...).toBlob()/toCanvas()` 계열 timeout.
+- 업그레이드하려면 먼저 Node engine 정책을 jsdom 30 요구 범위로 올릴지 결정하고, 그 다음 jsdom+canvas 이미지 로딩/format detection 회귀를 별도 작업으로 수정합니다.
+
 ## 테스트 기준
 
 - jsdom 단위 테스트는 타입 계약, 에러 경로, 호출 순서, 순수 계산 검증에 사용합니다.
