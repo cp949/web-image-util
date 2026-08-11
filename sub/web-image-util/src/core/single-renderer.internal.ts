@@ -145,7 +145,7 @@ function analyzeResizeOperation(sourceImage: HTMLImageElement, layout: FinalLayo
 /**
  * Analyze blur operation
  */
-function analyzeBlurOperation(layout: FinalLayout, options: any): void {
+function analyzeBlurOperation(layout: FinalLayout, options: BlurOptions): void {
   const radius = options.radius || 2;
   layout.filters.push(`blur(${radius}px)`);
 }
