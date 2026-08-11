@@ -49,24 +49,23 @@
 | 파일 | 역할 |
 | --- | --- |
 | `src/processor.ts` | `processImage()` 팩토리와 `ImageProcessor` 체이닝 API |
-| `src/core/source-converter.ts` | 위 서브모듈의 공개 API(`convertToImageElement`, `detectSourceType`, `getImageDimensions`)를 모은 배럴 |
 | `src/core/source-converter/index.ts` | `convertToImageElement` / `getImageDimensions` 오케스트레이션 |
-| `src/core/source-converter/detect.ts` | `detectSourceType()`과 `SourceType` 정의 |
-| `src/core/source-converter/options.ts` | 내부 옵션 타입과 `MAX_SVG_BYTES` 등 상수 |
-| `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.ts`, `loader.ts`, `safety.ts` |
-| `src/core/source-converter/url/` | HTTP/Blob URL 로더 — `policy.ts`, `fetch-guards.ts`, `loader.ts` |
-| `src/core/source-converter/loaders/` | 형태별 입력 변환기 — `string.ts`, `blob.ts`, `canvas.ts` |
+| `src/core/source-converter/detect.internal.ts` | `detectSourceType()`과 `SourceType` 정의 |
+| `src/core/source-converter/options.internal.ts` | 내부 옵션 타입과 `MAX_SVG_BYTES` 등 상수 |
+| `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.internal.ts`, `loader.internal.ts`, `safety.internal.ts` |
+| `src/core/source-converter/url/` | HTTP/Blob URL 로더 — `policy.internal.ts`, `fetch-guards.internal.ts`, `loader.internal.ts` |
+| `src/core/source-converter/loaders/` | 형태별 입력 변환기 — `string.internal.ts`, `blob.internal.ts`, `canvas.internal.ts` |
 | `src/utils/svg-detection.ts` | `isInlineSvg()` 등 SVG 문자열 판정 |
 | `src/utils/svg-sanitizer.ts` | `sanitizeSvgForRendering()`, `sanitizeSvg()` (deprecated alias) |
 | `src/utils/inspect-svg.ts` | SVG 문자열 진단 API — 부수효과 없이 findings·dimensions·sanitizer 추천을 반환하는 진단 레이어 |
 | `src/utils/inspect-svg-source.ts` | SVG 입력 source(`string`/`Blob`/`File`/`URL`) 진단. 기본 fetch 없음, `inspectSvg()` 위임으로 본문 분석 |
 | `src/utils/prefix-svg-ids.ts` | SVG `id`와 fragment reference를 prefix하는 standalone 정규화 유틸 — 파이프라인 외부, `@cp949/web-image-util/utils` 서브패스 |
 | `src/svg-sanitizer/inspect-sanitization.ts` | sanitizer 정책 영향 진단 API — `inspectSvgSanitization()`. 정책별 stage 카운트를 반환하며 파이프라인 외부의 진단 레이어다. strict는 동적 import. |
-| `src/svg-sanitizer/core.ts` | DOMPurify 기반 strict sanitizer 본체 — `sanitizeSvgStrict()` / `sanitizeSvgStrictDetailed()` 구현. `preprocess.ts`(BOM/XML 선언/DOCTYPE 제거), `enforce-dom-policy.ts`(`<script>`/`on*` 강제 제거), `postprocess.ts`(잔여 외부 참조 검사)와 함께 동작 |
+| `src/svg-sanitizer/core.internal.ts` | DOMPurify 기반 strict sanitizer 본체 — `sanitizeSvgStrict()` / `sanitizeSvgStrictDetailed()` 구현. `preprocess.internal.ts`(BOM/XML 선언/DOCTYPE 제거), `enforce-dom-policy.internal.ts`(`<script>`/`on*` 강제 제거), `postprocess.internal.ts`(잔여 외부 참조 검사)와 함께 동작 |
 | `src/svg-sanitizer/index.ts` | `@cp949/web-image-util/svg-sanitizer` 서브패스 배럴 — `sanitizeSvgStrict`, `sanitizeSvgStrictDetailed`, `inspectSvgSanitization` export |
-| `src/core/lazy-render-pipeline.ts` | 연산 누적과 최종 렌더링 트리거 |
-| `src/core/single-renderer.ts` | 누적 연산 분석 및 단일 렌더링 진입점 |
-| `src/core/onehot-renderer.ts` | 최종 Canvas drawImage 렌더링 |
+| `src/core/lazy-render-pipeline.internal.ts` | 연산 누적과 최종 렌더링 트리거 |
+| `src/core/single-renderer.internal.ts` | 누적 연산 분석 및 단일 렌더링 진입점 |
+| `src/core/onehot-renderer.internal.ts` | 최종 Canvas drawImage 렌더링 |
 | `src/types/resize-config.ts` | ResizeConfig 타입 시스템 |
 
 ## 공개 API 표면
@@ -110,8 +109,8 @@
 
 정책 헬퍼/상수의 단일 출처는 다음 두 모듈입니다.
 
-- `src/core/source-converter/options.ts` — `MAX_SVG_BYTES`, `DEFAULT_FETCH_TIMEOUT_MS`, `DEFAULT_ALLOWED_PROTOCOLS`
-- `src/core/source-converter/url/policy.ts` — `checkAllowedProtocol()`, `hasExplicitUrlScheme()`, `isProtocolRelativeUrl()`, `isAbortLikeError()`, `normalizePolicyUrl()`, `isBlockedSvgPolicyRef()`, `isSvgResourcePath()`
-- `src/core/source-converter/url/fetch-guards.ts` — `createFetchAbortHandle()`(timeout + AbortSignal 합성), `checkResponseSize()`(Content-Length 기반 byte cap 사전 검증)
+- `src/core/source-converter/options.internal.ts` — `MAX_SVG_BYTES`, `DEFAULT_FETCH_TIMEOUT_MS`, `DEFAULT_ALLOWED_PROTOCOLS`
+- `src/core/source-converter/url/policy.internal.ts` — `checkAllowedProtocol()`, `hasExplicitUrlScheme()`, `isProtocolRelativeUrl()`, `isAbortLikeError()`, `normalizePolicyUrl()`, `isBlockedSvgPolicyRef()`, `isSvgResourcePath()`
+- `src/core/source-converter/url/fetch-guards.internal.ts` — `createFetchAbortHandle()`(timeout + AbortSignal 합성), `checkResponseSize()`(Content-Length 기반 byte cap 사전 검증)
 
 진단 모듈(`src/utils/inspect-svg-source.ts`)은 위 헬퍼/상수를 그대로 import해 fetch 정책을 적용합니다. 신규 정책/가드 함수를 별도로 신설하지 않는 것이 RM-004 결정 D14의 단일 출처 원칙입니다. byte cap을 사용자 옵션으로 상향하는 것은 금지되며, `options.byteLimit`은 `MAX_SVG_BYTES` 이하로만 허용됩니다.
