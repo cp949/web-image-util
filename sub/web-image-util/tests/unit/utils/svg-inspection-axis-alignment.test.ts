@@ -91,9 +91,12 @@ describe('SVG 진단 판정 축 ↔ 실제 동작 층 정합', () => {
 
   describe('inspectSvg script/event-handler finding ↔ 렌더 intake guard', () => {
     // [label, svg, intake guard가 거부하는가]
-    // guard는 원문 문자열 검사(<script 포함, \son[a-z0-9:-]*= 정규식)이고 inspectSvg는 DOM 순회라
-    // 주석 안의 <script 같은 경계 입력에서는 guard만 거부한다(fail-closed) — 코퍼스는
-    // well-formed 입력으로 한정한다. 외부 참조 채널과 겹치지 않게 href/style은 넣지 않는다.
+    // 알려진 guard-단독 거부 비대칭 2종은 코퍼스에서 제외한다(fail-closed 방향이라 보안 문제 없음):
+    //  1. 추출 방식 차이 — guard는 원문 문자열 검사(<script 포함, \son[a-z0-9:-]*= 정규식),
+    //     inspectSvg는 DOM 순회라 주석 안의 <script는 guard만 거부한다.
+    //  2. 수량자 차이 — guard 정규식은 on 뒤 0글자(`on=`)도 매치하지만 DOM 패턴
+    //     (^on[a-z0-9:-]+$)은 1글자 이상만 매치한다.
+    // 외부 참조 채널과 겹치지 않게 href/style은 넣지 않는다.
     const cases: Array<[string, string, boolean]> = [
       ['script 요소', `<svg xmlns="${SVG_NS}"><script>alert(1)</script></svg>`, true],
       ['script·핸들러 없는 도형만', `<svg xmlns="${SVG_NS}"><rect width="1" height="1"/></svg>`, false],
@@ -105,8 +108,8 @@ describe('SVG 진단 판정 축 ↔ 실제 동작 층 정합', () => {
     ];
 
     it.each(cases)('%s → 판정 축과 guard 거부 여부가 일치한다', (_label, svg, rejects) => {
-      const findings = inspectSvg(svg).findings.some((f) => GUARD_CHANNEL_FINDING_CODES.has(f.code));
-      expect(findings).toBe(rejects);
+      const hasGuardChannelFinding = inspectSvg(svg).findings.some((f) => GUARD_CHANNEL_FINDING_CODES.has(f.code));
+      expect(hasGuardChannelFinding).toBe(rejects);
       expect(intakeGuardRejects(svg)).toBe(rejects);
     });
   });
