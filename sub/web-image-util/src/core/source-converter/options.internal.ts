@@ -1,7 +1,5 @@
 /**
  * source-converter 내부에서 공유하는 옵션 리졸버와 상수다.
- *
- * 외부로 노출되는 심볼은 배럴 파일 `core/source-converter.internal.ts`에서 일괄 re-export 한다.
  */
 
 import type { ProcessorOptions, SvgSanitizerMode } from '../../types';

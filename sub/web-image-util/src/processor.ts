@@ -5,7 +5,7 @@
  */
 
 import type { LazyRenderPipeline } from './core/lazy-render-pipeline.internal';
-import type { SvgPassthroughMode } from './core/source-converter.internal';
+import type { SvgPassthroughMode } from './core/source-converter/options.internal';
 import { canvasToBlobOutput } from './processor/blob-output.internal';
 import { renderToCanvasResult } from './processor/canvas-output.internal';
 import { blobToImageElement } from './processor/dom-output.internal';

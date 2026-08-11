@@ -5,7 +5,7 @@
  * 원본을 그대로 통과시킬 수 있으면 재인코딩을 회피하고, 옵션 변경이 필요할 때만 Canvas 경로를 거친다.
  */
 
-import { convertToImageElement } from '../../core/source-converter.internal';
+import { convertToImageElement } from '../../core/source-converter/index';
 import type { ImageSource, ResultBlob, ResultDataURL, ResultFile } from '../../types';
 import { ImageProcessError } from '../../types';
 import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from '../../types/result-implementations.internal';

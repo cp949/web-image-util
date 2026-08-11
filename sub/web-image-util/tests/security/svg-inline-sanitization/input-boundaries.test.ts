@@ -3,7 +3,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { convertToImageElement } from '../../../src/core/source-converter.internal';
+import { convertToImageElement } from '../../../src/core/source-converter/index';
 import { ensureImageElement } from '../../../src/utils/converters';
 import { sanitizeSvg } from '../../../src/utils/svg-sanitizer';
 import { SVG_LIMIT_BYTES } from '../helpers/svg-test-helpers';

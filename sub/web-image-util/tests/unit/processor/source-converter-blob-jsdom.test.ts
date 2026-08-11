@@ -13,9 +13,9 @@ vi.mock('../../../src/core/source-converter/svg/loader.internal', () => ({
   convertSvgToElement: vi.fn(),
 }));
 
+import { convertToImageElement } from '../../../src/core/source-converter/index';
 import { detectMimeTypeFromBuffer } from '../../../src/core/source-converter/loaders/blob.internal';
 import { convertSvgToElement } from '../../../src/core/source-converter/svg/loader.internal';
-import { convertToImageElement } from '../../../src/core/source-converter.internal';
 import { ImageProcessError } from '../../../src/types';
 
 /** 스니핑 판정에 충분한 최소 SVG 문자열 (ASCII 범위) */

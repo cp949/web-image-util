@@ -5,7 +5,7 @@
  * 네트워크 fetch와 결합된 응답 prefix 기반 판정은 [`./remote-fetch.internal.ts`]가 담당한다.
  */
 
-import { detectSourceType } from '../../core/source-converter.internal';
+import { detectSourceType } from '../../core/source-converter/detect.internal';
 import type { ImageSource } from '../../types';
 import { ImageFormats } from '../../types';
 import type { ImageInfo } from './types';

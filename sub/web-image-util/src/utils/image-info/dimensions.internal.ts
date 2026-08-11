@@ -6,7 +6,8 @@
  * 통해 안전하게 로드한 뒤 자연 치수를 측정한다.
  */
 
-import { convertToImageElement, detectSourceType } from '../../core/source-converter.internal';
+import { detectSourceType } from '../../core/source-converter/detect.internal';
+import { convertToImageElement } from '../../core/source-converter/index';
 import type { ImageSource } from '../../types';
 import { ImageFormats } from '../../types';
 import { extractSvgDimensions } from '../svg-dimensions';

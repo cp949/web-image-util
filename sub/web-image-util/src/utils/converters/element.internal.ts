@@ -4,7 +4,7 @@
  * @description 다양한 입력을 단일 HTMLImageElement로 정규화한다.
  */
 
-import { convertToImageElement } from '../../core/source-converter.internal';
+import { convertToImageElement } from '../../core/source-converter/index';
 import type { ImageSource, ResultElement } from '../../types';
 import { ImageProcessError } from '../../types';
 import { ElementResultImpl } from '../../types/result-implementations.internal';

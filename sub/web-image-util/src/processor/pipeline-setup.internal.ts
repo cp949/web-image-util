@@ -9,7 +9,7 @@
  */
 
 import { LazyRenderPipeline } from '../core/lazy-render-pipeline.internal';
-import { convertToImageElement } from '../core/source-converter.internal';
+import { convertToImageElement } from '../core/source-converter/index';
 import type { InternalProcessorOptions } from '../processor';
 import type { BlurOptions, ImageSource } from '../types';
 import { ImageProcessError } from '../types';

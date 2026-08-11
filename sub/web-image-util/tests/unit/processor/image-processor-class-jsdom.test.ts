@@ -22,14 +22,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as converter from '../../../src/core/source-converter.internal';
+import * as converter from '../../../src/core/source-converter/index';
 import { ImageProcessor, processImage } from '../../../src/processor';
 import { ImageProcessError } from '../../../src/types';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 // convertToImageElement 호출 인자를 추적하면서 실제 구현은 그대로 유지한다.
-vi.mock('../../../src/core/source-converter.internal', async (importOriginal) => {
-  const orig = await importOriginal<typeof import('../../../src/core/source-converter.internal')>();
+vi.mock('../../../src/core/source-converter/index', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('../../../src/core/source-converter/index')>();
   return {
     ...orig,
     convertToImageElement: vi.fn().mockImplementation(orig.convertToImageElement),
