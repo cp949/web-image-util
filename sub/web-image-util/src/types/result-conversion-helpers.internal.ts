@@ -1,23 +1,24 @@
 import { canvasToBlob as encodeCanvasToBlob } from '../base/canvas-utils.internal';
 import type { OutputOptions } from './index';
 
-export function resolveOutputMimeType(options?: OutputOptions, fallbackMimeType = 'image/png'): string {
-  return options?.format ? `image/${options.format}` : fallbackMimeType;
+export function resolveOutputMimeType(options?: OutputOptions, defaultMimeType = 'image/png'): string {
+  return options?.format ? `image/${options.format}` : defaultMimeType;
 }
 
 /**
  * result 객체용 canvas→Blob 변환.
  *
- * `fallbackMimeType`은 format 미지정 시 사용할 기본 MIME이다(재시도용 아님).
- * 재시도 없이 1회 인코딩하며, 실패 시 CANVAS_TO_BLOB_FAILED로 reject한다.
+ * `defaultMimeType`은 format 미지정 시 사용할 기본 MIME이다(인코더의 재시도용
+ * `fallbackMimeType`과 다름). 재시도 없이 1회 인코딩하며, 실패 시
+ * CANVAS_TO_BLOB_FAILED로 reject한다.
  */
 export function canvasToBlob(
   canvas: HTMLCanvasElement,
   options?: OutputOptions,
-  fallbackMimeType = 'image/png'
+  defaultMimeType = 'image/png'
 ): Promise<globalThis.Blob> {
   return encodeCanvasToBlob(canvas, {
-    mimeType: resolveOutputMimeType(options, fallbackMimeType),
+    mimeType: resolveOutputMimeType(options, defaultMimeType),
     quality: options?.quality,
   });
 }
@@ -25,9 +26,9 @@ export function canvasToBlob(
 export function canvasToDataURL(
   canvas: HTMLCanvasElement,
   options?: OutputOptions,
-  fallbackMimeType = 'image/png'
+  defaultMimeType = 'image/png'
 ): string {
-  return canvas.toDataURL(resolveOutputMimeType(options, fallbackMimeType), options?.quality);
+  return canvas.toDataURL(resolveOutputMimeType(options, defaultMimeType), options?.quality);
 }
 
 export function createFileFromBlob(blob: globalThis.Blob, filename: string): globalThis.File {

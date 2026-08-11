@@ -9,6 +9,10 @@
 - Added: `composeImages(spec)` under `@cp949/web-image-util/advanced` — 레이어/그리드/콜라주 합성을 discriminated union spec 하나로 받는 진입점입니다. 반환 canvas는 호출자 소유입니다. grid는 `columns`만 받고 행 수를 파생해 이미지가 잘리지 않으며, `cover` fit은 셀 영역으로 클리핑됩니다. collage는 `scaleRange`/`maxRotation`/`allowOverlap`/`maxPlacementAttempts` 옵션과 `random` 난수 주입(결과 재현)을 지원합니다. 잘못된 spec은 canvas 생성 전에 `ImageProcessError`로 거부됩니다.
 - Added: image-common 문자열 입력에서 Blob URL(`blob:`)을 지원합니다. `processImage()`와 문자열 변환 유틸은 fetch된 Blob의 MIME 타입을 기준으로 Blob/Data URL/File/Element 출력을 생성합니다.
 
+### 변경
+
+- Changed: canvas→Blob 인코딩 실패 오류를 `ImageProcessError`(code `CANVAS_TO_BLOB_FAILED`, 메시지 `Canvas to Blob conversion failed`)로 통일했습니다. 영향 표면: result 객체의 `toBlob()` 계열(기존 메시지 `Blob conversion failed`), `./advanced`의 `createAdvancedThumbnail`/`optimizeForSocial` Blob 폴백(기존 plain `Error`, 메시지 `Blob creation failed`), 변환 유틸의 canvas 인코딩 실패(기존 plain `Error`). tainted canvas 등 `canvas.toBlob()`의 동기 예외도 같은 오류로 래핑되며 원인은 `cause`에 보존됩니다.
+
 ### 수정
 
 - Fixed: advanced 서브패스의 고해상도 처리(`HighResolutionManager.smartResize`, `autoSmartResize`, `smartResizeWithProgress`, `AdvancedImageProcessor`)가 항상 빈(또는 크기 0의) canvas를 반환하던 결함을 수정했습니다. 내부 Canvas Pool이 반환 직전에 canvas를 회수·초기화하면서 결과 픽셀이 지워지고, 연속 호출 시 이전 결과 canvas가 재사용되는 문제였습니다. 결과 canvas는 이제 pool을 거치지 않는 호출자 소유 canvas로 생성됩니다.

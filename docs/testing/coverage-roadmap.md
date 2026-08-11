@@ -85,7 +85,6 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `core/performance-utils.ts` 성능 프리셋 편의 함수 | 낮음 (stmt/func 공백 큼) | 행동 | advanced resize 프리셋 회귀 방지 | 높음 |
 | `core/source-converter/{index,loaders/string,svg/loader}.ts` 문자열/SVG 변환 잔여 경로 | 낮음 (loader 함수·분기 잔여) | 행동 | 입력 분류·SVG 로딩 회귀 방지 | 높음 |
 | `types/result-implementations.ts` 결과 객체 변환 잔여 경로 | 중간 (statement/function 잔여) | 행동 | 출력 객체 변환 회귀 방지 | 높음 |
-| `base/image-common.ts` 공통 이미지 헬퍼 잔여 분기 | 낮음 (statement/branch/function 잔여) | 단위 | 공통 분기 보충 | 중간 |
 | `base/stepped-processor.ts` + `base/high-res-manager.ts` 고해상도/단계적 리사이즈 잔여 분기 | 중간 (전략·단계 계산 잔여) | 행동 | 고해상도 처리 회귀 방지 | 중간 |
 | `svg-sanitizer/{dompurify-instance,postprocess}.ts` strict sanitizer 환경·후처리 분기 | 중간 (branch 잔여) | 단위 | 정화 정책 회귀 방지 | 중간 |
 | `utils/image-inspection.ts` + `utils/image-info/{dimensions,format-detection}.ts` 이미지 메타/투명도 잔여 분기 | 중간 (branch/function 잔여) | 단위 | 판정 분기 보충 | 중간 |

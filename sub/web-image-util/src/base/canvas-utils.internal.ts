@@ -181,21 +181,35 @@ export function canvasToBlob(canvas: HTMLCanvasElement, options: CanvasToBlobOpt
   const { mimeType, quality, fallbackMimeType, errorCode = 'CANVAS_TO_BLOB_FAILED' } = options;
 
   return new Promise((resolve, reject) => {
-    const fail = () => reject(new ImageProcessError('Canvas to Blob conversion failed', errorCode));
+    // tainted canvas의 동기 SecurityError까지 ImageProcessError로 통일하고 원인을 cause로 보존한다.
+    const fail = (cause?: unknown) =>
+      reject(new ImageProcessError('Canvas to Blob conversion failed', errorCode, { cause }));
 
-    canvas.toBlob(
-      (blob) => {
-        if (blob) {
-          resolve(blob);
-        } else if (fallbackMimeType) {
-          canvas.toBlob((fallbackBlob) => (fallbackBlob ? resolve(fallbackBlob) : fail()), fallbackMimeType, quality);
-        } else {
-          fail();
-        }
-      },
-      mimeType,
-      quality
-    );
+    try {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else if (fallbackMimeType) {
+            try {
+              canvas.toBlob(
+                (fallbackBlob) => (fallbackBlob ? resolve(fallbackBlob) : fail()),
+                fallbackMimeType,
+                quality
+              );
+            } catch (cause) {
+              fail(cause);
+            }
+          } else {
+            fail();
+          }
+        },
+        mimeType,
+        quality
+      );
+    } catch (cause) {
+      fail(cause);
+    }
   });
 }
 

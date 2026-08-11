@@ -249,9 +249,7 @@ describe('canvasToBlob (통합 인코더)', () => {
     const fakeBlob = new Blob(['x'], { type: 'image/png' });
     const toBlobSpy = vi
       .spyOn(canvas, 'toBlob')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementationOnce((cb: any) => cb(null))
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementationOnce((cb: any) => cb(fakeBlob));
 
     const blob = await canvasToBlob(canvas, {
@@ -269,10 +267,7 @@ describe('canvasToBlob (통합 인코더)', () => {
 
   it('fallbackMimeType 미지정이면 재시도 없이 reject한다', async () => {
     const canvas = document.createElement('canvas');
-    const toBlobSpy = vi
-      .spyOn(canvas, 'toBlob')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .mockImplementation((cb: any) => cb(null));
+    const toBlobSpy = vi.spyOn(canvas, 'toBlob').mockImplementation((cb: any) => cb(null));
 
     await expect(canvasToBlob(canvas, { mimeType: 'image/png' })).rejects.toBeInstanceOf(ImageProcessError);
     expect(toBlobSpy).toHaveBeenCalledTimes(1);
@@ -281,10 +276,7 @@ describe('canvasToBlob (통합 인코더)', () => {
 
   it('재시도까지 실패하면 기본 코드 CANVAS_TO_BLOB_FAILED와 고정 메시지로 reject한다', async () => {
     const canvas = document.createElement('canvas');
-    const toBlobSpy = vi
-      .spyOn(canvas, 'toBlob')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .mockImplementation((cb: any) => cb(null));
+    const toBlobSpy = vi.spyOn(canvas, 'toBlob').mockImplementation((cb: any) => cb(null));
 
     await expect(canvasToBlob(canvas, { mimeType: 'image/webp', fallbackMimeType: 'image/png' })).rejects.toMatchObject(
       {
@@ -296,12 +288,23 @@ describe('canvasToBlob (통합 인코더)', () => {
     toBlobSpy.mockRestore();
   });
 
+  it('toBlob이 동기로 throw하면(tainted canvas 등) 원인을 cause로 보존한 ImageProcessError로 reject한다', async () => {
+    const canvas = document.createElement('canvas');
+    const securityError = new Error('SecurityError: tainted canvas');
+    const toBlobSpy = vi.spyOn(canvas, 'toBlob').mockImplementation(() => {
+      throw securityError;
+    });
+
+    await expect(canvasToBlob(canvas, { mimeType: 'image/png' })).rejects.toMatchObject({
+      code: 'CANVAS_TO_BLOB_FAILED',
+      cause: securityError,
+    });
+    toBlobSpy.mockRestore();
+  });
+
   it('errorCode 옵션이 에러 code에 반영된다', async () => {
     const canvas = document.createElement('canvas');
-    const toBlobSpy = vi
-      .spyOn(canvas, 'toBlob')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .mockImplementation((cb: any) => cb(null));
+    const toBlobSpy = vi.spyOn(canvas, 'toBlob').mockImplementation((cb: any) => cb(null));
 
     await expect(canvasToBlob(canvas, { mimeType: 'image/png', errorCode: 'OUTPUT_FAILED' })).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
