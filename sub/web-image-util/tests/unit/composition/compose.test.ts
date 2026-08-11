@@ -293,6 +293,15 @@ describe('composeImages — grid', () => {
     });
   });
 
+  it('fit 무효값은 canvas를 만들기 전에 OPTION_INVALID를 던진다', async () => {
+    const images = [createColorSource(10, 10, 'red')];
+    await expect(composeImages({ type: 'grid', images, fit: 'stretch' as unknown as 'contain' })).rejects.toMatchObject(
+      {
+        code: 'OPTION_INVALID',
+      }
+    );
+  });
+
   it('배경색 기본값은 흰색이다 — spacing 영역이 흰색 불투명', async () => {
     const canvas = await composeImages({ type: 'grid', images: [createColorSource(30, 30, 'red')] });
     const px = getCanvasPixelData(canvas, 1, 1);
@@ -486,6 +495,32 @@ describe('composeImages — collage', () => {
     await expect(composeImages({ ...base, maxRotation: -1 })).rejects.toMatchObject({
       code: 'OPTION_INVALID',
     });
+  });
+
+  it('random 옵션이 함수가 아니면 canvas를 만들기 전에 OPTION_INVALID를 던진다', async () => {
+    const images = [createColorSource(10, 10, 'red')];
+    await expect(
+      composeImages({
+        type: 'collage',
+        images,
+        width: 100,
+        height: 100,
+        random: 0.5 as unknown as () => number,
+      })
+    ).rejects.toMatchObject({ code: 'OPTION_INVALID' });
+  });
+
+  it('random 반환값이 [0, 1) 밖이면 canvas를 만들기 전에 OPTION_INVALID를 던진다', async () => {
+    const images = [createColorSource(10, 10, 'red')];
+    await expect(
+      composeImages({
+        type: 'collage',
+        images,
+        width: 100,
+        height: 100,
+        random: () => Number.NaN,
+      })
+    ).rejects.toMatchObject({ code: 'OPTION_INVALID' });
   });
 
   it('canvas 크기가 무효하면 INVALID_DIMENSIONS를 던진다', async () => {

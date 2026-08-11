@@ -152,6 +152,11 @@ interface PlacedRect {
   height: number;
 }
 
+interface PlacedCollageImage extends PlacedRect {
+  image: HTMLImageElement;
+  rotation?: number;
+}
+
 /** 소스의 그리기 기준 크기 — HTMLImageElement는 natural, canvas 소스는 width/height */
 function sourceSize(image: HTMLImageElement): { width: number; height: number } {
   return {
@@ -212,6 +217,25 @@ function requireOption(condition: boolean, option: string, message: string, mini
       details: minimum === undefined ? { option } : { option, minimum },
     });
   }
+}
+
+function readRandom(random: RandomSource, context: string): number {
+  let value: number;
+  try {
+    value = random();
+  } catch (error) {
+    throw new ImageProcessError(`${context}: random source threw an error`, 'OPTION_INVALID', {
+      cause: error,
+      details: { option: 'random' },
+    });
+  }
+
+  if (!Number.isFinite(value) || value < 0 || value >= 1) {
+    throw new ImageProcessError(`${context}: random source must return a number in [0, 1)`, 'OPTION_INVALID', {
+      details: { option: 'random' },
+    });
+  }
+  return value;
 }
 
 // ============================================================================
@@ -298,6 +322,13 @@ function composeGrid(spec: ComposeGridSpec): HTMLCanvasElement {
   if (spec.spacing !== undefined) {
     requireOption(Number.isFinite(spec.spacing) && spec.spacing >= 0, 'spacing', 'spacing must be >= 0', 0);
   }
+  if (spec.fit !== undefined) {
+    requireOption(
+      spec.fit === 'contain' || spec.fit === 'cover' || spec.fit === 'fill',
+      'fit',
+      'fit must be one of contain, cover, fill'
+    );
+  }
 
   const count = spec.images.length;
   const columns = spec.columns ?? Math.ceil(Math.sqrt(count));
@@ -382,9 +413,10 @@ function fitToCell(
 
 function composeCollage(spec: ComposeCollageSpec): HTMLCanvasElement {
   const canvasSize = resolveCanvasSize(spec.width, spec.height);
-  spec.images.forEach((image, index) => {
-    requireDrawableImage(image, `images[${index}]`);
-  });
+  const images = spec.images.map((image, index) => ({
+    image,
+    size: requireDrawableImage(image, `images[${index}]`),
+  }));
   if (spec.scaleRange !== undefined) {
     const [min, max] = spec.scaleRange;
     requireOption(
@@ -409,6 +441,13 @@ function composeCollage(spec: ComposeCollageSpec): HTMLCanvasElement {
       1
     );
   }
+  if (spec.random !== undefined) {
+    requireOption(
+      typeof spec.random === 'function',
+      'random',
+      'random must be a function returning a number in [0, 1)'
+    );
+  }
 
   const [minScale, maxScale] = spec.scaleRange ?? [0.15, 0.3];
   const maxRotation = spec.maxRotation ?? 15;
@@ -417,36 +456,46 @@ function composeCollage(spec: ComposeCollageSpec): HTMLCanvasElement {
   const random = spec.random ?? Math.random;
   const background = spec.background ?? '#ffffff';
 
-  const { canvas, ctx } = createOwnedCanvas(canvasSize.width, canvasSize.height);
-  fillCanvasBackground(ctx, canvasSize.width, canvasSize.height, background);
-
   const usedAreas: PlacedRect[] = [];
+  const placements: PlacedCollageImage[] = [];
 
-  for (const image of spec.images) {
-    const natural = sourceSize(image);
-    const drawnScale = minScale + random() * (maxScale - minScale);
+  for (const { image, size } of images) {
+    const drawnScale = minScale + readRandom(random, 'collage.scale') * (maxScale - minScale);
     // 배치가 항상 canvas 안에 들어가도록 클램프 — 음수 좌표를 원천 차단한다
-    const scale = Math.min(drawnScale, canvasSize.width / natural.width, canvasSize.height / natural.height);
-    const width = natural.width * scale;
-    const height = natural.height * scale;
+    const scale = Math.min(drawnScale, canvasSize.width / size.width, canvasSize.height / size.height);
+    const width = size.width * scale;
+    const height = size.height * scale;
 
     let x = 0;
     let y = 0;
     let attempts = 0;
     do {
-      x = random() * (canvasSize.width - width);
-      y = random() * (canvasSize.height - height);
+      x = readRandom(random, 'collage.x') * (canvasSize.width - width);
+      y = readRandom(random, 'collage.y') * (canvasSize.height - height);
       attempts++;
     } while (!allowOverlap && attempts < maxAttempts && overlapsAny({ x, y, width, height }, usedAreas));
     // 상한 도달 시 마지막 후보를 겹침 허용으로 채택한다(최선 노력)
     usedAreas.push({ x, y, width, height });
-
-    drawShadowedImage(ctx, image, {
+    placements.push({
+      image,
       x,
       y,
       width,
       height,
-      rotation: maxRotation > 0 ? (random() - 0.5) * 2 * maxRotation : undefined,
+      rotation: maxRotation > 0 ? (readRandom(random, 'collage.rotation') - 0.5) * 2 * maxRotation : undefined,
+    });
+  }
+
+  const { canvas, ctx } = createOwnedCanvas(canvasSize.width, canvasSize.height);
+  fillCanvasBackground(ctx, canvasSize.width, canvasSize.height, background);
+
+  for (const placement of placements) {
+    drawShadowedImage(ctx, placement.image, {
+      x: placement.x,
+      y: placement.y,
+      width: placement.width,
+      height: placement.height,
+      rotation: placement.rotation,
     });
   }
 
