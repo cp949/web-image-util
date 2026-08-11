@@ -2,7 +2,7 @@
 
 이 파일은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따르며, 이 프로젝트는 [Semantic Versioning](https://semver.org/lang/ko/)을 사용합니다.
 
-## [Unreleased]
+## [3.1.0] - 2026-08-12
 
 ### 추가
 
