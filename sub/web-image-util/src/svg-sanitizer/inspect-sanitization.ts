@@ -12,7 +12,7 @@
 
 import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import { ImageProcessError } from '../errors.internal';
-import { detectSvgInspectionEnvironment } from '../utils/svg-inspection';
+import { detectSvgInspectionEnvironment } from '../utils/environment.internal';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 import { collectEmbeddedImageStages, collectGeneralStages } from './inspect-sanitization/stage-collectors.internal';
 import type {
@@ -38,11 +38,6 @@ export type {
   InspectSvgSanitizationStrictImpact,
   SvgSanitizerPolicy,
 } from './inspect-sanitization/types.internal';
-
-/** 현재 실행 환경을 감지한다. 평가 순서는 happy-dom -> browser -> node -> unknown이다. */
-function detectSanitizationEnvironment(): 'browser' | 'happy-dom' | 'node' | 'unknown' {
-  return detectSvgInspectionEnvironment();
-}
 
 /** UTF-8 byte 길이 측정용 공용 인코더. 호출당 1회만 생성된다. */
 const UTF8_ENCODER = new TextEncoder();
@@ -324,7 +319,7 @@ export async function inspectSvgSanitization(
   const policy: SvgSanitizerPolicy = policyOption ?? 'lightweight';
 
   const bytes = UTF8_ENCODER.encode(svgString).length;
-  const environment = detectSanitizationEnvironment();
+  const environment = detectSvgInspectionEnvironment();
 
   // byte 초과 → 정책별 fallback
   if (bytes > MAX_SVG_BYTES) {

@@ -1,8 +1,8 @@
 import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
+import { detectSvgInspectionEnvironment } from './environment.internal';
 import type { InspectSvgReport } from './inspect-svg';
 import { inspectSvg } from './inspect-svg';
 import { extractSvgBody } from './inspect-svg-source/body-extraction.internal';
-import { detectInspectSourceEnvironment } from './inspect-svg-source/environment.internal';
 import { handleUrlSvgSourceFetch } from './inspect-svg-source/fetch-source.internal';
 import { detectMimeAndExtension } from './inspect-svg-source/mime-extension.internal';
 import { deduplicateFindings, maskSourceUrl } from './inspect-svg-source/report-utils.internal';
@@ -53,7 +53,7 @@ export async function inspectSvgSource(
   assertInspectSvgSourceOptions(options);
 
   const originalKind = detectOriginalKind(source);
-  const environment = detectInspectSourceEnvironment();
+  const environment = detectSvgInspectionEnvironment();
 
   let { mime, extension } = detectMimeAndExtension(source, originalKind);
 

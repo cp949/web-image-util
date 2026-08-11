@@ -1,7 +1,7 @@
 import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import type { ComplexityAnalysisResult } from '../core/svg-complexity-analyzer';
 import { ImageProcessError } from '../errors.internal';
-import { detectSvgInspectionEnvironment } from './svg-inspection';
+import { detectSvgInspectionEnvironment } from './environment.internal';
 import {
   callComplexityWrapper,
   collectDomFindings,
@@ -21,11 +21,6 @@ export type {
   InspectSvgReport,
 } from './svg-inspection/types.internal';
 
-/** 현재 실행 환경을 감지한다. 평가 순서는 happy-dom -> browser -> node -> unknown이다. */
-export function detectInspectEnvironment(): 'browser' | 'happy-dom' | 'node' | 'unknown' {
-  return detectSvgInspectionEnvironment();
-}
-
 /**
  * SVG 문자열을 부수효과 없이 진단해 리포트를 반환한다.
  *
@@ -43,7 +38,7 @@ export function inspectSvg(svgString: unknown): InspectSvgReport {
     });
   }
 
-  const environment = detectInspectEnvironment();
+  const environment = detectSvgInspectionEnvironment();
 
   // UTF-8 바이트 측정
   const bytes = new TextEncoder().encode(svgString).length;

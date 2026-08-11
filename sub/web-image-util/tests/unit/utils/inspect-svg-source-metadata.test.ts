@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { detectInspectSourceEnvironment } from '../../../src/utils/inspect-svg-source/environment.internal';
 import { detectMimeAndExtension } from '../../../src/utils/inspect-svg-source/mime-extension.internal';
 import { decideSvgFromSniff } from '../../../src/utils/inspect-svg-source/sniff-decision.internal';
 import { detectOriginalKind, estimateSourceBytes } from '../../../src/utils/inspect-svg-source/source-kind.internal';
@@ -155,13 +154,5 @@ describe('decideSvgFromSniff()', () => {
     });
     expect(result.kind).toBe('svg');
     expect(result.findings).toHaveLength(0);
-  });
-});
-
-describe('detectInspectSourceEnvironment()', () => {
-  it('vitest jsdom 환경에서 "node" 또는 "happy-dom"을 반환한다', () => {
-    const env = detectInspectSourceEnvironment();
-    // vitest jsdom은 happyDOM 또는 node 환경으로 분류된다
-    expect(['node', 'happy-dom', 'browser', 'unknown']).toContain(env);
   });
 });

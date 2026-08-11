@@ -1,23 +1,6 @@
 import type { SvgIdPrefixDeoptReason } from '../prefix-svg-ids';
 
 /**
- * 현재 실행 환경을 감지한다. inspectSvg와 동일 규칙을 인라인으로 둔다(D11).
- * 평가 순서: happyDOM → browser → node → unknown.
- */
-export function detectPrefixEnvironment(): 'browser' | 'happy-dom' | 'node' | 'unknown' {
-  if ((globalThis as unknown as Record<string, unknown>).happyDOM != null) {
-    return 'happy-dom';
-  }
-  if (typeof window !== 'undefined' && typeof document !== 'undefined' && typeof DOMParser !== 'undefined') {
-    return 'browser';
-  }
-  if (typeof process !== 'undefined' && process.versions?.node) {
-    return 'node';
-  }
-  return 'unknown';
-}
-
-/**
  * SVG 문자열을 DOMParser로 파싱한다.
  * DOMParser/XMLSerializer 미가용, parsererror, root가 svg가 아닌 경우 failure를 반환한다.
  */

@@ -1,11 +1,7 @@
 import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import { ImageProcessError } from '../errors.internal';
-import {
-  detectPrefixEnvironment,
-  detectStyleDeoptReasons,
-  parseSvgDocument,
-  serializeSvgDocument,
-} from './prefix-svg-ids/dom-utils.internal';
+import { detectSvgInspectionEnvironment } from './environment.internal';
+import { detectStyleDeoptReasons, parseSvgDocument, serializeSvgDocument } from './prefix-svg-ids/dom-utils.internal';
 import { applyIdRewrites, collectIdElements, planIdRewrites } from './prefix-svg-ids/id-rewrite.internal';
 import { rewriteFragmentReferences } from './prefix-svg-ids/reference-rewrite.internal';
 import { buildDeoptResult, buildPrefixWarnings } from './prefix-svg-ids/report-utils.internal';
@@ -109,7 +105,7 @@ function assertPrefix(prefix: unknown): asserts prefix is string {
 
 function preparePrefixRewrite(svgString: string): PreparedPrefixRewrite | SvgIdPrefixResult {
   const bytes = encoder.encode(svgString).byteLength;
-  const environment = detectPrefixEnvironment();
+  const environment = detectSvgInspectionEnvironment();
 
   if (bytes > MAX_SVG_BYTES) {
     return buildDeoptResult(svgString, bytes, environment, ['byte-limit-exceeded']);

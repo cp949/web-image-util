@@ -1,6 +1,5 @@
 export { collectSvgCssReferenceSignals, type SvgCssReferenceSignals } from './css-signals.internal';
 export { collectSvgDomSecuritySignals, type SvgDomSecuritySignals } from './dom-signals.internal';
-export { detectSvgInspectionEnvironment, type SvgInspectionEnvironment } from './environment.internal';
 export {
   isReferenceAttribute,
   readReferenceAttribute,

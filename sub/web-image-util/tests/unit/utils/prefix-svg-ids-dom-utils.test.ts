@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  detectPrefixEnvironment,
   detectStyleDeoptReasons,
   parseSvgDocument,
   serializeSvgDocument,
@@ -12,12 +11,6 @@ function parseDoc(svg: string): Document {
 }
 
 describe('dom-utils helper', () => {
-  describe('detectPrefixEnvironment', () => {
-    it('알려진 환경 값 중 하나를 반환한다', () => {
-      expect(['browser', 'happy-dom', 'node', 'unknown']).toContain(detectPrefixEnvironment());
-    });
-  });
-
   describe('parseSvgDocument', () => {
     it('정상 SVG는 Document를 반환한다', () => {
       const result = parseSvgDocument('<svg xmlns="http://www.w3.org/2000/svg"><rect id="a"/></svg>');
