@@ -50,7 +50,7 @@ rg -n "pipeline\\.ts|RenderPipeline|LazyRenderPipeline|lazy-render-pipeline" REA
 rg --files sub/web-image-util/src/core
 ```
 
-현재 메인 처리 구조는 `core/lazy-render-pipeline.ts`의 `LazyRenderPipeline`, `core/single-renderer.ts`, `core/onehot-renderer.ts` 중심이다. 과거의 `pipeline.ts`/`RenderPipeline` 설명을 되살리지 않는다.
+현재 메인 처리 구조는 `core/lazy-render-pipeline.internal.ts`의 `LazyRenderPipeline`과 `core/single-renderer.internal.ts` 중심이다. 과거의 `pipeline.ts`/`RenderPipeline`/`onehot-renderer` 설명을 되살리지 않는다.
 
 ## 생성 산출물
 
