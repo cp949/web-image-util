@@ -236,6 +236,7 @@ export const ADVANCED_VALUE_EXPORTS = [
   // 고해상도 관리자
   'HighResolutionManager',
   // 합성
+  'composeImages',
   'ImageWatermark',
   'TextWatermark',
   // advanced-index.ts에 정의된 편의 헬퍼

@@ -6,6 +6,7 @@
 
 ### 추가
 
+- Added: `composeImages(spec)` under `@cp949/web-image-util/advanced` — 레이어/그리드/콜라주 합성을 discriminated union spec 하나로 받는 진입점입니다. 반환 canvas는 호출자 소유입니다. grid는 `columns`만 받고 행 수를 파생해 이미지가 잘리지 않으며, `cover` fit은 셀 영역으로 클리핑됩니다. collage는 `scaleRange`/`maxRotation`/`allowOverlap`/`maxPlacementAttempts` 옵션과 `random` 난수 주입(결과 재현)을 지원합니다. 잘못된 spec은 canvas 생성 전에 `ImageProcessError`로 거부됩니다.
 - Added: image-common 문자열 입력에서 Blob URL(`blob:`)을 지원합니다. `processImage()`와 문자열 변환 유틸은 fetch된 Blob의 MIME 타입을 기준으로 Blob/Data URL/File/Element 출력을 생성합니다.
 
 ### 수정
@@ -15,6 +16,7 @@
 ### 제거
 
 - Removed: 내부 유틸 `copyCanvas`, `withMultipleManagedCanvas`, `TiledProcessor.processInTiles`, `LazyRenderPipeline.toBlob`을 제거했습니다. 모두 공개 API가 아니며 라이브러리 내부에서 사용되지 않았습니다.
+- Removed: 내부 전용 `ImageComposer` static class를 제거했습니다. 공개 API가 아니었으며 `composeImages(spec)`가 대체합니다.
 
 ## [3.0.0] - 2026-06-04
 

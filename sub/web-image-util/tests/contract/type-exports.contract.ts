@@ -9,6 +9,14 @@
  */
 
 import type {
+  ComposeCollageSpec,
+  ComposeGridSpec,
+  ComposeLayer,
+  ComposeLayersSpec,
+  ComposeSpec,
+  RandomSource,
+} from '@cp949/web-image-util/advanced';
+import type {
   InspectSvgSanitizationFailure,
   InspectSvgSanitizationFailureCode,
   InspectSvgSanitizationImpact,
@@ -179,3 +187,20 @@ const srcReport: InspectSvgSourceReport = {
 void srcInput;
 void srcOptions;
 void srcReport;
+
+const composeRandom: RandomSource = () => 0.5;
+const composeLayer: ComposeLayer = { image: {} as HTMLImageElement, x: 0, y: 0, opacity: 0.5 };
+const composeLayersSpec: ComposeLayersSpec = { type: 'layers', width: 10, height: 10, layers: [composeLayer] };
+const composeGridSpec: ComposeGridSpec = { type: 'grid', images: [], columns: 2, fit: 'cover' };
+const composeCollageSpec: ComposeCollageSpec = {
+  type: 'collage',
+  images: [],
+  width: 10,
+  height: 10,
+  scaleRange: [0.1, 0.2],
+  random: composeRandom,
+};
+const composeSpec: ComposeSpec = composeLayersSpec;
+void composeGridSpec;
+void composeCollageSpec;
+void composeSpec;

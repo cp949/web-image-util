@@ -104,6 +104,16 @@ export type { HighResolutionOptions, ProcessingResult } from './base/high-res-ma
 export { HighResolutionManager } from './base/high-res-manager';
 // 세밀한 워터마크 제어
 export type { ImageWatermarkOptions, TextWatermarkOptions } from './composition';
+// 이미지 합성 — 레이어/그리드/콜라주를 spec 데이터 하나로 표현한다
+export {
+  type ComposeCollageSpec,
+  type ComposeGridSpec,
+  type ComposeLayer,
+  type ComposeLayersSpec,
+  type ComposeSpec,
+  composeImages,
+  type RandomSource,
+} from './composition/compose';
 export { ImageWatermark } from './composition/image-watermark';
 export { TextWatermark } from './composition/text-watermark';
 

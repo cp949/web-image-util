@@ -110,6 +110,45 @@ const post = await createSocialImage(photo, { platform: 'instagram', format: 'jp
 
 `createSocialImage()`는 `twitter`, `facebook`, `instagram`, `linkedin`, `youtube`, `pinterest` 크기 프리셋을 제공합니다.
 
+## 이미지 합성 (advanced)
+
+`composeImages()`는 레이어/그리드/콜라주 합성을 spec 객체 하나로 받습니다. 반환 canvas는 호출자 소유이며 라이브러리가 재사용하지 않습니다.
+
+```typescript
+import { composeImages } from '@cp949/web-image-util/advanced';
+
+// 레이어 — 배열 순서대로 그려지고 뒤 원소가 위를 덮습니다
+const card = await composeImages({
+  type: 'layers',
+  width: 800,
+  height: 600,
+  layers: [
+    { image: photo, x: 0, y: 0, width: 800, height: 600 },
+    { image: logo, x: 20, y: 540, opacity: 0.8 },
+  ],
+});
+
+// 그리드 — 행 수는 ceil(이미지 수 / columns)로 파생되어 이미지가 잘리지 않습니다
+// columns 생략 시 ceil(sqrt(이미지 수))
+const album = await composeImages({ type: 'grid', images: photos, columns: 3, fit: 'cover' });
+
+// 콜라주 — random을 주입하면 같은 spec에서 같은 배치가 재현됩니다
+const board = await composeImages({
+  type: 'collage',
+  images: photos,
+  width: 1200,
+  height: 800,
+  scaleRange: [0.2, 0.35],
+  maxRotation: 10,
+  allowOverlap: false,
+  random: seededRandom, // () => number, 생략 시 Math.random
+});
+```
+
+- `grid`의 `cover` fit은 셀 밖으로 넘치는 부분을 셀 영역으로 클리핑합니다.
+- `collage`의 `allowOverlap: false`는 최선 노력입니다 — `maxPlacementAttempts`(기본 50)까지 겹치지 않는 위치를 재시도하고, 초과하면 겹침을 허용합니다.
+- 잘못된 spec(크기 0 이하, `columns` 0 등)은 canvas를 만들기 전에 `ImageProcessError`로 거부됩니다.
+
 ## 서브패스 import 경로
 
 라이브러리는 트리 셰이킹을 전제로 6개 서브패스 export를 노출합니다. 사용 목적에 맞는 서브패스에서 단일 함수만 가져오면 됩니다.
@@ -120,7 +159,7 @@ const post = await createSocialImage(photo, { platform: 'instagram', format: 'jp
 | `@cp949/web-image-util/utils` | 변환(`ensureBlob`/`ensureImageElement`/...), 포맷(`formatToMimeType`/...), SVG 진단(`inspectSvg`, `inspectSvgSource`), SVG 정규화(`prefixSvgIds`), 브라우저 기능 감지 | 호출 시 단일 함수만 가져오는 가벼운 유틸 |
 | `@cp949/web-image-util/svg-sanitizer` | `sanitizeSvgStrict`, `sanitizeSvgStrictDetailed`, `inspectSvgSanitization` | DOMPurify 기반 strict sanitizer (동적 import) |
 | `@cp949/web-image-util/presets` | `createThumbnail`, `createAvatar`, `createSocialImage` | 편의 preset 함수 |
-| `@cp949/web-image-util/advanced` | `AdvancedImageProcessor`, `SmartFormatSelector`, `BatchResizer`, 필터 plugins 재노출 | 사용자가 명시적으로 선택하는 고급 API |
+| `@cp949/web-image-util/advanced` | `AdvancedImageProcessor`, `SmartFormatSelector`, `BatchResizer`, `composeImages`, 필터 plugins 재노출 | 사용자가 명시적으로 선택하는 고급 API |
 | `@cp949/web-image-util/filters` | `BlurFilterPlugin`, `BrightnessFilterPlugin`, `GrayscaleFilterPlugin` 등 필터 plugin 클래스 | 필터 시스템 (advanced에서 재노출) |
 
 서브패스 책임 경계와 책임 분리는 [Architecture 문서의 공개 API 표면](https://github.com/cp949/web-image-util/blob/main/docs/architecture.md#공개-api-표면) 표를, sanitizer 관련 옵션의 사용 가능/금지 시나리오는 [SVG sanitizer 보안 정책의 "금지 사용처"](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md#금지-사용처) 표를 참고하세요.
