@@ -225,7 +225,7 @@ Fabric.js, Illustrator, Figma export처럼 SVG 안에 `data:image/*`를 embedded
 
 ### sanitizer 정책 영향 진단
 
-`inspectSvgSanitization()`는 SVG 문자열에 sanitizer 정책을 적용했을 때 어떤 stage가 발동(또는 발동할)했는지 호출 전에 진단합니다. 보고서에는 SVG 원문, Data URL payload, 외부 URL이 담기지 않으며, `samples`는 tagName/attrName/MIME 같은 짧은 식별자만 노출합니다. 보안 경계가 아니며, 신뢰할 수 없는 SVG에는 그대로 `svgSanitizer: 'strict'`를 사용하세요.
+`inspectSvgSanitization()`는 SVG 문자열에 sanitizer 정책을 적용했을 때 어떤 stage가 발동(또는 발동할)했는지 호출 전에 진단합니다. 보고서에는 SVG 원문, Data URL payload, 외부 URL이 담기지 않으며, `samples`는 tagName/attrName/MIME 같은 짧은 식별자만 노출합니다. 보안 경계가 아니며, 신뢰할 수 없는 SVG에는 그대로 `svgSanitizer: 'strict'`를 사용하세요. 보고되는 stage는 선택한 정책의 sanitizer가 실제로 바꾸는 것만 담습니다. 변환(`processImage()`)이 입력을 거부할지는 `inspectSvg()`로 확인하세요 — 두 API의 판정 기준 차이는 [SVG sanitizer 보안 정책의 "진단 API의 판정 기준 차이"](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md#진단-api의-판정-기준-차이) 섹션을 참고하세요.
 
 ```typescript
 import { inspectSvgSanitization } from '@cp949/web-image-util/svg-sanitizer';
@@ -267,7 +267,7 @@ console.warn(detailed.warnings);
 
 ### SVG 진단
 
-변환 전에 SVG 문자열을 미리 진단하려면 `inspectSvg()`를 사용합니다. sanitizer를 실행하지 않고 위험 요소를 검사해 findings와 sanitizer 권장 사항을 반환합니다.
+변환 전에 SVG 문자열을 미리 진단하려면 `inspectSvg()`를 사용합니다. sanitizer를 실행하지 않고 위험 요소를 검사해 findings와 sanitizer 권장 사항을 반환합니다. finding은 변환 경로가 거부하는 참조(외부 URL, 상대·절대 경로, 안전하지 않은 `data:`)를 기준으로 보고되며, sanitizer가 제거하는 항목과는 기준이 다릅니다.
 
 ```typescript
 import { inspectSvg } from '@cp949/web-image-util/utils';

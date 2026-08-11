@@ -134,6 +134,23 @@ nested SVG 재정제에서 byte cap 초과 또는 parse 실패가 발생하면 n
 
 `inspectSvg()`와 `inspectSvgSanitization()`은 happy-dom과 실제 브라우저의 DOM 파싱 차이가 `report.environment` 필드(`'happy-dom'` 또는 `'browser'`)에 드러납니다.
 
+### 진단 API의 판정 기준 차이
+
+두 진단 API는 서로 다른 질문에 답하므로, 같은 입력에서 보고 내용이 다를 수 있습니다. 이것은 의도된 동작입니다.
+
+| API | 답하는 질문 | 판정 기준 |
+| --- | --- | --- |
+| `inspectSvg()` / `inspectSvgSource()` | 변환(`processImage()`)이 이 입력을 거부하는가, strict sanitizer를 권해야 하는가 | 변환 경로의 안전성 검사와 같은 기준. 외부 URL(`http(s)`, `//`)뿐 아니라 상대·절대 경로(`./`, `../`, `/`)와 안전하지 않은 `data:` 참조도 finding으로 보고합니다 |
+| `inspectSvgSanitization()` | 선택한 sanitizer 정책을 적용하면 무엇이 바뀌는가 | 해당 정책의 sanitizer가 실제로 치환·제거하는 것만 stage로 보고합니다 |
+
+대표 사례:
+
+- **상대·절대 경로 참조**(`href="./rel.png"` 등): `inspectSvg()`는 finding을 보고합니다 — 변환 경로가 이 입력을 거부하기 때문입니다. `inspectSvgSanitization()`의 `lightweight` 정책은 stage를 보고하지 않습니다 — lightweight sanitizer는 이 값을 바꾸지 않기 때문입니다. 두 보고 모두 사실이며, lightweight sanitizer가 바꾸지 않아도 변환은 실패합니다.
+- **CSS `url()` 안의 raster `data:` 이미지**: `inspectSvgSanitization()`은 stage로 보고합니다 — lightweight sanitizer가 CSS의 `data:` 참조를 치환하기 때문입니다. `inspectSvg()`는 안전한 raster `data:image/*`를 finding으로 보고하지 않습니다 — 변환 경로가 이를 거부하지 않기 때문입니다.
+- **`@import`·`expression()`·`-moz-binding`·`image-set()`·presentation 속성(`fill` 등)의 `url()`**: `strict` 정책의 `inspectSvgSanitization()`만 보고합니다. lightweight sanitizer와 변환 경로의 안전성 검사는 이들을 건드리지 않으므로 `inspectSvg()`와 `lightweight` 진단에서는 나타나지 않습니다.
+
+`inspectSvg()`의 finding 유무가 변환 경로의 거부 여부와, `lightweight` stage가 lightweight sanitizer의 실제 치환과 일치하는지는 회귀 테스트(`sub/web-image-util/tests/unit/utils/svg-inspection-axis-alignment.test.ts`)로 고정되어 있습니다.
+
 ## 입력 형태별 적용 범위
 
 `strict`와 `lightweight`는 SVG로 확인된 다음 입력에 적용됩니다. 비-SVG URL은 sanitizer 경로를 타지 않습니다.

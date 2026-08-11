@@ -68,6 +68,8 @@
 | `src/core/single-renderer.internal.ts` | 누적 연산 분석(`analyzeAllOperations`)과 최종 Canvas drawImage 렌더링(`renderLayout` → `CanvasLease`) |
 | `src/types/resize-config.ts` | ResizeConfig 타입 시스템 |
 
+진단 API의 판정 기준은 층별로 다르다: `inspectSvg()`/`inspectSvgSource()`는 변환 경로 intake guard(`assertSafeSvgContent`)의 거부 기준을, `inspectSvgSanitization()`은 선택한 정책의 sanitizer가 실제 치환하는 기준을 따른다. 이 정합은 `sub/web-image-util/tests/unit/utils/svg-inspection-axis-alignment.test.ts`가 고정하며, 사용자 관점 서술은 [SVG-SECURITY.md](../SVG-SECURITY.md)의 "진단 API의 판정 기준 차이" 절에 있다.
+
 ## 공개 API 표면
 
 새 export를 추가하거나 제거할 때는 `sub/web-image-util/package.json`의 `exports` 필드, 배럴 파일, contract 테스트를 함께 갱신합니다.
