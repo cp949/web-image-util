@@ -111,67 +111,6 @@ export function createImageError(
 }
 
 /**
- * Error recovery attempt
- *
- * @description Wrapper function that attempts fallback function on failure
- */
-export async function withErrorRecovery<T>(
-  primaryFunction: () => Promise<T>,
-  fallbackFunction?: () => Promise<T>,
-  context?: ErrorContext
-): Promise<T> {
-  try {
-    return await primaryFunction();
-  } catch (error) {
-    // Attempt fallback
-    if (fallbackFunction) {
-      try {
-        console.warn('Primary method failed, trying fallback:', error);
-        return await fallbackFunction();
-      } catch (fallbackError) {
-        // 두 방법 모두 실패했을 때 더 자세한 에러를 제공한다
-        throw createImageError('CONVERSION_FAILED', {
-          cause: fallbackError,
-          context: {
-            ...context,
-            debug: {
-              primaryError: (error as Error).message,
-              fallbackError: (fallbackError as Error).message,
-            },
-          },
-        });
-      }
-    }
-
-    // ImageProcessError가 아니면 래핑한다
-    if (!(error instanceof ImageProcessError)) {
-      throw createImageError('CONVERSION_FAILED', { cause: error, context });
-    }
-
-    throw error;
-  }
-}
-
-/**
- * Browser feature support check
- */
-export function checkBrowserSupport(): {
-  canvas: boolean;
-  webp: boolean;
-  avif: boolean;
-  offscreenCanvas: boolean;
-} {
-  const canvas = document.createElement('canvas');
-
-  return {
-    canvas: !!canvas.getContext?.('2d'),
-    webp: canvas.toDataURL('image/webp').startsWith('data:image/webp'),
-    avif: canvas.toDataURL('image/avif').startsWith('data:image/avif'),
-    offscreenCanvas: typeof OffscreenCanvas !== 'undefined',
-  };
-}
-
-/**
  * Format support check
  */
 export async function isFormatSupported(format: string): Promise<boolean> {
@@ -182,49 +121,6 @@ export async function isFormatSupported(format: string): Promise<boolean> {
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(!!blob), `image/${format}`, 0.8);
   });
-}
-
-/**
- * Memory usage estimation
- */
-export function estimateMemoryUsage(
-  width: number,
-  height: number
-): {
-  bytes: number;
-  megabytes: number;
-  warning: boolean;
-} {
-  // RGBA 4 bytes × width × height
-  const bytes = width * height * 4;
-  const megabytes = bytes / (1024 * 1024);
-
-  // Warning for 100MB or more
-  const warning = megabytes > 100;
-
-  return { bytes, megabytes, warning };
-}
-
-/**
- * Error logging (development mode only)
- */
-export function logError(error: ImageProcessError, context?: any): void {
-  if (!isDevelopmentMode()) return;
-
-  console.group('🚨 ImageProcessError');
-  console.error('Code:', error.code);
-  console.error('Message:', error.message);
-
-  if (error.cause instanceof Error) {
-    console.error('Original Error:', error.cause);
-  }
-
-  if (context) {
-    console.error('Context:', context);
-  }
-
-  console.trace('Stack Trace');
-  console.groupEnd();
 }
 
 /**
