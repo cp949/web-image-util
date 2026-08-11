@@ -373,17 +373,9 @@ export const OUTPUT_FORMAT_INFO = {
 } as const;
 
 // ============================================================================
-// PRESET TYPES - Preset-related types re-export
-// ============================================================================
-
-export type { AvatarOptions, SocialImageOptions, SocialPlatform, ThumbnailOptions } from '../presets';
-
-// ============================================================================
 // SHORTCUT API TYPES - Shortcut API-related types
 // ============================================================================
 
-// Re-export Size type defined in LazyRenderPipeline
-export type { Size } from '../core/lazy-render-pipeline.internal';
 export type { IImageProcessor, InitialProcessorInterface, ResizedProcessorInterface } from './processor-interface';
 export type { DirectResizeConfig, ResizeOperation, ScaleOperation } from './shortcut-types';
 export { isScaleX, isScaleXY, isScaleY, isUniformScale } from './shortcut-types';
