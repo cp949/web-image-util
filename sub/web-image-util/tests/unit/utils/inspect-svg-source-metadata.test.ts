@@ -130,6 +130,11 @@ describe('estimateSourceBytes', () => {
     expect(estimateSourceBytes(blob, 'blob')).toBe(blob.size);
   });
 
+  it('File도 .size를 반환한다 (Blob 서브클래스 — 동일 분기)', () => {
+    const file = new File(['<svg/>'], 'icon.svg', { type: 'image/svg+xml' });
+    expect(estimateSourceBytes(file, 'file')).toBe(file.size);
+  });
+
   it('ASCII 문자열은 문자 수와 동일한 UTF-8 바이트 수를 반환한다', () => {
     const str = '<svg/>';
     // ASCII 범위에서는 문자 1개 = 1바이트.

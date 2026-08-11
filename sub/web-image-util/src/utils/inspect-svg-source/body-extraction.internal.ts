@@ -4,7 +4,7 @@
  */
 
 import { parseSvgFromDataUrl } from '../../core/source-converter/svg/data-url.internal';
-// 타입만 import — JS 런타임 순환 차단. 런타임 값 import 추가 시 순환이 남는다.
+// 스택 타입 leaf(types.internal)만 의존한다 — 부모 파일 되임포트 금지.
 import type { InspectSvgSourceMeta } from './types.internal';
 
 const textEncoder = new TextEncoder();

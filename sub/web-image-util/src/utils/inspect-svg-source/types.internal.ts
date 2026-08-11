@@ -5,7 +5,7 @@
  * 아니며, 공개는 `inspect-svg-source.ts`의 재export를 경유한다.
  */
 
-import type { InspectSvgReport } from '../inspect-svg';
+import type { InspectSvgReport } from '../svg-inspection/types.internal';
 
 /** SVG로 판정할 수 있는 입력 타입. HTMLImageElement / Canvas 등은 비-허용(D2). */
 export type InspectSvgSourceInput = string | Blob | File | URL;

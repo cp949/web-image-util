@@ -13,10 +13,7 @@ describe('detectSvgInspectionEnvironment', () => {
     delete (globalThis as unknown as Record<string, unknown>).happyDOM;
   });
 
-  it('알려진 환경 값 4종 중 하나를 반환한다', () => {
-    expect(['browser', 'happy-dom', 'node', 'unknown']).toContain(detectSvgInspectionEnvironment());
-  });
-
+  // 테스트 셋업(jsdom) 의존: window/document/DOMParser가 존재하는 환경을 전제한다.
   it('jsdom 셋업(window/document/DOMParser 존재)에서는 browser로 판정한다', () => {
     expect(detectSvgInspectionEnvironment()).toBe('browser');
   });
