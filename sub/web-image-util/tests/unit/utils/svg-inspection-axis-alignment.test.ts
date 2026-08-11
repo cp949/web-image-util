@@ -19,6 +19,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /** inspectSvg에서 판정 축 대상 finding 코드 */
 const AXIS_FINDING_CODES = new Set(['external-href', 'style-attribute-external-url', 'style-tag-external-url']);
+/** intake guard의 script/event-handler 채널과 호응하는 finding 코드 */
+const GUARD_CHANNEL_FINDING_CODES = new Set(['has-script-element', 'has-event-handler']);
 /** inspectSvgSanitization에서 판정 축 대상 stage 코드 (data-image-* / nested-svg-* 는 embedded 단계라 별개) */
 const EXTERNAL_STAGE_CODES = new Set(['external-href-removed', 'external-css-removed']);
 
@@ -83,6 +85,28 @@ describe('SVG 진단 판정 축 ↔ 실제 동작 층 정합', () => {
 
     it.each(cases)('%s → 판정 축과 guard 거부 여부가 일치한다', (_label, svg, rejects) => {
       expect(hasAxisFinding(svg)).toBe(rejects);
+      expect(intakeGuardRejects(svg)).toBe(rejects);
+    });
+  });
+
+  describe('inspectSvg script/event-handler finding ↔ 렌더 intake guard', () => {
+    // [label, svg, intake guard가 거부하는가]
+    // guard는 원문 문자열 검사(<script 포함, \son[a-z0-9:-]*= 정규식)이고 inspectSvg는 DOM 순회라
+    // 주석 안의 <script 같은 경계 입력에서는 guard만 거부한다(fail-closed) — 코퍼스는
+    // well-formed 입력으로 한정한다. 외부 참조 채널과 겹치지 않게 href/style은 넣지 않는다.
+    const cases: Array<[string, string, boolean]> = [
+      ['script 요소', `<svg xmlns="${SVG_NS}"><script>alert(1)</script></svg>`, true],
+      ['script·핸들러 없는 도형만', `<svg xmlns="${SVG_NS}"><rect width="1" height="1"/></svg>`, false],
+      ['rect의 onload 핸들러', `<svg xmlns="${SVG_NS}"><rect onload="x"/></svg>`, true],
+      ['루트 svg의 onclick 핸들러', `<svg xmlns="${SVG_NS}" onclick="alert(1)"><rect/></svg>`, true],
+      ['대문자 ONLOAD 핸들러', `<svg xmlns="${SVG_NS}"><rect ONLOAD="x"/></svg>`, true],
+      ['onbegin(SMIL 계열) 핸들러', `<svg xmlns="${SVG_NS}"><rect onbegin="x"/></svg>`, true],
+      ['on 접두 일반 속성(onlyattr)', `<svg xmlns="${SVG_NS}"><rect onlyattr="x"/></svg>`, true],
+    ];
+
+    it.each(cases)('%s → 판정 축과 guard 거부 여부가 일치한다', (_label, svg, rejects) => {
+      const findings = inspectSvg(svg).findings.some((f) => GUARD_CHANNEL_FINDING_CODES.has(f.code));
+      expect(findings).toBe(rejects);
       expect(intakeGuardRejects(svg)).toBe(rejects);
     });
   });
