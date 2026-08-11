@@ -20,10 +20,23 @@ import { ResizeCalculator } from './resize-calculator.internal';
  * 지연 렌더링 스택의 공유 타입 정의 지점 — 부모(LazyRenderPipeline)가 연산을
  * 누적할 때, 이 파일의 분석기·렌더러가 소비할 때 함께 사용한다.
  */
+/**
+ * Canvas filter 연산 옵션 — 각 필드는 CSS filter 함수 문자열로 변환된다
+ *
+ * analyzeFilterOperation 이 brightness(n)·contrast(n)·saturate(n)·
+ * hue-rotate(ndeg) 형태로 누적한다. hueRotate 단위는 deg.
+ */
+export interface CanvasFilterOptions {
+  brightness?: number;
+  contrast?: number;
+  saturate?: number;
+  hueRotate?: number;
+}
+
 export type LazyOperation =
   | { type: 'resize'; config: ResizeConfig }
   | { type: 'blur'; options: BlurOptions }
-  | { type: 'filter'; options: any };
+  | { type: 'filter'; options: CanvasFilterOptions };
 
 /**
  * Final layout information - Result of analyzing all operations
@@ -140,7 +153,7 @@ function analyzeBlurOperation(layout: FinalLayout, options: any): void {
 /**
  * Analyze other filter operations
  */
-function analyzeFilterOperation(layout: FinalLayout, options: any): void {
+function analyzeFilterOperation(layout: FinalLayout, options: CanvasFilterOptions): void {
   if (options.brightness !== undefined) {
     layout.filters.push(`brightness(${options.brightness})`);
   }

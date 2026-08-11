@@ -12,7 +12,13 @@ import type { BlurOptions, ResultMetadata } from '../types';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import type { ResizeOperation, ScaleOperation } from '../types/shortcut-types';
-import { analyzeAllOperations, debugLayout, type LazyOperation, renderLayout } from './single-renderer.internal';
+import {
+  analyzeAllOperations,
+  type CanvasFilterOptions,
+  debugLayout,
+  type LazyOperation,
+  renderLayout,
+} from './single-renderer.internal';
 
 /**
  * Size information interface
@@ -99,7 +105,7 @@ export class LazyRenderPipeline {
   /**
    * Add filter operation (calculation only, no rendering)
    */
-  addFilter(options: any): this {
+  addFilter(options: CanvasFilterOptions): this {
     this.operations.push({ type: 'filter', options });
     return this;
   }
