@@ -345,16 +345,73 @@ describe('renderLayout', () => {
       );
     });
 
-    it('imageSize 가 0 이하면 invalid-image-size 로 던진다', () => {
+    it('canvas 크기가 Infinity 면 INVALID_DIMENSIONS 를 던진다', () => {
       const source = createDrawableSource(100, 100);
 
-      expect(() => renderLayout(source, makeLayout({ imageSize: { width: 0, height: 100 } }))).toThrow(
+      expect(() => renderLayout(source, makeLayout({ width: Infinity, height: 100 }))).toThrow(
         expect.objectContaining({
           name: 'ImageProcessError',
           code: 'INVALID_DIMENSIONS',
-          details: { kind: 'invalid-image-size', width: 0, height: 100 },
+          details: { kind: 'invalid-canvas-size', width: Infinity, height: 100 },
         })
       );
+    });
+
+    it('canvas 크기가 반올림하면 0 이 되는 소수(0.4)여도 INVALID_DIMENSIONS 를 던진다', () => {
+      const source = createDrawableSource(100, 100);
+
+      expect(() => renderLayout(source, makeLayout({ width: 0.4, height: 100 }))).toThrow(
+        expect.objectContaining({
+          name: 'ImageProcessError',
+          code: 'INVALID_DIMENSIONS',
+          details: { kind: 'invalid-canvas-size', width: 0.4, height: 100 },
+        })
+      );
+    });
+
+    it('imageSize 가 음수면 invalid-image-size 로 던진다', () => {
+      const source = createDrawableSource(100, 100);
+
+      expect(() => renderLayout(source, makeLayout({ imageSize: { width: -1, height: 100 } }))).toThrow(
+        expect.objectContaining({
+          name: 'ImageProcessError',
+          code: 'INVALID_DIMENSIONS',
+          details: { kind: 'invalid-image-size', width: -1, height: 100 },
+        })
+      );
+    });
+
+    it('imageSize 가 NaN 이면 invalid-image-size 로 던진다', () => {
+      const source = createDrawableSource(100, 100);
+
+      expect(() => renderLayout(source, makeLayout({ imageSize: { width: NaN, height: 100 } }))).toThrow(
+        expect.objectContaining({
+          name: 'ImageProcessError',
+          code: 'INVALID_DIMENSIONS',
+          details: { kind: 'invalid-image-size', width: NaN, height: 100 },
+        })
+      );
+    });
+
+    it('imageSize 가 0 으로 반올림되는 축퇴 케이스면 drawImage 를 건너뛰고 배경만 그린다', () => {
+      // 극단 종횡비 입력(예: 1x10000 → contain 100x100)에서 calculator 가
+      // imageSize 0 을 산출할 수 있다. 이때 오류 대신 배경만 채운 canvas 를 반환한다.
+      const source = createDrawableSource(100, 100);
+      const tempCtx = document.createElement('canvas').getContext('2d')!;
+      const drawImageSpy = vi.spyOn(Object.getPrototypeOf(tempCtx), 'drawImage');
+
+      try {
+        const canvas = renderLayout(
+          source,
+          makeLayout({ width: 100, height: 100, imageSize: { width: 0, height: 100 } })
+        ).detach();
+
+        expect(drawImageSpy).not.toHaveBeenCalled();
+        expect(canvas.width).toBe(100);
+        expect(canvas.height).toBe(100);
+      } finally {
+        drawImageSpy.mockRestore();
+      }
     });
 
     it('position 이 NaN 이면 invalid-position 으로 던진다', () => {

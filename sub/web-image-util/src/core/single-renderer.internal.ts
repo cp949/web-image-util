@@ -170,22 +170,21 @@ export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout,
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 5. 모든 필터 효과를 한 번에 적용
-    if (layout.filters.length > 0) {
-      ctx.filter = layout.filters.join(' ');
+    // 5. 🎯 drawImage 한 번으로 모든 처리 완료 (필터도 이 시점에 함께 적용)
+    // 극단 종횡비에서 imageSize 가 0 으로 반올림되면 그릴 픽셀이 없다 —
+    // drawImage 를 건너뛰고 배경만 채운 canvas 를 반환한다.
+    const drawWidth = Math.round(layout.imageSize.width);
+    const drawHeight = Math.round(layout.imageSize.height);
+    if (drawWidth > 0 && drawHeight > 0) {
+      if (layout.filters.length > 0) {
+        ctx.filter = layout.filters.join(' ');
+      }
+
+      ctx.drawImage(sourceImage, Math.round(layout.position.x), Math.round(layout.position.y), drawWidth, drawHeight);
+
+      // 필터 초기화 (pool 재사용 대비)
+      ctx.filter = 'none';
     }
-
-    // 6. 🎯 drawImage 한 번으로 모든 처리 완료
-    ctx.drawImage(
-      sourceImage,
-      Math.round(layout.position.x),
-      Math.round(layout.position.y),
-      Math.round(layout.imageSize.width),
-      Math.round(layout.imageSize.height)
-    );
-
-    // 7. 필터 초기화 (pool 재사용 대비)
-    ctx.filter = 'none';
 
     return lease;
   } catch (error) {
@@ -197,24 +196,31 @@ export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout,
 /**
  * 레이아웃 검증 — 잘못된 값이면 렌더링 전에 ImageProcessError 를 던진다.
  *
- * - canvas/image 크기는 양의 유한수여야 한다 (0, 음수, NaN 거부)
+ * - canvas 크기는 유한수이고 반올림 후에도 양수여야 한다 (실제 acquire 에는 반올림 값이 쓰인다)
+ * - imageSize 는 음수·비유한수만 오류다. 반올림 0 은 극단 종횡비 입력에서
+ *   calculator 가 산출할 수 있는 유효한 축퇴 케이스로, renderLayout 이 drawImage 를 건너뛴다.
  * - 좌표는 유한수여야 한다
  * - 초대형 canvas 는 오류 대신 경고만 남긴다 (기기별 메모리 부족 가능성 안내)
  */
 function validateLayout(layout: FinalLayout): void {
   const { width, height, imageSize, position } = layout;
 
-  if (!(width > 0) || !(height > 0)) {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || Math.round(width) <= 0 || Math.round(height) <= 0) {
     throw new ImageProcessError(
-      `Invalid canvas size: ${width}x${height}. Both dimensions must be > 0.`,
+      `Invalid canvas size: ${width}x${height}. Both dimensions must round to > 0.`,
       'INVALID_DIMENSIONS',
       { details: { kind: 'invalid-canvas-size', width, height } }
     );
   }
 
-  if (!(imageSize.width > 0) || !(imageSize.height > 0)) {
+  if (
+    !Number.isFinite(imageSize.width) ||
+    !Number.isFinite(imageSize.height) ||
+    imageSize.width < 0 ||
+    imageSize.height < 0
+  ) {
     throw new ImageProcessError(
-      `Invalid image size: ${imageSize.width}x${imageSize.height}. Both dimensions must be > 0.`,
+      `Invalid image size: ${imageSize.width}x${imageSize.height}. Both dimensions must be finite and >= 0.`,
       'INVALID_DIMENSIONS',
       { details: { kind: 'invalid-image-size', width: imageSize.width, height: imageSize.height } }
     );
