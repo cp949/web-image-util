@@ -6,7 +6,7 @@
 
 `processImage()`는 입력 소스를 브라우저에서 렌더링 가능한 이미지 요소로 변환한 뒤, `ImageProcessor` 체이닝 API를 반환합니다. 문자열, URL, Blob/File, ArrayBuffer 계열 입력은 먼저 소스 타입을 판정하고, SVG 입력은 MIME과 내용 스니핑을 함께 확인한 다음 브라우저 렌더링에 맞게 정규화합니다.
 
-체이닝 단계에서는 `resize()`, `blur()` 같은 연산을 즉시 Canvas에 그리지 않고 `LazyRenderPipeline`에 누적합니다. 최종 출력 메서드(`toBlob()`, `toDataURL()`, `toFile()`, `toCanvas()`)가 호출되면 `single-renderer`의 분석기(`analyzeAllOperations`)가 누적 연산을 최종 레이아웃으로 계산하고(fit 모드 계산은 `ResizeCalculator` 활용), 렌더러(`renderLayout`)가 레이아웃 검증·품질 설정·배경색·필터를 적용해 한 번의 `drawImage()`로 렌더링합니다. 결과 canvas는 `CanvasLease`로 반환됩니다.
+체이닝 단계에서는 `resize()`, `blur()` 같은 연산을 즉시 Canvas에 그리지 않고 누적만 합니다. `ImageProcessor`는 타입 상태 전이와 위임만 남긴 얇은 축적기이며, 출력 경로 전체(소스 정규화, `LazyRenderPipeline` 구성과 누적 연산 재생, 포맷/품질 기본값, 인코딩, pool 반환, Result 래핑)는 `OutputPipeline`(`src/core/output-pipeline.internal.ts`)이 담당합니다. 최종 출력 메서드(`toBlob()`, `toDataURL()`, `toFile()`, `toCanvas()`)가 호출되면 `single-renderer`의 분석기(`analyzeAllOperations`)가 누적 연산을 최종 레이아웃으로 계산하고(fit 모드 계산은 `ResizeCalculator` 활용), 렌더러(`renderLayout`)가 레이아웃 검증·품질 설정·배경색·필터를 적용해 한 번의 `drawImage()`로 렌더링합니다. 결과 canvas는 `CanvasLease`로 반환됩니다.
 
 ## 핵심 흐름
 
@@ -48,7 +48,8 @@
 
 | 파일 | 역할 |
 | --- | --- |
-| `src/processor.ts` | `processImage()` 팩토리와 `ImageProcessor` 체이닝 API |
+| `src/processor.ts` | `processImage()` 팩토리와 `ImageProcessor` 체이닝 API — 연산 축적과 타입 상태 전이만 담당하는 얇은 축적기 |
+| `src/core/output-pipeline.internal.ts` | 출력 경로 deep module — 소스 정규화, 파이프라인 구성·누적 연산 재생, resize 1회 런타임 가드, 포맷/품질 기본값, 인코딩, `CanvasLease` consume/detach, Result 래핑 |
 | `src/core/source-converter/index.ts` | `convertToImageElement` / `getImageDimensions` 오케스트레이션 |
 | `src/core/source-converter/detect.internal.ts` | `detectSourceType()`과 `SourceType` 정의 |
 | `src/core/source-converter/options.internal.ts` | 내부 옵션 타입과 `MAX_SVG_BYTES` 등 상수 |
