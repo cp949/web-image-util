@@ -1,4 +1,4 @@
-import type { SvgIdPrefixDeoptReason } from '../prefix-svg-ids';
+import type { SvgIdPrefixDeoptReason } from './types.internal';
 
 /**
  * SVG 문자열을 DOMParser로 파싱한다.

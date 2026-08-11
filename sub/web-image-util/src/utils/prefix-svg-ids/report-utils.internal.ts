@@ -1,5 +1,5 @@
 import { MAX_SVG_BYTES } from '../../core/source-converter/options.internal';
-import type { SvgIdPrefixDeoptReason, SvgIdPrefixResult, SvgIdPrefixWarning } from '../prefix-svg-ids';
+import type { SvgIdPrefixDeoptReason, SvgIdPrefixResult, SvgIdPrefixWarning } from './types.internal';
 
 /** prefixSvgIds 실행 환경 표시. report.environment와 동일 규칙. */
 type PrefixEnvironment = 'browser' | 'happy-dom' | 'node' | 'unknown';
