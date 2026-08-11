@@ -1,8 +1,6 @@
 import { MAX_SVG_BYTES } from '../../core/source-converter/options.internal';
+import type { RuntimeEnvironment } from '../environment.internal';
 import type { SvgIdPrefixDeoptReason, SvgIdPrefixResult, SvgIdPrefixWarning } from './types.internal';
-
-/** prefixSvgIds 실행 환경 표시. report.environment와 동일 규칙. */
-type PrefixEnvironment = 'browser' | 'happy-dom' | 'node' | 'unknown';
 
 /** 정상 경로의 생략 count 모음. 각 count는 0 이상이며 0이면 warnings에 포함하지 않는다. */
 export interface PrefixWarningCounts {
@@ -37,7 +35,7 @@ export function buildPrefixWarnings(counts: PrefixWarningCounts): SvgIdPrefixWar
 export function buildDeoptResult(
   svgString: string,
   bytes: number,
-  environment: PrefixEnvironment,
+  environment: RuntimeEnvironment,
   deoptReasons: SvgIdPrefixDeoptReason[]
 ): SvgIdPrefixResult {
   return {
