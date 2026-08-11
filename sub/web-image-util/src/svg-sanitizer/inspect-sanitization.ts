@@ -12,7 +12,7 @@
 
 import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import { ImageProcessError } from '../errors.internal';
-import { detectSvgInspectionEnvironment } from '../utils/environment.internal';
+import { detectRuntimeEnvironment } from '../utils/environment.internal';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 import { collectEmbeddedImageStages, collectGeneralStages } from './inspect-sanitization/stage-collectors.internal';
 import type {
@@ -319,7 +319,7 @@ export async function inspectSvgSanitization(
   const policy: SvgSanitizerPolicy = policyOption ?? 'lightweight';
 
   const bytes = UTF8_ENCODER.encode(svgString).length;
-  const environment = detectSvgInspectionEnvironment();
+  const environment = detectRuntimeEnvironment();
 
   // byte 초과 → 정책별 fallback
   if (bytes > MAX_SVG_BYTES) {

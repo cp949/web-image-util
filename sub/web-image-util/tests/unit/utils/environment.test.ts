@@ -6,20 +6,20 @@
  */
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { detectSvgInspectionEnvironment } from '../../../src/utils/environment.internal';
+import { detectRuntimeEnvironment } from '../../../src/utils/environment.internal';
 
-describe('detectSvgInspectionEnvironment', () => {
+describe('detectRuntimeEnvironment', () => {
   afterEach(() => {
     delete (globalThis as unknown as Record<string, unknown>).happyDOM;
   });
 
   // 테스트 셋업(jsdom) 의존: window/document/DOMParser가 존재하는 환경을 전제한다.
   it('jsdom 셋업(window/document/DOMParser 존재)에서는 browser로 판정한다', () => {
-    expect(detectSvgInspectionEnvironment()).toBe('browser');
+    expect(detectRuntimeEnvironment()).toBe('browser');
   });
 
   it('globalThis.happyDOM이 있으면 window/document가 있어도 happy-dom이 우선한다', () => {
     (globalThis as unknown as Record<string, unknown>).happyDOM = {};
-    expect(detectSvgInspectionEnvironment()).toBe('happy-dom');
+    expect(detectRuntimeEnvironment()).toBe('happy-dom');
   });
 });

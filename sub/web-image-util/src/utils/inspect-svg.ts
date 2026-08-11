@@ -1,7 +1,7 @@
 import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import type { ComplexityAnalysisResult } from '../core/svg-complexity-analyzer';
 import { ImageProcessError } from '../errors.internal';
-import { detectSvgInspectionEnvironment } from './environment.internal';
+import { detectRuntimeEnvironment } from './environment.internal';
 import {
   callComplexityWrapper,
   collectDomFindings,
@@ -38,7 +38,7 @@ export function inspectSvg(svgString: unknown): InspectSvgReport {
     });
   }
 
-  const environment = detectSvgInspectionEnvironment();
+  const environment = detectRuntimeEnvironment();
 
   // UTF-8 바이트 측정
   const bytes = new TextEncoder().encode(svgString).length;
