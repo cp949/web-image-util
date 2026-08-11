@@ -18,7 +18,7 @@ import * as singleRenderer from '../../../src/core/single-renderer.internal';
 import { ImageProcessError } from '../../../src/types';
 
 vi.mock('../../../src/core/single-renderer.internal', () => ({
-  renderAllOperationsOnce: vi.fn(),
+  renderLayout: vi.fn(),
   analyzeAllOperations: vi.fn(),
   debugLayout: vi.fn(),
 }));
@@ -119,7 +119,7 @@ describe('LazyRenderPipeline (jsdom-safe)', () => {
       errorCanvas = createTestCanvas(100, 100);
       // 렌더러가 잘못된 config를 받으면 INVALID_DIMENSIONS를 던지는 상황을 시뮬레이션.
       // 기본 vi.fn()이 undefined를 반환해 TypeError로 통과하던 문제를 차단한다.
-      vi.mocked(singleRenderer.renderAllOperationsOnce).mockImplementation(() => {
+      vi.mocked(singleRenderer.renderLayout).mockImplementation(() => {
         throw new ImageProcessError('잘못된 resize 설정', 'INVALID_DIMENSIONS');
       });
       vi.mocked(singleRenderer.analyzeAllOperations).mockReturnValue(fixedLayout);
@@ -150,7 +150,7 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
 
   beforeEach(() => {
     testCanvas = createTestCanvas(100, 100);
-    vi.mocked(singleRenderer.renderAllOperationsOnce).mockReturnValue(new CanvasLease(testCanvas));
+    vi.mocked(singleRenderer.renderLayout).mockReturnValue(new CanvasLease(testCanvas));
     vi.mocked(singleRenderer.analyzeAllOperations).mockReturnValue(fixedLayout);
     vi.mocked(singleRenderer.debugLayout).mockImplementation(() => {});
   });
@@ -169,14 +169,14 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
 
     const { metadata } = p.render();
 
-    // 렌더러 호출 시점에 변환된 resize op이 args에 포함됨을 검증 (출력 직전 변환 계약)
-    expect(vi.mocked(singleRenderer.renderAllOperationsOnce)).toHaveBeenCalledWith(
+    // 분석기 호출 시점에 변환된 resize op이 args에 포함됨을 검증 (출력 직전 변환 계약)
+    expect(vi.mocked(singleRenderer.analyzeAllOperations)).toHaveBeenCalledWith(
       img,
       expect.arrayContaining([
         expect.objectContaining({ type: 'resize', config: { fit: 'fill', width: 400, height: 300 } }),
-      ]),
-      fixedLayout
+      ])
     );
+    expect(vi.mocked(singleRenderer.renderLayout)).toHaveBeenCalledWith(img, fixedLayout);
 
     // 출력 이후: pending이 ResizeConfig로 변환되어 1개 추가됨
     expect(p.getOperationCount()).toBe(1);
@@ -197,14 +197,14 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
 
     const { metadata } = p.render();
 
-    // 렌더러 호출 시점에 변환된 resize op이 args에 포함됨을 검증
-    expect(vi.mocked(singleRenderer.renderAllOperationsOnce)).toHaveBeenCalledWith(
+    // 분석기 호출 시점에 변환된 resize op이 args에 포함됨을 검증
+    expect(vi.mocked(singleRenderer.analyzeAllOperations)).toHaveBeenCalledWith(
       img,
       expect.arrayContaining([
         expect.objectContaining({ type: 'resize', config: { fit: 'fill', width: 400, height: 300 } }),
-      ]),
-      fixedLayout
+      ])
     );
+    expect(vi.mocked(singleRenderer.renderLayout)).toHaveBeenCalledWith(img, fixedLayout);
 
     expect(metadata.operations).toBe(1);
     // 높이 = round(400 * (600/800)) = 300
@@ -224,14 +224,14 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
 
     const { metadata } = p.render();
 
-    // 렌더러 호출 시점에 변환된 resize op이 args에 포함됨을 검증
-    expect(vi.mocked(singleRenderer.renderAllOperationsOnce)).toHaveBeenCalledWith(
+    // 분석기 호출 시점에 변환된 resize op이 args에 포함됨을 검증
+    expect(vi.mocked(singleRenderer.analyzeAllOperations)).toHaveBeenCalledWith(
       img,
       expect.arrayContaining([
         expect.objectContaining({ type: 'resize', config: { fit: 'fill', width: 400, height: 300 } }),
-      ]),
-      fixedLayout
+      ])
     );
+    expect(vi.mocked(singleRenderer.renderLayout)).toHaveBeenCalledWith(img, fixedLayout);
 
     expect(metadata.operations).toBe(1);
     // 너비 = round(300 * (800/600)) = 400
@@ -322,7 +322,7 @@ describe('LazyRenderPipeline — render() lease 계약', () => {
 
   beforeEach(() => {
     testCanvas = createTestCanvas(100, 100);
-    vi.mocked(singleRenderer.renderAllOperationsOnce).mockReturnValue(new CanvasLease(testCanvas));
+    vi.mocked(singleRenderer.renderLayout).mockReturnValue(new CanvasLease(testCanvas));
     vi.mocked(singleRenderer.analyzeAllOperations).mockReturnValue(fixedLayout);
     vi.mocked(singleRenderer.debugLayout).mockImplementation(() => {});
   });
@@ -372,7 +372,7 @@ describe('LazyRenderPipeline — render() 오류 경계', () => {
 
   beforeEach(() => {
     testCanvas = createTestCanvas(100, 100);
-    vi.mocked(singleRenderer.renderAllOperationsOnce).mockReturnValue(new CanvasLease(testCanvas));
+    vi.mocked(singleRenderer.renderLayout).mockReturnValue(new CanvasLease(testCanvas));
     vi.mocked(singleRenderer.analyzeAllOperations).mockReturnValue(fixedLayout);
   });
 

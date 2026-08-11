@@ -12,7 +12,7 @@ import type { BlurOptions, ResultMetadata } from '../types';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import type { ResizeOperation, ScaleOperation } from '../types/shortcut-types';
-import { analyzeAllOperations, debugLayout, renderAllOperationsOnce } from './single-renderer.internal';
+import { analyzeAllOperations, debugLayout, renderLayout } from './single-renderer.internal';
 
 /**
  * Operation definition for lazy execution
@@ -139,7 +139,7 @@ export class LazyRenderPipeline {
 
     // layout은 한 번만 계산해 렌더링과 디버그 출력에 재사용한다
     const layout = analyzeAllOperations(this.sourceImage, this.operations);
-    const lease = renderAllOperationsOnce(this.sourceImage, this.operations, layout);
+    const lease = renderLayout(this.sourceImage, layout);
 
     try {
       const canvas = lease.canvas;
