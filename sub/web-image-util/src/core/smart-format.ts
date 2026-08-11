@@ -5,45 +5,18 @@
 
 import type { ImageFormat } from '../base/format-detector';
 import { FORMAT_MIME_MAP, FormatDetector } from '../base/format-detector';
-import { calculateFormatScores, type ImageAnalysis, mergeSmartFormatOptions } from './smart-format-helpers.internal';
+import {
+  calculateFormatScores,
+  type ImageAnalysis,
+  ImagePurpose,
+  mergeSmartFormatOptions,
+  type SmartFormatOptions,
+} from './smart-format-helpers.internal';
 
-/**
- * Image purpose-based optimization presets
- *
- * @description Enum defining optimization strategies based on image usage purpose
- * Optimization criteria such as quality, size, and compatibility vary by purpose.
- */
-export enum ImagePurpose {
-  WEB = 'web', // Web pages (general web usage)
-  THUMBNAIL = 'thumbnail', // Thumbnails (small size, fast loading)
-  PRINT = 'print', // Print use (maintain high quality)
-  SOCIAL = 'social', // Social media (platform-specific optimization)
-  ICON = 'icon', // Icons (clarity priority)
-  ARCHIVE = 'archive', // Archive use (lossless priority)
-}
-
-/**
- * Smart format options
- */
-export interface SmartFormatOptions {
-  /** Image purpose (affects automatic optimization) */
-  purpose?: ImagePurpose;
-
-  /** Maximum file size (in KB) */
-  maxSizeKB?: number;
-
-  /** Quality priority (0: compression priority, 1: quality priority) */
-  qualityPriority?: number; // 0-1
-
-  /** Whether to prioritize browser compatibility */
-  legacyCompatible?: boolean;
-
-  /** Whether to preserve transparency (auto-detectable) */
-  preserveTransparency?: boolean;
-
-  /** Allowed formats (if you want to restrict) */
-  allowedFormats?: ImageFormat[];
-}
+// 공개 타입·enum의 정의는 스택의 leaf(smart-format-helpers.internal.ts)에 있다.
+// 이 재export가 공개 표면(advanced-index.ts 경유)을 그대로 유지한다.
+export type { SmartFormatOptions } from './smart-format-helpers.internal';
+export { ImagePurpose } from './smart-format-helpers.internal';
 
 /**
  * Format optimization result

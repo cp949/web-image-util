@@ -1,6 +1,43 @@
 import type { ImageFormat } from '../base/format-detector';
 import { ImageFormats } from '../types';
-import type { SmartFormatOptions } from './smart-format';
+
+/**
+ * Image purpose-based optimization presets
+ *
+ * @description Enum defining optimization strategies based on image usage purpose
+ * Optimization criteria such as quality, size, and compatibility vary by purpose.
+ */
+export enum ImagePurpose {
+  WEB = 'web', // Web pages (general web usage)
+  THUMBNAIL = 'thumbnail', // Thumbnails (small size, fast loading)
+  PRINT = 'print', // Print use (maintain high quality)
+  SOCIAL = 'social', // Social media (platform-specific optimization)
+  ICON = 'icon', // Icons (clarity priority)
+  ARCHIVE = 'archive', // Archive use (lossless priority)
+}
+
+/**
+ * Smart format options
+ */
+export interface SmartFormatOptions {
+  /** Image purpose (affects automatic optimization) */
+  purpose?: ImagePurpose;
+
+  /** Maximum file size (in KB) */
+  maxSizeKB?: number;
+
+  /** Quality priority (0: compression priority, 1: quality priority) */
+  qualityPriority?: number; // 0-1
+
+  /** Whether to prioritize browser compatibility */
+  legacyCompatible?: boolean;
+
+  /** Whether to preserve transparency (auto-detectable) */
+  preserveTransparency?: boolean;
+
+  /** Allowed formats (if you want to restrict) */
+  allowedFormats?: ImageFormat[];
+}
 
 export interface ImageAnalysis {
   hasTransparency: boolean;
