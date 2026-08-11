@@ -6,8 +6,8 @@
  * DOMPurify의 top-level import를 수행하지 않는다. strict 경로만 `await import('./core.internal')`로
  * DOMPurify에 동적 접근한다.
  *
- * 본 모듈은 TASK-01 시점에 외부로 노출되지 않는다. `svg-sanitizer/index.ts` 추가와
- * contract 픽스처 갱신은 TASK-04에서 한 번에 수행한다.
+ * 공개 표면은 `svg-sanitizer/index.ts`의 재export를 경유하며, 구현은 이 파일의
+ * 부수효과 없는 진단 함수에 둔다.
  */
 
 import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
