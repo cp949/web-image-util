@@ -227,25 +227,85 @@ describe('createOwnedCanvas', () => {
 });
 
 // ============================================================================
-// canvasToBlob (canvas-utils 버전)
+// canvasToBlob — 통합 canvas→Blob 인코더
 // ============================================================================
 
-describe('canvasToBlob (canvas-utils)', () => {
-  it('PNG Blob으로 resolve한다', async () => {
+describe('canvasToBlob (통합 인코더)', () => {
+  it('mimeType과 quality를 canvas.toBlob에 전달하고 Blob으로 resolve한다', async () => {
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
-    const blob = await canvasToBlob(canvas, 'image/png', 1);
+    const toBlobSpy = vi.spyOn(canvas, 'toBlob');
+
+    const blob = await canvasToBlob(canvas, { mimeType: 'image/png', quality: 1 });
+
     expect(blob).toBeInstanceOf(Blob);
+    expect(toBlobSpy).toHaveBeenCalledWith(expect.any(Function), 'image/png', 1);
+    toBlobSpy.mockRestore();
   });
 
-  it('toBlob이 null을 반환하면 ImageProcessError로 reject한다', async () => {
+  it('1차 인코딩 실패 시 fallbackMimeType으로 1회 재시도한다', async () => {
+    const canvas = document.createElement('canvas');
+    const fakeBlob = new Blob(['x'], { type: 'image/png' });
+    const toBlobSpy = vi
+      .spyOn(canvas, 'toBlob')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mockImplementationOnce((cb: any) => cb(null))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mockImplementationOnce((cb: any) => cb(fakeBlob));
+
+    const blob = await canvasToBlob(canvas, {
+      mimeType: 'image/webp',
+      quality: 0.5,
+      fallbackMimeType: 'image/png',
+    });
+
+    expect(blob).toBe(fakeBlob);
+    expect(toBlobSpy).toHaveBeenCalledTimes(2);
+    expect(toBlobSpy.mock.calls[1][1]).toBe('image/png');
+    expect(toBlobSpy.mock.calls[1][2]).toBe(0.5);
+    toBlobSpy.mockRestore();
+  });
+
+  it('fallbackMimeType 미지정이면 재시도 없이 reject한다', async () => {
     const canvas = document.createElement('canvas');
     const toBlobSpy = vi
       .spyOn(canvas, 'toBlob')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation((cb: any) => cb(null));
-    await expect(canvasToBlob(canvas, 'image/png', 1)).rejects.toBeInstanceOf(ImageProcessError);
+
+    await expect(canvasToBlob(canvas, { mimeType: 'image/png' })).rejects.toBeInstanceOf(ImageProcessError);
+    expect(toBlobSpy).toHaveBeenCalledTimes(1);
+    toBlobSpy.mockRestore();
+  });
+
+  it('재시도까지 실패하면 기본 코드 CANVAS_TO_BLOB_FAILED와 고정 메시지로 reject한다', async () => {
+    const canvas = document.createElement('canvas');
+    const toBlobSpy = vi
+      .spyOn(canvas, 'toBlob')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mockImplementation((cb: any) => cb(null));
+
+    await expect(canvasToBlob(canvas, { mimeType: 'image/webp', fallbackMimeType: 'image/png' })).rejects.toMatchObject(
+      {
+        code: 'CANVAS_TO_BLOB_FAILED',
+        message: 'Canvas to Blob conversion failed',
+      }
+    );
+    expect(toBlobSpy).toHaveBeenCalledTimes(2);
+    toBlobSpy.mockRestore();
+  });
+
+  it('errorCode 옵션이 에러 code에 반영된다', async () => {
+    const canvas = document.createElement('canvas');
+    const toBlobSpy = vi
+      .spyOn(canvas, 'toBlob')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mockImplementation((cb: any) => cb(null));
+
+    await expect(canvasToBlob(canvas, { mimeType: 'image/png', errorCode: 'OUTPUT_FAILED' })).rejects.toMatchObject({
+      code: 'OUTPUT_FAILED',
+    });
     toBlobSpy.mockRestore();
   });
 });

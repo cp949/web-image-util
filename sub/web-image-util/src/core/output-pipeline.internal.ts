@@ -13,6 +13,7 @@
  */
 
 import type { CanvasLease } from '../base/canvas-lease.internal';
+import { canvasToBlob } from '../base/canvas-utils.internal';
 import type {
   BlurOptions,
   ImageFormat,
@@ -502,42 +503,21 @@ function applyFormatExtensionToFilename(filename: string, format: OutputFormat):
  * Canvas를 Blob으로 인코딩한다.
  *
  * - 요청 포맷으로 변환 실패(blob === null) 시 fallbackFormat으로 재시도한다.
- * - 재시도도 실패하면 ImageProcessError('Failed to create Blob from Canvas', 'OUTPUT_FAILED')를 reject한다.
+ * - 재시도도 실패하면 ImageProcessError('Canvas to Blob conversion failed', 'OUTPUT_FAILED')를 reject한다.
  * - 브라우저가 요청 포맷 대신 다른 MIME으로 반환할 수 있으므로 실제 type 기준으로 포맷을 결정한다.
  */
-function encodeCanvasToBlob(
+async function encodeCanvasToBlob(
   canvas: HTMLCanvasElement,
   options: Required<OutputOptions>
 ): Promise<{ blob: Blob; format: OutputFormat }> {
-  const mimeType = formatToMimeType(options.format);
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) {
-          const actualFormat = mimeTypeToOutputFormat(blob.type) ?? options.format;
-          resolve({ blob, format: actualFormat });
-        } else {
-          // 요청 포맷 미지원 시 fallback 포맷으로 재시도한다.
-          const fallbackMimeType = formatToMimeType(options.fallbackFormat);
-          canvas.toBlob(
-            (fallbackBlob) => {
-              if (fallbackBlob) {
-                const actualFallbackFormat = mimeTypeToOutputFormat(fallbackBlob.type) ?? options.fallbackFormat;
-                resolve({ blob: fallbackBlob, format: actualFallbackFormat });
-              } else {
-                reject(new ImageProcessError('Failed to create Blob from Canvas', 'OUTPUT_FAILED'));
-              }
-            },
-            fallbackMimeType,
-            options.quality
-          );
-        }
-      },
-      mimeType,
-      options.quality
-    );
+  const blob = await canvasToBlob(canvas, {
+    mimeType: formatToMimeType(options.format),
+    quality: options.quality,
+    fallbackMimeType: formatToMimeType(options.fallbackFormat),
+    errorCode: 'OUTPUT_FAILED',
   });
+
+  return { blob, format: mimeTypeToOutputFormat(blob.type) ?? options.format };
 }
 
 /** Blob을 Data URL 문자열로 변환한다. */

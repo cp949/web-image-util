@@ -27,6 +27,7 @@
  * ```
  */
 
+import { canvasToBlob } from './base/canvas-utils.internal';
 import type { FilterCategory, FilterOptions, FilterPlugin, FilterValidationResult } from './filters/plugin-system';
 import { getMissingFilterNames } from './filters/plugin-system';
 import { ImageProcessError } from './types';
@@ -167,16 +168,7 @@ export async function createAdvancedThumbnail(
 
   // 브라우저 구현 차이로 Blob이 비어 있으면 기본 JPEG Blob을 다시 만든다.
   if (!result.blob) {
-    result.blob = await new Promise<Blob>((resolve, reject) => {
-      result.canvas.toBlob(
-        (blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error('Blob creation failed'));
-        },
-        'image/jpeg',
-        0.8
-      );
-    });
+    result.blob = await canvasToBlob(result.canvas, { mimeType: 'image/jpeg', quality: 0.8 });
   }
 
   return {
@@ -237,16 +229,7 @@ export async function optimizeForSocial(
   });
 
   if (!result.blob) {
-    result.blob = await new Promise<Blob>((resolve, reject) => {
-      result.canvas.toBlob(
-        (blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error('Blob creation failed'));
-        },
-        'image/jpeg',
-        0.8
-      );
-    });
+    result.blob = await canvasToBlob(result.canvas, { mimeType: 'image/jpeg', quality: 0.8 });
   }
 
   return {

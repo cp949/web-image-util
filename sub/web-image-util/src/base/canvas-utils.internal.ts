@@ -1,3 +1,4 @@
+import { type ImageErrorCodeType, ImageProcessError } from '../errors.internal';
 import { CanvasPool } from './canvas-pool.internal';
 import { createImageError } from './error-helpers';
 
@@ -155,24 +156,44 @@ export function createOwnedCanvas(
 }
 
 /**
- * Convert Canvas to Blob (for managed Canvas)
+ * 통합 canvas→Blob 인코더 옵션.
  *
- * @param canvas - Canvas to convert
- * @param type - MIME type
- * @param quality - Quality (0-1)
- * @returns Blob Promise
+ * 포맷 결정 정책(어떤 MIME/품질을 쓸지)은 호출자 소유다 — 이 인코더는
+ * Promise 래핑, null 실패 시 1회 재시도, 에러 변환만 담당한다.
  */
-export function canvasToBlob(canvas: HTMLCanvasElement, type: string = 'image/png', quality?: number): Promise<Blob> {
+export interface CanvasToBlobOptions {
+  /** 인코딩 MIME 타입 (예: 'image/png') */
+  mimeType: string;
+  /** 인코딩 품질(0~1). 미지정 시 브라우저 기본값 */
+  quality?: number;
+  /** 지정 시 1차 인코딩 실패(blob === null)에 한해 이 MIME으로 1회 재시도한다 */
+  fallbackMimeType?: string;
+  /** 실패 시 던질 ImageProcessError 코드. 기본 'CANVAS_TO_BLOB_FAILED' */
+  errorCode?: ImageErrorCodeType;
+}
+
+/**
+ * Canvas를 Blob으로 인코딩한다 — 라이브러리 전체가 공유하는 단일 인코딩 경로.
+ *
+ * 실패 시 `ImageProcessError('Canvas to Blob conversion failed', errorCode)`로 reject한다.
+ */
+export function canvasToBlob(canvas: HTMLCanvasElement, options: CanvasToBlobOptions): Promise<Blob> {
+  const { mimeType, quality, fallbackMimeType, errorCode = 'CANVAS_TO_BLOB_FAILED' } = options;
+
   return new Promise((resolve, reject) => {
+    const fail = () => reject(new ImageProcessError('Canvas to Blob conversion failed', errorCode));
+
     canvas.toBlob(
       (blob) => {
         if (blob) {
           resolve(blob);
+        } else if (fallbackMimeType) {
+          canvas.toBlob((fallbackBlob) => (fallbackBlob ? resolve(fallbackBlob) : fail()), fallbackMimeType, quality);
         } else {
-          reject(createImageError('CONVERSION_FAILED', { cause: new Error(`Canvas to ${type} conversion failed`) }));
+          fail();
         }
       },
-      type,
+      mimeType,
       quality
     );
   });

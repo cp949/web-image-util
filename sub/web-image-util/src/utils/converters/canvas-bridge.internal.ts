@@ -5,6 +5,7 @@
  * Element → Canvas 그리기, Blob 크기 측정 같은 보조 기능을 모아둔다.
  */
 
+import { canvasToBlob as encodeCanvasToBlob } from '../../base/canvas-utils.internal';
 import type { OutputOptions } from '../../types';
 import { ImageProcessError } from '../../types';
 import { formatToMimeType } from '../format-utils';
@@ -12,35 +13,14 @@ import { createImageElement } from '../image-element.internal';
 
 /**
  * Convert Canvas to Blob
+ *
+ * 1차 인코딩 실패 시 fallbackFormat(기본 png)으로 1회 재시도한다.
  */
 export async function canvasToBlob(canvas: HTMLCanvasElement, options: OutputOptions): Promise<Blob> {
-  const mimeType = formatToMimeType(options.format || 'png');
-  const quality = options.quality ?? 0.8;
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          // Retry with fallback format
-          const fallbackMimeType = formatToMimeType(options.fallbackFormat || 'png');
-          canvas.toBlob(
-            (fallbackBlob) => {
-              if (fallbackBlob) {
-                resolve(fallbackBlob);
-              } else {
-                reject(new Error('Canvas to Blob conversion failed'));
-              }
-            },
-            fallbackMimeType,
-            quality
-          );
-        }
-      },
-      mimeType,
-      quality
-    );
+  return encodeCanvasToBlob(canvas, {
+    mimeType: formatToMimeType(options.format || 'png'),
+    quality: options.quality ?? 0.8,
+    fallbackMimeType: formatToMimeType(options.fallbackFormat || 'png'),
   });
 }
 

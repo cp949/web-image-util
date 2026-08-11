@@ -178,7 +178,7 @@ describe('AdvancedImageProcessor.createThumbnail 분기', () => {
       expect(result.blob!.type).toBe('image/jpeg');
     });
 
-    it('canvas.toBlob 콜백이 null을 받으면 "Blob creation failed" 에러로 reject된다', async () => {
+    it('canvas.toBlob 콜백이 null을 받으면 CANVAS_TO_BLOB_FAILED 오류로 reject된다', async () => {
       // blob 없는 결과 → createThumbnail이 canvas.toBlob 경로에 진입
       processImageSpy.mockResolvedValue(makeProcessResult({ withBlob: false }) as any);
       // toBlob 콜백을 null로 강제 호출해 reject 분기 유도
@@ -187,7 +187,9 @@ describe('AdvancedImageProcessor.createThumbnail 분기', () => {
       });
 
       const img = createMockImage();
-      await expect(AdvancedImageProcessor.createThumbnail(img, 100)).rejects.toThrow('Blob creation failed');
+      await expect(AdvancedImageProcessor.createThumbnail(img, 100)).rejects.toMatchObject({
+        code: 'CANVAS_TO_BLOB_FAILED',
+      });
     });
 
     it('반환값은 canvas · blob만으로 구성된다 (AdvancedProcessingResult 전체 반환 회귀 방지)', async () => {

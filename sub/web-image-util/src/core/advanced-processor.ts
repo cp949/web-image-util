@@ -3,6 +3,7 @@
  * Provides advanced features through a unified, consistent API
  */
 
+import { canvasToBlob } from '../base/canvas-utils.internal';
 import type { ImageFormat } from '../base/format-detector';
 import type { SimpleImageWatermarkOptions, SimpleTextWatermarkOptions } from '../composition/simple-watermark';
 import { SimpleWatermark } from '../composition/simple-watermark';
@@ -187,16 +188,7 @@ export class AdvancedImageProcessor {
             purpose: ImagePurpose.WEB,
           });
 
-          blob = await new Promise<Blob>((resolve, reject) => {
-            canvas.toBlob(
-              (blob) => {
-                if (blob) resolve(blob);
-                else reject(new Error('Failed to create Blob'));
-              },
-              formatResult.mimeType,
-              formatResult.quality
-            );
-          });
+          blob = await canvasToBlob(canvas, { mimeType: formatResult.mimeType, quality: formatResult.quality });
 
           formatOptimization = {
             finalFormat: formatResult.format,
@@ -208,16 +200,7 @@ export class AdvancedImageProcessor {
         } else if (typeof options.format === 'string') {
           // Specific format specified
           const mimeType = `image/${options.format}`;
-          blob = await new Promise<Blob>((resolve, reject) => {
-            canvas.toBlob(
-              (blob) => {
-                if (blob) resolve(blob);
-                else reject(new Error('Failed to create Blob'));
-              },
-              mimeType,
-              0.8
-            );
-          });
+          blob = await canvasToBlob(canvas, { mimeType, quality: 0.8 });
 
           formatOptimization = {
             finalFormat: options.format,
@@ -228,16 +211,7 @@ export class AdvancedImageProcessor {
           // Using SmartFormatOptions
           const formatResult = await SmartFormatSelector.selectOptimalFormat(canvas, options.format);
 
-          blob = await new Promise<Blob>((resolve, reject) => {
-            canvas.toBlob(
-              (blob) => {
-                if (blob) resolve(blob);
-                else reject(new Error('Failed to create Blob'));
-              },
-              formatResult.mimeType,
-              formatResult.quality
-            );
-          });
+          blob = await canvasToBlob(canvas, { mimeType: formatResult.mimeType, quality: formatResult.quality });
 
           formatOptimization = {
             finalFormat: formatResult.format,
@@ -312,17 +286,7 @@ export class AdvancedImageProcessor {
 
     if (!result.blob) {
       // Generate as default JPEG when Blob is not created
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        result.canvas.toBlob(
-          (blob) => {
-            if (blob) resolve(blob);
-            else reject(new Error('Blob creation failed'));
-          },
-          'image/jpeg',
-          0.8
-        );
-      });
-      result.blob = blob;
+      result.blob = await canvasToBlob(result.canvas, { mimeType: 'image/jpeg', quality: 0.8 });
     }
 
     return {
