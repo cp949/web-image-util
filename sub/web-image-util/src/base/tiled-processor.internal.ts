@@ -1,4 +1,4 @@
-import { withManagedCanvas } from './canvas-utils.internal';
+import { createOwnedCanvas, withManagedCanvas } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
 
 /**
@@ -74,18 +74,16 @@ export class TiledProcessor {
       opts.overlapSize
     );
 
-    return await withManagedCanvas(targetWidth, targetHeight, async (resultCanvas, resultCtx) => {
-      // High-quality rendering settings
-      if (opts.quality === 'high') {
-        resultCtx.imageSmoothingEnabled = true;
-        resultCtx.imageSmoothingQuality = 'high';
-      }
+    // 결과 canvas는 호출자 소유 — pool을 거치지 않는다 (타일 중간 canvas만 pool 사용)
+    const { canvas: resultCanvas, ctx: resultCtx } = createOwnedCanvas(targetWidth, targetHeight);
+    if (opts.quality === 'high') {
+      resultCtx.imageSmoothingEnabled = true;
+      resultCtx.imageSmoothingQuality = 'high';
+    }
 
-      // Process tiles
-      await TiledProcessor.processTiles(img, tiles, scaleX, scaleY, resultCtx, opts);
+    await TiledProcessor.processTiles(img, tiles, scaleX, scaleY, resultCtx, opts);
 
-      return resultCanvas;
-    });
+    return resultCanvas;
   }
 
   /**
@@ -209,72 +207,7 @@ export class TiledProcessor {
 
       // Composite processed tile to result Canvas
       resultCtx.drawImage(tileCanvas, tile.x, tile.y);
-
-      return tileCanvas;
-    });
-  }
-
-  /**
-   * Apply custom processing per tile
-   *
-   * @param img - Source image
-   * @param processor - Function to process each tile
-   * @param options - Processing options
-   * @returns Processed Canvas
-   */
-  static async processInTiles<T>(
-    img: HTMLImageElement,
-    processor: (tileCanvas: HTMLCanvasElement, tileInfo: TileInfo) => Promise<HTMLCanvasElement> | HTMLCanvasElement,
-    options: TiledProcessingOptions = {}
-  ): Promise<HTMLCanvasElement> {
-    const opts = { ...TiledProcessor.DEFAULT_OPTIONS, ...options };
-    const { width: imgWidth, height: imgHeight } = img;
-
-    // Generate tile information
-    const tiles = TiledProcessor.generateSimpleTilePlan(imgWidth, imgHeight, opts.tileSize, opts.overlapSize);
-
-    return withManagedCanvas(imgWidth, imgHeight, async (resultCanvas, resultCtx) => {
-      let processedTiles = 0;
-      const totalTiles = tiles.length;
-
-      // Process each tile
-      for (const tile of tiles) {
-        // Extract tile
-        const extractedTile = await withManagedCanvas(tile.sourceWidth, tile.sourceHeight, (tileCanvas, tileCtx) => {
-          tileCtx.drawImage(
-            img,
-            tile.sourceX,
-            tile.sourceY,
-            tile.sourceWidth,
-            tile.sourceHeight,
-            0,
-            0,
-            tile.sourceWidth,
-            tile.sourceHeight
-          );
-          return tileCanvas;
-        });
-
-        // Apply custom processor
-        const processedTile = await processor(extractedTile, tile);
-
-        // Merge to result
-        resultCtx.drawImage(processedTile, tile.sourceX, tile.sourceY);
-
-        // Memory cleanup
-        extractedTile.width = 0;
-        extractedTile.height = 0;
-        if (processedTile !== extractedTile) {
-          processedTile.width = 0;
-          processedTile.height = 0;
-        }
-
-        // Update progress
-        processedTiles++;
-        opts.onProgress?.(processedTiles, totalTiles);
-      }
-
-      return resultCanvas;
+      // 임대 canvas는 콜백 밖으로 내보내지 않는다 — 여기서 소비 완료
     });
   }
 

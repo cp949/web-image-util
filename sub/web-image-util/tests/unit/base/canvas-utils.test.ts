@@ -1,8 +1,8 @@
 /**
  * canvas-utils.ts 단위 테스트
  *
- * ManagedCanvas 클래스, withManagedCanvas / withMultipleManagedCanvas 헬퍼,
- * copyCanvas, setupHighQualityCanvas, 풀 관리 함수의
+ * ManagedCanvas 클래스, withManagedCanvas 헬퍼, createOwnedCanvas,
+ * setupHighQualityCanvas, 풀 관리 함수의
  * 구조적 속성(dimension, 호출 횟수, dispose 상태)을 검증한다.
  */
 
@@ -11,13 +11,12 @@ import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import {
   canvasToBlob,
   clearCanvasPool,
-  copyCanvas,
+  createOwnedCanvas,
   getCanvasPoolStats,
   ManagedCanvas,
   setCanvasPoolMaxSize,
   setupHighQualityCanvas,
   withManagedCanvas,
-  withMultipleManagedCanvas,
 } from '../../../src/base/canvas-utils.internal';
 import { ImageProcessError } from '../../../src/types';
 
@@ -159,6 +158,11 @@ describe('withManagedCanvas', () => {
     expect(result).toBe('hello');
   });
 
+  it('임대 canvas를 오퍼레이션 결과로 반환할 수 없다', async () => {
+    // @ts-expect-error pool에서 빌린 canvas는 withManagedCanvas 밖으로 내보낼 수 없다.
+    await withManagedCanvas(100, 100, (canvas) => canvas);
+  });
+
   it('오퍼레이션에 지정한 크기의 캔버스를 전달한다', async () => {
     await withManagedCanvas(120, 80, (canvas) => {
       expect(canvas.width).toBe(120);
@@ -198,96 +202,27 @@ describe('withManagedCanvas', () => {
 });
 
 // ============================================================================
-// withMultipleManagedCanvas
+// createOwnedCanvas
 // ============================================================================
 
-describe('withMultipleManagedCanvas', () => {
-  let pool: CanvasPool;
+describe('createOwnedCanvas', () => {
+  it('지정한 크기의 canvas와 context를 반환한다', () => {
+    const { canvas, ctx } = createOwnedCanvas(120, 80);
+    expect(canvas.width).toBe(120);
+    expect(canvas.height).toBe(80);
+    expect(ctx).toBeTruthy();
+  });
 
-  beforeEach(() => {
-    pool = CanvasPool.getInstance();
+  it('pool을 거치지 않는다 — acquire/release 통계가 변하지 않는다', () => {
+    const pool = CanvasPool.getInstance();
     pool.clear();
-  });
+    const before = pool.getStats();
 
-  it('지정한 개수만큼 캔버스를 오퍼레이션에 전달한다', async () => {
-    const sizes = [
-      { width: 100, height: 50 },
-      { width: 200, height: 100 },
-      { width: 150, height: 75 },
-    ];
-    await withMultipleManagedCanvas(sizes, (canvases) => {
-      expect(canvases).toHaveLength(3);
-    });
-  });
+    createOwnedCanvas(64, 64);
 
-  it('각 캔버스가 지정한 크기를 갖는다', async () => {
-    const sizes = [
-      { width: 80, height: 60 },
-      { width: 320, height: 240 },
-    ];
-    await withMultipleManagedCanvas(sizes, (canvases) => {
-      expect(canvases[0].canvas.width).toBe(80);
-      expect(canvases[0].canvas.height).toBe(60);
-      expect(canvases[1].canvas.width).toBe(320);
-      expect(canvases[1].canvas.height).toBe(240);
-    });
-  });
-
-  it('오퍼레이션 완료 후 모든 캔버스를 풀에 반환한다', async () => {
-    const statsBefore = pool.getStats().totalReleased;
-    await withMultipleManagedCanvas(
-      [
-        { width: 50, height: 50 },
-        { width: 50, height: 50 },
-      ],
-      () => 'done'
-    );
-    expect(pool.getStats().totalReleased).toBe(statsBefore + 2);
-  });
-
-  it('오퍼레이션 결과를 반환한다', async () => {
-    const result = await withMultipleManagedCanvas([{ width: 50, height: 50 }], () => 99);
-    expect(result).toBe(99);
-  });
-
-  it('오퍼레이션 에러 시에도 모든 캔버스를 풀에 반환한다', async () => {
-    const statsBefore = pool.getStats().totalReleased;
-    await expect(
-      withMultipleManagedCanvas(
-        [
-          { width: 50, height: 50 },
-          { width: 80, height: 80 },
-        ],
-        () => {
-          throw new Error('다중 캔버스 테스트 에러');
-        }
-      )
-    ).rejects.toThrow('다중 캔버스 테스트 에러');
-    expect(pool.getStats().totalReleased).toBe(statsBefore + 2);
-  });
-});
-
-// ============================================================================
-// copyCanvas
-// ============================================================================
-
-describe('copyCanvas', () => {
-  it('대상 크기 미지정 시 소스와 동일한 dimension을 가진 캔버스를 반환한다', async () => {
-    const source = document.createElement('canvas');
-    source.width = 100;
-    source.height = 50;
-    const copy = await copyCanvas(source);
-    expect(copy.width).toBe(100);
-    expect(copy.height).toBe(50);
-  });
-
-  it('대상 크기 지정 시 해당 dimension을 가진 캔버스를 반환한다', async () => {
-    const source = document.createElement('canvas');
-    source.width = 100;
-    source.height = 50;
-    const copy = await copyCanvas(source, 200, 100);
-    expect(copy.width).toBe(200);
-    expect(copy.height).toBe(100);
+    const after = pool.getStats();
+    expect(after.totalCreated).toBe(before.totalCreated);
+    expect(after.totalReleased).toBe(before.totalReleased);
   });
 });
 

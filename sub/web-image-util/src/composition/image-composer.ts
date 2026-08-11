@@ -1,4 +1,4 @@
-import { withManagedCanvas } from '../base/canvas-utils.internal';
+import { createOwnedCanvas } from '../base/canvas-utils.internal';
 import { ImageProcessError } from '../errors.internal';
 import { productionLog } from '../utils/debug.internal';
 import { drawImageLayer, drawPlacedImage, drawShadowedImage, fillCanvasBackground } from './canvas-drawing.internal';
@@ -62,17 +62,17 @@ export class ImageComposer {
   static async composeLayers(layers: Layer[], options: CompositionOptions): Promise<HTMLCanvasElement> {
     const { width, height, backgroundColor } = options;
 
-    return withManagedCanvas(width, height, (canvas, ctx) => {
-      fillCanvasBackground(ctx, width, height, backgroundColor);
+    // 결과 canvas는 호출자 소유 — pool을 거치지 않는다
+    const { canvas, ctx } = createOwnedCanvas(width, height);
+    fillCanvasBackground(ctx, width, height, backgroundColor);
 
-      for (const layer of layers) {
-        if (layer.visible === false) continue;
+    for (const layer of layers) {
+      if (layer.visible === false) continue;
 
-        drawImageLayer(ctx, layer);
-      }
+      drawImageLayer(ctx, layer);
+    }
 
-      return canvas;
-    });
+    return canvas;
   }
 
   /**
@@ -97,24 +97,24 @@ export class ImageComposer {
       spacing,
     });
 
-    return withManagedCanvas(canvasWidth, canvasHeight, (canvas, ctx) => {
-      fillCanvasBackground(ctx, canvasWidth, canvasHeight, backgroundColor);
+    // 결과 canvas는 호출자 소유 — pool을 거치지 않는다
+    const { canvas, ctx } = createOwnedCanvas(canvasWidth, canvasHeight);
+    fillCanvasBackground(ctx, canvasWidth, canvasHeight, backgroundColor);
 
-      for (let i = 0; i < maxImages; i++) {
-        const row = Math.floor(i / cols);
-        const col = i % cols;
-        const image = images[i];
+    for (let i = 0; i < maxImages; i++) {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const image = images[i];
 
-        const cellX = spacing + col * (cellWidth + spacing);
-        const cellY = spacing + row * (cellHeight + spacing);
+      const cellX = spacing + col * (cellWidth + spacing);
+      const cellY = spacing + row * (cellHeight + spacing);
 
-        const { x, y, width, height } = calculateFitSize(image.width, image.height, cellWidth, cellHeight, fit);
+      const { x, y, width, height } = calculateFitSize(image.width, image.height, cellWidth, cellHeight, fit);
 
-        drawPlacedImage(ctx, image, { x: cellX + x, y: cellY + y, width, height });
-      }
+      drawPlacedImage(ctx, image, { x: cellX + x, y: cellY + y, width, height });
+    }
 
-      return canvas;
-    });
+    return canvas;
   }
 
   /**
@@ -132,47 +132,47 @@ export class ImageComposer {
   ): Promise<HTMLCanvasElement> {
     const { backgroundColor = '#ffffff', randomRotation = true, maxRotation = 15, overlap = true } = options;
 
-    return withManagedCanvas(canvasSize.width, canvasSize.height, (canvas, ctx) => {
-      fillCanvasBackground(ctx, canvasSize.width, canvasSize.height, backgroundColor);
+    // 결과 canvas는 호출자 소유 — pool을 거치지 않는다
+    const { canvas, ctx } = createOwnedCanvas(canvasSize.width, canvasSize.height);
+    fillCanvasBackground(ctx, canvasSize.width, canvasSize.height, backgroundColor);
 
-      const usedAreas: Rectangle[] = [];
+    const usedAreas: Rectangle[] = [];
 
-      for (let i = 0; i < images.length; i++) {
-        const image = images[i];
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
 
-        const minScale = 0.15;
-        const maxScale = 0.3;
-        const scale = minScale + Math.random() * (maxScale - minScale);
+      const minScale = 0.15;
+      const maxScale = 0.3;
+      const scale = minScale + Math.random() * (maxScale - minScale);
 
-        const scaledWidth = image.width * scale;
-        const scaledHeight = image.height * scale;
+      const scaledWidth = image.width * scale;
+      const scaledHeight = image.height * scale;
 
-        let x: number, y: number;
-        let attempts = 0;
-        const maxAttempts = 50;
+      let x: number, y: number;
+      let attempts = 0;
+      const maxAttempts = 50;
 
-        do {
-          x = Math.random() * (canvasSize.width - scaledWidth);
-          y = Math.random() * (canvasSize.height - scaledHeight);
-          attempts++;
-        } while (
-          !overlap &&
-          attempts < maxAttempts &&
-          rectanglesOverlap({ x, y, width: scaledWidth, height: scaledHeight }, usedAreas)
-        );
+      do {
+        x = Math.random() * (canvasSize.width - scaledWidth);
+        y = Math.random() * (canvasSize.height - scaledHeight);
+        attempts++;
+      } while (
+        !overlap &&
+        attempts < maxAttempts &&
+        rectanglesOverlap({ x, y, width: scaledWidth, height: scaledHeight }, usedAreas)
+      );
 
-        usedAreas.push({ x, y, width: scaledWidth, height: scaledHeight });
+      usedAreas.push({ x, y, width: scaledWidth, height: scaledHeight });
 
-        drawShadowedImage(ctx, image, {
-          x,
-          y,
-          width: scaledWidth,
-          height: scaledHeight,
-          rotation: randomRotation ? (Math.random() - 0.5) * 2 * maxRotation : undefined,
-        });
-      }
+      drawShadowedImage(ctx, image, {
+        x,
+        y,
+        width: scaledWidth,
+        height: scaledHeight,
+        rotation: randomRotation ? (Math.random() - 0.5) * 2 * maxRotation : undefined,
+      });
+    }
 
-      return canvas;
-    });
+    return canvas;
   }
 }

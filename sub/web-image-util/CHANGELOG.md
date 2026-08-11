@@ -8,6 +8,14 @@
 
 - Added: image-common 문자열 입력에서 Blob URL(`blob:`)을 지원합니다. `processImage()`와 문자열 변환 유틸은 fetch된 Blob의 MIME 타입을 기준으로 Blob/Data URL/File/Element 출력을 생성합니다.
 
+### 수정
+
+- Fixed: advanced 서브패스의 고해상도 처리(`HighResolutionManager.smartResize`, `autoSmartResize`, `smartResizeWithProgress`, `AdvancedImageProcessor`)가 항상 빈(또는 크기 0의) canvas를 반환하던 결함을 수정했습니다. 내부 Canvas Pool이 반환 직전에 canvas를 회수·초기화하면서 결과 픽셀이 지워지고, 연속 호출 시 이전 결과 canvas가 재사용되는 문제였습니다. 결과 canvas는 이제 pool을 거치지 않는 호출자 소유 canvas로 생성됩니다.
+
+### 제거
+
+- Removed: 내부 유틸 `copyCanvas`, `withMultipleManagedCanvas`, `TiledProcessor.processInTiles`, `LazyRenderPipeline.toBlob`을 제거했습니다. 모두 공개 API가 아니며 라이브러리 내부에서 사용되지 않았습니다.
+
 ## [3.0.0] - 2026-06-04
 
 ### 추가

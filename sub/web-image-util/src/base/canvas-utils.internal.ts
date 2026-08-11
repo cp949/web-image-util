@@ -1,6 +1,8 @@
 import { CanvasPool } from './canvas-pool.internal';
 import { createImageError } from './error-helpers';
 
+type ManagedCanvasOperationResult<T> = T extends HTMLCanvasElement ? never : T;
+
 /**
  * Wrapper class that automatically manages Canvas operations
  * Manages Canvas lifecycle and automatically returns to pool.
@@ -112,8 +114,11 @@ export class ManagedCanvas {
 export async function withManagedCanvas<T>(
   width: number,
   height: number,
-  operation: (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => Promise<T> | T
-): Promise<T> {
+  operation: (
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D
+  ) => Promise<ManagedCanvasOperationResult<T>> | ManagedCanvasOperationResult<T>
+): Promise<ManagedCanvasOperationResult<T>> {
   const managedCanvas = new ManagedCanvas(width, height);
 
   try {
@@ -124,60 +129,29 @@ export async function withManagedCanvas<T>(
 }
 
 /**
- * Helper function that manages multiple Canvas operations
- * Suitable for operations that use multiple Canvas simultaneously.
+ * 호출자 소유 canvas를 생성한다.
  *
- * @param canvasSizes - Array of sizes for each Canvas
- * @param operation - Operation to perform
- * @returns Operation result
+ * CanvasPool을 거치지 않으므로 반환된 canvas는 pool로 회수되지 않는다.
+ * 결과 canvas를 호출자에게 넘겨야 하는 경로에서 사용한다 —
+ * pool에서 빌린 canvas는 module 밖으로 내보내면 안 된다
+ * (release가 clearRect를 실행해 호출자가 빈 canvas를 받게 된다).
  */
-export async function withMultipleManagedCanvas<T>(
-  canvasSizes: Array<{ width: number; height: number }>,
-  operation: (canvases: Array<{ canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D }>) => Promise<T> | T
-): Promise<T> {
-  const managedCanvases = canvasSizes.map((size) => new ManagedCanvas(size.width, size.height));
+export function createOwnedCanvas(
+  width: number,
+  height: number
+): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
 
-  try {
-    const canvasData = managedCanvases.map((managed) => ({
-      canvas: managed.getCanvas(),
-      ctx: managed.getContext(),
-    }));
-
-    return await operation(canvasData);
-  } finally {
-    managedCanvases.forEach((managed) => {
-      managed.dispose();
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw createImageError('CANVAS_CREATION_FAILED', {
+      cause: new Error('Failed to create CanvasRenderingContext2D'),
     });
   }
-}
 
-/**
- * Canvas copy utility
- * Copies content from one Canvas to another Canvas.
- *
- * @param source - Source Canvas
- * @param targetWidth - Target Canvas width
- * @param targetHeight - Target Canvas height
- * @returns New copied Canvas
- */
-export async function copyCanvas(
-  source: HTMLCanvasElement,
-  targetWidth?: number,
-  targetHeight?: number
-): Promise<HTMLCanvasElement> {
-  const width = targetWidth || source.width;
-  const height = targetHeight || source.height;
-
-  return withManagedCanvas(width, height, (canvas, ctx) => {
-    if (targetWidth && targetHeight && (targetWidth !== source.width || targetHeight !== source.height)) {
-      // If size is different, copy with scaling
-      ctx.drawImage(source, 0, 0, targetWidth, targetHeight);
-    } else {
-      // If same size, copy as is
-      ctx.drawImage(source, 0, 0);
-    }
-    return canvas;
-  });
+  return { canvas, ctx };
 }
 
 /**

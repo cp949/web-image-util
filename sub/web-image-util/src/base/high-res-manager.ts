@@ -1,5 +1,5 @@
 import { productionLog } from '../utils/debug.internal';
-import { withManagedCanvas } from './canvas-utils.internal';
+import { createOwnedCanvas } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
 import type { ImageAnalysis } from './high-res-detector.internal';
 import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector.internal';
@@ -273,24 +273,23 @@ export class HighResolutionManager {
     targetHeight: number,
     quality: 'fast' | 'balanced' | 'high'
   ): Promise<HTMLCanvasElement> {
-    return withManagedCanvas(targetWidth, targetHeight, (canvas, ctx) => {
-      // Quality settings
-      switch (quality) {
-        case 'fast':
-          ctx.imageSmoothingEnabled = false;
-          break;
-        case 'high':
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          break;
-        default:
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'medium';
-      }
+    // 결과 canvas는 호출자 소유 — pool을 거치지 않는다
+    const { canvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);
+    switch (quality) {
+      case 'fast':
+        ctx.imageSmoothingEnabled = false;
+        break;
+      case 'high':
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        break;
+      default:
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'medium';
+    }
 
-      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-      return canvas;
-    });
+    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+    return canvas;
   }
 
   /**
