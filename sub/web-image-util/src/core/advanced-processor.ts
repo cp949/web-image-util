@@ -13,8 +13,8 @@ import { ImageProcessError } from '../types';
 import { productionLog } from '../utils/debug.internal';
 import type { AutoProcessingResult } from './auto-high-res';
 import { AutoHighResProcessor } from './auto-high-res';
-import type { SmartFormatOptions } from './smart-format';
-import { ImagePurpose, SmartFormatSelector } from './smart-format';
+import { SmartFormatSelector } from './smart-format';
+import { ImagePurpose, type SmartFormatOptions } from './smart-format-helpers.internal';
 
 /**
  * Advanced image processing options

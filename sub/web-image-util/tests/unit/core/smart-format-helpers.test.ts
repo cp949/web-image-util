@@ -3,10 +3,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { ImagePurpose } from '../../../src/core/smart-format';
 import type { ImageAnalysis } from '../../../src/core/smart-format-helpers.internal';
 import {
   calculateFormatScores,
+  ImagePurpose,
   mergeSmartFormatOptions,
   resolveRecommendedQuality,
 } from '../../../src/core/smart-format-helpers.internal';
