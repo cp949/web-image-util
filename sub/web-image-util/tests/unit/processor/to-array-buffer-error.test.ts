@@ -1,14 +1,16 @@
 /**
  * processor.toArrayBuffer() 비동기 콜백 예외 래핑 회귀 테스트다.
  */
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CanvasLease } from '../../../src/base/canvas-lease.internal';
 
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { processImage } from '../../../src/processor';
 
 function createProcessingOutput(canvas: HTMLCanvasElement) {
   return {
-    canvas,
+    lease: new CanvasLease(canvas),
     result: {
       width: canvas.width,
       height: canvas.height,
@@ -63,9 +65,11 @@ describe('toArrayBuffer 오류 원인 보존', () => {
     });
 
     const result = createProcessorWithCanvas(canvas).toArrayBuffer();
+    // release 실패는 lease.consume → toBlob에서 OUTPUT_FAILED로 감싸이고,
+    // toArrayBuffer가 한 번 더 감싼다. 원인 체인으로 원본 에러가 보존된다.
     const assertion = expect(result).rejects.toMatchObject({
       code: 'OUTPUT_FAILED',
-      cause: cause,
+      cause: expect.objectContaining({ code: 'OUTPUT_FAILED', cause }),
     });
 
     await vi.runAllTimersAsync();

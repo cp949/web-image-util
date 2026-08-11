@@ -1,17 +1,18 @@
 /**
  * Canvas 출력(toCanvas/toCanvasDetailed) 결과 조립 헬퍼다.
  *
- * @description 처리 결과 Canvas와 메타데이터를 CanvasResultImpl로 감싼다.
- * 여기서 생성한 Canvas는 사용자 소유이므로 CanvasPool로 반환하지 않는다.
+ * @description 처리 결과 lease에서 canvas 소유권을 이전받아 CanvasResultImpl로 감싼다.
+ * detach된 Canvas는 사용자 소유이므로 CanvasPool로 돌아가지 않는다.
  */
 
+import type { CanvasLease } from '../base/canvas-lease.internal';
 import type { ResultCanvas } from '../types';
 import { ImageProcessError } from '../types';
 import { CanvasResultImpl } from '../types/result-implementations.internal';
 
 /** executeProcessing()이 돌려주는 처리 결과 형태다. */
 export interface ProcessingOutcome {
-  canvas: HTMLCanvasElement;
+  lease: CanvasLease;
   result: {
     width: number;
     height: number;
@@ -32,9 +33,9 @@ export async function renderToCanvasResult(
   errorMessage: string
 ): Promise<ResultCanvas> {
   try {
-    const { canvas, result } = await execute();
+    const { lease, result } = await execute();
     return new CanvasResultImpl(
-      canvas,
+      lease.detach(), // 소유권을 사용자에게 이전 — pool로 돌아가지 않는다
       result.width,
       result.height,
       result.processingTime,

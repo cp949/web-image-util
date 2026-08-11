@@ -4,12 +4,13 @@
  * 분리 기준:
  * - operation 누적 / resize 1회 가드 / 체이닝 / addResize 단계에서 즉시 throw하는 경로는
  *   실제 렌더링까지 가지 않으므로 jsdom 가능.
- * - toCanvas() / toBlob() 같은 실제 출력 메서드는 내부에서 drawImage(src 없는 Image)를
+ * - render() 같은 실제 출력 메서드는 내부에서 drawImage(src 없는 Image)를
  *   호출해 jsdom에서 실패하므로 browser 테스트에서 대표 실제 로딩 경로를 검증한다.
- *   단, single-renderer를 모킹해 pending resize 변환·오류 경계·CanvasPool 반환 정책을
+ *   단, single-renderer를 모킹해 pending resize 변환·오류 경계·CanvasLease 반환 정책을
  *   jsdom 환경에서 단위 검증한다.
  */
 
+import { CanvasLease } from '../../../src/base/canvas-lease.internal';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import type { FinalLayout } from '../../../src/core/lazy-render-pipeline.internal';
 import { LazyRenderPipeline } from '../../../src/core/lazy-render-pipeline.internal';
@@ -135,11 +136,11 @@ describe('LazyRenderPipeline (jsdom-safe)', () => {
       const p = new LazyRenderPipeline(img);
 
       // LazyRenderPipeline은 lazy 실행이라 addResize에서 던지지 않고
-      // toCanvas() 시점에 렌더러가 invalid config를 거부해 throw한다.
+      // render() 시점에 렌더러가 invalid config를 거부해 throw한다.
       expect(() => {
         // @ts-expect-error Invalid type for testing
         p.addResize({ fit: 'invalid', width: -100 });
-        p.toCanvas();
+        p.render();
       }).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
     });
   });
@@ -150,7 +151,7 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
 
   beforeEach(() => {
     testCanvas = createTestCanvas(100, 100);
-    vi.mocked(singleRenderer.renderAllOperationsOnce).mockReturnValue(testCanvas);
+    vi.mocked(singleRenderer.renderAllOperationsOnce).mockReturnValue(new CanvasLease(testCanvas));
     vi.mocked(singleRenderer.analyzeAllOperations).mockReturnValue(fixedLayout);
     vi.mocked(singleRenderer.debugLayout).mockImplementation(() => {});
   });
@@ -167,14 +168,15 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
     // 출력 이전: operations 배열에 아직 추가되지 않음
     expect(p.getOperationCount()).toBe(0);
 
-    const { metadata } = p.toCanvas();
+    const { metadata } = p.render();
 
     // 렌더러 호출 시점에 변환된 resize op이 args에 포함됨을 검증 (출력 직전 변환 계약)
     expect(vi.mocked(singleRenderer.renderAllOperationsOnce)).toHaveBeenCalledWith(
       img,
       expect.arrayContaining([
         expect.objectContaining({ type: 'resize', config: { fit: 'fill', width: 400, height: 300 } }),
-      ])
+      ]),
+      fixedLayout
     );
 
     // 출력 이후: pending이 ResizeConfig로 변환되어 1개 추가됨
@@ -194,14 +196,15 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
     // 출력 이전: 0
     expect(p.getOperationCount()).toBe(0);
 
-    const { metadata } = p.toCanvas();
+    const { metadata } = p.render();
 
     // 렌더러 호출 시점에 변환된 resize op이 args에 포함됨을 검증
     expect(vi.mocked(singleRenderer.renderAllOperationsOnce)).toHaveBeenCalledWith(
       img,
       expect.arrayContaining([
         expect.objectContaining({ type: 'resize', config: { fit: 'fill', width: 400, height: 300 } }),
-      ])
+      ]),
+      fixedLayout
     );
 
     expect(metadata.operations).toBe(1);
@@ -220,14 +223,15 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
     // 출력 이전: 0
     expect(p.getOperationCount()).toBe(0);
 
-    const { metadata } = p.toCanvas();
+    const { metadata } = p.render();
 
     // 렌더러 호출 시점에 변환된 resize op이 args에 포함됨을 검증
     expect(vi.mocked(singleRenderer.renderAllOperationsOnce)).toHaveBeenCalledWith(
       img,
       expect.arrayContaining([
         expect.objectContaining({ type: 'resize', config: { fit: 'fill', width: 400, height: 300 } }),
-      ])
+      ]),
+      fixedLayout
     );
 
     expect(metadata.operations).toBe(1);
@@ -276,7 +280,7 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
     const p = new LazyRenderPipeline(img);
 
     p._addResizeOperation({ type: 'scale', value: { sx: 2 } });
-    p.toCanvas();
+    p.render();
 
     // sx=2, sy 미지정 → sy 기본값 1 → width=1600, height=600
     expect(p.getOperations()[0]).toMatchObject({
@@ -290,7 +294,7 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
     const p = new LazyRenderPipeline(img);
 
     p._addResizeOperation({ type: 'scale', value: { sy: 2 } });
-    p.toCanvas();
+    p.render();
 
     // sy=2, sx 미지정 → sx 기본값 1 → width=800, height=1200
     expect(p.getOperations()[0]).toMatchObject({
@@ -304,7 +308,7 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
     const p = new LazyRenderPipeline(img);
 
     p._addResizeOperation({ type: 'scale', value: { sx: 2, sy: 3 } });
-    p.toCanvas();
+    p.render();
 
     // sx=2, sy=3 → width=1600, height=1800
     expect(p.getOperations()[0]).toMatchObject({
@@ -314,12 +318,12 @@ describe('LazyRenderPipeline — _addResizeOperation pending resize 변환', () 
   });
 });
 
-describe('LazyRenderPipeline — toBlob 오류 경계', () => {
+describe('LazyRenderPipeline — render() lease 계약', () => {
   let testCanvas: HTMLCanvasElement;
 
   beforeEach(() => {
     testCanvas = createTestCanvas(100, 100);
-    vi.mocked(singleRenderer.renderAllOperationsOnce).mockReturnValue(testCanvas);
+    vi.mocked(singleRenderer.renderAllOperationsOnce).mockReturnValue(new CanvasLease(testCanvas));
     vi.mocked(singleRenderer.analyzeAllOperations).mockReturnValue(fixedLayout);
     vi.mocked(singleRenderer.debugLayout).mockImplementation(() => {});
   });
@@ -328,41 +332,48 @@ describe('LazyRenderPipeline — toBlob 오류 경계', () => {
     vi.restoreAllMocks();
   });
 
-  it('canvas.toBlob이 null을 반환하면 BLOB_CONVERSION_ERROR로 거절되고 CanvasPool.release가 1회 호출된다', async () => {
+  it('lease.consume은 파생물 생성 후 canvas를 pool로 반환한다', async () => {
     const img = createMockImage(800, 600);
     const p = new LazyRenderPipeline(img);
-
-    vi.spyOn(testCanvas, 'toBlob').mockImplementation((callback) => {
-      callback(null);
-    });
     const releaseSpy = vi.spyOn(CanvasPool.getInstance(), 'release').mockImplementation(() => {});
 
-    await expect(p.toBlob()).rejects.toMatchObject({ code: 'BLOB_CONVERSION_ERROR' });
+    const { lease } = p.render();
+    const width = await lease.consume((canvas) => canvas.width);
+
+    expect(width).toBe(100);
     expect(releaseSpy).toHaveBeenCalledTimes(1);
     expect(releaseSpy).toHaveBeenCalledWith(testCanvas);
   });
 
-  it('canvas.toBlob 자체가 throw하면 CanvasPool.release가 호출된다', async () => {
+  it('lease.detach는 소유권을 이전하고 pool로 반환하지 않는다', () => {
+    const img = createMockImage(800, 600);
+    const p = new LazyRenderPipeline(img);
+    const releaseSpy = vi.spyOn(CanvasPool.getInstance(), 'release').mockImplementation(() => {});
+
+    const { lease } = p.render();
+    const canvas = lease.detach();
+
+    expect(canvas).toBe(testCanvas);
+    expect(releaseSpy).not.toHaveBeenCalled();
+  });
+
+  it('layout 분석은 render()당 한 번만 수행된다', () => {
     const img = createMockImage(800, 600);
     const p = new LazyRenderPipeline(img);
 
-    vi.spyOn(testCanvas, 'toBlob').mockImplementation(() => {
-      throw new Error('toBlob 실패');
-    });
-    const releaseSpy = vi.spyOn(CanvasPool.getInstance(), 'release').mockImplementation(() => {});
+    vi.mocked(singleRenderer.analyzeAllOperations).mockClear();
+    p.render();
 
-    await expect(p.toBlob()).rejects.toThrow('toBlob 실패');
-    expect(releaseSpy).toHaveBeenCalledTimes(1);
-    expect(releaseSpy).toHaveBeenCalledWith(testCanvas);
+    expect(vi.mocked(singleRenderer.analyzeAllOperations)).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('LazyRenderPipeline — toCanvas 오류 경계', () => {
+describe('LazyRenderPipeline — render() 오류 경계', () => {
   let testCanvas: HTMLCanvasElement;
 
   beforeEach(() => {
     testCanvas = createTestCanvas(100, 100);
-    vi.mocked(singleRenderer.renderAllOperationsOnce).mockReturnValue(testCanvas);
+    vi.mocked(singleRenderer.renderAllOperationsOnce).mockReturnValue(new CanvasLease(testCanvas));
     vi.mocked(singleRenderer.analyzeAllOperations).mockReturnValue(fixedLayout);
   });
 
@@ -380,7 +391,7 @@ describe('LazyRenderPipeline — toCanvas 오류 경계', () => {
     });
     const releaseSpy = vi.spyOn(CanvasPool.getInstance(), 'release').mockImplementation(() => {});
 
-    expect(() => p.toCanvas()).toThrow(debugError);
+    expect(() => p.render()).toThrow(debugError);
     expect(releaseSpy).toHaveBeenCalledTimes(1);
     expect(releaseSpy).toHaveBeenCalledWith(testCanvas);
   });

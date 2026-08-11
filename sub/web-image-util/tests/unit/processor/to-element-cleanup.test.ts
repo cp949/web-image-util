@@ -3,7 +3,9 @@
  *
  * onload/onerror 핸들러 해제와 objectURL revoke가 올바르게 수행되는지 검증한다.
  */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CanvasLease } from '../../../src/base/canvas-lease.internal';
 
 import { processImage } from '../../../src/processor';
 import { ImageProcessError } from '../../../src/types';
@@ -12,7 +14,7 @@ const originalDocumentCreateElement = document.createElement;
 
 function createProcessingOutput(canvas: HTMLCanvasElement) {
   return {
-    canvas,
+    lease: new CanvasLease(canvas),
     result: {
       width: canvas.width,
       height: canvas.height,

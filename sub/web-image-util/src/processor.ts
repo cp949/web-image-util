@@ -4,7 +4,6 @@
  * @description Canvas 2D API를 바탕으로 브라우저 전용 이미지 처리 흐름을 구성한다.
  */
 
-import { CanvasPool } from './base/canvas-pool.internal';
 import type { LazyRenderPipeline } from './core/lazy-render-pipeline.internal';
 import type { SvgPassthroughMode } from './core/source-converter.internal';
 import { canvasToBlobOutput } from './processor/blob-output.internal';
@@ -329,18 +328,16 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
       getOptimalQuality: (f) => this.getOptimalQuality(f),
     });
 
-    const { canvas, result } = await this.executeProcessing();
+    const { lease, result } = await this.executeProcessing();
 
     try {
-      const { blob, format } = await canvasToBlobOutput(canvas, outputOptions);
+      // consume이 blob 변환 후 canvas를 pool로 반환한다 (실패 시에도 반환)
+      const { blob, format } = await lease.consume((canvas) => canvasToBlobOutput(canvas, outputOptions));
 
       // 🆕 Return extended result object (includes direct conversion methods)
       return new BlobResultImpl(blob, result.width, result.height, result.processingTime, result.originalSize, format);
     } catch (error) {
       throw new ImageProcessError('Error occurred during Blob conversion', 'OUTPUT_FAILED', { cause: error });
-    } finally {
-      // blob 변환이 끝났으므로 pool-acquired canvas를 반환한다.
-      CanvasPool.getInstance().release(canvas);
     }
   }
 
@@ -532,10 +529,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
         throw new ImageProcessError('LazyRenderPipeline initialization failed', 'PROCESSING_FAILED');
       }
 
-      const { canvas, metadata } = this.lazyPipeline.toCanvas();
+      const { lease, metadata } = this.lazyPipeline.render();
 
       return {
-        canvas,
+        lease,
         result: {
           width: metadata.width,
           height: metadata.height,

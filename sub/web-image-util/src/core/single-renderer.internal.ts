@@ -7,6 +7,7 @@
  * - Generates only final result without creating intermediate Canvas objects
  */
 
+import { CanvasLease } from '../base/canvas-lease.internal';
 import { CanvasPool } from '../base/canvas-pool.internal';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
@@ -140,51 +141,61 @@ export function calculateAllFilters(operations: LazyOperation[]): string {
  * - drawImage 한 번으로 모든 처리를 완료한다.
  *
  * **Canvas 소유권 규칙 (중요)**
- * - 반환되는 canvas는 {@link CanvasPool}에서 획득한 것이다.
- * - 호출자는 canvas 사용이 끝나면 반드시 `CanvasPool.getInstance().release(canvas)`를 호출해야 한다.
- * - 단, canvas 자체를 최종 소비자(consumer)에게 반환하는 경우에는 release를 호출하지 않는다.
- *   이 경우 소유권이 소비자에게 이전되므로, 소비자가 canvas를 관리할 책임을 진다.
+ * - 반환되는 canvas는 {@link CanvasPool}에서 획득하고 즉시 {@link CanvasLease}로 감싼다.
+ * - 렌더링 중 오류가 나면 lease가 canvas를 pool로 반환한다.
+ *
+ * @param precomputedLayout 이미 계산한 layout이 있으면 전달해 중복 분석을 피한다
  */
-export function renderAllOperationsOnce(sourceImage: HTMLImageElement, operations: LazyOperation[]): HTMLCanvasElement {
+export function renderAllOperationsOnce(
+  sourceImage: HTMLImageElement,
+  operations: LazyOperation[],
+  precomputedLayout?: FinalLayout
+): CanvasLease {
   // 1. Analyze all operations to calculate final layout
-  const layout = analyzeAllOperations(sourceImage, operations);
+  const layout = precomputedLayout ?? analyzeAllOperations(sourceImage, operations);
 
   // 2. 최종 Canvas 생성 — pool에서 우선 획득
   const canvas = CanvasPool.getInstance().acquire(layout.width, layout.height);
+  const lease = new CanvasLease(canvas);
 
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    throw new ImageProcessError('Cannot create Canvas 2D context', 'CANVAS_CONTEXT_ERROR');
+  try {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new ImageProcessError('Cannot create Canvas 2D context', 'CANVAS_CONTEXT_ERROR');
+    }
+
+    // 3. Set up high-quality rendering
+    setupHighQualityRendering(ctx);
+
+    // 4. Draw background (if needed)
+    if (layout.background !== 'transparent') {
+      ctx.fillStyle = layout.background;
+      ctx.fillRect(0, 0, layout.width, layout.height);
+    }
+
+    // 5. Apply all filter effects at once
+    if (layout.filters.length > 0) {
+      ctx.filter = layout.filters.join(' ');
+    }
+
+    // 6. 🎯 Complete all processing with a single drawImage call
+    // This is the key to SVG quality preservation
+    ctx.drawImage(
+      sourceImage,
+      Math.round(layout.position.x),
+      Math.round(layout.position.y),
+      Math.round(layout.imageSize.width),
+      Math.round(layout.imageSize.height)
+    );
+
+    // 7. Reset filter (for next use)
+    ctx.filter = 'none';
+
+    return lease;
+  } catch (error) {
+    lease.release();
+    throw error;
   }
-
-  // 3. Set up high-quality rendering
-  setupHighQualityRendering(ctx);
-
-  // 4. Draw background (if needed)
-  if (layout.background !== 'transparent') {
-    ctx.fillStyle = layout.background;
-    ctx.fillRect(0, 0, layout.width, layout.height);
-  }
-
-  // 5. Apply all filter effects at once
-  if (layout.filters.length > 0) {
-    ctx.filter = layout.filters.join(' ');
-  }
-
-  // 6. 🎯 Complete all processing with a single drawImage call
-  // This is the key to SVG quality preservation
-  ctx.drawImage(
-    sourceImage,
-    Math.round(layout.position.x),
-    Math.round(layout.position.y),
-    Math.round(layout.imageSize.width),
-    Math.round(layout.imageSize.height)
-  );
-
-  // 7. Reset filter (for next use)
-  ctx.filter = 'none';
-
-  return canvas;
 }
 
 /**

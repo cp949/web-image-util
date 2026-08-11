@@ -7,7 +7,7 @@
  * - Generate final result only without creating intermediate Canvas
  */
 
-import { CanvasPool } from '../base/canvas-pool.internal';
+import type { CanvasLease } from '../base/canvas-lease.internal';
 import type { BlurOptions, ResultMetadata } from '../types';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
@@ -125,96 +125,24 @@ export class LazyRenderPipeline {
   }
 
   /**
-   * Analyze all operations and calculate final layout
-   * Uses analyzeAllOperations from single-renderer
+   * 🚀 Core: 모든 계산을 마친 뒤 단 한 번 렌더링한다.
+   *
+   * 결과 canvas는 pool 소유이며 {@link CanvasLease}에 담겨 반환된다.
+   * 소비자는 lease.consume()으로 파생물을 만들거나(사용 후 pool 반환),
+   * lease.detach()로 소유권을 가져간다(toCanvas 계열 — pool로 돌아가지 않음).
    */
-  private calculateFinalLayout(): FinalLayout {
-    return analyzeAllOperations(this.sourceImage, this.operations);
-  }
-
-  /**
-   * 🚀 Core: Render only once based on all calculation results
-   * Uses renderAllOperationsOnce from single-renderer
-   */
-  private renderOnce(): HTMLCanvasElement {
-    return renderAllOperationsOnce(this.sourceImage, this.operations);
-  }
-
-  /**
-   * Output final result as Blob
-   * Actual rendering performed at this point
-   */
-  async toBlob(format: string = 'image/png', quality?: number): Promise<{ blob: Blob; metadata: ResultMetadata }> {
-    const startTime = performance.now();
-    this.applyPendingResizeOperation();
-    const canvas = this.renderOnce();
-
-    return new Promise((resolve, reject) => {
-      let released = false;
-      const releaseOnce = () => {
-        if (released) {
-          return;
-        }
-
-        released = true;
-        CanvasPool.getInstance().release(canvas);
-      };
-
-      try {
-        canvas.toBlob(
-          (blob) => {
-            try {
-              if (!blob) {
-                reject(new ImageProcessError('Blob creation failed', 'BLOB_CONVERSION_ERROR'));
-                return;
-              }
-
-              const metadata: ResultMetadata = {
-                width: canvas.width,
-                height: canvas.height,
-                format: format as any,
-                size: blob.size,
-                processingTime: performance.now() - startTime,
-                operations: this.operations.length,
-              };
-
-              // 디버깅 정보 출력
-              const layout = this.calculateFinalLayout();
-              debugLayout(layout, this.operations.length);
-
-              resolve({ blob, metadata });
-            } catch (error) {
-              reject(error);
-            } finally {
-              // 예외 발생 여부와 무관하게 canvas를 pool에 반환
-              releaseOnce();
-            }
-          },
-          format,
-          quality
-        );
-      } catch (error) {
-        releaseOnce();
-        reject(error);
-      }
-    });
-  }
-
-  /**
-   * Output final result as Canvas
-   * Actual rendering performed at this point
-   */
-  toCanvas(): { canvas: HTMLCanvasElement; metadata: ResultMetadata } {
+  render(): { lease: CanvasLease; metadata: ResultMetadata } {
     const startTime = performance.now();
 
     // 🎯 Philosophy implementation: Perform operations only at final output
     this.applyPendingResizeOperation();
 
-    const canvas = this.renderOnce();
+    // layout은 한 번만 계산해 렌더링과 디버그 출력에 재사용한다
+    const layout = analyzeAllOperations(this.sourceImage, this.operations);
+    const lease = renderAllOperationsOnce(this.sourceImage, this.operations, layout);
 
-    // canvas 획득 이후 예외가 발생하면 pool에 반환한다.
-    // 정상 경로에서는 소비자가 canvas를 소유하므로 release하지 않는다.
     try {
+      const canvas = lease.canvas;
       const metadata: ResultMetadata = {
         width: canvas.width,
         height: canvas.height,
@@ -224,14 +152,12 @@ export class LazyRenderPipeline {
         operations: this.operations.length,
       };
 
-      // Output debugging information
-      const layout = this.calculateFinalLayout();
       debugLayout(layout, this.operations.length);
 
-      return { canvas, metadata };
+      return { lease, metadata };
     } catch (error) {
       // 예외 발생 시 canvas를 pool에 반환하여 누수를 방지한다.
-      CanvasPool.getInstance().release(canvas);
+      lease.release();
       throw error;
     }
   }

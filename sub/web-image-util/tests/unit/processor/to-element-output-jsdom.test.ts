@@ -5,7 +5,9 @@
  * resize/blur 체이닝 도달성을 검증한다.
  * cleanup 동작(핸들러 해제, URL revoke)은 to-element-cleanup.test.ts에서 다룬다.
  */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CanvasLease } from '../../../src/base/canvas-lease.internal';
 
 import { processImage } from '../../../src/processor';
 
@@ -13,7 +15,7 @@ const originalDocumentCreateElement = document.createElement;
 
 function createProcessingOutput(canvas: HTMLCanvasElement) {
   return {
-    canvas,
+    lease: new CanvasLease(canvas),
     result: {
       width: canvas.width,
       height: canvas.height,
