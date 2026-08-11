@@ -101,44 +101,44 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   }
 
   /**
-   * Image blur effect
+   * 이미지 블러 효과
    *
    * @description
-   * Applies Gaussian blur to the image using Canvas 2D filter API.
-   * Can be used before or after resize(), and can be called multiple times for cumulative effect.
+   * Canvas 2D filter API로 이미지에 가우시안 블러를 적용한다.
+   * resize() 전후에 모두 사용할 수 있으며, 여러 번 호출하면 순차 패스로 누적 적용된다.
    *
-   * **Performance Considerations:**
-   * - Recommended range: 0.5-10 pixels (higher values may cause performance issues)
-   * - Blur before resize for better performance on large images
-   * - Multiple blur calls compose sequentially (each call adds another CSS blur pass)
+   * **성능 고려사항:**
+   * - 권장 범위: 0.5-10px (높은 값은 성능 문제를 일으킬 수 있음)
+   * - 큰 이미지에서는 성능을 위해 resize 전에 blur 적용 권장
+   * - blur를 여러 번 호출하면 각 호출이 CSS blur 패스 하나로 순차 합성됨
    *
-   * @param radius Blur radius in pixels (default: 2, 0 = no blur, recommended range: 0.5-10)
-   * @param options Blur options (an explicit `options.radius` overrides the radius argument)
-   * @returns Processor in same state (chainable)
+   * @param radius 픽셀 단위 블러 반경 (기본값: 2, 0 = 블러 없음, 권장 범위: 0.5-10)
+   * @param options 블러 옵션 (`options.radius`를 명시하면 radius 인자를 덮어씀)
+   * @returns 같은 상태의 Processor (체이닝 가능)
    *
    * @example
    * ```typescript
-   * // Apply subtle blur before resize (recommended for performance)
+   * // resize 전에 약한 blur 적용 (성능상 권장)
    * await processImage(source)
    *   .blur(2)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .toBlob();
    *
-   * // Apply strong blur after resize
+   * // resize 후 강한 blur 적용
    * await processImage(source)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .blur(5)
    *   .toBlob();
    *
-   * // Multiple blur applications (sequential passes)
+   * // blur 여러 번 적용 (순차 패스)
    * await processImage(source)
-   *   .blur(2)     // First blur pass: 2px
-   *   .blur(3)     // Second blur pass: 3px, applied on top
+   *   .blur(2)     // 첫 번째 blur 패스: 2px
+   *   .blur(3)     // 두 번째 blur 패스: 위 결과에 3px 추가 적용
    *   .toBlob();
    *
-   * // Performance-optimized blur for thumbnails
+   * // 썸네일용 성능 최적화 blur
    * await processImage(source)
-   *   .blur(1)     // Light blur before resize
+   *   .blur(1)     // resize 전 약한 blur
    *   .resize({ fit: 'cover', width: 150, height: 150 })
    *   .toBlob();
    * ```
