@@ -7,10 +7,10 @@
 
 import { createImageError } from '../base/error-helpers';
 import type { ProcessingStrategy } from '../base/high-res-detector.internal';
+import { HighResolutionManager } from '../base/high-res-manager';
 import type { SmartResizeOptions } from '../types';
 import { AutoMemoryManager } from './auto-memory-manager.internal';
 import { type BatchResizeJob, BatchResizer } from './batch-resizer';
-import { InternalHighResProcessor } from './internal/internal-high-res-processor.internal';
 import type { ResizeProfile } from './performance-config';
 
 /**
@@ -63,7 +63,7 @@ export class SmartProcessor {
       const memoryManager = AutoMemoryManager.getInstance();
       await memoryManager.checkAndOptimize();
 
-      const result = await InternalHighResProcessor.smartResize(img, width, height, internalOptions);
+      const result = await HighResolutionManager.smartResize(img, width, height, internalOptions);
 
       return result.canvas;
     } catch (error) {

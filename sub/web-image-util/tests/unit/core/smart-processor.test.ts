@@ -3,12 +3,12 @@
  *
  * 자동 고해상도 분기 결정(shouldUseHighResProcessing)과
  * 내부 전략 변환 로직(selectInternalStrategy, mapStrategyToQuality)을 검증한다.
- * InternalHighResProcessor 와 AutoMemoryManager 는 spy 로 격리한다.
+ * HighResolutionManager 와 AutoMemoryManager 는 spy 로 격리한다.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AutoMemoryManager } from '../../../src/core/auto-memory-manager.internal';
-import { InternalHighResProcessor } from '../../../src/core/internal/internal-high-res-processor.internal';
+import { HighResolutionManager } from '../../../src/base/high-res-manager';
 import { SmartProcessor } from '../../../src/core/smart-processor.internal';
 
 // img.width / img.height 를 제어하는 헬퍼 (고해상도 경로, 모킹됨)
@@ -29,7 +29,7 @@ function createDrawableImage(width: number, height: number): HTMLImageElement {
   return canvas as unknown as HTMLImageElement;
 }
 
-// InternalHighResProcessor.smartResize 의 기본 반환값
+// HighResolutionManager.smartResize 의 기본 반환값
 function makeProcessingResult(canvasW = 800, canvasH = 600) {
   const canvas = document.createElement('canvas');
   canvas.width = canvasW;
@@ -54,7 +54,7 @@ describe('SmartProcessor', () => {
 
   beforeEach(() => {
     // 고해상도 내부 처리기 격리
-    highResSpy = vi.spyOn(InternalHighResProcessor, 'smartResize').mockResolvedValue(makeProcessingResult());
+    highResSpy = vi.spyOn(HighResolutionManager, 'smartResize').mockResolvedValue(makeProcessingResult());
 
     // AutoMemoryManager 격리
     memoryManagerMock = { checkAndOptimize: vi.fn().mockResolvedValue(undefined) };
@@ -69,7 +69,7 @@ describe('SmartProcessor', () => {
   // shouldUseHighResProcessing — 픽셀 수 기반 분기
   // --------------------------------------------------------------------------
   describe('shouldUseHighResProcessing — 픽셀 수 기반 분기', () => {
-    it('1MP 이미지(< 4MP)는 표준 경로를 사용하며 InternalHighResProcessor 를 호출하지 않는다', async () => {
+    it('1MP 이미지(< 4MP)는 표준 경로를 사용하며 HighResolutionManager 를 호출하지 않는다', async () => {
       // 1000×1000 = 1MP, 스케일 1.25x < 4 → 표준 경로 → drawImage 필요 → drawable
       const img = createDrawableImage(1000, 1000);
       await SmartProcessor.process(img, 800, 600);
@@ -252,8 +252,8 @@ describe('SmartProcessor', () => {
   // 에러 처리
   // --------------------------------------------------------------------------
   describe('에러 처리', () => {
-    it('InternalHighResProcessor.smartResize 가 에러를 던지면 ImageProcessError 로 래핑된다', async () => {
-      vi.spyOn(InternalHighResProcessor, 'smartResize').mockRejectedValue(new Error('처리 실패'));
+    it('HighResolutionManager.smartResize 가 에러를 던지면 ImageProcessError 로 래핑된다', async () => {
+      vi.spyOn(HighResolutionManager, 'smartResize').mockRejectedValue(new Error('처리 실패'));
 
       const img = createMockImage(2001, 2001);
 
