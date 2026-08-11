@@ -4,12 +4,12 @@
  * withManagedCanvas 콜백에서 임대(pool acquire) canvas를 그대로 반환하면
  * finally의 release가 clearRect를 실행해 호출자는 빈 canvas를 받는다.
  * 이 파일은 "반환된 canvas는 호출자 소유이며 픽셀이 보존된다"는 계약을
- * 공개 seam(smartResize)과 대표 내부 경로(composeGrid)에서 고정한다.
+ * 공개 seam(smartResize)과 합성 경로(composeImages grid)에서 고정한다.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { HighResolutionManager } from '../../../src/base/high-res-manager';
-import { ImageComposer } from '../../../src/composition/image-composer';
+import { composeImages } from '../../../src/composition/compose';
 import { getCanvasPixelData } from '../../utils/canvas-helper';
 import { createTestImageDataUrl } from '../../utils/image-helper';
 
@@ -56,14 +56,15 @@ describe('Canvas 소유권 (pool use-after-release 회귀)', () => {
     expect(pixel.b).toBeLessThan(100);
   });
 
-  it('composeGrid 결과 canvas는 배경과 이미지 픽셀을 보존한다', async () => {
+  it('composeImages grid 결과 canvas는 배경과 이미지 픽셀을 보존한다', async () => {
     const images = [await createLoadedImage(32, 32, 'red'), await createLoadedImage(32, 32, 'blue')];
 
-    const canvas = await ImageComposer.composeGrid(images, {
-      rows: 1,
-      cols: 2,
+    const canvas = await composeImages({
+      type: 'grid',
+      images,
+      columns: 2,
       spacing: 4,
-      backgroundColor: '#ffffff',
+      background: '#ffffff',
     });
 
     // spacing 영역은 배경색(흰색, 불투명)이어야 한다

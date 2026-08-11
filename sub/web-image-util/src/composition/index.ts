@@ -2,7 +2,15 @@
  * Image composition and watermark module exports
  */
 
-export { type CompositionOptions, type GridLayoutOptions, ImageComposer, type Layer } from './image-composer';
+export {
+  type ComposeCollageSpec,
+  type ComposeGridSpec,
+  type ComposeLayer,
+  type ComposeLayersSpec,
+  type ComposeSpec,
+  composeImages,
+  type RandomSource,
+} from './compose';
 export { ImageWatermark, type ImageWatermarkOptions } from './image-watermark';
 export type { Position, Size } from './position-types';
 export {
