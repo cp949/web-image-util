@@ -20,5 +20,5 @@ export interface ErrorContext {
   /** Timestamp */
   timestamp?: number;
   /** Additional debug information */
-  debug?: Record<string, any>;
+  debug?: Record<string, unknown>;
 }
