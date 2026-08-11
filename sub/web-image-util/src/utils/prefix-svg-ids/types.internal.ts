@@ -5,6 +5,8 @@
  * 아니며, 공개는 `prefix-svg-ids.ts`의 재export를 경유한다.
  */
 
+import type { RuntimeEnvironment } from '../environment.internal';
+
 /** rewrite를 보류한 사유. 같은 호출에서 여러 사유가 중복 누적될 수 있다. */
 export type SvgIdPrefixDeoptReason =
   | 'byte-limit-exceeded'
@@ -36,7 +38,7 @@ export interface SvgIdPrefixReport {
   /** byte 한도(`MAX_SVG_BYTES`). */
   byteLimit: number;
   /** 실행 환경 표시. inspectSvg의 environment와 동일 규칙. */
-  environment: 'browser' | 'happy-dom' | 'node' | 'unknown';
+  environment: RuntimeEnvironment;
   /** prefix 접두를 실제로 붙인 id 개수(idempotent/collision 생략 제외). */
   prefixedIdCount: number;
   /** rewrite한 fragment reference 개수(dangling/external 생략 제외). */

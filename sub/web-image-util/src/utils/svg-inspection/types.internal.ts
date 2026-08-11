@@ -7,6 +7,7 @@
  */
 
 import type { ComplexityAnalysisResult } from '../../core/svg-complexity-analyzer';
+import type { RuntimeEnvironment } from '../environment.internal';
 
 export type InspectSvgFindingCode =
   | 'svg-bytes-exceeded'
@@ -41,7 +42,7 @@ export interface InspectSvgReport {
   valid: boolean;
   bytes: number;
   byteLimit: number;
-  environment: 'browser' | 'happy-dom' | 'node' | 'unknown';
+  environment: RuntimeEnvironment;
   parse: { ok: boolean; message: string | null; locationAvailable: boolean };
   root: 'svg' | 'other' | 'none' | 'unknown';
   dimensions: InspectSvgDimensions | null;

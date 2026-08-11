@@ -5,6 +5,7 @@
  * 아니며, 공개는 `inspect-svg-source.ts`의 재export를 경유한다.
  */
 
+import type { RuntimeEnvironment } from '../environment.internal';
 import type { InspectSvgReport } from '../svg-inspection/types.internal';
 
 /** SVG로 판정할 수 있는 입력 타입. HTMLImageElement / Canvas 등은 비-허용(D2). */
@@ -80,7 +81,7 @@ export interface InspectSvgSourceReport {
   /** source/routing 단계 finding. svg 본문 단계 finding은 svg.findings에 있다. */
   findings: InspectSvgSourceFinding[];
   /** 실행 환경(D12). RM-001/RM-005와 동일 규칙. */
-  environment: 'browser' | 'happy-dom' | 'node' | 'unknown';
+  environment: RuntimeEnvironment;
 }
 
 export interface InspectSvgSourceOptions {

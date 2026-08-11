@@ -5,6 +5,8 @@
  * 경로가 아니며, 공개는 `inspect-sanitization.ts`의 재export를 경유한다.
  */
 
+import type { RuntimeEnvironment } from '../../utils/environment.internal';
+
 /** sanitizer 정책. processImage()의 `svgSanitizer` 옵션과 동일한 3개 값을 받는다. */
 export type SvgSanitizerPolicy = 'lightweight' | 'strict' | 'skip';
 
@@ -81,7 +83,7 @@ export interface InspectSvgSanitizationReport {
   /** strict의 failure가 있어도 보고서 객체 자체는 항상 반환된다. impact.kind / impact.status로 분기. */
   bytes: number;
   byteLimit: number;
-  environment: 'browser' | 'happy-dom' | 'node' | 'unknown';
+  environment: RuntimeEnvironment;
   policy: SvgSanitizerPolicy;
   impact: InspectSvgSanitizationImpact;
 }
