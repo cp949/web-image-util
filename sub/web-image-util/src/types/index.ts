@@ -377,35 +377,6 @@ export type { DirectResizeConfig, ResizeOperation, ScaleOperation } from './shor
 export { isScaleX, isScaleXY, isScaleY, isUniformScale } from './shortcut-types';
 
 // ============================================================================
-// ADDITIONAL TYPES - Additional types for test compatibility
-// ============================================================================
-
-/**
- * MIME type
- */
-export type MimeType = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' | 'image/svg+xml' | 'image/avif';
-
-/**
- * Smart format options
- */
-export interface SmartFormatOptions {
-  enableWebP?: boolean;
-  enableAVIF?: boolean;
-  fallbackFormat?: OutputFormat;
-  autoDetect?: boolean;
-}
-
-/**
- * Performance configuration
- */
-export interface PerformanceConfig {
-  maxMemoryMB?: number;
-  enableMultiThreading?: boolean;
-  chunkSize?: number;
-  optimizeForSpeed?: boolean;
-}
-
-// ============================================================================
 // SVG QUALITY ENHANCEMENT TYPES - SVG quality enhancement related types
 // ============================================================================
 
@@ -422,26 +393,3 @@ export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from 
 
 // OffscreenCanvas + Web Worker high-performance processing types
 // (Types used by OffscreenSVGProcessor are defined in that module)
-
-// ============================================================================
-// ADVANCED PROCESSING TYPES - Advanced processing related unified types
-// ============================================================================
-
-/**
- * Advanced SVG processing mode
- */
-export type AdvancedProcessingMode = 'standard' | 'offscreen' | 'auto';
-
-/**
- * Performance benchmark result
- */
-export interface PerformanceBenchmark {
-  /** Standard processing time (milliseconds) */
-  standardTime: number;
-  /** OffscreenCanvas processing time (milliseconds, when supported) */
-  offscreenTime?: number;
-  /** Whether OffscreenCanvas is faster */
-  isOffscreenFaster: boolean;
-  /** Recommended processing method */
-  recommendation: 'standard' | 'offscreen';
-}
