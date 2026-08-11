@@ -122,6 +122,8 @@ export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstant
 // Re-import types from base.ts to make them available
 import type { GeometrySize, OutputFormat, ResizeBackground } from './base';
 import { ImageFormats, OutputFormats } from './base';
+// 본문(ImageProcessor 등)이 사용하는 출력 계약 타입 — 정의는 output-types leaf
+import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './output-types';
 // Import ResizeConfig type for use in ImageProcessor
 import type { ResizeConfig } from './resize-config';
 
@@ -225,17 +227,20 @@ export interface SmartResizeOptions {
 // ============================================================================
 
 // ============================================================================
-// BLUR TYPES - Blur-related types (changed to ES2015 module syntax)
+// BLUR / OUTPUT / RESULT TYPES — 정의는 output-types.ts leaf에 있다.
+// 이 재export가 공개 표면(src/index.ts 경유)을 그대로 유지한다.
 // ============================================================================
 
-/**
- * Blur options (Canvas CSS filter limitations)
- */
-export interface BlurOptions {
-  /** Blur radius (default: 2) */
-  radius?: number;
-  // Canvas only supports CSS filter blur(), so advanced options are removed
-}
+export type {
+  BlurOptions,
+  OutputOptions,
+  ResultBlob,
+  ResultCanvas,
+  ResultDataURL,
+  ResultElement,
+  ResultFile,
+  ResultMetadata,
+} from './output-types';
 
 // =================================
 // OUTPUT TYPES - Output-related types
@@ -252,18 +257,6 @@ export const OutputOptimalQuality: Record<OutputFormat, number> = {
   avif: 0.75, // Best compression ratio
 } as const;
 
-/**
- * Output options
- */
-export interface OutputOptions {
-  /** Output format (default: 'webp' if supported, 'png' if not) */
-  format?: OutputFormat;
-  /** Compression quality 0.0-1.0 (default: optimal value per format) */
-  quality?: number;
-  /** Fallback format when format not supported (default: 'png') */
-  fallbackFormat?: OutputFormat;
-}
-
 // ============================================================================
 // IMAGE ERROR TYPES - Image error-related types
 // ============================================================================
@@ -278,111 +271,6 @@ export { ImageErrorCode, ImageProcessError } from '../errors.internal';
 
 // Canvas API does not have margin/padding concepts like Sharp.js's extend feature
 // Users must directly adjust Canvas size if needed
-
-// ============================================================================
-// RESULT NAMESPACE - Result-related types
-// ============================================================================
-
-/**
- * Basic processing result metadata
- */
-export interface ResultMetadata {
-  /** Result width */
-  width: number;
-  /** Result height */
-  height: number;
-  /** Processing time (milliseconds) */
-  processingTime: number;
-  /** Original size */
-  originalSize?: GeometrySize;
-  /** Format used */
-  format?: OutputFormat;
-  /** Result size (bytes) */
-  size?: number;
-  /** Number of operations applied */
-  operations?: number;
-}
-
-/**
- * Blob result (includes metadata)
- */
-export interface ResultBlob extends ResultMetadata {
-  blob: globalThis.Blob;
-
-  // 🆕 Additional metadata (test compatibility)
-  /** Background color information (optional) */
-  background?: string;
-  /** Used quality setting (optional) */
-  quality?: number;
-
-  // 🆕 Direct conversion methods (performance optimization)
-  toCanvas(): Promise<HTMLCanvasElement>;
-  toDataURL(options?: OutputOptions): Promise<string>;
-  toFile(filename: string, options?: OutputOptions): Promise<globalThis.File>;
-  toElement(): Promise<HTMLImageElement>;
-  toArrayBuffer(): Promise<ArrayBuffer>;
-  toUint8Array(): Promise<Uint8Array>;
-}
-
-/**
- * DataURL result (includes metadata)
- */
-export interface ResultDataURL extends ResultMetadata {
-  dataURL: string;
-
-  // 🆕 Direct conversion methods (performance optimization through size info reuse)
-  toCanvas(): Promise<HTMLCanvasElement>;
-  toBlob(options?: OutputOptions): Promise<globalThis.Blob>;
-  toFile(filename: string, options?: OutputOptions): Promise<globalThis.File>;
-  toElement(): Promise<HTMLImageElement>;
-  toArrayBuffer(): Promise<ArrayBuffer>;
-  toUint8Array(): Promise<Uint8Array>;
-}
-
-/**
- * File result (includes metadata)
- */
-export interface ResultFile extends ResultMetadata {
-  file: globalThis.File;
-
-  // 🆕 Direct conversion methods
-  toCanvas(): Promise<HTMLCanvasElement>;
-  toDataURL(options?: OutputOptions): Promise<string>;
-  toBlob(options?: OutputOptions): Promise<globalThis.Blob>;
-  toElement(): Promise<HTMLImageElement>;
-  toArrayBuffer(): Promise<ArrayBuffer>;
-  toUint8Array(): Promise<Uint8Array>;
-}
-
-/**
- * Canvas result (includes metadata)
- */
-export interface ResultCanvas extends ResultMetadata {
-  canvas: HTMLCanvasElement;
-
-  // Direct conversion methods
-  toBlob(options?: OutputOptions): Promise<globalThis.Blob>;
-  toDataURL(options?: OutputOptions): Promise<string>;
-  toFile(filename: string, options?: OutputOptions): Promise<globalThis.File>;
-  toElement(): Promise<HTMLImageElement>;
-  toArrayBuffer(): Promise<ArrayBuffer>;
-  toUint8Array(): Promise<Uint8Array>;
-}
-
-/**
- * HTMLImageElement 결과 (메타데이터 포함)
- */
-export interface ResultElement extends ResultMetadata {
-  element: HTMLImageElement;
-
-  // 직접 변환 메서드
-  toBlob(options?: OutputOptions): Promise<globalThis.Blob>;
-  toDataURL(options?: OutputOptions): Promise<string>;
-  toFile(filename: string, options?: OutputOptions): Promise<globalThis.File>;
-  toCanvas(): Promise<HTMLCanvasElement>;
-  toArrayBuffer(): Promise<ArrayBuffer>;
-  toUint8Array(): Promise<Uint8Array>;
-}
 
 // ============================================================================
 // PROCESSOR NAMESPACE - Processor-related types
