@@ -8,35 +8,54 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CanvasLease } from '../../../src/base/canvas-lease.internal';
+import { LazyRenderPipeline } from '../../../src/core/lazy-render-pipeline.internal';
+import * as converter from '../../../src/core/source-converter/index';
 
 import { processImage } from '../../../src/processor';
 
+// 소스 변환을 대체하기 위한 모듈 mock (실제 구현은 각 테스트에서 mockResolvedValue로 지정)
+vi.mock('../../../src/core/source-converter/index', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('../../../src/core/source-converter/index')>();
+  return {
+    ...orig,
+    convertToImageElement: vi.fn().mockImplementation(orig.convertToImageElement),
+  };
+});
+
 const originalDocumentCreateElement = document.createElement;
 
-function createProcessingOutput(canvas: HTMLCanvasElement) {
+function createRenderOutput(canvas: HTMLCanvasElement): ReturnType<LazyRenderPipeline['render']> {
   return {
     lease: new CanvasLease(canvas),
-    result: {
+    metadata: {
       width: canvas.width,
       height: canvas.height,
       processingTime: 0,
-      originalSize: {
-        width: canvas.width,
-        height: canvas.height,
-      },
-      operations: [],
+      operations: 0,
     },
-  };
+  } as unknown as ReturnType<LazyRenderPipeline['render']>;
 }
 
 /**
- * controlled canvas를 반환하는 processor를 만든다. executeProcessing을 spy로 대체한다.
+ * 렌더 단계를 controlled canvas로 대체한다.
+ * private 구현 대신 안정적 seam(소스 변환 mock + 렌더 코어의 공개 interface인
+ * LazyRenderPipeline.render)을 대체해 jsdom에서 결정적으로 진행시킨다.
+ */
+function mockRenderWithCanvas(canvas: HTMLCanvasElement): void {
+  vi.mocked(converter.convertToImageElement).mockResolvedValue({
+    naturalWidth: canvas.width,
+    naturalHeight: canvas.height,
+  } as unknown as HTMLImageElement);
+  vi.spyOn(LazyRenderPipeline.prototype, 'render').mockReturnValue(createRenderOutput(canvas));
+}
+
+/**
+ * controlled canvas를 반환하는 processor를 만든다.
  * toElement()는 공개 TypedImageProcessor 인터페이스에 없어 any로 반환한다.
  */
 function createProcessorWithCanvas(canvas: HTMLCanvasElement): any {
-  const processor = processImage(new Blob(['input'], { type: 'image/png' }));
-  vi.spyOn(processor as any, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
-  return processor;
+  mockRenderWithCanvas(canvas);
+  return processImage(new Blob(['input'], { type: 'image/png' }));
 }
 
 /**
@@ -237,10 +256,10 @@ describe('toElement() 체이닝 도달성', () => {
       throw new Error(`예상치 않은 element 생성: ${tagName}`);
     });
 
-    // resize()를 거쳐 executeProcessing이 호출되는 경로를 spy로 우회한다.
+    // 렌더 단계를 mock으로 우회하고 resize() 체이닝 도달성만 검증한다.
+    mockRenderWithCanvas(canvas);
     const blob = new Blob(['input'], { type: 'image/png' });
     const processor: any = processImage(blob).resize({ fit: 'cover', width: 200, height: 200 });
-    vi.spyOn(processor, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
 
     let result: HTMLImageElement;
     try {
@@ -261,9 +280,9 @@ describe('toElement() 체이닝 도달성', () => {
       throw new Error(`예상치 않은 element 생성: ${tagName}`);
     });
 
+    mockRenderWithCanvas(canvas);
     const blob = new Blob(['input'], { type: 'image/png' });
     const processor: any = processImage(blob).blur(2).resize({ fit: 'cover', width: 200, height: 200 });
-    vi.spyOn(processor, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
 
     let result: HTMLImageElement;
     try {
@@ -284,9 +303,9 @@ describe('toElement() 체이닝 도달성', () => {
       throw new Error(`예상치 않은 element 생성: ${tagName}`);
     });
 
+    mockRenderWithCanvas(canvas);
     const blob = new Blob(['input'], { type: 'image/png' });
     const processor: any = processImage(blob).blur(2);
-    vi.spyOn(processor, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
 
     let result: HTMLImageElement;
     try {

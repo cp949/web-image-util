@@ -2,27 +2,15 @@
  * 체이닝 기반 이미지 처리를 담당하는 핵심 클래스다.
  *
  * @description Canvas 2D API를 바탕으로 브라우저 전용 이미지 처리 흐름을 구성한다.
+ * 출력 경로 전체(소스 정규화·파이프라인 구성·인코딩·pool 반환)는
+ * OutputPipeline이 담당하고, 이 클래스는 연산 축적과 타입 상태 전이만 맡는다.
  */
 
-import type { LazyRenderPipeline } from './core/lazy-render-pipeline.internal';
-import type { SvgPassthroughMode } from './core/source-converter/options.internal';
-import { canvasToBlobOutput } from './processor/blob-output.internal';
-import { renderToCanvasResult } from './processor/canvas-output.internal';
-import { blobToImageElement } from './processor/dom-output.internal';
-import { blobResultToDataURL, blobResultToFile } from './processor/encoded-output.internal';
-import { getBestFormat, getOptimalQuality } from './processor/format-helpers.internal';
-import {
-  MULTIPLE_RESIZE_OPERATION_MESSAGE,
-  MULTIPLE_RESIZE_RESIZE_MESSAGE,
-} from './processor/operation-helpers.internal';
-import { resolveFileOutput } from './processor/output-helpers.internal';
-import { resolveOutputOptions } from './processor/output-options.internal';
-import { setupLazyPipeline } from './processor/pipeline-setup.internal';
-import { appendBlurState, applyResizeState, planResizeOperation } from './processor/state-helpers.internal';
+import type { InternalProcessorOptions } from './core/output-pipeline.internal';
+import { OutputPipeline } from './core/output-pipeline.internal';
 import { ShortcutBuilder } from './shortcut/shortcut-builder';
 import type {
   BlurOptions,
-  ImageFormat,
   ImageSource,
   OutputFormat,
   OutputOptions,
@@ -32,11 +20,9 @@ import type {
   ResultDataURL,
   ResultFile,
 } from './types';
-import { ImageProcessError } from './types';
 import type { IImageProcessor, IShortcutBuilder } from './types/processor-interface';
 import type { AfterResizeCall, ProcessorState } from './types/processor-state.internal';
 import type { ResizeConfig } from './types/resize-config';
-import { BlobResultImpl } from './types/result-implementations.internal';
 import type { ResizeOperation } from './types/shortcut-types';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor.internal';
 
@@ -65,64 +51,14 @@ import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './type
  * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  * ```
  */
-
-// 공개 ProcessorOptions를 확장하는 내부 전용 옵션 타입이다.
-// 내부 helper(pipeline-setup 등)에서 재사용하므로 export하되, index.ts에서 re-export하지 않는다.
-export type InternalProcessorOptions = ProcessorOptions & {
-  __svgPassthroughMode?: SvgPassthroughMode;
-};
-
 export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   implements TypedImageProcessor<TState>, IImageProcessor<TState>
 {
-  private lazyPipeline: LazyRenderPipeline | null = null;
-  private sourceImage: HTMLImageElement | null = null;
-  private options: InternalProcessorOptions;
-  private hasResized = false;
-  private pendingResizeConfig: ResizeConfig | null = null;
-  private pendingBlurOptions: BlurOptions[] = [];
-  private pendingResizeOperation: ResizeOperation | null = null;
+  // 출력 경로 deep module. 연산 축적·1회 제약 런타임 가드·렌더·인코딩 전부 여기에 있다.
+  private readonly output: OutputPipeline;
 
-  constructor(
-    private source: ImageSource,
-    options: InternalProcessorOptions = {}
-  ) {
-    this.options = {
-      crossOrigin: 'anonymous',
-      defaultQuality: 0.8,
-      defaultBackground: { r: 0, g: 0, b: 0, alpha: 0 },
-      __svgPassthroughMode: 'safe',
-      ...options,
-    };
-  }
-
-  /**
-   * 입력 소스를 HTMLImageElement로 정규화하고 지연 파이프라인을 준비한다.
-   */
-  private async ensureLazyPipeline(): Promise<void> {
-    // 이미 초기화됐으면 pending을 건드리지 않고 그대로 둔다.
-    if (this.lazyPipeline) {
-      return;
-    }
-
-    // source 로딩, pipeline 생성, pending 연산 반영은 helper가 담당한다.
-    const result = await setupLazyPipeline({
-      source: this.source,
-      options: this.options,
-      currentPipeline: this.lazyPipeline,
-      currentSourceImage: this.sourceImage,
-      pendingResizeConfig: this.pendingResizeConfig,
-      pendingResizeOperation: this.pendingResizeOperation,
-      pendingBlurOptions: this.pendingBlurOptions,
-    });
-
-    this.lazyPipeline = result.lazyPipeline;
-    this.sourceImage = result.sourceImage;
-
-    // helper가 반영을 끝냈으므로 pending 필드를 비운다.
-    this.pendingResizeConfig = null;
-    this.pendingResizeOperation = null;
-    this.pendingBlurOptions = [];
+  constructor(source: ImageSource, options: InternalProcessorOptions = {}) {
+    this.output = new OutputPipeline(source, options);
   }
 
   /**
@@ -135,7 +71,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * - TypeScript prevents duplicate calls at compile time
    *
    * @param config Resize configuration (ResizeConfig)
-   * @param _constraint Type-level constraint (internal use, please ignore)
    * @returns Processor in AfterResize state (blur, toBlob etc. available)
    *
    * @throws {ImageProcessError} Runtime error if resize() is called more than once
@@ -159,10 +94,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   resize(config: ResizeConfig): ImageProcessor<AfterResizeCall<TState>> {
-    // 검증과 상태 전이는 helper에 위임하고, 결과만 필드에 반영한다.
-    const update = applyResizeState(this.hasResized, config, MULTIPLE_RESIZE_RESIZE_MESSAGE);
-    this.hasResized = update.hasResized;
-    this.pendingResizeConfig = update.pendingResizeConfig;
+    // 런타임 검증과 1회 제약은 OutputPipeline이 담당하고, 여기서는 타입 상태 전이만 남는다.
+    this.output.addResize(config);
 
     return this as unknown as ImageProcessor<AfterResizeCall<TState>>;
   }
@@ -191,28 +124,15 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .toBlob();
    *
-   * // Apply strong blur after resize
-   * await processImage(source)
-   *   .resize({ fit: 'cover', width: 300, height: 200 })
-   *   .blur(5)
-   *   .toBlob();
-   *
    * // Multiple blur applications (cumulative effect)
    * await processImage(source)
    *   .blur(2)     // First blur: 2px
    *   .blur(3)     // Total blur: 5px (2+3)
    *   .toBlob();
-   *
-   * // Performance-optimized blur for thumbnails
-   * await processImage(source)
-   *   .blur(1)     // Light blur before resize
-   *   .resize({ fit: 'cover', width: 150, height: 150 })
-   *   .toBlob();
    * ```
    */
   blur(radius: number = 2, options: Partial<BlurOptions> = {}): ImageProcessor<TState> {
-    // blur 옵션 누적은 helper에 위임한다(호출 순서 보존).
-    this.pendingBlurOptions = appendBlurState(this.pendingBlurOptions, radius, options);
+    this.output.addBlur(radius, options);
 
     return this as ImageProcessor<TState>;
   }
@@ -228,18 +148,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * @internal
    */
   _addResizeOperation(operation: ResizeOperation): void {
-    // resize 1회 제약 검사와 pending/즉시 적용 분기 결정은 helper에 위임한다.
-    const plan = planResizeOperation(this.hasResized, this.lazyPipeline !== null, MULTIPLE_RESIZE_OPERATION_MESSAGE);
-
-    this.hasResized = true;
-
-    if (plan.mode === 'apply') {
-      // 이미 초기화된 경우 즉시 전달
-      this.lazyPipeline?._addResizeOperation(operation);
-    } else {
-      // 아직 초기화되지 않은 경우 pending 저장 (ensureLazyPipeline()에서 자동 반영)
-      this.pendingResizeOperation = operation;
-    }
+    // 준비 전/후(pending/즉시 반영) 분기는 OutputPipeline 내부에서 처리된다.
+    this.output.addResizeOperation(operation);
   }
 
   /**
@@ -270,26 +180,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
     return new ShortcutBuilder(this);
   }
 
-  // ==============================================
-  // Smart format selection and optimization methods
-  // ==============================================
-
-  /**
-   * 브라우저 지원에 따라 최적 출력 포맷을 선택한다.
-   * @private
-   */
-  private getBestFormat(): OutputFormat {
-    return getBestFormat();
-  }
-
-  /**
-   * 포맷별 권장 품질을 반환한다. (defaultQuality 기반 fallback 포함)
-   * @private
-   */
-  private getOptimalQuality(format: ImageFormat): number {
-    return getOptimalQuality(format, this.options.defaultQuality);
-  }
-
   /**
    * Convert to Blob (with metadata)
    *
@@ -315,30 +205,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * console.log(`${width}x${height} image, ${processingTime}ms elapsed`);
    * ```
    */
-
   async toBlob(options?: OutputOptions): Promise<ResultBlob>;
   async toBlob(format: OutputFormat): Promise<ResultBlob>;
   async toBlob(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultBlob> {
-    // ✅ All sources use the same pipeline (SVG branching removed)
-
-    // 옵션 정규화를 헬퍼에 위임한다.
-    const outputOptions = resolveOutputOptions({
-      optionsOrFormat,
-      getBestFormat: () => this.getBestFormat(),
-      getOptimalQuality: (f) => this.getOptimalQuality(f),
-    });
-
-    const { lease, result } = await this.executeProcessing();
-
-    try {
-      // consume이 blob 변환 후 canvas를 pool로 반환한다 (실패 시에도 반환)
-      const { blob, format } = await lease.consume((canvas) => canvasToBlobOutput(canvas, outputOptions));
-
-      // 🆕 Return extended result object (includes direct conversion methods)
-      return new BlobResultImpl(blob, result.width, result.height, result.processingTime, result.originalSize, format);
-    } catch (error) {
-      throw new ImageProcessError('Error occurred during Blob conversion', 'OUTPUT_FAILED', { cause: error });
-    }
+    return this.output.toBlob(optionsOrFormat);
   }
 
   /**
@@ -368,8 +238,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   async toDataURL(options?: OutputOptions): Promise<ResultDataURL>;
   async toDataURL(format: OutputFormat): Promise<ResultDataURL>;
   async toDataURL(optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultDataURL> {
-    const blobResult = await this.toBlob(optionsOrFormat as OutputOptions);
-    return blobResultToDataURL(blobResult);
+    return this.output.toDataURL(optionsOrFormat);
   }
 
   /**
@@ -402,14 +271,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
   async toFile(filename: string, options?: OutputOptions): Promise<ResultFile>;
   async toFile(filename: string, format: OutputFormat): Promise<ResultFile>;
   async toFile(filename: string, optionsOrFormat: OutputOptions | OutputFormat = {}): Promise<ResultFile> {
-    // 포맷/파일명 해석은 헬퍼에 위임한다.
-    const { finalOptions, resolvedFilename } = resolveFileOutput(
-      filename,
-      optionsOrFormat,
-      this.options.defaultQuality
-    );
-    const blobResult = await this.toBlob(finalOptions);
-    return blobResultToFile(blobResult, resolvedFilename);
+    return this.output.toFile(filename, optionsOrFormat);
   }
 
   /**
@@ -426,7 +288,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   async toCanvas(): Promise<ResultCanvas> {
-    return renderToCanvasResult(() => this.executeProcessing(), 'Error occurred during Canvas conversion');
+    return this.output.toCanvas();
   }
 
   /**
@@ -441,7 +303,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   async toCanvasDetailed(): Promise<ResultCanvas> {
-    return renderToCanvasResult(() => this.executeProcessing(), 'Error occurred during detailed Canvas conversion');
+    return this.output.toCanvasDetailed();
   }
 
   /**
@@ -457,14 +319,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   async toElement(): Promise<HTMLImageElement> {
-    let blobResult: ResultBlob;
-    try {
-      blobResult = await this.toBlob('png');
-    } catch (error) {
-      throw new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error });
-    }
-
-    return blobToImageElement(blobResult.blob);
+    return this.output.toElement();
   }
 
   /**
@@ -480,21 +335,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   async toArrayBuffer(): Promise<ArrayBuffer> {
-    try {
-      const blobResult = await this.toBlob('png');
-
-      try {
-        return await blobResult.blob.arrayBuffer();
-      } catch (error) {
-        throw new ImageProcessError('ArrayBuffer conversion failed', 'BLOB_TO_ARRAYBUFFER_FAILED', { cause: error });
-      }
-    } catch (error) {
-      if (error instanceof ImageProcessError && error.code === 'BLOB_TO_ARRAYBUFFER_FAILED') {
-        throw error;
-      }
-
-      throw new ImageProcessError('Error occurred during ArrayBuffer conversion', 'OUTPUT_FAILED', { cause: error });
-    }
+    return this.output.toArrayBuffer();
   }
 
   /**
@@ -509,53 +350,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   async toUint8Array(): Promise<Uint8Array> {
-    try {
-      const arrayBuffer = await this.toArrayBuffer();
-      return new Uint8Array(arrayBuffer);
-    } catch (error) {
-      throw new ImageProcessError('Error occurred during Uint8Array conversion', 'OUTPUT_FAILED', { cause: error });
-    }
+    return this.output.toUint8Array();
   }
-
-  /**
-   * Execute pipeline processing
-   */
-  private async executeProcessing() {
-    try {
-      // Process with LazyRenderPipeline
-      await this.ensureLazyPipeline();
-
-      if (!this.lazyPipeline) {
-        throw new ImageProcessError('LazyRenderPipeline initialization failed', 'PROCESSING_FAILED');
-      }
-
-      const { lease, metadata } = this.lazyPipeline.render();
-
-      return {
-        lease,
-        result: {
-          width: metadata.width,
-          height: metadata.height,
-          processingTime: metadata.processingTime,
-          originalSize: {
-            width: this.sourceImage?.naturalWidth || 0,
-            height: this.sourceImage?.naturalHeight || 0,
-          },
-          operations: metadata.operations,
-        },
-      };
-    } catch (error) {
-      if (error instanceof ImageProcessError) {
-        throw error;
-      }
-
-      throw new ImageProcessError('Error occurred during image processing', 'CANVAS_CREATION_FAILED', { cause: error });
-    }
-  }
-
-  // ==============================================
-  // ✅ SVG-specific processing path removed - all sources use unified pipeline
-  // ==============================================
 }
 
 /**

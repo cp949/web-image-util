@@ -6,26 +6,33 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CanvasLease } from '../../../src/base/canvas-lease.internal';
+import { LazyRenderPipeline } from '../../../src/core/lazy-render-pipeline.internal';
+import * as converter from '../../../src/core/source-converter/index';
 
 import { processImage } from '../../../src/processor';
 import { ImageProcessError } from '../../../src/types';
 
+// 소스 변환을 대체하기 위한 모듈 mock (실제 구현은 각 테스트에서 mockResolvedValue로 지정)
+vi.mock('../../../src/core/source-converter/index', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('../../../src/core/source-converter/index')>();
+  return {
+    ...orig,
+    convertToImageElement: vi.fn().mockImplementation(orig.convertToImageElement),
+  };
+});
+
 const originalDocumentCreateElement = document.createElement;
 
-function createProcessingOutput(canvas: HTMLCanvasElement) {
+function createRenderOutput(canvas: HTMLCanvasElement): ReturnType<LazyRenderPipeline['render']> {
   return {
     lease: new CanvasLease(canvas),
-    result: {
+    metadata: {
       width: canvas.width,
       height: canvas.height,
       processingTime: 0,
-      originalSize: {
-        width: canvas.width,
-        height: canvas.height,
-      },
-      operations: [],
+      operations: 0,
     },
-  };
+  } as unknown as ReturnType<LazyRenderPipeline['render']>;
 }
 
 function createCanvasWithBlob(blob: Blob | null): HTMLCanvasElement {
@@ -58,10 +65,18 @@ function createControlledImage(result: 'load' | 'error'): HTMLImageElement {
   return img;
 }
 
+/**
+ * controlled canvas를 반환하는 processor를 만든다.
+ * private 구현 대신 안정적 seam(소스 변환 mock + 렌더 코어의 공개 interface인
+ * LazyRenderPipeline.render)을 대체해 jsdom에서 결정적으로 진행시킨다.
+ */
 function createProcessorWithCanvas(canvas: HTMLCanvasElement): any {
-  const processor = processImage(new Blob(['input'], { type: 'image/png' }));
-  vi.spyOn(processor as any, 'executeProcessing').mockResolvedValue(createProcessingOutput(canvas));
-  return processor;
+  vi.mocked(converter.convertToImageElement).mockResolvedValue({
+    naturalWidth: canvas.width,
+    naturalHeight: canvas.height,
+  } as unknown as HTMLImageElement);
+  vi.spyOn(LazyRenderPipeline.prototype, 'render').mockReturnValue(createRenderOutput(canvas));
+  return processImage(new Blob(['input'], { type: 'image/png' }));
 }
 
 describe('toElement cleanup 동작', () => {
