@@ -318,7 +318,7 @@ describe('renderLayout', () => {
     });
   });
 
-  describe('레이아웃 검증 (OnehotRenderer 승계)', () => {
+  describe('레이아웃 검증', () => {
     it('canvas 크기가 0 이하면 INVALID_DIMENSIONS 를 던지고 pool 을 사용하지 않는다', () => {
       const acquireSpy = vi.spyOn(CanvasPool.getInstance(), 'acquire');
       const source = createDrawableSource(100, 100);
@@ -370,7 +370,7 @@ describe('renderLayout', () => {
     });
   });
 
-  describe('품질 옵션 (OnehotRenderer 승계)', () => {
+  describe('품질 옵션', () => {
     // drawImage 시점의 ctx 스무딩 상태를 캡처하는 헬퍼
     function renderAndCaptureSmoothing(options?: Parameters<typeof renderLayout>[2]) {
       const source = createDrawableSource(100, 100);
@@ -425,7 +425,7 @@ describe('renderLayout', () => {
     });
   });
 
-  describe('배경 채우기 (OnehotRenderer 승계)', () => {
+  describe('배경 채우기', () => {
     it('background 가 CSS 색이면 해당 색으로 전체 영역을 fillRect 한다', () => {
       const source = createDrawableSource(100, 100);
       const tempCtx = document.createElement('canvas').getContext('2d')!;
@@ -465,7 +465,7 @@ describe('renderLayout', () => {
     });
   });
 
-  describe('대형 canvas 경고 (OnehotRenderer 승계)', () => {
+  describe('대형 canvas 경고', () => {
     it('면적이 16384^2 를 넘으면 오류 없이 경고만 남긴다', () => {
       // 실제 초대형 canvas 할당을 피하기 위해 acquire 를 작은 canvas 로 대체한다
       const small = document.createElement('canvas');

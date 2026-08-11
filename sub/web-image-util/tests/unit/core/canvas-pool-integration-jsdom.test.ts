@@ -1,6 +1,6 @@
 /**
  * CanvasPool 통합 테스트 중 jsdom에서 안전한 케이스만 모은다.
- * - OnehotRenderer 직접 호출은 Canvas 입력만 받으므로 jsdom 가능.
+ * - renderLayout 직접 호출은 Canvas 입력을 소스로 쓰면 jsdom 가능.
  * - pool 정책 검증은 Image 로드 없이 pool API만 사용하므로 jsdom 가능.
  *
  * LazyRenderPipeline + Canvas 입력 출력 흐름 케이스는 production이 내부적으로
@@ -8,17 +8,30 @@
  * browser 테스트에서 대표 실제 로딩 경로를 검증한다.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
-import { OnehotRenderer } from '../../../src/core/onehot-renderer.internal';
-import { ResizeCalculator } from '../../../src/core/resize-calculator.internal';
-import type { ResizeConfig } from '../../../src/types/resize-config';
+import type { LazyOperation } from '../../../src/core/lazy-render-pipeline.internal';
+import { analyzeAllOperations, renderLayout } from '../../../src/core/single-renderer.internal';
 
 function createMockCanvas(width: number, height: number): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   return canvas;
+}
+
+// drawImage 를 안전하게 수행할 수 있는 소스 캔버스를 이미지처럼 사용
+// node-canvas 는 drawImage 의 소스로 Canvas 를 수락한다
+function createDrawableSource(width: number, height: number): HTMLImageElement {
+  const canvas = createMockCanvas(width, height);
+  Object.defineProperty(canvas, 'naturalWidth', { value: width, configurable: true });
+  Object.defineProperty(canvas, 'naturalHeight', { value: height, configurable: true });
+  return canvas as unknown as HTMLImageElement;
+}
+
+// 소스와 연산으로 레이아웃 계산 후 렌더링하는 헬퍼
+function renderWithOps(source: HTMLImageElement, ops: LazyOperation[]) {
+  return renderLayout(source, analyzeAllOperations(source, ops));
 }
 
 describe('CanvasPool 통합 (jsdom-safe)', () => {
@@ -33,58 +46,33 @@ describe('CanvasPool 통합 (jsdom-safe)', () => {
     pool.clear();
   });
 
-  describe('OnehotRenderer + CanvasPool 통합', () => {
-    it('연속 렌더링 시 pool hit이 증가해야 한다', () => {
-      const calculator = new ResizeCalculator();
-      const renderer = new OnehotRenderer();
-      const config: ResizeConfig = { fit: 'cover', width: 200, height: 200 };
+  describe('renderLayout + CanvasPool 통합', () => {
+    const resizeOps: LazyOperation[] = [{ type: 'resize', config: { fit: 'cover', width: 200, height: 200 } }];
 
-      const sourceCanvas1 = createMockCanvas(100, 100);
-      const layout1 = calculator.calculateFinalLayout(100, 100, config);
-      const result1 = renderer.render(sourceCanvas1, layout1, config);
-
-      pool.release(result1);
+    it('lease 반환 후 다시 렌더링하면 pool hit이 증가해야 한다', () => {
+      const lease1 = renderWithOps(createDrawableSource(100, 100), resizeOps);
+      lease1.release();
 
       const statsAfterFirstRelease = pool.getStats();
       expect(statsAfterFirstRelease.poolSize).toBe(1);
 
-      const sourceCanvas2 = createMockCanvas(100, 100);
-      const layout2 = calculator.calculateFinalLayout(100, 100, config);
-      renderer.render(sourceCanvas2, layout2, config);
+      const lease2 = renderWithOps(createDrawableSource(100, 100), resizeOps);
 
       const statsAfterSecond = pool.getStats();
       expect(statsAfterSecond.poolHits).toBeGreaterThan(0);
+      lease2.release();
     });
 
-    it('렌더링 시 pool.acquire를 사용해야 한다', () => {
-      const calculator = new ResizeCalculator();
-      const renderer = new OnehotRenderer();
-      const config: ResizeConfig = { fit: 'cover', width: 200, height: 200 };
+    it('렌더링 직후 lease를 소비하기 전에는 pool로 반환되지 않아야 한다', () => {
+      const lease = renderWithOps(createDrawableSource(100, 100), resizeOps);
 
-      const acquireSpy = vi.spyOn(pool, 'acquire');
-
-      const sourceCanvas = createMockCanvas(100, 100);
-      const layout = calculator.calculateFinalLayout(100, 100, config);
-      renderer.render(sourceCanvas, layout, config);
-
-      expect(acquireSpy).toHaveBeenCalled();
-
-      acquireSpy.mockRestore();
+      const stats = pool.getStats();
+      expect(stats.totalReleased).toBe(0);
+      lease.release();
     });
+  });
 
-    it('렌더링 결과로 반환된 canvas는 올바른 크기를 가져야 한다', () => {
-      const calculator = new ResizeCalculator();
-      const renderer = new OnehotRenderer();
-      const config: ResizeConfig = { fit: 'fill', width: 300, height: 200 };
-
-      const sourceCanvas = createMockCanvas(100, 100);
-      const layout = calculator.calculateFinalLayout(100, 100, config);
-      const result = renderer.render(sourceCanvas, layout, config);
-
-      expect(result.width).toBe(300);
-      expect(result.height).toBe(200);
-    });
-
+  describe('pool 정책 검증', () => {
     it('큰 canvas(2048x2048 초과)는 pool에 반환되지 않아야 한다', () => {
       const largeCanvas = createMockCanvas(2049, 2049);
       pool.release(largeCanvas);
@@ -94,24 +82,6 @@ describe('CanvasPool 통합 (jsdom-safe)', () => {
       expect(stats.totalReleased).toBe(1);
     });
 
-    it('렌더링 직후 반환된 canvas는 pool에서 조기 해제되지 않아야 한다', () => {
-      const calculator = new ResizeCalculator();
-      const renderer = new OnehotRenderer();
-      const config: ResizeConfig = { fit: 'cover', width: 200, height: 200 };
-
-      const sourceCanvas = createMockCanvas(100, 100);
-      const layout = calculator.calculateFinalLayout(100, 100, config);
-      const result = renderer.render(sourceCanvas, layout, config);
-
-      expect(result.width).toBe(200);
-      expect(result.height).toBe(200);
-
-      const stats = pool.getStats();
-      expect(stats.totalReleased).toBe(0);
-    });
-  });
-
-  describe('pool 정책 검증', () => {
     it('pool이 가득 찼을 때 초과 canvas는 dispose되야 한다', () => {
       pool.setMaxPoolSize(2);
 

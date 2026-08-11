@@ -5,7 +5,7 @@
  * - Handles calculation logic for the new ResizeConfig API
  * - Provides optimized calculation methods for each fit mode
  * - Implemented based on Sharp library's calculation approach
- * - Single responsibility: Only performs layout calculations, rendering is handled by OnehotRenderer
+ * - Single responsibility: Only performs layout calculations, rendering is handled by renderLayout (single-renderer)
  */
 
 import type { GeometryPoint, GeometrySize } from '../types/base';
