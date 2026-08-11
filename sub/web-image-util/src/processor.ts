@@ -124,10 +124,22 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    *   .resize({ fit: 'cover', width: 300, height: 200 })
    *   .toBlob();
    *
+   * // Apply strong blur after resize
+   * await processImage(source)
+   *   .resize({ fit: 'cover', width: 300, height: 200 })
+   *   .blur(5)
+   *   .toBlob();
+   *
    * // Multiple blur applications (cumulative effect)
    * await processImage(source)
    *   .blur(2)     // First blur: 2px
    *   .blur(3)     // Total blur: 5px (2+3)
+   *   .toBlob();
+   *
+   * // Performance-optimized blur for thumbnails
+   * await processImage(source)
+   *   .blur(1)     // Light blur before resize
+   *   .resize({ fit: 'cover', width: 150, height: 150 })
    *   .toBlob();
    * ```
    */

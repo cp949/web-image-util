@@ -61,6 +61,21 @@ describe('OutputPipeline', () => {
       expect(vi.mocked(converter.convertToImageElement)).toHaveBeenCalledTimes(1);
     });
 
+    it('첫 출력이 소스 변환 실패로 거부돼도 다음 출력은 소스 변환을 재시도한다', async () => {
+      // mutation: prepare promise가 rejection까지 캐시하면 두 번째 출력이 캐시된 실패를
+      // 재사용해 영구 실패한다 (리뷰 H-01 — 구 코드의 재시도 동작 보존)
+      vi.mocked(converter.convertToImageElement).mockRejectedValueOnce(new Error('transient network error'));
+      const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
+      pipeline.addResize({ fit: 'cover', width: 100, height: 100 });
+
+      await expect(pipeline.toBlob()).rejects.toMatchObject({ code: 'CANVAS_CREATION_FAILED' });
+
+      // 두 번째 호출은 실제 변환으로 회복하고, 실패 전 축적된 연산도 그대로 재생된다
+      const result = await pipeline.toBlob();
+      expect(result.width).toBe(100);
+      expect(vi.mocked(converter.convertToImageElement)).toHaveBeenCalledTimes(2);
+    });
+
     it('생성자 옵션이 기본값과 병합되어 소스 변환에 전달된다', async () => {
       // mutation: 옵션 병합(기본값 주입)을 제거하면 실패한다 — 표면 테스트와 동일 관찰 경계
       const canvas = createTestCanvas(400, 300, 'green');
@@ -339,6 +354,29 @@ describe('OutputPipeline', () => {
       await expect(pipeline.toBlob()).rejects.toMatchObject({
         name: 'ImageProcessError',
         code: 'CANVAS_CREATION_FAILED',
+      });
+    });
+
+    it('toCanvas 실패는 Canvas 변환 메시지의 OUTPUT_FAILED로 래핑한다', async () => {
+      vi.mocked(converter.convertToImageElement).mockRejectedValueOnce(new Error('boom'));
+      const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
+
+      await expect(pipeline.toCanvas()).rejects.toMatchObject({
+        name: 'ImageProcessError',
+        code: 'OUTPUT_FAILED',
+        message: 'Error occurred during Canvas conversion',
+      });
+    });
+
+    it('toCanvasDetailed 실패는 detailed 메시지의 OUTPUT_FAILED로 래핑한다', async () => {
+      // toCanvasDetailed는 에러 메시지 문자열 차이가 toCanvas와의 유일한 계약이다
+      vi.mocked(converter.convertToImageElement).mockRejectedValueOnce(new Error('boom'));
+      const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
+
+      await expect(pipeline.toCanvasDetailed()).rejects.toMatchObject({
+        name: 'ImageProcessError',
+        code: 'OUTPUT_FAILED',
+        message: 'Error occurred during detailed Canvas conversion',
       });
     });
 

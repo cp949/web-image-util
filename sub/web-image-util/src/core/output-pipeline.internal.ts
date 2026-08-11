@@ -9,7 +9,7 @@
  * pool에 반환하고, toCanvas/toCanvasDetailed만 lease.detach()로 사용자에게
  * 소유권을 이전한다. CanvasLease는 이 모듈의 interface 밖으로 노출되지 않는다.
  *
- * 공개 export가 아니다 — processor.ts만 사용한다.
+ * 공개 export가 아니다 — src에서는 processor.ts만 사용한다.
  */
 
 import type { CanvasLease } from '../base/canvas-lease.internal';
@@ -145,7 +145,8 @@ export class OutputPipeline {
   /**
    * blur 옵션을 축적한다. 여러 번 호출 가능하며 호출 순서를 보존한다.
    *
-   * 주의(현행 동작 보존): 첫 출력 이후의 호출은 이후 출력에 반영되지 않는다.
+   * 주의(현행 동작 보존): 첫 출력 이후의 호출은 배열에 축적은 되지만
+   * prepare가 재실행되지 않으므로 이후 출력에 재생되지 않는다.
    */
   addBlur(radius: number, options: Partial<BlurOptions> = {}): void {
     this.pendingBlurOptions = [...this.pendingBlurOptions, { radius, ...options }];
@@ -164,7 +165,12 @@ export class OutputPipeline {
   /** 소스 정규화와 파이프라인 구성을 1회만 수행한다(promise 메모이즈). */
   private ensurePrepared(): Promise<PreparedPipeline> {
     if (!this.prepared) {
-      this.prepared = this.prepare();
+      this.prepared = this.prepare().catch((error) => {
+        // 실패는 캐시하지 않는다 — 다음 출력이 소스 로딩부터 재시도한다.
+        // pending 필드는 prepare 성공 시에만 비워지므로 재시도 시 그대로 재생된다.
+        this.prepared = null;
+        throw error;
+      });
     }
     return this.prepared;
   }
