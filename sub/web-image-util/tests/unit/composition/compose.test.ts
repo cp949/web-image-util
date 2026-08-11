@@ -169,6 +169,28 @@ describe('composeImages — layers', () => {
       composeImages({ type: 'layers', width: 50, height: 50, layers: [{ image: img, x: 0, y: 0, opacity: 1.5 }] })
     ).rejects.toMatchObject({ code: 'OPTION_INVALID' });
   });
+
+  it('레이어 height에 0 이하를 지정하면 OPTION_INVALID를 던진다', async () => {
+    const img = createColorSource(20, 20, 'red');
+    await expect(
+      composeImages({ type: 'layers', width: 50, height: 50, layers: [{ image: img, x: 0, y: 0, height: -1 }] })
+    ).rejects.toMatchObject({ code: 'OPTION_INVALID' });
+  });
+
+  it('레이어 x/y·rotation이 비유한값이면 OPTION_INVALID를 던진다 — 침묵 소멸 방지', async () => {
+    const img = createColorSource(20, 20, 'red');
+    await expect(
+      composeImages({ type: 'layers', width: 50, height: 50, layers: [{ image: img, x: Number.NaN, y: 0 }] })
+    ).rejects.toMatchObject({ code: 'OPTION_INVALID' });
+    await expect(
+      composeImages({
+        type: 'layers',
+        width: 50,
+        height: 50,
+        layers: [{ image: img, x: 0, y: 0, rotation: Number.POSITIVE_INFINITY }],
+      })
+    ).rejects.toMatchObject({ code: 'OPTION_INVALID' });
+  });
 });
 
 // ============================================================================
@@ -365,6 +387,43 @@ describe('composeImages — collage', () => {
     }
   });
 
+  it('allowOverlap=false에서 겹치는 후보는 버리고 다음 후보를 채택한다', async () => {
+    // 이 테스트는 현재 구현의 난수 소비 순서(이미지마다 scale 1회 → 시도마다 x·y 각 1회)를
+    // 사용한다 — 소비 순서는 공개 계약이 아니므로 배치 알고리즘 변경 시 이 시퀀스를 갱신한다.
+    const images = [createColorSource(100, 100, 'red'), createColorSource(100, 100, 'blue')];
+    const seq = [
+      0, // 1번 이미지 scale → 0.5
+      0,
+      0, // 1번 이미지 배치 (0, 0) — rect (0,0,50,50)
+      0, // 2번 이미지 scale → 0.5
+      0.1,
+      0.1, // 2번 이미지 1차 후보 (15, 15) — 1번과 겹침 → 재시도해야 한다
+      0.9,
+      0.9, // 2번 이미지 2차 후보 (135, 135) — 채택
+    ];
+    let cursor = 0;
+    const { observed, restore } = collectDrawImageArgs();
+
+    try {
+      await composeImages({
+        type: 'collage',
+        images,
+        width: 200,
+        height: 200,
+        scaleRange: [0.5, 0.5],
+        maxRotation: 0,
+        allowOverlap: false,
+        random: () => seq[cursor++] ?? 0.5,
+      });
+
+      expect(observed).toHaveLength(2);
+      // 겹침 회피가 없다면 1차 후보 (15, 15)가 그대로 채택되어 실패한다
+      expect(observed[1].slice(1)).toEqual([135, 135, 50, 50]);
+    } finally {
+      restore();
+    }
+  });
+
   it('allowOverlap=false여도 공간이 부족하면 겹침을 허용하고 전부 그린다 — 최선 노력', async () => {
     // 40x40 canvas 에 20x20 다섯 개 — 비겹침 배치가 사실상 불가능한 밀도
     const images = Array.from({ length: 5 }, () => createColorSource(100, 100, 'red'));
@@ -445,6 +504,52 @@ describe('composeImages — 공통', () => {
     // JS 호출자의 잘못된 입력을 재현
     const spec = { type: 'mosaic' } as unknown as ComposeSpec;
     await expect(composeImages(spec)).rejects.toMatchObject({ code: 'PROCESSING_FAILED' });
+  });
+
+  it('로드되지 않은(크기 0) 이미지가 섞이면 INVALID_SOURCE를 던진다', async () => {
+    const zero = createColorSource(0, 0, 'red');
+    const normal = createColorSource(20, 20, 'red');
+
+    await expect(composeImages({ type: 'grid', images: [normal, zero] })).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+    });
+    await expect(
+      composeImages({ type: 'layers', width: 50, height: 50, layers: [{ image: zero, x: 0, y: 0 }] })
+    ).rejects.toMatchObject({ code: 'INVALID_SOURCE' });
+    await expect(composeImages({ type: 'collage', images: [zero], width: 100, height: 100 })).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+    });
+  });
+
+  it('이미지 자리에 null이 오면 raw TypeError가 아니라 INVALID_SOURCE를 던진다', async () => {
+    const nullImage = null as unknown as HTMLImageElement;
+    await expect(
+      composeImages({ type: 'layers', width: 50, height: 50, layers: [{ image: nullImage, x: 0, y: 0 }] })
+    ).rejects.toMatchObject({ code: 'INVALID_SOURCE' });
+  });
+
+  it('canvas 크기가 16384px를 넘으면 DIMENSION_TOO_LARGE를 던진다 — canvas 할당 전에 거부', async () => {
+    await expect(composeImages({ type: 'layers', width: 20000, height: 100, layers: [] })).rejects.toMatchObject({
+      code: 'DIMENSION_TOO_LARGE',
+    });
+
+    // grid 파생 크기도 같은 상한을 적용한다 — 9000px 이미지 2열이면 파생 너비가 상한을 넘는다
+    const huge = createColorSource(100, 100, 'red');
+    Object.defineProperty(huge, 'naturalWidth', { value: 9000, configurable: true });
+    Object.defineProperty(huge, 'naturalHeight', { value: 9000, configurable: true });
+    await expect(composeImages({ type: 'grid', images: [huge, huge], columns: 2 })).rejects.toMatchObject({
+      code: 'DIMENSION_TOO_LARGE',
+    });
+  });
+
+  it('비정수 canvas 크기는 반올림된다 — 0으로 반올림되면 INVALID_DIMENSIONS', async () => {
+    const canvas = await composeImages({ type: 'layers', width: 100.6, height: 50.4, layers: [] });
+    expect(canvas.width).toBe(101);
+    expect(canvas.height).toBe(50);
+
+    await expect(composeImages({ type: 'layers', width: 0.4, height: 10, layers: [] })).rejects.toMatchObject({
+      code: 'INVALID_DIMENSIONS',
+    });
   });
 
   it('반환 canvas는 호출자 소유다 — 이후 호출이 이전 결과를 변경하지 않는다', async () => {

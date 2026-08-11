@@ -52,7 +52,7 @@ export interface ComposeLayer {
 /** 좌표 지정 레이어 합성 */
 export interface ComposeLayersSpec {
   type: 'layers';
-  /** 출력 canvas 크기(px). 0 이하·비유한수는 오류 */
+  /** 출력 canvas 크기(px). 반올림되어 적용된다. 반올림 후 0 이하·비유한수·한 변 16384 초과는 오류 */
   width: number;
   height: number;
   /** CSS 색상. 생략 시 투명 배경 */
@@ -67,7 +67,7 @@ export interface ComposeLayersSpec {
  * 행 수는 항상 `ceil(images.length / columns)`로 파생되므로 이미지가
  * 잘리는 조합이 없다. 셀·canvas 크기는 입력에서 파생된다:
  * `cellW = max(이미지 너비)`, `canvasW = columns*cellW + (columns+1)*spacing`
- * (높이 동형).
+ * (높이 동형). 파생 크기의 한 변이 16384를 넘으면 DIMENSION_TOO_LARGE 오류다.
  */
 export interface ComposeGridSpec {
   type: 'grid';
@@ -91,7 +91,7 @@ export interface ComposeCollageSpec {
   type: 'collage';
   /** 빈 배열 허용 — 배경만 그린 canvas */
   images: readonly HTMLImageElement[];
-  /** 출력 canvas 크기(px). 0 이하·비유한수는 오류 */
+  /** 출력 canvas 크기(px). 반올림되어 적용된다. 반올림 후 0 이하·비유한수·한 변 16384 초과는 오류 */
   width: number;
   height: number;
   /** 기본 '#ffffff' */
@@ -103,7 +103,11 @@ export interface ComposeCollageSpec {
   scaleRange?: readonly [number, number];
   /** 회전 최대각(도, >= 0). 회전각은 ±maxRotation 균등분포. 0이면 회전 없음. 기본 15 */
   maxRotation?: number;
-  /** 기본 true. false면 기배치 영역과 겹치지 않는 위치를 최선 노력으로 재시도한다 */
+  /**
+   * 기본 true. false면 기배치 영역과 겹치지 않는 위치를 최선 노력으로 재시도한다.
+   * 겹침 판정은 회전 적용 전 AABB(축 정렬 경계 상자) 기준이다 —
+   * maxRotation > 0이면 회전으로 인한 시각적 겹침은 발생할 수 있다.
+   */
   allowOverlap?: boolean;
   /**
    * allowOverlap=false일 때 위치 재시도 상한(정수 >= 1). 기본 50.
@@ -156,14 +160,50 @@ function sourceSize(image: HTMLImageElement): { width: number; height: number } 
   };
 }
 
-function validateCanvasSize(width: number, height: number): void {
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+// 대부분의 브라우저가 지원하는 보수적 한 변 상한 — high-res-detector의 default와 동일 값.
+// 초과 시 브라우저는 오류 없이 빈 canvas를 만들 수 있어(특히 파생 크기의 grid) 생성 전에 거부한다.
+const MAX_CANVAS_DIMENSION = 16384;
+
+/**
+ * canvas 크기를 검증하고 반올림한다 — 실제 canvas에는 반올림 값이 쓰인다.
+ * 반올림 후 0 이하면 INVALID_DIMENSIONS, 한 변이 상한을 넘으면 DIMENSION_TOO_LARGE.
+ */
+function resolveCanvasSize(width: number, height: number): { width: number; height: number } {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || Math.round(width) <= 0 || Math.round(height) <= 0) {
     throw new ImageProcessError(
-      `Invalid canvas size: ${width}x${height}. Both dimensions must be > 0.`,
+      `Invalid canvas size: ${width}x${height}. Both dimensions must round to > 0.`,
       'INVALID_DIMENSIONS',
       { details: { kind: 'invalid-canvas-size', width, height } }
     );
   }
+  const rounded = { width: Math.round(width), height: Math.round(height) };
+  if (rounded.width > MAX_CANVAS_DIMENSION || rounded.height > MAX_CANVAS_DIMENSION) {
+    throw new ImageProcessError(
+      `Canvas size ${rounded.width}x${rounded.height} exceeds the ${MAX_CANVAS_DIMENSION}px per-side browser limit.`,
+      'DIMENSION_TOO_LARGE'
+    );
+  }
+  return rounded;
+}
+
+/**
+ * 소스가 그리기 가능한 상태인지 검증하고 크기를 반환한다.
+ * null·비객체·크기 0(미로드)·비유한 크기는 INVALID_SOURCE — canvas 할당 전에 걸러
+ * NaN 배치로 인한 침묵 소멸을 막는다.
+ */
+function requireDrawableImage(image: HTMLImageElement, context: string): { width: number; height: number } {
+  if (!image || typeof image !== 'object') {
+    throw new ImageProcessError(`${context}: image is not a drawable element`, 'INVALID_SOURCE', {
+      details: { label: 'image-not-loaded' },
+    });
+  }
+  const size = sourceSize(image);
+  if (!Number.isFinite(size.width) || !Number.isFinite(size.height) || size.width <= 0 || size.height <= 0) {
+    throw new ImageProcessError(`${context}: image has no drawable size (not loaded?)`, 'INVALID_SOURCE', {
+      details: { label: 'image-not-loaded' },
+    });
+  }
+  return size;
 }
 
 function requireOption(condition: boolean, option: string, message: string, minimum?: number): void {
@@ -179,10 +219,20 @@ function requireOption(condition: boolean, option: string, message: string, mini
 // ============================================================================
 
 function composeLayers(spec: ComposeLayersSpec): HTMLCanvasElement {
-  validateCanvasSize(spec.width, spec.height);
+  const canvasSize = resolveCanvasSize(spec.width, spec.height);
 
   // 검증은 visible 여부와 무관하게 전체 레이어에 적용한다
   spec.layers.forEach((layer, index) => {
+    requireDrawableImage(layer.image, `layers[${index}]`);
+    requireOption(Number.isFinite(layer.x), `layers[${index}].x`, `layers[${index}].x must be a finite number`);
+    requireOption(Number.isFinite(layer.y), `layers[${index}].y`, `layers[${index}].y must be a finite number`);
+    if (layer.rotation !== undefined) {
+      requireOption(
+        Number.isFinite(layer.rotation),
+        `layers[${index}].rotation`,
+        `layers[${index}].rotation must be a finite number`
+      );
+    }
     if (layer.width !== undefined) {
       requireOption(
         Number.isFinite(layer.width) && layer.width > 0,
@@ -206,8 +256,8 @@ function composeLayers(spec: ComposeLayersSpec): HTMLCanvasElement {
     }
   });
 
-  const { canvas, ctx } = createOwnedCanvas(spec.width, spec.height);
-  fillCanvasBackground(ctx, spec.width, spec.height, spec.background);
+  const { canvas, ctx } = createOwnedCanvas(canvasSize.width, canvasSize.height);
+  fillCanvasBackground(ctx, canvasSize.width, canvasSize.height, spec.background);
 
   for (const layer of spec.layers) {
     // opacity 0 = 완전 투명 — 그리기 자체를 생략한다.
@@ -256,16 +306,17 @@ function composeGrid(spec: ComposeGridSpec): HTMLCanvasElement {
   const fit = spec.fit ?? 'contain';
   const background = spec.background ?? '#ffffff';
 
-  const sizes = spec.images.map(sourceSize);
-  const cellWidth = Math.max(...sizes.map((size) => size.width));
-  const cellHeight = Math.max(...sizes.map((size) => size.height));
-  const canvasWidth = columns * cellWidth + (columns + 1) * spacing;
-  const canvasHeight = rows * cellHeight + (rows + 1) * spacing;
-  // 크기 0 소스만 있고 spacing도 0이면 canvas가 축퇴한다 — 파생값도 검증한다
-  validateCanvasSize(canvasWidth, canvasHeight);
+  const sizes = spec.images.map((image, index) => requireDrawableImage(image, `images[${index}]`));
+  const cellWidth = sizes.reduce((max, size) => Math.max(max, size.width), 0);
+  const cellHeight = sizes.reduce((max, size) => Math.max(max, size.height), 0);
+  // 파생 크기에도 반올림·상한 정책을 동일하게 적용한다
+  const canvasSize = resolveCanvasSize(
+    columns * cellWidth + (columns + 1) * spacing,
+    rows * cellHeight + (rows + 1) * spacing
+  );
 
-  const { canvas, ctx } = createOwnedCanvas(canvasWidth, canvasHeight);
-  fillCanvasBackground(ctx, canvasWidth, canvasHeight, background);
+  const { canvas, ctx } = createOwnedCanvas(canvasSize.width, canvasSize.height);
+  fillCanvasBackground(ctx, canvasSize.width, canvasSize.height, background);
 
   for (let i = 0; i < count; i++) {
     const image = spec.images[i];
@@ -330,7 +381,10 @@ function fitToCell(
 // ============================================================================
 
 function composeCollage(spec: ComposeCollageSpec): HTMLCanvasElement {
-  validateCanvasSize(spec.width, spec.height);
+  const canvasSize = resolveCanvasSize(spec.width, spec.height);
+  spec.images.forEach((image, index) => {
+    requireDrawableImage(image, `images[${index}]`);
+  });
   if (spec.scaleRange !== undefined) {
     const [min, max] = spec.scaleRange;
     requireOption(
@@ -363,8 +417,8 @@ function composeCollage(spec: ComposeCollageSpec): HTMLCanvasElement {
   const random = spec.random ?? Math.random;
   const background = spec.background ?? '#ffffff';
 
-  const { canvas, ctx } = createOwnedCanvas(spec.width, spec.height);
-  fillCanvasBackground(ctx, spec.width, spec.height, background);
+  const { canvas, ctx } = createOwnedCanvas(canvasSize.width, canvasSize.height);
+  fillCanvasBackground(ctx, canvasSize.width, canvasSize.height, background);
 
   const usedAreas: PlacedRect[] = [];
 
@@ -372,10 +426,7 @@ function composeCollage(spec: ComposeCollageSpec): HTMLCanvasElement {
     const natural = sourceSize(image);
     const drawnScale = minScale + random() * (maxScale - minScale);
     // 배치가 항상 canvas 안에 들어가도록 클램프 — 음수 좌표를 원천 차단한다
-    const scale =
-      natural.width > 0 && natural.height > 0
-        ? Math.min(drawnScale, spec.width / natural.width, spec.height / natural.height)
-        : drawnScale;
+    const scale = Math.min(drawnScale, canvasSize.width / natural.width, canvasSize.height / natural.height);
     const width = natural.width * scale;
     const height = natural.height * scale;
 
@@ -383,8 +434,8 @@ function composeCollage(spec: ComposeCollageSpec): HTMLCanvasElement {
     let y = 0;
     let attempts = 0;
     do {
-      x = random() * (spec.width - width);
-      y = random() * (spec.height - height);
+      x = random() * (canvasSize.width - width);
+      y = random() * (canvasSize.height - height);
       attempts++;
     } while (!allowOverlap && attempts < maxAttempts && overlapsAny({ x, y, width, height }, usedAreas));
     // 상한 도달 시 마지막 후보를 겹침 허용으로 채택한다(최선 노력)
