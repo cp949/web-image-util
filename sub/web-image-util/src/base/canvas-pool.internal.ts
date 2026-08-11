@@ -4,7 +4,7 @@
  * Fabric.js 패턴을 참고한 동적 메모리 관리 시스템.
  */
 
-import { ImageProcessError } from '../types';
+import { ImageProcessError } from '../errors.internal';
 import { debugLog } from '../utils/debug.internal';
 
 export class CanvasPool {

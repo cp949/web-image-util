@@ -5,8 +5,8 @@
  */
 
 import type { ErrorContext } from '../base/error-context.internal';
-import type { ImageErrorCodeType } from '../types';
-import { ImageProcessError } from '../types';
+import type { ImageErrorCodeType } from '../errors.internal';
+import { ImageProcessError } from '../errors.internal';
 
 // Re-export ImageProcessError class
 export { ImageProcessError };

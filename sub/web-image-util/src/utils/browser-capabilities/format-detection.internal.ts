@@ -6,7 +6,7 @@
  * 두 경로는 의미가 다르므로 캐시 키를 분리해서 보관한다.
  */
 
-import type { ImageFormat } from '../../types';
+import type { ImageFormat } from '../../types/base';
 import { createImageElement } from '../image-element.internal';
 import { capabilityCache } from './cache.internal';
 import type { BrowserCapabilities } from './types';

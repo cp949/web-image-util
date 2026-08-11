@@ -5,7 +5,7 @@
  */
 
 import { globalErrorHandler } from '../core/error-handler';
-import { type ImageErrorCodeType, type ImageErrorDetails, ImageProcessError } from '../types';
+import { type ImageErrorCodeType, type ImageErrorDetails, ImageProcessError } from '../errors.internal';
 import type { ErrorContext } from './error-context.internal';
 
 /**
