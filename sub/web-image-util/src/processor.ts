@@ -110,10 +110,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * **Performance Considerations:**
    * - Recommended range: 0.5-10 pixels (higher values may cause performance issues)
    * - Blur before resize for better performance on large images
-   * - Multiple blur calls are cumulative (blur(2) + blur(3) = blur(5) effect)
+   * - Multiple blur calls compose sequentially (each call adds another CSS blur pass)
    *
-   * @param radius Blur radius in pixels (default: 2, recommended range: 0.5-10)
-   * @param options Blur options (additional settings, currently unused but reserved for future extensions)
+   * @param radius Blur radius in pixels (default: 2, 0 = no blur, recommended range: 0.5-10)
+   * @param options Blur options (an explicit `options.radius` overrides the radius argument)
    * @returns Processor in same state (chainable)
    *
    * @example
@@ -130,10 +130,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    *   .blur(5)
    *   .toBlob();
    *
-   * // Multiple blur applications (cumulative effect)
+   * // Multiple blur applications (sequential passes)
    * await processImage(source)
-   *   .blur(2)     // First blur: 2px
-   *   .blur(3)     // Total blur: 5px (2+3)
+   *   .blur(2)     // First blur pass: 2px
+   *   .blur(3)     // Second blur pass: 3px, applied on top
    *   .toBlob();
    *
    * // Performance-optimized blur for thumbnails
