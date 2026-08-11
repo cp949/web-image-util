@@ -12,7 +12,7 @@ import {
   MAX_SAMPLES_PER_STAGE,
   readReferenceAttribute,
 } from '../../utils/svg-inspection';
-import type { InspectSvgSanitizationStage, InspectSvgSanitizationStageCode } from '../inspect-sanitization';
+import type { InspectSvgSanitizationStage, InspectSvgSanitizationStageCode } from './types.internal';
 
 /** doctype 선언 정규식. */
 const DOCTYPE_PATTERN = /<!DOCTYPE\b/gi;
