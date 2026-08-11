@@ -105,36 +105,6 @@ function analyzeFilterOperation(layout: FinalLayout, options: any): void {
 }
 
 /**
- * Combine all filters into a single string
- */
-export function calculateAllFilters(operations: LazyOperation[]): string {
-  const filters: string[] = [];
-
-  for (const operation of operations) {
-    if (operation.type === 'blur') {
-      const radius = operation.options.radius || 2;
-      filters.push(`blur(${radius}px)`);
-    } else if (operation.type === 'filter') {
-      const options = operation.options;
-      if (options.brightness !== undefined) {
-        filters.push(`brightness(${options.brightness})`);
-      }
-      if (options.contrast !== undefined) {
-        filters.push(`contrast(${options.contrast})`);
-      }
-      if (options.saturate !== undefined) {
-        filters.push(`saturate(${options.saturate})`);
-      }
-      if (options.hueRotate !== undefined) {
-        filters.push(`hue-rotate(${options.hueRotate}deg)`);
-      }
-    }
-  }
-
-  return filters.join(' ');
-}
-
-/**
  * 🚀 핵심 함수: 모든 연산을 한 번에 렌더링한다.
  *
  * - 배경을 먼저 그린 뒤 모든 필터를 한꺼번에 적용한다.

@@ -21,7 +21,6 @@ vi.mock('../../../src/core/single-renderer.internal', () => ({
   renderAllOperationsOnce: vi.fn(),
   analyzeAllOperations: vi.fn(),
   debugLayout: vi.fn(),
-  calculateAllFilters: vi.fn(),
 }));
 
 function createMockImage(width = 800, height = 600): HTMLImageElement {

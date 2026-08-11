@@ -1,7 +1,7 @@
 /**
  * single-renderer 단위 테스트
  *
- * analyzeAllOperations (레이아웃 계산), calculateAllFilters (CSS 필터 조합),
+ * analyzeAllOperations (레이아웃 계산),
  * renderAllOperationsOnce (Canvas Pool 활용 및 dimension 매핑) 를 검증한다.
  * 픽셀 비교는 하지 않으며, 구조적 속성(크기, 필터 문자열, Pool 호출)만 확인한다.
  */
@@ -10,11 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CanvasLease } from '../../../src/base/canvas-lease.internal';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import type { LazyOperation } from '../../../src/core/lazy-render-pipeline.internal';
-import {
-  analyzeAllOperations,
-  calculateAllFilters,
-  renderAllOperationsOnce,
-} from '../../../src/core/single-renderer.internal';
+import { analyzeAllOperations, renderAllOperationsOnce } from '../../../src/core/single-renderer.internal';
 
 // naturalWidth / naturalHeight 를 제어하는 헬퍼
 function createMockImage(naturalWidth: number, naturalHeight: number): HTMLImageElement {
@@ -206,58 +202,6 @@ describe('analyzeAllOperations', () => {
       expect(layout.filters[0]).toBe('blur(3px)');
       expect(layout.filters[1]).toBe('brightness(1.2)');
     });
-  });
-});
-
-// ============================================================================
-// calculateAllFilters
-// ============================================================================
-
-describe('calculateAllFilters', () => {
-  it('연산이 없으면 빈 문자열을 반환한다', () => {
-    const result = calculateAllFilters([]);
-    expect(result).toBe('');
-  });
-
-  it('blur 연산을 "blur(Npx)" 문자열로 변환한다', () => {
-    const ops: LazyOperation[] = [{ type: 'blur', options: { radius: 4 } }];
-    const result = calculateAllFilters(ops);
-
-    expect(result).toBe('blur(4px)');
-  });
-
-  it('radius 가 없으면 기본값 2px 를 사용한다', () => {
-    const ops: LazyOperation[] = [{ type: 'blur', options: {} }];
-    const result = calculateAllFilters(ops);
-
-    expect(result).toBe('blur(2px)');
-  });
-
-  it('brightness filter 를 올바르게 변환한다', () => {
-    const ops: LazyOperation[] = [{ type: 'filter', options: { brightness: 1.5 } }];
-    const result = calculateAllFilters(ops);
-
-    expect(result).toBe('brightness(1.5)');
-  });
-
-  it('복수 필터를 공백으로 구분하여 합친다', () => {
-    const ops: LazyOperation[] = [
-      { type: 'blur', options: { radius: 2 } },
-      { type: 'filter', options: { brightness: 1.2 } },
-    ];
-    const result = calculateAllFilters(ops);
-
-    expect(result).toBe('blur(2px) brightness(1.2)');
-  });
-
-  it('resize 연산은 필터 문자열에 포함되지 않는다', () => {
-    const ops: LazyOperation[] = [
-      { type: 'resize', config: { fit: 'cover', width: 400, height: 300 } },
-      { type: 'blur', options: { radius: 2 } },
-    ];
-    const result = calculateAllFilters(ops);
-
-    expect(result).toBe('blur(2px)');
   });
 });
 
