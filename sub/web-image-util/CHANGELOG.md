@@ -15,6 +15,7 @@
 
 ### 수정
 
+- Fixed: `blur(0)` 또는 `blur(n, { radius: 0 })`이 기본값 2px 블러로 대체되던 동작을 수정했습니다. 이제 radius 0은 블러 없음으로 처리되며, radius 미지정 시 기본값 2는 그대로 유지됩니다.
 - Fixed: advanced 서브패스의 고해상도 처리(`HighResolutionManager.smartResize`, `autoSmartResize`, `smartResizeWithProgress`, `AdvancedImageProcessor`)가 항상 빈(또는 크기 0의) canvas를 반환하던 결함을 수정했습니다. 내부 Canvas Pool이 반환 직전에 canvas를 회수·초기화하면서 결과 픽셀이 지워지고, 연속 호출 시 이전 결과 canvas가 재사용되는 문제였습니다. 결과 canvas는 이제 pool을 거치지 않는 호출자 소유 canvas로 생성됩니다.
 
 ### 제거

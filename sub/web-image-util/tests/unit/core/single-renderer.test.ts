@@ -142,6 +142,14 @@ describe('analyzeAllOperations', () => {
       expect(layout.filters).toContain('blur(2px)');
     });
 
+    it('radius 0 이면 기본값으로 대체되지 않고 blur(0px) 로 추가된다', () => {
+      const img = createMockImage(800, 600);
+      const ops: LazyOperation[] = [{ type: 'blur', options: { radius: 0 } }];
+      const layout = analyzeAllOperations(img, ops);
+
+      expect(layout.filters).toContain('blur(0px)');
+    });
+
     it('blur 연산은 canvas 크기에 영향을 미치지 않는다', () => {
       const img = createMockImage(800, 600);
       const ops: LazyOperation[] = [{ type: 'blur', options: { radius: 3 } }];

@@ -12,7 +12,7 @@ import type { GeometrySize, OutputFormat } from './base';
  * Blur options (Canvas CSS filter limitations)
  */
 export interface BlurOptions {
-  /** Blur radius (default: 2) */
+  /** Blur radius — 미지정 시 2, 0이면 블러 없음 */
   radius?: number;
   // Canvas only supports CSS filter blur(), so advanced options are removed
 }
