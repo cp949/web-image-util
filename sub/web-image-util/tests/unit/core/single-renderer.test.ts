@@ -7,6 +7,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CanvasLease } from '../../../src/base/canvas-lease.internal';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import type { LazyOperation } from '../../../src/core/lazy-render-pipeline.internal';
 import {
@@ -273,7 +274,7 @@ describe('renderAllOperationsOnce', () => {
     it('연산 없이 호출하면 소스 이미지 크기의 canvas 를 반환한다', () => {
       // node-canvas 에서 drawImage 는 Canvas 를 소스로 수락하므로 안전하게 사용
       const source = createDrawableSource(800, 600);
-      const canvas = renderAllOperationsOnce(source, []);
+      const canvas = renderAllOperationsOnce(source, []).detach();
 
       expect(canvas.width).toBe(800);
       expect(canvas.height).toBe(600);
@@ -282,7 +283,7 @@ describe('renderAllOperationsOnce', () => {
     it('resize 연산 후 반환 canvas 크기가 목표 크기와 일치한다', () => {
       const source = createDrawableSource(800, 600);
       const ops: LazyOperation[] = [{ type: 'resize', config: { fit: 'cover', width: 400, height: 300 } }];
-      const canvas = renderAllOperationsOnce(source, ops);
+      const canvas = renderAllOperationsOnce(source, ops).detach();
 
       expect(canvas.width).toBe(400);
       expect(canvas.height).toBe(300);
@@ -291,7 +292,7 @@ describe('renderAllOperationsOnce', () => {
     it('blur 연산만 있으면 canvas 크기가 소스와 같다', () => {
       const source = createDrawableSource(800, 600);
       const ops: LazyOperation[] = [{ type: 'blur', options: { radius: 2 } }];
-      const canvas = renderAllOperationsOnce(source, ops);
+      const canvas = renderAllOperationsOnce(source, ops).detach();
 
       expect(canvas.width).toBe(800);
       expect(canvas.height).toBe(600);
@@ -305,9 +306,10 @@ describe('renderAllOperationsOnce', () => {
 
       const source = createDrawableSource(800, 600);
       const ops: LazyOperation[] = [{ type: 'resize', config: { fit: 'cover', width: 400, height: 300 } }];
-      renderAllOperationsOnce(source, ops);
+      const lease = renderAllOperationsOnce(source, ops);
 
       expect(acquireSpy).toHaveBeenCalledWith(400, 300);
+      lease.release();
     });
 
     it('연산 없을 때 CanvasPool.acquire 가 소스 크기로 호출된다', () => {
@@ -315,18 +317,38 @@ describe('renderAllOperationsOnce', () => {
       const acquireSpy = vi.spyOn(pool, 'acquire');
 
       const source = createDrawableSource(320, 240);
-      renderAllOperationsOnce(source, []);
+      const lease = renderAllOperationsOnce(source, []);
 
       expect(acquireSpy).toHaveBeenCalledWith(320, 240);
+      lease.release();
+    });
+
+    it('렌더링 중 오류가 나면 획득한 canvas를 pool로 반환한다', () => {
+      const pool = CanvasPool.getInstance();
+      const releaseSpy = vi.spyOn(pool, 'release');
+      const drawError = new Error('drawImage 실패');
+      const source = createDrawableSource(320, 240);
+      const tempCtx = document.createElement('canvas').getContext('2d')!;
+      const drawImageSpy = vi.spyOn(Object.getPrototypeOf(tempCtx), 'drawImage').mockImplementation(() => {
+        throw drawError;
+      });
+
+      try {
+        expect(() => renderAllOperationsOnce(source, [])).toThrow(drawError);
+        expect(releaseSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        drawImageSpy.mockRestore();
+      }
     });
   });
 
-  describe('HTMLCanvasElement 반환 타입', () => {
-    it('반환값이 HTMLCanvasElement 인스턴스다', () => {
+  describe('CanvasLease 반환 타입', () => {
+    it('반환값이 CanvasLease 인스턴스다', () => {
       const source = createDrawableSource(100, 100);
-      const canvas = renderAllOperationsOnce(source, []);
+      const lease = renderAllOperationsOnce(source, []);
 
-      expect(canvas).toBeInstanceOf(HTMLCanvasElement);
+      expect(lease).toBeInstanceOf(CanvasLease);
+      expect(lease.detach()).toBeInstanceOf(HTMLCanvasElement);
     });
   });
 });
