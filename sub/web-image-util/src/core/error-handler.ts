@@ -4,7 +4,7 @@
  * @description Simple handler that processes all errors consistently
  */
 
-import type { ErrorContext } from '../base/error-helpers';
+import type { ErrorContext } from '../base/error-context.internal';
 import type { ImageErrorCodeType } from '../types';
 import { ImageProcessError } from '../types';
 

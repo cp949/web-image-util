@@ -6,24 +6,7 @@
 
 import { globalErrorHandler } from '../core/error-handler';
 import { type ImageErrorCodeType, type ImageErrorDetails, ImageProcessError } from '../types';
-
-/**
- * Error context information
- */
-export interface ErrorContext {
-  /** Source type being processed */
-  sourceType?: string;
-  /** Format attempted */
-  format?: string;
-  /** Image size information */
-  dimensions?: { width: number; height: number };
-  /** Browser information */
-  userAgent?: string;
-  /** Timestamp */
-  timestamp?: number;
-  /** Additional debug information */
-  debug?: Record<string, any>;
-}
+import type { ErrorContext } from './error-context.internal';
 
 /**
  * User-friendly error message mapping
