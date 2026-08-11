@@ -14,7 +14,7 @@ import type {
   InspectSvgSourceKind,
   InspectSvgSourceOptions,
 } from '../inspect-svg-source';
-import { decideSvgFromSniff } from './source-metadata.internal';
+import { decideSvgFromSniff } from './sniff-decision.internal';
 
 const textEncoder = new TextEncoder();
 

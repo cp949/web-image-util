@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { detectInspectSourceEnvironment } from '../../../src/utils/inspect-svg-source/environment.internal';
+import { detectMimeAndExtension } from '../../../src/utils/inspect-svg-source/mime-extension.internal';
+import { decideSvgFromSniff } from '../../../src/utils/inspect-svg-source/sniff-decision.internal';
 import {
-  decideSvgFromSniff,
-  detectInspectSourceEnvironment,
-  detectMimeAndExtension,
   detectOriginalKind,
   estimateSourceBytes,
-} from '../../../src/utils/inspect-svg-source/source-metadata.internal';
+} from '../../../src/utils/inspect-svg-source/source-kind.internal';
 
 describe('detectOriginalKind', () => {
   it('File 인스턴스는 Blob보다 먼저 "file"로 분류된다', () => {

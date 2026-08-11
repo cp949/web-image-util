@@ -3,14 +3,11 @@ import type { InspectSvgReport } from './inspect-svg';
 import { inspectSvg } from './inspect-svg';
 import { extractSvgBody } from './inspect-svg-source/body-extraction.internal';
 import { handleUrlSvgSourceFetch } from './inspect-svg-source/fetch-source.internal';
+import { detectInspectSourceEnvironment } from './inspect-svg-source/environment.internal';
+import { detectMimeAndExtension } from './inspect-svg-source/mime-extension.internal';
 import { deduplicateFindings, maskSourceUrl } from './inspect-svg-source/report-utils.internal';
-import {
-  decideSvgFromSniff,
-  detectInspectSourceEnvironment,
-  detectMimeAndExtension,
-  detectOriginalKind,
-  estimateSourceBytes,
-} from './inspect-svg-source/source-metadata.internal';
+import { decideSvgFromSniff } from './inspect-svg-source/sniff-decision.internal';
+import { detectOriginalKind, estimateSourceBytes } from './inspect-svg-source/source-kind.internal';
 import { assertInspectSvgSourceInput, assertInspectSvgSourceOptions } from './inspect-svg-source/validation.internal';
 
 /** SVG로 판정할 수 있는 입력 타입. HTMLImageElement / Canvas 등은 비-허용(D2). */
