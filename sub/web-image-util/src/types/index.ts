@@ -569,6 +569,3 @@ export interface PerformanceBenchmark {
   /** Recommended processing method */
   recommendation: 'standard' | 'offscreen';
 }
-
-// SystemPerformanceProfile is directly defined in advanced/advanced.internal.ts
-// Only re-export is performed here to resolve type dependency issues
