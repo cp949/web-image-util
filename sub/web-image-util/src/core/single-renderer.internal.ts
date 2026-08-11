@@ -9,11 +9,33 @@
 
 import { CanvasLease } from '../base/canvas-lease.internal';
 import { CanvasPool } from '../base/canvas-pool.internal';
-import { ImageProcessError } from '../types';
+import { type BlurOptions, ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import { debugLog, productionLog } from '../utils/debug.internal';
-import type { FinalLayout, LazyOperation } from './lazy-render-pipeline.internal';
 import { ResizeCalculator } from './resize-calculator.internal';
+
+/**
+ * Operation definition for lazy execution
+ *
+ * 지연 렌더링 스택의 공유 타입 정의 지점 — 부모(LazyRenderPipeline)가 연산을
+ * 누적할 때, 이 파일의 분석기·렌더러가 소비할 때 함께 사용한다.
+ */
+export type LazyOperation =
+  | { type: 'resize'; config: ResizeConfig }
+  | { type: 'blur'; options: BlurOptions }
+  | { type: 'filter'; options: any };
+
+/**
+ * Final layout information - Result of analyzing all operations
+ */
+export interface FinalLayout {
+  width: number;
+  height: number;
+  position: { x: number; y: number };
+  imageSize: { width: number; height: number };
+  background: string;
+  filters: string[];
+}
 
 /**
  * 렌더링 품질 수준

@@ -9,8 +9,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CanvasLease } from '../../../src/base/canvas-lease.internal';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
-import type { FinalLayout, LazyOperation } from '../../../src/core/lazy-render-pipeline.internal';
-import { analyzeAllOperations, renderLayout } from '../../../src/core/single-renderer.internal';
+import {
+  analyzeAllOperations,
+  type FinalLayout,
+  type LazyOperation,
+  renderLayout,
+} from '../../../src/core/single-renderer.internal';
 import { productionLog } from '../../../src/utils/debug.internal';
 
 // naturalWidth / naturalHeight 를 제어하는 헬퍼

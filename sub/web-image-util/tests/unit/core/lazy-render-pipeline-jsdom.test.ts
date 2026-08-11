@@ -12,8 +12,8 @@
 
 import { CanvasLease } from '../../../src/base/canvas-lease.internal';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
-import type { FinalLayout } from '../../../src/core/lazy-render-pipeline.internal';
 import { LazyRenderPipeline } from '../../../src/core/lazy-render-pipeline.internal';
+import type { FinalLayout } from '../../../src/core/single-renderer.internal';
 import * as singleRenderer from '../../../src/core/single-renderer.internal';
 import { ImageProcessError } from '../../../src/types';
 

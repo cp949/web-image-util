@@ -10,8 +10,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
-import type { LazyOperation } from '../../../src/core/lazy-render-pipeline.internal';
-import { analyzeAllOperations, renderLayout } from '../../../src/core/single-renderer.internal';
+import { analyzeAllOperations, type LazyOperation, renderLayout } from '../../../src/core/single-renderer.internal';
 
 function createMockCanvas(width: number, height: number): HTMLCanvasElement {
   const canvas = document.createElement('canvas');

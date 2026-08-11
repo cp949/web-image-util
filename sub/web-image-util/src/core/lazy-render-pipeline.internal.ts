@@ -12,27 +12,7 @@ import type { BlurOptions, ResultMetadata } from '../types';
 import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import type { ResizeOperation, ScaleOperation } from '../types/shortcut-types';
-import { analyzeAllOperations, debugLayout, renderLayout } from './single-renderer.internal';
-
-/**
- * Operation definition for lazy execution
- */
-export type LazyOperation =
-  | { type: 'resize'; config: ResizeConfig }
-  | { type: 'blur'; options: BlurOptions }
-  | { type: 'filter'; options: any };
-
-/**
- * Final layout information - Result of analyzing all operations
- */
-export interface FinalLayout {
-  width: number;
-  height: number;
-  position: { x: number; y: number };
-  imageSize: { width: number; height: number };
-  background: string;
-  filters: string[];
-}
+import { analyzeAllOperations, debugLayout, type LazyOperation, renderLayout } from './single-renderer.internal';
 
 /**
  * Size information interface
