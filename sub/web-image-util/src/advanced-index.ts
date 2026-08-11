@@ -32,6 +32,8 @@ import type { FilterCategory, FilterOptions, FilterPlugin, FilterValidationResul
 import { getMissingFilterNames } from './filters/plugin-system';
 import { ImageProcessError } from './types';
 
+export type { ErrorStats } from './base/error-handler';
+export { globalErrorHandler, ImageErrorHandler } from './base/error-handler';
 // ===== 고급 오류 처리 =====
 export { createAndHandleError, createQuickError, getErrorStats, withErrorHandling } from './base/error-helpers';
 export type {
@@ -54,8 +56,6 @@ export type { AutoProcessingResult } from './core/auto-high-res';
 // ===== 자동 고해상도 처리 =====
 export { AutoHighResProcessor, smartResize as autoSmartResize, smartResizeWithProgress } from './core/auto-high-res';
 export { BatchResizer } from './core/batch-resizer';
-export type { ErrorStats } from './core/error-handler';
-export { globalErrorHandler, ImageErrorHandler } from './core/error-handler';
 export type { ResizePerformanceOptions, ResizeProfile } from './core/performance-config';
 export { getPerformanceConfig, RESIZE_PROFILES } from './core/performance-config';
 // ===== 성능 최적화 =====

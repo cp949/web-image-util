@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { globalErrorHandler, ImageErrorHandler } from '../../../src/core/error-handler';
+import { globalErrorHandler, ImageErrorHandler } from '../../../src/base/error-handler';
 import { ImageErrorCode, ImageProcessError } from '../../../src/errors.internal';
 
 describe('ImageErrorHandler 싱글턴', () => {

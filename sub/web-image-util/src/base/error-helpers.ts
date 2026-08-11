@@ -4,9 +4,9 @@
  * @description Provides user-friendly error messages and solutions
  */
 
-import { globalErrorHandler } from '../core/error-handler';
 import { type ImageErrorCodeType, type ImageErrorDetails, ImageProcessError } from '../errors.internal';
 import type { ErrorContext } from './error-context.internal';
+import { globalErrorHandler } from './error-handler';
 
 /**
  * User-friendly error message mapping

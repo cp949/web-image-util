@@ -4,9 +4,9 @@
  * @description Simple handler that processes all errors consistently
  */
 
-import type { ErrorContext } from '../base/error-context.internal';
 import type { ImageErrorCodeType } from '../errors.internal';
 import { ImageProcessError } from '../errors.internal';
+import type { ErrorContext } from './error-context.internal';
 
 // Re-export ImageProcessError class
 export { ImageProcessError };
@@ -124,7 +124,7 @@ export class ImageErrorHandler {
 
     // Clean up Canvas Pool (if available)
     try {
-      const { CanvasPool } = await import('../base/canvas-pool.internal');
+      const { CanvasPool } = await import('./canvas-pool.internal');
       CanvasPool.getInstance().clear();
       console.info('Canvas pool cleared due to critical error');
     } catch {

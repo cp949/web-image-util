@@ -6,6 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ImageErrorHandler } from '../../../src/base/error-handler';
 import {
   checkBrowserSupport,
   createAndHandleError,
@@ -18,7 +19,6 @@ import {
   withErrorHandling,
   withErrorRecovery,
 } from '../../../src/base/error-helpers';
-import { ImageErrorHandler } from '../../../src/core/error-handler';
 import { ImageErrorCode, ImageProcessError } from '../../../src/errors.internal';
 
 describe('createImageError', () => {
