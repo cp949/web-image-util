@@ -2,7 +2,7 @@
  * 단일 렌더러 — 분석기 하나(analyzeAllOperations), 렌더러 하나(renderLayout)
  *
  * 핵심 개념: "계산 먼저, 렌더링 한 번"
- * - analyzeAllOperations: 모든 연산(resize, blur, filter)을 분석해 최종 레이아웃 계산
+ * - analyzeAllOperations: 모든 연산(resize, blur)을 분석해 최종 레이아웃 계산
  * - renderLayout: 계산된 레이아웃을 검증하고 단 한 번의 drawImage 로 렌더링
  * - 중간 Canvas 를 만들지 않고 최종 결과만 생성한다
  */
@@ -20,23 +20,7 @@ import { ResizeCalculator } from './resize-calculator.internal';
  * 지연 렌더링 스택의 공유 타입 정의 지점 — 부모(LazyRenderPipeline)가 연산을
  * 누적할 때, 이 파일의 분석기·렌더러가 소비할 때 함께 사용한다.
  */
-/**
- * Canvas filter 연산 옵션 — 각 필드는 CSS filter 함수 문자열로 변환된다
- *
- * analyzeFilterOperation 이 brightness(n)·contrast(n)·saturate(n)·
- * hue-rotate(ndeg) 형태로 누적한다. hueRotate 단위는 deg.
- */
-export interface CanvasFilterOptions {
-  brightness?: number;
-  contrast?: number;
-  saturate?: number;
-  hueRotate?: number;
-}
-
-export type LazyOperation =
-  | { type: 'resize'; config: ResizeConfig }
-  | { type: 'blur'; options: BlurOptions }
-  | { type: 'filter'; options: CanvasFilterOptions };
+export type LazyOperation = { type: 'resize'; config: ResizeConfig } | { type: 'blur'; options: BlurOptions };
 
 /**
  * Final layout information - Result of analyzing all operations
@@ -108,9 +92,6 @@ export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: 
       case 'blur':
         analyzeBlurOperation(layout, operation.options);
         break;
-      case 'filter':
-        analyzeFilterOperation(layout, operation.options);
-        break;
     }
   }
 
@@ -148,24 +129,6 @@ function analyzeResizeOperation(sourceImage: HTMLImageElement, layout: FinalLayo
 function analyzeBlurOperation(layout: FinalLayout, options: BlurOptions): void {
   const radius = options.radius || 2;
   layout.filters.push(`blur(${radius}px)`);
-}
-
-/**
- * Analyze other filter operations
- */
-function analyzeFilterOperation(layout: FinalLayout, options: CanvasFilterOptions): void {
-  if (options.brightness !== undefined) {
-    layout.filters.push(`brightness(${options.brightness})`);
-  }
-  if (options.contrast !== undefined) {
-    layout.filters.push(`contrast(${options.contrast})`);
-  }
-  if (options.saturate !== undefined) {
-    layout.filters.push(`saturate(${options.saturate})`);
-  }
-  if (options.hueRotate !== undefined) {
-    layout.filters.push(`hue-rotate(${options.hueRotate}deg)`);
-  }
 }
 
 /**

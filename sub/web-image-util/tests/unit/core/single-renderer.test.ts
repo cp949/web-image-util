@@ -152,49 +152,6 @@ describe('analyzeAllOperations', () => {
     });
   });
 
-  describe('filter 연산', () => {
-    it('brightness 필터가 filters 에 추가된다', () => {
-      const img = createMockImage(800, 600);
-      const ops: LazyOperation[] = [{ type: 'filter', options: { brightness: 1.2 } }];
-      const layout = analyzeAllOperations(img, ops);
-
-      expect(layout.filters).toContain('brightness(1.2)');
-    });
-
-    it('contrast 필터가 filters 에 추가된다', () => {
-      const img = createMockImage(800, 600);
-      const ops: LazyOperation[] = [{ type: 'filter', options: { contrast: 0.8 } }];
-      const layout = analyzeAllOperations(img, ops);
-
-      expect(layout.filters).toContain('contrast(0.8)');
-    });
-
-    it('saturate 필터가 filters 에 추가된다', () => {
-      const img = createMockImage(800, 600);
-      const ops: LazyOperation[] = [{ type: 'filter', options: { saturate: 1.5 } }];
-      const layout = analyzeAllOperations(img, ops);
-
-      expect(layout.filters).toContain('saturate(1.5)');
-    });
-
-    it('hueRotate 필터가 "hue-rotate(Ndeg)" 형식으로 추가된다', () => {
-      const img = createMockImage(800, 600);
-      const ops: LazyOperation[] = [{ type: 'filter', options: { hueRotate: 90 } }];
-      const layout = analyzeAllOperations(img, ops);
-
-      expect(layout.filters).toContain('hue-rotate(90deg)');
-    });
-
-    it('복수 filter 옵션이 모두 개별 항목으로 추가된다', () => {
-      const img = createMockImage(800, 600);
-      const ops: LazyOperation[] = [{ type: 'filter', options: { brightness: 1.1, contrast: 0.9 } }];
-      const layout = analyzeAllOperations(img, ops);
-
-      expect(layout.filters).toContain('brightness(1.1)');
-      expect(layout.filters).toContain('contrast(0.9)');
-    });
-  });
-
   describe('복합 연산', () => {
     it('resize 후 blur 를 추가하면 크기와 필터가 모두 반영된다', () => {
       const img = createMockImage(800, 600);
@@ -209,16 +166,16 @@ describe('analyzeAllOperations', () => {
       expect(layout.filters).toContain('blur(2px)');
     });
 
-    it('blur 와 filter 를 모두 추가하면 filters 에 순서대로 쌓인다', () => {
+    it('blur 를 여러 번 추가하면 filters 에 순서대로 쌓인다', () => {
       const img = createMockImage(800, 600);
       const ops: LazyOperation[] = [
         { type: 'blur', options: { radius: 3 } },
-        { type: 'filter', options: { brightness: 1.2 } },
+        { type: 'blur', options: { radius: 1 } },
       ];
       const layout = analyzeAllOperations(img, ops);
 
       expect(layout.filters[0]).toBe('blur(3px)');
-      expect(layout.filters[1]).toBe('brightness(1.2)');
+      expect(layout.filters[1]).toBe('blur(1px)');
     });
   });
 });
@@ -296,11 +253,11 @@ describe('renderLayout', () => {
   });
 
   describe('필터 렌더링', () => {
-    it('blur 와 filter 연산을 결합해 drawImage 전에 ctx.filter 에 적용한다', () => {
+    it('blur 연산 여러 개를 결합해 drawImage 전에 ctx.filter 에 적용한다', () => {
       const source = createDrawableSource(800, 600);
       const ops: LazyOperation[] = [
         { type: 'blur', options: { radius: 2 } },
-        { type: 'filter', options: { brightness: 1.2, contrast: 0.9 } },
+        { type: 'blur', options: { radius: 3 } },
       ];
       const tempCtx = document.createElement('canvas').getContext('2d')!;
       const observedFilters: string[] = [];
@@ -314,7 +271,7 @@ describe('renderLayout', () => {
       try {
         lease = renderLayout(source, analyzeAllOperations(source, ops));
 
-        expect(observedFilters).toEqual(['blur(2px) brightness(1.2) contrast(0.9)']);
+        expect(observedFilters).toEqual(['blur(2px) blur(3px)']);
       } finally {
         lease?.release();
         drawImageSpy.mockRestore();

@@ -105,7 +105,7 @@ describe('LazyRenderPipeline (jsdom-safe)', () => {
       const result = pipeline
         .addResize({ fit: 'cover', width: 300, height: 200 })
         .addBlur({ radius: 2 })
-        .addFilter({ brightness: 1.2 });
+        .addBlur({ radius: 1 });
 
       expect(result).toBe(pipeline);
       expect(pipeline.getOperationCount()).toBe(3);
