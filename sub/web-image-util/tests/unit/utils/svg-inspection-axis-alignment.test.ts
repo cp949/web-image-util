@@ -1,0 +1,112 @@
+/**
+ * SVG 진단 판정 축 ↔ 실제 동작 층 정합 테스트.
+ *
+ * 두 진단 API의 판정 축은 의도적으로 다르다(각각 다른 실제 동작 층의 거울).
+ *  - inspectSvg의 external-href / style-*-external-url finding은
+ *    렌더 경로 intake guard(assertSafeSvgContent)의 거부 여부와 일치해야 한다.
+ *  - inspectSvgSanitization(lightweight)의 external-*-removed stage는
+ *    lightweight sanitizer(sanitizeSvgForRendering)의 실제 치환 여부와 일치해야 한다.
+ *
+ * 이 거울 관계가 리팩토링으로 조용히 어긋나면 본 테스트가 실패한다.
+ */
+import { describe, expect, it } from 'vitest';
+import { assertSafeSvgContent } from '../../../src/core/source-converter/svg/safety.internal';
+import { inspectSvgSanitization } from '../../../src/svg-sanitizer/inspect-sanitization';
+import { inspectSvg } from '../../../src/utils/inspect-svg';
+import { sanitizeSvgForRendering } from '../../../src/utils/svg-sanitizer';
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** inspectSvg에서 판정 축 대상 finding 코드 */
+const AXIS_FINDING_CODES = new Set(['external-href', 'style-attribute-external-url', 'style-tag-external-url']);
+/** inspectSvgSanitization에서 판정 축 대상 stage 코드 (data-image-* / nested-svg-* 는 embedded 단계라 별개) */
+const EXTERNAL_STAGE_CODES = new Set(['external-href-removed', 'external-css-removed']);
+
+const href = (v: string) => `<svg xmlns="${SVG_NS}"><image href="${v}"/></svg>`;
+const styleAttr = (css: string) => `<svg xmlns="${SVG_NS}"><rect style="${css}"/></svg>`;
+const styleTag = (css: string) => `<svg xmlns="${SVG_NS}"><style>${css}</style><rect/></svg>`;
+const presAttr = (name: string, v: string) => `<svg xmlns="${SVG_NS}"><rect ${name}="${v}"/></svg>`;
+
+function hasAxisFinding(svg: string): boolean {
+  return inspectSvg(svg).findings.some((f) => AXIS_FINDING_CODES.has(f.code));
+}
+
+function intakeGuardRejects(svg: string): boolean {
+  try {
+    assertSafeSvgContent(svg);
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+async function hasExternalStage(svg: string): Promise<boolean> {
+  const report = await inspectSvgSanitization(svg);
+  if (report.impact.kind !== 'lightweight' || report.impact.status !== 'ok') {
+    throw new Error(`lightweight impact를 기대했지만 ${report.impact.kind}/${report.impact.status}`);
+  }
+  return report.impact.stages.some((s) => EXTERNAL_STAGE_CODES.has(s.code));
+}
+
+describe('SVG 진단 판정 축 ↔ 실제 동작 층 정합', () => {
+  describe('inspectSvg 판정 축 ↔ 렌더 intake guard(assertSafeSvgContent)', () => {
+    // [label, svg, intake guard가 거부하는가]
+    const cases: Array<[string, string, boolean]> = [
+      ['href http 외부 URL', href('http://example.com/a.png'), true],
+      ['href protocol-relative', href('//cdn.example.com/a.png'), true],
+      ['href javascript URI', href('javascript:alert(1)'), true],
+      ['href 상대 경로 ./', href('./rel.png'), true],
+      ['href 상대 경로 ../', href('../up.png'), true],
+      ['href 절대 경로 /', href('/abs.png'), true],
+      ['href 접두어 없는 상대 경로', href('bare.png'), false],
+      ['href 내부 fragment', href('#frag'), false],
+      ['href 안전 raster data URL', href('data:image/png;base64,iVBORw0KGgo='), false],
+      ['href 비허용 MIME data URL', href('data:text/html,hi'), true],
+      [
+        'href utf8 형식 svg data URL',
+        href(`data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="${SVG_NS}"><rect/></svg>`)}`),
+        true,
+      ],
+      ['style 속성 url(http)', styleAttr('fill:url(http://example.com/x.png)'), true],
+      ['style 속성 url(./)', styleAttr('fill:url(./rel.png)'), true],
+      ['style 속성 url(#id)', styleAttr('fill:url(#id)'), false],
+      ['style 속성 url(안전 raster data)', styleAttr('fill:url(data:image/png;base64,iVBORw0KGgo=)'), false],
+      ['style 속성 expression()', styleAttr('width:expression(alert(1))'), false],
+      ['style 태그 url(http)', styleTag('.a{fill:url(http://example.com/x.png)}'), true],
+      ['style 태그 url(./)', styleTag('.a{fill:url(./rel.png)}'), true],
+      ['style 태그 @import', styleTag('@import "http://example.com/x.css";'), false],
+      ['presentation 속성 fill=url(http)', presAttr('fill', 'url(http://example.com/x.png)'), false],
+      ['presentation 속성 clip-path=url(./)', presAttr('clip-path', 'url(./c.svg#c)'), false],
+    ];
+
+    it.each(cases)('%s → 판정 축과 guard 거부 여부가 일치한다', (_label, svg, rejects) => {
+      expect(hasAxisFinding(svg)).toBe(rejects);
+      expect(intakeGuardRejects(svg)).toBe(rejects);
+    });
+  });
+
+  describe('inspectSvgSanitization lightweight stage ↔ lightweight sanitizer 실제 치환', () => {
+    // [label, svg, sanitizer가 치환하는가]
+    // data:image/svg+xml 케이스는 external stage 없이도 재인코딩으로 출력이 변해 별개 축이므로 제외한다.
+    const cases: Array<[string, string, boolean]> = [
+      ['href http 외부 URL', href('http://example.com/a.png'), true],
+      ['href javascript URI', href('javascript:alert(1)'), true],
+      ['href 상대 경로 ./', href('./rel.png'), false],
+      ['href 접두어 없는 상대 경로', href('bare.png'), false],
+      ['href 내부 fragment', href('#frag'), false],
+      ['href 안전 raster data URL', href('data:image/png;base64,iVBORw0KGgo='), false],
+      ['style 속성 url(http)', styleAttr('fill:url(http://example.com/x.png)'), true],
+      ['style 속성 url(./)', styleAttr('fill:url(./rel.png)'), false],
+      ['style 속성 url(#id)', styleAttr('fill:url(#id)'), false],
+      ['style 속성 url(안전 raster data)', styleAttr('fill:url(data:image/png;base64,iVBORw0KGgo=)'), true],
+      ['style 태그 url(http)', styleTag('.a{fill:url(http://example.com/x.png)}'), true],
+      ['style 태그 @import', styleTag('@import "http://example.com/x.css";'), false],
+      ['presentation 속성 fill=url(http)', presAttr('fill', 'url(http://example.com/x.png)'), false],
+    ];
+
+    it.each(cases)('%s → stage 유무와 sanitizer 출력 변화가 일치한다', async (_label, svg, rewrites) => {
+      expect(await hasExternalStage(svg)).toBe(rewrites);
+      expect(sanitizeSvgForRendering(svg) !== svg).toBe(rewrites);
+    });
+  });
+});
