@@ -8,7 +8,7 @@
  * - Enforces required/optional options for each fit mode
  */
 
-import { ImageProcessError } from './index';
+import { ImageProcessError } from '../errors.internal';
 
 // ============================================================================
 // BASE TYPES - Base types
