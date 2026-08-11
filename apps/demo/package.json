@@ -20,20 +20,20 @@
     "@cp949/web-image-util": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^9.0.0",
-    "@mui/material": "^9.0.0",
+    "@mui/icons-material": "^9.3.1",
+    "@mui/material": "^9.3.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.15.1",
-    "react-syntax-highlighter": "^16.0.0"
+    "react-router-dom": "^7.18.2",
+    "react-syntax-highlighter": "^16.1.1"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@types/react-syntax-highlighter": "^15.0.0",
-    "@vitejs/plugin-react": "^6.0.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitejs/plugin-react": "^6.0.5",
     "typescript": "^6.0.3",
-    "vite": "^8.0.16"
+    "vite": "^8.2.1"
   }
 }
