@@ -96,27 +96,6 @@ export type {
 // Users only need to use the ImageProcessor interface.
 // ============================================================================
 
-// Commented out to allow import only from internal implementation
-// export type {
-//   AfterResize,
-//   AfterResizeCall,
-//   BeforeResize,
-//   CanResize,
-//   EnsureCanResize,
-//   ProcessorState,
-//   ProcessorStateType,
-//   ResizeAlreadyCalledError,
-// } from './processor-state.internal';
-//
-// export type {
-//   CanCallResize,
-//   GetProcessorState,
-//   InitialProcessor,
-//   ProcessorFactory,
-//   ResizedProcessor,
-//   TypedImageProcessor,
-// } from './typed-processor.internal';
-
 export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstants } from './base';
 
 // Re-import types from base.ts to make them available
