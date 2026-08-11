@@ -7,7 +7,7 @@
  * 이 모듈은 public export가 아니다(`package.json` exports 비대상).
  */
 
-import type { InspectSvgFinding } from '../inspect-svg';
+import type { InspectSvgFinding } from './types.internal';
 
 /**
  * 정규식으로 script/foreignObject/event-handler finding을 수집한다.

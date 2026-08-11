@@ -10,7 +10,6 @@
 import { isBlockedSvgPolicyRef } from '../../core/source-converter/url/policy.internal';
 import type { ComplexityAnalysisResult } from '../../core/svg-complexity-analyzer';
 import { analyzeSvgComplexity } from '../../core/svg-complexity-analyzer';
-import type { InspectSvgDimensions, InspectSvgFinding } from '../inspect-svg';
 import {
   collectSvgDomSecuritySignals,
   isReferenceAttribute,
@@ -18,6 +17,7 @@ import {
   readReferenceAttribute,
 } from '../svg-inspection';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../svg-policy-utils.internal';
+import type { InspectSvgDimensions, InspectSvgFinding } from './types.internal';
 
 const DIM_ATTR_REGEX = /^(\d+(?:\.\d+)?)\s*([a-z%]*)$/;
 const COMPLEXITY_FALLBACK_SENTINEL = 'Using default values due to analysis failure';

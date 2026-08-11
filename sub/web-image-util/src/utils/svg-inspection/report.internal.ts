@@ -10,7 +10,12 @@
  */
 
 import type { ComplexityAnalysisResult } from '../../core/svg-complexity-analyzer';
-import type { InspectSvgDimensions, InspectSvgFinding, InspectSvgFindingCode, InspectSvgReport } from '../inspect-svg';
+import type {
+  InspectSvgDimensions,
+  InspectSvgFinding,
+  InspectSvgFindingCode,
+  InspectSvgReport,
+} from './types.internal';
 
 /** 보안 finding 코드 목록 — 이 중 하나라도 있으면 strict sanitizer 추천 */
 const SECURITY_FINDING_CODES = new Set<InspectSvgFindingCode>([

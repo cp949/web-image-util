@@ -10,48 +10,16 @@ import {
 import { collectRegexFindings } from './svg-inspection/fallback-analysis.internal';
 import { parseAndClassifySvg } from './svg-inspection/parser.internal';
 import { assembleInspectReport } from './svg-inspection/report.internal';
+import type { InspectSvgDimensions, InspectSvgFinding, InspectSvgReport } from './svg-inspection/types.internal';
 
-export type InspectSvgFindingCode =
-  | 'svg-bytes-exceeded'
-  | 'svg-parse-failed'
-  | 'not-svg-root'
-  | 'has-script-element'
-  | 'has-foreign-object'
-  | 'has-event-handler'
-  | 'external-href'
-  | 'style-attribute-external-url'
-  | 'style-tag-external-url'
-  | 'dimensions-fallback'
-  | 'complexity-analysis-failed';
-
-export interface InspectSvgFinding {
-  code: InspectSvgFindingCode;
-  /** 영어 자연문. 호출자 분기 대상이 아니며 patch에서도 자유롭게 다듬을 수 있다. */
-  message: string;
-  /** 호출자 분기용 구조화 컨텍스트. 원본 텍스트(SVG 본문/Data URL/외부 URL)는 담지 않는다. */
-  details?: Record<string, unknown>;
-}
-
-export interface InspectSvgDimensions {
-  widthAttr: { raw: string | null; numeric: number | null; unit: string | null };
-  heightAttr: { raw: string | null; numeric: number | null; unit: string | null };
-  viewBox: { raw: string | null; parsed: { x: number; y: number; width: number; height: number } | null };
-  effective: { width: number; height: number; source: 'explicit' | 'viewBox' | 'fallback' };
-}
-
-export interface InspectSvgReport {
-  /** parse 실패, bytes 초과, 루트 부재 중 하나라도 있으면 false. */
-  valid: boolean;
-  bytes: number;
-  byteLimit: number;
-  environment: 'browser' | 'happy-dom' | 'node' | 'unknown';
-  parse: { ok: boolean; message: string | null; locationAvailable: boolean };
-  root: 'svg' | 'other' | 'none' | 'unknown';
-  dimensions: InspectSvgDimensions | null;
-  complexity: ComplexityAnalysisResult | null;
-  findings: InspectSvgFinding[];
-  recommendation: { sanitizer: 'lightweight' | 'strict'; reasons: InspectSvgFindingCode[] };
-}
+// 공개 타입의 정의는 스택의 타입 leaf(svg-inspection/types.internal.ts)에 있다.
+// 이 재export가 공개 표면(utils/index.ts 경유)을 그대로 유지한다.
+export type {
+  InspectSvgDimensions,
+  InspectSvgFinding,
+  InspectSvgFindingCode,
+  InspectSvgReport,
+} from './svg-inspection/types.internal';
 
 /** 현재 실행 환경을 감지한다. 평가 순서는 happy-dom -> browser -> node -> unknown이다. */
 export function detectInspectEnvironment(): 'browser' | 'happy-dom' | 'node' | 'unknown' {
