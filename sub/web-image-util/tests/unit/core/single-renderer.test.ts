@@ -243,6 +243,33 @@ describe('renderAllOperationsOnce', () => {
     });
   });
 
+  describe('필터 렌더링', () => {
+    it('blur 와 filter 연산을 결합해 drawImage 전에 ctx.filter 에 적용한다', () => {
+      const source = createDrawableSource(800, 600);
+      const ops: LazyOperation[] = [
+        { type: 'blur', options: { radius: 2 } },
+        { type: 'filter', options: { brightness: 1.2, contrast: 0.9 } },
+      ];
+      const tempCtx = document.createElement('canvas').getContext('2d')!;
+      const observedFilters: string[] = [];
+      const drawImageSpy = vi.spyOn(Object.getPrototypeOf(tempCtx), 'drawImage').mockImplementation(function (
+        this: CanvasRenderingContext2D
+      ) {
+        observedFilters.push(this.filter);
+      });
+      let lease: CanvasLease | null = null;
+
+      try {
+        lease = renderAllOperationsOnce(source, ops);
+
+        expect(observedFilters).toEqual(['blur(2px) brightness(1.2) contrast(0.9)']);
+      } finally {
+        lease?.release();
+        drawImageSpy.mockRestore();
+      }
+    });
+  });
+
   describe('CanvasPool 활용', () => {
     it('CanvasPool.acquire 가 레이아웃 크기와 함께 호출된다', () => {
       const pool = CanvasPool.getInstance();

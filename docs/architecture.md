@@ -87,13 +87,13 @@
 
 | 단계 | 모듈 | 역할 |
 | --- | --- | --- |
-| 1 | `detectSourceType()` *(source-converter/detect.ts)* | string/Blob/File/URL 분기 |
+| 1 | `detectSourceType()` *(source-converter/detect.internal.ts)* | string/Blob/File/URL 분기 |
 | 2 | `isInlineSvg()` *(utils/svg-detection.ts)* | 인라인 SVG XML 후보 검출 |
 | 3 | `stripXmlPreambleAndNoise()` *(utils/svg-detection.ts)* | BOM, XML 선언, 주석, DOCTYPE 정리 후 재판정 |
-| 4 | `sniffSvgFromBlob()` *(source-converter/svg/data-url.ts)* | Blob 첫 4KB sniff |
-| 5 | `parseSvgFromDataUrl()` *(source-converter/svg/data-url.ts)* | Data URL decode + SVG 추출 |
-| 6 | `assertSafeSvgContent()` *(source-converter/svg/safety.ts)* | sanitize 후 잔여 외부 참조 fail-closed 차단 |
-| 7 | `convertSvgToElement()` *(source-converter/svg/loader.ts)* | SVG 정규화 + 고품질 브라우저 렌더링용 `HTMLImageElement` 변환 |
+| 4 | `sniffSvgFromBlob()` *(source-converter/svg/data-url.internal.ts)* | Blob 첫 4KB sniff |
+| 5 | `parseSvgFromDataUrl()` *(source-converter/svg/data-url.internal.ts)* | Data URL decode + SVG 추출 |
+| 6 | `assertSafeSvgContent()` *(source-converter/svg/safety.internal.ts)* | sanitize 후 잔여 외부 참조 fail-closed 차단 |
+| 7 | `convertSvgToElement()` *(source-converter/svg/loader.internal.ts)* | SVG 정규화 + 고품질 브라우저 렌더링용 `HTMLImageElement` 변환 |
 
 수정 시 다양한 케이스 테스트, XSS·canvas 오염 방지를 함께 고려해야 합니다.
 
