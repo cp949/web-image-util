@@ -4,7 +4,7 @@ import {
   normalizePolicyValue,
   visitCssUrlValues,
 } from '../svg-policy-utils.internal';
-import type { SvgInspectionPolicy } from './policy.internal';
+import type { SvgInspectionPolicy } from './reference-attribute.internal';
 import { pushCappedSample } from './sample-utils.internal';
 
 const CSS_URL_PRESENTATION_ATTRIBUTES = new Set([
