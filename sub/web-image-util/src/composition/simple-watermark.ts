@@ -8,37 +8,17 @@ import { ImageWatermark } from './image-watermark';
 import {
   convertSimplePosition,
   mapSimpleBlendMode,
+  type PresetTextStyle,
   resolveSimpleImageScale,
   resolveSimpleTextStyle,
+  type SimplePosition,
 } from './simple-watermark-helpers.internal';
 import type { TextStyle, TextWatermarkOptions } from './text-watermark';
 import { TextWatermark } from './text-watermark';
 
-/**
- * Simple position type (user-friendly)
- */
-export type SimplePosition =
-  | 'top-left'
-  | 'top-center'
-  | 'top-right'
-  | 'center-left'
-  | 'center'
-  | 'center-right'
-  | 'bottom-left'
-  | 'bottom-center'
-  | 'bottom-right';
-
-/**
- * Predefined text styles
- */
-export type PresetTextStyle =
-  | 'default' // black, 16px, 80% opacity
-  | 'white-shadow' // white text, black shadow
-  | 'black-shadow' // black text, white shadow
-  | 'bold-white' // bold white text
-  | 'bold-black' // bold black text
-  | 'outline' // white text, black border
-  | 'subtle'; // gray, 60% opacity
+// 공개 타입의 정의는 스택의 leaf(simple-watermark-helpers.internal.ts)에 있다.
+// 이 재export가 공개 표면(composition/index·advanced-index 경유)을 그대로 유지한다.
+export type { PresetTextStyle, SimplePosition } from './simple-watermark-helpers.internal';
 
 /**
  * Simple text watermark options

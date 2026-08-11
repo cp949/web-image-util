@@ -1,6 +1,31 @@
 import { Position } from './position-types';
-import type { PresetTextStyle, SimplePosition } from './simple-watermark';
 import type { TextStyle } from './text-watermark';
+
+/**
+ * Simple position type (user-friendly)
+ */
+export type SimplePosition =
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'center-left'
+  | 'center'
+  | 'center-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right';
+
+/**
+ * Predefined text styles
+ */
+export type PresetTextStyle =
+  | 'default' // black, 16px, 80% opacity
+  | 'white-shadow' // white text, black shadow
+  | 'black-shadow' // black text, white shadow
+  | 'bold-white' // bold white text
+  | 'bold-black' // bold black text
+  | 'outline' // white text, black border
+  | 'subtle'; // gray, 60% opacity
 
 export function convertSimplePosition(position: SimplePosition): Position {
   const positionMap: Record<SimplePosition, Position> = {
