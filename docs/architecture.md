@@ -29,8 +29,8 @@
 - `resize()`, `blur()` 같은 체이닝 메서드는 Canvas에 즉시 그리지 않고 연산만 누적합니다.
 - 한 체인에서 `resize()`는 한 번만 허용합니다. 타입 상태와 런타임 가드를 함께 유지합니다.
 - 실제 Canvas 렌더링은 출력 메서드 호출 시점에 한 번만 수행합니다.
-- 내부 렌더링 Canvas는 `CanvasPool`을 통해 획득하고 반환합니다.
-- `toCanvas()`와 `toCanvasDetailed()`의 반환 Canvas는 사용자 소유이므로 pool에 반환하지 않습니다.
+- 내부 렌더링 Canvas는 `CanvasPool`에서 획득하고, 소유권은 `CanvasLease` handle(`src/base/canvas-lease.internal.ts`)로 관리합니다. 파생물 출력(`toBlob()` 등)은 `consume()`으로 사용 후 pool에 반환하고, `toCanvas()`/`toCanvasDetailed()`는 `detach()`로 소유권을 사용자에게 이전합니다(pool 미반환).
+- pool에서 빌린 canvas는 module 밖으로 내보내지 않습니다. 결과 canvas를 호출자에게 직접 반환하는 경로(composition, 고해상도 처리)는 pool을 거치지 않는 사용자 소유 canvas(`createOwnedCanvas`)를 사용합니다. pool이 release 시점에 픽셀을 지우므로, 빌린 canvas를 그대로 반환하면 호출자는 빈 canvas를 받게 됩니다.
 - 공개 진입점은 `sub/web-image-util/package.json`의 `exports` 필드에 선언된 경로로 제한합니다.
 - SVG 입력은 단순 문자열 검사로 분기하지 않고 `source-converter/`의 다단계 판정 경로를 사용합니다.
 
