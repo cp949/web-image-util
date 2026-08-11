@@ -5,6 +5,7 @@
  * Uses internally optimized options to guarantee the best results
  */
 
+import { isFormatSupported } from '../base/error-helpers';
 import { processImage } from '../processor';
 import type { ImageSource, ResultBlob } from '../types';
 
@@ -387,18 +388,5 @@ export async function createSocialImage(source: ImageSource, options: SocialImag
  * @returns Supported format
  */
 async function getOptimalFormat(preferredFormat: string, fallbackFormat: string): Promise<string> {
-  // Check format support with Canvas.toBlob
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      if (blob) {
-        resolve(preferredFormat);
-      } else {
-        resolve(fallbackFormat);
-      }
-    }, `image/${preferredFormat}`);
-  });
+  return (await isFormatSupported(preferredFormat)) ? preferredFormat : fallbackFormat;
 }
