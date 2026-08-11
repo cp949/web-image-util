@@ -75,6 +75,11 @@ export interface TypedImageProcessor<TState extends ProcessorState = BeforeResiz
   toCanvas(): Promise<ResultCanvas>;
 
   /**
+   * Return result as Canvas with detailed metadata
+   */
+  toCanvasDetailed(): Promise<ResultCanvas>;
+
+  /**
    * Return result as Data URL
    */
   toDataURL(options?: OutputOptions): Promise<ResultDataURL>;
@@ -85,6 +90,21 @@ export interface TypedImageProcessor<TState extends ProcessorState = BeforeResiz
    */
   toFile(filename: string, options?: OutputOptions): Promise<ResultFile>;
   toFile(filename: string, format: OutputFormat): Promise<ResultFile>;
+
+  /**
+   * Return result as HTMLImageElement
+   */
+  toElement(): Promise<HTMLImageElement>;
+
+  /**
+   * Return result as ArrayBuffer
+   */
+  toArrayBuffer(): Promise<ArrayBuffer>;
+
+  /**
+   * Return result as Uint8Array
+   */
+  toUint8Array(): Promise<Uint8Array>;
 }
 
 /**

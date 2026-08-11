@@ -71,21 +71,21 @@ describe('브라우저 SVG 보안 스모크 테스트', () => {
     const svgWithRelativeHref =
       '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"><image href="./assets/pattern.png" width="12" height="12"/></svg>';
 
-    await expect((processImage(svgWithRelativeHref) as any).toElement()).rejects.toBeInstanceOf(ImageProcessError);
+    await expect(processImage(svgWithRelativeHref).toElement()).rejects.toBeInstanceOf(ImageProcessError);
 
-    const image = await (unsafe_processImage(svgWithRelativeHref) as any).toElement();
+    const image = await unsafe_processImage(svgWithRelativeHref).toElement();
     expect(image).toBeInstanceOf(HTMLImageElement);
     expect(image.naturalWidth || image.width).toBeGreaterThan(0);
   });
 
   it('toElement 출력은 실제 브라우저 Blob URL 이미지 로딩 경로로 후속 처리할 수 있다', async () => {
-    const element = await (
-      processImage(unsafeSvg, { svgSanitizer: 'strict' }).resize({
+    const element = await processImage(unsafeSvg, { svgSanitizer: 'strict' })
+      .resize({
         fit: 'fill',
         width: 24,
         height: 24,
-      }) as any
-    ).toElement();
+      })
+      .toElement();
 
     const result = await processImage(element).resize({ fit: 'fill', width: 12, height: 12 }).toBlob();
 

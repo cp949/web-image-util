@@ -323,7 +323,7 @@ describe('OutputPipeline', () => {
     it('인코딩 실패 시에도 canvas는 pool로 반환된다', async () => {
       const releaseSpy = vi.spyOn(CanvasPool.getInstance(), 'release');
       // 요청 포맷과 fallback 둘 다 인코딩 실패(null)로 만든다
-      vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (callback) {
+      vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((callback) => {
         callback(null);
       });
       const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
@@ -336,7 +336,7 @@ describe('OutputPipeline', () => {
 
   describe('에러 모드', () => {
     it('인코딩 실패는 OUTPUT_FAILED로 래핑한다', async () => {
-      vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (callback) {
+      vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((callback) => {
         callback(null);
       });
       const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));

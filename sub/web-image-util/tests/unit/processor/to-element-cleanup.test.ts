@@ -70,7 +70,7 @@ function createControlledImage(result: 'load' | 'error'): HTMLImageElement {
  * private 구현 대신 안정적 seam(소스 변환 mock + 렌더 코어의 공개 interface인
  * LazyRenderPipeline.render)을 대체해 jsdom에서 결정적으로 진행시킨다.
  */
-function createProcessorWithCanvas(canvas: HTMLCanvasElement): any {
+function createProcessorWithCanvas(canvas: HTMLCanvasElement): ReturnType<typeof processImage> {
   vi.mocked(converter.convertToImageElement).mockResolvedValue({
     naturalWidth: canvas.width,
     naturalHeight: canvas.height,

@@ -51,9 +51,8 @@ function mockRenderWithCanvas(canvas: HTMLCanvasElement): void {
 
 /**
  * controlled canvas를 반환하는 processor를 만든다.
- * toElement()는 공개 TypedImageProcessor 인터페이스에 없어 any로 반환한다.
  */
-function createProcessorWithCanvas(canvas: HTMLCanvasElement): any {
+function createProcessorWithCanvas(canvas: HTMLCanvasElement): ReturnType<typeof processImage> {
   mockRenderWithCanvas(canvas);
   return processImage(new Blob(['input'], { type: 'image/png' }));
 }
@@ -259,7 +258,7 @@ describe('toElement() 체이닝 도달성', () => {
     // 렌더 단계를 mock으로 우회하고 resize() 체이닝 도달성만 검증한다.
     mockRenderWithCanvas(canvas);
     const blob = new Blob(['input'], { type: 'image/png' });
-    const processor: any = processImage(blob).resize({ fit: 'cover', width: 200, height: 200 });
+    const processor = processImage(blob).resize({ fit: 'cover', width: 200, height: 200 });
 
     let result: HTMLImageElement;
     try {
@@ -282,7 +281,7 @@ describe('toElement() 체이닝 도달성', () => {
 
     mockRenderWithCanvas(canvas);
     const blob = new Blob(['input'], { type: 'image/png' });
-    const processor: any = processImage(blob).blur(2).resize({ fit: 'cover', width: 200, height: 200 });
+    const processor = processImage(blob).blur(2).resize({ fit: 'cover', width: 200, height: 200 });
 
     let result: HTMLImageElement;
     try {
@@ -305,7 +304,7 @@ describe('toElement() 체이닝 도달성', () => {
 
     mockRenderWithCanvas(canvas);
     const blob = new Blob(['input'], { type: 'image/png' });
-    const processor: any = processImage(blob).blur(2);
+    const processor = processImage(blob).blur(2);
 
     let result: HTMLImageElement;
     try {
