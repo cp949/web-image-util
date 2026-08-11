@@ -147,9 +147,9 @@ nested SVG 재정제에서 byte cap 초과 또는 parse 실패가 발생하면 n
 
 - **상대·절대 경로 참조**(`href="./rel.png"` 등): `inspectSvg()`는 finding을 보고합니다 — 변환 경로가 이 입력을 거부하기 때문입니다. `inspectSvgSanitization()`의 `lightweight` 정책은 stage를 보고하지 않습니다 — lightweight sanitizer는 이 값을 바꾸지 않기 때문입니다. 두 보고 모두 사실이며, lightweight sanitizer가 바꾸지 않아도 변환은 실패합니다.
 - **CSS `url()` 안의 raster `data:` 이미지**: `inspectSvgSanitization()`은 stage로 보고합니다 — lightweight sanitizer가 CSS의 `data:` 참조를 치환하기 때문입니다. `inspectSvg()`는 안전한 raster `data:image/*`를 finding으로 보고하지 않습니다 — 변환 경로가 이를 거부하지 않기 때문입니다.
-- **CSS `url()` 함수 바깥의 위험 구문과 presentation 속성**: 문자열 인자 형태의 `@import "…"`, `expression()`, 내부 참조만 담은 `-moz-binding`, 문자열 인자 형태의 `image-set()`, 그리고 `fill` 같은 presentation 속성의 `url()`은 `strict` 정책의 `inspectSvgSanitization()`만 보고합니다. lightweight sanitizer와 변환 경로의 안전성 검사는 이들을 건드리지 않습니다. 단, 이 구문 안이라도 외부 URL이 `url()` 함수 형태로 등장하면(`@import url(http://…)` 등) 나머지 두 층도 그 `url()` 참조를 보고합니다.
+- **CSS `url()` 함수 바깥의 위험 구문과 presentation 속성**: 문자열 인자 형태의 `@import "…"`, `expression()`, 내부 참조만 담은 `-moz-binding`, 문자열 인자 형태의 `image-set()`, 그리고 `fill` 같은 presentation 속성의 `url()`은 `strict` 정책의 `inspectSvgSanitization()`만 보고합니다. lightweight sanitizer와 변환 경로의 안전성 검사는 이들을 건드리지 않습니다. 단, `style` 속성이나 `<style>` 태그의 CSS 텍스트 안에서 외부 URL이 `url()` 함수 형태로 등장하면(`@import url(http://…)` 등) 나머지 두 층도 그 `url()` 참조를 보고합니다 — presentation 속성은 이 경우에도 `strict` 정책만 검사합니다.
 
-`inspectSvg()`의 finding 유무가 변환 경로의 거부 여부와, `lightweight` stage가 lightweight sanitizer의 실제 치환과 일치하는지는 회귀 테스트(`sub/web-image-util/tests/unit/utils/svg-inspection-axis-alignment.test.ts`)로 고정되어 있습니다. 두 검사는 판정 기준을 공유하지만 추출 방식이 다르므로(DOM 순회 vs 원문 정규식), 주석 안의 참조 같은 경계 입력에서는 변환 경로가 진단보다 보수적으로 거부할 수 있습니다.
+`inspectSvg()`의 finding 유무가 변환 경로의 거부 여부와, `lightweight` stage가 lightweight sanitizer의 실제 치환과 일치하는지는 회귀 테스트(`sub/web-image-util/tests/unit/utils/svg-inspection-axis-alignment.test.ts`)로 고정되어 있습니다. 두 검사는 판정 기준을 공유하지만 추출 방식이 다르므로(진단은 DOM 순회, 변환 경로와 lightweight sanitizer는 원문 정규식), 주석 안의 참조 같은 경계 입력에서는 변환 경로가 진단보다 보수적으로 거부하거나 lightweight sanitizer가 stage 보고 없이 치환할 수 있습니다.
 
 ## 입력 형태별 적용 범위
 
