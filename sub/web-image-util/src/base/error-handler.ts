@@ -4,12 +4,8 @@
  * @description Simple handler that processes all errors consistently
  */
 
-import type { ImageErrorCodeType } from '../errors.internal';
-import { ImageProcessError } from '../errors.internal';
+import type { ImageErrorCodeType, ImageProcessError } from '../errors.internal';
 import type { ErrorContext } from './error-context.internal';
-
-// Re-export ImageProcessError class
-export { ImageProcessError };
 
 /**
  * Simple error statistics
