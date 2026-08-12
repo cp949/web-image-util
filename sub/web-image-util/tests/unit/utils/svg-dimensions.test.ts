@@ -100,5 +100,29 @@ describe('extractSvgDimensions()', () => {
       const result = extractSvgDimensions(svg);
       expect(result.viewBox).toBeUndefined();
     });
+
+    it('콤마로 구분된 viewBox를 파싱한다', () => {
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0,0,300,150"></svg>';
+      const result = extractSvgDimensions(svg);
+      expect(result.viewBox).toEqual({ x: 0, y: 0, width: 300, height: 150 });
+      expect(result.width).toBe(300);
+      expect(result.height).toBe(150);
+    });
+
+    it('앞뒤 공백이 있는 viewBox를 파싱한다', () => {
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox=" 0 0 300 150 "></svg>';
+      const result = extractSvgDimensions(svg);
+      expect(result.viewBox).toEqual({ x: 0, y: 0, width: 300, height: 150 });
+    });
+  });
+
+  describe('음수 크기', () => {
+    it('음수 width/height는 크기 단서로 쓰지 않고 viewBox로 폴백한다', () => {
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="-50" height="-50" viewBox="0 0 300 150"></svg>';
+      const result = extractSvgDimensions(svg);
+      expect(result.width).toBe(300);
+      expect(result.height).toBe(150);
+      expect(result.hasExplicitSize).toBe(false);
+    });
   });
 });

@@ -15,7 +15,6 @@ import { isBrowser, isValidBBox } from '../../../src/utils/svg-compatibility/bbo
 import {
   extractSizeHints,
   getStyleLength,
-  parseCssLength,
   sanitizeNum,
 } from '../../../src/utils/svg-compatibility/dimensions.internal';
 import { toMsg } from '../../../src/utils/svg-compatibility/message.internal';
@@ -309,35 +308,7 @@ function createSvgRoot(attrs: Record<string, string>): SVGSVGElement {
   return root;
 }
 
-describe('치수 헬퍼 — parseCssLength', () => {
-  it('빈 값/null/undefined는 value·unit 모두 null이다', () => {
-    expect(parseCssLength(undefined)).toEqual({ value: null, unit: null });
-    expect(parseCssLength(null)).toEqual({ value: null, unit: null });
-    expect(parseCssLength('')).toEqual({ value: null, unit: null });
-  });
-
-  it('단위 없는 숫자는 user unit(unit=null)으로 본다', () => {
-    expect(parseCssLength('100')).toEqual({ value: 100, unit: null });
-  });
-
-  it('단위가 붙은 값은 소문자 단위로 분리한다', () => {
-    expect(parseCssLength('100PX')).toEqual({ value: 100, unit: 'px' });
-    expect(parseCssLength('50%')).toEqual({ value: 50, unit: '%' });
-  });
-
-  it('음수·소수·지수 표기를 모두 받아들인다', () => {
-    expect(parseCssLength('-1.5e-3')).toEqual({ value: -0.0015, unit: null });
-  });
-
-  it('형식에 맞지 않는 문자열은 null을 반환한다', () => {
-    expect(parseCssLength('abc')).toEqual({ value: null, unit: null });
-    expect(parseCssLength('10 20')).toEqual({ value: null, unit: null });
-  });
-
-  it('유한값이 아닌 결과(예: 1e999)는 null로 보정한다', () => {
-    expect(parseCssLength('1e999')).toEqual({ value: null, unit: null });
-  });
-});
+// 길이 파싱 자체(parseSvgLength)의 검증은 svg-length.test.ts가 담당한다.
 
 describe('치수 헬퍼 — getStyleLength', () => {
   it('style 속성이 없으면 null을 반환한다', () => {
@@ -383,5 +354,32 @@ describe('치수 헬퍼 — sanitizeNum', () => {
   it('유한값이 아니면 0으로 보정한다', () => {
     expect(sanitizeNum(Number.POSITIVE_INFINITY)).toBe(0);
     expect(sanitizeNum(Number.NaN)).toBe(0);
+  });
+});
+
+describe('기존 viewBox에서 width/height 주입 — 구분자와 공백', () => {
+  it('콤마로 구분된 viewBox에서 크기를 주입한다', () => {
+    const { enhancedSvg } = enhanceBrowserCompatibility('<svg viewBox="0,0,300,150"></svg>', {
+      ensureNonZeroViewport: true,
+    });
+    expect(enhancedSvg).toContain('width="300"');
+    expect(enhancedSvg).toContain('height="150"');
+  });
+
+  it('앞뒤 공백이 있는 viewBox에서도 크기를 주입한다', () => {
+    const { enhancedSvg } = enhanceBrowserCompatibility('<svg viewBox=" 0 0 300 150 "></svg>', {
+      ensureNonZeroViewport: true,
+    });
+    expect(enhancedSvg).toContain('width="300"');
+    expect(enhancedSvg).toContain('height="150"');
+  });
+
+  it('값이 4개가 아닌 viewBox는 defaultSize로 폴백한다', () => {
+    const { enhancedSvg } = enhanceBrowserCompatibility('<svg viewBox="0 0 300"></svg>', {
+      ensureNonZeroViewport: true,
+      defaultSize: { width: 64, height: 64 },
+    });
+    expect(enhancedSvg).toContain('width="64"');
+    expect(enhancedSvg).toContain('height="64"');
   });
 });

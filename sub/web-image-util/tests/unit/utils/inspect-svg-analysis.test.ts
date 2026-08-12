@@ -26,6 +26,13 @@ describe('inspectSvg() 분석 리포트', () => {
       expect(report.findings.some((f) => f.code === 'dimensions-fallback')).toBe(false);
     });
 
+    it('콤마로 구분된 viewBox도 파싱한다', () => {
+      const report = inspectSvg('<svg viewBox="0,0,300,150"><rect/></svg>');
+      expect(report.dimensions?.viewBox.parsed).toEqual({ x: 0, y: 0, width: 300, height: 150 });
+      expect(report.dimensions?.effective.source).toBe('viewBox');
+      expect(report.dimensions?.effective.width).toBe(300);
+    });
+
     it('단위 포함 width/height → raw/numeric/unit 모두 정확하다', () => {
       const report = inspectSvg('<svg width="2em" height="1em"><rect/></svg>');
       expect(report.dimensions?.widthAttr.raw).toBe('2em');

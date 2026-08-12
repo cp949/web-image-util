@@ -3,27 +3,6 @@
  */
 
 /**
- * CSS 길이 값을 숫자와 단위로 분리한다.
- *
- * @description 음수, 소수, 지수 표기, %·px 같은 단위를 모두 받아들인다.
- * 단위가 없으면 SVG user unit으로 간주해 unit을 null로 돌려준다.
- *
- * @param input CSS 길이 문자열(예: `"100"`, `"100px"`, `"50%"`)
- * @returns `value`와 `unit` 쌍. 파싱 실패 시 둘 다 null
- */
-export function parseCssLength(input?: string | null): { value: number | null; unit: string | null } {
-  if (!input) return { value: null, unit: null };
-  const s = String(input).trim();
-  const m = s.match(/^(-?\d+(?:\.\d+)?(?:e-?\d+)?)([a-z%]*)$/i);
-  if (!m) return { value: null, unit: null };
-  const num = Number(m[1]);
-  if (!Number.isFinite(num)) return { value: null, unit: null };
-  // 단위가 없으면 SVG user unit으로 간주한다.
-  const unit = m[2] ? m[2].toLowerCase() : null;
-  return { value: num, unit };
-}
-
-/**
  * SVG 루트의 width/height 단서를 attribute와 style에서 모두 모은다.
  *
  * @param root 검사 대상 SVG 루트 요소

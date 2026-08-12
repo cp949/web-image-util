@@ -4,6 +4,7 @@
  */
 
 import { parseAndClassifySvg } from './svg-document.internal';
+import { parseSvgLength, parseViewBoxValues } from './svg-length.internal';
 
 // Interface for holding SVG size information
 export interface SvgDimensions {
@@ -35,11 +36,11 @@ export function extractSvgDimensions(svgString: string): SvgDimensions {
   }
 
   // Extract width, height attributes
-  const width = extractNumericValue(svgElement.getAttribute('width'));
-  const height = extractNumericValue(svgElement.getAttribute('height'));
+  const width = readPositiveLength(svgElement.getAttribute('width'));
+  const height = readPositiveLength(svgElement.getAttribute('height'));
 
   // Parse viewBox
-  const viewBox = parseViewBox(svgElement.getAttribute('viewBox'));
+  const viewBox = parseViewBoxValues(svgElement.getAttribute('viewBox')) ?? undefined;
 
   return {
     width: width || viewBox?.width || 100, // default 100
@@ -50,34 +51,16 @@ export function extractSvgDimensions(svgString: string): SvgDimensions {
 }
 
 /**
- * Helper function to extract numeric value from string
- * Removes units like px, pt, em and extracts only numbers
- * @param value - string value to parse
- * @returns extracted numeric value or undefined
+ * width/height 속성에서 양수 크기 단서만 읽는다.
+ *
+ * @description 파싱은 svg-length leaf가 담당하고, 여기서는 이 함수의 정책만 적용한다.
+ * 단위(px, %, em 등)는 무시하고 숫자만 크기로 쓴다. 0 이하는 크기 단서로 보지 않고
+ * undefined를 돌려 viewBox 또는 기본값 폴백에 맡긴다.
+ *
+ * @param value 파싱할 속성 문자열
+ * @returns 양수 크기 값, 없으면 undefined
  */
-function extractNumericValue(value: string | null): number | undefined {
-  if (!value) return undefined;
-
-  // Remove units like px, pt, em and extract only numbers
-  const numericMatch = value.match(/^(\d+(?:\.\d+)?)/);
-  return numericMatch ? parseFloat(numericMatch[1]) : undefined;
-}
-
-/**
- * Helper function to parse viewBox string
- * @param viewBoxStr - viewBox attribute value
- * @returns parsed viewBox information or undefined
- */
-function parseViewBox(viewBoxStr: string | null): SvgDimensions['viewBox'] {
-  if (!viewBoxStr) return undefined;
-
-  const values = viewBoxStr.split(/\s+/).map(Number);
-  if (values.length !== 4 || values.some(Number.isNaN)) return undefined;
-
-  return {
-    x: values[0],
-    y: values[1],
-    width: values[2],
-    height: values[3],
-  };
+function readPositiveLength(value: string | null): number | undefined {
+  const { value: parsed } = parseSvgLength(value);
+  return parsed !== null && parsed > 0 ? parsed : undefined;
 }

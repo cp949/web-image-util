@@ -9,6 +9,7 @@
 
 import type { ComplexityAnalysisResult } from '../../core/svg-complexity-analyzer';
 import { analyzeSvgComplexity } from '../../core/svg-complexity-analyzer';
+import { parseSvgLength, parseViewBoxValues } from '../svg-length.internal';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../svg-policy-utils.internal';
 import { isBlockedPipelineUriRef } from '../svg-threat-policy.internal';
 import { collectSvgDomSecuritySignals } from './dom-signals.internal';
@@ -16,18 +17,23 @@ import { isReferenceAttribute, readReferenceAttribute } from './reference-attrib
 import { pushCappedSample } from './sample-utils.internal';
 import type { InspectSvgDimensions, InspectSvgFinding } from './types.internal';
 
-const DIM_ATTR_REGEX = /^(\d+(?:\.\d+)?)\s*([a-z%]*)$/;
 const COMPLEXITY_FALLBACK_SENTINEL = 'Using default values due to analysis failure';
 
+/**
+ * 치수 속성 하나를 진단용 형태(raw + numeric + unit)로 읽는다.
+ *
+ * @description 파싱은 svg-length leaf가 담당한다. 이 함수는 inspectSvg 리포트 계약만 유지한다.
+ * 단위가 없으면 빈 문자열, 파싱 실패면 원문을 unit 자리에 그대로 남겨 진단에 쓸 수 있게 한다.
+ */
 function parseAttrValue(raw: string | null): { raw: string | null; numeric: number | null; unit: string | null } {
   if (raw === null) {
     return { raw: null, numeric: null, unit: null };
   }
-  const match = DIM_ATTR_REGEX.exec(raw);
-  if (match) {
-    return { raw, numeric: parseFloat(match[1]), unit: match[2] };
+  const { value, unit } = parseSvgLength(raw);
+  if (value === null) {
+    return { raw, numeric: null, unit: raw };
   }
-  return { raw, numeric: null, unit: raw };
+  return { raw, numeric: value, unit: unit ?? '' };
 }
 
 /** svg 루트 요소에서 width/height/viewBox를 읽어 effective dimension을 도출한다. */
@@ -39,16 +45,7 @@ export function readInspectDimensions(svgElement: Element): InspectSvgDimensions
   const widthAttr = parseAttrValue(widthRaw);
   const heightAttr = parseAttrValue(heightRaw);
 
-  let viewBoxParsed: { x: number; y: number; width: number; height: number } | null = null;
-  if (viewBoxRaw !== null) {
-    const parts = viewBoxRaw.trim().split(/\s+/);
-    if (parts.length === 4) {
-      const nums = parts.map(Number);
-      if (nums.every((n) => !Number.isNaN(n))) {
-        viewBoxParsed = { x: nums[0], y: nums[1], width: nums[2], height: nums[3] };
-      }
-    }
-  }
+  const viewBoxParsed = parseViewBoxValues(viewBoxRaw);
 
   const viewBox: InspectSvgDimensions['viewBox'] = { raw: viewBoxRaw, parsed: viewBoxParsed };
 

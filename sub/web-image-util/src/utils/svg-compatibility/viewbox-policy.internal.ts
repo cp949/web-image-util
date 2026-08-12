@@ -6,9 +6,10 @@
  * 기존 속성 보존 → 휴리스틱/라이브 BBox 계산 → defaultSize 폴백 순서로 동작한다.
  */
 
+import { parseSvgLength, parseViewBoxValues } from '../svg-length.internal';
 import { computeBBox } from './bbox/compute.internal';
 import { padBBox } from './bbox/heuristic.internal';
-import { extractSizeHints, getStyleLength, parseCssLength, sanitizeNum } from './dimensions.internal';
+import { extractSizeHints, getStyleLength, sanitizeNum } from './dimensions.internal';
 import type { SvgCompatibilityOptions, SvgCompatibilityReport } from './options';
 
 /**
@@ -36,11 +37,10 @@ export function applyViewBoxPolicy(
   if (hasVB) {
     // 0×0 방지: 크기 단서가 전혀 없고 ensureNonZeroViewport=true면 viewBox W/H를 width/height로 주입한다.
     if (opts.ensureNonZeroViewport && !hasW && !hasH) {
-      const vb = root.getAttribute('viewBox')!;
-      const [, , rawW, rawH] = vb.split(/[\s,]+/).map(Number);
-      // viewBox 자체가 비정상(0 또는 음수)이어도 안전한 기본 크기로 보정한다.
-      const W = rawW > 0 ? rawW : opts.defaultSize.width;
-      const H = rawH > 0 ? rawH : opts.defaultSize.height;
+      const vb = parseViewBoxValues(root.getAttribute('viewBox'));
+      // viewBox 자체가 비정상(파싱 실패, 0 또는 음수)이어도 안전한 기본 크기로 보정한다.
+      const W = vb && vb.width > 0 ? vb.width : opts.defaultSize.width;
+      const H = vb && vb.height > 0 ? vb.height : opts.defaultSize.height;
       root.setAttribute('width', String(W));
       root.setAttribute('height', String(H));
       report.infos?.push('Injected width/height from existing viewBox (coerced to non-zero).');
@@ -52,8 +52,8 @@ export function applyViewBoxPolicy(
 
   // width/height 단서를 attribute와 style 양쪽에서 모두 수집한다.
   const { wAttr, hAttr } = extractSizeHints(root);
-  const { value: wVal, unit: wUnit } = parseCssLength(wAttr);
-  const { value: hVal, unit: hUnit } = parseCssLength(hAttr);
+  const { value: wVal, unit: wUnit } = parseSvgLength(wAttr);
+  const { value: hVal, unit: hUnit } = parseSvgLength(hAttr);
   const wIsPxLike = wVal != null && (!wUnit || wUnit === 'px');
   const hIsPxLike = hVal != null && (!hUnit || hUnit === 'px');
 
