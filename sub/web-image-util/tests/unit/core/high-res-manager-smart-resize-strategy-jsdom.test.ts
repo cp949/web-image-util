@@ -183,6 +183,22 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
     expect(opts?.quality).toBe('balanced');
     expect(opts?.maxConcurrency).toBe(2);
   });
+
+  it('forceStrategy가 Object prototype 키여도 FEATURE_NOT_SUPPORTED 원인을 보존한다', async () => {
+    const img = createMockImage(300, 300);
+
+    await expect(
+      HighResolutionManager.smartResize(img, 50, 50, {
+        forceStrategy: 'toString' as ProcessingStrategy,
+      })
+    ).rejects.toMatchObject({
+      code: 'RESIZE_FAILED',
+      cause: expect.objectContaining({
+        code: 'FEATURE_NOT_SUPPORTED',
+        cause: expect.objectContaining({ message: 'Unsupported processing strategy: toString' }),
+      }),
+    });
+  });
 });
 
 describe('HighResolutionManager.smartResize — enableProgressTracking 진행률 shape', () => {

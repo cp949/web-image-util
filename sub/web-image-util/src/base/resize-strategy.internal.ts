@@ -88,3 +88,8 @@ export const RESIZE_STRATEGY_ADAPTERS: Record<ProcessingStrategy, ResizeStrategy
   stepped: steppedAdapter,
   tiled: tiledAdapter,
 };
+
+export function getResizeStrategyAdapter(strategy: ProcessingStrategy): ResizeStrategyAdapter | undefined {
+  const adapter = RESIZE_STRATEGY_ADAPTERS[strategy];
+  return adapter?.id === strategy ? adapter : undefined;
+}

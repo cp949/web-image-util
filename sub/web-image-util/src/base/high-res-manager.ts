@@ -2,7 +2,7 @@ import { productionLog } from '../utils/debug.internal';
 import { createImageError } from './error-helpers';
 import type { ImageAnalysis } from './high-res-detector.internal';
 import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector.internal';
-import { RESIZE_STRATEGY_ADAPTERS } from './resize-strategy.internal';
+import { getResizeStrategyAdapter } from './resize-strategy.internal';
 
 /**
  * High-resolution processing options
@@ -101,7 +101,7 @@ export class HighResolutionManager {
         analysis
       );
 
-      // 5. Generate result
+      // 5. 결과 생성
       progressTracker?.update('finalizing', 90, 'Finalizing...');
       const processingTime = (Date.now() - startTime) / 1000;
       memoryPeakUsage = HighResolutionManager.getCurrentMemoryUsage();
@@ -231,7 +231,7 @@ export class HighResolutionManager {
         }
       : undefined;
 
-    const adapter = RESIZE_STRATEGY_ADAPTERS[strategy];
+    const adapter = getResizeStrategyAdapter(strategy);
     if (!adapter) {
       // forceStrategy로 임의 문자열이 들어오는 런타임 경로 방어
       throw createImageError('FEATURE_NOT_SUPPORTED', {
@@ -366,8 +366,8 @@ export class HighResolutionManager {
     const timeEstimate = HighResolutionDetector.estimateProcessingTime(analysis);
     let estimatedTime = timeEstimate.estimatedSeconds;
 
-    // 전략별 예상 시간 배수는 adapter가 소유한다
-    estimatedTime *= RESIZE_STRATEGY_ADAPTERS[recommendedStrategy].timeMultiplier;
+    // 전략별 예상 시간 배수는 adapter가 소유한다. 런타임 임의 전략은 기존 switch default처럼 배수 1을 적용한다.
+    estimatedTime *= getResizeStrategyAdapter(recommendedStrategy)?.timeMultiplier ?? 1;
 
     return {
       canProcess: validation.canProcess,
