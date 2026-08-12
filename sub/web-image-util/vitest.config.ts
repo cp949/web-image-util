@@ -49,7 +49,6 @@ export default defineConfig({
 
     // Reporter configuration
     reporters: process.env.CI ? ['junit', 'github-actions'] : ['verbose'],
-
   },
 
   // Vite configuration

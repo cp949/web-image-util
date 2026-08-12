@@ -1,4 +1,4 @@
-import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -44,74 +44,76 @@ async function main() {
   const readmeText = await readText('README.md');
   const distDeclarations = await readDistDeclarations();
 
-  const modules = await Promise.all([
-    {
-      modulePath: 'dist/index.d.ts',
-      moduleSpecifier: '@cp949/web-image-util',
-      keySymbols: ['processImage', 'unsafe_processImage', 'ProcessorOptions', 'SvgSanitizerMode', 'ResizeConfig'],
-      sourceText: distDeclarations,
-    },
-    {
-      modulePath: 'dist/presets/index.d.ts',
-      moduleSpecifier: '@cp949/web-image-util/presets',
-      keySymbols: ['createThumbnail', 'createAvatar', 'createSocialImage'],
-    },
-    {
-      modulePath: 'dist/*.d.ts',
-      moduleSpecifier: '@cp949/web-image-util/utils',
-      keySymbols: [
-        'blobToDataURL',
-        'dataURLToBlob',
-        'decodeSvgDataURL',
-        'detectBrowserCapabilities',
-        'detectImageSourceInfo',
-        'detectImageSourceType',
-        'detectImageStringSourceInfo',
-        'detectImageStringSourceType',
-        'enhanceBrowserCompatibility',
-        'enhanceSvgForBrowser',
-        'ensureBlob',
-        'ensureBlobDetailed',
-        'ensureDataURL',
-        'ensureDataURLDetailed',
-        'ensureFile',
-        'ensureFileDetailed',
-        'ensureImageElement',
-        'ensureImageElementDetailed',
-        'estimateDataURLPayloadByteLength',
-        'estimateDataURLSize',
-        'fetchImageFormat',
-        'fetchImageSourceBlob',
-        'formatToMimeType',
-        'getImageAspectRatio',
-        'getImageDimensions',
-        'getImageFormat',
-        'getImageInfo',
-        'getImageOrientation',
-        'getOutputFilename',
-        'hasTransparency',
-        'isDataURLString',
-        'isInlineSvg',
-        'isSupportedOutputFormat',
-        'mimeTypeToImageFormat',
-        'mimeTypeToOutputFormat',
-        'replaceImageExtension',
-        'resolveOutputFormat',
-        'sanitizeSvg',
-        'sanitizeSvgForRendering',
-        'SvgOptimizer',
-      ],
-      sourceText: distDeclarations,
-    },
-    {
-      modulePath: 'dist/svg-sanitizer/index.d.ts',
-      moduleSpecifier: '@cp949/web-image-util/svg-sanitizer',
-      keySymbols: ['sanitizeSvgStrict', 'sanitizeSvgStrictDetailed'],
-    },
-  ].map(async (module) => ({
-    ...module,
-    sourceText: module.sourceText ?? (await readText(module.modulePath)),
-  })));
+  const modules = await Promise.all(
+    [
+      {
+        modulePath: 'dist/index.d.ts',
+        moduleSpecifier: '@cp949/web-image-util',
+        keySymbols: ['processImage', 'unsafe_processImage', 'ProcessorOptions', 'SvgSanitizerMode', 'ResizeConfig'],
+        sourceText: distDeclarations,
+      },
+      {
+        modulePath: 'dist/presets/index.d.ts',
+        moduleSpecifier: '@cp949/web-image-util/presets',
+        keySymbols: ['createThumbnail', 'createAvatar', 'createSocialImage'],
+      },
+      {
+        modulePath: 'dist/*.d.ts',
+        moduleSpecifier: '@cp949/web-image-util/utils',
+        keySymbols: [
+          'blobToDataURL',
+          'dataURLToBlob',
+          'decodeSvgDataURL',
+          'detectBrowserCapabilities',
+          'detectImageSourceInfo',
+          'detectImageSourceType',
+          'detectImageStringSourceInfo',
+          'detectImageStringSourceType',
+          'enhanceBrowserCompatibility',
+          'enhanceSvgForBrowser',
+          'ensureBlob',
+          'ensureBlobDetailed',
+          'ensureDataURL',
+          'ensureDataURLDetailed',
+          'ensureFile',
+          'ensureFileDetailed',
+          'ensureImageElement',
+          'ensureImageElementDetailed',
+          'estimateDataURLPayloadByteLength',
+          'estimateDataURLSize',
+          'fetchImageFormat',
+          'fetchImageSourceBlob',
+          'formatToMimeType',
+          'getImageAspectRatio',
+          'getImageDimensions',
+          'getImageFormat',
+          'getImageInfo',
+          'getImageOrientation',
+          'getOutputFilename',
+          'hasTransparency',
+          'isDataURLString',
+          'isInlineSvg',
+          'isSupportedOutputFormat',
+          'mimeTypeToImageFormat',
+          'mimeTypeToOutputFormat',
+          'replaceImageExtension',
+          'resolveOutputFormat',
+          'sanitizeSvg',
+          'sanitizeSvgForRendering',
+          'SvgOptimizer',
+        ],
+        sourceText: distDeclarations,
+      },
+      {
+        modulePath: 'dist/svg-sanitizer/index.d.ts',
+        moduleSpecifier: '@cp949/web-image-util/svg-sanitizer',
+        keySymbols: ['sanitizeSvgStrict', 'sanitizeSvgStrictDetailed'],
+      },
+    ].map(async (module) => ({
+      ...module,
+      sourceText: module.sourceText ?? (await readText(module.modulePath)),
+    }))
+  );
 
   const output = renderLlmTxt({
     packageName: packageJson.name,

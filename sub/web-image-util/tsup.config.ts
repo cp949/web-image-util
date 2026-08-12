@@ -7,7 +7,7 @@ export default defineConfig({
     'src/utils/index.ts',
     'src/presets/index.ts',
     'src/filters/plugins/index.ts',
-    'src/svg-sanitizer/index.ts'
+    'src/svg-sanitizer/index.ts',
   ],
   format: ['esm'],
   target: 'es2020',
@@ -15,8 +15,8 @@ export default defineConfig({
   dts: {
     compilerOptions: {
       // tsup DTS bundling injects `baseUrl: "."` under TS 6.
-      ignoreDeprecations: '6.0'
-    }
+      ignoreDeprecations: '6.0',
+    },
   },
   sourcemap: true,
   clean: true,

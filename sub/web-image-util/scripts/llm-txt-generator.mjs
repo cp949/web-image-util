@@ -18,7 +18,13 @@ function normalizeDeclarationText(text) {
 }
 
 function extractDeclarationText(sourceText, symbolName) {
-  const sourceFile = ts.createSourceFile('declarations.d.ts', sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const sourceFile = ts.createSourceFile(
+    'declarations.d.ts',
+    sourceText,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
 
   for (const statement of sourceFile.statements) {
     if (
@@ -94,11 +100,11 @@ export function renderLlmTxt({ packageName, readmeText, modules }) {
     '## Examples',
     "- `const blob = await processImage(file).resize({ fit: 'cover', width: 300, height: 200 }).toBlob({ format: 'webp', quality: 0.85 });`",
     "- `const avatar = await createAvatar(file, { size: 128, format: 'png' });`",
-    "- `const safeSvg = sanitizeSvg(svgString);`",
+    '- `const safeSvg = sanitizeSvg(svgString);`',
     "- `const strictBlob = await processImage(untrustedSvg, { svgSanitizer: 'strict' }).toBlob();`",
-    "- `const strictSvg = sanitizeSvgStrict(svgString);`",
+    '- `const strictSvg = sanitizeSvgStrict(svgString);`',
     "- `const blob = await ensureBlob(canvas, { format: 'webp', quality: 0.85 });`",
-    "- `const info = await detectImageSourceInfo(file);`",
+    '- `const info = await detectImageSourceInfo(file);`',
     "- `const format = await fetchImageFormat('https://example.com/image-without-extension');`",
     "- `const format = resolveOutputFormat('avif', { supported: ['webp', 'png'] });`",
     '',
@@ -112,10 +118,10 @@ export function renderLlmTxt({ packageName, readmeText, modules }) {
     '- This library targets browser environments with Canvas 2D API support.',
     '',
     '## Anti-Patterns',
-    "- Do not invent unsupported chain methods such as `crop()`, `rotate()`, or `sharpen()`.",
-    "- Do not call `resize()` multiple times in the same chain.",
-    "- Do not rely on internal `dist/chunk-*` files or non-exported symbols.",
-    "- Do not describe this package as a Node.js image pipeline.",
+    '- Do not invent unsupported chain methods such as `crop()`, `rotate()`, or `sharpen()`.',
+    '- Do not call `resize()` multiple times in the same chain.',
+    '- Do not rely on internal `dist/chunk-*` files or non-exported symbols.',
+    '- Do not describe this package as a Node.js image pipeline.',
     '',
     '## Notes',
     '- `createAvatar()` defaults to PNG-oriented avatar output.',
