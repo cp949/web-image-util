@@ -53,12 +53,14 @@ describe('공개 export 계약', () => {
     expect(valueExportKeys(utils)).toEqual(UTILS_VALUE_EXPORTS);
   });
 
-  test('빌드된 `/utils` 서브패스 export는 신규 photo-editor 유틸을 노출한다', async () => {
+  test('빌드된 `/utils` 서브패스는 루트가 소유한 변환·포맷·정보 유틸을 노출하지 않는다', async () => {
     const builtUtils = await import('../../dist/utils/index.js');
 
-    expect(builtUtils.decodeSvgDataURL).toBeTypeOf('function');
-    expect(builtUtils.estimateDataURLPayloadByteLength).toBeTypeOf('function');
-    expect(builtUtils.fetchImageSourceBlob).toBeTypeOf('function');
+    expect(builtUtils).not.toHaveProperty('decodeSvgDataURL');
+    expect(builtUtils).not.toHaveProperty('estimateDataURLPayloadByteLength');
+    expect(builtUtils).not.toHaveProperty('fetchImageSourceBlob');
+    expect(builtUtils).not.toHaveProperty('ensureBlob');
+    expect(builtUtils).not.toHaveProperty('detectBrowserCapabilities');
   });
 
   test('빌드된 `/utils` 서브패스에서 prefixSvgIds를 import하고 실행할 수 있다', async () => {

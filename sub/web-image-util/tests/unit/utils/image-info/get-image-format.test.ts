@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getImageFormat } from '../../../../src/utils';
+import { getImageFormat } from '../../../../src';
 import {
   formatFromBlobMetadata,
   formatFromBytes,

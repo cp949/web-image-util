@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { getImageAspectRatio, getImageDimensions, getImageOrientation } from '../../../../src/utils';
+import { getImageAspectRatio, getImageDimensions, getImageOrientation } from '../../../../src';
 
 /** decode 없이 "로드 완료" 상태로 보이는 HTMLImageElement를 만든다. */
 function createLoadedImage(naturalWidth: number, naturalHeight: number): HTMLImageElement {

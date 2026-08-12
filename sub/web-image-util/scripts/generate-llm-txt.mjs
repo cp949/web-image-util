@@ -56,10 +56,11 @@ async function main() {
         modulePath: 'dist/presets/index.d.ts',
         moduleSpecifier: '@cp949/web-image-util/presets',
         keySymbols: ['createThumbnail', 'createAvatar', 'createSocialImage'],
+        sourceText: distDeclarations,
       },
       {
         modulePath: 'dist/*.d.ts',
-        moduleSpecifier: '@cp949/web-image-util/utils',
+        moduleSpecifier: '@cp949/web-image-util',
         keySymbols: [
           'blobToDataURL',
           'dataURLToBlob',
@@ -100,14 +101,20 @@ async function main() {
           'resolveOutputFormat',
           'sanitizeSvg',
           'sanitizeSvgForRendering',
-          'SvgOptimizer',
         ],
+        sourceText: distDeclarations,
+      },
+      {
+        modulePath: 'dist/utils/index.d.ts',
+        moduleSpecifier: '@cp949/web-image-util/utils',
+        keySymbols: ['inspectSvg', 'inspectSvgSource', 'prefixSvgIds', 'SvgOptimizer'],
         sourceText: distDeclarations,
       },
       {
         modulePath: 'dist/svg-sanitizer/index.d.ts',
         moduleSpecifier: '@cp949/web-image-util/svg-sanitizer',
         keySymbols: ['sanitizeSvgStrict', 'sanitizeSvgStrictDetailed'],
+        sourceText: distDeclarations,
       },
     ].map(async (module) => ({
       ...module,

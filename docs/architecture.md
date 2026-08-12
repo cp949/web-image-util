@@ -88,6 +88,8 @@
 | `@cp949/web-image-util/filters` | `src/filters/plugins/index.ts` |
 | `@cp949/web-image-util/svg-sanitizer` | `src/svg-sanitizer/index.ts` |
 
+진입점 간 심볼 중복은 두지 않습니다. 변환·포맷·이미지 정보·소스 판정·브라우저 기능 감지 유틸은 루트가 단독 소유하고, `/utils`는 SVG 전용 진단·변형 도구(`inspectSvg`, `inspectSvgSource`, `prefixSvgIds`, `SvgOptimizer`)만 노출합니다. `src/index.ts`는 `src/utils/index.ts` 배럴을 경유하지 않고 각 하위 모듈에서 직접 재노출합니다.
+
 ## SVG 입력 처리 파이프라인
 
 `source-converter/`의 SVG 감지 로직은 라이브러리의 핵심 기술입니다. 단순 문자열 검사(`includes('<svg')`나 `startsWith('<?xml')`)에 의존하지 않고 모듈 호출 순서로 다단 검증합니다. 본 흐름이 SVG 입력 처리의 단일 출처이며 진단 API(`inspectSvg`, `inspectSvgSource`)도 동일한 헬퍼를 재사용합니다.

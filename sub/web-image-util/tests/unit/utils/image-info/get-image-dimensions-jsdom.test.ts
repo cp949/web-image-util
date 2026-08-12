@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { getImageDimensions } from '../../../../src/utils';
+import { getImageDimensions } from '../../../../src';
 
 describe('getImageDimensions (jsdom-safe)', () => {
   it('캔버스 치수는 이미지 변환 없이 캔버스 속성에서 바로 반환한다', async () => {

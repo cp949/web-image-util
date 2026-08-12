@@ -2,15 +2,11 @@ import { readdirSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  detectImageSourceInfo as detectImageSourceInfoFromRoot,
-  detectImageSourceType as detectImageSourceTypeFromRoot,
-} from '../../../src';
-import {
   detectImageSourceInfo,
   detectImageSourceType,
   detectImageStringSourceInfo,
   detectImageStringSourceType,
-} from '../../../src/utils';
+} from '../../../src';
 // path/mime 헬퍼는 공개 barrel에 노출되지 않는 내부 헬퍼이므로 모듈에서 직접 import한다.
 import { isXmlMimeType, normalizeMimeType } from '../../../src/utils/source-utils/mime.internal';
 import { getFormatFromPath, getPathnameWithoutSuffix } from '../../../src/utils/source-utils/path.internal';
@@ -185,10 +181,10 @@ describe('source utilities', () => {
   });
 
   describe('exports', () => {
-    it('utils 엔트리와 루트 엔트리에서 공개 함수를 사용할 수 있다', async () => {
+    it('루트 엔트리에서 공개 함수를 사용할 수 있다', async () => {
       expect(detectImageStringSourceType('/icon.svg')).toBe('svg-path');
-      expect(detectImageSourceTypeFromRoot('/photo.png')).toBe('path');
-      await expect(detectImageSourceInfoFromRoot('/icon.svg')).resolves.toMatchObject({ type: 'svg-path' });
+      expect(detectImageSourceType('/photo.png')).toBe('path');
+      await expect(detectImageSourceInfo('/icon.svg')).resolves.toMatchObject({ type: 'svg-path' });
     });
 
     it('공개 배럴과 공개 타입을 제외한 구현 파일은 internal 파일명을 사용한다', () => {

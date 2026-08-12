@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { getImageInfo } from '../../../../src/utils';
+import { getImageInfo } from '../../../../src';
 
 describe('getImageInfo (jsdom-safe)', () => {
   it('SVG 문자열의 치수와 포맷을 한 번의 SVG 파싱 결과로 반환한다', async () => {

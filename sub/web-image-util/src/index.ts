@@ -150,68 +150,6 @@ export type {
 } from './types';
 // Error classes
 export { ImageErrorCode, ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';
-export type {
-  DecodedSvgDataURL,
-  DetectImageSourceInfoOptions,
-  EnsureBlobDetailedOptions,
-  EnsureBlobOptions,
-  EnsureDataURLDetailedOptions,
-  EnsureDataURLOptions,
-  EnsureFileDetailedOptions,
-  EnsureFileOptions,
-  EstimateDataURLPayloadByteLengthOptions,
-  FetchImageFormatOptions,
-  FetchImageSourceBlobOptions,
-  FetchImageSourceBlobResult,
-  ImageDimensions,
-  ImageFormatOrUnknown,
-  ImageInfo,
-  ImageOrientation,
-  ImageSourceInfo,
-  ImageSourceType,
-  ImageStringSourceInfo,
-  ImageStringSourceType,
-  OutputFilenameOptions,
-  ResolveOutputFormatOptions,
-  TransparencyOptions,
-} from './utils';
-// Utility functions
-export {
-  blobToDataURL,
-  dataURLToBlob,
-  decodeSvgDataURL,
-  detectImageSourceInfo,
-  detectImageSourceType,
-  detectImageStringSourceInfo,
-  detectImageStringSourceType,
-  ensureBlob,
-  ensureBlobDetailed,
-  ensureDataURL,
-  ensureDataURLDetailed,
-  ensureFile,
-  ensureFileDetailed,
-  ensureImageElement,
-  ensureImageElementDetailed,
-  estimateDataURLPayloadByteLength,
-  estimateDataURLSize,
-  fetchImageFormat,
-  fetchImageSourceBlob,
-  formatToMimeType,
-  getImageAspectRatio,
-  getImageDimensions,
-  getImageFormat,
-  getImageInfo,
-  getImageOrientation,
-  getOutputFilename,
-  hasTransparency,
-  isDataURLString,
-  isInlineSvg,
-  isSupportedOutputFormat,
-  mimeTypeToImageFormat,
-  mimeTypeToOutputFormat,
-  replaceImageExtension,
-  resolveOutputFormat,
-} from './utils';
 // 브라우저 기능 감지 — 단일 구현 소스를 재노출한다
 export {
   analyzePerformanceFeatures,
@@ -229,9 +167,86 @@ export {
   type PerformanceFeatures,
   PROCESSING_MODE_DESCRIPTIONS,
 } from './utils/browser-capabilities/index';
+// 변환 유틸리티 — 서브패스가 아닌 루트가 단독 소유한다
+export type {
+  EnsureBlobDetailedOptions,
+  EnsureBlobOptions,
+  EnsureDataURLDetailedOptions,
+  EnsureDataURLOptions,
+  EnsureFileDetailedOptions,
+  EnsureFileOptions,
+} from './utils/converters/index';
+export {
+  ensureBlob,
+  ensureBlobDetailed,
+  ensureDataURL,
+  ensureDataURLDetailed,
+  ensureFile,
+  ensureFileDetailed,
+  ensureImageElement,
+  ensureImageElementDetailed,
+} from './utils/converters/index';
+// Data URL 변환 유틸리티
+export type { DecodedSvgDataURL, EstimateDataURLPayloadByteLengthOptions } from './utils/data-url/index';
+export {
+  blobToDataURL,
+  dataURLToBlob,
+  decodeSvgDataURL,
+  estimateDataURLPayloadByteLength,
+  estimateDataURLSize,
+  isDataURLString,
+} from './utils/data-url/index';
+// 포맷 변환 유틸리티
+export type { ImageFormatOrUnknown, OutputFilenameOptions, ResolveOutputFormatOptions } from './utils/format-utils';
+export {
+  formatToMimeType,
+  getOutputFilename,
+  isSupportedOutputFormat,
+  mimeTypeToImageFormat,
+  mimeTypeToOutputFormat,
+  replaceImageExtension,
+  resolveOutputFormat,
+} from './utils/format-utils';
+// 이미지 정보 조회 유틸리티
+export type {
+  FetchImageFormatOptions,
+  FetchImageSourceBlobOptions,
+  FetchImageSourceBlobResult,
+  ImageDimensions,
+  ImageInfo,
+  ImageOrientation,
+} from './utils/image-info/index';
+export {
+  fetchImageFormat,
+  fetchImageSourceBlob,
+  getImageAspectRatio,
+  getImageDimensions,
+  getImageFormat,
+  getImageInfo,
+  getImageOrientation,
+} from './utils/image-info/index';
+// 이미지 투명도 검사 유틸리티
+export type { TransparencyOptions } from './utils/image-inspection';
+export { hasTransparency } from './utils/image-inspection';
+// 이미지 소스 판정 유틸리티
+export type {
+  DetectImageSourceInfoOptions,
+  ImageSourceInfo,
+  ImageSourceType,
+  ImageStringSourceInfo,
+  ImageStringSourceType,
+} from './utils/source-utils/index';
+export {
+  detectImageSourceInfo,
+  detectImageSourceType,
+  detectImageStringSourceInfo,
+  detectImageStringSourceType,
+} from './utils/source-utils/index';
 export type { SvgCompatibilityOptions, SvgCompatibilityReport } from './utils/svg-compatibility/index';
 // SVG compatibility functions
 export { enhanceBrowserCompatibility, enhanceSvgForBrowser } from './utils/svg-compatibility/index';
+// SVG 문자열 감지 유틸리티
+export { isInlineSvg } from './utils/svg-detection';
 // SVG utility functions
 export { extractSvgDimensions } from './utils/svg-dimensions';
 // SVG sanitize

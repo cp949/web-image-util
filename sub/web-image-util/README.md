@@ -163,8 +163,8 @@ const board = await composeImages({
 
 | npm 서브패스 | 주요 API | 책임 |
 | --- | --- | --- |
-| `@cp949/web-image-util` | `processImage`, `unsafe_processImage`, `ImageProcessor`, `ShortcutBuilder`, `ImageProcessError`, `extractSvgDimensions`, `analyzeSvgComplexity` | 메인 진입점, 체이닝 API |
-| `@cp949/web-image-util/utils` | 변환(`ensureBlob`/`ensureImageElement`/...), 포맷(`formatToMimeType`/...), SVG 진단(`inspectSvg`, `inspectSvgSource`), SVG 정규화(`prefixSvgIds`), 브라우저 기능 감지 | 호출 시 단일 함수만 가져오는 가벼운 유틸 |
+| `@cp949/web-image-util` | `processImage`, `unsafe_processImage`, `ImageProcessor`, `ShortcutBuilder`, `ImageProcessError`, `extractSvgDimensions`, `analyzeSvgComplexity`, 변환(`ensureBlob`/`ensureImageElement`/...), 포맷(`formatToMimeType`/...), 이미지 정보(`getImageInfo`/...), 소스 판정(`detectImageSourceType`/...), 브라우저 기능 감지 | 메인 진입점, 체이닝 API, 변환·포맷·정보 유틸 |
+| `@cp949/web-image-util/utils` | SVG 진단(`inspectSvg`, `inspectSvgSource`), SVG 정규화(`prefixSvgIds`), SVG 최적화(`SvgOptimizer`) | SVG 전용 진단·변형 도구 |
 | `@cp949/web-image-util/svg-sanitizer` | `sanitizeSvgStrict`, `sanitizeSvgStrictDetailed`, `inspectSvgSanitization` | DOMPurify 기반 strict sanitizer (동적 import) |
 | `@cp949/web-image-util/presets` | `createThumbnail`, `createAvatar`, `createSocialImage` | 편의 preset 함수 |
 | `@cp949/web-image-util/advanced` | `AdvancedImageProcessor`, `SmartFormatSelector`, `BatchResizer`, `composeImages`, 필터 plugins 재노출 | 사용자가 명시적으로 선택하는 고급 API |
@@ -271,7 +271,7 @@ console.warn(detailed.warnings);
 
 ## 유틸리티
 
-자주 쓰는 유틸리티는 `@cp949/web-image-util/utils`에서 가져옵니다.
+SVG 진단·정규화·최적화 도구는 `@cp949/web-image-util/utils`에서, 그 밖의 변환·포맷·이미지 정보 유틸은 루트 `@cp949/web-image-util`에서 가져옵니다.
 
 ### SVG 진단
 
@@ -353,7 +353,7 @@ import {
   getOutputFilename,
   hasTransparency,
   resolveOutputFormat,
-} from '@cp949/web-image-util/utils';
+} from '@cp949/web-image-util';
 
 const info = await getImageInfo(file);
 const format = await getImageFormat(file);

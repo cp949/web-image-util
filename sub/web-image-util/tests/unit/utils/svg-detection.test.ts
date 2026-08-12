@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isInlineSvg as isInlineSvgFromRoot } from '../../../src';
-import { isInlineSvg } from '../../../src/utils';
+import { isInlineSvg } from '../../../src';
 
 describe('isInlineSvg', () => {
   it('순수 SVG 문자열을 인라인 SVG로 판정한다', () => {
@@ -60,9 +59,5 @@ describe('isInlineSvg', () => {
 
   it('SVG Data URL은 인라인 SVG XML 문자열로 판정하지 않는다', () => {
     expect(isInlineSvg('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"></svg>')).toBe(false);
-  });
-
-  it('루트 엔트리에서도 동일한 공개 유틸을 재노출한다', () => {
-    expect(isInlineSvgFromRoot('<svg viewBox="0 0 1 1" />')).toBe(true);
   });
 });

@@ -7,7 +7,7 @@ import {
   mimeTypeToOutputFormat,
   replaceImageExtension,
   resolveOutputFormat,
-} from '../../../src/utils';
+} from '../../../src';
 // outputFormatFromFilename은 공개 표면이 아니라 내부 소비자(output-pipeline)용이므로 모듈에서 직접 가져온다.
 import { outputFormatFromFilename } from '../../../src/utils/format-utils';
 

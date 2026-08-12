@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fetchImageFormat } from '../../../../src/utils';
+import { fetchImageFormat } from '../../../../src';
 
 describe('fetchImageFormat', () => {
   it('확장자가 없는 URL의 응답 바이트를 읽어 실제 래스터 포맷을 반환한다', async () => {

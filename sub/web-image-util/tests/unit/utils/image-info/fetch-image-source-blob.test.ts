@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ImageProcessError } from '../../../../src';
-import { fetchImageSourceBlob } from '../../../../src/utils';
+import { fetchImageSourceBlob, ImageProcessError } from '../../../../src';
 import { createAbortableFetchMock, withFetchMock } from '../../../utils';
 
 describe('fetchImageSourceBlob', () => {

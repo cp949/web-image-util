@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getImageAspectRatio, getImageOrientation } from '../../../../src/utils';
+import { getImageAspectRatio, getImageOrientation } from '../../../../src';
 
 describe('getImageAspectRatio', () => {
   it('캔버스 이미지 비율을 반환한다', async () => {

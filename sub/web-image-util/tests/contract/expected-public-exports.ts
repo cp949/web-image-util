@@ -28,7 +28,7 @@ export const ROOT_VALUE_EXPORTS = [
   // SVG 크기 추출 (루트 전용)
   'extractSvgDimensions',
 
-  // /utils 재노출 - 변환
+  // 변환 (루트 단독 소유)
   'ensureBlob',
   'ensureBlobDetailed',
   'ensureDataURL',
@@ -37,14 +37,14 @@ export const ROOT_VALUE_EXPORTS = [
   'ensureFileDetailed',
   'ensureImageElement',
   'ensureImageElementDetailed',
-  // /utils 재노출 - Data URL
+  // Data URL (루트 단독 소유)
   'blobToDataURL',
   'dataURLToBlob',
   'decodeSvgDataURL',
   'estimateDataURLPayloadByteLength',
   'estimateDataURLSize',
   'isDataURLString',
-  // /utils 재노출 - 포맷
+  // 포맷 (루트 단독 소유)
   'formatToMimeType',
   'getOutputFilename',
   'isSupportedOutputFormat',
@@ -52,7 +52,7 @@ export const ROOT_VALUE_EXPORTS = [
   'mimeTypeToOutputFormat',
   'replaceImageExtension',
   'resolveOutputFormat',
-  // /utils 재노출 - 이미지 정보
+  // 이미지 정보 (루트 단독 소유)
   'fetchImageFormat',
   'fetchImageSourceBlob',
   'getImageAspectRatio',
@@ -60,20 +60,20 @@ export const ROOT_VALUE_EXPORTS = [
   'getImageFormat',
   'getImageInfo',
   'getImageOrientation',
-  // /utils 재노출 - 이미지 검사
+  // 이미지 검사 (루트 단독 소유)
   'hasTransparency',
-  // /utils 재노출 - 소스 판정
+  // 소스 판정 (루트 단독 소유)
   'detectImageSourceInfo',
   'detectImageSourceType',
   'detectImageStringSourceInfo',
   'detectImageStringSourceType',
-  // /utils 재노출 - SVG
+  // SVG 정규화 · 정화 (루트 단독 소유)
   'enhanceBrowserCompatibility',
   'enhanceSvgForBrowser',
   'isInlineSvg',
   'sanitizeSvg',
   'sanitizeSvgForRendering',
-  // /utils 재노출 - 브라우저 기능 감지 (캐시 헬퍼는 /utils 서브패스 미노출)
+  // 브라우저 기능 감지 (루트 단독 소유)
   'analyzePerformanceFeatures',
   'BrowserCapabilityDetector',
   'DEFAULT_DETECTION_OPTIONS',
@@ -88,64 +88,12 @@ export const ROOT_VALUE_EXPORTS = [
 ].sort();
 
 export const UTILS_VALUE_EXPORTS = [
-  // 브라우저 기능 감지 (캐시 헬퍼 미노출)
-  'analyzePerformanceFeatures',
-  'BrowserCapabilityDetector',
-  'DEFAULT_DETECTION_OPTIONS',
-  'detectBrowserCapabilities',
-  'detectFormatSupport',
-  'detectSyncCapabilities',
-  'FEATURE_PERFORMANCE_WEIGHTS',
-  'getOptimalProcessingMode',
-  'PROCESSING_MODE_DESCRIPTIONS',
-  // 변환
-  'ensureBlob',
-  'ensureBlobDetailed',
-  'ensureDataURL',
-  'ensureDataURLDetailed',
-  'ensureFile',
-  'ensureFileDetailed',
-  'ensureImageElement',
-  'ensureImageElementDetailed',
-  // Data URL
-  'blobToDataURL',
-  'dataURLToBlob',
-  'decodeSvgDataURL',
-  'estimateDataURLPayloadByteLength',
-  'estimateDataURLSize',
-  'isDataURLString',
-  // 포맷
-  'formatToMimeType',
-  'getOutputFilename',
-  'isSupportedOutputFormat',
-  'mimeTypeToImageFormat',
-  'mimeTypeToOutputFormat',
-  'replaceImageExtension',
-  'resolveOutputFormat',
-  // 이미지 정보
-  'fetchImageFormat',
-  'fetchImageSourceBlob',
-  'getImageAspectRatio',
-  'getImageDimensions',
-  'getImageFormat',
-  'getImageInfo',
-  'getImageOrientation',
-  // 이미지 검사
-  'hasTransparency',
-  // 소스 판정
-  'detectImageSourceInfo',
-  'detectImageSourceType',
-  'detectImageStringSourceInfo',
-  'detectImageStringSourceType',
-  // SVG
-  'enhanceBrowserCompatibility',
-  'enhanceSvgForBrowser',
+  // SVG 진단
   'inspectSvg',
   'inspectSvgSource',
-  'isInlineSvg',
+  // SVG 정규화
   'prefixSvgIds',
-  'sanitizeSvg',
-  'sanitizeSvgForRendering',
+  // SVG 최적화
   'SvgOptimizer',
 ].sort();
 

@@ -21,7 +21,7 @@ import { ElementResultImpl } from '../../types/result-implementations.internal';
  *
  * @example
  * ```typescript
- * import { ensureImageElement } from '@cp949/web-image-util/utils';
+ * import { ensureImageElement } from '@cp949/web-image-util';
  *
  * const element = await ensureImageElement(blob);
  * const element2 = await ensureImageElement('https://example.com/image.jpg');
@@ -44,7 +44,7 @@ export async function ensureImageElement(source: ImageSource): Promise<HTMLImage
  *
  * @example
  * ```typescript
- * import { ensureImageElementDetailed } from '@cp949/web-image-util/utils';
+ * import { ensureImageElementDetailed } from '@cp949/web-image-util';
  *
  * const result = await ensureImageElementDetailed(blob);
  * // result.element, result.width, result.height, result.processingTime
