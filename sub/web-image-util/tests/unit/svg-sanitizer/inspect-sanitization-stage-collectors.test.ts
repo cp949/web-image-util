@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sanitizeSvgStrictDetailed } from '../../../src/svg-sanitizer';
 import {
   collectEmbeddedImageStages,
   collectGeneralStages,
@@ -54,6 +55,26 @@ describe('정화 stage collector helper stage 수집', () => {
     expect(findStage(stages, 'script-removed')?.count).toBe(1);
     expect(findStage(stages, 'doctype-removed')).toBeUndefined();
     expect(findStage(stages, 'entity-removed')).toBeUndefined();
+  });
+
+  it('strict 정책은 빈 href를 제거 대상으로 세고, 실제 strict sanitizer 제거와 거울 정합한다', () => {
+    const svgBody = '<svg xmlns="http://www.w3.org/2000/svg"><image href=""/></svg>';
+
+    // 진단: strict sanitizer는 빈 href 속성도 제거하므로 external-href-removed로 센다
+    const strictStages = collectGeneralStages(svgBody, parseSvgDocument(svgBody), 'strict');
+    expect(findStage(strictStages, 'external-href-removed')).toEqual({
+      code: 'external-href-removed',
+      count: 1,
+      samples: ['href'],
+    });
+
+    // 거울: 실제 strict sanitizer도 빈 href 속성을 제거한다
+    const sanitized = sanitizeSvgStrictDetailed(svgBody).svg;
+    expect(sanitized).not.toContain('href');
+
+    // 비대칭 문서화: lightweight sanitizer는 빈 href를 보존하므로 진단도 세지 않는다
+    const lightweightStages = collectGeneralStages(svgBody, parseSvgDocument(svgBody), 'lightweight');
+    expect(findStage(lightweightStages, 'external-href-removed')).toBeUndefined();
   });
 
   it('embedded image stage는 보존 raster, 차단 MIME, nested SVG를 분리한다', () => {

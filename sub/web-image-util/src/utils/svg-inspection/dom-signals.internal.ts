@@ -29,19 +29,20 @@ export interface CollectSvgDomSecuritySignalsOptions {
  * 내부 fragment(`#...`)와 모든 `data:` 값은 제외한다. `data:` 값은 embedded image 단계가
  * 별도로 처리하므로 본 판정에서 제외해 이중 카운트를 막는다.
  *
- * lightweight 정책에서는 일반 상대 경로(`./`, `../`)와 절대 경로(`/path`)를 보존 대상으로
- * 제외한다. strict 정책에서는 내부 fragment와 `data:`를 제외한 모든 참조를 제거 대상으로 센다.
+ * lightweight 정책에서는 빈 값, 일반 상대 경로(`./`, `../`), 절대 경로(`/path`)를 보존 대상으로
+ * 제외한다. strict 정책에서는 내부 fragment와 `data:`를 제외한 모든 참조(빈 값 포함)를
+ * 제거 대상으로 센다 — strict sanitizer는 빈 href도 속성을 제거하기 때문이다.
  */
 function isExternalSvgReference(value: string, policy: SvgInspectionPolicy): boolean {
-  if (value === '') return false;
-
   const normalized = normalizePolicyValue(value);
-  if (normalized === '') return false;
   // 모든 data: 값은 embedded image 단계가 처리하므로 제외
   if (normalized.startsWith('data:')) return false;
   // 내부 fragment 참조 제외
   if (normalized.startsWith('#')) return false;
+  // strict는 빈 값을 포함해 내부 fragment 외 모든 참조를 제거하므로 그대로 센다
   if (policy === 'strict') return true;
+  // lightweight는 빈 값을 보존한다
+  if (value === '' || normalized === '') return false;
   // 일반 상대 경로(./, ../) 제외
   if (normalized.startsWith('./') || normalized.startsWith('../')) return false;
   // 절대 경로(/path)는 보존 대상. protocol-relative(//host)는 차단 대상이므로 분리한다.
