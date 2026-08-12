@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { processImage } from '../../src';
+import { CanvasPool } from '../../src/base/canvas-pool.internal';
 import { mimeTypeToOutputFormat } from '../../src/utils/format-utils';
 
 function createFixtureCanvas(width = 64, height = 48): HTMLCanvasElement {
@@ -116,6 +117,20 @@ async function blobToImageFixture(blob: Blob): Promise<{ image: HTMLImageElement
     image,
     cleanup: () => URL.revokeObjectURL(objectUrl),
   };
+}
+
+async function loadCrossOriginImage(): Promise<HTMLImageElement> {
+  const imageUrl = new URL('/tests/browser/fixtures/cross-origin.svg', window.location.href);
+  imageUrl.hostname = window.location.hostname === 'localhost' ? '127.0.0.1' : 'localhost';
+  const image = new Image();
+
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error(`교차 출처 fixture를 불러오지 못했다: ${imageUrl.origin}`));
+    image.src = imageUrl.href;
+  });
+
+  return image;
 }
 
 describe('브라우저 스모크 테스트', () => {
@@ -255,6 +270,32 @@ describe('브라우저 스모크 테스트', () => {
 
     expect(['image/avif', 'image/png']).toContain(result.blob.type);
     expectBlobMetadataMatchesActualMime(result);
+  });
+});
+
+describe('CanvasPool 브라우저 격리', () => {
+  const pool = CanvasPool.getInstance();
+
+  afterEach(() => {
+    pool.clear();
+  });
+
+  it('tainted canvas를 반환한 뒤 같은 인스턴스를 안전하게 재사용한다', async () => {
+    const image = await loadCrossOriginImage();
+    const canvas = pool.acquire(image.naturalWidth, image.naturalHeight);
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('2D canvas context is unavailable');
+    }
+
+    context.drawImage(image, 0, 0);
+    expect(() => canvas.toDataURL()).toThrowError(/tainted|cross-origin|insecure|SecurityError/i);
+
+    pool.release(canvas);
+    const reused = pool.acquire(image.naturalWidth, image.naturalHeight);
+
+    expect(reused).toBe(canvas);
+    expect(() => reused.toDataURL()).not.toThrow();
   });
 });
 
