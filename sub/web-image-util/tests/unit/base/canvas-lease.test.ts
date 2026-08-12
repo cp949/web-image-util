@@ -121,7 +121,7 @@ describe('CanvasLease', () => {
     });
   });
 
-  describe('leaseCanvas', () => {
+  describe('leaseCanvas 임대 팩토리', () => {
     it('지정한 크기의 canvas를 pool에서 임대해 lease로 감싼다', () => {
       const acquireSpy = vi.spyOn(pool, 'acquire');
 
@@ -131,26 +131,6 @@ describe('CanvasLease', () => {
       expect(lease.canvas.width).toBe(120);
       expect(lease.canvas.height).toBe(80);
       lease.release();
-    });
-
-    it('consume이 끝나면 canvas가 pool로 돌아간다', async () => {
-      const before = pool.getStats().totalReleased;
-
-      await leaseCanvas(64, 64).consume((canvas) => canvas.width);
-
-      expect(pool.getStats().totalReleased).toBe(before + 1);
-    });
-
-    it('consume 콜백이 throw해도 canvas가 pool로 돌아간다', async () => {
-      const before = pool.getStats().totalReleased;
-
-      await expect(
-        leaseCanvas(64, 64).consume(() => {
-          throw new Error('테스트 에러');
-        })
-      ).rejects.toThrow('테스트 에러');
-
-      expect(pool.getStats().totalReleased).toBe(before + 1);
     });
   });
 });

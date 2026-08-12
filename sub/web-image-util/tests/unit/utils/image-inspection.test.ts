@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { ImageProcessError } from '../../../src/errors.internal';
 import { hasTransparency } from '../../../src/utils';
 
@@ -141,6 +142,17 @@ describe('이미지 검사 유틸', () => {
     } as ImageData);
 
     await expect(hasTransparency(img)).resolves.toBe(true);
+  });
+
+  it('캔버스가 아닌 이미지 소스의 임시 canvas를 검사 후 pool로 반환한다', async () => {
+    const img = createLoadedImage(1, 1);
+    const proto = Object.getPrototypeOf(document.createElement('canvas').getContext('2d') as object);
+    vi.spyOn(proto, 'drawImage').mockReturnValue(undefined);
+    const releaseSpy = vi.spyOn(CanvasPool.getInstance(), 'release');
+
+    await hasTransparency(img);
+
+    expect(releaseSpy).toHaveBeenCalledTimes(1);
   });
 
   it('Canvas 2D 컨텍스트를 얻지 못하면 CANVAS_CREATION_FAILED로 던진다', async () => {
