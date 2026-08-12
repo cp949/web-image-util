@@ -81,10 +81,9 @@ export {
   applyFilter,
   applyFilterChain,
   FilterCategory,
-  // 플러그인 매니저
-  filterManager,
   getAvailableFilters,
   registerFilter,
+  validateFilterChain,
 } from './filters/plugin-system';
 // 기본 필터 플러그인 (개별 플러그인, 카테고리별 컬렉션, AllFilterPlugins, 초기화 함수를 포함)
 export * from './filters/plugins';
@@ -92,7 +91,7 @@ export * from './filters/plugins';
 // ===== 고급 기능 =====
 
 // 필터 시스템은 플러그인 아키텍처를 사용한다.
-// 사용 예: filterManager.applyFilter(imageData, { name: 'brightness', params: { value: 10 } })
+// 사용 예: applyFilter(imageData, { name: 'brightness', params: { value: 10 } })
 
 export type AdvancedFilterOption<TParams = unknown> = Pick<FilterOptions<TParams>, 'name' | 'params'>;
 

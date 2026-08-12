@@ -2,17 +2,17 @@
  * filters/plugins/index의 export 계약과 등록/환경 분기를 고정한다.
  *
  * - AllFilterPlugins: 카테고리 합산 배열, 이름 중복 없음
- * - registerDefaultFilters: 등록 실패 집계(catch), development 환경 시스템 정보 조회
+ * - registerDefaultFilters: 등록 실패 집계(catch)
  * - initializeFilterSystem: window 없는 환경의 global 노출 분기
  *
- * registerFilter spy, NODE_ENV, window를 바꾸므로 매 테스트 후 복구한다.
+ * registerFilter spy와 window를 바꾸므로 매 테스트 후 복구한다.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import * as pluginSystem from '../../../src/filters/plugin-system';
-import { FilterPluginManager } from '../../../src/filters/plugin-system';
 import { AllFilterPlugins, initializeFilterSystem, registerDefaultFilters } from '../../../src/filters/plugins/index';
+import { resetFilterRegistry } from './plugin-system-helpers';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -24,7 +24,7 @@ afterEach(() => {
   if (typeof window !== 'undefined') {
     delete (window as { WebImageUtil?: unknown }).WebImageUtil;
   }
-  FilterPluginManager.resetForTesting();
+  resetFilterRegistry();
 });
 
 describe('AllFilterPlugins export 계약', () => {
@@ -49,25 +49,14 @@ describe('registerDefaultFilters 분기', () => {
     expect(() => registerDefaultFilters()).not.toThrow();
     expect(spy).toHaveBeenCalled();
     // 모두 실패했으므로 등록된 필터가 없다
-    expect(pluginSystem.filterManager.getAvailableFilters().length).toBe(0);
+    expect(pluginSystem.getAvailableFilters().length).toBe(0);
   });
 
-  it('development 환경에서는 시스템 정보를 추가로 조회한다', () => {
-    vi.stubEnv('NODE_ENV', 'development');
-    const infoSpy = vi.spyOn(pluginSystem.filterManager, 'getSystemInfo');
-
+  it('예외 없이 끝나면 기본 필터가 모두 등록된다', () => {
     registerDefaultFilters();
 
-    expect(infoSpy).toHaveBeenCalled();
-  });
-
-  it('production 환경에서는 시스템 정보를 조회하지 않는다', () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    const infoSpy = vi.spyOn(pluginSystem.filterManager, 'getSystemInfo');
-
-    registerDefaultFilters();
-
-    expect(infoSpy).not.toHaveBeenCalled();
+    const registered = pluginSystem.getAvailableFilters();
+    expect(registered).toEqual(expect.arrayContaining(AllFilterPlugins.map((plugin) => plugin.name)));
   });
 });
 

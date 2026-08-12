@@ -4,7 +4,8 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AdvancedImageProcessor, filterManager } from '../../../src/advanced-index';
+import { AdvancedImageProcessor } from '../../../src/advanced-index';
+import * as pluginSystem from '../../../src/filters/plugin-system';
 import { createDrawableSource } from './advanced-processor-branches.helpers';
 
 // ==========================================================================
@@ -18,7 +19,7 @@ describe('processImage 단계 스킵 분기', () => {
   it('filters.filters가 빈 배열이면 필터 블록을 건너뛴다 (applyFilterChain 미호출)', async () => {
     // options.filters는 존재하지만 filters.length === 0 → 필터 블록을 건너뜀
     // filtersApplied === 0 단독으로는 실행/스킵을 구분 못 하므로 spy로 직접 검증
-    const applyChainSpy = vi.spyOn(filterManager, 'applyFilterChain');
+    const applyChainSpy = vi.spyOn(pluginSystem, 'applyFilterChain');
 
     const source = createDrawableSource(100, 100);
     const result = await AdvancedImageProcessor.processImage(source, {

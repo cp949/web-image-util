@@ -1,5 +1,5 @@
 import { beforeAll } from 'vitest';
-import { FilterCategory, type FilterPlugin } from '../../../src/filters/plugin-system';
+import { FilterCategory, type FilterPlugin, resetFilterRegistryForTesting } from '../../../src/filters/plugin-system';
 
 // Node 환경에서 ImageData mock을 준비해 필터 연산 테스트가 같은 입력 모델을 공유하게 한다.
 beforeAll(() => {
@@ -16,6 +16,11 @@ beforeAll(() => {
     } as unknown as typeof ImageData;
   }
 });
+
+/** 테스트 간 필터 레지스트리를 격리한다. */
+export function resetFilterRegistry(): void {
+  resetFilterRegistryForTesting();
+}
 
 /** 지정한 색상으로 채워진 ImageData를 생성한다. */
 export function createImageData(

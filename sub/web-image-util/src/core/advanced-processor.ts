@@ -8,7 +8,7 @@ import type { ImageFormat } from '../base/format-detector';
 import type { SimpleImageWatermarkOptions, SimpleTextWatermarkOptions } from '../composition/simple-watermark';
 import { SimpleWatermark } from '../composition/simple-watermark';
 import type { FilterChain } from '../filters/plugin-system';
-import { filterManager, getMissingFilterNames } from '../filters/plugin-system';
+import { applyFilterChain, getMissingFilterNames, validateFilterChain } from '../filters/plugin-system';
 import { ImageProcessError } from '../types';
 import { productionLog } from '../utils/debug.internal';
 import { formatToMimeType } from '../utils/format-utils';
@@ -143,7 +143,7 @@ export class AdvancedImageProcessor {
 
       try {
         const imageData = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
-        const filteredData = filterManager.applyFilterChain(imageData, options.filters);
+        const filteredData = applyFilterChain(imageData, options.filters);
         canvas.getContext('2d')!.putImageData(filteredData, 0, 0);
 
         filtersApplied = options.filters.filters.filter((f) => f.enabled !== false).length;
@@ -378,7 +378,7 @@ export class AdvancedImageProcessor {
 
     // Filter validation
     if (options.filters) {
-      const filterValidation = filterManager.validateFilterChain(options.filters);
+      const filterValidation = validateFilterChain(options.filters);
       if (!filterValidation.valid) {
         warnings.push(...(filterValidation.errors || []));
       }

@@ -10,11 +10,11 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createAdvancedThumbnail, optimizeForSocial } from '../../../src/advanced-index';
-import { FilterPluginManager } from '../../../src/filters/plugin-system';
+import { resetFilterRegistryForTesting } from '../../../src/filters/plugin-system';
 
 describe('AdvancedImageProcessor 필터 초기화 계약 (jsdom-safe)', () => {
   beforeEach(() => {
-    FilterPluginManager.resetForTesting();
+    resetFilterRegistryForTesting();
 
     globalThis.ImageData = class MockImageData {
       data: Uint8ClampedArray;

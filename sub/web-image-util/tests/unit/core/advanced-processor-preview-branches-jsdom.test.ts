@@ -4,7 +4,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AdvancedImageProcessor, AutoHighResProcessor, filterManager, ImagePurpose } from '../../../src/advanced-index';
+import { AdvancedImageProcessor, AutoHighResProcessor, ImagePurpose } from '../../../src/advanced-index';
+import * as pluginSystem from '../../../src/filters/plugin-system';
 import { createMockImage, makeValidationResult } from './advanced-processor-branches.helpers';
 
 // ==========================================================================
@@ -132,8 +133,8 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
   // filters 분기
   // -----------------------------------------------------------------------
   describe('filters 옵션 분기', () => {
-    it('filters 미전달 시 filterManager.validateFilterChain을 호출하지 않는다', async () => {
-      const validateChainSpy = vi.spyOn(filterManager, 'validateFilterChain');
+    it('filters 미전달 시 validateFilterChain을 호출하지 않는다', async () => {
+      const validateChainSpy = vi.spyOn(pluginSystem, 'validateFilterChain');
 
       const img = createMockImage();
       await AdvancedImageProcessor.previewProcessing(img, {});
@@ -141,9 +142,9 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
       expect(validateChainSpy).not.toHaveBeenCalled();
     });
 
-    it('filters 전달 시 filterManager.validateFilterChain이 해당 chain으로 호출된다', async () => {
+    it('filters 전달 시 validateFilterChain이 해당 chain으로 호출된다', async () => {
       const validateChainSpy = vi
-        .spyOn(filterManager, 'validateFilterChain')
+        .spyOn(pluginSystem, 'validateFilterChain')
         .mockReturnValue({ valid: true, warnings: [] });
 
       const chain = { filters: [] };
@@ -155,7 +156,7 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
 
     it('filterValidation.valid가 false이지만 errors가 없으면 warnings가 비어 canProcess가 true로 유지된다', async () => {
       // errors 프로퍼티 없음 → || [] 폴백 → warnings 추가 없음 → canProcess true
-      vi.spyOn(filterManager, 'validateFilterChain').mockReturnValue({
+      vi.spyOn(pluginSystem, 'validateFilterChain').mockReturnValue({
         valid: false,
         warnings: [],
       });
@@ -168,7 +169,7 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
     });
 
     it('filterValidation.valid가 false이면 errors가 warnings에 추가되어 canProcess가 false이다', async () => {
-      vi.spyOn(filterManager, 'validateFilterChain').mockReturnValue({
+      vi.spyOn(pluginSystem, 'validateFilterChain').mockReturnValue({
         valid: false,
         errors: ['알 수 없는 필터'],
         warnings: [],
@@ -182,7 +183,7 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
     });
 
     it('filterValidation.warnings가 있으면 결과 warnings에 포함된다', async () => {
-      vi.spyOn(filterManager, 'validateFilterChain').mockReturnValue({
+      vi.spyOn(pluginSystem, 'validateFilterChain').mockReturnValue({
         valid: true,
         warnings: ['성능 경고: 필터 수가 많습니다'],
       });
@@ -194,7 +195,7 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
     });
 
     it('필터 수에 비례해 estimatedTime이 증가한다 (필터당 0.5초)', async () => {
-      vi.spyOn(filterManager, 'validateFilterChain').mockReturnValue({ valid: true });
+      vi.spyOn(pluginSystem, 'validateFilterChain').mockReturnValue({ valid: true });
 
       const chain = {
         filters: [

@@ -8,15 +8,9 @@
  */
 
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  createFilterPlugin,
-  FilterCategory,
-  filterManager,
-  getAvailableFilters,
-  registerFilter,
-} from '../../../src/advanced-index';
+import { createFilterPlugin, FilterCategory, getAvailableFilters, registerFilter } from '../../../src/advanced-index';
 // plugin-system-helpers 임포트로 Node 환경용 ImageData mock beforeAll이 함께 등록된다.
-import { createImageData } from './plugin-system-helpers';
+import { createImageData, resetFilterRegistry } from './plugin-system-helpers';
 
 type TestParams = { intensity: number };
 
@@ -39,18 +33,8 @@ function makeConfig(name = 'test-plugin') {
 }
 
 describe('createFilterPlugin 팩토리', () => {
-  // 이 파일은 filterManager의 모듈 로드 시 캡처된 인스턴스(I1)를 직접 사용한다.
-  // resetForTesting()은 첫 호출 후 instance를 undefined로 만들어 두 번째 호출부터 no-op이 되므로 사용하지 않는다.
-  // 대신 등록한 이름을 추적해 afterEach에서 filterManager.unregister(name)로 명시 해제한다.
-  const registeredPluginNames: string[] = [];
-
   afterEach(() => {
-    for (const name of registeredPluginNames) {
-      if (filterManager.hasFilter(name)) {
-        filterManager.unregister(name);
-      }
-    }
-    registeredPluginNames.length = 0;
+    resetFilterRegistry();
   });
 
   describe('config 필드 전달', () => {
@@ -92,32 +76,10 @@ describe('createFilterPlugin 팩토리', () => {
   });
 
   describe('등록 가능성', () => {
-    it('filterManager.register()로 등록하면 hasFilter가 true를 반환한다', () => {
-      const plugin = createFilterPlugin<TestParams>(makeConfig('reg-direct'));
-      filterManager.register(plugin);
-      registeredPluginNames.push('reg-direct');
-      expect(filterManager.hasFilter('reg-direct')).toBe(true);
-    });
-
     it('registerFilter()로 등록하면 getAvailableFilters()에서 찾을 수 있다', () => {
       const plugin = createFilterPlugin<TestParams>(makeConfig('reg-conv'));
       registerFilter(plugin);
-      registeredPluginNames.push('reg-conv');
       expect(getAvailableFilters()).toContain('reg-conv');
-    });
-
-    it('등록 후 getPlugin()으로 동일 인스턴스를 조회할 수 있다', () => {
-      const plugin = createFilterPlugin<TestParams>(makeConfig('reg-get'));
-      filterManager.register(plugin);
-      registeredPluginNames.push('reg-get');
-      expect(filterManager.getPlugin('reg-get')).toBe(plugin);
-    });
-
-    it('unregister()로 해제하면 hasFilter가 false를 반환한다', () => {
-      const plugin = createFilterPlugin<TestParams>(makeConfig('reg-remove'));
-      filterManager.register(plugin);
-      filterManager.unregister('reg-remove');
-      expect(filterManager.hasFilter('reg-remove')).toBe(false);
     });
   });
 

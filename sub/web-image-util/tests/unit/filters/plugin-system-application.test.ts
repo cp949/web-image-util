@@ -1,51 +1,52 @@
 /**
- * FilterPluginManager가 필터를 적용하고 체인을 검증하는 동작을 검증한다.
+ * plugin-system이 필터를 적용하고 체인을 검증하는 동작을 검증한다.
  */
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { BlendMode, FilterCategory, type FilterPlugin, FilterPluginManager } from '../../../src/filters/plugin-system';
-import { createDummyPlugin, createImageData } from './plugin-system-helpers';
+import {
+  applyFilter,
+  applyFilterChain,
+  BlendMode,
+  FilterCategory,
+  type FilterPlugin,
+  registerFilter,
+  validateFilterChain,
+} from '../../../src/filters/plugin-system';
+import { createDummyPlugin, createImageData, resetFilterRegistry } from './plugin-system-helpers';
 
-describe('FilterPluginManager 필터 적용', () => {
+describe('필터 적용', () => {
   afterEach(() => {
-    FilterPluginManager.resetForTesting();
+    resetFilterRegistry();
   });
 
   describe('applyFilter', () => {
     it('필터를 적용하면 변환된 ImageData를 반환한다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('adder'));
+      registerFilter(createDummyPlugin('adder'));
       const input = createImageData(2, 2, [100, 50, 25, 255]);
-      const result = manager.applyFilter(input, { name: 'adder', params: { value: 10 } });
+      const result = applyFilter(input, { name: 'adder', params: { value: 10 } });
       expect(result.data[0]).toBe(110);
     });
 
     it('미등록 필터 적용 시 에러를 던진다', () => {
-      const manager = FilterPluginManager.getInstance();
-      expect(() => manager.applyFilter(createImageData(2, 2), { name: 'missing', params: {} })).toThrow("'missing'");
+      expect(() => applyFilter(createImageData(2, 2), { name: 'missing', params: {} })).toThrow("'missing'");
     });
 
     it('enabled=false이면 원본을 복사해 반환한다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('adder'));
+      registerFilter(createDummyPlugin('adder'));
       const input = createImageData(2, 2, [100, 50, 25, 255]);
-      const result = manager.applyFilter(input, { name: 'adder', params: { value: 50 }, enabled: false });
+      const result = applyFilter(input, { name: 'adder', params: { value: 50 }, enabled: false });
       expect(result.data[0]).toBe(100);
     });
 
     it('파라미터 검증 실패 시 에러를 던진다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('adder'));
-      expect(() => manager.applyFilter(createImageData(2, 2), { name: 'adder', params: { value: 999 } })).toThrow(
-        'invalid'
-      );
+      registerFilter(createDummyPlugin('adder'));
+      expect(() => applyFilter(createImageData(2, 2), { name: 'adder', params: { value: 999 } })).toThrow('invalid');
     });
 
     it('BlendMode.MULTIPLY로 블렌딩한다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('adder'));
+      registerFilter(createDummyPlugin('adder'));
       const input = createImageData(1, 1, [200, 100, 50, 255]);
-      const result = manager.applyFilter(input, {
+      const result = applyFilter(input, {
         name: 'adder',
         params: { value: 0 },
         blend: BlendMode.MULTIPLY,
@@ -55,10 +56,9 @@ describe('FilterPluginManager 필터 적용', () => {
     });
 
     it('BlendMode.SCREEN으로 블렌딩한다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('adder'));
+      registerFilter(createDummyPlugin('adder'));
       const input = createImageData(1, 1, [100, 100, 100, 255]);
-      const result = manager.applyFilter(input, {
+      const result = applyFilter(input, {
         name: 'adder',
         params: { value: 0 },
         blend: BlendMode.SCREEN,
@@ -68,10 +68,9 @@ describe('FilterPluginManager 필터 적용', () => {
     });
 
     it('BlendMode.OVERLAY로 블렌딩한다 (r1 < 0.5 케이스)', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('adder'));
+      registerFilter(createDummyPlugin('adder'));
       const input = createImageData(1, 1, [100, 100, 100, 255]);
-      const result = manager.applyFilter(input, {
+      const result = applyFilter(input, {
         name: 'adder',
         params: { value: 0 },
         blend: BlendMode.OVERLAY,
@@ -81,10 +80,9 @@ describe('FilterPluginManager 필터 적용', () => {
     });
 
     it('opacity를 적용하면 원본과 필터 결과를 혼합한다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('adder'));
+      registerFilter(createDummyPlugin('adder'));
       const input = createImageData(1, 1, [0, 0, 0, 255]);
-      const result = manager.applyFilter(input, {
+      const result = applyFilter(input, {
         name: 'adder',
         params: { value: 100 },
         opacity: 0.5,
@@ -95,10 +93,9 @@ describe('FilterPluginManager 필터 적용', () => {
 
   describe('applyFilterChain', () => {
     it('여러 필터를 순서대로 적용한다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('adder'));
+      registerFilter(createDummyPlugin('adder'));
       const input = createImageData(1, 1, [0, 0, 0, 255]);
-      const result = manager.applyFilterChain(input, {
+      const result = applyFilterChain(input, {
         filters: [
           { name: 'adder', params: { value: 10 } },
           { name: 'adder', params: { value: 20 } },
@@ -108,10 +105,9 @@ describe('FilterPluginManager 필터 적용', () => {
     });
 
     it('enabled=false인 필터는 건너뛴다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('adder'));
+      registerFilter(createDummyPlugin('adder'));
       const input = createImageData(1, 1, [0, 0, 0, 255]);
-      const result = manager.applyFilterChain(input, {
+      const result = applyFilterChain(input, {
         filters: [
           { name: 'adder', params: { value: 10 } },
           { name: 'adder', params: { value: 99 }, enabled: false },
@@ -119,21 +115,26 @@ describe('FilterPluginManager 필터 적용', () => {
       });
       expect(result.data[0]).toBe(10);
     });
+
+    it('원본 ImageData를 변형하지 않는다', () => {
+      registerFilter(createDummyPlugin('adder'));
+      const input = createImageData(1, 1, [0, 0, 0, 255]);
+      applyFilterChain(input, { filters: [{ name: 'adder', params: { value: 40 } }] });
+      expect(input.data[0]).toBe(0);
+    });
   });
 
   describe('validateFilterChain', () => {
     it('유효한 체인은 valid:true를 반환한다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('v-filter'));
-      const result = manager.validateFilterChain({
+      registerFilter(createDummyPlugin('v-filter'));
+      const result = validateFilterChain({
         filters: [{ name: 'v-filter', params: { value: 10 } }],
       });
       expect(result.valid).toBe(true);
     });
 
     it('미등록 필터가 포함되면 valid:false와 errors를 반환한다', () => {
-      const manager = FilterPluginManager.getInstance();
-      const result = manager.validateFilterChain({
+      const result = validateFilterChain({
         filters: [{ name: 'missing', params: {} }],
       });
       expect(result.valid).toBe(false);
@@ -141,9 +142,8 @@ describe('FilterPluginManager 필터 적용', () => {
     });
 
     it('파라미터 오류가 있으면 valid:false를 반환한다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('v-filter'));
-      const result = manager.validateFilterChain({
+      registerFilter(createDummyPlugin('v-filter'));
+      const result = validateFilterChain({
         filters: [{ name: 'v-filter', params: { value: 999 } }],
       });
       expect(result.valid).toBe(false);
@@ -157,9 +157,8 @@ describe('FilterPluginManager 필터 적용', () => {
         apply: (imageData: ImageData) => imageData,
         validate: () => ({ valid: true, warnings: ['테스트 경고'] }),
       };
-      const manager = FilterPluginManager.getInstance();
-      manager.register(pluginWithWarnings);
-      const result = manager.validateFilterChain({
+      registerFilter(pluginWithWarnings);
+      const result = validateFilterChain({
         filters: [{ name: 'warn-plugin', params: { x: 0 } }],
       });
       expect(result.valid).toBe(true);

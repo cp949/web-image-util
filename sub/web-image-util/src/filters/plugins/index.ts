@@ -6,7 +6,7 @@
 
 import { debugLog, productionLog } from '../../utils/debug.internal';
 import type { FilterPlugin } from '../plugin-system';
-import { filterManager, registerFilter } from '../plugin-system';
+import { hasFilter, registerFilter } from '../plugin-system';
 import { BlurFilterPlugins } from './blur-plugins';
 import { ColorFilterPlugins } from './color-plugins';
 import { EffectFilterPlugins } from './effect-plugins';
@@ -25,13 +25,13 @@ export const AllFilterPlugins: FilterPlugin<unknown>[] = [
 ];
 
 function hasAllDefaultFiltersRegistered(): boolean {
-  return AllFilterPlugins.every((plugin) => filterManager.hasFilter(plugin.name));
+  return AllFilterPlugins.every((plugin) => hasFilter(plugin.name));
 }
 
 /**
  * 모든 기본 필터 플러그인을 한 번에 등록한다.
  *
- * 라이브러리 초기화 시 한 번 호출되어 filterManager에 기본 필터를 모두 등록한다.
+ * 라이브러리 초기화 시 한 번 호출되어 필터 레지스트리에 기본 필터를 모두 등록한다.
  * 등록 성공/실패 통계는 디버그 로그로 출력한다.
  */
 export function registerDefaultFilters(): void {
@@ -51,12 +51,6 @@ export function registerDefaultFilters(): void {
   }
 
   debugLog.debug(`Filter plugin registration completed: ${registeredCount} successful, ${failedCount} failed`);
-
-  // 개발 모드에서만 시스템 정보를 출력한다.
-  if (process.env.NODE_ENV === 'development') {
-    const systemInfo = filterManager.getSystemInfo();
-    debugLog.debug('Filter system information:', systemInfo);
-  }
 }
 
 /**
@@ -76,7 +70,6 @@ export function initializeFilterSystem(): void {
       ...((window as any).WebImageUtil || {}),
       filters: {
         register: registerFilter,
-        manager: filterManager,
       },
     };
   } else if (typeof global !== 'undefined') {
@@ -85,7 +78,6 @@ export function initializeFilterSystem(): void {
       ...((global as any).WebImageUtil || {}),
       filters: {
         register: registerFilter,
-        manager: filterManager,
       },
     };
   }

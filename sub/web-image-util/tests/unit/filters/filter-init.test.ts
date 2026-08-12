@@ -6,8 +6,9 @@
  */
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { FilterPluginManager, filterManager } from '../../../src/filters/plugin-system';
+import { getAvailableFilters } from '../../../src/filters/plugin-system';
 import { initializeFilterSystem } from '../../../src/filters/plugins/index';
+import { resetFilterRegistry } from './plugin-system-helpers';
 
 describe('필터 초기화 부작용 제거', () => {
   // 각 테스트 후 전역 상태 정리
@@ -16,8 +17,8 @@ describe('필터 초기화 부작용 제거', () => {
     if (typeof global !== 'undefined') {
       delete (global as any).WebImageUtil;
     }
-    // filterManager 싱글톤 초기화 (테스트 격리)
-    FilterPluginManager.resetForTesting();
+    // 필터 레지스트리 초기화 (테스트 격리)
+    resetFilterRegistry();
   });
 
   it('모듈 import만으로 전역 객체가 오염되지 않는다', () => {
@@ -27,7 +28,7 @@ describe('필터 초기화 부작용 제거', () => {
 
   it('initializeFilterSystem() 호출 전에는 필터가 등록되지 않는다', () => {
     // 호출 전에는 필터가 없어야 한다
-    const beforeFilters = filterManager.getAvailableFilters();
+    const beforeFilters = getAvailableFilters();
     expect(beforeFilters.length).toBe(0);
   });
 
@@ -36,7 +37,7 @@ describe('필터 초기화 부작용 제거', () => {
     initializeFilterSystem();
 
     // 호출 후에는 필터가 등록되어 있어야 한다
-    const afterFilters = filterManager.getAvailableFilters();
+    const afterFilters = getAvailableFilters();
     expect(afterFilters.length).toBeGreaterThan(0);
   });
 
@@ -57,7 +58,7 @@ describe('필터 초기화 부작용 제거', () => {
     }).not.toThrow();
 
     // 중복 등록 후에도 필터 목록이 일관성 있어야 한다 (중복 없이)
-    const filters = filterManager.getAvailableFilters();
+    const filters = getAvailableFilters();
     const uniqueFilters = new Set(filters);
     expect(filters.length).toBe(uniqueFilters.size);
   });

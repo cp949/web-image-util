@@ -20,6 +20,13 @@
 
 ### 변경
 
+- Changed (**Breaking**): `/advanced`의 필터 플러그인 표면이 모듈 함수 한 벌로 단일화되었습니다. 같은 기능을 매니저 객체와 모듈 함수로 이중 노출하던 구조를 정리한 것입니다.
+  - `filterManager` export가 제거되었습니다. `filterManager.applyFilter()`/`applyFilterChain()`/`getAvailableFilters()`는 같은 이름의 모듈 함수를 그대로 사용하세요. `filterManager.register()`는 `registerFilter()`, `filterManager.validateFilterChain()`은 신설 export `validateFilterChain()`으로 대체됩니다.
+  - `filterManager`를 통해서만 도달할 수 있던 `unregister()`·`getPlugin()`·`getAllPlugins()`·`getPluginsByCategory()`·`getSystemInfo()`는 대체 없이 제거되었습니다. 등록 해제 경로는 사라지며, 같은 이름으로 다시 `registerFilter()`하면 덮어쓰기는 그대로 동작합니다.
+  - `initializeFilterSystem()`이 전역 객체에 노출하던 `WebImageUtil.filters.manager`가 제거되었습니다. `WebImageUtil.filters.register`는 유지됩니다.
+- Changed (**Breaking**): 필터 플러그인 타입에서 판독하는 코드가 없던 선택 멤버를 제거했습니다. 객체 리터럴로 이 필드를 함께 넘기던 코드는 초과 속성 검사에 걸립니다.
+  - `FilterPlugin.preview`·`FilterPlugin.canOptimizeWith` 제거. 기본 제공 플러그인(`BrightnessFilterPlugin`·`GrayscaleFilterPlugin`·`BlurFilterPlugin`의 `preview`, `SaturationFilterPlugin`의 `canOptimizeWith`)에서도 함께 사라지며, `createFilterPlugin()`도 더 이상 `preview`를 채우지 않습니다.
+  - `FilterChain.preview`·`FilterChain.name`·`FilterOptions.id` 제거.
 - Changed (**Breaking**): 파일명 확장자 정책이 `toFile()`과 `ensureFile()` 공통 정본 하나로 통일되었습니다. 기존에는 두 경로가 서로 다른 규칙을 썼습니다. 통일된 규칙은 다음과 같습니다.
   - JPEG 계열의 권장 확장자는 `jpg`입니다. `ensureFile(src, 'photo.png', { format: 'jpeg' })`의 결과가 `photo.jpeg`에서 `photo.jpg`로 바뀝니다. 공개 함수 `replaceImageExtension()`/`getOutputFilename()`도 같습니다.
   - 확장자가 이미 같은 포맷을 가리키면 표기를 보존합니다(`photo.jpeg` + `jpeg` → `photo.jpeg`, `photo.jpg` + `jpeg` → `photo.jpg`). 이에 따라 `ensureFile()`이 같은 포맷·같은 파일명 입력에서 원본 `File`을 재사용하고 불필요한 재인코딩을 하지 않습니다.
@@ -37,6 +44,7 @@
 
 ### 수정
 
+- Fixed: 필터 레지스트리가 두 벌로 갈라질 수 있던 결함을 제거했습니다. 기존에는 모듈이 로드 시점의 싱글턴 인스턴스를 캡처하는 반면 인스턴스 슬롯을 비우면 이후 조회가 새 인스턴스를 만들어, 등록한 필터가 조회에서 보이지 않을 수 있었습니다. 레지스트리는 이제 모듈 내부 상태 하나뿐입니다.
 - Fixed: strict 정책 진단이 빈 `href=""`를 보존으로 과소 보고하던 불일치를 수정했습니다. 실제 strict sanitizer는 빈 href 속성을 제거하며, 이제 진단도 제거 대상으로 셉니다.
 - Fixed: `createAvatar()`의 `fit` 옵션이 무시되고 항상 `'cover'`로 처리되던 결함을 수정했습니다. 이제 `fit: 'contain'`/`'fill'`이 리사이즈에 반영되며, 미지정 시 기본값 `'cover'`는 그대로 유지됩니다.
 - Fixed: advanced `AdvancedImageProcessor.processImage()`에서 `format: 'jpg'` 지정 시 비표준 MIME `image/jpg`로 인코딩을 시도해 브라우저가 PNG로 폴백하던 문제를 수정했습니다. 정본 포맷 테이블 경유로 `image/jpeg`로 인코딩합니다.

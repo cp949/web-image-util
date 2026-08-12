@@ -227,9 +227,9 @@ export const ADVANCED_VALUE_EXPORTS = [
   'applyFilter',
   'applyFilterChain',
   'FilterCategory',
-  'filterManager',
   'getAvailableFilters',
   'registerFilter',
+  'validateFilterChain',
   // 포맷 감지기
   'FORMAT_MIME_MAP',
   'FormatDetector',
