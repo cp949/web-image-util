@@ -1,5 +1,5 @@
-import { isDataUrlSvg } from '../../core/source-converter/svg/data-url.internal';
 import { normalizePolicyUrl } from '../../core/source-converter/url/policy.internal';
+import { isSvgDataURL, parseDataURLMimeType } from '../data-url';
 // 스택 타입 leaf(types.internal)만 의존한다 — 부모 파일 되임포트 금지.
 import type { InspectSvgSourceInput, InspectSvgSourceMeta } from './types.internal';
 
@@ -13,12 +13,11 @@ export function detectMimeAndExtension(
 ): { mime: string | null; extension: string | null } {
   if (originalKind === 'data-url') {
     const str = source as string;
-    // isDataUrlSvg가 true이면 mime을 'image/svg+xml'로 확정한다(확장 sniff 우선).
-    if (isDataUrlSvg(str)) {
+    // isSvgDataURL이 true이면 mime을 'image/svg+xml'로 확정한다(확장 sniff 우선).
+    if (isSvgDataURL(str)) {
       return { mime: 'image/svg+xml', extension: null };
     }
-    const match = str.match(/^data:([^;,]+)/i);
-    return { mime: match ? match[1].toLowerCase() : null, extension: null };
+    return { mime: parseDataURLMimeType(str) ?? null, extension: null };
   }
 
   if (originalKind === 'url-string') {

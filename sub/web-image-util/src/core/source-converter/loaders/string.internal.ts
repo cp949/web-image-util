@@ -6,6 +6,7 @@
  */
 
 import { ImageProcessError } from '../../../types';
+import { isSvgDataURL } from '../../../utils/data-url';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { detectSourceType } from '../detect.internal';
 import {
@@ -16,7 +17,7 @@ import {
   resolvePassthroughMode,
   resolveSvgSanitizerMode,
 } from '../options.internal';
-import { isDataUrlSvg, parseSvgFromDataUrl } from '../svg/data-url.internal';
+import { parseSvgFromDataUrl } from '../svg/data-url.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
 import { readVerifiedSvgResponse } from '../svg/safety.internal';
 import { checkResponseSize, createFetchAbortHandle } from '../url/fetch-guards.internal';
@@ -40,7 +41,7 @@ export async function convertStringToElement(
     case 'svg':
       // 인라인 SVG, SVG Data URL, SVG URL을 각각 안전한 경로로 처리한다.
       // SVG Data URL은 먼저 문자열로 복원한 뒤 공통 SVG 처리기로 넘긴다.
-      if (isDataUrlSvg(source.trim())) {
+      if (isSvgDataURL(source.trim())) {
         const allowedProtocols = options?.allowedProtocols ?? DEFAULT_ALLOWED_PROTOCOLS;
         checkAllowedProtocol(source.trim(), allowedProtocols);
         const svgContent = parseSvgFromDataUrl(source);

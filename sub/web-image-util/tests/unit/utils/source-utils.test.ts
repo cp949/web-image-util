@@ -11,13 +11,8 @@ import {
   detectImageStringSourceInfo,
   detectImageStringSourceType,
 } from '../../../src/utils';
-// path/mime 헬퍼는 공개 barrel에 노출되지 않는 내부 parser이므로 모듈에서 직접 import한다.
-import {
-  isSvgDataUrl,
-  isXmlMimeType,
-  normalizeMimeType,
-  parseDataUrlMimeType,
-} from '../../../src/utils/source-utils/mime.internal';
+// path/mime 헬퍼는 공개 barrel에 노출되지 않는 내부 헬퍼이므로 모듈에서 직접 import한다.
+import { isXmlMimeType, normalizeMimeType } from '../../../src/utils/source-utils/mime.internal';
 import { getFormatFromPath, getPathnameWithoutSuffix } from '../../../src/utils/source-utils/path.internal';
 
 describe('source utilities', () => {
@@ -269,44 +264,6 @@ describe('path parser', () => {
 });
 
 describe('mime parser', () => {
-  describe('isSvgDataUrl', () => {
-    it('SVG data URL 헤더만 true로 판정한다', () => {
-      expect(isSvgDataUrl('data:image/svg+xml,%3Csvg%3E')).toBe(true);
-      expect(isSvgDataUrl('data:image/svg+xml;base64,PHN2Zz4=')).toBe(true);
-      expect(isSvgDataUrl('DATA:IMAGE/SVG+XML,%3Csvg%3E')).toBe(true);
-      expect(isSvgDataUrl('data:image/svg+xml')).toBe(true);
-    });
-
-    it('비SVG data URL과 유사 prefix는 false로 판정한다', () => {
-      expect(isSvgDataUrl('data:image/png;base64,AAAA')).toBe(false);
-      expect(isSvgDataUrl('data:image/svg+xmlfoo,%3Csvg%3E')).toBe(false);
-      expect(isSvgDataUrl('https://example.com/icon.svg')).toBe(false);
-      expect(isSvgDataUrl('')).toBe(false);
-    });
-  });
-
-  describe('parseDataUrlMimeType', () => {
-    it('data URL이 아니면 undefined를 반환한다', () => {
-      expect(parseDataUrlMimeType('https://example.com/photo.png')).toBeUndefined();
-      expect(parseDataUrlMimeType('')).toBeUndefined();
-    });
-
-    it('파라미터와 base64 마커를 제외한 MIME 토큰을 반환한다', () => {
-      expect(parseDataUrlMimeType('data:image/png;base64,AAAA')).toBe('image/png');
-      expect(parseDataUrlMimeType('data:image/svg+xml;charset=utf-8,%3Csvg%3E')).toBe('image/svg+xml');
-      expect(parseDataUrlMimeType('DATA:Image/PNG;base64,AAAA')).toBe('image/png');
-    });
-
-    it('콤마가 없는 헤더도 MIME 토큰을 추출한다', () => {
-      expect(parseDataUrlMimeType('data:image/webp')).toBe('image/webp');
-    });
-
-    it('MIME이 비어 있으면 undefined를 반환한다', () => {
-      expect(parseDataUrlMimeType('data:,payload')).toBeUndefined();
-      expect(parseDataUrlMimeType('data:;base64,AAAA')).toBeUndefined();
-    });
-  });
-
   describe('normalizeMimeType', () => {
     it('소문자/공백 제거 정규형으로 변환한다', () => {
       expect(normalizeMimeType('  Image/PNG  ')).toBe('image/png');

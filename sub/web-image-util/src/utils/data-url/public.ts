@@ -13,11 +13,41 @@ import type { EstimateDataURLPayloadByteLengthOptions } from './types';
 /**
  * 값이 Data URL 문자열인지 판정한다.
  *
+ * @description scheme 비교는 대소문자를 구분하지 않으며 앞쪽 공백을 무시한다.
+ * 라이브러리 전체의 `data:` 여부 판정은 이 함수 하나로 수렴한다.
+ *
+ * string 인자 오버로드는 부정 분기가 `never`로 좁혀지는 것을 막기 위한 것으로,
+ * unknown 인자에서만 타입 narrowing이 일어난다.
+ *
  * @param value 판정할 값
  * @returns Data URL 문자열이면 true
  */
-export function isDataURLString(value: unknown): value is string {
-  return typeof value === 'string' && value.trimStart().startsWith('data:');
+export function isDataURLString(value: string): boolean;
+export function isDataURLString(value: unknown): value is string;
+export function isDataURLString(value: unknown): boolean {
+  return typeof value === 'string' && value.trimStart().slice(0, 'data:'.length).toLowerCase() === 'data:';
+}
+
+/**
+ * Data URL 헤더의 첫 MIME 타입 토큰을 정규화해 반환한다.
+ *
+ * @description 헤더의 파라미터(`;charset=...` 등)와 base64 마커는 제외한다.
+ * 쉼표가 없는 잘린 입력도 헤더 힌트로 취급해 MIME을 추출한다(전체 파싱은 parseDataURL 담당).
+ *
+ * @param source 검사할 문자열
+ * @returns 정규화된 MIME 타입. Data URL이 아니거나 MIME 토큰이 비어 있으면 undefined
+ */
+export function parseDataURLMimeType(source: string): string | undefined {
+  const trimmed = source.trimStart();
+  if (!isDataURLString(trimmed)) {
+    return undefined;
+  }
+
+  const commaIndex = trimmed.indexOf(',');
+  const header = trimmed.slice('data:'.length, commaIndex >= 0 ? commaIndex : undefined);
+  const mimeType = header.split(';', 1)[0]?.trim().toLowerCase() ?? '';
+
+  return mimeType || undefined;
 }
 
 /**

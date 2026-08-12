@@ -1,3 +1,4 @@
+import { isDataURLString } from '../data-url';
 import { isBlockedPipelineUriRef, isEventHandlerAttributeName } from '../svg-threat-policy.internal';
 import { isReferenceAttribute, readReferenceAttribute } from './reference-attribute.internal';
 import { pushCappedSample } from './sample-utils.internal';
@@ -21,7 +22,7 @@ export interface SvgDomSecuritySignals {
  */
 function isRemovedSvgReference(value: string): boolean {
   // 모든 data: 값은 embedded image 단계가 처리하므로 제외
-  if (value.trim().toLowerCase().startsWith('data:')) return false;
+  if (isDataURLString(value)) return false;
   return value.trim() === '' || isBlockedPipelineUriRef(value);
 }
 

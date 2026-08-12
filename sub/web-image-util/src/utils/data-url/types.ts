@@ -5,6 +5,8 @@
 /** parseDataURL이 반환하는 분해 결과 — 서브모듈 간 공유되는 내부 타입 */
 export type ParsedDataURL = {
   isBase64: boolean;
+  /** `data:`와 쉼표 사이의 원본 metadata 문자열. 정책 소비자가 자체 해석할 수 있도록 보존한다. */
+  metadata: string;
   mimeType: string;
   payload: string;
 };

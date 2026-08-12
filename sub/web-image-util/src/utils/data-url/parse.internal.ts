@@ -39,7 +39,21 @@ export function parseDataURL(dataURL: string, options: ParseDataURLOptions = {})
   const mimeType = metadataParts[0]?.includes('/') ? metadataParts[0].toLowerCase() : '';
   const isBase64 = metadataParts.some((part) => part.toLowerCase() === 'base64');
 
-  return { isBase64, mimeType, payload };
+  return { isBase64, metadata, mimeType, payload };
+}
+
+/**
+ * Data URL을 non-throwing으로 분해한다.
+ *
+ * @description scheme은 대소문자를 구분하지 않으며, malformed 입력은 throw 대신 null을 반환한다.
+ * 사본마다 제각각이던 null/undefined/sentinel 실패 계약을 이 함수 하나로 수렴시킨다.
+ */
+export function tryParseDataURL(dataURL: string): ParsedDataURL | null {
+  try {
+    return parseDataURL(dataURL, { caseSensitiveScheme: false });
+  } catch {
+    return null;
+  }
 }
 
 /**

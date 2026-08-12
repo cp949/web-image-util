@@ -1,5 +1,5 @@
-import { isDataUrlSvg } from '../../core/source-converter/svg/data-url.internal';
 import { hasExplicitUrlScheme, isProtocolRelativeUrl } from '../../core/source-converter/url/policy.internal';
+import { isDataURLString, isSvgDataURL } from '../data-url';
 // 스택 타입 leaf(types.internal)만 의존한다 — 부모 파일 되임포트 금지.
 import type { InspectSvgSourceInput, InspectSvgSourceMeta } from './types.internal';
 
@@ -14,7 +14,7 @@ export function detectOriginalKind(source: InspectSvgSourceInput): InspectSvgSou
   if (source instanceof Blob) return 'blob';
   if (source instanceof URL) return 'url-string';
   // 위 instanceof 분기로 string 외 타입은 모두 제거됐다.
-  if (isDataUrlSvg(source) || source.startsWith('data:')) return 'data-url';
+  if (isSvgDataURL(source) || isDataURLString(source)) return 'data-url';
   if (hasExplicitUrlScheme(source) || isProtocolRelativeUrl(source)) return 'url-string';
   return 'string';
 }

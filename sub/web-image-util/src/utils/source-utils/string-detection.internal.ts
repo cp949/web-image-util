@@ -4,9 +4,9 @@
  * 외부 리소스를 로드하거나 data URL 본문을 디코딩하지 않는다.
  */
 
+import { isDataURLString, isSvgDataURL, parseDataURLMimeType } from '../data-url';
 import { mimeTypeToImageFormat } from '../format-utils';
 import { isInlineSvg } from '../svg-detection';
-import { isSvgDataUrl, parseDataUrlMimeType } from './mime.internal';
 import { getFormatFromPath } from './path.internal';
 import type { ImageStringSourceInfo, ImageStringSourceType } from './types';
 
@@ -23,11 +23,11 @@ export function detectImageStringSourceType(source: string): ImageStringSourceTy
     return 'inline-svg';
   }
 
-  if (isSvgDataUrl(trimmed)) {
+  if (isSvgDataURL(trimmed)) {
     return 'svg-data-url';
   }
 
-  if (lowerTrimmed.startsWith('data:')) {
+  if (isDataURLString(trimmed)) {
     return 'data-url';
   }
 
@@ -58,7 +58,7 @@ export function detectImageStringSourceType(source: string): ImageStringSourceTy
 export function detectImageStringSourceInfo(source: string): ImageStringSourceInfo {
   const type = detectImageStringSourceType(source);
   const trimmed = source.trim();
-  const mimeType = parseDataUrlMimeType(trimmed);
+  const mimeType = parseDataURLMimeType(trimmed);
   const isDataUrl = type === 'data-url' || type === 'svg-data-url';
   const isBlobUrl = type === 'blob-url';
   const isUrl = type === 'http-url' || type === 'protocol-relative-url';

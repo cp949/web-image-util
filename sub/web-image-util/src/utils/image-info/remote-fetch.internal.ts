@@ -9,6 +9,7 @@
  */
 
 import { ImageFormats, ImageProcessError } from '../../types';
+import { isDataURLString } from '../data-url';
 import { isInlineSvg } from '../svg-detection';
 import { formatFromBytes, formatFromMimeType } from './format-detection.internal';
 import type {
@@ -26,7 +27,7 @@ function canFetchStringSource(source: string): boolean {
   const trimmed = source.trim();
   const lower = trimmed.toLowerCase();
 
-  if (trimmed.length === 0 || lower.startsWith('data:') || isInlineSvg(trimmed)) {
+  if (trimmed.length === 0 || isDataURLString(trimmed) || isInlineSvg(trimmed)) {
     return false;
   }
 

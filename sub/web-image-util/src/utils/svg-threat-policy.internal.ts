@@ -8,6 +8,7 @@
  * 순수 함수·상수만 둔다 — DOM 접근이나 문서 순회 같은 메커니즘은 소비자 몫이다.
  */
 
+import { isDataURLString } from './data-url';
 import {
   decodeSvgDataImageRef,
   encodeSvgDataImageRef,
@@ -130,7 +131,7 @@ export function isBlockedPipelineUriRef(ref: string): boolean {
     return true;
   }
 
-  if (normalizedRef.startsWith('data:') && (isSafeRasterDataImageRef(ref) || isSanitizedSvgDataImageRef(ref))) {
+  if (isDataURLString(normalizedRef) && (isSafeRasterDataImageRef(ref) || isSanitizedSvgDataImageRef(ref))) {
     return false;
   }
 

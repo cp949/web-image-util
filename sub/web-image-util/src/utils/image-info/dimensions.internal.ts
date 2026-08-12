@@ -10,6 +10,7 @@ import { detectSourceType } from '../../core/source-converter/detect.internal';
 import { convertToImageElement } from '../../core/source-converter/index';
 import type { ImageSource } from '../../types';
 import { ImageFormats } from '../../types';
+import { isDataURLString } from '../data-url';
 import { extractSvgDimensions } from '../svg-dimensions';
 import { formatFromPath } from './format-detection.internal';
 import type { ImageDimensions, ImageOrientation } from './types';
@@ -37,7 +38,7 @@ function tryGetInlineSvgDimensions(source: ImageSource): ImageDimensions | undef
   }
 
   const trimmed = source.trim();
-  if (trimmed.startsWith('data:') || formatFromPath(trimmed) === ImageFormats.SVG) {
+  if (isDataURLString(trimmed) || formatFromPath(trimmed) === ImageFormats.SVG) {
     return undefined;
   }
 

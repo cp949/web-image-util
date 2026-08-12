@@ -4,8 +4,8 @@
 
 import type { ImageSource } from '../../types';
 import { ImageProcessError } from '../../types';
+import { isDataURLString, isSvgDataURL } from '../../utils/data-url';
 import { isInlineSvg } from '../../utils/svg-detection';
-import { isDataUrlSvg } from './svg/data-url.internal';
 import { isProtocolRelativeUrl, isSvgResourcePath } from './url/policy.internal';
 
 /** 지원하는 이미지 입력 소스 타입이다. */
@@ -76,7 +76,7 @@ export function detectSourceType(source: ImageSource): SourceType {
     const trimmed = source.trim();
 
     // Detect Data URL SVG (priority - check before general Data URL)
-    if (isDataUrlSvg(trimmed)) {
+    if (isSvgDataURL(trimmed)) {
       return 'svg';
     }
 
@@ -86,7 +86,7 @@ export function detectSourceType(source: ImageSource): SourceType {
     }
 
     // Detect other Data URLs
-    if (trimmed.startsWith('data:')) {
+    if (isDataURLString(trimmed)) {
       return 'dataurl';
     }
 

@@ -108,7 +108,7 @@ describe('convertStringToElement — 문자열 입력 분류 및 loader 위임',
 
   it('SVG data URL은 SVG loader로 위임되고 URL loader를 쓰지 않는다', async () => {
     const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL');
-    // URL 인코딩 형식의 SVG data URL — detect에서 isDataUrlSvg로 'svg'로 분류된다.
+    // URL 인코딩 형식의 SVG data URL — detect에서 isSvgDataURL로 'svg'로 분류된다.
     const svgDataUrl = `data:image/svg+xml,${encodeURIComponent(MINIMAL_SVG)}`;
 
     await convertStringToElement(svgDataUrl);

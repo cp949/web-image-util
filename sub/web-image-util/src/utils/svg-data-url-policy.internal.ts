@@ -11,6 +11,8 @@
  * 이 모듈은 브라우저 전용이며 Node 단독 실행을 위한 polyfill을 추가하지 않는다.
  */
 
+import { tryParseDataURL } from './data-url';
+
 /**
  * sanitizer가 보존할 raster `data:image/*` MIME 타입 목록.
  *
@@ -98,15 +100,14 @@ export interface SvgDataUrlInfo {
  * @returns `data:` URL이 아닐 경우 null. 그 외에는 구조화된 정보를 반환한다.
  */
 export function parseSvgDataUrlRef(value: string): SvgDataUrlInfo | null {
-  const trimmed = value.trim();
-  if (!trimmed.toLowerCase().startsWith('data:')) return null;
+  // 구조 분해(scheme/metadata/payload)는 utils/data-url leaf에 위임한다.
+  const parsed = tryParseDataURL(value.trim());
+  if (!parsed) return null;
 
-  const commaIndex = trimmed.indexOf(',');
-  if (commaIndex < 0) return null;
-
-  const metadata = trimmed.slice(5, commaIndex);
-  const payload = trimmed.slice(commaIndex + 1);
-  const metadataParts = metadata.split(';').map((part) => part.trim().toLowerCase());
+  // metadata 해석은 sanitizer 정책 소유다 — 빈 MIME은 RFC 2397 기본값 text/plain으로,
+  // base64 마커는 파라미터 공백 내성으로 판정한다(브라우저 동작 정합).
+  const payload = parsed.payload;
+  const metadataParts = parsed.metadata.split(';').map((part) => part.trim().toLowerCase());
   const mimeType = metadataParts[0] || 'text/plain';
   const isBase64 = metadataParts.includes('base64');
 

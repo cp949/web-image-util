@@ -5,6 +5,7 @@
  * Support TypeScript type narrowing to improve compile-time safety
  */
 
+import { isDataURLString, parseDataURLMimeType } from '../utils/data-url';
 import type { ImageFormat, ImageSource, ResizeBackground, ResizeFit, ResizePosition } from './base';
 
 // Define constants directly to prevent circular imports
@@ -118,7 +119,7 @@ export function isArrayBuffer(value: unknown): value is ArrayBuffer {
  * ```
  */
 export function isDataURL(value: unknown): value is string {
-  return isNonEmptyString(value) && value.startsWith('data:image/');
+  return isDataURLString(value) && (parseDataURLMimeType(value)?.startsWith('image/') ?? false);
 }
 
 /**

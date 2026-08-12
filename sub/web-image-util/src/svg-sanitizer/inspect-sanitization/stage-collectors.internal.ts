@@ -1,3 +1,4 @@
+import { isDataURLString } from '../../utils/data-url';
 import {
   decodeSvgDataImageRef,
   isRecognizedDataUrlMimeType,
@@ -159,7 +160,7 @@ export function collectEmbeddedImageStages(doc: Document): InspectSvgSanitizatio
 
       const value = readReferenceAttribute(element, attrName) ?? '';
       if (value === '') continue;
-      if (!value.trim().toLowerCase().startsWith('data:')) continue;
+      if (!isDataURLString(value)) continue;
 
       const info = parseSvgDataUrlRef(value);
       if (info?.mimeType === 'image/svg+xml' && decodeSvgDataImageRef(value) !== null) {

@@ -8,6 +8,7 @@
 import { detectSourceType } from '../../core/source-converter/detect.internal';
 import type { ImageSource } from '../../types';
 import { ImageFormats } from '../../types';
+import { parseDataURLMimeType } from '../data-url';
 import type { ImageInfo } from './types';
 
 /** MIME 타입을 공개 이미지 포맷 값으로 변환한다. */
@@ -49,9 +50,8 @@ export function formatFromPath(input: string): ImageInfo['format'] {
 
 /** Data URL 헤더에서 이미지 포맷을 추출한다. */
 export function formatFromDataUrl(input: string): ImageInfo['format'] {
-  const header = input.slice(0, input.indexOf(','));
-  const match = header.match(/^data:([^;,]+)/i);
-  return match ? formatFromMimeType(match[1]) : 'unknown';
+  const mimeType = parseDataURLMimeType(input);
+  return mimeType ? formatFromMimeType(mimeType) : 'unknown';
 }
 
 /** 바이너리 시그니처에서 이미지 포맷을 가볍게 판정한다. */

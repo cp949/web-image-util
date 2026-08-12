@@ -1,25 +1,16 @@
 /**
- * SVG data: URL 파싱과 인코딩, Blob 본문 SVG 스니핑 헬퍼다.
+ * SVG data: URL 디코딩과 인코딩, Blob 본문 SVG 스니핑 헬퍼다.
  *
- * 이 모듈은 source-converter 레이어의 크기 제한 정책을 적용하기 위해
- * `utils/data-url`의 `decodeSvgDataURL`과 독립적으로 운용된다.
+ * 구조 분해(scheme/metadata/payload)는 `utils/data-url` leaf에 위임하고,
+ * 이 모듈은 source-converter 레이어의 크기 제한 정책과 디코딩만 소유한다.
  * 오류 code는 source-converter 의미 체계(`INVALID_SOURCE`, `SOURCE_LOAD_FAILED`)를 따른다.
  */
 
 import { ImageProcessError } from '../../../errors.internal';
+import { tryParseDataURL } from '../../../utils/data-url';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { MAX_SVG_BYTES } from '../options.internal';
 import { checkSvgSizeLimit, createSvgSizeLimitError } from './safety.internal';
-
-/**
- * 문자열이 SVG Data URL 형식인지 판정한다.
- *
- * @param input 검사할 문자열
- * @returns SVG Data URL이면 true
- */
-export function isDataUrlSvg(input: string): boolean {
-  return /^data:image\/svg\+xml(?:[;,]|$)/i.test(input);
-}
 
 /**
  * Base64 문자열의 디코딩 후 예상 크기를 계산한다.
@@ -63,31 +54,31 @@ export function parseSvgFromDataUrl(dataUrl: string): string {
   // Format: data:image/svg+xml;charset=utf-8,<url-encoded-data>
   // Format: data:image/svg+xml,<svg-content>
 
-  const [header, content] = dataUrl.split(',');
-  if (!content) {
+  const parsed = tryParseDataURL(dataUrl);
+  if (!parsed || parsed.payload === '') {
     throw new ImageProcessError('Invalid SVG Data URL format', 'INVALID_SOURCE');
   }
 
   let svgContent: string;
 
   // Base64 인코딩은 디코딩 예상 크기부터 확인해 과도한 메모리 사용을 막는다.
-  if (header.includes('base64')) {
-    const estimatedBytes = estimateBase64DecodedSize(content);
+  if (parsed.isBase64) {
+    const estimatedBytes = estimateBase64DecodedSize(parsed.payload);
     if (estimatedBytes > MAX_SVG_BYTES) {
       throw createSvgSizeLimitError('Data URL SVG', estimatedBytes);
     }
     try {
-      svgContent = atob(content);
+      svgContent = atob(parsed.payload);
     } catch (error) {
       throw new ImageProcessError('Failed to decode Base64 SVG', 'SOURCE_LOAD_FAILED', { cause: error });
     }
   } else {
     // URL 인코딩 Data URL은 원문 길이가 아닌 디코딩 결과 기준으로 제한을 적용한다.
     try {
-      svgContent = decodeURIComponent(content);
+      svgContent = decodeURIComponent(parsed.payload);
     } catch {
       // URL 디코딩 실패 시에도 원문으로 한 번 더 SVG 형식을 검증한다.
-      svgContent = content;
+      svgContent = parsed.payload;
     }
   }
 

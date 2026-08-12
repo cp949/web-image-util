@@ -12,6 +12,19 @@ import { decodeDataURLPayload, parseDataURL } from './parse.internal';
 import type { DecodedSvgDataURL } from './types';
 
 /**
+ * 문자열이 `data:image/svg+xml` 계열 Data URL인지 판정한다.
+ *
+ * @description 헤더 prefix만 검사하는 판정이며 쉼표 없는 잘린 입력도 허용한다.
+ * scheme과 MIME 비교는 대소문자를 구분하지 않는다. 앞쪽 공백은 호출 측에서 정리한다.
+ *
+ * @param value 검사할 문자열
+ * @returns SVG Data URL이면 true
+ */
+export function isSvgDataURL(value: string): boolean {
+  return /^data:image\/svg\+xml(?:[;,]|$)/i.test(value);
+}
+
+/**
  * SVG Data URL을 동기적으로 UTF-8 text로 decode한다.
  *
  * - `image/svg+xml` MIME만 허용하며 scheme/MIME 비교는 대소문자를 구분하지 않는다.

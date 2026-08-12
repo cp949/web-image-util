@@ -13,14 +13,16 @@
  * 외부에서는 이 배럴 또는 상위 `utils/data-url`을 통해서만 import한다.
  */
 
+export { tryParseDataURL } from './parse.internal';
 export {
   blobToDataURL,
   dataURLToBlob,
   estimateDataURLPayloadByteLength,
   estimateDataURLSize,
   isDataURLString,
+  parseDataURLMimeType,
 } from './public';
 
-export { decodeSvgDataURL } from './svg';
+export { decodeSvgDataURL, isSvgDataURL } from './svg';
 
-export type { DecodedSvgDataURL, EstimateDataURLPayloadByteLengthOptions } from './types';
+export type { DecodedSvgDataURL, EstimateDataURLPayloadByteLengthOptions, ParsedDataURL } from './types';
