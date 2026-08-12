@@ -40,6 +40,27 @@ describe('inspectSvg() 분석 리포트', () => {
       expect(report.dimensions?.widthAttr.unit).toBe('em');
     });
 
+    it('대문자 단위 → 소문자로 정규화되어 numeric/unit이 채워진다', () => {
+      const report = inspectSvg('<svg width="100PX" height="100PX"><rect/></svg>');
+      expect(report.dimensions?.widthAttr.raw).toBe('100PX');
+      expect(report.dimensions?.widthAttr.numeric).toBe(100);
+      expect(report.dimensions?.widthAttr.unit).toBe('px');
+    });
+
+    it('width 속성값 자체가 무효하면 numeric은 null, unit에 원문이 그대로 남는다', () => {
+      const report = inspectSvg('<svg width="abc" height="100"><rect/></svg>');
+      expect(report.dimensions?.widthAttr.raw).toBe('abc');
+      expect(report.dimensions?.widthAttr.numeric).toBeNull();
+      expect(report.dimensions?.widthAttr.unit).toBe('abc');
+    });
+
+    it('width 속성값이 빈 문자열이면 numeric은 null, unit도 빈 문자열이다', () => {
+      const report = inspectSvg('<svg width="" height="100"><rect/></svg>');
+      expect(report.dimensions?.widthAttr.raw).toBe('');
+      expect(report.dimensions?.widthAttr.numeric).toBeNull();
+      expect(report.dimensions?.widthAttr.unit).toBe('');
+    });
+
     it('치수 정보 없는 SVG → fallback 분기가 올바르게 동작한다', () => {
       const report = inspectSvg('<svg><rect/></svg>');
       expect(report.dimensions?.effective.source).toBe('fallback');
