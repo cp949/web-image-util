@@ -74,16 +74,37 @@ export function isSupportedOutputFormat(format: unknown): format is OutputFormat
 }
 
 /**
+ * 파일명 확장자에서 출력 포맷을 판정한다.
+ *
+ * 쿼리·해시를 제거한 뒤 마지막 확장자를 읽는다. Canvas 출력 포맷이 아닌 확장자
+ * (`.txt`, `.gif`, `.svg`)와 확장자 없는 파일명은 `undefined`를 반환한다.
+ * `jpg`는 `jpeg`로 정규화한다.
+ */
+export function outputFormatFromFilename(filename: string): OutputFormat | undefined {
+  const { extension } = splitFilenameExtension(stripFilenameSuffix(filename));
+
+  return isSupportedOutputFormat(extension) ? normalizeOutputFormat(extension) : undefined;
+}
+
+/**
  * 파일명에서 쿼리와 해시를 제거한 뒤 마지막 확장자를 출력 포맷 확장자로 교체한다.
+ *
+ * 라이브러리의 파일명 확장자 정책 정본이다 — `ensureFile`과 `toFile`이 모두 이 함수를 거친다.
+ *
+ * - 기존 확장자가 이미 같은 포맷을 가리키면 표기를 보존한다 (`photo.jpeg` + `jpeg` → `photo.jpeg`).
+ * - 그 외에는 마지막 확장자를 권장 확장자로 교체한다. 이미지 확장자가 아니어도 교체한다
+ *   (`photo.txt` + `png` → `photo.png`).
+ * - 확장자가 없으면 권장 확장자를 덧붙인다.
  */
 export function replaceImageExtension(filename: string, format: OutputFormat): string {
   const cleanFilename = stripFilenameSuffix(filename);
-  const lastSlashIndex = Math.max(cleanFilename.lastIndexOf('/'), cleanFilename.lastIndexOf('\\'));
-  const lastDotIndex = cleanFilename.lastIndexOf('.');
-  const hasExtension = lastDotIndex > lastSlashIndex + 1;
-  const basename = hasExtension ? cleanFilename.slice(0, lastDotIndex) : cleanFilename;
+  const { basename, extension } = splitFilenameExtension(cleanFilename);
 
-  return `${basename}.${format}`;
+  if (isSupportedOutputFormat(extension) && normalizeOutputFormat(extension) === normalizeOutputFormat(format)) {
+    return cleanFilename;
+  }
+
+  return `${basename}.${getCanonicalExtension(format)}`;
 }
 
 /**
@@ -122,6 +143,32 @@ export function resolveOutputFormat(preferred: OutputFormat, options: ResolveOut
  */
 function normalizeOutputFormat(format: OutputFormat): OutputFormat {
   return format === 'jpg' ? 'jpeg' : format;
+}
+
+/**
+ * 출력 포맷의 권장 파일 확장자를 반환한다. JPEG 계열은 웹 관례에 맞춰 `jpg`로 통일한다.
+ */
+function getCanonicalExtension(format: OutputFormat): string {
+  return normalizeOutputFormat(format) === 'jpeg' ? 'jpg' : format;
+}
+
+/**
+ * 쿼리·해시를 제거한 파일명을 basename과 확장자(소문자, 점 제외)로 나눈다.
+ *
+ * 디렉터리 구분자 뒤 첫 글자가 점인 경우(`.hidden`, `dir/.gitignore`)는 확장자로 보지 않는다.
+ */
+function splitFilenameExtension(cleanFilename: string): { basename: string; extension?: string } {
+  const lastSlashIndex = Math.max(cleanFilename.lastIndexOf('/'), cleanFilename.lastIndexOf('\\'));
+  const lastDotIndex = cleanFilename.lastIndexOf('.');
+
+  if (lastDotIndex <= lastSlashIndex + 1) {
+    return { basename: cleanFilename };
+  }
+
+  return {
+    basename: cleanFilename.slice(0, lastDotIndex),
+    extension: cleanFilename.slice(lastDotIndex + 1).toLowerCase(),
+  };
 }
 
 /**

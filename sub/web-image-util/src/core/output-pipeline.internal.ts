@@ -35,7 +35,12 @@ import {
   FileResultImpl,
 } from '../types/result-implementations.internal';
 import { detectCanvasFormatSupport } from '../utils/browser-capabilities/index';
-import { formatToMimeType, mimeTypeToOutputFormat } from '../utils/format-utils';
+import {
+  formatToMimeType,
+  getOutputFilename,
+  mimeTypeToOutputFormat,
+  outputFormatFromFilename,
+} from '../utils/format-utils';
 import { createImageElement } from '../utils/image-element.internal';
 import { LazyRenderPipeline } from './lazy-render-pipeline.internal';
 import { convertToImageElement } from './source-converter/index';
@@ -325,13 +330,13 @@ export class OutputPipeline {
    *
    * - 문자열 인자는 포맷 지정으로 본다.
    * - 빈 옵션 객체이고 파일명에서 포맷을 추출할 수 있으면 그 포맷과 권장 품질을 쓴다.
-   * - 포맷이 정해지면 파일명 확장자도 그에 맞춰 정규화한다.
+   * - 포맷이 정해지면 파일명 확장자도 그에 맞춰 정규화한다(정책 정본은 `utils/format-utils`).
    */
   private resolveFileOutput(
     filename: string,
     optionsOrFormat: OutputOptions | OutputFormat
   ): { finalOptions: OutputOptions; resolvedFilename: string } {
-    const formatFromFilename = getFormatFromFilename(filename);
+    const formatFromFilename = outputFormatFromFilename(filename);
 
     let finalOptions: OutputOptions;
     if (typeof optionsOrFormat === 'string') {
@@ -345,9 +350,7 @@ export class OutputPipeline {
       finalOptions = optionsOrFormat;
     }
 
-    const resolvedFilename = finalOptions.format
-      ? applyFormatExtensionToFilename(filename, finalOptions.format)
-      : filename;
+    const resolvedFilename = getOutputFilename(filename, { format: finalOptions.format });
 
     return { finalOptions, resolvedFilename };
   }
@@ -371,50 +374,6 @@ function getBestFormat(): OutputFormat {
     return 'webp';
   }
   return 'png';
-}
-
-/** 파일명에서 출력 포맷을 추출한다. 지원하지 않는 확장자는 null을 반환한다. */
-function getFormatFromFilename(filename: string): OutputFormat | null {
-  const ext = filename.toLowerCase().split('.').pop();
-
-  const formatMap: Record<string, OutputFormat> = {
-    jpg: 'jpeg',
-    jpeg: 'jpeg',
-    png: 'png',
-    webp: 'webp',
-    avif: 'avif',
-  };
-
-  return formatMap[ext || ''] || null;
-}
-
-/** 출력 포맷의 권장 파일 확장자(소문자)를 반환한다. JPEG 계열은 `.jpg`로 통일한다. */
-function getCanonicalExtension(format: OutputFormat): string {
-  if (format === 'jpeg' || format === 'jpg') return 'jpg';
-  return format;
-}
-
-/**
- * 명시된 출력 포맷에 맞춰 파일명 확장자를 정규화한다.
- *
- * - 기존 확장자가 같은 포맷을 나타내면(`photo.jpg` + `jpeg`) 그대로 유지한다.
- * - 알려진 이미지 확장자가 있으면 포맷에 맞는 확장자로 교체한다.
- * - 그 외에는 권장 확장자를 덧붙인다.
- */
-function applyFormatExtensionToFilename(filename: string, format: OutputFormat): string {
-  const currentFormat = getFormatFromFilename(filename);
-  const normalizedFormat: OutputFormat = format === 'jpg' ? 'jpeg' : format;
-  if (currentFormat === normalizedFormat) {
-    return filename;
-  }
-
-  const canonicalExt = getCanonicalExtension(format);
-  const imageExtensionPattern = /\.(jpg|jpeg|png|webp|avif|gif|svg|bmp|ico|tiff?)$/i;
-  if (imageExtensionPattern.test(filename)) {
-    return filename.replace(imageExtensionPattern, `.${canonicalExt}`);
-  }
-
-  return `${filename}.${canonicalExt}`;
 }
 
 // ==============================================

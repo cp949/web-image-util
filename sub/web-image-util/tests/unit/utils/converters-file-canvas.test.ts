@@ -18,9 +18,17 @@ describe('File 변환 유틸 (jsdom-safe)', () => {
     });
 
     expect(file).toBeInstanceOf(File);
-    expect(file.name).toBe('sample.jpeg');
+    // JPEG 계열의 권장 확장자는 jpg다 — toFile()과 같은 정책 정본을 쓴다
+    expect(file.name).toBe('sample.jpg');
     expect(file.type).toBe('image/jpeg');
     expect(file.size).toBeGreaterThan(0);
+  });
+
+  it('ensureFile은 확장자가 이미 같은 포맷을 가리키면 원본 File을 재사용한다', async () => {
+    const file = new File(['mock'], 'photo.jpg', { type: 'image/jpeg' });
+
+    // 확장자 표기(.jpg)가 보존되므로 파일명이 바뀌지 않고 재인코딩도 일어나지 않는다
+    await expect(ensureFile(file, 'photo.jpg', { format: 'jpeg' })).resolves.toBe(file);
   });
 
   it('ensureFileDetailed은 파일과 치수 metadata를 함께 반환한다', async () => {

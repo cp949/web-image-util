@@ -20,6 +20,10 @@
 
 ### 변경
 
+- Changed (**Breaking**): 파일명 확장자 정책이 `toFile()`과 `ensureFile()` 공통 정본 하나로 통일되었습니다. 기존에는 두 경로가 서로 다른 규칙을 썼습니다. 통일된 규칙은 다음과 같습니다.
+  - JPEG 계열의 권장 확장자는 `jpg`입니다. `ensureFile(src, 'photo.png', { format: 'jpeg' })`의 결과가 `photo.jpeg`에서 `photo.jpg`로 바뀝니다. 공개 함수 `replaceImageExtension()`/`getOutputFilename()`도 같습니다.
+  - 확장자가 이미 같은 포맷을 가리키면 표기를 보존합니다(`photo.jpeg` + `jpeg` → `photo.jpeg`, `photo.jpg` + `jpeg` → `photo.jpg`). 이에 따라 `ensureFile()`이 같은 포맷·같은 파일명 입력에서 원본 `File`을 재사용하고 불필요한 재인코딩을 하지 않습니다.
+  - 이미지 확장자가 아니어도 마지막 확장자를 교체하고, 쿼리·해시(`?v=1`, `#preview`)를 제거합니다. `toFile('photo.txt', { format: 'png' })`의 결과가 `photo.txt.png`에서 `photo.png`로 바뀝니다.
 - Changed (**Breaking**): 공개 변환 옵션 타입 `EnsureBlobOptions`·`EnsureBlobDetailedOptions`·`EnsureDataURLOptions`·`EnsureDataURLDetailedOptions`를 `OutputOptions`의 type alias로, `EnsureFileDetailedOptions`를 `EnsureFileOptions`의 type alias로 축소했습니다. 일반 구조적 할당은 동일하지만, 이 타입들을 대상으로 한 TypeScript declaration merging은 더 이상 지원하지 않습니다.
 - Changed (**Breaking**): `inspectSvgSource()`의 byte 초과 finding이 세 진단 API 공통 계약으로 통일되었습니다. code가 `'byte-limit-exceeded'`에서 `'svg-bytes-exceeded'`로, `details`가 `{ byteLimit }`에서 `{ actualBytes, maxBytes }`로 바뀝니다(`actualBytes`는 측정된 실제 크기이며, 공통 스키마는 크기를 알 수 없는 경로를 위해 null도 허용합니다). 이제 `inspectSvg()`/`inspectSvgSource()`/`inspectSvgSanitization()`이 같은 사건(byte 한도 초과)을 같은 code·details 스키마로 보고하므로 소비자 파싱 코드를 하나로 쓸 수 있습니다.
 - Changed: `inspectSvgSanitization()`의 byte 초과 failure에 `details`(`{ actualBytes, maxBytes }`)가 추가되었습니다. `InspectSvgSanitizationFailure` 타입에 선택 필드 `details?`가 신설됩니다.
