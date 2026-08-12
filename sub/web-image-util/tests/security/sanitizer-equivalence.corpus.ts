@@ -277,6 +277,14 @@ export const SANITIZER_EQUIVALENCE_CORPUS: SanitizerEquivalenceCase[] = [
     },
   },
   {
+    name: '요소: 문자참조로 href를 타겟팅하는 animate는 양쪽 모두 제거한다',
+    svg: `${SVG_OPEN}<a href="#x"><animate attributeName="h&#x72;ef" to="javascript:alert(1)"/></a></svg>`,
+    expected: {
+      lightweight: { removes: ['<animate', 'alert(1)'] },
+      strict: { removes: ['<animate', 'alert(1)'] },
+    },
+  },
+  {
     name: '요소: href를 타겟팅하지 않는 animate — 경량 보존, strict 제거',
     svg: `${SVG_OPEN}<rect><animate attributeName="x" from="0" to="10" dur="1s"/></rect></svg>`,
     expected: {

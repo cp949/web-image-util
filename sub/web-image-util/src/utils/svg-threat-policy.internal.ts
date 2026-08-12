@@ -263,7 +263,7 @@ export const HREF_TARGETING_ANIMATION_ELEMENT_NAMES: readonly string[] = ['anima
  * @returns href 또는 xlink:href를 타겟팅하면 true
  */
 export function isHrefTargetingAttributeValue(value: string): boolean {
-  const normalized = value.trim().toLowerCase();
+  const normalized = decodeHtmlEntities(value).trim().toLowerCase();
   return normalized === 'href' || normalized === 'xlink:href';
 }
 
