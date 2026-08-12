@@ -7,9 +7,22 @@
  *   실제 브라우저 포맷 경로는 browser 스모크에서 검증한다.
  */
 
+import { createCanvas as createNodeCanvas, loadImage } from 'canvas';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAvatar, createSocialImage, createThumbnail } from '../../../src/presets';
 import { createTestCanvas } from '../../utils/canvas-helper';
+
+/**
+ * 결과 Blob을 node-canvas로 직접 디코드해 픽셀을 검사한다.
+ * ResultBlob.toCanvas()는 Blob URL 이미지 로딩을 요구해 jsdom에서 쓸 수 없다.
+ */
+async function decodeBlobPixels(blob: Blob, width: number, height: number) {
+  const image = await loadImage(Buffer.from(await blob.arrayBuffer()));
+  const canvas = createNodeCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(image, 0, 0);
+  return ctx;
+}
 
 describe('프리셋 이미지 생성 (Canvas 입력, jsdom-safe)', () => {
   it('객체 size 썸네일은 height 생략 시 width를 높이로 사용한다', async () => {
@@ -37,6 +50,22 @@ describe('프리셋 이미지 생성 (Canvas 입력, jsdom-safe)', () => {
     expect(result.height).toBe(64);
     expect(result.blob.type).toBe('image/png');
     expect(result.format).toBe('png');
+  });
+
+  it('아바타는 fit 옵션을 반영한다 — contain이면 소스 비율이 유지되어 여백이 투명하다', async () => {
+    // 2:1 가로형 소스를 64x64 contain으로 줄이면 상하 여백(letterbox)이 생긴다.
+    // cover가 적용되면 소스가 정사각형을 꽉 채워 여백 없이 전부 불투명해진다.
+    const source = createTestCanvas(400, 200, 'red');
+
+    const result = await createAvatar(source, { size: 64, fit: 'contain', background: 'transparent' });
+
+    const ctx = await decodeBlobPixels(result.blob, 64, 64);
+    // 상단 모서리: contain이면 투명 배경
+    expect(ctx.getImageData(0, 0, 1, 1).data[3]).toBe(0);
+    // 중앙: 소스 이미지 픽셀(불투명 red)
+    const center = ctx.getImageData(32, 32, 1, 1).data;
+    expect(center[3]).toBe(255);
+    expect(center[0]).toBeGreaterThan(200);
   });
 
   it('소셜 이미지는 customSize가 있으면 플랫폼 기본 크기보다 우선한다', async () => {

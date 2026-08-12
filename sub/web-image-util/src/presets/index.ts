@@ -218,13 +218,14 @@ export async function createAvatar(source: ImageSource, options: AvatarOptions =
     background: 'transparent',
     format: 'png' as const, // transparency support
     quality: 0.9, // high quality for avatars
+    fit: 'cover' as const,
   };
 
   const finalOptions = { ...defaultOptions, ...options };
 
-  // Basic resizing (square, cover fit)
+  // Basic resizing (square, default cover fit)
   const processor = processImage(source).resize({
-    fit: 'cover',
+    fit: finalOptions.fit,
     width: finalOptions.size,
     height: finalOptions.size,
     background: finalOptions.background,
