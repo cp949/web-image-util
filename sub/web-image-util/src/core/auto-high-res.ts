@@ -3,6 +3,7 @@
  * Transparent system that automatically processes high-resolution images
  */
 
+import { createOwnedCanvas } from '../base/canvas-utils.internal';
 import { HighResolutionDetector } from '../base/high-res-detector.internal';
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
@@ -335,11 +336,7 @@ export class AutoHighResProcessor {
   ): Promise<ProcessingResult> {
     const startTime = Date.now();
 
-    const canvas = document.createElement('canvas');
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
-
-    const ctx = canvas.getContext('2d')!;
+    const { canvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);
 
     // Quality settings
     switch (quality) {

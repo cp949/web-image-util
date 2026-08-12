@@ -5,6 +5,7 @@
  * Users don't need to know complex strategies, internal optimization is automatic.
  */
 
+import { createOwnedCanvas } from '../base/canvas-utils.internal';
 import { createImageError } from '../base/error-helpers';
 import type { ProcessingStrategy } from '../base/high-res-detector.internal';
 import { HighResolutionManager } from '../base/high-res-manager';
@@ -97,15 +98,7 @@ export class SmartProcessor {
     height: number,
     options: SmartResizeOptions
   ): Promise<HTMLCanvasElement> {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-      throw createImageError('CANVAS_CONTEXT_FAILED', { cause: new Error('Failed to get canvas context') });
-    }
-
-    canvas.width = width;
-    canvas.height = height;
+    const { canvas, ctx } = createOwnedCanvas(width, height);
 
     // Basic high-quality settings
     ctx.imageSmoothingEnabled = true;

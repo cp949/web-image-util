@@ -3,7 +3,7 @@
  * Provides advanced features through a unified, consistent API
  */
 
-import { canvasToBlob } from '../base/canvas-utils.internal';
+import { canvasToBlob, createOwnedCanvas } from '../base/canvas-utils.internal';
 import type { ImageFormat } from '../base/format-detector';
 import type { SimpleImageWatermarkOptions, SimpleTextWatermarkOptions } from '../composition/simple-watermark';
 import { SimpleWatermark } from '../composition/simple-watermark';
@@ -122,12 +122,10 @@ export class AdvancedImageProcessor {
         messages.push(resizingResult.userMessage);
       }
     } else {
-      // Create canvas when not resizing
-      canvas = document.createElement('canvas');
-      canvas.width = source.width;
-      canvas.height = source.height;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(source, 0, 0);
+      // 리사이즈 생략 — 원본 복사용 canvas (호출자 소유, pool 미경유)
+      const owned = createOwnedCanvas(source.width, source.height);
+      owned.ctx.drawImage(source, 0, 0);
+      canvas = owned.canvas;
     }
 
     onProgress?.('filtering', 50, 'Applying filters...');
