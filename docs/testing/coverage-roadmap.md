@@ -58,13 +58,13 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `/advanced` | `fastResize` / `qualityResize` / `autoResize` / `ResizePerformance` / `getPerformanceConfig` / `RESIZE_PROFILES` | 성능 우선순위 프리셋 적용 결과 | 있음 | `tests/unit/core/performance-utils.test.ts`, `performance-config.test.ts` |
 | `/advanced` | `addTextWatermark` / `addImageWatermark` / `addCopyright` / `SimpleWatermark` | 이미지 + 텍스트/이미지 워터마크 옵션 → 워터마크 합성된 Canvas/Blob | 있음 | `tests/unit/composition/watermark-convenience.test.ts`, `watermark-text.test.ts` |
 | `/advanced` | `TextWatermark` / `ImageWatermark` (세밀 제어 클래스) | 워터마크 위치/스타일 세밀 제어 | 부분 | `tests/unit/composition/watermark-text.test.ts` (텍스트만) |
-| `/advanced` | `filterManager` / `registerFilter` / `applyFilter` / `applyFilterChain` / `getAvailableFilters` / `FilterCategory` | 필터 플러그인 등록/조회/적용 | 있음 | `tests/unit/filters/plugin-system-manager.test.ts`, `plugin-system-application.test.ts`, `plugin-system-convenience.test.ts` |
+| `/advanced` | `registerFilter` / `applyFilter` / `applyFilterChain` / `validateFilterChain` / `getAvailableFilters` / `FilterCategory` | 필터 플러그인 등록/조회/적용 | 있음 | `tests/unit/filters/plugin-system-registry.test.ts`, `plugin-system-application.test.ts` |
 | `/advanced` | `createAdvancedThumbnail` / `optimizeForSocial` / `batchOptimize` (advanced-index convenience) | 묶음 시나리오용 편의 함수 | 부분 | `tests/unit/core/advanced-filter-initialization-jsdom.test.ts` (등록되지 않은 필터 거부 sad-path만) |
 | `/advanced` | `FormatDetector` / `FORMAT_MIME_MAP` | MIME ↔ 포맷 매핑 및 감지 | 있음 | `tests/unit/base/format-detector.test.ts` |
 | `/advanced` | `HighResolutionManager` | 고해상도 처리 수동 제어 진입점 | 부분 | `tests/unit/core/high-res-manager-*.test.ts`, `tests/unit/core/auto-high-res.test.ts` |
 | `/advanced` | `ImageErrorHandler` / `globalErrorHandler` / `withErrorHandling` / `createAndHandleError` / `createQuickError` / `getErrorStats` | 에러 통계 누적/래핑 | 있음 | `tests/unit/base/error-helpers.test.ts`, `tests/unit/base/error-handler.test.ts` |
-| `/advanced` | `initializeFilterSystem()` | 호출 시 기본 필터(blur/color/effect) 모두 `filterManager`에 등록 | 있음 | `tests/unit/filters/filter-init.test.ts`, `tests/unit/core/advanced-filter-initialization-jsdom.test.ts` |
-| `/advanced` | `createFilterPlugin(config)` | 입력 config → 표준 `FilterPlugin` 객체 (preview = apply 기본값) | 있음 | `tests/unit/filters/create-filter-plugin.test.ts` |
+| `/advanced` | `initializeFilterSystem()` | 호출 시 기본 필터(blur/color/effect) 모두 필터 레지스트리에 등록 | 있음 | `tests/unit/filters/filter-init.test.ts`, `tests/unit/core/advanced-filter-initialization-jsdom.test.ts` |
+| `/advanced` | `createFilterPlugin(config)` | 입력 config → 표준 `FilterPlugin` 객체 | 있음 | `tests/unit/filters/create-filter-plugin.test.ts` |
 | `/advanced` | `getAdvancedFeatureInfo()` | 환경 → 기능 가용성 정보 객체 | 있음 | `tests/unit/core/advanced-feature-info.test.ts` |
 | `/advanced` | `AllFilterPlugins` / `registerDefaultFilters` / `BlurFilterPlugins` / `ColorFilterPlugins` / `EffectFilterPlugins` | 카테고리별 기본 필터 플러그인 배열 export | 있음 | `tests/unit/filters/blur-plugins.test.ts`, `color-plugins.test.ts`, `effect-plugins.test.ts` |
 | `/presets` | `createThumbnail` / `createAvatar` / `createSocialImage` | (메인과 동일 — 서브패스 export) | 있음 | `tests/unit/presets/presets-jsdom.test.ts` |
