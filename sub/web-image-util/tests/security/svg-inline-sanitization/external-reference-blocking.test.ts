@@ -4,10 +4,18 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ensureImageElement } from '../../../src/utils/converters';
+import { sanitizeSvgForRendering } from '../../../src/utils/svg-sanitizer';
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
+
+function expectSanitizedSvgRemoves(svg: string, ...fragments: string[]): void {
+  const sanitized = sanitizeSvgForRendering(svg);
+  for (const fragment of fragments) {
+    expect(sanitized).not.toContain(fragment);
+  }
+}
 
 describe('보안: 인라인 SVG 외부 참조 차단', () => {
   it('상대 경로 href는 sanitizer가 속성을 제거해 무해화한 뒤 렌더링한다', async () => {
@@ -16,6 +24,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
 
     // URI allowlist 통일로 상대 경로는 에러가 아니라 조용한 제거로 무해화된다 —
     // 참조가 제거되므로 동일 출처 fetch는 발생하지 않는다
+    expectSanitizedSvgRemoves(svgWithRelativeRef, './assets/pattern.png');
     const element = await ensureImageElement(svgWithRelativeRef);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
@@ -24,6 +33,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const svgWithRelativeRef =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href=./assets/pattern.png width="10" height="10"/></svg>';
 
+    expectSanitizedSvgRemoves(svgWithRelativeRef, './assets/pattern.png');
     const element = await ensureImageElement(svgWithRelativeRef);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
@@ -33,6 +43,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\2e \\2e /secret.png)"/></svg>';
 
     // 위협 정책 통일로 fragment가 아닌 url()은 sanitizer가 무해화한다 — fetch는 발생하지 않는다
+    expectSanitizedSvgRemoves(svgWithEscapedRef, 'secret.png');
     const element = await ensureImageElement(svgWithEscapedRef);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
@@ -41,6 +52,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const svgWithEscapedRef =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\00002&#x65; \\00002&#x65; /secret.png)"/></svg>';
 
+    expectSanitizedSvgRemoves(svgWithEscapedRef, 'secret.png');
     const element = await ensureImageElement(svgWithEscapedRef);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
@@ -50,6 +62,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:u\\00007&#x32;l(\\00002&#x65; \\00002&#x65; /secret.png)"/></svg>';
 
     // 엔티티 디코드로 url()이 드러나면 엔진이 값 전체를 폐기한다(fail-closed)
+    expectSanitizedSvgRemoves(svgWithEscapedRef, 'secret.png');
     const element = await ensureImageElement(svgWithEscapedRef);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
@@ -58,6 +71,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const svgWithEscapedRef =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" style="fill:url(\\2f assets/tracker.png)"/></svg>';
 
+    expectSanitizedSvgRemoves(svgWithEscapedRef, 'tracker.png');
     const element = await ensureImageElement(svgWithEscapedRef);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
@@ -66,6 +80,7 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     const svgWithAbsoluteRef =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="/assets/pattern.png" width="10" height="10"/></svg>';
 
+    expectSanitizedSvgRemoves(svgWithAbsoluteRef, '/assets/pattern.png');
     const element = await ensureImageElement(svgWithAbsoluteRef);
     expect(element).toBeInstanceOf(HTMLImageElement);
   });
