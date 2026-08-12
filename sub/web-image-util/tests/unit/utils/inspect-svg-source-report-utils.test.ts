@@ -105,13 +105,13 @@ describe('deduplicateFindings()', () => {
   it('finding code 기준으로 중복을 제거한다', () => {
     const findings: InspectSvgSourceFinding[] = [
       { code: 'fetch-failed', message: '첫 번째' },
-      { code: 'byte-limit-exceeded', message: '두 번째' },
+      { code: 'svg-bytes-exceeded', message: '두 번째' },
       { code: 'fetch-failed', message: '중복 — 제거 대상' },
     ];
     const result = deduplicateFindings(findings);
     expect(result).toHaveLength(2);
     expect(result[0].code).toBe('fetch-failed');
-    expect(result[1].code).toBe('byte-limit-exceeded');
+    expect(result[1].code).toBe('svg-bytes-exceeded');
   });
 
   it('첫 번째 등장 항목을 유지한다', () => {
@@ -130,7 +130,7 @@ describe('deduplicateFindings()', () => {
   it('중복 없는 배열은 그대로 반환한다', () => {
     const findings: InspectSvgSourceFinding[] = [
       { code: 'fetch-failed', message: 'a' },
-      { code: 'byte-limit-exceeded', message: 'b' },
+      { code: 'svg-bytes-exceeded', message: 'b' },
       { code: 'mime-mismatch', message: 'c' },
     ];
     const result = deduplicateFindings(findings);

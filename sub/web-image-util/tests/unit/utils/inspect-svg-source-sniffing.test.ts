@@ -47,9 +47,9 @@ describe('inspectSvgSource() — MIME/확장자/Data URL/byte sniff 분기', () 
     expect(result.kind).toBe('svg');
   });
 
-  it('byteLimit: 10 + 11바이트 비-SVG string → finding byte-limit-exceeded가 있고 kind이 "not-svg-source"이다', async () => {
+  it('byteLimit: 10 + 11바이트 비-SVG string → finding svg-bytes-exceeded가 있고 kind이 "not-svg-source"이다', async () => {
     const result = await inspectSvgSource('hello world', { byteLimit: 10 });
-    expect(result.findings.some((f) => f.code === 'byte-limit-exceeded')).toBe(true);
+    expect(result.findings.some((f) => f.code === 'svg-bytes-exceeded')).toBe(true);
     expect(result.kind).toBe('not-svg-source');
   });
 });
@@ -117,7 +117,7 @@ describe('inspectSvgSource() — 본문 도출 경로(string / data-url / blob /
 });
 
 describe('inspectSvgSource() — Blob/File 본문 도출 byte 가드', () => {
-  it('Blob.size가 byteLimit을 넘으면 .text() 호출 없이 finding byte-limit-exceeded가 있고 consumed가 false이다', async () => {
+  it('Blob.size가 byteLimit을 넘으면 .text() 호출 없이 finding svg-bytes-exceeded가 있고 consumed가 false이다', async () => {
     const big = 'a'.repeat(2048);
     const blob = new Blob([big], { type: 'image/svg+xml' });
     let textCalls = 0;
@@ -131,7 +131,10 @@ describe('inspectSvgSource() — Blob/File 본문 도출 byte 가드', () => {
     const result = await inspectSvgSource(blob, { byteLimit: 256 });
 
     expect(textCalls).toBe(0);
-    expect(result.findings.some((f) => f.code === 'byte-limit-exceeded')).toBe(true);
+    const finding = result.findings.find((f) => f.code === 'svg-bytes-exceeded');
+    expect(finding).toBeDefined();
+    // 공유 계약 details — Blob.size 사전 가드 경로도 실제 크기를 보고한다.
+    expect(finding?.details).toEqual({ actualBytes: 2048, maxBytes: 256 });
     expect(result.source.consumed).toBe(false);
     expect(result.findings.some((f) => f.code === 'body-consumed-once')).toBe(false);
     expect(result.svg).toBeNull();

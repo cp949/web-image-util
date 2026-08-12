@@ -21,3 +21,34 @@ export type SvgSanitizerMode = 'lightweight' | 'strict' | 'skip';
  * 이 상한선은 정상 사용을 막지 않으면서 비정상적인 메모리 소모를 초기에 차단한다.
  */
 export const MAX_SVG_BYTES = 10 * 1024 * 1024;
+
+/**
+ * byte 초과 finding의 details 스키마.
+ *
+ * `actualBytes`는 실제 입력 바이트 수이며, 알 수 없는 경로(Content-Length 부재 등)는 null이다.
+ */
+export type SvgBytesExceededDetails = {
+  actualBytes: number | null;
+  maxBytes: number;
+};
+
+/**
+ * byte 초과 사건의 공유 finding을 만든다.
+ *
+ * 세 진단 API(inspectSvg / inspectSvgSource / inspectSvgSanitization)가 같은 사건을
+ * 같은 code·details 스키마로 보고하기 위한 단일 조립 지점이다. message는 호출자
+ * 분기 대상이 아니며, 계약은 code와 details다.
+ *
+ * @param actualBytes 실제 입력 바이트 수. 알 수 없으면 null
+ * @param maxBytes 적용된 byte 한도
+ */
+export function buildSvgBytesExceededFinding(
+  actualBytes: number | null,
+  maxBytes: number
+): { code: 'svg-bytes-exceeded'; message: string; details: SvgBytesExceededDetails } {
+  const message =
+    actualBytes === null
+      ? `SVG input size exceeds the maximum allowed (${maxBytes} bytes).`
+      : `SVG input size (${actualBytes} bytes) exceeds the maximum allowed (${maxBytes} bytes).`;
+  return { code: 'svg-bytes-exceeded', message, details: { actualBytes, maxBytes } };
+}

@@ -109,7 +109,7 @@ describe('decideSvgFromSniff', () => {
     expect(result.findings[0].code).toBe('extension-mismatch');
   });
 
-  it('byteLimit 초과 시 kind=unknown, finding=byte-limit-exceeded를 반환한다', () => {
+  it('byteLimit 초과 시 kind=unknown, finding=svg-bytes-exceeded를 반환한다', () => {
     const result = decideSvgFromSniff({
       originalKind: 'blob',
       mime: 'image/svg+xml',
@@ -119,7 +119,9 @@ describe('decideSvgFromSniff', () => {
     });
     expect(result.kind).toBe('unknown');
     expect(result.findings).toHaveLength(1);
-    expect(result.findings[0].code).toBe('byte-limit-exceeded');
+    expect(result.findings[0].code).toBe('svg-bytes-exceeded');
+    // 공유 계약 details — 세 진단 API가 같은 스키마로 보고한다.
+    expect(result.findings[0].details).toEqual({ actualBytes: 500, maxBytes: 100 });
   });
 });
 

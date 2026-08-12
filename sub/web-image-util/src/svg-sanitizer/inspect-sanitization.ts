@@ -11,7 +11,7 @@
  */
 
 import { ImageProcessError } from '../errors.internal';
-import { MAX_SVG_BYTES } from '../svg-contract.internal';
+import { buildSvgBytesExceededFinding, MAX_SVG_BYTES } from '../svg-contract.internal';
 import { detectRuntimeEnvironment } from '../utils/environment.internal';
 import { parseAndClassifySvg } from '../utils/svg-document.internal';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
@@ -55,15 +55,13 @@ function parseSvgDocument(svgString: string): Document | null {
 }
 
 /** byte 초과 시 정책별로 반환할 fallback impact를 만든다. */
-function buildBytesExceededImpact(policy: SvgSanitizerPolicy): InspectSvgSanitizationImpact {
+function buildBytesExceededImpact(policy: SvgSanitizerPolicy, actualBytes: number): InspectSvgSanitizationImpact {
   if (policy === 'skip') {
     return { kind: 'skip', status: 'not-applied', potentialStages: [] };
   }
 
-  const failure: InspectSvgSanitizationFailure = {
-    code: 'svg-bytes-exceeded',
-    message: 'SVG input size exceeds the configured byte limit.',
-  };
+  // byte 초과 failure는 진단 3 API 공유 계약(빌더)으로 조립한다.
+  const failure: InspectSvgSanitizationFailure = buildSvgBytesExceededFinding(actualBytes, MAX_SVG_BYTES);
 
   if (policy === 'strict') {
     return {
@@ -308,7 +306,7 @@ export async function inspectSvgSanitization(
       byteLimit: MAX_SVG_BYTES,
       environment,
       policy,
-      impact: buildBytesExceededImpact(policy),
+      impact: buildBytesExceededImpact(policy, bytes),
     };
     return report;
   }

@@ -1,3 +1,4 @@
+import { buildSvgBytesExceededFinding } from '../../svg-contract.internal';
 // 스택 타입 leaf(types.internal)만 의존한다 — 부모 파일 되임포트 금지.
 import type { InspectSvgSourceFinding, InspectSvgSourceKind, InspectSvgSourceMeta } from './types.internal';
 
@@ -19,13 +20,9 @@ export function decideSvgFromSniff({ originalKind, mime, extension, bytes, byteL
 } {
   const findings: InspectSvgSourceFinding[] = [];
 
-  // byte 초과 시 본문 sniff 불가 → 'unknown'으로 보수적 처리.
+  // byte 초과 시 본문 sniff 불가 → 'unknown'으로 보수적 처리. finding은 공유 계약(빌더)으로 조립한다.
   if (bytes !== null && bytes > byteLimit) {
-    findings.push({
-      code: 'byte-limit-exceeded',
-      message: `Input size (${bytes} bytes) exceeds byte limit (${byteLimit} bytes).`,
-      details: { bytes, byteLimit },
-    });
+    findings.push(buildSvgBytesExceededFinding(bytes, byteLimit));
     return { kind: 'unknown', findings };
   }
 

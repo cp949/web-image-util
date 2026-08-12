@@ -130,7 +130,7 @@ describe('inspectSvgSource() — fetch: "body" 모드', () => {
     expect(result.findings.some((f) => f.code === 'body-consumed-once')).toBe(true);
   });
 
-  it('Content-Length가 byteLimit 초과 → finding byte-limit-exceeded이고 kind이 "unknown"이다', async () => {
+  it('Content-Length가 byteLimit 초과 → finding svg-bytes-exceeded이고 kind이 "unknown"이다', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
@@ -144,7 +144,10 @@ describe('inspectSvgSource() — fetch: "body" 모드', () => {
       )
     );
     const result = await inspectSvgSource('https://example.com/foo.svg', { fetch: 'body', byteLimit: 100 });
-    expect(result.findings.some((f) => f.code === 'byte-limit-exceeded')).toBe(true);
+    const finding = result.findings.find((f) => f.code === 'svg-bytes-exceeded');
+    expect(finding).toBeDefined();
+    // 공유 계약 details — actualBytes는 Content-Length, maxBytes는 적용된 byteLimit이다.
+    expect(finding?.details).toEqual({ actualBytes: 500, maxBytes: 100 });
     expect(result.kind).toBe('unknown');
   });
 });

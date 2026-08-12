@@ -50,6 +50,8 @@ export interface InspectSvgSanitizationFailure {
   code: InspectSvgSanitizationFailureCode;
   /** 영어 자연문. 호출자 분기 대상이 아니며 patch에서도 자유롭게 다듬을 수 있다. */
   message: string;
+  /** 호출자 분기용 구조화 컨텍스트. byte 초과 실패는 공유 계약 details(actualBytes/maxBytes)를 담는다. */
+  details?: Record<string, unknown>;
 }
 
 export interface InspectSvgSanitizationLightweightImpact {

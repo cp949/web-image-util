@@ -15,6 +15,8 @@ export type ExtractSvgBodyFailure = {
   failure: 'data-url-decode-failed' | 'byte-limit-exceeded' | 'fetch-not-attempted-in-this-task';
   /** .text()를 호출했는지 여부. fail 분기에서도 consumed 표기를 정합 있게 유지하기 위함(D11). */
   consumed?: boolean;
+  /** byte-limit-exceeded일 때 측정한 실제 바이트 수(Blob.size 또는 UTF-8 재측정치). 부모의 finding details 조립용. */
+  actualBytes?: number;
 };
 
 /**
@@ -45,13 +47,13 @@ export async function extractSvgBody(
     const blob = source as Blob;
     // .size 사전 검증으로 큰 Blob의 .text() 호출(메모리 폭발)을 차단한다.
     if (blob.size > byteLimit) {
-      return { failure: 'byte-limit-exceeded' };
+      return { failure: 'byte-limit-exceeded', actualBytes: blob.size };
     }
     const text = await blob.text();
     const byteCount = textEncoder.encode(text).byteLength;
     if (byteCount > byteLimit) {
       // .text()는 이미 호출됐으므로 consumed 정보를 fail 분기에도 함께 보존한다(D11).
-      return { failure: 'byte-limit-exceeded', consumed: true };
+      return { failure: 'byte-limit-exceeded', consumed: true, actualBytes: byteCount };
     }
     return { svgString: text, consumed: true };
   }

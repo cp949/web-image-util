@@ -1,6 +1,6 @@
 import type { ComplexityAnalysisResult } from '../core/svg-complexity-analyzer';
 import { ImageProcessError } from '../errors.internal';
-import { MAX_SVG_BYTES } from '../svg-contract.internal';
+import { buildSvgBytesExceededFinding, MAX_SVG_BYTES } from '../svg-contract.internal';
 import { detectRuntimeEnvironment } from './environment.internal';
 import { parseAndClassifySvg } from './svg-document.internal';
 import {
@@ -43,15 +43,9 @@ export function inspectSvg(svgString: unknown): InspectSvgReport {
   // UTF-8 바이트 측정
   const bytes = new TextEncoder().encode(svgString).length;
 
-  // 바이트 초과 찾기
+  // 바이트 초과 찾기 — byte 초과 finding은 진단 3 API 공유 계약(빌더)으로 조립한다.
   if (bytes > MAX_SVG_BYTES) {
-    const findings: InspectSvgFinding[] = [
-      {
-        code: 'svg-bytes-exceeded',
-        message: 'SVG input size exceeds the configured byte limit.',
-        details: { actualBytes: bytes, maxBytes: MAX_SVG_BYTES },
-      },
-    ];
+    const findings: InspectSvgFinding[] = [buildSvgBytesExceededFinding(bytes, MAX_SVG_BYTES)];
     // byte 초과 경로도 동일 조립 함수를 사용한다. svg-bytes-exceeded는 invalidating
     // 코드이므로 valid=false, 보안 코드가 아니므로 recommendation은 lightweight가 된다.
     return assembleInspectReport({

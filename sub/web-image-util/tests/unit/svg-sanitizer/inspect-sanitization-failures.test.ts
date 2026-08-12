@@ -19,6 +19,8 @@ describe('inspectSvgSanitization() 실패 경계', () => {
         expect(report.impact.outputBytes).toBeNull();
         expect(report.impact.stages).toEqual([]);
         expect(report.impact.failure?.code).toBe('svg-bytes-exceeded');
+        // 공유 계약 details — 세 진단 API가 같은 스키마로 보고한다.
+        expect(report.impact.failure?.details).toEqual({ actualBytes: MAX_SVG_BYTES + 1, maxBytes: MAX_SVG_BYTES });
       }
     });
 

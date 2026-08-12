@@ -20,6 +20,8 @@
 
 ### 변경
 
+- Changed (**Breaking**): `inspectSvgSource()`의 byte 초과 finding이 세 진단 API 공통 계약으로 통일되었습니다. code가 `'byte-limit-exceeded'`에서 `'svg-bytes-exceeded'`로, `details`가 `{ byteLimit }`에서 `{ actualBytes, maxBytes }`로 바뀝니다(`actualBytes`는 실제 크기를 알 수 없는 경로에서 null). 이제 `inspectSvg()`/`inspectSvgSource()`/`inspectSvgSanitization()`이 같은 사건(byte 한도 초과)을 같은 code·details 스키마로 보고하므로 소비자 파싱 코드를 하나로 쓸 수 있습니다.
+- Changed: `inspectSvgSanitization()`의 byte 초과 failure에 `details`(`{ actualBytes, maxBytes }`)가 추가되었습니다. `InspectSvgSanitizationFailure` 타입에 선택 필드 `details?`가 신설됩니다.
 - Changed: 상대·절대 경로 참조(`./a.png`, `/a.png` 등)가 포함된 SVG의 기본 경로 처리 결과가 오류(`INVALID_SOURCE`)에서 "참조 제거 후 렌더링"으로 바뀌었습니다. 외부 `http(s)` URL과 같은 무해화 방식으로 통일한 것입니다.
 - Changed: 경량 sanitizer의 외부 CSS `url()` 치환값이 `url(#invalid)`에서 `none`으로 통일되었습니다.
 - Changed: `inspectSvgSanitization()`의 lightweight/skip 보고가 통일된 위협 정책을 따릅니다 — 상대 경로·빈 `href`·presentation 속성 CSS·DOCTYPE 절단이 stage로 보고됩니다.

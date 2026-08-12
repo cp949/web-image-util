@@ -27,7 +27,7 @@ export type InspectSvgSourceFindingCode =
   | 'source-kind-unsupported'
   | 'mime-mismatch'
   | 'extension-mismatch'
-  | 'byte-limit-exceeded'
+  | 'svg-bytes-exceeded'
   | 'data-url-decode-failed'
   | 'fetch-disabled-by-option'
   | 'fetch-blocked-policy'

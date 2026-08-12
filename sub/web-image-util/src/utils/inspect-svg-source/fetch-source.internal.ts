@@ -5,6 +5,7 @@ import {
   isAbortLikeError,
   normalizePolicyUrl,
 } from '../../core/source-converter/url/policy.internal';
+import { buildSvgBytesExceededFinding } from '../../svg-contract.internal';
 import type { InspectSvgReport } from '../inspect-svg';
 import { inspectSvg } from '../inspect-svg';
 import { decideSvgFromSniff } from './sniff-decision.internal';
@@ -171,11 +172,8 @@ async function fetchUrlBody(
   try {
     checkResponseSize(response, byteLimit, 'inspect-svg-source body');
   } catch {
-    context.findings.push({
-      code: 'byte-limit-exceeded',
-      message: `Response Content-Length exceeds byte limit (${byteLimit} bytes).`,
-      details: { byteLimit },
-    });
+    // byte 초과 finding은 공유 계약(빌더)으로 조립한다. 실제 크기는 Content-Length(부재 시 null)다.
+    context.findings.push(buildSvgBytesExceededFinding(context.bytes, byteLimit));
     context.kind = 'unknown';
     return metadata.status;
   }

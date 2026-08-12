@@ -1,4 +1,4 @@
-import { MAX_SVG_BYTES } from '../svg-contract.internal';
+import { buildSvgBytesExceededFinding, MAX_SVG_BYTES } from '../svg-contract.internal';
 import { detectRuntimeEnvironment } from './environment.internal';
 import type { InspectSvgReport } from './inspect-svg';
 import { inspectSvg } from './inspect-svg';
@@ -127,11 +127,8 @@ export async function inspectSvgSource(
         });
         kind = 'unknown';
       } else if (failure === 'byte-limit-exceeded') {
-        findings.push({
-          code: 'byte-limit-exceeded',
-          message: `Blob/File body size exceeds byte limit (${effectiveByteLimit} bytes).`,
-          details: { byteLimit: effectiveByteLimit },
-        });
+        // byte 초과 finding은 공유 계약(빌더)으로 조립한다. 실제 크기는 본문 도출 단계의 측정치를 우선한다.
+        findings.push(buildSvgBytesExceededFinding(extracted.actualBytes ?? bytes, effectiveByteLimit));
         kind = 'unknown';
       }
     }
