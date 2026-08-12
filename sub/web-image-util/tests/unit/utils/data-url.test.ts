@@ -38,7 +38,7 @@ function expectImageProcessError(
   }
 }
 
-describe('data URL utilities', () => {
+describe('Data URL 유틸리티', () => {
   it('Data URL 문자열을 판정한다', () => {
     expect(isDataURLString('data:image/png;base64,abc')).toBe(true);
     expect(isDataURLString('  data:image/svg+xml,%3Csvg%3E%3C/svg%3E')).toBe(true);
@@ -47,7 +47,7 @@ describe('data URL utilities', () => {
     expect(isDataURLString(null)).toBe(false);
   });
 
-  describe('isSvgDataURL', () => {
+  describe('SVG Data URL 판정', () => {
     it('SVG data URL 헤더만 true로 판정한다', () => {
       expect(isSvgDataURL('data:image/svg+xml,%3Csvg%3E')).toBe(true);
       expect(isSvgDataURL('data:image/svg+xml;base64,PHN2Zz4=')).toBe(true);
@@ -63,7 +63,7 @@ describe('data URL utilities', () => {
     });
   });
 
-  describe('parseDataURLMimeType', () => {
+  describe('Data URL MIME 타입 파싱', () => {
     it('data URL이 아니면 undefined를 반환한다', () => {
       expect(parseDataURLMimeType('https://example.com/photo.png')).toBeUndefined();
       expect(parseDataURLMimeType('')).toBeUndefined();

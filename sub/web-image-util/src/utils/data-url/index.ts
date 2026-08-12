@@ -1,5 +1,5 @@
 /**
- * Data URL 유틸 서브모듈의 공개 진입점.
+ * Data URL 유틸 서브모듈의 내부 leaf 배럴.
  *
  * 책임은 다음 모듈로 분리되어 있다.
  * - {@link ./types}   공개 타입 정의
@@ -10,7 +10,8 @@
  * - {@link ./svg}     SVG Data URL → UTF-8 text 디코더
  * - {@link ./public}  Blob 변환·크기 추정 등 공개 API 본체
  *
- * 외부에서는 이 배럴 또는 상위 `utils/data-url`을 통해서만 import한다.
+ * 라이브러리 내부에서는 이 배럴을 통해 import한다. 패키지 공개 표면은 `src/utils/index.ts`가
+ * 필요한 항목만 재노출한다.
  */
 
 export { tryParseDataURL } from './parse.internal';

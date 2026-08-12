@@ -103,6 +103,10 @@ describe('isFormatSupported', () => {
     const result = await isFormatSupported('png');
     expect(typeof result).toBe('boolean');
   });
+
+  it('알 수 없는 포맷은 PNG 폴백으로 지원 판정하지 않는다', async () => {
+    await expect(isFormatSupported('unknown-format')).resolves.toBe(false);
+  });
 });
 
 describe('createAndHandleError', () => {
