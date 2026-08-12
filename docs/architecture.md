@@ -6,7 +6,7 @@
 
 `processImage()`는 입력 소스를 브라우저에서 렌더링 가능한 이미지 요소로 변환한 뒤, `ImageProcessor` 체이닝 API를 반환합니다. 문자열, URL, Blob/File, ArrayBuffer 계열 입력은 먼저 소스 타입을 판정하고, SVG 입력은 MIME과 내용 스니핑을 함께 확인한 다음 브라우저 렌더링에 맞게 정규화합니다.
 
-체이닝 단계에서는 `resize()`, `blur()` 같은 연산을 즉시 Canvas에 그리지 않고 누적만 합니다. `ImageProcessor`는 타입 상태 전이와 위임만 남긴 얇은 축적기이며, 출력 경로 전체(소스 정규화, `LazyRenderPipeline` 구성과 누적 연산 재생, 포맷/품질 기본값, 인코딩, pool 반환, Result 래핑)는 `OutputPipeline`(`src/core/output-pipeline.internal.ts`)이 담당합니다. 최종 출력 메서드(`toBlob()`, `toDataURL()`, `toFile()`, `toCanvas()`)가 호출되면 `single-renderer`의 분석기(`analyzeAllOperations`)가 누적 연산을 최종 레이아웃으로 계산하고(fit 모드 계산은 `ResizeCalculator` 활용), 렌더러(`renderLayout`)가 레이아웃 검증·품질 설정·배경색·필터를 적용해 한 번의 `drawImage()`로 렌더링합니다. 결과 canvas는 `CanvasLease`로 반환됩니다.
+체이닝 단계에서는 `resize()`, `blur()` 같은 연산을 즉시 Canvas에 그리지 않고 누적만 합니다. `ImageProcessor`는 타입 상태 전이와 위임만 남긴 얇은 축적기이고, 연산은 `OutputPipeline`(`src/core/output-pipeline.internal.ts`)이 생성 시점부터 보유한 `LazyRenderPipeline`에 직접 쌓입니다. resize 1회 불변식의 런타임 가드와 설정 검증(`validateResizeConfig`)은 `LazyRenderPipeline.addResize` 한 곳이 소유하며, shortcut의 scale/exactWidth 계열도 별도 통로 없이 공개 `resize()` 설정(`fit: 'scale'`, 단일 축 `fit: 'fill'`)으로 합류합니다. 출력 경로 전체(소스 정규화, 포맷/품질 기본값, 인코딩, pool 반환, Result 래핑)는 `OutputPipeline`이 담당합니다. 최종 출력 메서드(`toBlob()`, `toDataURL()`, `toFile()`, `toCanvas()`)가 호출되면 `single-renderer`의 분석기(`analyzeAllOperations`)가 누적 연산을 최종 레이아웃으로 계산하고(fit 모드 계산은 `ResizeCalculator` 활용 — scale·단일 축 fill의 원본 크기 해석도 이 시점), 렌더러(`renderLayout`)가 레이아웃 검증·품질 설정·배경색·필터를 적용해 한 번의 `drawImage()`로 렌더링합니다. 결과 canvas는 `CanvasLease`로 반환됩니다.
 
 ## 핵심 흐름
 
@@ -27,7 +27,7 @@
 아래 규칙은 기능 추가나 리팩터링 때 우선 확인합니다.
 
 - `resize()`, `blur()` 같은 체이닝 메서드는 Canvas에 즉시 그리지 않고 연산만 누적합니다.
-- 한 체인에서 `resize()`는 한 번만 허용합니다. 타입 상태와 런타임 가드를 함께 유지합니다.
+- 한 체인에서 `resize()`는 한 번만 허용합니다. 타입 상태와 런타임 가드를 함께 유지하며, 런타임 가드·설정 검증·오류 메시지는 `LazyRenderPipeline.addResize` 한 곳이 소유합니다.
 - 실제 Canvas 렌더링은 출력 메서드 호출 시점에 한 번만 수행합니다.
 - 내부 렌더링 Canvas는 `CanvasPool`에서 획득하고, 소유권은 `CanvasLease` handle(`src/base/canvas-lease.internal.ts`)로 관리합니다. 파생물 출력(`toBlob()` 등)은 `consume()`으로 사용 후 pool에 반환하고, `toCanvas()`/`toCanvasDetailed()`는 `detach()`로 소유권을 사용자에게 이전합니다(pool 미반환).
 - pool에서 빌린 canvas는 module 밖으로 내보내지 않습니다. 결과 canvas를 호출자에게 직접 반환하는 경로(composition, 고해상도 처리)는 pool을 거치지 않는 사용자 소유 canvas(`createOwnedCanvas`)를 사용합니다. pool이 release 시점에 픽셀을 지우므로, 빌린 canvas를 그대로 반환하면 호출자는 빈 canvas를 받게 됩니다.

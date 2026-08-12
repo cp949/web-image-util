@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### 추가
+
+- Added: `resize()`가 `{ fit: 'scale', scale }` 설정을 받습니다. 원본 크기 기준 배율 리사이즈이며 균일 배율(`scale: 1.5`)과 축별 배율(`scale: { sx: 2 }`, `{ sy: 0.5 }`, `{ sx: 2, sy: 0.75 }`)을 지원합니다. shortcut `scale()`/`scaleX()`/`scaleY()`/`scaleXY()`와 동일한 동작입니다.
+- Added: `{ fit: 'fill' }`에서 `width` 또는 `height` 한 축만 지정할 수 있습니다. 생략한 축은 원본 비율로 계산됩니다. shortcut `exactWidth()`/`exactHeight()`와 동일한 동작입니다.
+
 ### 보안
 
 - Security: 경량(lightweight) SVG sanitizer의 위협 정책을 strict와 단일 모듈로 통일하고 다음 구멍을 폐쇄했습니다. 두 정책의 동작 차이는 동치성 코퍼스 테스트로 전수 고정됩니다.
@@ -18,6 +23,10 @@
 - Changed: 상대·절대 경로 참조(`./a.png`, `/a.png` 등)가 포함된 SVG의 기본 경로 처리 결과가 오류(`INVALID_SOURCE`)에서 "참조 제거 후 렌더링"으로 바뀌었습니다. 외부 `http(s)` URL과 같은 무해화 방식으로 통일한 것입니다.
 - Changed: 경량 sanitizer의 외부 CSS `url()` 치환값이 `url(#invalid)`에서 `none`으로 통일되었습니다.
 - Changed: `inspectSvgSanitization()`의 lightweight/skip 보고가 통일된 위협 정책을 따릅니다 — 상대 경로·빈 `href`·presentation 속성 CSS·DOCTYPE 절단이 stage로 보고됩니다.
+- Changed: 첫 출력 이후에 호출한 `resize()`/`blur()`가 다음 출력에 반영됩니다. 기존에는 `resize()`/`blur()`는 조용히 무시되고 shortcut의 scale/exactWidth 계열만 반영되는 비대칭이 있었습니다.
+- Changed: shortcut의 scale/exactWidth 계열도 호출 시점에 설정을 검증합니다. 예를 들어 `exactWidth(0)`은 출력 시점이 아니라 호출 즉시 `INVALID_DIMENSIONS`로 거부됩니다.
+- Changed: `resize()` 중복 호출 오류 메시지가 경로별 3종에서 1종으로 통일되었습니다. 오류 코드 `MULTIPLE_RESIZE_NOT_ALLOWED`는 그대로입니다.
+- Deprecated: `ResizeOperation`·`DirectResizeConfig` 타입과 `ScaleOperation` 별칭. shortcut 내부 통로가 공개 `resize()` 설정으로 합류하면서 처리 경로에서 사용되지 않습니다. `ScaleOperation` 대신 `ScaleValue`를 사용하세요.
 
 ### 수정
 

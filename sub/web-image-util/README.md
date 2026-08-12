@@ -55,6 +55,7 @@ const avatar = await createAvatar(profilePhoto, { size: 128 });
 | `fill`    | 아니오    | 예        | 아니오 | 아니오 | 둘 다     | 정확한 크기         |
 | `maxFit`  | 예        | 예        | 아니오 | 아니오 | 축소만    | 최대 크기 제한      |
 | `minFit`  | 예        | 예        | 아니오 | 아니오 | 확대만    | 최소 크기 보장      |
+| `scale`   | 선택      | 예        | 아니오 | 아니오 | 둘 다     | 원본 크기 기준 배율 |
 
 ```typescript
 // cover: 비율 유지, 전체 영역 채움
@@ -69,6 +70,13 @@ await processImage(source)
 
 // maxFit: 지정 크기보다 클 때만 축소
 await processImage(source).resize({ fit: 'maxFit', width: 800 }).toBlob();
+
+// fill 단일 축: 생략한 축은 원본 비율로 계산
+await processImage(source).resize({ fit: 'fill', width: 800 }).toBlob();
+
+// scale: 원본 크기 기준 배율 (균일 또는 축별)
+await processImage(source).resize({ fit: 'scale', scale: 0.5 }).toBlob();
+await processImage(source).resize({ fit: 'scale', scale: { sx: 2, sy: 1.5 } }).toBlob();
 ```
 
 `contain`은 지정한 `width`/`height`의 출력 캔버스를 유지합니다. 출력 캔버스도 실제 이미지 크기로 받고 싶다면 `maxFit`을 사용하세요.
@@ -169,11 +177,11 @@ const board = await composeImages({
 `processImage()` 입력은 `HTMLImageElement`, `Blob`, `File`, `ArrayBuffer`, `Uint8Array`, `string`을 지원합니다. 문자열은 HTTP(S) URL, Blob URL, Data URL, SVG XML, 브라우저 경로를 자동 판별합니다.
 
 ```typescript
-await processImage(file).resize({ width: 300, height: 200 }).toBlob();
-await processImage('https://example.com/photo.jpg').resize({ width: 300 }).toBlob();
-await processImage(URL.createObjectURL(file)).resize({ width: 300 }).toBlob();
-await processImage('data:image/jpeg;base64,/9j/4AAQ...').resize({ width: 300 }).toBlob();
-await processImage('<svg width="100" height="100">...</svg>').resize({ width: 200 }).toBlob();
+await processImage(file).resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
+await processImage('https://example.com/photo.jpg').resize({ fit: 'fill', width: 300 }).toBlob();
+await processImage(URL.createObjectURL(file)).resize({ fit: 'fill', width: 300 }).toBlob();
+await processImage('data:image/jpeg;base64,/9j/4AAQ...').resize({ fit: 'fill', width: 300 }).toBlob();
+await processImage('<svg width="100" height="100">...</svg>').resize({ fit: 'fill', width: 200 }).toBlob();
 ```
 
 | 출력 메서드                   | 반환                                                    | 용도                 |
@@ -363,7 +371,7 @@ const fetched = await fetchImageSourceBlob(url, { maxBytes: 20 * 1024 * 1024 });
 import { ImageProcessError, processImage } from '@cp949/web-image-util';
 
 try {
-  await processImage(src).resize({ fit: 'cover', width: 200 }).toBlob();
+  await processImage(src).resize({ fit: 'cover', width: 200, height: 200 }).toBlob();
 } catch (error) {
   if (error instanceof ImageProcessError) {
     console.error(`[${error.code}] ${error.message}`);
