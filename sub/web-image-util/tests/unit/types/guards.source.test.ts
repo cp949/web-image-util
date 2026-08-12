@@ -61,6 +61,10 @@ describe('isSVGString', () => {
     expect(isSVGString('<svg xmlns="http://www.w3.org/2000/svg">')).toBe(false);
   });
 
+  it('자가 닫힘 <svg/> 루트 → true (닫힘 태그가 없어도 유효한 SVG)', () => {
+    expect(isSVGString('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>')).toBe(true);
+  });
+
   it('<svg 없는 XML → false (includes 가드에서 탈출)', () => {
     // <svg 부분문자열 자체가 없으므로 guards.ts:165에서 탈출
     expect(isSVGString('<?xml version="1.0"?><div></div>')).toBe(false);

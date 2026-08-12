@@ -3,6 +3,8 @@
  * Size information processing for improved SVG rendering quality
  */
 
+import { parseAndClassifySvg } from './svg-document.internal';
+
 // Interface for holding SVG size information
 export interface SvgDimensions {
   width: number;
@@ -23,10 +25,10 @@ export interface SvgDimensions {
  * @throws Error - when SVG is invalid
  */
 export function extractSvgDimensions(svgString: string): SvgDimensions {
-  // Use DOM parser (strict mode compliance)
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, 'image/svg+xml');
-  const svgElement = doc.querySelector('svg');
+  // 파싱과 parsererror 감지는 svg-document leaf가 담당한다.
+  // 루트가 svg가 아니어도 문서 안의 첫 <svg> 요소에서 치수를 읽는 기존 동작을 유지한다.
+  const parsed = parseAndClassifySvg(svgString);
+  const svgElement = parsed.ok ? parsed.doc.querySelector('svg') : null;
 
   if (!svgElement) {
     throw new Error('Invalid SVG: No <svg> element found');

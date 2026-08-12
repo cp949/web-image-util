@@ -12,6 +12,8 @@
  * - Safe fallback when analysis fails
  */
 
+import { parseAndClassifySvg } from '../utils/svg-document.internal';
+
 /**
  * SVG complexity metrics interface
  *
@@ -91,14 +93,12 @@ export type QualityLevel = 'low' | 'medium' | 'high' | 'ultra';
  */
 export function analyzeSvgComplexity(svgString: string): ComplexityAnalysisResult {
   try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgString, 'image/svg+xml');
-
-    // Check for parsing errors
-    const parserError = doc.querySelector('parsererror');
-    if (parserError) {
+    // 파싱과 parsererror 감지는 svg-document leaf가 담당한다.
+    const parsed = parseAndClassifySvg(svgString);
+    if (!parsed.ok) {
       throw new Error('SVG parsing failed');
     }
+    const doc = parsed.doc;
 
     // Collect metrics
     const metrics = collectMetrics(doc, svgString);

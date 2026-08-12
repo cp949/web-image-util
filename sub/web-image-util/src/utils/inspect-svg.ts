@@ -2,13 +2,13 @@ import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import type { ComplexityAnalysisResult } from '../core/svg-complexity-analyzer';
 import { ImageProcessError } from '../errors.internal';
 import { detectRuntimeEnvironment } from './environment.internal';
+import { parseAndClassifySvg } from './svg-document.internal';
 import {
   callComplexityWrapper,
   collectDomFindings,
   readInspectDimensions,
 } from './svg-inspection/dom-analysis.internal';
 import { collectRegexFindings } from './svg-inspection/fallback-analysis.internal';
-import { parseAndClassifySvg } from './svg-inspection/parser.internal';
 import { assembleInspectReport } from './svg-inspection/report.internal';
 import type { InspectSvgDimensions, InspectSvgFinding, InspectSvgReport } from './svg-inspection/types.internal';
 

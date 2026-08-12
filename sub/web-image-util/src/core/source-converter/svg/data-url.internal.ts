@@ -25,25 +25,6 @@ function estimateBase64DecodedSize(base64Content: string): number {
 }
 
 /**
- * Blob 앞부분만 읽어 실제 SVG 콘텐츠인지 판정한다.
- *
- * MIME 타입이 비어 있거나 신뢰하기 어려운 업로드에서도 `<svg` 루트를 빠르게 확인하기 위한 헬퍼다.
- * 읽기 실패는 모두 안전하게 false로 처리한다.
- *
- * @param blob 검사할 Blob 객체
- * @param bytes 앞에서부터 읽을 최대 바이트 수
- * @returns SVG 콘텐츠로 판정되면 true
- */
-export async function sniffSvgFromBlob(blob: Blob, bytes = 4096): Promise<boolean> {
-  try {
-    const slice = await blob.slice(0, bytes).text();
-    return isInlineSvg(slice);
-  } catch {
-    return false;
-  }
-}
-
-/**
  * SVG Data URL에서 실제 SVG 문자열을 추출하고 검증한다.
  *
  * @param dataUrl SVG Data URL 문자열

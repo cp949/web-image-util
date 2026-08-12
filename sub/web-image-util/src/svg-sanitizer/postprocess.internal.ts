@@ -3,6 +3,7 @@
  * `<metadata>` 제거, parsererror 처리, 노드 카운트를 일괄 수행한다.
  */
 
+import { parseAndClassifySvg } from '../utils/svg-document.internal';
 import { enforceStrictDomPolicy } from './enforce-dom-policy.internal';
 import type { NestedSanitize, StrictSvgSanitizerOptions } from './types';
 import { pushUniqueWarning } from './warnings.internal';
@@ -38,26 +39,13 @@ export function postProcessSanitized(
     return { svg: '', nodeCount: 0 };
   }
 
-  const parser = new DOMParser();
-  // image/svg+xml 으로 파싱하면 루트가 SVG 요소가 된다
-  const doc = parser.parseFromString(sanitizedSvg, 'image/svg+xml');
-  const root = doc.documentElement;
-
-  // 루트가 없는 경우 0으로 간주
-  if (!root) {
+  // strict sanitizer의 반환 계약은 SVG 루트 문자열이다. 파싱 실패·루트 부재·
+  // 루트가 SVG가 아닌 경우 모두 fail-closed 처리한다.
+  const parsed = parseAndClassifySvg(sanitizedSvg);
+  if (parsed.root !== 'svg') {
     return { svg: '', nodeCount: 0 };
   }
-
-  // 파서 에러 처리 — DOM 구현체별 표현 형태가 다르므로 두 조건을 OR로 둔다.
-  if (root.tagName === 'parsererror' || root.querySelector('parsererror')) {
-    return { svg: '', nodeCount: 0 };
-  }
-
-  // strict sanitizer의 반환 계약은 SVG 루트 문자열이다. WHOLE_DOCUMENT 같은
-  // 설정 변화나 파서 보정으로 루트가 SVG가 아니면 fail-closed 처리한다.
-  if (root.localName.toLowerCase() !== 'svg') {
-    return { svg: '', nodeCount: 0 };
-  }
+  const root = parsed.svgElement;
 
   // DOMPurify 결과에 strict sanitizer 강제 정책을 재적용한다.
   enforceStrictDomPolicy(root, warnings, options, depth, nestedSanitize);

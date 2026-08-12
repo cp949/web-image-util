@@ -5,12 +5,12 @@
  */
 
 import type { ImageFormat, ImageSource } from '../../types';
+import { sniffSvgFromBlob } from '../svg-detection';
 import {
   DEFAULT_SVG_SNIFF_BYTES,
   getBlobMetadataFormat,
   isSvgBlobByMetadata,
   shouldSniffBlobForSvg,
-  sniffSvgFromBlob,
 } from './blob-sniff.internal';
 import { normalizeMimeType } from './mime.internal';
 import { detectImageStringSourceInfo, detectImageStringSourceType } from './string-detection.internal';

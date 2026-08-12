@@ -13,6 +13,7 @@
 import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import { ImageProcessError } from '../errors.internal';
 import { detectRuntimeEnvironment } from '../utils/environment.internal';
+import { parseAndClassifySvg } from '../utils/svg-document.internal';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
 import { collectEmbeddedImageStages, collectGeneralStages } from './inspect-sanitization/stage-collectors.internal';
 import type {
@@ -49,21 +50,8 @@ const UTF8_ENCODER = new TextEncoder();
  * 정규식 기반이라 파싱 실패와 무관하게 그대로 실행된다.
  */
 function parseSvgDocument(svgString: string): Document | null {
-  if (typeof DOMParser === 'undefined') return null;
-
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgString, 'image/svg+xml');
-    if (doc.getElementsByTagName('parsererror').length > 0) {
-      return null;
-    }
-    const root = doc.documentElement;
-    if (!root) return null;
-    if (root.tagName.toLowerCase() !== 'svg') return null;
-    return doc;
-  } catch {
-    return null;
-  }
+  const parsed = parseAndClassifySvg(svgString);
+  return parsed.root === 'svg' ? parsed.doc : null;
 }
 
 /** byte 초과 시 정책별로 반환할 fallback impact를 만든다. */
@@ -186,17 +174,9 @@ async function runStrictSanitization(svgString: string): Promise<StrictSanitizat
  * 정의된다. DOMParser가 없거나 파싱 실패면 0을 반환한다.
  */
 function countElementsInSanitizedSvg(sanitizedSvg: string): number {
-  if (typeof DOMParser === 'undefined') return 0;
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(sanitizedSvg, 'image/svg+xml');
-    if (doc.getElementsByTagName('parsererror').length > 0) return 0;
-    const root = doc.documentElement;
-    if (!root) return 0;
-    return root.querySelectorAll('*').length;
-  } catch {
-    return 0;
-  }
+  const parsed = parseAndClassifySvg(sanitizedSvg);
+  const root = parsed.ok ? parsed.doc.documentElement : null;
+  return root ? root.querySelectorAll('*').length : 0;
 }
 
 /**

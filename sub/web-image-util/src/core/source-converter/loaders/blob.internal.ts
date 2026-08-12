@@ -5,14 +5,13 @@
  */
 
 import { ImageProcessError } from '../../../types';
-import { isInlineSvg } from '../../../utils/svg-detection';
+import { isInlineSvg, sniffSvgFromBlob } from '../../../utils/svg-detection';
 import {
   DEFAULT_MAX_SOURCE_BYTES,
   type InternalSourceConverterOptions,
   resolvePassthroughMode,
   resolveSvgSanitizerMode,
 } from '../options.internal';
-import { sniffSvgFromBlob } from '../svg/data-url.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
 
 /**

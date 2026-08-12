@@ -6,6 +6,7 @@
  */
 
 import { isDataURLString, parseDataURLMimeType } from '../utils/data-url';
+import { isInlineSvg } from '../utils/svg-detection';
 import type { ImageFormat, ImageSource, ResizeBackground, ResizeFit, ResizePosition } from './base';
 
 // Define constants directly to prevent circular imports
@@ -162,23 +163,13 @@ export function isSVGString(value: unknown): value is string {
 
   const trimmed = value.trim();
 
-  // Must have both opening <svg and closing </svg> tags
-  if (!trimmed.includes('<svg') || !trimmed.includes('</svg>')) {
+  // 루트가 <svg인지는 svg-detection leaf의 판정을 따르고,
+  // 이 guard는 문자열이 닫혀 있는지(닫힘 태그 또는 자가 닫힘 루트)만 추가로 본다.
+  if (!isInlineSvg(trimmed)) {
     return false;
   }
 
-  // 1. Case starting directly with <svg
-  if (trimmed.startsWith('<svg')) {
-    return true;
-  }
-
-  // 2. Case starting with XML declaration - first tag after declaration must be <svg
-  if (trimmed.startsWith('<?xml')) {
-    const afterXmlDeclaration = trimmed.replace(/^<\?xml[^>]*\?>\s*/, '');
-    return afterXmlDeclaration.startsWith('<svg');
-  }
-
-  return false;
+  return trimmed.includes('</svg>') || /<svg[^>]*\/>/i.test(trimmed);
 }
 
 // Composite type guards

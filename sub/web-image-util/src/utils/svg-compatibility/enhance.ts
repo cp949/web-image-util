@@ -5,6 +5,7 @@
  * 한 곳에서 조립한다. 이미지 처리 파이프라인용 facade(`enhanceSvgForBrowser`)도 함께 둔다.
  */
 
+import { parseAndClassifySvg } from '../svg-document.internal';
 import { addPAR, addRequiredNamespaces, modernizeSvgSyntax } from './attributes.internal';
 import { toMsg } from './message.internal';
 import { DEFAULT_OPTIONS, type SvgCompatibilityOptions, type SvgCompatibilityReport } from './options';
@@ -52,26 +53,20 @@ export function enhanceBrowserCompatibility(
   };
 
   // SVG XML 파싱 단계: 실패하면 원본을 그대로 돌려준다.
-  let doc: Document;
-  try {
-    if (typeof DOMParser === 'undefined') {
-      report.warnings.push('DOMParser is not available. Returning original SVG.');
-      return finalize(svgString, report, now(), t0);
-    }
-    doc = new DOMParser().parseFromString(svgString, 'image/svg+xml');
-
-    const parseError = doc.querySelector('parsererror');
-    if (parseError) {
-      report.warnings.push('XML parse error detected. Returning original SVG.');
-      return finalize(svgString, report, now(), t0);
-    }
-  } catch (e) {
-    report.warnings.push(`DOMParser failed: ${toMsg(e)}. Returning original SVG.`);
+  // 파싱·parsererror 감지·루트 판정은 svg-document leaf가 담당한다.
+  const parsed = parseAndClassifySvg(svgString);
+  if (!parsed.ok) {
+    report.warnings.push(
+      parsed.reason === 'domparser-unavailable'
+        ? 'DOMParser is not available. Returning original SVG.'
+        : 'XML parse error detected. Returning original SVG.'
+    );
     return finalize(svgString, report, now(), t0);
   }
 
-  const root = doc.documentElement;
-  if (!root || root.tagName.toLowerCase() !== 'svg') {
+  const doc = parsed.doc;
+  const root = parsed.svgElement;
+  if (parsed.root !== 'svg' || !root) {
     report.warnings.push('Root element is not <svg>. Returning original SVG.');
     return finalize(svgString, report, now(), t0);
   }

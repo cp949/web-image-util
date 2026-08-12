@@ -8,6 +8,7 @@
  */
 
 import { isSafeRasterDataImageRef, isSvgDataImageRef } from '../utils/svg-data-url-policy.internal';
+import { parseAndClassifySvg } from '../utils/svg-document.internal';
 import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
 import { isSafeInternalReference } from './reference-policy.internal';
 
@@ -34,14 +35,13 @@ export function pushUniqueWarning(warnings: string[], warning: string): void {
  * @param warnings 경고 누적 배열
  */
 export function collectInputPolicyWarnings(svg: string, warnings: string[]): void {
-  if (typeof DOMParser === 'undefined' || !svg.trim()) {
+  if (!svg.trim()) {
     return;
   }
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svg, 'image/svg+xml');
-  const root = doc.documentElement;
-  if (!root || root.tagName === 'parsererror' || root.querySelector('parsererror')) {
+  const parsed = parseAndClassifySvg(svg);
+  const root = parsed.ok ? parsed.doc.documentElement : null;
+  if (!root) {
     return;
   }
 

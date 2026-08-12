@@ -7,7 +7,6 @@
 
 import type { ImageFormat } from '../../types';
 import { mimeTypeToImageFormat } from '../format-utils';
-import { isInlineSvg } from '../svg-detection';
 import { isXmlMimeType, normalizeMimeType } from './mime.internal';
 import { getFormatFromPath } from './path.internal';
 import { canReadBlobText } from './type-guards.internal';
@@ -40,13 +39,4 @@ export function shouldSniffBlobForSvg(blob: Blob, mimeType: string): boolean {
   return (
     mimeType === '' || mimeType === 'application/octet-stream' || mimeType === 'text/plain' || isXmlMimeType(mimeType)
   );
-}
-
-/** Blob 앞부분을 텍스트로 읽어 인라인 SVG 시그니처가 있는지 검사한다. */
-export async function sniffSvgFromBlob(blob: Blob, bytes: number): Promise<boolean> {
-  try {
-    return isInlineSvg(await blob.slice(0, Math.max(0, bytes)).text());
-  } catch {
-    return false;
-  }
 }

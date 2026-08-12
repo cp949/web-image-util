@@ -108,3 +108,21 @@ export function isInlineSvg(source: string): boolean {
   const stripped = stripXmlPreambleAndNoise(stripBom(source));
   return /^<svg(?:[\s/>])/i.test(stripped);
 }
+
+/**
+ * Blob 앞부분을 텍스트로 읽어 인라인 SVG 시그니처가 있는지 검사한다.
+ *
+ * MIME 타입이 비어 있거나 신뢰하기 어려운 업로드에서도 `<svg` 루트를 빠르게 확인하기 위한
+ * 헬퍼다. 읽기 실패는 모두 안전하게 false로 처리한다.
+ *
+ * @param blob 검사할 Blob 객체
+ * @param bytes 앞에서부터 읽을 최대 바이트 수
+ * @returns SVG 콘텐츠로 판정되면 true
+ */
+export async function sniffSvgFromBlob(blob: Blob, bytes = 4096): Promise<boolean> {
+  try {
+    return isInlineSvg(await blob.slice(0, Math.max(0, bytes)).text());
+  } catch {
+    return false;
+  }
+}

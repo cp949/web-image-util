@@ -8,6 +8,7 @@
  */
 
 import { productionLog } from '../debug.internal';
+import { parseAndClassifySvg } from '../svg-document.internal';
 
 /** ID 하나가 문서에서 참조되는지 검사할 때 사용할 속성 셀렉터 목록. */
 const REFERENCE_ATTRIBUTES = [
@@ -54,18 +55,15 @@ function collectUsedIds(documentRoot: Element, definedIds: Set<string>): Set<str
  */
 export function removeUnusedDefs(svgString: string): string {
   try {
-    if (typeof DOMParser === 'undefined') {
-      productionLog.warn('DOMParser is not available in this environment. Skipping unused definitions removal.');
+    // 파싱 실패 시 원본 유지. 파서 미가용은 경고 후 건너뛴다.
+    const parsed = parseAndClassifySvg(svgString);
+    if (!parsed.ok) {
+      if (parsed.reason === 'domparser-unavailable') {
+        productionLog.warn('DOMParser is not available in this environment. Skipping unused definitions removal.');
+      }
       return svgString;
     }
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgString, 'image/svg+xml');
-
-    const errorNode = doc.querySelector('parsererror');
-    if (errorNode) {
-      return svgString;
-    }
+    const doc = parsed.doc;
 
     const defs = doc.querySelector('defs');
     if (!defs) {

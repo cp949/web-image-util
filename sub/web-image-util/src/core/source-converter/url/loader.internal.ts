@@ -7,7 +7,7 @@
 
 import { ImageProcessError } from '../../../types';
 import { productionLog } from '../../../utils/debug.internal';
-import { isInlineSvg } from '../../../utils/svg-detection';
+import { isInlineSvg, sniffSvgFromBlob } from '../../../utils/svg-detection';
 import {
   DEFAULT_ALLOWED_PROTOCOLS,
   DEFAULT_MAX_SOURCE_BYTES,
@@ -16,7 +16,6 @@ import {
   resolvePassthroughMode,
   resolveSvgSanitizerMode,
 } from '../options.internal';
-import { sniffSvgFromBlob } from '../svg/data-url.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
 import { readCheckedTextResponse, readVerifiedSvgResponse } from '../svg/safety.internal';
 import { createFetchAbortHandle, readCheckedBlobResponse } from './fetch-guards.internal';

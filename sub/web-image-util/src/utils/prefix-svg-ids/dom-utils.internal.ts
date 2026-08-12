@@ -1,3 +1,4 @@
+import { parseAndClassifySvg } from '../svg-document.internal';
 import type { SvgIdPrefixDeoptReason } from './types.internal';
 
 /**
@@ -5,22 +6,18 @@ import type { SvgIdPrefixDeoptReason } from './types.internal';
  * DOMParser/XMLSerializer 미가용, parsererror, root가 svg가 아닌 경우 failure를 반환한다.
  */
 export function parseSvgDocument(svgString: string): Document | { failure: SvgIdPrefixDeoptReason } {
-  if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined') {
+  // 직렬화 단계(serializeSvgDocument)까지 가야 하므로 XMLSerializer 가용성은 여기서 함께 본다.
+  if (typeof XMLSerializer === 'undefined') {
     return { failure: 'domparser-unavailable' };
   }
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgString, 'image/svg+xml');
-    if (doc.getElementsByTagName('parsererror').length > 0) {
-      return { failure: 'parse-failed' };
-    }
-    if (!doc.documentElement || doc.documentElement.tagName.toLowerCase() !== 'svg') {
-      return { failure: 'parse-failed' };
-    }
-    return doc;
-  } catch {
+  const parsed = parseAndClassifySvg(svgString);
+  if (!parsed.ok) {
+    return { failure: parsed.reason === 'domparser-unavailable' ? 'domparser-unavailable' : 'parse-failed' };
+  }
+  if (parsed.root !== 'svg') {
     return { failure: 'parse-failed' };
   }
+  return parsed.doc;
 }
 
 /**

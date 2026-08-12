@@ -7,6 +7,7 @@
  */
 
 import { productionLog } from '../debug.internal';
+import { parseAndClassifySvg } from '../svg-document.internal';
 
 /** 그라디언트의 형태/속성/정지점을 합쳐 동일성 키를 만든다. */
 function hashGradient(gradient: Element): string {
@@ -53,20 +54,15 @@ function rewriteGradientReferences(doc: Document, replacementMap: Map<string, st
  */
 export function optimizeGradients(svgString: string): string {
   try {
-    // Node 환경 등 DOMParser 미지원 시 건너뛴다.
-    if (typeof DOMParser === 'undefined') {
-      productionLog.warn('DOMParser is not available in this environment. Skipping gradient optimization.');
+    // 파싱 실패 시 원본 유지. Node 환경 등 파서 미가용은 경고 후 건너뛴다.
+    const parsed = parseAndClassifySvg(svgString);
+    if (!parsed.ok) {
+      if (parsed.reason === 'domparser-unavailable') {
+        productionLog.warn('DOMParser is not available in this environment. Skipping gradient optimization.');
+      }
       return svgString;
     }
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgString, 'image/svg+xml');
-
-    // 파싱 실패 시 원본 유지.
-    const errorNode = doc.querySelector('parsererror');
-    if (errorNode) {
-      return svgString;
-    }
+    const doc = parsed.doc;
 
     const gradients = doc.querySelectorAll('linearGradient, radialGradient');
     const gradientMap = new Map<string, Element>();
