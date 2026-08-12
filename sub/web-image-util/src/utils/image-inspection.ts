@@ -2,6 +2,7 @@
  * 이미지 픽셀 데이터를 직접 검사하는 유틸리티다.
  */
 
+import { createOwnedCanvas } from '../base/canvas-utils.internal';
 import { convertToImageElement } from '../core/source-converter/index';
 import type { ImageSource } from '../types';
 import { ImageProcessError } from '../types';
@@ -36,15 +37,12 @@ function normalizeSampleStep(sampleStep: number | undefined): number {
 /** 이미지 요소를 캔버스에 그려 픽셀 검사 가능한 형태로 변환한다. */
 async function imageSourceToCanvas(source: ImageSource): Promise<HTMLCanvasElement> {
   const imageElement = await convertToImageElement(source);
-  const canvas = document.createElement('canvas');
   const width = imageElement.naturalWidth || imageElement.width;
   const height = imageElement.naturalHeight || imageElement.height;
 
-  canvas.width = width;
-  canvas.height = height;
-
-  const context = getCanvasContext(canvas);
-  context.drawImage(imageElement, 0, 0, width, height);
+  // 결과를 호출자에게 넘기므로 owned canvas
+  const { canvas, ctx } = createOwnedCanvas(width, height);
+  ctx.drawImage(imageElement, 0, 0, width, height);
 
   return canvas;
 }

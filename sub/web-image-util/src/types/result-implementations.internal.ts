@@ -4,6 +4,7 @@
  * @description 이미 알고 있는 크기 정보를 재사용해 후속 변환 비용을 줄인다.
  */
 
+import { createOwnedCanvas } from '../base/canvas-utils.internal';
 import { createImageElement } from '../utils/image-element.internal';
 import { loadImageElement } from '../utils/image-loader.internal';
 import type {
@@ -16,7 +17,6 @@ import type {
   ResultElement,
   ResultFile,
 } from './index';
-import { ImageProcessError } from './index';
 import {
   blobToArrayBuffer,
   blobToUint8Array,
@@ -42,12 +42,8 @@ export class DataURLResultImpl implements ResultDataURL {
 
   /** 크기 정보를 재사용해 Canvas로 변환한다. */
   async toCanvas(): Promise<HTMLCanvasElement> {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d')!;
-
-    // 이미 계산된 결과 크기를 그대로 캔버스에 반영한다.
-    canvas.width = this.width;
-    canvas.height = this.height;
+    // 결과를 호출자에게 넘기므로 owned canvas — 이미 계산된 결과 크기를 그대로 쓴다
+    const { canvas, ctx } = createOwnedCanvas(this.width, this.height);
 
     const img = createImageElement();
     await loadImageElement(img, this.dataURL);
@@ -109,12 +105,8 @@ export class BlobResultImpl implements ResultBlob {
       const img = createImageElement();
       await loadImageElement(img, objectUrl);
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-
-      // 이미 계산된 결과 크기를 그대로 캔버스에 반영한다.
-      canvas.width = this.width;
-      canvas.height = this.height;
+      // 결과를 호출자에게 넘기므로 owned canvas — 이미 계산된 결과 크기를 그대로 쓴다
+      const { canvas, ctx } = createOwnedCanvas(this.width, this.height);
 
       ctx.drawImage(img, 0, 0);
       return canvas;
@@ -213,12 +205,8 @@ export class FileResultImpl implements ResultFile {
       const img = createImageElement();
       await loadImageElement(img, objectUrl);
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-
-      // 이미 계산된 결과 크기를 그대로 캔버스에 반영한다.
-      canvas.width = this.width;
-      canvas.height = this.height;
+      // 결과를 호출자에게 넘기므로 owned canvas — 이미 계산된 결과 크기를 그대로 쓴다
+      const { canvas, ctx } = createOwnedCanvas(this.width, this.height);
 
       ctx.drawImage(img, 0, 0);
       return canvas;
@@ -356,14 +344,9 @@ export class ElementResultImpl implements ResultElement {
 
   /** Canvas로 변환한다. 이미 알고 있는 크기를 그대로 사용한다. */
   async toCanvas(): Promise<HTMLCanvasElement> {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new ImageProcessError('Unable to create Canvas 2D context', 'CANVAS_CREATION_FAILED');
-    }
+    // 결과를 호출자에게 넘기므로 owned canvas
+    const { canvas, ctx } = createOwnedCanvas(this.width, this.height);
 
-    canvas.width = this.width;
-    canvas.height = this.height;
     ctx.drawImage(this.element, 0, 0);
     return canvas;
   }

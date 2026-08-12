@@ -5,9 +5,8 @@
  * Element → Canvas 그리기, Blob 크기 측정 같은 보조 기능을 모아둔다.
  */
 
-import { canvasToBlob as encodeCanvasToBlob } from '../../base/canvas-utils.internal';
+import { createOwnedCanvas, canvasToBlob as encodeCanvasToBlob } from '../../base/canvas-utils.internal';
 import type { OutputOptions } from '../../types';
-import { ImageProcessError } from '../../types';
 import { formatToMimeType } from '../format-utils';
 import { createImageElement } from '../image-element.internal';
 
@@ -38,15 +37,8 @@ export function canvasToDataURL(canvas: HTMLCanvasElement, options: OutputOption
  * Convert HTMLImageElement to Canvas
  */
 export async function imageElementToCanvas(imageElement: HTMLImageElement): Promise<HTMLCanvasElement> {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-
-  if (!ctx) {
-    throw new ImageProcessError('Unable to create Canvas 2D context', 'CANVAS_CREATION_FAILED');
-  }
-
-  canvas.width = imageElement.width;
-  canvas.height = imageElement.height;
+  // 결과를 호출자에게 넘기므로 owned canvas
+  const { canvas, ctx } = createOwnedCanvas(imageElement.width, imageElement.height);
 
   ctx.drawImage(imageElement, 0, 0);
 
