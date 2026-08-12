@@ -5,6 +5,8 @@
  * 다루지 않고 후처리(`postProcessSanitized`)에서 DOM 기반으로 제거한다.
  */
 
+import { stripDoctypeAndEntityDeclarations } from '../utils/svg-threat-policy.internal';
+
 /**
  * 입력 SVG 문자열에서 DOCTYPE/ENTITY 선언, BOM, XML 선언, HTML 주석을 제거한다.
  *
@@ -27,25 +29,15 @@ export function preprocessSvgInput(svg: string, warnings: string[]): string {
     result = result.slice(1);
   }
 
-  // DOCTYPE / ENTITY 선언 검출 및 제거 (XXE 우려)
-  // 대소문자 무관하게 매칭하며 발견 시 경고를 남긴다
-  const hasDoctype = /<!DOCTYPE\b/i.test(result);
-  const hasEntity = /<!ENTITY\b/i.test(result);
-
-  if (hasDoctype) {
+  // DOCTYPE / ENTITY 선언 절단 (XXE 우려) — 위협 정책 모듈이 소유하는 공유 절단
+  const stripped = stripDoctypeAndEntityDeclarations(result);
+  if (stripped.doctypeRemoved) {
     warnings.push('XXE 우려로 DOCTYPE 선언이 제거되었습니다.');
   }
-  if (hasEntity) {
+  if (stripped.entityRemoved) {
     warnings.push('XXE 우려로 ENTITY 선언이 제거되었습니다.');
   }
-
-  // <!DOCTYPE 부터 첫 <svg 루트 시작 직전까지 (대소문자 무관) 모두 제거.
-  // 이 패턴은 internal subset 안의 quoted "]>"나 임의의 텍스트가 있어도
-  // SVG 루트 시작점을 기준으로 절단하므로 잔여물이 남지 않는다.
-  result = result.replace(/<!DOCTYPE\b[\s\S]*?(?=<svg\b|$)/gi, '');
-  // 위 패턴이 SVG 루트 외부의 ENTITY까지 함께 잡지만,
-  // 루트 내부에 단독으로 등장한 <!ENTITY ...> 선언은 별도로 정리한다.
-  result = result.replace(/<!ENTITY\b[^>]*>/gi, '');
+  result = stripped.svg;
 
   // XML 선언 제거 (<?xml ... ?>)
   result = result.replace(/<\?xml\b[\s\S]*?\?>/gi, '');

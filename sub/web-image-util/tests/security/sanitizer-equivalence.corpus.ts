@@ -250,7 +250,7 @@ export const SANITIZER_EQUIVALENCE_CORPUS: SanitizerEquivalenceCase[] = [
     },
   },
 
-  // ─── 요소/속성: 의도적 모드 차이 (현행 실측) ───
+  // ─── 요소/속성: 의도적 모드 차이 ───
   {
     name: '요소: use — 경량 보존, strict 제거',
     svg: `${SVG_OPEN}<use href="#icon"/></svg>`,
@@ -261,22 +261,30 @@ export const SANITIZER_EQUIVALENCE_CORPUS: SanitizerEquivalenceCase[] = [
     divergence: '경량은 렌더링 경로라 sprite/defs 패턴(use)을 보존한다. href 정책이 외부 참조를 방어한다.',
   },
   {
-    name: '요소: href를 타겟팅하는 animate — 경량 통과, strict 제거',
+    name: '요소: href를 타겟팅하는 animate는 양쪽 모두 제거한다',
     svg: `${SVG_OPEN}<a href="#x"><animate attributeName="href" to="javascript:alert(1)"/></a></svg>`,
     expected: {
-      lightweight: { preserves: ['<animate', 'javascript:alert(1)'] },
+      lightweight: { removes: ['<animate', 'alert(1)'] },
       strict: { removes: ['<animate', 'alert(1)'] },
     },
-    divergence: '경량은 animate/set 요소를 다루지 않는다 — 알려진 구멍(href 애니메이션 우회).',
   },
   {
-    name: '선언: DOCTYPE/ENTITY — 경량 통과, strict 제거',
+    name: '요소: href를 타겟팅하지 않는 animate — 경량 보존, strict 제거',
+    svg: `${SVG_OPEN}<rect><animate attributeName="x" from="0" to="10" dur="1s"/></rect></svg>`,
+    expected: {
+      lightweight: { preserves: ['<animate'] },
+      strict: { removes: ['<animate'] },
+    },
+    divergence:
+      '경량은 렌더링 경로라 좌표 애니메이션을 보존한다. strict는 DOMPurify 기본 정책으로 animate/set을 전부 제거한다.',
+  },
+  {
+    name: '선언: DOCTYPE/ENTITY는 양쪽 모두 절단한다',
     svg: `<!DOCTYPE svg [<!ENTITY xxe "boom">]>${SVG_OPEN}<text>x</text></svg>`,
     expected: {
-      lightweight: { preserves: ['<!DOCTYPE', '<!ENTITY'] },
+      lightweight: { removes: ['<!DOCTYPE', '<!ENTITY'] },
       strict: { removes: ['<!DOCTYPE', '<!ENTITY'] },
     },
-    divergence: '경량은 XML 선언부를 전처리하지 않는다 — 알려진 구멍(XXE 표면).',
   },
   {
     name: '요소: 닫는 태그 없는 script — 경량 잔존, strict 제거',

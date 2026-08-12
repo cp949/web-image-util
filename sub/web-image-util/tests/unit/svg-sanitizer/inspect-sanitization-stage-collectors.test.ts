@@ -22,7 +22,7 @@ describe('정화 stage collector helper stage 수집', () => {
       '<script>alert(1)</script><style>rect { fill: url(http://evil.example.com/p.png); }</style></svg>';
     const input = `<!DOCTYPE svg [<!ENTITY a "b">]>${svgBody}`;
 
-    const stages = collectGeneralStages(input, parseSvgDocument(svgBody), 'strict');
+    const stages = collectGeneralStages(input, parseSvgDocument(svgBody));
 
     expect(findStage(stages, 'script-removed')).toEqual({
       code: 'script-removed',
@@ -47,29 +47,27 @@ describe('정화 stage collector helper stage 수집', () => {
     });
   });
 
-  it('lightweight 정책의 일반 stage는 doctype/entity를 제외한다', () => {
+  it('XXE 절단 공유 후 doctype/entity stage는 정책 구분 없이 수집된다', () => {
     const svgBody = '<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>';
     const input = `<!DOCTYPE svg [<!ENTITY a "b">]>${svgBody}`;
 
-    const stages = collectGeneralStages(input, parseSvgDocument(svgBody), 'lightweight');
+    const stages = collectGeneralStages(input, parseSvgDocument(svgBody));
 
     expect(findStage(stages, 'script-removed')?.count).toBe(1);
-    expect(findStage(stages, 'doctype-removed')).toBeUndefined();
-    expect(findStage(stages, 'entity-removed')).toBeUndefined();
+    expect(findStage(stages, 'doctype-removed')?.count).toBe(1);
+    expect(findStage(stages, 'entity-removed')?.count).toBe(1);
   });
 
   it('빈 href를 두 정책 모두 제거 대상으로 세고, 실제 sanitizer 제거와 거울 정합한다', () => {
     const svgBody = '<svg xmlns="http://www.w3.org/2000/svg"><image href=""/></svg>';
 
-    // 진단: URI allowlist 통일 후 두 정책 모두 빈 href를 external-href-removed로 센다
-    for (const policy of ['strict', 'lightweight'] as const) {
-      const stages = collectGeneralStages(svgBody, parseSvgDocument(svgBody), policy);
-      expect(findStage(stages, 'external-href-removed')).toEqual({
-        code: 'external-href-removed',
-        count: 1,
-        samples: ['href'],
-      });
-    }
+    // 진단: URI allowlist 통일 후 빈 href를 external-href-removed로 센다
+    const stages = collectGeneralStages(svgBody, parseSvgDocument(svgBody));
+    expect(findStage(stages, 'external-href-removed')).toEqual({
+      code: 'external-href-removed',
+      count: 1,
+      samples: ['href'],
+    });
 
     // 거울: 두 sanitizer 모두 빈 href 속성을 제거한다
     expect(sanitizeSvgStrictDetailed(svgBody).svg).not.toContain('href');

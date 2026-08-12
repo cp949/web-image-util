@@ -24,7 +24,14 @@
  */
 
 import { decodeHtmlEntities } from './svg-policy-utils.internal';
-import { CSS_URL_PRESENTATION_ATTRIBUTES, sanitizeCssValue, sanitizeUriValue } from './svg-threat-policy.internal';
+import {
+  CSS_URL_PRESENTATION_ATTRIBUTES,
+  HREF_TARGETING_ANIMATION_ELEMENT_NAMES,
+  isHrefTargetingAttributeValue,
+  sanitizeCssValue,
+  sanitizeUriValue,
+  stripDoctypeAndEntityDeclarations,
+} from './svg-threat-policy.internal';
 
 /**
  * `href`/`xlink:href`/`src` 속성값을 lightweight 위협 정책으로 정제한다.
@@ -93,11 +100,24 @@ function sanitizeCssAttribute(attrName: string, cssValue: string, quote: '"' | "
 const SVG_START_TAG_PATTERN = /<([a-z][a-z0-9:-]*)(\b(?:[^"'<>]|"[^"]*"|'[^']*')*)(\/?)>/gi;
 
 /**
+ * href 타겟팅 가능 애니메이션 요소(animate/set)를 통째로 매치하는 패턴.
+ *
+ * 자가 닫힘과 블록 형태 모두 처리하며, 실제 제거 여부는 매치 후
+ * `attributeName` 값 판정(`isHrefTargetingAttributeValue`)으로 결정한다.
+ */
+const HREF_TARGETING_ANIMATION_PATTERN = new RegExp(
+  `<(${HREF_TARGETING_ANIMATION_ELEMENT_NAMES.join('|')})\\b((?:[^"'<>]|"[^"]*"|'[^']*')*)(?:\\/>|>[\\s\\S]*?<\\/\\1\\s*>)`,
+  'gi'
+);
+
+/**
  * SVG 문자열에서 위험 요소와 속성을 제거하는 경량 방어층(lightweight safety guard).
  *
  * **처리 순서:**
+ * 0. DOCTYPE/ENTITY 선언 절단 (XXE 표면)
  * 1. `<script>...</script>` 또는 `<script ... />` 제거
- * 2. `<foreignObject>...</foreignObject>` 제거 (중첩 포함)
+ * 2. `<foreignObject>...</foreignObject>` 제거 (중첩 포함),
+ *    href를 타겟팅하는 `<animate>`/`<set>` 제거
  * 3. `on*` 이벤트 핸들러 속성 제거
  * 4. `href`, `xlink:href`, `src` 속성 중 fragment·안전 data:image 외 값 제거
  * 5. `style`·presentation 속성 및 `<style>` 블록의 CSS 값 정제
@@ -116,6 +136,9 @@ const SVG_START_TAG_PATTERN = /<([a-z][a-z0-9:-]*)(\b(?:[^"'<>]|"[^"]*"|'[^']*')
 export function sanitizeSvgForRendering(svgString: string, depth = 0): string {
   let result = svgString;
 
+  // 0. DOCTYPE/ENTITY 선언 절단 (XXE 표면) — strict 엔진과 같은 정책을 공유한다
+  result = stripDoctypeAndEntityDeclarations(result).svg;
+
   // 1. <script> 요소 제거 — 자가 닫힘(`<script ... />`)과 블록 형태(`<script>...</script>`) 모두 처리한다
   // 자가 닫힘 먼저 제거해야 블록 패턴의 오탐을 줄일 수 있다
   result = result.replace(/<script\b[^>]*\/>/gi, '');
@@ -130,6 +153,14 @@ export function sanitizeSvgForRendering(svgString: string, depth = 0): string {
   } while (result !== prev);
   // 자가 닫힘 foreignObject도 처리한다
   result = result.replace(/<foreignObject\b[^>]*\/>/gi, '');
+
+  // 2.5 attributeName으로 href를 타겟팅하는 animate/set 요소를 제거한다 — URI 정책 우회 차단.
+  // 좌표 애니메이션 등 일반 animate/set은 보존한다.
+  result = result.replace(HREF_TARGETING_ANIMATION_PATTERN, (match, _tagName: string, attrs: string) => {
+    const attrMatch = /\battributename\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs);
+    const targetValue = attrMatch?.[1] ?? attrMatch?.[2] ?? attrMatch?.[3] ?? '';
+    return isHrefTargetingAttributeValue(targetValue) ? '' : match;
+  });
 
   // 3~5. 태그 내부 속성만 대상으로 위험 속성을 제거/정제한다.
   result = result.replace(SVG_START_TAG_PATTERN, (_match, tagName: string, attrs: string, selfClosing: string) => {

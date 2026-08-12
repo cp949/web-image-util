@@ -100,17 +100,9 @@ function collectExternalCssStage(doc: Document, stages: InspectSvgSanitizationSt
 /**
  * 원본 svgString의 `<!DOCTYPE>` / `<!ENTITY>` 매치 수로 stage를 수집한다.
  *
- * lightweight sanitizer는 DOCTYPE/ENTITY를 제거하지 않으므로 호출 정책 컨텍스트가
- * `'lightweight'` 또는 `'skip'`이면 본 함수는 어떤 stage도 추가하지 않는다. 두 stage는
- * 향후 strict 정책 컨텍스트에서만 등장한다.
+ * 위협 정책의 XXE 절단이 두 집행 엔진에 공유된 뒤로 정책 구분 없이 수집한다.
  */
-function collectDoctypeAndEntityStages(
-  svgString: string,
-  policy: 'lightweight' | 'skip' | 'strict',
-  stages: InspectSvgSanitizationStage[]
-): void {
-  if (policy !== 'strict') return;
-
+function collectDoctypeAndEntityStages(svgString: string, stages: InspectSvgSanitizationStage[]): void {
   const doctypeMatches = svgString.match(DOCTYPE_PATTERN);
   if (doctypeMatches && doctypeMatches.length > 0) {
     const acc = createAccumulator();
@@ -200,17 +192,12 @@ export function collectEmbeddedImageStages(doc: Document): InspectSvgSanitizatio
  * `doctype-removed` / `entity-removed`).
  *
  * DOM 기반 수집은 doc이 non-null일 때만 수행한다. 파싱 실패 또는 non-svg 루트 입력은
- * 빈 stages를 반환한다(doctype/entity는 호출 정책 컨텍스트로 분기되며 lightweight/skip에서는
- * 어차피 결과에서 제외된다).
+ * doctype/entity 외의 stage를 수집하지 않는다.
  *
  * embedded image stage(`data-image-*`, `nested-svg-resanitized`)는 본 헬퍼 범위 밖이며,
  * `collectEmbeddedImageStages`가 별도로 수집해 합쳐진다.
  */
-export function collectGeneralStages(
-  svgString: string,
-  doc: Document | null,
-  policy: 'lightweight' | 'skip' | 'strict'
-): InspectSvgSanitizationStage[] {
+export function collectGeneralStages(svgString: string, doc: Document | null): InspectSvgSanitizationStage[] {
   const stages: InspectSvgSanitizationStage[] = [];
 
   if (doc !== null) {
@@ -218,7 +205,7 @@ export function collectGeneralStages(
     collectExternalCssStage(doc, stages);
   }
 
-  collectDoctypeAndEntityStages(svgString, policy, stages);
+  collectDoctypeAndEntityStages(svgString, stages);
 
   return stages;
 }

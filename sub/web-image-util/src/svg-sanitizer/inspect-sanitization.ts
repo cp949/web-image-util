@@ -223,7 +223,7 @@ async function runStrictImpact(svgString: string): Promise<InspectSvgSanitizatio
   const outputNodeCount = countElementsInSanitizedSvg(outcome.sanitizedSvg);
 
   const doc = parseSvgDocument(svgString);
-  const stages = collectGeneralStages(svgString, doc, 'strict');
+  const stages = collectGeneralStages(svgString, doc);
   if (doc !== null) {
     stages.push(...collectEmbeddedImageStages(doc));
   }
@@ -240,7 +240,7 @@ async function runStrictImpact(svgString: string): Promise<InspectSvgSanitizatio
 
 /**
  * lightweight 정책 경로. 입력 SVG에 `sanitizeSvgForRendering`을 동기 실행해 outputBytes를
- * 측정하고, 입력을 DOMParser로 파싱해 `collectGeneralStages('lightweight')`와
+ * 측정하고, 입력을 DOMParser로 파싱해 `collectGeneralStages`와
  * `collectEmbeddedImageStages`로 stage를 수집해 합친다.
  *
  * 파싱 실패 또는 non-svg 루트라도 sanitize는 그대로 수행(정규식 기반이므로 파싱과 무관)하며,
@@ -250,7 +250,7 @@ function runLightweightImpact(svgString: string): InspectSvgSanitizationImpact {
   const sanitized = sanitizeSvgForRendering(svgString);
   const outputBytes = UTF8_ENCODER.encode(sanitized).length;
   const doc = parseSvgDocument(svgString);
-  const stages = collectGeneralStages(svgString, doc, 'lightweight');
+  const stages = collectGeneralStages(svgString, doc);
   if (doc !== null) {
     stages.push(...collectEmbeddedImageStages(doc));
   }
@@ -266,12 +266,12 @@ function runLightweightImpact(svgString: string): InspectSvgSanitizationImpact {
 
 /**
  * skip 정책 경로. sanitizer를 실행하지 않고 DOMParser로 입력만 파싱한 뒤
- * `collectGeneralStages('skip')`와 `collectEmbeddedImageStages`로
+ * `collectGeneralStages`와 `collectEmbeddedImageStages`로
  * "lightweight가 적용됐다면 발동했을" stage를 수집해 합친다.
  */
 function runSkipImpact(svgString: string): InspectSvgSanitizationImpact {
   const doc = parseSvgDocument(svgString);
-  const potentialStages = collectGeneralStages(svgString, doc, 'skip');
+  const potentialStages = collectGeneralStages(svgString, doc);
   if (doc !== null) {
     potentialStages.push(...collectEmbeddedImageStages(doc));
   }

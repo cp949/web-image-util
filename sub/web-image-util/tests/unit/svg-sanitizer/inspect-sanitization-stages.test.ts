@@ -102,12 +102,11 @@ describe('inspectSvgSanitization() stage 수집', () => {
       expect(stage?.samples).toEqual(['style-tag']);
     });
 
-    it('lightweight 정책에서는 doctype-removed stage가 포함되지 않는다', async () => {
+    it('lightweight 정책에서도 doctype-removed stage가 포함된다 — XXE 절단 공유', async () => {
       const report = await inspectSvgSanitization('<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg"></svg>');
       expect(report.impact.kind).toBe('lightweight');
       if (report.impact.kind !== 'lightweight') return;
-      expect(findStage(report.impact.stages, 'doctype-removed')).toBeUndefined();
-      expect(findStage(report.impact.stages, 'entity-removed')).toBeUndefined();
+      expect(findStage(report.impact.stages, 'doctype-removed')?.count).toBe(1);
     });
 
     it('정상 SVG에서는 stages가 빈 배열이다', async () => {
@@ -167,13 +166,13 @@ describe('inspectSvgSanitization() stage 수집', () => {
       expect('outputBytes' in report.impact).toBe(false);
     });
 
-    it('skip 정책에서도 doctype-removed는 potentialStages에 포함되지 않는다', async () => {
+    it('skip 정책의 potentialStages에는 doctype-removed가 포함된다 — 적용 시 절단 대상', async () => {
       const report = await inspectSvgSanitization('<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg"></svg>', {
         policy: 'skip',
       });
       expect(report.impact.kind).toBe('skip');
       if (report.impact.kind !== 'skip') return;
-      expect(findStage(report.impact.potentialStages, 'doctype-removed')).toBeUndefined();
+      expect(findStage(report.impact.potentialStages, 'doctype-removed')?.count).toBe(1);
     });
   });
 
@@ -210,7 +209,7 @@ describe('inspectSvgSanitization() stage 수집', () => {
       expect(stage?.count).toBe(1);
     });
 
-    it('DOCTYPE 선언이 있으면 strict 정책에서만 doctype-removed stage가 등장한다', async () => {
+    it('DOCTYPE 선언이 있으면 모든 정책에서 doctype-removed stage가 등장한다', async () => {
       const input = '<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg"></svg>';
       const strictReport = await inspectSvgSanitization(input, { policy: 'strict' });
       expect(strictReport.impact.kind).toBe('strict');
@@ -220,11 +219,11 @@ describe('inspectSvgSanitization() stage 수집', () => {
       expect(strictStage?.count).toBeGreaterThanOrEqual(1);
       expect(strictStage?.samples).toEqual(['doctype']);
 
-      // lightweight/skip 정책에서는 doctype-removed가 등장하지 않음을 다시 확인
+      // XXE 절단 공유 후 lightweight에서도 같은 stage가 등장한다
       const lightweightReport = await inspectSvgSanitization(input);
       expect(lightweightReport.impact.kind).toBe('lightweight');
       if (lightweightReport.impact.kind !== 'lightweight') return;
-      expect(findStage(lightweightReport.impact.stages, 'doctype-removed')).toBeUndefined();
+      expect(findStage(lightweightReport.impact.stages, 'doctype-removed')?.count).toBe(1);
     });
 
     it('ENTITY 선언이 있으면 strict 정책에서 entity-removed stage가 등장한다', async () => {

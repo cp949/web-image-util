@@ -229,6 +229,55 @@ export function createCssImageSetFunctionPattern(): RegExp {
  */
 export const FORBIDDEN_SVG_ELEMENT_NAMES: readonly string[] = ['foreignobject', 'script'];
 
+/**
+ * `attributeName`으로 href를 타겟팅해 URI 정책을 우회할 수 있는 애니메이션
+ * 요소(소문자). `animateTransform` 등 좌표 애니메이션은 해당 없다.
+ *
+ * strict 엔진은 DOMPurify 기본 정책으로 이 요소들을 전부 제거하고, 경량 엔진은
+ * href 타겟팅 여부를 판정해 해당 요소만 제거한다.
+ */
+export const HREF_TARGETING_ANIMATION_ELEMENT_NAMES: readonly string[] = ['animate', 'set'];
+
+/**
+ * `attributeName` 값이 href 계열(URI 정책 우회 대상)인지 판정한다.
+ *
+ * @param value attributeName 속성값
+ * @returns href 또는 xlink:href를 타겟팅하면 true
+ */
+export function isHrefTargetingAttributeValue(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return normalized === 'href' || normalized === 'xlink:href';
+}
+
+/**
+ * DOCTYPE/ENTITY 선언(XXE 표면)을 절단한다 — 두 집행 엔진이 공유한다.
+ *
+ * DOCTYPE 제거는 internal subset 안의 quoted `]>` 같은 까다로운 케이스에서도
+ * 잔여물이 남지 않도록 "DOCTYPE 시작부터 다음 SVG 루트 시작 또는 문서 끝까지"를
+ * 한 번에 절단한다. 루트 내부에 단독으로 등장한 `<!ENTITY ...>`는 별도로 정리한다.
+ *
+ * @param svg 원본 SVG 문자열
+ * @returns 절단 결과와 선언 발견 여부
+ */
+export function stripDoctypeAndEntityDeclarations(svg: string): {
+  svg: string;
+  doctypeRemoved: boolean;
+  entityRemoved: boolean;
+} {
+  const doctypeRemoved = /<!DOCTYPE\b/i.test(svg);
+  const entityRemoved = /<!ENTITY\b/i.test(svg);
+
+  let result = svg;
+  if (doctypeRemoved) {
+    result = result.replace(/<!DOCTYPE\b[\s\S]*?(?=<svg\b|$)/gi, '');
+  }
+  if (entityRemoved) {
+    result = result.replace(/<!ENTITY\b[^>]*>/gi, '');
+  }
+
+  return { svg: result, doctypeRemoved, entityRemoved };
+}
+
 const EVENT_HANDLER_ATTRIBUTE_PATTERN = /^on[a-z0-9:-]+$/i;
 
 /**
