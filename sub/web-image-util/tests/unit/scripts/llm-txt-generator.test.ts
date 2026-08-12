@@ -70,4 +70,72 @@ declare function createThumbnail(source: ImageSource, options: ThumbnailOptions)
 
     expect(script).not.toContain('dist/svg-sanitizer-');
   });
+
+  test('모든 모듈이 sourceText를 직접 지정하므로 modulePath 폴백 읽기를 쓰지 않는다', () => {
+    const script = readFileSync(join(process.cwd(), 'scripts/generate-llm-txt.mjs'), 'utf8');
+
+    expect(script).not.toContain('module.sourceText ??');
+  });
+
+  test('서로 다른 dist 파일에 동일한 이름의 선언이 충돌하면 llm.txt 생성을 실패시킨다', () => {
+    // sourceText는 generate-llm-txt.mjs에서 dist 전체 .d.ts를 이어붙인 한 문자열(distDeclarations)이므로,
+    // 서로 다른 원본 파일의 선언도 여기서는 같은 sourceText 안에 함께 존재한다.
+    expect(() =>
+      renderLlmTxt({
+        packageName: '@cp949/web-image-util',
+        readmeText: '# README',
+        modules: [
+          {
+            modulePath: 'dist/utils/index.d.ts',
+            moduleSpecifier: '@cp949/web-image-util/utils',
+            sourceText: `
+export interface SvgOptimizer { optimize(svg: string): string; }
+export declare class SvgOptimizer { run(svg: string): string; }
+            `,
+            keySymbols: ['SvgOptimizer'],
+          },
+        ],
+      })
+    ).toThrow(/SvgOptimizer/);
+  });
+
+  test('동일한 함수의 오버로드 시그니처는 충돌로 취급하지 않는다', () => {
+    const output = renderLlmTxt({
+      packageName: '@cp949/web-image-util',
+      readmeText: '# README',
+      modules: [
+        {
+          modulePath: 'dist/index.d.ts',
+          moduleSpecifier: '@cp949/web-image-util',
+          sourceText: `
+declare function isDataURLString(value: string): boolean;
+declare function isDataURLString(value: unknown): value is string;
+          `,
+          keySymbols: ['isDataURLString'],
+        },
+      ],
+    });
+
+    expect(output).toContain('- `isDataURLString(value: string): boolean`');
+  });
+
+  test('여러 dist 청크에 걸쳐 완전히 동일한 선언이 중복돼도 충돌로 취급하지 않는다', () => {
+    const output = renderLlmTxt({
+      packageName: '@cp949/web-image-util',
+      readmeText: '# README',
+      modules: [
+        {
+          modulePath: 'dist/index.d.ts',
+          moduleSpecifier: '@cp949/web-image-util',
+          sourceText: `
+export interface ThumbnailOptions { size: number; }
+export interface ThumbnailOptions { size: number; }
+          `,
+          keySymbols: ['ThumbnailOptions'],
+        },
+      ],
+    });
+
+    expect(output).toContain('- `interface ThumbnailOptions { size: number; }`');
+  });
 });

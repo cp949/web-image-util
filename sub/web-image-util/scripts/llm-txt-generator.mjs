@@ -26,6 +26,8 @@ function extractDeclarationText(sourceText, symbolName) {
     ts.ScriptKind.TS
   );
 
+  const matches = [];
+
   for (const statement of sourceFile.statements) {
     if (
       (ts.isFunctionDeclaration(statement) ||
@@ -35,19 +37,36 @@ function extractDeclarationText(sourceText, symbolName) {
         ts.isEnumDeclaration(statement)) &&
       statement.name?.text === symbolName
     ) {
-      return normalizeDeclarationText(printNode(statement, sourceFile));
+      matches.push(statement);
+      continue;
     }
 
     if (ts.isVariableStatement(statement)) {
       for (const declaration of statement.declarationList.declarations) {
         if (ts.isIdentifier(declaration.name) && declaration.name.text === symbolName) {
-          return normalizeDeclarationText(printNode(statement, sourceFile));
+          matches.push(statement);
         }
       }
     }
   }
 
-  throw new Error(`Public declaration not found for symbol: ${symbolName}`);
+  if (matches.length === 0) {
+    throw new Error(`Public declaration not found for symbol: ${symbolName}`);
+  }
+
+  const normalizedTexts = matches.map((statement) => normalizeDeclarationText(printNode(statement, sourceFile)));
+  const isFunctionOverloadSet = matches.every((statement) => ts.isFunctionDeclaration(statement));
+
+  if (!isFunctionOverloadSet && new Set(normalizedTexts).size > 1) {
+    // sourceText는 dist 전체 .d.ts를 이어붙인 문자열이라 원본 파일 경계가 없다.
+    // 서로 다른 파일이 같은 이름으로 다른 선언을 노출하면 첫 매치를 조용히 반환하는 대신
+    // 여기서 실패시켜 llm.txt에 엉뚱한 시그니처가 삽입되는 것을 막는다.
+    throw new Error(
+      `Ambiguous public declaration for symbol: ${symbolName} (${new Set(normalizedTexts).size} conflicting declarations found across dist/*.d.ts)`
+    );
+  }
+
+  return normalizedTexts[0];
 }
 
 function renderKeyApis(modules) {
