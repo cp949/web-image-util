@@ -4,6 +4,7 @@ import {
   collectEmbeddedImageStages,
   collectGeneralStages,
 } from '../../../src/svg-sanitizer/inspect-sanitization/stage-collectors.internal';
+import { sanitizeSvgForRendering } from '../../../src/utils/svg-sanitizer';
 import { findStage } from './inspect-sanitization-helpers';
 
 function parseSvgDocument(svgString: string): Document {
@@ -57,24 +58,22 @@ describe('정화 stage collector helper stage 수집', () => {
     expect(findStage(stages, 'entity-removed')).toBeUndefined();
   });
 
-  it('strict 정책은 빈 href를 제거 대상으로 세고, 실제 strict sanitizer 제거와 거울 정합한다', () => {
+  it('빈 href를 두 정책 모두 제거 대상으로 세고, 실제 sanitizer 제거와 거울 정합한다', () => {
     const svgBody = '<svg xmlns="http://www.w3.org/2000/svg"><image href=""/></svg>';
 
-    // 진단: strict sanitizer는 빈 href 속성도 제거하므로 external-href-removed로 센다
-    const strictStages = collectGeneralStages(svgBody, parseSvgDocument(svgBody), 'strict');
-    expect(findStage(strictStages, 'external-href-removed')).toEqual({
-      code: 'external-href-removed',
-      count: 1,
-      samples: ['href'],
-    });
+    // 진단: URI allowlist 통일 후 두 정책 모두 빈 href를 external-href-removed로 센다
+    for (const policy of ['strict', 'lightweight'] as const) {
+      const stages = collectGeneralStages(svgBody, parseSvgDocument(svgBody), policy);
+      expect(findStage(stages, 'external-href-removed')).toEqual({
+        code: 'external-href-removed',
+        count: 1,
+        samples: ['href'],
+      });
+    }
 
-    // 거울: 실제 strict sanitizer도 빈 href 속성을 제거한다
-    const sanitized = sanitizeSvgStrictDetailed(svgBody).svg;
-    expect(sanitized).not.toContain('href');
-
-    // 비대칭 문서화: lightweight sanitizer는 빈 href를 보존하므로 진단도 세지 않는다
-    const lightweightStages = collectGeneralStages(svgBody, parseSvgDocument(svgBody), 'lightweight');
-    expect(findStage(lightweightStages, 'external-href-removed')).toBeUndefined();
+    // 거울: 두 sanitizer 모두 빈 href 속성을 제거한다
+    expect(sanitizeSvgStrictDetailed(svgBody).svg).not.toContain('href');
+    expect(sanitizeSvgForRendering(svgBody)).not.toContain('href');
   });
 
   it('embedded image stage는 보존 raster, 차단 MIME, nested SVG를 분리한다', () => {

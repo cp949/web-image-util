@@ -179,29 +179,29 @@ describe('SVG inspection/sanitization contract matrix', () => {
     });
   });
 
-  describe('REF-04: 내부 fragment / 로컬 참조는 외부 아님', () => {
+  describe('REF-04: 내부 fragment만 외부 아님', () => {
     it('href="#local"은 external-href finding/stage를 만들지 않는다', async () => {
       const svg = `<svg ${XMLNS}><use href="#local"/></svg>`;
       expect(findingCodes(svg)).not.toContain('external-href');
       expect(await stageCodes(svg, 'lightweight')).not.toContain('external-href-removed');
     });
 
-    it('href="local-id"는 external-href finding/stage를 만들지 않는다', async () => {
+    it('href="local-id"는 fragment가 아니므로 external-href finding/stage를 만든다', async () => {
       const svg = `<svg ${XMLNS}><use href="local-id"/></svg>`;
-      expect(findingCodes(svg)).not.toContain('external-href');
-      expect(await stageCodes(svg, 'lightweight')).not.toContain('external-href-removed');
+      expect(findingCodes(svg)).toContain('external-href');
+      expect(await stageCodes(svg, 'lightweight')).toContain('external-href-removed');
     });
   });
 
-  describe('REF-05: 상대 경로 참조는 inspect와 sanitizer 정책별 표면이 다르다', () => {
+  describe('REF-05: 상대 경로 참조는 두 sanitizer 모두 제거 대상이다', () => {
     const svg = `<svg ${XMLNS}><use href="../sprite.svg#a"/></svg>`;
 
     it('inspectSvg는 렌더링 후단 보안 게이트 기준으로 external-href finding을 낸다', () => {
       expect(findingCodes(svg)).toContain('external-href');
     });
 
-    it('lightweight sanitizer는 상대 href를 제거 stage로 보고하지 않는다', async () => {
-      expect(await stageCodes(svg, 'lightweight')).not.toContain('external-href-removed');
+    it('lightweight sanitizer도 상대 href를 제거 stage로 보고한다', async () => {
+      expect(await stageCodes(svg, 'lightweight')).toContain('external-href-removed');
     });
 
     it('strict sanitizer는 상대 href를 제거 stage로 보고한다', async () => {

@@ -36,7 +36,10 @@ export type NestedSvgSanitize = (svg: string, depth: number) => string;
 // ─────────────────────────────── URI 정책 ───────────────────────────────
 
 /**
- * 경량 모드가 차단하는 URI 스킴 denylist 판정.
+ * 경량 CSS 판정이 소비하는 URI 스킴 denylist.
+ *
+ * URI 속성 판정은 allowlist(`isAllowedUri`)로 전환되어 더 이상 이 목록을 쓰지
+ * 않는다 — CSS `url()` 경량 판정만 남아 있다.
  *
  * @param normalizedValue `normalizePolicyValue()`를 거친 값
  * @returns 차단 대상 스킴이면 true
@@ -54,9 +57,10 @@ export function isDeniedUriScheme(normalizedValue: string): boolean {
 /**
  * `href`/`xlink:href`/`src` 값이 해당 모드에서 보존 가능한지 판정한다.
  *
- * - lightweight: denylist — 알려진 위험 스킴만 차단하고 나머지(상대 경로, 빈 값,
- *   미지 스킴)는 보존한다. 이 보존은 동치성 코퍼스에 알려진 구멍으로 등재되어 있다.
- * - strict: allowlist — 문서 내부 프래그먼트(`#id`)만 보존한다.
+ * 두 모드 모두 allowlist다 — 문서 내부 프래그먼트(`#id`)만 보존하고 상대 경로,
+ * 빈 값, 미지 스킴을 포함한 나머지는 제거한다. 차이는 정규화 방식뿐이다:
+ * lightweight는 문자참조·노이즈 우회를 무력화하는 `normalizePolicyValue()`를,
+ * strict는 단순 trim을 쓴다(느슨해지는 방향의 정규화는 strict에 적용하지 않는다).
  *
  * 안전한 `data:image/*` 참조는 `sanitizeUriValue()`가 이 판정 전에 분기 처리하므로
  * 여기서는 모든 `data:` 값을 차단 대상으로 본다.
@@ -69,7 +73,7 @@ export function isAllowedUri(value: string, mode: SvgThreatPolicyMode): boolean 
   if (mode === 'strict') {
     return value.trim().startsWith('#');
   }
-  return !isDeniedUriScheme(normalizePolicyValue(value));
+  return normalizePolicyValue(value).startsWith('#');
 }
 
 /**
@@ -109,10 +113,13 @@ export function sanitizeUriValue(
 /**
  * 파이프라인 intake guard의 URI 차단 판정.
  *
- * 경량 denylist에 `./`, `../`, `/` 경로를 더한 guard 전용 집합이다.
- * sanitizer가 보존한 안전한 raster와 canonical 재인코딩된 nested SVG는
- * 차단하지 않는다 — 비-canonical `data:` 형식은 sanitizer 우회 가능성이
- * 있으므로 fail-closed로 차단한다.
+ * sanitizer의 lightweight 제거 판정(`isAllowedUri`)을 거울로 쓴다 — sanitizer가
+ * 제거하는 참조는 guard도 차단한다. 예외 두 가지:
+ * - 빈 값은 fetch/실행 대상이 없으므로 차단하지 않는다 (sanitizer는 속성을
+ *   제거하지만 guard는 위험으로 보지 않는다)
+ * - sanitizer가 보존한 안전한 raster와 canonical 재인코딩된 nested SVG는
+ *   차단하지 않는다. 비-canonical `data:` 형식은 sanitizer 우회 가능성이
+ *   있으므로 fail-closed로 차단한다.
  *
  * @param ref 정규화 전 또는 후의 참조 문자열
  * @returns 외부 또는 실행 가능한 URI면 true
@@ -120,16 +127,15 @@ export function sanitizeUriValue(
 export function isBlockedPipelineUriRef(ref: string): boolean {
   const normalizedRef = normalizePolicyValue(ref);
 
+  if (normalizedRef === '') {
+    return false;
+  }
+
   if (normalizedRef.startsWith('data:') && (isSafeRasterDataImageRef(ref) || isSanitizedSvgDataImageRef(ref))) {
     return false;
   }
 
-  return (
-    isDeniedUriScheme(normalizedRef) ||
-    normalizedRef.startsWith('./') ||
-    normalizedRef.startsWith('../') ||
-    normalizedRef.startsWith('/')
-  );
+  return !normalizedRef.startsWith('#');
 }
 
 // ─────────────────────────────── CSS 정책 ───────────────────────────────

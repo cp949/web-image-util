@@ -38,25 +38,18 @@ describe('collectSvgDomSecuritySignals()', () => {
     expect(signals.externalHrefSamples).toEqual([]);
   });
 
-  it('lightweight 정책에서는 상대 href와 절대 경로 href를 외부 href로 세지 않는다', () => {
-    const doc = parseSvg('<svg><use href="../sprite.svg#a" /><image src="/assets/a.png" /></svg>');
-    const signals = collectSvgDomSecuritySignals(doc);
-    expect(signals.externalHrefCount).toBe(0);
-    expect(signals.externalHrefSamples).toEqual([]);
-  });
-
-  it('strict 정책에서는 내부 fragment와 data: 외 참조를 외부 href로 센다', () => {
+  it('내부 fragment와 data: 외 참조(상대·절대 경로 포함)를 제거 대상으로 센다', () => {
     const doc = parseSvg('<svg><use href="../sprite.svg#a" /><image src="/assets/a.png" /><use href="#local" /></svg>');
-    const signals = collectSvgDomSecuritySignals(doc, { policy: 'strict' });
+    const signals = collectSvgDomSecuritySignals(doc);
     expect(signals.externalHrefCount).toBe(2);
     expect(signals.externalHrefSamples).toEqual(['href', 'src']);
   });
 
-  it('strict 정책에서는 namespace prefix가 달라도 localName이 href인 외부 참조를 센다', () => {
+  it('namespace prefix가 달라도 localName이 href인 외부 참조를 센다', () => {
     const doc = parseSvg(
       '<svg xmlns:foo="http://example.test/foo"><use foo:href="https://example.test/sprite.svg#id" /></svg>'
     );
-    const signals = collectSvgDomSecuritySignals(doc, { policy: 'strict' });
+    const signals = collectSvgDomSecuritySignals(doc);
     expect(signals.externalHrefCount).toBe(1);
     expect(signals.externalHrefSamples).toEqual(['foo:href']);
   });

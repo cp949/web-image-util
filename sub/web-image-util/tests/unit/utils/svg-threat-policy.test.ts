@@ -16,12 +16,19 @@ import {
 } from '../../../src/utils/svg-threat-policy.internal';
 
 describe('위협 정책 — isAllowedUri', () => {
-  it('lightweight는 denylist 스킴만 차단한다', () => {
-    expect(isAllowedUri('http://evil.example.com/a.png', 'lightweight')).toBe(false);
-    expect(isAllowedUri('https://evil.example.com/a.png', 'lightweight')).toBe(false);
-    expect(isAllowedUri('//evil.example.com/a.png', 'lightweight')).toBe(false);
-    expect(isAllowedUri('javascript:alert(1)', 'lightweight')).toBe(false);
-    expect(isAllowedUri('data:text/html,x', 'lightweight')).toBe(false);
+  it('두 모드 모두 내부 fragment만 허용한다', () => {
+    for (const mode of ['lightweight', 'strict'] as const) {
+      expect(isAllowedUri('#frag', mode)).toBe(true);
+      expect(isAllowedUri('', mode)).toBe(false);
+      expect(isAllowedUri('./a.png', mode)).toBe(false);
+      expect(isAllowedUri('a.png', mode)).toBe(false);
+      expect(isAllowedUri('/a.png', mode)).toBe(false);
+      expect(isAllowedUri('vbscript:alert(1)', mode)).toBe(false);
+      expect(isAllowedUri('file:///etc/passwd', mode)).toBe(false);
+      expect(isAllowedUri('http://evil.example.com/a.png', mode)).toBe(false);
+      expect(isAllowedUri('javascript:alert(1)', mode)).toBe(false);
+      expect(isAllowedUri('data:text/html,x', mode)).toBe(false);
+    }
   });
 
   it('lightweight는 정규화 우회(대소문자·공백·문자참조)를 무력화한다', () => {
@@ -30,23 +37,8 @@ describe('위협 정책 — isAllowedUri', () => {
     expect(isAllowedUri('jav&#x61;script:alert(1)', 'lightweight')).toBe(false);
   });
 
-  it('lightweight는 denylist 밖 값을 보존한다 — 코퍼스에 등재된 알려진 구멍 포함', () => {
-    expect(isAllowedUri('#frag', 'lightweight')).toBe(true);
-    expect(isAllowedUri('./a.png', 'lightweight')).toBe(true);
-    expect(isAllowedUri('a.png', 'lightweight')).toBe(true);
-    expect(isAllowedUri('', 'lightweight')).toBe(true);
-    // 알려진 구멍: 미지 스킴 통과 (sanitizer-equivalence.corpus.ts divergence 항목)
-    expect(isAllowedUri('vbscript:alert(1)', 'lightweight')).toBe(true);
-    expect(isAllowedUri('file:///etc/passwd', 'lightweight')).toBe(true);
-  });
-
-  it('strict는 내부 fragment만 허용한다', () => {
-    expect(isAllowedUri('#frag', 'strict')).toBe(true);
+  it('strict는 선행 공백 뒤의 fragment를 허용한다', () => {
     expect(isAllowedUri('  #frag', 'strict')).toBe(true);
-    expect(isAllowedUri('', 'strict')).toBe(false);
-    expect(isAllowedUri('./a.png', 'strict')).toBe(false);
-    expect(isAllowedUri('vbscript:alert(1)', 'strict')).toBe(false);
-    expect(isAllowedUri('http://evil.example.com/a.png', 'strict')).toBe(false);
   });
 });
 
@@ -75,25 +67,29 @@ describe('위협 정책 — sanitizeUriValue', () => {
     expect(sanitizeUriValue(nested, 'lightweight', 5, passthroughNested)).toBeNull();
   });
 
-  it('모드별 판정에 따라 보존하거나 제거 의도(null)를 반환한다', () => {
+  it('URI allowlist 판정에 따라 보존하거나 제거 의도(null)를 반환한다', () => {
     expect(sanitizeUriValue('#frag', 'strict', 0, passthroughNested)).toBe('#frag');
+    expect(sanitizeUriValue('#frag', 'lightweight', 0, passthroughNested)).toBe('#frag');
     expect(sanitizeUriValue('http://evil.example.com/x', 'lightweight', 0, passthroughNested)).toBeNull();
-    expect(sanitizeUriValue('./a.png', 'lightweight', 0, passthroughNested)).toBe('./a.png');
+    expect(sanitizeUriValue('./a.png', 'lightweight', 0, passthroughNested)).toBeNull();
     expect(sanitizeUriValue('./a.png', 'strict', 0, passthroughNested)).toBeNull();
   });
 });
 
 describe('위협 정책 — isBlockedPipelineUriRef', () => {
-  it('경량 denylist에 상대·절대 경로를 더해 차단한다', () => {
+  it('fragment 외 모든 참조를 차단한다 — sanitizer 제거 판정의 거울', () => {
     expect(isBlockedPipelineUriRef('http://evil.example.com/a.png')).toBe(true);
     expect(isBlockedPipelineUriRef('./a.png')).toBe(true);
     expect(isBlockedPipelineUriRef('../a.png')).toBe(true);
     expect(isBlockedPipelineUriRef('/a.png')).toBe(true);
+    expect(isBlockedPipelineUriRef('a.png')).toBe(true);
+    expect(isBlockedPipelineUriRef('vbscript:alert(1)')).toBe(true);
   });
 
-  it('bare 상대 경로와 fragment는 차단하지 않는다', () => {
-    expect(isBlockedPipelineUriRef('a.png')).toBe(false);
+  it('fragment와 빈 값은 차단하지 않는다 — 빈 값은 fetch/실행 대상이 없다', () => {
     expect(isBlockedPipelineUriRef('#frag')).toBe(false);
+    expect(isBlockedPipelineUriRef('')).toBe(false);
+    expect(isBlockedPipelineUriRef('  ')).toBe(false);
   });
 
   it('sanitizer가 보존한 안전한 raster data URL은 차단하지 않는다', () => {

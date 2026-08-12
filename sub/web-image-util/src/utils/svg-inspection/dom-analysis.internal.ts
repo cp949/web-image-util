@@ -7,7 +7,6 @@
  * 이 모듈은 public export가 아니다(`package.json` exports 비대상).
  */
 
-import { isBlockedSvgPolicyRef } from '../../core/source-converter/url/policy.internal';
 import type { ComplexityAnalysisResult } from '../../core/svg-complexity-analyzer';
 import { analyzeSvgComplexity } from '../../core/svg-complexity-analyzer';
 import {
@@ -17,6 +16,7 @@ import {
   readReferenceAttribute,
 } from '../svg-inspection';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../svg-policy-utils.internal';
+import { isBlockedPipelineUriRef } from '../svg-threat-policy.internal';
 import type { InspectSvgDimensions, InspectSvgFinding } from './types.internal';
 
 const DIM_ATTR_REGEX = /^(\d+(?:\.\d+)?)\s*([a-z%]*)$/;
@@ -126,12 +126,11 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
   }
 
   // external href/src 참조와 style attribute url() 검사.
-  // external-href와 CSS finding은 DOM 보안 신호 helper 범위 밖이다. helper의 lightweight 판정
-  // (isExternalSvgReference)은 data:·내부 fragment에 더해 상대(./, ../)·절대(/path) 경로까지
-  // 제외하지만, inspectSvg는 embedded-image 단계가 없으므로 isBlockedSvgPolicyRef 기준으로
-  // data:·상대·절대 경로도 정책 차단 대상이면 그대로 보고한다(sanitizer의 external-href stage가
-  // data:를 embedded-image로 위임하는 것과 의미가 다르다). 두 의미 축(data: 포함, 상대/절대
-  // 경로 포함)이 달라 helper의 externalHrefCount를 재사용하지 않고 직접 수집한다.
+  // external-href와 CSS finding은 DOM 보안 신호 helper 범위 밖이다. inspectSvg는
+  // embedded-image 단계가 없으므로 intake guard 판정(isBlockedPipelineUriRef) 기준으로
+  // 비허용 data:도 정책 차단 대상이면 그대로 보고한다(sanitizer의 external-href stage가
+  // data:를 embedded-image로 위임하는 것과 의미가 다르다). 의미 축(data: 포함 여부)이
+  // 달라 helper의 externalHrefCount를 재사용하지 않고 직접 수집한다.
   const allElements = doc.getElementsByTagName('*');
   let externalHrefCount = 0;
   const externalHrefSamples: string[] = [];
@@ -155,7 +154,7 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
         const styleAttr = el.getAttribute(attrName);
         if (styleAttr) {
           visitCssUrlValues(styleAttr, (urlValue) => {
-            if (getCssPolicyValueVariants(urlValue).some(isBlockedSvgPolicyRef)) {
+            if (getCssPolicyValueVariants(urlValue).some(isBlockedPipelineUriRef)) {
               styleAttrExternalUrlCount++;
             }
           });
@@ -165,7 +164,7 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
       // external href/xlink:href/src 검사 (element당 한 번만 카운트)
       if (!elementHrefCounted && isReferenceAttribute(el, attrName)) {
         const value = readReferenceAttribute(el, attrName);
-        if (value !== null && getCssPolicyValueVariants(value).some(isBlockedSvgPolicyRef)) {
+        if (value !== null && getCssPolicyValueVariants(value).some(isBlockedPipelineUriRef)) {
           externalHrefCount++;
           pushCappedSample(externalHrefSamples, lowered);
           elementHrefCounted = true;
@@ -177,7 +176,7 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
     if (el.tagName.toLowerCase() === 'style') {
       const cssText = el.textContent ?? '';
       visitCssUrlValues(cssText, (urlValue) => {
-        if (getCssPolicyValueVariants(urlValue).some(isBlockedSvgPolicyRef)) {
+        if (getCssPolicyValueVariants(urlValue).some(isBlockedPipelineUriRef)) {
           styleTagExternalUrlCount++;
         }
       });

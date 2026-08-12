@@ -10,24 +10,22 @@ afterEach(() => {
 });
 
 describe('보안: 인라인 SVG 외부 참조 차단', () => {
-  it('상대 경로 참조가 포함된 SVG 문자열은 외부 리소스로 간주해 거부한다', async () => {
-    const safeSvg =
+  it('상대 경로 href는 sanitizer가 속성을 제거해 무해화한 뒤 렌더링한다', async () => {
+    const svgWithRelativeRef =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="./assets/pattern.png" width="10" height="10"/></svg>';
 
-    await expect(ensureImageElement(safeSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-      details: { reason: 'external-ref' },
-    });
+    // URI allowlist 통일로 상대 경로는 에러가 아니라 조용한 제거로 무해화된다 —
+    // 참조가 제거되므로 동일 출처 fetch는 발생하지 않는다
+    const element = await ensureImageElement(svgWithRelativeRef);
+    expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
-  it('따옴표 없는 상대 경로 href가 포함된 SVG 문자열도 외부 리소스로 간주해 거부한다', async () => {
-    const unsafeSvg =
+  it('따옴표 없는 상대 경로 href도 속성 제거로 무해화한 뒤 렌더링한다', async () => {
+    const svgWithRelativeRef =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href=./assets/pattern.png width="10" height="10"/></svg>';
 
-    await expect(ensureImageElement(unsafeSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-      details: { reason: 'external-ref' },
-    });
+    const element = await ensureImageElement(svgWithRelativeRef);
+    expect(element).toBeInstanceOf(HTMLImageElement);
   });
 
   it('CSS escape로 숨긴 상대 경로 style URL도 외부 리소스로 간주해 거부한다', async () => {
@@ -70,13 +68,11 @@ describe('보안: 인라인 SVG 외부 참조 차단', () => {
     });
   });
 
-  it('루트 절대 경로 참조가 포함된 SVG 문자열은 외부 리소스로 간주해 거부한다', async () => {
-    const unsafeSvg =
+  it('루트 절대 경로 href도 속성 제거로 무해화한 뒤 렌더링한다', async () => {
+    const svgWithAbsoluteRef =
       '<svg xmlns="http://www.w3.org/2000/svg"><image href="/assets/pattern.png" width="10" height="10"/></svg>';
 
-    await expect(ensureImageElement(unsafeSvg)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-      details: { reason: 'external-ref' },
-    });
+    const element = await ensureImageElement(svgWithAbsoluteRef);
+    expect(element).toBeInstanceOf(HTMLImageElement);
   });
 });

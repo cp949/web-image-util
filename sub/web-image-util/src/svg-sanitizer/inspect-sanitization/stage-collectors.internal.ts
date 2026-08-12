@@ -70,16 +70,12 @@ function pushCountStage(
  * `script-removed` / `foreign-object-removed` / `event-handler-removed` / `external-href-removed`
  * stage를 공통 DOM 보안 신호 helper로 수집한다.
  *
- * external-href 판정은 helper가 담당한다. lightweight/skip은 렌더링 guard 기준으로, strict는
- * strict URI 정책 기준으로 센다. `data:` 값은 embedded image stage가 별도로 처리하므로 본
- * stage에서는 제외돼 중복 카운트가 발생하지 않는다.
+ * external-href 판정은 helper가 담당한다. 위협 정책의 URI allowlist가 모드 무관으로
+ * 통일된 뒤로 정책 구분 없이 같은 기준으로 센다. `data:` 값은 embedded image stage가
+ * 별도로 처리하므로 본 stage에서는 제외돼 중복 카운트가 발생하지 않는다.
  */
-function collectDomSecurityStages(
-  doc: Document,
-  stages: InspectSvgSanitizationStage[],
-  policy: 'lightweight' | 'skip' | 'strict'
-): void {
-  const signals = collectSvgDomSecuritySignals(doc, { policy: policy === 'strict' ? 'strict' : 'lightweight' });
+function collectDomSecurityStages(doc: Document, stages: InspectSvgSanitizationStage[]): void {
+  const signals = collectSvgDomSecuritySignals(doc);
   pushCountStage(stages, 'script-removed', signals.scriptElementCount, ['script']);
   pushCountStage(stages, 'foreign-object-removed', signals.foreignObjectElementCount, ['foreignobject']);
   pushCountStage(
@@ -221,7 +217,7 @@ export function collectGeneralStages(
   const stages: InspectSvgSanitizationStage[] = [];
 
   if (doc !== null) {
-    collectDomSecurityStages(doc, stages, policy);
+    collectDomSecurityStages(doc, stages);
     collectExternalCssStage(doc, stages, policy);
   }
 

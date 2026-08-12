@@ -60,14 +60,14 @@ describe('보안: 인라인·Blob SVG 입력 경계', () => {
     });
   });
 
-  it('XML MIME 타입의 SVG Blob에 상대 경로 참조가 있으면 보안 게이트에서 차단한다', async () => {
+  it('XML MIME 타입의 SVG Blob에 상대 경로 참조가 있으면 속성 제거로 무해화한 뒤 렌더링한다', async () => {
     const svgBlob = new Blob(
       ['<svg xmlns="http://www.w3.org/2000/svg"><image href="./assets/pattern.png" width="10" height="10"/></svg>'],
       { type: 'application/xml' }
     );
 
-    await expect(ensureImageElement(svgBlob)).rejects.toMatchObject({
-      code: 'INVALID_SOURCE',
-    });
+    // URI allowlist 통일로 상대 경로는 에러가 아니라 조용한 제거로 무해화된다
+    const element = await ensureImageElement(svgBlob);
+    expect(element).toBeInstanceOf(HTMLImageElement);
   });
 });

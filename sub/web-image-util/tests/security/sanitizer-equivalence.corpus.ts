@@ -98,81 +98,70 @@ export const SANITIZER_EQUIVALENCE_CORPUS: SanitizerEquivalenceCase[] = [
     },
   },
 
-  // ─── URI: 의도적 모드 차이 (현행 실측) ───
+  // ─── URI: 정책 통일 후 동치 (상대 경로·미지 스킴·빈 값 폐쇄) ───
   {
-    name: 'URI: ./ 상대 경로 — 경량 보존, strict 제거',
+    name: 'URI: ./ 상대 경로는 양쪽 모두 제거한다',
     svg: imageHref('./a.png'),
     expected: {
-      lightweight: { preserves: ['href="./a.png"'] },
+      lightweight: { removes: ['a.png'] },
       strict: { removes: ['a.png'] },
     },
-    divergence:
-      '경량 denylist는 상대 경로를 보존한다. 파이프라인에서는 후치 intake guard가 ./ 경로를 THROW로 차단한다.',
   },
   {
-    name: 'URI: bare 상대 경로 — 경량 보존, strict 제거',
+    name: 'URI: bare 상대 경로는 양쪽 모두 제거한다',
     svg: imageHref('a.png'),
     expected: {
-      lightweight: { preserves: ['href="a.png"'] },
+      lightweight: { removes: ['a.png'] },
       strict: { removes: ['a.png'] },
     },
-    divergence:
-      '경량 denylist는 bare 상대 경로를 보존하고 후치 guard도 통과시킨다 — 동일 출처 fetch 가능성이 남는 알려진 구멍.',
   },
   {
-    name: 'URI: / 절대 경로 — 경량 보존, strict 제거',
+    name: 'URI: / 절대 경로는 양쪽 모두 제거한다',
     svg: imageHref('/a.png'),
     expected: {
-      lightweight: { preserves: ['href="/a.png"'] },
+      lightweight: { removes: ['a.png'] },
       strict: { removes: ['a.png'] },
     },
-    divergence:
-      '경량 denylist는 //만 검사하므로 단일 /는 보존한다. 파이프라인에서는 후치 intake guard가 THROW로 차단한다.',
   },
   {
-    name: 'URI: vbscript 스킴 — 경량 보존, strict 제거',
+    name: 'URI: vbscript 스킴은 양쪽 모두 제거한다',
     svg: imageHref('vbscript:alert(1)'),
     expected: {
-      lightweight: { preserves: ['vbscript:alert(1)'] },
+      lightweight: { removes: ['vbscript'] },
       strict: { removes: ['vbscript'] },
     },
-    divergence: '경량 denylist 목록 밖 스킴은 보존된다 — 알려진 구멍.',
   },
   {
-    name: 'URI: file 스킴 — 경량 보존, strict 제거',
+    name: 'URI: file 스킴은 양쪽 모두 제거한다',
     svg: imageHref('file:///etc/passwd'),
     expected: {
-      lightweight: { preserves: ['file:///etc/passwd'] },
+      lightweight: { removes: ['file://'] },
       strict: { removes: ['file://'] },
     },
-    divergence: '경량 denylist 목록 밖 스킴은 보존된다 — 알려진 구멍.',
   },
   {
-    name: 'URI: ftp 스킴 — 경량 보존, strict 제거',
+    name: 'URI: ftp 스킴은 양쪽 모두 제거한다',
     svg: imageHref('ftp://evil.example.com/a.png'),
     expected: {
-      lightweight: { preserves: ['ftp://evil.example.com/a.png'] },
+      lightweight: { removes: ['evil.example.com'] },
       strict: { removes: ['evil.example.com'] },
     },
-    divergence: '경량 denylist 목록 밖 스킴은 보존된다 — 알려진 구멍.',
   },
   {
-    name: 'URI: blob 스킴 — 경량 보존, strict 제거',
+    name: 'URI: blob 스킴은 양쪽 모두 제거한다',
     svg: imageHref('blob:https://example.com/uuid'),
     expected: {
-      lightweight: { preserves: ['blob:https://example.com/uuid'] },
+      lightweight: { removes: ['blob:'] },
       strict: { removes: ['blob:'] },
     },
-    divergence: '경량 denylist 목록 밖 스킴은 보존된다 — 알려진 구멍.',
   },
   {
-    name: 'URI: 빈 href — 경량 보존, strict 속성 제거',
+    name: 'URI: 빈 href는 양쪽 모두 속성을 제거한다',
     svg: imageHref(''),
     expected: {
-      lightweight: { preserves: ['href=""'] },
+      lightweight: { removes: ['href'] },
       strict: { removes: ['href'] },
     },
-    divergence: '경량 denylist는 빈 값을 보존하고, strict allowlist는 #fragment가 아니므로 제거한다.',
   },
 
   // ─── CSS: 두 모드 동치 ───
