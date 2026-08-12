@@ -43,6 +43,17 @@ describe('CanvasPool lifecycle', () => {
       expect(reacquired).toBe(canvas);
     });
 
+    it('0 크기로 acquire하면 재사용 Canvas의 이전 크기를 남기지 않는다', () => {
+      const canvas = pool.acquire(120, 80);
+      pool.release(canvas);
+
+      const reacquired = pool.acquire(0, 0);
+
+      expect(reacquired).toBe(canvas);
+      expect(reacquired.width).toBe(0);
+      expect(reacquired.height).toBe(0);
+    });
+
     it('풀이 비어 있으면 acquire 시 새 Canvas를 생성한다', () => {
       pool.acquire(100, 100);
 

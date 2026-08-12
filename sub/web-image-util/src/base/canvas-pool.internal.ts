@@ -80,8 +80,9 @@ export class CanvasPool {
       this.stats.totalCreated++;
     }
 
-    // 크기 설정
-    if (width && height) {
+    // 0도 유효한 요청 크기다. 재사용 Canvas의 이전 크기가 남지 않도록
+    // 두 크기가 모두 지정된 경우 그대로 반영한다.
+    if (width !== undefined && height !== undefined) {
       canvas.width = width;
       canvas.height = height;
     }
