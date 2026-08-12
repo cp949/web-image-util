@@ -5,8 +5,7 @@
  */
 
 import { ImageProcessError } from '../../../types';
-import { isSafeRasterDataImageRef, isSanitizedSvgDataImageRef } from '../../../utils/svg-data-url-policy.internal';
-import { normalizePolicyValue } from '../../../utils/svg-policy-utils.internal';
+import { isBlockedPipelineUriRef } from '../../../utils/svg-threat-policy.internal';
 
 /**
  * 입력 문자열이 명시적 스킴을 가진 절대 URL인지 판정한다.
@@ -115,28 +114,12 @@ export function isSvgResourcePath(input: string): boolean {
 /**
  * SVG 보안 정책에서 차단해야 하는 참조인지 판정한다.
  *
+ * 판정 규칙은 위협 정책 모듈(`utils/svg-threat-policy.internal`)이 소유한다 —
+ * sanitizer의 제거 판정과 이 intake guard의 차단 판정이 같은 술어를 거울로 쓴다.
+ *
  * @param ref 정규화 전 또는 후의 참조 문자열
  * @returns 외부 또는 실행 가능한 URI면 true
  */
 export function isBlockedSvgPolicyRef(ref: string): boolean {
-  const normalizedRef = normalizePolicyValue(ref);
-
-  // sanitizer가 보존한 안전한 data:image/* 참조는 차단하지 않는다.
-  // - raster는 원본 그대로 보존
-  // - data:image/svg+xml은 sanitizer가 항상 canonical base64 형식으로 재인코딩한다.
-  //   비-canonical 형식은 sanitizer가 우회되었을 가능성이 있으므로 fail-closed로 차단한다.
-  if (normalizedRef.startsWith('data:') && (isSafeRasterDataImageRef(ref) || isSanitizedSvgDataImageRef(ref))) {
-    return false;
-  }
-
-  return (
-    normalizedRef.startsWith('//') ||
-    normalizedRef.startsWith('http://') ||
-    normalizedRef.startsWith('https://') ||
-    normalizedRef.startsWith('./') ||
-    normalizedRef.startsWith('../') ||
-    normalizedRef.startsWith('/') ||
-    normalizedRef.startsWith('javascript:') ||
-    normalizedRef.startsWith('data:')
-  );
+  return isBlockedPipelineUriRef(ref);
 }

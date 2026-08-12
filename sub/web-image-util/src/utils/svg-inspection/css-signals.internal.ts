@@ -4,23 +4,14 @@ import {
   normalizePolicyValue,
   visitCssUrlValues,
 } from '../svg-policy-utils.internal';
+import {
+  CSS_URL_PRESENTATION_ATTRIBUTES,
+  createCssImageSetFunctionPattern,
+  hasExternalCssUrlLiteral,
+  isAllowedCssUrl,
+} from '../svg-threat-policy.internal';
 import type { SvgInspectionPolicy } from './reference-attribute.internal';
 import { pushCappedSample } from './sample-utils.internal';
-
-const CSS_URL_PRESENTATION_ATTRIBUTES = new Set([
-  'clip-path',
-  'color-profile',
-  'cursor',
-  'fill',
-  'filter',
-  'marker',
-  'marker-end',
-  'marker-mid',
-  'marker-start',
-  'mask',
-  'stroke',
-]);
-const CSS_IMAGE_SET_FUNCTION_PATTERN = /(?:-webkit-)?image-set\s*\([^)]*\)/gi;
 
 export interface SvgCssReferenceSignals {
   externalCssCount: number;
@@ -36,27 +27,17 @@ export interface CollectSvgCssReferenceSignalsOptions {
   policy?: SvgInspectionPolicy;
 }
 
-function isLightweightExternalCssUrl(urlValue: string): boolean {
-  return getCssPolicyValueVariants(urlValue)
-    .map(normalizePolicyValue)
-    .some(
-      (value) =>
-        value.startsWith('//') ||
-        value.startsWith('http://') ||
-        value.startsWith('https://') ||
-        value.startsWith('data:') ||
-        value.startsWith('javascript:')
-    );
-}
-
+/**
+ * strict 카운트용 url() 차단 판정.
+ *
+ * sanitizer 술어(`isAllowedCssUrl(..., 'strict')`)와 달리 빈 값을 세지 않고
+ * escape 디코드 변형까지 검사한다 — 알려진 미세 차이로, 카운트 축 정렬 시
+ * 위협 정책 모듈 술어로 통합할 대상이다.
+ */
 function isStrictExternalCssUrl(urlValue: string): boolean {
   return getCssPolicyValueVariants(urlValue)
     .map(normalizePolicyValue)
     .some((value) => value !== '' && !value.startsWith('#'));
-}
-
-function hasExternalUrlLiteral(css: string): boolean {
-  return /(?:https?:|file:|data:|blob:|ftp:|\/\/)/i.test(css);
 }
 
 function shouldInspectStrictCssAttribute(attrName: string, element: Element): boolean {
@@ -78,7 +59,7 @@ function countStrictCssPolicyTriggersInPlainCss(cssText: string): number {
       count += 1;
       return '';
     })
-    .replace(CSS_IMAGE_SET_FUNCTION_PATTERN, () => {
+    .replace(createCssImageSetFunctionPattern(), () => {
       count += 1;
       return '';
     })
@@ -92,7 +73,7 @@ function countStrictCssPolicyTriggersInPlainCss(cssText: string): number {
     });
 
   count += countBlockedCssUrls(cssWithoutWholeConstructs, 'strict');
-  if (count === 0 && hasExternalUrlLiteral(cssWithoutWholeConstructs)) {
+  if (count === 0 && hasExternalCssUrlLiteral(cssWithoutWholeConstructs)) {
     count = 1;
   }
 
@@ -108,7 +89,7 @@ function countStrictCssPolicyTriggers(cssText: string): number {
       /-moz-binding\s*:/i.test(decodedForPolicy) ||
       /url\s*\(/i.test(decodedForPolicy) ||
       /(?:-webkit-)?image-set\s*\(/i.test(decodedForPolicy) ||
-      hasExternalUrlLiteral(decodedForPolicy));
+      hasExternalCssUrlLiteral(decodedForPolicy));
 
   if (hasDecodedDangerousCss) {
     return Math.max(1, countStrictCssPolicyTriggersInPlainCss(decodedForPolicy));
@@ -121,7 +102,7 @@ function countStrictCssPolicyTriggers(cssText: string): number {
 function countBlockedCssUrls(cssText: string, policy: SvgInspectionPolicy): number {
   let count = 0;
   visitCssUrlValues(cssText, (urlValue) => {
-    const blocked = policy === 'strict' ? isStrictExternalCssUrl(urlValue) : isLightweightExternalCssUrl(urlValue);
+    const blocked = policy === 'strict' ? isStrictExternalCssUrl(urlValue) : !isAllowedCssUrl(urlValue, 'lightweight');
     if (blocked) {
       count += 1;
     }

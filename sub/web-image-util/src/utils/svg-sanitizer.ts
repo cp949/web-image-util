@@ -19,100 +19,36 @@
  * - `style` 속성 또는 `<style>` 본문 안의 외부 `url(...)` 참조
  */
 
-import {
-  decodeSvgDataImageRef,
-  encodeSvgDataImageRef,
-  isSafeRasterDataImageRef,
-  isSvgDataImageRef,
-  MAX_NESTED_SVG_DEPTH,
-} from './svg-data-url-policy.internal';
-import { getCssPolicyValueVariants, normalizePolicyValue, replaceCssUrlValues } from './svg-policy-utils.internal';
+import { replaceCssUrlValues } from './svg-policy-utils.internal';
+import { isAllowedCssUrl, sanitizeUriValue } from './svg-threat-policy.internal';
 
 /**
- * `href` 또는 `xlink:href` 속성값이 외부 URL인지 판정한다.
+ * `href`/`xlink:href`/`src` 속성값을 lightweight 위협 정책으로 정제한다.
  *
- * 프래그먼트 참조(#...) 및 일반 상대 경로 이외의 경우를 위험으로 간주한다.
- * 단, 태스크 명세에 따라 여기서는 외부 URL(http://, https://, data:, javascript:)만 제거한다.
- *
- * 안전한 raster `data:image/*` 참조는 호출처(`sanitizeHrefValue`)에서 이 함수에 도달하기 전에
- * 분기로 처리되므로 여기서는 모든 `data:` 시작 값을 외부 참조로 간주한다.
- *
- * @param value 속성값 문자열
- * @returns 외부 URL이면 true
- */
-function isExternalHref(value: string): boolean {
-  const normalized = normalizePolicyValue(value);
-  return (
-    normalized.startsWith('//') ||
-    normalized.startsWith('http://') ||
-    normalized.startsWith('https://') ||
-    normalized.startsWith('data:') ||
-    normalized.startsWith('javascript:')
-  );
-}
-
-/**
- * `href`/`xlink:href`/`src` 속성값을 정책에 따라 정제한 결과를 반환한다.
- *
- * - 안전한 raster `data:image/*`는 원본 그대로 보존
- * - `data:image/svg+xml`은 nested SVG를 디코드하고 lightweight sanitizer를 재귀 적용한 뒤
- *   `data:image/svg+xml;base64,...` 형식으로 재인코딩 (디코드 실패는 fail-closed)
- * - 그 외 외부 URL/javascript 등은 null로 표시해 호출처가 속성을 제거하게 함
+ * 판정 규칙은 위협 정책 모듈(`svg-threat-policy.internal`)이 소유하고,
+ * nested SVG 재귀 정제는 이 엔진 자신을 콜백으로 주입한다.
  *
  * @param value 원본 속성값
- * @param depth 현재 nested SVG 재귀 깊이 (`MAX_NESTED_SVG_DEPTH` 이상이면 제거)
+ * @param depth 현재 nested SVG 재귀 깊이
  * @returns 보존할 새 속성값(문자열) 또는 제거 의도(null)
  */
 function sanitizeHrefValue(value: string, depth: number): string | null {
-  if (isSafeRasterDataImageRef(value)) {
-    return value;
-  }
-
-  if (isSvgDataImageRef(value)) {
-    if (depth >= MAX_NESTED_SVG_DEPTH) return null;
-    const nestedSvg = decodeSvgDataImageRef(value);
-    if (!nestedSvg) return null;
-    const sanitizedNestedSvg = sanitizeSvgForRendering(nestedSvg, depth + 1);
-    return encodeSvgDataImageRef(sanitizedNestedSvg);
-  }
-
-  return isExternalHref(value) ? null : value;
-}
-
-/**
- * CSS `url()` 함수 내 값이 외부 참조인지 판정한다.
- *
- * 외부 참조로 간주하는 스킴: http://, https://, //..., data:, javascript:
- * 프래그먼트 참조(#...) 는 내부 참조이므로 허용한다.
- * CSS escape(`\68ttp://` → `http://`)를 디코딩한 값도 함께 검사한다.
- *
- * @param urlValue `url()` 안쪽의 따옴표가 제거된 문자열
- * @returns 외부 참조이면 true
- */
-function isExternalCssUrl(urlValue: string): boolean {
-  return getCssPolicyValueVariants(urlValue)
-    .map(normalizePolicyValue)
-    .some(
-      (value) =>
-        value.startsWith('//') ||
-        value.startsWith('http://') ||
-        value.startsWith('https://') ||
-        value.startsWith('data:') ||
-        value.startsWith('javascript:')
-    );
+  return sanitizeUriValue(value, 'lightweight', depth, sanitizeSvgForRendering);
 }
 
 /**
  * CSS 텍스트(style 속성값 또는 `<style>` 블록 본문)에서 외부 `url()` 참조를 제거한다.
  *
- * 제거 대상: `url(http://...)`, `url('https://...')`, `url("data:...")`, `url(javascript:...)` 등
+ * 판정은 위협 정책 모듈의 `isAllowedCssUrl(..., 'lightweight')`가 담당한다.
  * 대체값: `url(#invalid)` — 내부 참조 형식이지만 실제로 존재하지 않아 렌더링에 영향을 주지 않는다.
  *
  * @param css 처리할 CSS 텍스트
  * @returns 외부 url() 참조가 제거된 CSS 텍스트
  */
 function stripExternalCssUrls(css: string): string {
-  return replaceCssUrlValues(css, (value, match) => (isExternalCssUrl(value.trim()) ? 'url(#invalid)' : match));
+  return replaceCssUrlValues(css, (value, match) =>
+    isAllowedCssUrl(value.trim(), 'lightweight') ? match : 'url(#invalid)'
+  );
 }
 
 /**

@@ -9,6 +9,7 @@
  *   `expression()`, `-moz-binding`
  */
 
+import { FORBIDDEN_SVG_ELEMENT_NAMES } from '../utils/svg-threat-policy.internal';
 import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
 import { sanitizeStrictUriValue } from './reference-policy.internal';
 import type { NestedSanitize, StrictSvgSanitizerOptions } from './types';
@@ -33,7 +34,7 @@ export function enforceStrictDomPolicy(
   const elements = [root, ...Array.from(root.querySelectorAll('*'))];
 
   for (const element of elements) {
-    if (element !== root && ['foreignobject', 'script'].includes(element.localName.toLowerCase())) {
+    if (element !== root && FORBIDDEN_SVG_ELEMENT_NAMES.includes(element.localName.toLowerCase())) {
       element.parentNode?.removeChild(element);
       pushUniqueWarning(warnings, '위험 SVG 요소가 제거되었습니다.');
       continue;

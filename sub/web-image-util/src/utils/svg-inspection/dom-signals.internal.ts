@@ -1,9 +1,7 @@
-import { isBlockedSvgPolicyRef } from '../../core/source-converter/url/policy.internal';
 import { getCssPolicyValueVariants, normalizePolicyValue } from '../svg-policy-utils.internal';
+import { isBlockedPipelineUriRef, isEventHandlerAttributeName } from '../svg-threat-policy.internal';
 import { isReferenceAttribute, readReferenceAttribute, type SvgInspectionPolicy } from './reference-attribute.internal';
 import { pushCappedSample } from './sample-utils.internal';
-
-const EVENT_HANDLER_ATTR_PATTERN = /^on[a-z0-9:-]+$/i;
 
 export interface SvgDomSecuritySignals {
   scriptElementCount: number;
@@ -48,7 +46,7 @@ function isExternalSvgReference(value: string, policy: SvgInspectionPolicy): boo
   // 절대 경로(/path)는 보존 대상. protocol-relative(//host)는 차단 대상이므로 분리한다.
   if (normalized.startsWith('/') && !normalized.startsWith('//')) return false;
 
-  return getCssPolicyValueVariants(value).some(isBlockedSvgPolicyRef);
+  return getCssPolicyValueVariants(value).some(isBlockedPipelineUriRef);
 }
 
 /** DOM 기반 SVG 보안 신호를 한 번의 순회로 수집한다. */
@@ -80,7 +78,7 @@ export function collectSvgDomSecuritySignals(
 
     for (const attrName of element.getAttributeNames()) {
       const lowered = attrName.toLowerCase();
-      if (EVENT_HANDLER_ATTR_PATTERN.test(attrName)) {
+      if (isEventHandlerAttributeName(attrName)) {
         signals.eventHandlerAttributeCount += 1;
         pushCappedSample(signals.eventHandlerAttributeSamples, lowered);
       }

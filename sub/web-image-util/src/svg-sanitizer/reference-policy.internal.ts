@@ -1,22 +1,16 @@
 /**
- * URI/href 참조에 대한 strict sanitizer 정책.
+ * URI/href 참조에 대한 strict sanitizer 정책 어댑터.
  *
- * - 안전한 raster `data:image/*`는 그대로 보존
- * - `data:image/svg+xml`은 nested SVG를 strict sanitizer로 재귀 정제 후 재인코딩
- * - 그 외에는 문서 내부 프래그먼트(`#id`)만 허용
+ * 판정 규칙은 위협 정책 모듈(`utils/svg-threat-policy.internal`)이 소유한다.
+ * 이 모듈은 strict 엔진의 콜백 형태(`NestedSanitize` — 옵션 전파 포함)를
+ * 정책 모듈의 콜백 형태로 맞추는 어댑터만 담당한다.
  *
  * nested SVG 재귀 정제는 core(`sanitizeSvgStrictCore`)를 호출해야 하지만, 이
  * 모듈이 core를 직접 import 하면 순환 의존이 생긴다. 따라서 core가 자기
  * 자신을 `nestedSanitize` 콜백으로 주입한다(types.ts의 `NestedSanitize`).
  */
 
-import {
-  decodeSvgDataImageRef,
-  encodeSvgDataImageRef,
-  isSafeRasterDataImageRef,
-  isSvgDataImageRef,
-  MAX_NESTED_SVG_DEPTH,
-} from '../utils/svg-data-url-policy.internal';
+import { isAllowedUri, sanitizeUriValue } from '../utils/svg-threat-policy.internal';
 import type { NestedSanitize, StrictSvgSanitizerOptions } from './types';
 
 /**
@@ -29,7 +23,7 @@ import type { NestedSanitize, StrictSvgSanitizerOptions } from './types';
  * @returns 내부 프래그먼트 참조이면 true
  */
 export function isSafeInternalReference(value: string): boolean {
-  return value.trim().startsWith('#');
+  return isAllowedUri(value, 'strict');
 }
 
 /**
@@ -52,17 +46,7 @@ export function sanitizeStrictUriValue(
   depth: number,
   nestedSanitize: NestedSanitize
 ): string | null {
-  if (isSafeRasterDataImageRef(value)) {
-    return value;
-  }
-
-  if (isSvgDataImageRef(value)) {
-    if (depth >= MAX_NESTED_SVG_DEPTH) return null;
-    const nestedSvg = decodeSvgDataImageRef(value);
-    if (!nestedSvg) return null;
-    const sanitizedNestedSvg = nestedSanitize(nestedSvg, options, depth + 1).svg;
-    return encodeSvgDataImageRef(sanitizedNestedSvg);
-  }
-
-  return isSafeInternalReference(value) ? value : null;
+  return sanitizeUriValue(value, 'strict', depth, (nestedSvg, nestedDepth) => {
+    return nestedSanitize(nestedSvg, options, nestedDepth).svg;
+  });
 }
