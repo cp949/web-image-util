@@ -174,61 +174,54 @@ export const SANITIZER_EQUIVALENCE_CORPUS: SanitizerEquivalenceCase[] = [
     },
   },
   {
-    name: 'CSS: style 속성의 외부 http url()은 양쪽 모두 무해화한다',
+    name: 'CSS: style 속성의 외부 http url()은 양쪽 모두 none으로 무해화한다',
     svg: rectStyle('fill:url(http://evil.example.com/a.png)'),
     expected: {
-      lightweight: { removes: ['evil.example.com'], preserves: ['url(#invalid)'] },
-      strict: { removes: ['evil.example.com'] },
+      lightweight: { removes: ['evil.example.com'], preserves: ['fill:none'] },
+      strict: { removes: ['evil.example.com'], preserves: ['fill:none'] },
     },
-    divergence: '무해화 방식이 다르다 — 경량은 url(#invalid) 치환, strict는 none 치환.',
   },
 
-  // ─── CSS: 의도적 모드 차이 (현행 실측) ───
+  // ─── CSS: 정책 통일 후 동치 (presentation 속성·위험 구문 폐쇄) ───
   {
-    name: 'CSS: 상대 경로 url() — 경량 보존, strict 무해화',
+    name: 'CSS: 상대 경로 url()은 양쪽 모두 무해화한다',
     svg: rectStyle('fill:url(a.png)'),
     expected: {
-      lightweight: { preserves: ['url(a.png)'] },
+      lightweight: { removes: ['a.png'] },
       strict: { removes: ['a.png'] },
     },
-    divergence: '경량 CSS denylist는 상대 경로를 보존한다 — 알려진 구멍.',
   },
   {
-    name: 'CSS: vbscript url() — 경량 보존, strict 무해화',
+    name: 'CSS: vbscript url()은 양쪽 모두 무해화한다',
     svg: rectStyle('fill:url(vbscript:x)'),
     expected: {
-      lightweight: { preserves: ['vbscript:x'] },
+      lightweight: { removes: ['vbscript'] },
       strict: { removes: ['vbscript'] },
     },
-    divergence: '경량 CSS denylist 목록 밖 스킴은 보존된다 — 알려진 구멍.',
   },
   {
-    name: 'CSS: url() 없는 @import — 경량 통과, strict 폐기',
-    svg: rectStyle('@import "https://evil.example.com/a.css";'),
+    name: 'CSS: url() 없는 @import는 양쪽 모두 폐기한다',
+    svg: rectStyle("@import 'https://evil.example.com/a.css';"),
     expected: {
-      lightweight: { preserves: ['@import'] },
+      lightweight: { removes: ['@import', 'evil.example.com'] },
       strict: { removes: ['@import', 'evil.example.com'] },
     },
-    divergence: '경량은 url() 리터럴만 치환하므로 문자열 인자 @import를 다루지 않는다 — 알려진 구멍.',
   },
   {
-    name: 'CSS: expression() — 경량 통과, strict 폐기',
+    name: 'CSS: expression()은 양쪽 모두 폐기한다',
     svg: rectStyle('width:expression(alert(1))'),
     expected: {
-      lightweight: { preserves: ['expression(alert(1))'] },
+      lightweight: { removes: ['expression('] },
       strict: { removes: ['expression('] },
     },
-    divergence: '경량은 url() 리터럴만 치환하므로 expression()을 다루지 않는다 — 알려진 구멍.',
   },
   {
-    name: 'CSS: presentation 속성의 외부 url() — 경량 통과, strict 무해화',
+    name: 'CSS: presentation 속성의 외부 url()은 양쪽 모두 무해화한다',
     svg: `${SVG_OPEN}<rect fill="url(http://evil.example.com/a.png)"/></svg>`,
     expected: {
-      lightweight: { preserves: ['evil.example.com'] },
+      lightweight: { removes: ['evil.example.com'] },
       strict: { removes: ['evil.example.com'] },
     },
-    divergence:
-      '경량 CSS 정제는 style 속성과 <style> 본문만 대상이라 fill 등 presentation 속성을 다루지 않는다 — 최대 격차.',
   },
 
   // ─── 요소/속성: 두 모드 동치 ───

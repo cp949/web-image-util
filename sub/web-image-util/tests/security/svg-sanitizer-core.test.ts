@@ -149,14 +149,16 @@ describe('SVG sanitize 유틸', () => {
         '<svg xmlns="http://www.w3.org/2000/svg"><rect style=fill:url(https://evil.com/pattern.svg#id) width="10" height="10"/></svg>';
       const result = sanitizeSvg(input);
       expect(result).not.toMatch(/style=fill:url\(https:/i);
-      expect(result).toMatch(/style="fill:url\(#invalid\)"/i);
+      expect(result).toMatch(/style="fill:none"/i);
     });
 
     it('엔티티로 인코딩된 javascript: url() 참조도 제거한다', () => {
       const input =
         '<svg xmlns="http://www.w3.org/2000/svg"><rect style="fill:url(jav&#x61;script:alert(1))" width="10" height="10"/></svg>';
       const result = sanitizeSvg(input);
-      expect(result).toMatch(/url\(#invalid\)/i);
+      // 엔티티 디코드로 javascript: url이 드러나므로 값 전체가 폐기되어 style 속성이 제거된다
+      expect(result).not.toMatch(/alert\(1\)/i);
+      expect(result).not.toMatch(/style=/i);
     });
 
     it('protocol-relative style 속성의 외부 url() 참조도 제거한다', () => {
@@ -164,7 +166,7 @@ describe('SVG sanitize 유틸', () => {
         '<svg xmlns="http://www.w3.org/2000/svg"><rect style=fill:url(//evil.com/pattern.svg#id) width="10" height="10"/></svg>';
       const result = sanitizeSvg(input);
       expect(result).not.toMatch(/url\(\/\/evil\.com/i);
-      expect(result).toMatch(/style="fill:url\(#invalid\)"/i);
+      expect(result).toMatch(/style="fill:none"/i);
     });
 
     it('텍스트 노드 안의 href= 문자열은 속성으로 오인해 제거하지 않는다', () => {
@@ -192,7 +194,7 @@ describe('SVG sanitize 유틸', () => {
         '<svg xmlns="http://www.w3.org/2000/svg"><rect aria-label="1 > 0" style="fill:url(https://evil.com/pattern.svg#id)" width="10" height="10"/></svg>';
       const result = sanitizeSvg(input);
       expect(result).not.toMatch(/url\(https:\/\/evil\.com/i);
-      expect(result).toMatch(/style="fill:url\(#invalid\)"/i);
+      expect(result).toMatch(/style="fill:none"/i);
     });
 
     it('프래그먼트 참조(#id)는 보존한다', () => {

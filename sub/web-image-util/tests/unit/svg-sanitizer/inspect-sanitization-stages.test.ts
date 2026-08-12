@@ -119,16 +119,15 @@ describe('inspectSvgSanitization() stage 수집', () => {
       expect(report.impact.stages).toEqual([]);
     });
 
-    it('lightweight 정책에서 상대 href는 제거 stage로 보고하고 상대 CSS url은 아직 보고하지 않는다', async () => {
+    it('lightweight 정책에서도 상대 href와 상대 CSS url을 제거 stage로 보고한다', async () => {
       const report = await inspectSvgSanitization(
         '<svg xmlns="http://www.w3.org/2000/svg"><use href="../sprite.svg#a"/><rect style="fill:url(/mask.svg#m)"/></svg>'
       );
       expect(report.impact.kind).toBe('lightweight');
       if (report.impact.kind !== 'lightweight') return;
-      // URI allowlist 통일로 상대 href는 lightweight sanitizer도 제거한다
+      // 위협 정책 통일로 상대 href·상대 CSS url 모두 lightweight sanitizer가 제거한다
       expect(findStage(report.impact.stages, 'external-href-removed')?.count).toBe(1);
-      // CSS 경량 판정은 아직 denylist라 상대 url()을 보존한다
-      expect(findStage(report.impact.stages, 'external-css-removed')).toBeUndefined();
+      expect(findStage(report.impact.stages, 'external-css-removed')?.count).toBe(1);
     });
 
     it('outputBytes는 sanitizeSvgForRendering 결과 byte와 동일하다', async () => {

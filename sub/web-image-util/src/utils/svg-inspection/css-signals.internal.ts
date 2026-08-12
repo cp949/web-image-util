@@ -1,16 +1,10 @@
-import {
-  decodeCssEscapes,
-  getCssPolicyValueVariants,
-  normalizePolicyValue,
-  visitCssUrlValues,
-} from '../svg-policy-utils.internal';
+import { decodeCssEscapes, visitCssUrlValues } from '../svg-policy-utils.internal';
 import {
   CSS_URL_PRESENTATION_ATTRIBUTES,
   createCssImageSetFunctionPattern,
   hasExternalCssUrlLiteral,
   isAllowedCssUrl,
 } from '../svg-threat-policy.internal';
-import type { SvgInspectionPolicy } from './reference-attribute.internal';
 import { pushCappedSample } from './sample-utils.internal';
 
 export interface SvgCssReferenceSignals {
@@ -18,29 +12,13 @@ export interface SvgCssReferenceSignals {
   externalCssSamples: string[];
 }
 
-export interface CollectSvgCssReferenceSignalsOptions {
-  /**
-   * CSS url() 참조 판정 정책.
-   * lightweight는 렌더링 guard가 실제로 치환하는 명시적 외부 URL만 센다.
-   * strict는 url(#id)를 제외한 모든 url() 참조를 제거 대상으로 센다.
-   */
-  policy?: SvgInspectionPolicy;
-}
-
 /**
- * strict 카운트용 url() 차단 판정.
+ * CSS 정책 대상 속성인지 판정한다 — style 또는 presentation 속성 목록.
  *
- * sanitizer 술어(`isAllowedCssUrl(..., 'strict')`)와 달리 빈 값을 세지 않고
- * escape 디코드 변형까지 검사한다 — 알려진 미세 차이로, 카운트 축 정렬 시
- * 위협 정책 모듈 술어로 통합할 대상이다.
+ * 위협 정책의 CSS 판정이 모드 무관으로 통일된 뒤로 두 sanitizer가 같은
+ * 속성 집합을 정제하므로 진단도 같은 집합을 검사한다.
  */
-function isStrictExternalCssUrl(urlValue: string): boolean {
-  return getCssPolicyValueVariants(urlValue)
-    .map(normalizePolicyValue)
-    .some((value) => value !== '' && !value.startsWith('#'));
-}
-
-function shouldInspectStrictCssAttribute(attrName: string, element: Element): boolean {
+function shouldInspectCssAttribute(attrName: string, element: Element): boolean {
   const lowered = attrName.toLowerCase();
   const localName = element.getAttributeNode(attrName)?.localName.toLowerCase() ?? lowered;
   return (
@@ -50,7 +28,7 @@ function shouldInspectStrictCssAttribute(attrName: string, element: Element): bo
   );
 }
 
-function countStrictCssPolicyTriggersInPlainCss(cssText: string): number {
+function countCssPolicyTriggersInPlainCss(cssText: string): number {
   let count = 0;
   let cssWithoutWholeConstructs = cssText;
 
@@ -72,7 +50,7 @@ function countStrictCssPolicyTriggersInPlainCss(cssText: string): number {
       return '';
     });
 
-  count += countBlockedCssUrls(cssWithoutWholeConstructs, 'strict');
+  count += countBlockedCssUrls(cssWithoutWholeConstructs);
   if (count === 0 && hasExternalCssUrlLiteral(cssWithoutWholeConstructs)) {
     count = 1;
   }
@@ -80,7 +58,7 @@ function countStrictCssPolicyTriggersInPlainCss(cssText: string): number {
   return count;
 }
 
-function countStrictCssPolicyTriggers(cssText: string): number {
+function countCssPolicyTriggers(cssText: string): number {
   const decodedForPolicy = decodeCssEscapes(cssText);
   const hasDecodedDangerousCss =
     decodedForPolicy !== cssText &&
@@ -92,30 +70,25 @@ function countStrictCssPolicyTriggers(cssText: string): number {
       hasExternalCssUrlLiteral(decodedForPolicy));
 
   if (hasDecodedDangerousCss) {
-    return Math.max(1, countStrictCssPolicyTriggersInPlainCss(decodedForPolicy));
+    return Math.max(1, countCssPolicyTriggersInPlainCss(decodedForPolicy));
   }
 
-  return countStrictCssPolicyTriggersInPlainCss(cssText);
+  return countCssPolicyTriggersInPlainCss(cssText);
 }
 
-/** CSS 텍스트에 정책상 차단되는 외부 url() 참조가 몇 번 등장하는지 센다. */
-function countBlockedCssUrls(cssText: string, policy: SvgInspectionPolicy): number {
+/** CSS 텍스트에 정책상 차단되는 url() 참조가 몇 번 등장하는지 센다. */
+function countBlockedCssUrls(cssText: string): number {
   let count = 0;
   visitCssUrlValues(cssText, (urlValue) => {
-    const blocked = policy === 'strict' ? isStrictExternalCssUrl(urlValue) : !isAllowedCssUrl(urlValue, 'lightweight');
-    if (blocked) {
+    if (!isAllowedCssUrl(urlValue)) {
       count += 1;
     }
   });
   return count;
 }
 
-/** style 속성과 style 태그의 외부 CSS URL 참조를 수집한다. */
-export function collectSvgCssReferenceSignals(
-  doc: Document,
-  options: CollectSvgCssReferenceSignalsOptions = {}
-): SvgCssReferenceSignals {
-  const policy = options.policy ?? 'lightweight';
+/** style·presentation 속성과 style 태그의 위험 CSS 참조를 수집한다. */
+export function collectSvgCssReferenceSignals(doc: Document): SvgCssReferenceSignals {
   const signals: SvgCssReferenceSignals = {
     externalCssCount: 0,
     externalCssSamples: [],
@@ -131,12 +104,10 @@ export function collectSvgCssReferenceSignals(
 
     for (const attrName of element.getAttributeNames()) {
       const lowered = attrName.toLowerCase();
-      if (policy === 'lightweight' && lowered !== 'style') continue;
-      if (policy === 'strict' && !shouldInspectStrictCssAttribute(attrName, element)) continue;
+      if (!shouldInspectCssAttribute(attrName, element)) continue;
       const styleValue = element.getAttribute(attrName);
       if (styleValue === null || styleValue === '') continue;
-      const blockedCount =
-        policy === 'strict' ? countStrictCssPolicyTriggers(styleValue) : countBlockedCssUrls(styleValue, policy);
+      const blockedCount = countCssPolicyTriggers(styleValue);
       if (blockedCount > 0) {
         styleAttributeBlockedCount += blockedCount;
         pushCappedSample(styleAttributeSamples, lowered);
@@ -145,8 +116,7 @@ export function collectSvgCssReferenceSignals(
 
     if (element.tagName.toLowerCase() === 'style') {
       const cssText = element.textContent ?? '';
-      const blockedCount =
-        policy === 'strict' ? countStrictCssPolicyTriggers(cssText) : countBlockedCssUrls(cssText, policy);
+      const blockedCount = countCssPolicyTriggers(cssText);
       if (blockedCount > 0) {
         styleTagBlockedCount += blockedCount;
       }
@@ -154,8 +124,6 @@ export function collectSvgCssReferenceSignals(
   }
 
   signals.externalCssCount = styleAttributeBlockedCount + styleTagBlockedCount;
-  // lightweight는 style 속성만 검사하므로 styleAttributeSamples에 'style' 토큰만 들어 있고,
-  // strict는 presentation attr명까지 들어 있다. 양쪽 모두 이 루프가 그대로 옮긴다.
   for (const sample of styleAttributeSamples) {
     pushCappedSample(signals.externalCssSamples, sample);
   }

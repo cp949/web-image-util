@@ -16,7 +16,7 @@ import {
   isSvgDataImageRef,
   MAX_NESTED_SVG_DEPTH,
 } from './svg-data-url-policy.internal';
-import { getCssPolicyValueVariants, normalizePolicyValue } from './svg-policy-utils.internal';
+import { decodeCssEscapes, normalizePolicyValue } from './svg-policy-utils.internal';
 
 /**
  * 위협 정책 모드.
@@ -34,25 +34,6 @@ export type SvgThreatPolicyMode = 'lightweight' | 'strict';
 export type NestedSvgSanitize = (svg: string, depth: number) => string;
 
 // ─────────────────────────────── URI 정책 ───────────────────────────────
-
-/**
- * 경량 CSS 판정이 소비하는 URI 스킴 denylist.
- *
- * URI 속성 판정은 allowlist(`isAllowedUri`)로 전환되어 더 이상 이 목록을 쓰지
- * 않는다 — CSS `url()` 경량 판정만 남아 있다.
- *
- * @param normalizedValue `normalizePolicyValue()`를 거친 값
- * @returns 차단 대상 스킴이면 true
- */
-export function isDeniedUriScheme(normalizedValue: string): boolean {
-  return (
-    normalizedValue.startsWith('//') ||
-    normalizedValue.startsWith('http://') ||
-    normalizedValue.startsWith('https://') ||
-    normalizedValue.startsWith('data:') ||
-    normalizedValue.startsWith('javascript:')
-  );
-}
 
 /**
  * `href`/`xlink:href`/`src` 값이 해당 모드에서 보존 가능한지 판정한다.
@@ -161,23 +142,60 @@ export const CSS_URL_PRESENTATION_ATTRIBUTES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * CSS `url()` 내부 값이 해당 모드에서 보존 가능한지 판정한다.
+ * CSS `url()` 내부 값이 보존 가능한지 판정한다.
  *
- * - lightweight: denylist — 원본/escape 디코드 변형 중 하나라도 위험 스킴이면 차단
- * - strict: allowlist — 경계 따옴표 제거 후 `#fragment`만 허용
+ * URI 판정과 마찬가지로 모드 무관 allowlist다 — 경계 따옴표 제거 후
+ * `#fragment`만 허용한다.
  *
  * @param urlValue `url(...)` 내부 값 (따옴표 포함 가능)
- * @param mode 위협 정책 모드
  * @returns 보존 가능하면 true
  */
-export function isAllowedCssUrl(urlValue: string, mode: SvgThreatPolicyMode): boolean {
-  if (mode === 'strict') {
-    return urlValue
-      .replace(/^['"]|['"]$/g, '')
-      .trim()
-      .startsWith('#');
+export function isAllowedCssUrl(urlValue: string): boolean {
+  return urlValue
+    .replace(/^['"]|['"]$/g, '')
+    .trim()
+    .startsWith('#');
+}
+
+/**
+ * style 속성, CSS presentation 속성, `<style>` 본문에서 외부 참조와 위험 CSS
+ * 구문을 제거한다. 두 집행 엔진이 같은 함수를 소비하는 모드 무관 단일 정책이다.
+ *
+ * CSS 파서는 환경별 차이가 있어 필수 차단 항목만 보수적인 문자열 정책으로
+ * 제거한다. `url(#id)` 같은 문서 내부 참조만 보존하고, `@import`,
+ * `expression()`, `-moz-binding`, `image-set()` 및 외부 URL 문자열을 직접 받는
+ * CSS 구문은 값 단위로 제거한다. CSS escape(예: `u\72l(...)`)는 디코드해 같은
+ * 정책으로 판정하고, 디코드 후 위험 구문이 드러나면 값 전체를 폐기한다.
+ *
+ * @param css CSS 문자열
+ * @returns 위험 참조가 제거된 CSS 문자열
+ */
+export function sanitizeCssValue(css: string): string {
+  const decodedForPolicy = decodeCssEscapes(css);
+  const hasDecodedDangerousCss =
+    decodedForPolicy !== css &&
+    (/@import\b/i.test(decodedForPolicy) ||
+      /expression\s*\(/i.test(decodedForPolicy) ||
+      /-moz-binding\s*:/i.test(decodedForPolicy) ||
+      /url\s*\(/i.test(decodedForPolicy) ||
+      /(?:-webkit-)?image-set\s*\(/i.test(decodedForPolicy) ||
+      hasExternalCssUrlLiteral(decodedForPolicy));
+
+  if (hasDecodedDangerousCss) {
+    return '';
   }
-  return !getCssPolicyValueVariants(urlValue).map(normalizePolicyValue).some(isDeniedUriScheme);
+
+  const sanitizedCss = css
+    .replace(/@import\b[^;]*(?:;|$)/gi, '')
+    .replace(createCssImageSetFunctionPattern(), '')
+    .replace(/expression\s*\([^)]*\)/gi, '')
+    .replace(/-moz-binding\s*:[^;]*(?:;|$)/gi, '')
+    .replace(/url\s*\(\s*("([^"]*)"|'([^']*)'|([^)]*))\s*\)/gi, (match, _raw, doubleQuoted, singleQuoted, unquoted) => {
+      const urlValue = doubleQuoted ?? singleQuoted ?? unquoted ?? '';
+      return isAllowedCssUrl(urlValue) ? match : 'none';
+    });
+
+  return hasExternalCssUrlLiteral(sanitizedCss) ? '' : sanitizedCss;
 }
 
 /**

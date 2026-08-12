@@ -89,14 +89,11 @@ function collectDomSecurityStages(doc: Document, stages: InspectSvgSanitizationS
 
 /**
  * `external-css-removed` 카운트를 공통 CSS 참조 신호 helper로 수집한다.
- * style 속성과 `<style>` 본문 양쪽을 검사한다.
+ * 위협 정책의 CSS 판정이 모드 무관으로 통일되어 정책 구분 없이
+ * style·presentation 속성과 `<style>` 본문 양쪽을 검사한다.
  */
-function collectExternalCssStage(
-  doc: Document,
-  stages: InspectSvgSanitizationStage[],
-  policy: 'lightweight' | 'skip' | 'strict'
-): void {
-  const signals = collectSvgCssReferenceSignals(doc, { policy: policy === 'strict' ? 'strict' : 'lightweight' });
+function collectExternalCssStage(doc: Document, stages: InspectSvgSanitizationStage[]): void {
+  const signals = collectSvgCssReferenceSignals(doc);
   pushCountStage(stages, 'external-css-removed', signals.externalCssCount, signals.externalCssSamples);
 }
 
@@ -218,7 +215,7 @@ export function collectGeneralStages(
 
   if (doc !== null) {
     collectDomSecurityStages(doc, stages);
-    collectExternalCssStage(doc, stages, policy);
+    collectExternalCssStage(doc, stages);
   }
 
   collectDoctypeAndEntityStages(svgString, policy, stages);

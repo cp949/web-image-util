@@ -125,12 +125,12 @@ describe('스타일 escape 우회 후보 정제', () => {
     });
   }
 
-  it('image-set unquoted 중첩 구조 보존: 외부 함수 닫는 괄호가 사라지면 안 된다', () => {
+  it('image-set은 함수 전체를 제거한다 — 위협 정책 통일 후 strict와 동일', () => {
     const payload =
       '<svg xmlns="http://www.w3.org/2000/svg"><rect style="background:image-set(url(http://evil.example.com/x.png) 1x)"/></svg>';
     const sanitized = sanitizeSvgForRendering(payload);
-    // image-set 구조 보존: 외부 함수 닫는 괄호가 사라지면 안 된다
-    expect(sanitized).toMatch(/image-set\(url\(#invalid\)\s*1x\)/i);
+    expect(sanitized).not.toMatch(/image-set/i);
+    expect(sanitized).not.toMatch(/evil\.example\.com/i);
   });
 
   it('style 블록의 엔티티 따옴표 외부 URL도 제거한다', () => {
@@ -139,7 +139,7 @@ describe('스타일 escape 우회 후보 정제', () => {
     const sanitized = sanitizeSvgForRendering(payload);
 
     expect(containsExternalReference(sanitized)).toBe(false);
-    expect(sanitized).toContain('url(#invalid)');
+    expect(sanitized).not.toMatch(/url\s*\(\s*["'&]*\s*https?:/i);
   });
 
   it('style 블록의 엔티티 함수명 외부 URL도 제거한다', () => {
@@ -148,6 +148,7 @@ describe('스타일 escape 우회 후보 정제', () => {
     const sanitized = sanitizeSvgForRendering(payload);
 
     expect(containsExternalReference(sanitized)).toBe(false);
-    expect(sanitized).toContain('url(#invalid)');
+    // 엔티티 디코드로 url()이 드러나므로 style 본문 전체가 폐기된다
+    expect(sanitized).not.toMatch(/evil\.example\.com/i);
   });
 });

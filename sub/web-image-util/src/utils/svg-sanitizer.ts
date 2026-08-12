@@ -14,13 +14,17 @@
  * - `<script>` 요소 (자가 닫힘 포함)
  * - `<foreignObject>` 요소 (중첩 콘텐츠 포함)
  * - `on*` 이벤트 핸들러 속성 (onload, onclick 등)
- * - `href`, `xlink:href`, `src` 속성 중 외부 URL을 가리키는 것
- *   (http://, https://, //..., data:, javascript: — 프래그먼트 참조 `#id`는 보존)
- * - `style` 속성 또는 `<style>` 본문 안의 외부 `url(...)` 참조
+ * - `href`, `xlink:href`, `src` 속성 중 문서 내부 프래그먼트(`#id`)와
+ *   안전한 `data:image/*`가 아닌 모든 참조 (상대 경로·미지 스킴 포함)
+ * - `style`·presentation 속성과 `<style>` 본문의 외부 `url(...)` 참조,
+ *   `@import`/`expression()`/`image-set()`/`-moz-binding` 구문
+ *
+ * 판정 규칙은 위협 정책 모듈(`svg-threat-policy.internal`)이 소유하며 strict
+ * sanitizer와 같은 정책을 공유한다 — 이 모듈은 정규식 기반 집행 메커니즘이다.
  */
 
-import { replaceCssUrlValues } from './svg-policy-utils.internal';
-import { isAllowedCssUrl, sanitizeUriValue } from './svg-threat-policy.internal';
+import { decodeHtmlEntities } from './svg-policy-utils.internal';
+import { CSS_URL_PRESENTATION_ATTRIBUTES, sanitizeCssValue, sanitizeUriValue } from './svg-threat-policy.internal';
 
 /**
  * `href`/`xlink:href`/`src` 속성값을 lightweight 위협 정책으로 정제한다.
@@ -37,18 +41,50 @@ function sanitizeHrefValue(value: string, depth: number): string | null {
 }
 
 /**
- * CSS 텍스트(style 속성값 또는 `<style>` 블록 본문)에서 외부 `url()` 참조를 제거한다.
+ * CSS 정책 대상 속성 이름 alternation.
  *
- * 판정은 위협 정책 모듈의 `isAllowedCssUrl(..., 'lightweight')`가 담당한다.
- * 대체값: `url(#invalid)` — 내부 참조 형식이지만 실제로 존재하지 않아 렌더링에 영향을 주지 않는다.
- *
- * @param css 처리할 CSS 텍스트
- * @returns 외부 url() 참조가 제거된 CSS 텍스트
+ * `style`과 위협 정책의 presentation 속성 목록을 합친다. 긴 이름을 앞에 두어
+ * `marker-end` 같은 이름이 `marker`로 부분 매치되지 않게 한다.
  */
-function stripExternalCssUrls(css: string): string {
-  return replaceCssUrlValues(css, (value, match) =>
-    isAllowedCssUrl(value.trim(), 'lightweight') ? match : 'url(#invalid)'
-  );
+const CSS_POLICY_ATTR_ALTERNATION = ['style', ...CSS_URL_PRESENTATION_ATTRIBUTES]
+  .sort((a, b) => b.length - a.length)
+  .join('|');
+
+const CSS_ATTR_DOUBLE_QUOTE_PATTERN = new RegExp(`\\s+(${CSS_POLICY_ATTR_ALTERNATION})\\s*=\\s*"([^"]*)"`, 'gi');
+const CSS_ATTR_SINGLE_QUOTE_PATTERN = new RegExp(`\\s+(${CSS_POLICY_ATTR_ALTERNATION})\\s*=\\s*'([^']*)'`, 'gi');
+const CSS_ATTR_UNQUOTED_PATTERN = new RegExp(`\\s+(${CSS_POLICY_ATTR_ALTERNATION})\\s*=\\s*(?!["'])([^\\s>]+)`, 'gi');
+
+/**
+ * raw 텍스트 매체용 CSS 정제 — HTML 엔티티 가드를 씌운 위협 정책 정제.
+ *
+ * strict 엔진은 DOM이 엔티티를 디코드한 값을 정책에 넘기지만, 이 엔진은 파싱 전
+ * 원문을 다루므로 엔티티로 숨긴 위협(`u&#x72;l(...)` 등)을 직접 가드해야 한다.
+ * 엔티티 디코드로 위험 구문이 드러나면 값 전체를 폐기한다(fail-closed).
+ *
+ * @param css 원문 CSS 텍스트
+ * @returns 위협 정책으로 정제된 CSS 텍스트
+ */
+function sanitizeRawCssText(css: string): string {
+  const entityDecoded = decodeHtmlEntities(css);
+  if (entityDecoded !== css && sanitizeCssValue(entityDecoded) !== entityDecoded) {
+    return '';
+  }
+  return sanitizeCssValue(css);
+}
+
+/**
+ * CSS 정책 대상 속성값을 위협 정책으로 정제해 속성 표현으로 되돌린다.
+ *
+ * 정제 결과가 비면 속성 제거 의도로 빈 문자열을 반환한다 (strict 엔진과 동일한 규칙).
+ *
+ * @param attrName 원본 속성 이름
+ * @param cssValue 원본 CSS 값
+ * @param quote 원본 인용부호 (무인용 입력은 큰따옴표로 재인용)
+ * @returns 보존할 속성 문자열 또는 빈 문자열(속성 제거)
+ */
+function sanitizeCssAttribute(attrName: string, cssValue: string, quote: '"' | "'"): string {
+  const sanitized = sanitizeRawCssText(cssValue).trim();
+  return sanitized ? ` ${attrName}=${quote}${sanitized}${quote}` : '';
 }
 
 /**
@@ -63,8 +99,8 @@ const SVG_START_TAG_PATTERN = /<([a-z][a-z0-9:-]*)(\b(?:[^"'<>]|"[^"]*"|'[^']*')
  * 1. `<script>...</script>` 또는 `<script ... />` 제거
  * 2. `<foreignObject>...</foreignObject>` 제거 (중첩 포함)
  * 3. `on*` 이벤트 핸들러 속성 제거
- * 4. `href`, `xlink:href`, `src` 속성 중 외부 URL 값 제거
- * 5. `style` 속성 및 `<style>` 블록 내 외부 `url()` 참조 제거
+ * 4. `href`, `xlink:href`, `src` 속성 중 fragment·안전 data:image 외 값 제거
+ * 5. `style`·presentation 속성 및 `<style>` 블록의 CSS 값 정제
  *
  * @param svgString 입력 SVG 문자열
  * @param depth nested `data:image/svg+xml` 재귀 깊이. 외부 호출은 항상 0(기본값) 사용.
@@ -115,28 +151,25 @@ export function sanitizeSvgForRendering(svgString: string, depth = 0): string {
         const sanitizedValue = sanitizeHrefValue(value, depth);
         return sanitizedValue === null ? '' : ` ${attrName}="${sanitizedValue}"`;
       })
-      // 5. style 속성 내 외부 url() 참조를 제거한다
-      .replace(/\s+style\s*=\s*"([^"]*)"/gi, (_attrMatch, cssValue: string) => {
-        const cleanedCss = stripExternalCssUrls(cssValue);
-        return ` style="${cleanedCss}"`;
-      })
-      .replace(/\s+style\s*=\s*'([^']*)'/gi, (_attrMatch, cssValue: string) => {
-        const cleanedCss = stripExternalCssUrls(cssValue);
-        return ` style='${cleanedCss}'`;
-      })
-      .replace(/\s+style\s*=\s*(?!["'])([^\s>]+)/gi, (_attrMatch, cssValue: string) => {
-        const cleanedCss = stripExternalCssUrls(cssValue);
-        return ` style="${cleanedCss}"`;
-      });
+      // 5. style·presentation 속성의 CSS 값을 위협 정책으로 정제한다
+      .replace(CSS_ATTR_DOUBLE_QUOTE_PATTERN, (_attrMatch, attrName: string, cssValue: string) =>
+        sanitizeCssAttribute(attrName, cssValue, '"')
+      )
+      .replace(CSS_ATTR_SINGLE_QUOTE_PATTERN, (_attrMatch, attrName: string, cssValue: string) =>
+        sanitizeCssAttribute(attrName, cssValue, "'")
+      )
+      .replace(CSS_ATTR_UNQUOTED_PATTERN, (_attrMatch, attrName: string, cssValue: string) =>
+        sanitizeCssAttribute(attrName, cssValue, '"')
+      );
 
     return `<${tagName}${cleaned}${selfClosing}>`;
   });
 
-  // 6. <style> 블록 본문 내 외부 url() 참조를 제거한다
+  // 6. <style> 블록 본문을 위협 정책으로 정제한다
   result = result.replace(
     /(<style\b[^>]*>)([\s\S]*?)(<\/style\s*>)/gi,
     (_match, open: string, body: string, close: string) => {
-      return `${open}${stripExternalCssUrls(body)}${close}`;
+      return `${open}${sanitizeRawCssText(body)}${close}`;
     }
   );
 

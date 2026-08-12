@@ -130,15 +130,15 @@ describe('SVG 진단 판정 축 ↔ 실제 동작 층 정합', () => {
       ['href 내부 fragment', href('#frag'), false],
       ['href 안전 raster data URL', href('data:image/png;base64,iVBORw0KGgo='), false],
       ['style 속성 url(http)', styleAttr('fill:url(http://example.com/x.png)'), true],
-      ['style 속성 url(./)', styleAttr('fill:url(./rel.png)'), false],
+      ['style 속성 url(./)', styleAttr('fill:url(./rel.png)'), true],
       ['style 속성 url(#id)', styleAttr('fill:url(#id)'), false],
       ['style 속성 url(안전 raster data)', styleAttr('fill:url(data:image/png;base64,iVBORw0KGgo=)'), true],
-      ['style 속성 -moz-binding url(#내부)', styleAttr('-moz-binding:url(#internal)'), false],
-      ['style 속성 image-set 문자열 인자', styleAttr("background:image-set('http://example.com/a.png' 1x)"), false],
+      ['style 속성 -moz-binding url(#내부)', styleAttr('-moz-binding:url(#internal)'), true],
+      ['style 속성 image-set 문자열 인자', styleAttr("background:image-set('http://example.com/a.png' 1x)"), true],
       ['style 태그 url(http)', styleTag('.a{fill:url(http://example.com/x.png)}'), true],
-      ['style 태그 url(./)', styleTag('.a{fill:url(./rel.png)}'), false],
-      ['style 태그 @import', styleTag('@import "http://example.com/x.css";'), false],
-      ['presentation 속성 fill=url(http)', presAttr('fill', 'url(http://example.com/x.png)'), false],
+      ['style 태그 url(./)', styleTag('.a{fill:url(./rel.png)}'), true],
+      ['style 태그 @import', styleTag('@import "http://example.com/x.css";'), true],
+      ['presentation 속성 fill=url(http)', presAttr('fill', 'url(http://example.com/x.png)'), true],
     ];
 
     it.each(cases)('%s → stage 유무와 sanitizer 출력 변화가 일치한다', async (_label, svg, rewrites) => {

@@ -12,6 +12,7 @@ import {
   isAllowedUri,
   isBlockedPipelineUriRef,
   isEventHandlerAttributeName,
+  sanitizeCssValue,
   sanitizeUriValue,
 } from '../../../src/utils/svg-threat-policy.internal';
 
@@ -99,24 +100,32 @@ describe('위협 정책 — isBlockedPipelineUriRef', () => {
 });
 
 describe('위협 정책 — isAllowedCssUrl', () => {
-  it('내부 fragment는 양쪽 모드 모두 허용한다', () => {
-    expect(isAllowedCssUrl('#g', 'lightweight')).toBe(true);
-    expect(isAllowedCssUrl('#g', 'strict')).toBe(true);
-    expect(isAllowedCssUrl('"#g"', 'strict')).toBe(true);
+  it('내부 fragment만 허용한다 — 모드 무관', () => {
+    expect(isAllowedCssUrl('#g')).toBe(true);
+    expect(isAllowedCssUrl('"#g"')).toBe(true);
+    expect(isAllowedCssUrl('http://evil.example.com/a.png')).toBe(false);
+    expect(isAllowedCssUrl('a.png')).toBe(false);
+    expect(isAllowedCssUrl('')).toBe(false);
+    expect(isAllowedCssUrl('\\68ttp://evil.example.com/a.png')).toBe(false);
+  });
+});
+
+describe('위협 정책 — sanitizeCssValue', () => {
+  it('내부 fragment url()은 보존하고 외부 url()은 none으로 치환한다', () => {
+    expect(sanitizeCssValue('fill:url(#g)')).toBe('fill:url(#g)');
+    expect(sanitizeCssValue('fill:url(http://evil.example.com/a.png)')).toBe('fill:none');
+    expect(sanitizeCssValue('fill:url(a.png)')).toBe('fill:none');
   });
 
-  it('외부 http URL은 양쪽 모드 모두 차단한다', () => {
-    expect(isAllowedCssUrl('http://evil.example.com/a.png', 'lightweight')).toBe(false);
-    expect(isAllowedCssUrl('http://evil.example.com/a.png', 'strict')).toBe(false);
+  it('@import·expression·image-set·-moz-binding 구문을 제거한다', () => {
+    expect(sanitizeCssValue('@import "https://evil.example.com/a.css";color:red')).toBe('color:red');
+    expect(sanitizeCssValue('width:expression(alert(1))')).toBe('width:)');
+    expect(sanitizeCssValue("background:image-set('https://e.example/a.png' 1x)")).toBe('background:');
+    expect(sanitizeCssValue('-moz-binding:url(http://e.example/x);fill:red')).toBe('fill:red');
   });
 
-  it('상대 경로는 lightweight만 허용한다 — 코퍼스에 등재된 알려진 구멍', () => {
-    expect(isAllowedCssUrl('a.png', 'lightweight')).toBe(true);
-    expect(isAllowedCssUrl('a.png', 'strict')).toBe(false);
-  });
-
-  it('lightweight는 CSS escape 변형도 함께 판정한다', () => {
-    expect(isAllowedCssUrl('\\68ttp://evil.example.com/a.png', 'lightweight')).toBe(false);
+  it('escape 디코드 후 위험 구문이 드러나면 값 전체를 폐기한다', () => {
+    expect(sanitizeCssValue('fill:\\75rl(http://evil.example.com/a.png)')).toBe('');
   });
 });
 
