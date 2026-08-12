@@ -5,70 +5,45 @@
  * - Accumulate all resize, blur operations in memory
  * - Perform actual rendering only when toBlob(), toCanvas() is called
  * - Generate final result only without creating intermediate Canvas
+ *
+ * resize 1회 불변식의 런타임 소유자다 — 가드와 설정 검증은 addResize 한 곳에만 있다.
+ * (컴파일 타임 전이는 AfterResizeCall 타입이 보조한다)
  */
 
 import type { CanvasLease } from '../base/canvas-lease.internal';
+import { createQuickError } from '../base/error-helpers';
 import type { BlurOptions, ResultMetadata } from '../types';
-import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
-import type { ResizeOperation, ScaleOperation } from '../types/shortcut-types';
+import { validateResizeConfig } from '../types/resize-config';
 import { analyzeAllOperations, debugLayout, type LazyOperation, renderLayout } from './single-renderer.internal';
-
-/**
- * Size information interface
- */
-export interface Size {
-  width: number;
-  height: number;
-}
 
 /**
  * Lazy rendering pipeline
  *
  * Unlike traditional pipelines that draw to Canvas immediately for each operation,
- * this completes all calculations first and renders only once at the end
+ * this completes all calculations first and renders only once at the end.
+ *
+ * 소스 이미지는 출력 시점에야 로딩되므로 생성 시점에는 받지 않고
+ * {@link render}의 인자로 받는다 — 덕분에 OutputPipeline이 생성 직후부터
+ * 연산을 이 파이프라인에 직접 축적할 수 있다(pending 재생 없음).
  */
 export class LazyRenderPipeline {
   private operations: LazyOperation[] = [];
-  private sourceImage: HTMLImageElement;
   private resizeCalled = false;
-  private pendingResizeOperation?: ResizeOperation;
-
-  constructor(sourceImage: HTMLImageElement) {
-    this.sourceImage = sourceImage;
-  }
-
-  private assertResizeNotCalled(): void {
-    if (this.resizeCalled || this.pendingResizeOperation) {
-      throw new ImageProcessError(
-        'resize() can only be called once. If you need multiple resizes, use a new processImage()',
-        'MULTIPLE_RESIZE_NOT_ALLOWED'
-      );
-    }
-  }
-
-  private appendResize(config: ResizeConfig): void {
-    this.operations.push({ type: 'resize', config });
-  }
-
-  private applyPendingResizeOperation(): void {
-    if (!this.pendingResizeOperation) {
-      return;
-    }
-
-    const resizeConfig = this.convertToResizeConfig(this.pendingResizeOperation);
-    this.appendResize(resizeConfig);
-    this.pendingResizeOperation = undefined;
-  }
 
   /**
    * Add resize operation (calculation only, no rendering)
-   * Constraint to allow only one call
+   *
+   * resize 1회 불변식과 설정 검증의 단일 지점이다.
+   * 검증 실패 시 어떤 상태도 남기지 않는다.
    */
   addResize(config: ResizeConfig): this {
-    this.assertResizeNotCalled();
+    if (this.resizeCalled) {
+      throw createQuickError('MULTIPLE_RESIZE_NOT_ALLOWED');
+    }
+    validateResizeConfig(config);
     this.resizeCalled = true;
-    this.appendResize(config);
+    this.operations.push({ type: 'resize', config });
     return this;
   }
 
@@ -82,36 +57,21 @@ export class LazyRenderPipeline {
   }
 
   /**
-   * Add lazy resize operation (Internal method for Shortcut API)
-   *
-   * @description Store operations that require source size in pending state.
-   * Converts to ResizeConfig via convertToResizeConfig at final output.
-   *
-   * @param operation ResizeOperation (scale, toWidth, toHeight)
-   * @internal
-   */
-  _addResizeOperation(operation: ResizeOperation): void {
-    this.assertResizeNotCalled();
-    this.resizeCalled = true;
-    this.pendingResizeOperation = operation;
-  }
-
-  /**
    * 🚀 Core: 모든 계산을 마친 뒤 단 한 번 렌더링한다.
+   *
+   * @param sourceImage 로딩이 끝난 소스 이미지 — scale·단일 축 fill 같은
+   *   원본 크기 의존 설정은 이 시점에 ResizeCalculator가 해석한다.
    *
    * 결과 canvas는 pool 소유이며 {@link CanvasLease}에 담겨 반환된다.
    * 소비자는 lease.consume()으로 파생물을 만들거나(사용 후 pool 반환),
    * lease.detach()로 소유권을 가져간다(toCanvas 계열 — pool로 돌아가지 않음).
    */
-  render(): { lease: CanvasLease; metadata: ResultMetadata } {
+  render(sourceImage: HTMLImageElement): { lease: CanvasLease; metadata: ResultMetadata } {
     const startTime = performance.now();
 
-    // 🎯 Philosophy implementation: Perform operations only at final output
-    this.applyPendingResizeOperation();
-
     // layout은 한 번만 계산해 렌더링과 디버그 출력에 재사용한다
-    const layout = analyzeAllOperations(this.sourceImage, this.operations);
-    const lease = renderLayout(this.sourceImage, layout);
+    const layout = analyzeAllOperations(sourceImage, this.operations);
+    const lease = renderLayout(sourceImage, layout);
 
     try {
       const canvas = lease.canvas;
@@ -146,113 +106,5 @@ export class LazyRenderPipeline {
    */
   getOperations(): LazyOperation[] {
     return [...this.operations];
-  }
-
-  /**
-   * Get source image size
-   * @private
-   */
-  private getSourceSize(): Size {
-    return {
-      width: this.sourceImage.naturalWidth,
-      height: this.sourceImage.naturalHeight,
-    };
-  }
-
-  /**
-   * Convert ResizeOperation to ResizeConfig
-   *
-   * @description Source size is queried only at this point to generate the final ResizeConfig.
-   * Discriminated Union pattern is used to ensure type safety.
-   *
-   * TypeScript best practices (Context7):
-   * - Use switch statement for Discriminated Union type narrowing
-   * - Types are automatically narrowed in each case block
-   * - Exhaustive checking ensures all cases are handled
-   *
-   * @param operation ResizeOperation to convert
-   * @returns ResizeConfig
-   * @private
-   */
-  private convertToResizeConfig(operation: ResizeOperation): ResizeConfig {
-    const sourceSize = this.getSourceSize(); // Query size only at this point!
-
-    // TypeScript best practice: Handle Discriminated Union with switch statement
-    // Type is automatically narrowed according to operation.type in each case
-    switch (operation.type) {
-      case 'scale':
-        // operation: { type: 'scale'; value: ScaleOperation }
-        return this.handleScale(sourceSize, operation.value);
-
-      case 'toWidth': {
-        // operation: { type: 'toWidth'; width: number }
-        const aspectRatio = sourceSize.height / sourceSize.width;
-        return {
-          fit: 'fill',
-          width: operation.width,
-          height: Math.round(operation.width * aspectRatio),
-        };
-      }
-
-      case 'toHeight': {
-        // operation: { type: 'toHeight'; height: number }
-        const aspectRatio = sourceSize.width / sourceSize.height;
-        return {
-          fit: 'fill',
-          width: Math.round(operation.height * aspectRatio),
-          height: operation.height,
-        };
-      }
-
-      default: {
-        // 새 ResizeOperation variant 추가 시 컴파일 에러로 누락 감지
-        const _exhaustive: never = operation;
-        throw new ImageProcessError(
-          `Unknown ResizeOperation type: ${(_exhaustive as { type?: unknown }).type ?? 'unknown'}`,
-          'INVALID_DIMENSIONS'
-        );
-      }
-    }
-  }
-
-  /**
-   * Convert ScaleOperation to ResizeConfig
-   *
-   * @description Handles all 4 forms of ScaleOperation:
-   * - number: uniform scale
-   * - { sx }: X-axis only scale
-   * - { sy }: Y-axis only scale
-   * - { sx, sy }: individual X/Y axis scale
-   *
-   * TypeScript best practices:
-   * - Use explicit type guards for Discriminated Union type narrowing
-   * - Apply exhaustive checking pattern for type safety
-   *
-   * @param source Source image size
-   * @param scale ScaleOperation
-   * @returns ResizeConfig
-   * @private
-   */
-  private handleScale(source: Size, scale: ScaleOperation): ResizeConfig {
-    // Case for uniform scale (type: number)
-    if (typeof scale === 'number') {
-      return {
-        fit: 'fill',
-        width: Math.round(source.width * scale),
-        height: Math.round(source.height * scale),
-      };
-    }
-
-    // Case for object form: { sx?, sy? }
-    // TypeScript best practice: Type narrowing with 'in' operator
-    // Apply appropriate default values based on presence of sx and sy
-    const sx = 'sx' in scale ? scale.sx : 1;
-    const sy = 'sy' in scale ? scale.sy : 1;
-
-    return {
-      fit: 'fill',
-      width: Math.round(source.width * sx),
-      height: Math.round(source.height * sy),
-    };
   }
 }

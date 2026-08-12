@@ -232,10 +232,11 @@ describe('Shortcut API Type Safety', () => {
       expect(processor).toBeDefined();
     });
 
-    it('should handle zero dimensions gracefully', () => {
-      // This case may actually throw an error, but the type system allows it
-      const processor = processImage(testImageUrl).shortcut.exactWidth(0);
-      expect(processor).toBeDefined();
+    it('0 치수는 호출 시점에 INVALID_DIMENSIONS로 즉시 거부한다', () => {
+      // shortcut이 공개 resize()로 합류하면서 설정 검증도 동일하게 적용된다
+      expect(() => {
+        processImage(testImageUrl).shortcut.exactWidth(0);
+      }).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
     });
   });
 });

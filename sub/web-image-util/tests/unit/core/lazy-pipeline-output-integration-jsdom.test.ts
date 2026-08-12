@@ -97,7 +97,7 @@ describe('LazyRenderPipeline 통합 분기 (processImage 공개 표면, jsdom-sa
     });
   });
 
-  describe('Shortcut scale 분기 → _addResizeOperation 경로', () => {
+  describe('Shortcut scale → 공개 resize({ fit: "scale" }) 경로', () => {
     it('shortcut.scale(0.5) 적용 시 원본의 절반 치수로 toCanvas가 정상 종료한다', async () => {
       // 400x300 → scale(0.5) → Math.round(400*0.5)=200, Math.round(300*0.5)=150
       const canvas = createTestCanvas(400, 300, 'navy');
@@ -118,7 +118,7 @@ describe('LazyRenderPipeline 통합 분기 (processImage 공개 표면, jsdom-sa
     });
   });
 
-  describe('Shortcut toWidth 분기 → convertToResizeConfig(toWidth) 경로', () => {
+  describe('Shortcut exactWidth → 공개 resize({ fit: "fill", width }) 경로', () => {
     it('shortcut.exactWidth(300) 적용 시 종횡비를 유지하며 width가 300으로 출력한다', async () => {
       // 400x300 → toWidth(300): aspectRatio = 300/400 = 0.75, height = Math.round(300*0.75) = 225
       const canvas = createTestCanvas(400, 300, 'coral');

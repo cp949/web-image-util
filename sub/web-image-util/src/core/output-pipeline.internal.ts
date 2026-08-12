@@ -1,9 +1,9 @@
 /**
  * 출력 파이프라인 — processImage() 출력 경로 전체를 담당하는 deep module이다.
  *
- * @description ImageProcessor가 축적한 연산(resize/blur)을 받아, 출력 시점에
- * 소스 정규화 → LazyRenderPipeline 구성 → pending 재생 → 렌더 → 포맷/품질 기본값
- * → 인코딩 → pool 반환 → Result 래핑을 한 곳에서 수행한다.
+ * @description ImageProcessor가 위임한 연산(resize/blur)을 생성 시점부터 존재하는
+ * LazyRenderPipeline에 직접 축적하고, 출력 시점에 소스 정규화 → 렌더 →
+ * 포맷/품질 기본값 → 인코딩 → pool 반환 → Result 래핑을 한 곳에서 수행한다.
  *
  * 소유권 규칙: 인코딩 계열(toBlob과 그 파생)은 lease.consume()으로 canvas를
  * pool에 반환하고, toCanvas/toCanvasDetailed만 lease.detach()로 사용자에게
@@ -28,14 +28,12 @@ import type {
 } from '../types';
 import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
-import { validateResizeConfig } from '../types/resize-config';
 import {
   BlobResultImpl,
   CanvasResultImpl,
   DataURLResultImpl,
   FileResultImpl,
 } from '../types/result-implementations.internal';
-import type { ResizeOperation } from '../types/shortcut-types';
 import { detectCanvasFormatSupport } from '../utils/browser-capabilities/index';
 import { formatToMimeType, mimeTypeToOutputFormat } from '../utils/format-utils';
 import { createImageElement } from '../utils/image-element.internal';
@@ -48,20 +46,6 @@ import type { SvgPassthroughMode } from './source-converter/options.internal';
 export type InternalProcessorOptions = ProcessorOptions & {
   __svgPassthroughMode?: SvgPassthroughMode;
 };
-
-/** `resize()` 중복 호출 시 사용하는 에러 메시지다. */
-const MULTIPLE_RESIZE_RESIZE_MESSAGE =
-  'resize() can only be called once. Use a single resize() call to prevent image quality degradation.';
-
-/** Shortcut API의 resize operation 중복 추가 시 사용하는 에러 메시지다. */
-const MULTIPLE_RESIZE_OPERATION_MESSAGE =
-  'resize() can only be called once. Use a single resize operation to prevent image quality degradation.';
-
-/** 준비 단계(소스 정규화 + 파이프라인 구성) 결과다. */
-interface PreparedPipeline {
-  lazyPipeline: LazyRenderPipeline;
-  sourceImage: HTMLImageElement;
-}
 
 /** 렌더 1회의 결과다. lease 소비 방식(consume/detach)은 출력 메서드가 결정한다. */
 interface ProcessingOutcome {
@@ -78,25 +62,19 @@ interface ProcessingOutcome {
  * 출력 경로 deep module. ImageProcessor 인스턴스당 정확히 1개 생성한다.
  *
  * 생성자는 옵션 기본값 병합만 수행하며 I/O·Canvas 작업이 없다(지연 렌더링 보존).
- * 소스 로딩과 파이프라인 구성은 첫 출력 호출에서 정확히 1회 일어나고 이후 캐시된다.
+ * 소스 로딩은 첫 출력 호출에서 정확히 1회 일어나고 이후 캐시된다.
+ * 연산 축적은 항상 같은 파이프라인으로 가므로 출력 전후의 반영 의미가 동일하다.
  */
 export class OutputPipeline {
   private readonly source: ImageSource;
   private readonly options: InternalProcessorOptions;
 
-  // resize 1회 제약의 런타임 상태. 컴파일 타임 전이(AfterResizeCall)는 ImageProcessor가 유지한다.
-  private hasResized = false;
+  // 생성 직후부터 존재하는 연산 축적기다. resize 1회 불변식(가드·검증·메시지)은
+  // 이 파이프라인이 단일 소유한다 — 여기서는 위임만 한다.
+  private readonly pipeline = new LazyRenderPipeline();
 
-  // 준비 전 축적 연산. 재생 순서는 resize config → resize operation → blur(호출 순서)로 고정이다.
-  private pendingResizeConfig: ResizeConfig | null = null;
-  private pendingResizeOperation: ResizeOperation | null = null;
-  private pendingBlurOptions: BlurOptions[] = [];
-
-  // 준비 promise 메모이즈 — 동시 첫 출력에서도 소스 로딩·구성은 1회만 일어난다(single-flight).
-  private prepared: Promise<PreparedPipeline> | null = null;
-
-  // 준비 완료 후에만 세팅된다. addResizeOperation의 즉시 반영 분기가 이 필드를 본다.
-  private livePipeline: LazyRenderPipeline | null = null;
+  // 소스 변환 promise 메모이즈 — 동시 첫 출력에서도 소스 로딩은 1회만 일어난다(single-flight).
+  private prepared: Promise<HTMLImageElement> | null = null;
 
   constructor(source: ImageSource, options: InternalProcessorOptions = {}) {
     this.source = source;
@@ -114,92 +92,36 @@ export class OutputPipeline {
   // ==============================================
 
   /**
-   * resize 설정을 축적한다. 1회 제약 검사 → 런타임 검증 → 기록 순서이며,
-   * 검증 실패 시 어떤 상태도 남기지 않는다.
-   *
-   * 주의(현행 동작 보존): 첫 출력 이후의 호출은 이후 출력에 반영되지 않는다.
-   * 파이프라인 구성이 이미 끝났고 재구성하지 않기 때문이다. 반영 통일은 공개
-   * 동작 변경이므로 이 모듈의 범위 밖이다.
+   * resize 설정을 파이프라인에 위임한다.
+   * 1회 제약 가드와 런타임 검증은 LazyRenderPipeline.addResize가 수행한다.
    */
   addResize(config: ResizeConfig): void {
-    this.assertResizeNotCalled(MULTIPLE_RESIZE_RESIZE_MESSAGE);
-    validateResizeConfig(config);
-    this.hasResized = true;
-    this.pendingResizeConfig = config;
+    this.pipeline.addResize(config);
   }
 
   /**
-   * Shortcut API의 resize operation을 축적한다.
-   * 준비 전이면 pending에 저장하고, 준비 후면 라이브 파이프라인에 즉시 반영한다.
-   */
-  addResizeOperation(operation: ResizeOperation): void {
-    this.assertResizeNotCalled(MULTIPLE_RESIZE_OPERATION_MESSAGE);
-    this.hasResized = true;
-
-    if (this.livePipeline) {
-      this.livePipeline._addResizeOperation(operation);
-    } else {
-      this.pendingResizeOperation = operation;
-    }
-  }
-
-  /**
-   * blur 옵션을 축적한다. 여러 번 호출 가능하며 호출 순서를 보존한다.
-   *
-   * 주의(현행 동작 보존): 첫 출력 이후의 호출은 배열에 축적은 되지만
-   * prepare가 재실행되지 않으므로 이후 출력에 재생되지 않는다.
+   * blur 옵션을 파이프라인에 위임한다. 여러 번 호출 가능하며 호출 순서를 보존한다.
    */
   addBlur(radius: number, options: Partial<BlurOptions> = {}): void {
-    this.pendingBlurOptions = [...this.pendingBlurOptions, { radius, ...options }];
-  }
-
-  private assertResizeNotCalled(message: string): void {
-    if (this.hasResized) {
-      throw new ImageProcessError(message, 'MULTIPLE_RESIZE_NOT_ALLOWED');
-    }
+    this.pipeline.addBlur({ radius, ...options });
   }
 
   // ==============================================
   // 준비와 렌더
   // ==============================================
 
-  /** 소스 정규화와 파이프라인 구성을 1회만 수행한다(promise 메모이즈). */
-  private ensurePrepared(): Promise<PreparedPipeline> {
+  /** 소스 정규화를 1회만 수행한다(promise 메모이즈). */
+  private ensurePrepared(): Promise<HTMLImageElement> {
     if (!this.prepared) {
-      this.prepared = this.prepare().catch((error) => {
+      // 입력 소스를 공통 이미지 요소로 바꾼다.
+      this.prepared = convertToImageElement(this.source, this.options).catch((error) => {
         // 실패는 캐시하지 않는다 — 다음 출력이 소스 로딩부터 재시도한다.
-        // pending 필드는 prepare 성공 시에만 비워지므로 재시도 시 그대로 재생된다.
+        // 연산은 파이프라인이 이미 보유하고 있으므로 재시도 시 그대로 사용된다.
         this.prepared = null;
         throw error;
       });
     }
     return this.prepared;
-  }
-
-  private async prepare(): Promise<PreparedPipeline> {
-    // 입력 소스를 공통 이미지 요소로 바꾼다.
-    const sourceImage = await convertToImageElement(this.source, this.options);
-
-    // 이후 연산을 쌓아 둘 지연 파이프라인을 만든다.
-    const lazyPipeline = new LazyRenderPipeline(sourceImage);
-
-    // 준비 전에 축적된 연산을 정해진 순서(resize config → resize operation → blur)로 재생한다.
-    if (this.pendingResizeConfig) {
-      lazyPipeline.addResize(this.pendingResizeConfig);
-    }
-    if (this.pendingResizeOperation) {
-      lazyPipeline._addResizeOperation(this.pendingResizeOperation);
-    }
-    for (const blurOption of this.pendingBlurOptions) {
-      lazyPipeline.addBlur(blurOption);
-    }
-
-    this.pendingResizeConfig = null;
-    this.pendingResizeOperation = null;
-    this.pendingBlurOptions = [];
-
-    this.livePipeline = lazyPipeline;
-    return { lazyPipeline, sourceImage };
   }
 
   /**
@@ -208,8 +130,8 @@ export class OutputPipeline {
    */
   private async renderOnce(): Promise<ProcessingOutcome> {
     try {
-      const { lazyPipeline, sourceImage } = await this.ensurePrepared();
-      const { lease, metadata } = lazyPipeline.render();
+      const sourceImage = await this.ensurePrepared();
+      const { lease, metadata } = this.pipeline.render(sourceImage);
 
       return {
         lease,

@@ -8,8 +8,7 @@
 import type { OutputFormat } from './base';
 import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './output-types';
 import type { AfterResize, BeforeResize, ProcessorState } from './processor-state.internal';
-import type { ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig, ResizeConfig } from './resize-config';
-import type { ResizeOperation, ScaleOperation } from './shortcut-types';
+import type { ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig, ResizeConfig, ScaleValue } from './resize-config';
 
 /**
  * Shortcut API interface
@@ -105,11 +104,8 @@ export interface IShortcutBuilder<TState extends ProcessorState> {
   ): IImageProcessor<AfterResize>;
 
   // ============================================================================
-  // 🔄 Lazy Operations: Operations that require source dimensions
-  // ============================================================================
-
-  // ============================================================================
-  // New method names (v3.0+)
+  // 🎯 Scale and exact size adjustment methods (v3.0+)
+  // 원본 크기 의존 설정도 공개 resize()로 전달된다 — 해석은 렌더 시점
   // ============================================================================
 
   /**
@@ -128,7 +124,7 @@ export interface IShortcutBuilder<TState extends ProcessorState> {
    * Scale-based resizing
    * @since v3.0.0
    */
-  scale(this: IShortcutBuilder<BeforeResize>, scale: ScaleOperation): IImageProcessor<AfterResize>;
+  scale(this: IShortcutBuilder<BeforeResize>, scale: ScaleValue): IImageProcessor<AfterResize>;
 
   /**
    * X-axis scale resizing (convenience method)
@@ -200,16 +196,6 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * Convert to Canvas
    */
   toCanvas(): Promise<ResultCanvas>;
-
-  /**
-   * Add lazy resize operation (internal API)
-   *
-   * @description Internal method used by ShortcutBuilder.
-   * Stores operations that require source dimensions in pending state.
-   *
-   * @internal
-   */
-  _addResizeOperation(operation: ResizeOperation): void;
 }
 
 /**

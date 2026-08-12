@@ -23,7 +23,6 @@ import type {
 import type { IImageProcessor, IShortcutBuilder } from './types/processor-interface';
 import type { AfterResizeCall, ProcessorState } from './types/processor-state.internal';
 import type { ResizeConfig } from './types/resize-config';
-import type { ResizeOperation } from './types/shortcut-types';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor.internal';
 
 /**
@@ -94,7 +93,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * ```
    */
   resize(config: ResizeConfig): ImageProcessor<AfterResizeCall<TState>> {
-    // 런타임 검증과 1회 제약은 OutputPipeline이 담당하고, 여기서는 타입 상태 전이만 남는다.
+    // 런타임 검증과 1회 제약은 LazyRenderPipeline이 단일 소유하고, 여기서는 타입 상태 전이만 남는다.
     this.output.addResize(config);
 
     return this as unknown as ImageProcessor<AfterResizeCall<TState>>;
@@ -147,21 +146,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
     this.output.addBlur(radius, options);
 
     return this as ImageProcessor<TState>;
-  }
-
-  /**
-   * Add lazy resize operation (internal method for Shortcut API)
-   *
-   * @description Internal API used by ShortcutBuilder.
-   * Stores operations requiring source size (scale, toWidth, toHeight) in pending state.
-   * Actual conversion is performed at final output time (toBlob, toCanvas, etc.).
-   *
-   * @param operation ResizeOperation (scale, toWidth, toHeight)
-   * @internal
-   */
-  _addResizeOperation(operation: ResizeOperation): void {
-    // 준비 전/후(pending/즉시 반영) 분기는 OutputPipeline 내부에서 처리된다.
-    this.output.addResizeOperation(operation);
   }
 
   /**

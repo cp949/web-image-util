@@ -1,14 +1,14 @@
 /**
  * OutputPipeline 행동 테스트.
  *
- * 출력 경로 deep module의 public interface(생성자/addResize/addResizeOperation/addBlur/출력 메서드)
+ * 출력 경로 deep module의 public interface(생성자/addResize/addBlur/출력 메서드)
  * 경유로만 검증한다. 내부 상태 단언 금지.
  *
- * 검증 계약 (아키텍처 리뷰 #2 계획서):
+ * 검증 계약 (아키텍처 리뷰 #2 카드 4):
  * - 소스 준비 캐싱: 출력 N회에 소스 변환 1회 (동시 첫 출력 포함)
- * - pending 재생 순서: resize → blur (축적 순서와 무관)
- * - 준비 후 addResizeOperation 즉시 반영 / addResize 무반영 (현행 quirk 보존)
- * - resize 1회 제약: 경로별 메시지 2종, 검증 실패 시 상태 무변화
+ * - 연산 전달: 호출 즉시 파이프라인에 축적, 호출 순서 보존
+ * - 첫 출력 이후의 addResize/addBlur도 다음 출력에 반영 (출력 전후 의미 동일)
+ * - resize 1회 제약: LazyRenderPipeline 단일 가드, 검증 실패 시 상태 무변화
  * - 포맷/품질 기본값: 스마트 포맷, 문자열 포맷 최적 품질, quality 0 보존
  * - toFile 파일명/포맷 해석
  * - CanvasLease 소유권: 인코딩 후 pool 반환, toCanvas는 detach
@@ -94,24 +94,25 @@ describe('OutputPipeline', () => {
     });
   });
 
-  describe('pending 재생 순서', () => {
-    it('blur를 resize보다 먼저 축적해도 재생은 resize가 먼저다', async () => {
-      // 재생 순서(resize config → blur)는 현행 setupLazyPipeline의 계약이다.
-      // interface 결과(픽셀)로는 관찰 불가하므로 렌더 코어 접수 순서를 스파이로 관찰한다(실구현 유지).
+  describe('연산 전달', () => {
+    it('연산은 호출 즉시 파이프라인에 호출 순서대로 축적된다', async () => {
+      // 파이프라인이 생성 시점부터 존재하므로 pending 재생 없이 직접 전달된다.
+      // 렌더 결과는 연산 순서 무관(blur는 filters 누적, resize는 layout 계산)이다.
       const addResizeSpy = vi.spyOn(LazyRenderPipeline.prototype, 'addResize');
       const addBlurSpy = vi.spyOn(LazyRenderPipeline.prototype, 'addBlur');
       const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
 
       pipeline.addBlur(2);
       pipeline.addResize({ fit: 'cover', width: 100, height: 100 });
-      await pipeline.toBlob();
+      const result = await pipeline.toBlob();
 
       expect(addResizeSpy).toHaveBeenCalledTimes(1);
       expect(addBlurSpy).toHaveBeenCalledTimes(1);
-      expect(addResizeSpy.mock.invocationCallOrder[0]).toBeLessThan(addBlurSpy.mock.invocationCallOrder[0]);
+      expect(addBlurSpy.mock.invocationCallOrder[0]).toBeLessThan(addResizeSpy.mock.invocationCallOrder[0]);
+      expect(result.width).toBe(100);
     });
 
-    it('여러 blur는 호출 순서대로 재생된다', async () => {
+    it('여러 blur는 호출 순서대로 전달된다', async () => {
       const addBlurSpy = vi.spyOn(LazyRenderPipeline.prototype, 'addBlur');
       const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
 
@@ -124,22 +125,23 @@ describe('OutputPipeline', () => {
   });
 
   describe('축적과 준비 시점', () => {
-    it('준비 전 addResizeOperation은 첫 출력에서 재생된다', async () => {
+    it('출력 전 축적한 scale 설정은 첫 출력에 반영된다', async () => {
       const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
 
-      pipeline.addResizeOperation({ type: 'scale', value: 0.5 });
+      pipeline.addResize({ fit: 'scale', scale: 0.5 });
       const result = await pipeline.toBlob();
 
       expect(result.width).toBe(200);
       expect(result.height).toBe(150);
     });
 
-    it('첫 출력 후 addResizeOperation은 다음 출력에 즉시 반영된다', async () => {
-      // mutation: 준비 후 즉시 전달 분기를 제거하면 두 번째 출력이 400x300으로 남아 실패한다
+    it('첫 출력 후 addResize는 다음 출력에 반영된다', async () => {
+      // 파이프라인이 생성 시점부터 하나뿐이므로 출력 전후의 반영 의미가 동일하다
+      // (구 pending 재생 구조의 "첫 출력 후 무반영" quirk 소멸)
       const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
 
       const first = await pipeline.toBlob();
-      pipeline.addResizeOperation({ type: 'scale', value: 0.5 });
+      pipeline.addResize({ fit: 'scale', scale: 0.5 });
       const second = await pipeline.toBlob();
 
       expect(first.width).toBe(400);
@@ -147,16 +149,16 @@ describe('OutputPipeline', () => {
       expect(second.height).toBe(150);
     });
 
-    it('첫 출력 후 addResize는 이후 출력에 반영되지 않는다 (현행 동작 보존)', async () => {
-      // 초기화 이후 resize config 무반영은 관찰 가능한 현행 공개 동작이다 — 동작 불변 원칙으로 고정
+    it('첫 출력 후 addBlur도 다음 출력에 반영된다', async () => {
+      const addBlurSpy = vi.spyOn(LazyRenderPipeline.prototype, 'addBlur');
       const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
 
       await pipeline.toBlob();
-      pipeline.addResize({ fit: 'cover', width: 100, height: 100 });
-      const second = await pipeline.toBlob();
+      pipeline.addBlur(3);
+      await pipeline.toBlob();
 
-      expect(second.width).toBe(400);
-      expect(second.height).toBe(300);
+      expect(addBlurSpy).toHaveBeenCalledTimes(1);
+      expect(addBlurSpy).toHaveBeenCalledWith(expect.objectContaining({ radius: 3 }));
     });
 
     it('출력 메타데이터에 원본 크기가 담긴다', async () => {
@@ -172,7 +174,7 @@ describe('OutputPipeline', () => {
   });
 
   describe('resize 1회 제약', () => {
-    it('addResize 두 번째 호출은 resize 경로 메시지로 거부한다', () => {
+    it('addResize 두 번째 호출은 동기적으로 거부한다 (메시지 1벌)', () => {
       const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
       pipeline.addResize({ fit: 'cover', width: 100, height: 100 });
 
@@ -183,25 +185,18 @@ describe('OutputPipeline', () => {
         expect(error).toBeInstanceOf(ImageProcessError);
         if (error instanceof ImageProcessError) {
           expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
-          expect(error.message).toContain('single resize() call');
+          expect(error.message).toContain('can only be called once');
         }
       }
     });
 
-    it('addResizeOperation 두 번째 호출은 operation 경로 메시지로 거부한다', () => {
+    it('scale 설정과 box 설정을 섞어도 1회 제약은 동일하게 적용된다', () => {
       const pipeline = new OutputPipeline(createTestCanvas(400, 300, 'red'));
-      pipeline.addResizeOperation({ type: 'scale', value: 2 });
+      pipeline.addResize({ fit: 'scale', scale: 2 });
 
-      try {
-        pipeline.addResizeOperation({ type: 'scale', value: 0.5 });
-        expect.fail('두 번째 addResizeOperation은 에러를 던져야 한다');
-      } catch (error) {
-        expect(error).toBeInstanceOf(ImageProcessError);
-        if (error instanceof ImageProcessError) {
-          expect(error.code).toBe('MULTIPLE_RESIZE_NOT_ALLOWED');
-          expect(error.message).toContain('single resize operation');
-        }
-      }
+      expect(() => {
+        pipeline.addResize({ fit: 'scale', scale: 0.5 });
+      }).toThrow(expect.objectContaining({ code: 'MULTIPLE_RESIZE_NOT_ALLOWED' }));
     });
 
     it('config 검증 실패 시 1회 제약 상태가 남지 않는다', async () => {
