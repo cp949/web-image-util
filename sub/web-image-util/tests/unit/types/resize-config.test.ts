@@ -86,6 +86,11 @@ describe('ResizeConfig Types', () => {
         const config = { fit: 'fill', width: -300 } as any;
         expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
+
+      it.each([0, Number.NaN, Number.POSITIVE_INFINITY])('명시된 fill 축의 잘못된 값 %s는 거부한다', (height) => {
+        const config = { fit: 'fill', width: 300, height } as any;
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
+      });
     });
 
     describe('scale config', () => {

@@ -219,8 +219,8 @@ export function isScaleConfig(config: ResizeConfig): config is ScaleConfig {
 // RUNTIME VALIDATION - Runtime validation function
 // ============================================================================
 
-/** scale 축 배율 하나가 유한 양수인지 검사한다 */
-function isValidScaleFactor(value: number): boolean {
+/** resize 축 값 하나가 유한 양수인지 검사한다 */
+function isValidDimension(value: number): boolean {
   return Number.isFinite(value) && value > 0;
 }
 
@@ -234,11 +234,13 @@ function isValidScaleFactor(value: number): boolean {
 export function validateResizeConfig(config: ResizeConfig): void {
   // maxFit, minFit, fill require at least one of width or height
   if (config.fit === 'maxFit' || config.fit === 'minFit' || config.fit === 'fill') {
-    if (!config.width && !config.height) {
+    if (config.width == null && config.height == null) {
       throw new ImageProcessError(`${config.fit} requires at least width or height`, 'INVALID_DIMENSIONS');
     }
-    // Check if width or height is negative
-    if ((config.width && config.width <= 0) || (config.height && config.height <= 0)) {
+    if (
+      (config.width != null && !isValidDimension(config.width)) ||
+      (config.height != null && !isValidDimension(config.height))
+    ) {
       throw new ImageProcessError(`${config.fit} width and height must be positive numbers`, 'INVALID_DIMENSIONS');
     }
   }
@@ -259,7 +261,7 @@ export function validateResizeConfig(config: ResizeConfig): void {
   if (config.fit === 'scale') {
     const { scale } = config;
     if (typeof scale === 'number') {
-      if (!isValidScaleFactor(scale)) {
+      if (!isValidDimension(scale)) {
         throw new ImageProcessError('scale must be a finite positive number', 'INVALID_DIMENSIONS');
       }
     } else {
@@ -269,8 +271,8 @@ export function validateResizeConfig(config: ResizeConfig): void {
         throw new ImageProcessError('scale requires at least sx or sy', 'INVALID_DIMENSIONS');
       }
       if (
-        (hasSx && !isValidScaleFactor((scale as { sx: number }).sx)) ||
-        (hasSy && !isValidScaleFactor((scale as { sy: number }).sy))
+        (hasSx && !isValidDimension((scale as { sx: number }).sx)) ||
+        (hasSy && !isValidDimension((scale as { sy: number }).sy))
       ) {
         throw new ImageProcessError('scale factors must be finite positive numbers', 'INVALID_DIMENSIONS');
       }

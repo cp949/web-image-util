@@ -240,6 +240,16 @@ describe('ResizeCalculator - fit 모드', () => {
       expect(result.imageSize).toEqual({ width: 167, height: 167 });
     });
 
+    it('양수 배율의 반올림 결과는 축마다 최소 1px을 보장한다', () => {
+      const result = calculator.calculateFinalLayout(1, 2, {
+        fit: 'scale',
+        scale: { sx: 0.1, sy: 0.2 },
+      });
+
+      expect(result.imageSize).toEqual({ width: 1, height: 1 });
+      expect(result.canvasSize).toEqual({ width: 1, height: 1 });
+    });
+
     it('scale 모드에서도 padding이 캔버스에 더해진다', () => {
       const result = calculator.calculateFinalLayout(400, 300, {
         fit: 'scale',

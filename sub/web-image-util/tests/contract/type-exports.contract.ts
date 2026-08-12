@@ -49,11 +49,21 @@ import type {
   SvgIdPrefixWarning,
   SvgIdPrefixWarningCode,
 } from '@cp949/web-image-util/utils';
-import type { ImageErrorCodeType, ImageErrorDetails, ImageProcessErrorOptions } from '../../src';
+import type {
+  ImageErrorCodeType,
+  ImageErrorDetails,
+  ImageProcessErrorOptions,
+  ResizeConfig,
+  ScaleConfig,
+  ScaleValue,
+} from '../../src';
 import type {
   ImageErrorCodeType as ImageErrorCodeTypeFromTypes,
   ImageErrorDetails as ImageErrorDetailsFromTypes,
   ImageProcessErrorOptions as ImageProcessErrorOptionsFromTypes,
+  ResizeConfig as ResizeConfigFromTypes,
+  ScaleConfig as ScaleConfigFromTypes,
+  ScaleValue as ScaleValueFromTypes,
 } from '../../src/types';
 
 const code: ImageErrorCodeType = 'INVALID_SOURCE';
@@ -68,6 +78,16 @@ const detailsFromTypes: ImageErrorDetailsFromTypes = details;
 void codeFromTypes;
 void optionsFromTypes;
 void detailsFromTypes;
+
+const scaleValue: ScaleValue = { sx: 2, sy: 0.5 };
+const scaleValueFromTypes: ScaleValueFromTypes = scaleValue;
+const scaleConfig: ScaleConfig = { fit: 'scale', scale: scaleValue };
+const scaleConfigFromTypes: ScaleConfigFromTypes = scaleConfig;
+const resizeConfig: ResizeConfig = scaleConfig;
+const resizeConfigFromTypes: ResizeConfigFromTypes = resizeConfig;
+void scaleValueFromTypes;
+void scaleConfigFromTypes;
+void resizeConfigFromTypes;
 
 const inspectReport: InspectSvgReport = {
   valid: true,

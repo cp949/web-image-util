@@ -451,8 +451,8 @@ export class ResizeCalculator {
   private calculateScaleSize(originalWidth: number, originalHeight: number, scale: ScaleValue): GeometrySize {
     if (typeof scale === 'number') {
       return {
-        width: Math.round(originalWidth * scale),
-        height: Math.round(originalHeight * scale),
+        width: Math.max(1, Math.round(originalWidth * scale)),
+        height: Math.max(1, Math.round(originalHeight * scale)),
       };
     }
 
@@ -460,8 +460,8 @@ export class ResizeCalculator {
     const sy = 'sy' in scale ? scale.sy : 1;
 
     return {
-      width: Math.round(originalWidth * sx),
-      height: Math.round(originalHeight * sy),
+      width: Math.max(1, Math.round(originalWidth * sx)),
+      height: Math.max(1, Math.round(originalHeight * sy)),
     };
   }
 }
