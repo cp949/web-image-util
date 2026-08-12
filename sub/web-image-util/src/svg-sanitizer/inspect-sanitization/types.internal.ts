@@ -5,10 +5,14 @@
  * 경로가 아니며, 공개는 `inspect-sanitization.ts`의 재export를 경유한다.
  */
 
+import type { SvgSanitizerMode } from '../../svg-contract.internal';
 import type { RuntimeEnvironment } from '../../utils/environment.internal';
 
-/** sanitizer 정책. processImage()의 `svgSanitizer` 옵션과 동일한 3개 값을 받는다. */
-export type SvgSanitizerPolicy = 'lightweight' | 'strict' | 'skip';
+/**
+ * sanitizer 정책. processImage()의 `svgSanitizer` 옵션과 같은 축이다 —
+ * 정의는 SVG 계약 leaf의 `SvgSanitizerMode`가 소유하고, 이 이름은 공개 호환용 alias다.
+ */
+export type SvgSanitizerPolicy = SvgSanitizerMode;
 
 /** 정책 발동(또는 발동했을) 사건을 식별하는 코드. inspectSvg finding 코드와 1:1 의미 호응. */
 export type InspectSvgSanitizationStageCode =
