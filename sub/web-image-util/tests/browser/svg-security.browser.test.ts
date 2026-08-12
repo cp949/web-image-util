@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { processImage, unsafe_processImage } from '../../src';
 import { convertToImageElement } from '../../src/core/source-converter/index';
-import { ImageProcessError } from '../../src/types';
 
 const unsafeSvg =
   '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" onload="alert(1)"><script>alert(1)</script><rect width="12" height="12" fill="red"/></svg>';
@@ -67,15 +66,30 @@ describe('브라우저 SVG 보안 스모크 테스트', () => {
     expectStrictSanitizedImage(image);
   });
 
-  it('safe 경로는 상대 리소스 참조 SVG를 차단하고 unsafe 경로는 passthrough로 처리한다', async () => {
+  it('safe 경로는 상대 리소스 참조를 제거한 뒤 렌더링하고 unsafe 경로는 passthrough로 처리한다', async () => {
     const svgWithRelativeHref =
       '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"><image href="./assets/pattern.png" width="12" height="12"/></svg>';
+    const assignedSvgSources: string[] = [];
+    const srcDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+    vi.spyOn(HTMLImageElement.prototype, 'src', 'set').mockImplementation(function (this: HTMLImageElement, source) {
+      if (source.startsWith('data:image/svg+xml')) {
+        assignedSvgSources.push(source);
+      }
+      srcDescriptor?.set?.call(this, source);
+    });
 
-    await expect(processImage(svgWithRelativeHref).toElement()).rejects.toBeInstanceOf(ImageProcessError);
+    const safeImage = await processImage(svgWithRelativeHref).toElement();
+    const safeSvg = decodeSvgImageSource(assignedSvgSources[assignedSvgSources.length - 1] ?? '');
+    const safeSvgDocument = new DOMParser().parseFromString(safeSvg, 'image/svg+xml');
+    expect(safeSvgDocument.querySelector('image')?.hasAttribute('href')).toBe(false);
+    expect(safeImage).toBeInstanceOf(HTMLImageElement);
+    expect(safeImage.naturalWidth || safeImage.width).toBeGreaterThan(0);
 
-    const image = await unsafe_processImage(svgWithRelativeHref).toElement();
-    expect(image).toBeInstanceOf(HTMLImageElement);
-    expect(image.naturalWidth || image.width).toBeGreaterThan(0);
+    const unsafeImage = await unsafe_processImage(svgWithRelativeHref).toElement();
+    const unsafeRenderedSvg = decodeSvgImageSource(assignedSvgSources[assignedSvgSources.length - 1] ?? '');
+    expect(unsafeRenderedSvg).toContain('./assets/pattern.png');
+    expect(unsafeImage).toBeInstanceOf(HTMLImageElement);
+    expect(unsafeImage.naturalWidth || unsafeImage.width).toBeGreaterThan(0);
   });
 
   it('toElement 출력은 실제 브라우저 Blob URL 이미지 로딩 경로로 후속 처리할 수 있다', async () => {
