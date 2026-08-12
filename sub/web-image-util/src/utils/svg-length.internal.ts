@@ -28,21 +28,22 @@ export interface SvgViewBoxValues {
 }
 
 /**
- * 길이 문자열 전체 매칭 패턴.
+ * SVG/CSS 숫자 토큰 문법.
  *
- * - `-?` 음수 허용
- * - `(?:\.\d+)?` 소수 허용
- * - `(?:e[+-]?\d+)?` 지수 표기 허용(대소문자 무관)
- * - `\s*` 숫자와 단위 사이 공백 허용(`"100 px"`)
- * - `([a-z%]*)` 단위는 알파벳과 `%`만 허용
+ * @description 10진수만 받아 `Number()`의 16진수 허용을 차단한다.
+ * 양음 부호, 선행 0이 없는 소수, 지수 표기를 포함한다.
  */
-const SVG_LENGTH_PATTERN = /^(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)\s*([a-z%]*)$/i;
+const SVG_NUMBER_SOURCE = String.raw`[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?`;
 
-/** viewBox 값 구분자. 공백과 콤마를 모두 받는다(`"0,0,100,100"`). */
-const VIEW_BOX_SEPARATOR = /[\s,]+/;
+/** 길이 문자열 전체 매칭 패턴. 숫자와 단위 사이 공백은 기존 진단 계약을 위해 유지한다. */
+const SVG_LENGTH_PATTERN = new RegExp(String.raw`^(${SVG_NUMBER_SOURCE})(\s*)([a-z%]*)$`, 'i');
 
-/** viewBox가 가져야 하는 값 개수(min-x, min-y, width, height). */
-const VIEW_BOX_VALUE_COUNT = 4;
+/** viewBox의 네 숫자와 단일 콤마/공백 구분자를 검증하는 전체 패턴. */
+const VIEW_BOX_SEPARATOR_SOURCE = String.raw`(?:\s*,\s*|\s+)`;
+const VIEW_BOX_PATTERN = new RegExp(
+  String.raw`^\s*(${SVG_NUMBER_SOURCE})${VIEW_BOX_SEPARATOR_SOURCE}(${SVG_NUMBER_SOURCE})${VIEW_BOX_SEPARATOR_SOURCE}(${SVG_NUMBER_SOURCE})${VIEW_BOX_SEPARATOR_SOURCE}(${SVG_NUMBER_SOURCE})\s*$`,
+  'i'
+);
 
 /**
  * SVG 길이 속성 값을 숫자와 단위로 분리한다.
@@ -63,7 +64,19 @@ export function parseSvgLength(input?: string | null): SvgLength {
   // 지수 표기가 오버플로하면 Infinity가 나오므로 유한값만 통과시킨다.
   if (!Number.isFinite(value)) return { value: null, unit: null };
 
-  return { value, unit: matched[2] ? matched[2].toLowerCase() : null };
+  return { value, unit: matched[3] ? matched[3].toLowerCase() : null };
+}
+
+/**
+ * 유효한 SVG 길이에서 숫자와 단위 사이 공백이 있는지 확인한다.
+ *
+ * @description `parseSvgLength`와 같은 패턴을 사용해 문법 판정이 소비자로 복제되지 않게 한다.
+ */
+export function hasWhitespaceBeforeSvgLengthUnit(input?: string | null): boolean {
+  if (!input) return false;
+
+  const matched = SVG_LENGTH_PATTERN.exec(String(input).trim());
+  return Boolean(matched?.[2] && matched[3]);
 }
 
 /**
@@ -79,10 +92,10 @@ export function parseSvgLength(input?: string | null): SvgLength {
 export function parseViewBoxValues(input?: string | null): SvgViewBoxValues | null {
   if (!input) return null;
 
-  const parts = input.trim().split(VIEW_BOX_SEPARATOR);
-  if (parts.length !== VIEW_BOX_VALUE_COUNT) return null;
+  const matched = VIEW_BOX_PATTERN.exec(input);
+  if (!matched) return null;
 
-  const values = parts.map(Number);
+  const values = matched.slice(1).map(Number);
   if (!values.every((value) => Number.isFinite(value))) return null;
 
   return { x: values[0], y: values[1], width: values[2], height: values[3] };

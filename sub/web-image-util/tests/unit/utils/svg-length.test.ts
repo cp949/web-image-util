@@ -7,7 +7,11 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { parseSvgLength, parseViewBoxValues } from '../../../src/utils/svg-length.internal';
+import {
+  hasWhitespaceBeforeSvgLengthUnit,
+  parseSvgLength,
+  parseViewBoxValues,
+} from '../../../src/utils/svg-length.internal';
 
 describe('parseSvgLength()', () => {
   describe('빈 입력', () => {
@@ -47,6 +51,11 @@ describe('parseSvgLength()', () => {
       expect(parseSvgLength('12.5px')).toEqual({ value: 12.5, unit: 'px' });
     });
 
+    it('선행 0이 없는 소수와 양의 부호를 받아들인다', () => {
+      expect(parseSvgLength('.5px')).toEqual({ value: 0.5, unit: 'px' });
+      expect(parseSvgLength('+5')).toEqual({ value: 5, unit: null });
+    });
+
     it('지수 표기를 받아들인다', () => {
       expect(parseSvgLength('-1.5e-3')).toEqual({ value: -0.0015, unit: null });
       expect(parseSvgLength('1e+3')).toEqual({ value: 1000, unit: null });
@@ -64,6 +73,15 @@ describe('parseSvgLength()', () => {
     it('유한값이 아닌 결과(예: 1e999)는 null로 보정한다', () => {
       expect(parseSvgLength('1e999')).toEqual({ value: null, unit: null });
     });
+  });
+});
+
+describe('hasWhitespaceBeforeSvgLengthUnit()', () => {
+  it('숫자와 단위 사이의 공백만 감지한다', () => {
+    expect(hasWhitespaceBeforeSvgLengthUnit('100 px')).toBe(true);
+    expect(hasWhitespaceBeforeSvgLengthUnit('100px')).toBe(false);
+    expect(hasWhitespaceBeforeSvgLengthUnit('100')).toBe(false);
+    expect(hasWhitespaceBeforeSvgLengthUnit('invalid')).toBe(false);
   });
 });
 
@@ -94,6 +112,10 @@ describe('parseViewBoxValues()', () => {
     it('소수를 받아들인다', () => {
       expect(parseViewBoxValues('0 0 12.5 7.5')).toEqual({ x: 0, y: 0, width: 12.5, height: 7.5 });
     });
+
+    it('선행 0이 없는 소수와 양의 부호를 받아들인다', () => {
+      expect(parseViewBoxValues('+.5 -.5 +12.5 7.5')).toEqual({ x: 0.5, y: -0.5, width: 12.5, height: 7.5 });
+    });
   });
 
   describe('거부', () => {
@@ -111,6 +133,11 @@ describe('parseViewBoxValues()', () => {
     it('숫자가 아닌 값이 섞이면 null을 반환한다', () => {
       expect(parseViewBoxValues('invalid')).toBeNull();
       expect(parseViewBoxValues('0 0 abc 150')).toBeNull();
+    });
+
+    it('SVG 숫자 문법이 아닌 16진수와 중복 콤마를 거부한다', () => {
+      expect(parseViewBoxValues('0 0 0x10 150')).toBeNull();
+      expect(parseViewBoxValues('0,,0,300,150')).toBeNull();
     });
 
     it('유한값이 아닌 값은 거부한다', () => {

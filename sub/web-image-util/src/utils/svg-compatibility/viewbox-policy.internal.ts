@@ -6,20 +6,11 @@
  * 기존 속성 보존 → 휴리스틱/라이브 BBox 계산 → defaultSize 폴백 순서로 동작한다.
  */
 
-import { parseSvgLength, parseViewBoxValues } from '../svg-length.internal';
+import { hasWhitespaceBeforeSvgLengthUnit, parseSvgLength, parseViewBoxValues } from '../svg-length.internal';
 import { computeBBox } from './bbox/compute.internal';
 import { padBBox } from './bbox/heuristic.internal';
 import { extractSizeHints, getStyleLength, sanitizeNum } from './dimensions.internal';
 import type { SvgCompatibilityOptions, SvgCompatibilityReport } from './options';
-
-/**
- * 숫자와 단위 사이에 공백이 있는 값(`"100 px"`)을 무효 length로 간주한다.
- * SVG/CSS 스펙상 length는 숫자와 단위가 붙어야 하며, 이를 유효로 인정하면
- * defaultSize 폴백 대신 잘못된 크기로 렌더링될 수 있다.
- */
-function hasWhitespaceBeforeUnit(raw: string | null | undefined): boolean {
-  return raw != null && /\d\s+[a-z%]/i.test(raw);
-}
 
 /**
  * SVG 루트에 viewBox와 width/height 정책을 적용한다.
@@ -63,8 +54,8 @@ export function applyViewBoxPolicy(
   const { wAttr, hAttr } = extractSizeHints(root);
   const { value: wVal, unit: wUnit } = parseSvgLength(wAttr);
   const { value: hVal, unit: hUnit } = parseSvgLength(hAttr);
-  const wIsPxLike = wVal != null && (!wUnit || wUnit === 'px') && !hasWhitespaceBeforeUnit(wAttr);
-  const hIsPxLike = hVal != null && (!hUnit || hUnit === 'px') && !hasWhitespaceBeforeUnit(hAttr);
+  const wIsPxLike = wVal != null && (!wUnit || wUnit === 'px') && !hasWhitespaceBeforeSvgLengthUnit(wAttr);
+  const hIsPxLike = hVal != null && (!hUnit || hUnit === 'px') && !hasWhitespaceBeforeSvgLengthUnit(hAttr);
 
   // viewBox와 보조 width/height를 함께 안전하게 주입하는 헬퍼다.
   const setVB = (minX: number, minY: number, rawW: number, rawH: number) => {
