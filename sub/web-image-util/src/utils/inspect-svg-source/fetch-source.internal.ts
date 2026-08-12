@@ -35,6 +35,42 @@ interface ResponseMetadata {
   status: number;
 }
 
+type BoundedTextResult =
+  | { exceeded: false; text: string; actualBytes: number }
+  | { exceeded: true; actualBytes: number | null };
+
+async function readBoundedText(response: Response, byteLimit: number): Promise<BoundedTextResult> {
+  if (!response.body) {
+    const text = await response.text();
+    const actualBytes = textEncoder.encode(text).byteLength;
+    return actualBytes > byteLimit ? { exceeded: true, actualBytes } : { exceeded: false, text, actualBytes };
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const chunks: string[] = [];
+  let actualBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      actualBytes += value.byteLength;
+      if (actualBytes > byteLimit) {
+        await reader.cancel().catch(() => undefined);
+        return { exceeded: true, actualBytes: null };
+      }
+      chunks.push(decoder.decode(value, { stream: true }));
+    }
+
+    chunks.push(decoder.decode());
+    return { exceeded: false, text: chunks.join(''), actualBytes };
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export interface HandleUrlSvgSourceFetchParams {
   source: InspectSvgSourceInput;
   mime: string | null;
@@ -172,20 +208,25 @@ async function fetchUrlBody(
   try {
     checkResponseSize(response, byteLimit, 'inspect-svg-source body');
   } catch {
-    // byte 초과 finding은 공유 계약(빌더)으로 조립한다. 실제 크기는 Content-Length(부재 시 null)다.
+    // byte 초과 finding은 공유 계약(빌더)으로 조립한다. 이 분기는 초과한 Content-Length를 실제 크기로 쓴다.
+    await response.body?.cancel().catch(() => undefined);
     context.findings.push(buildSvgBytesExceededFinding(context.bytes, byteLimit));
     context.kind = 'unknown';
     return metadata.status;
   }
 
-  const svgString = await response.text();
+  const body = await readBoundedText(response, byteLimit);
   context.consumed = true;
-  context.findings.push({ code: 'body-consumed-once', message: 'Response body was consumed once via .text().' });
+  context.findings.push({ code: 'body-consumed-once', message: 'Response body was consumed once.' });
+  context.bytes = body.actualBytes;
 
-  if (context.bytes === null) {
-    context.bytes = textEncoder.encode(svgString).byteLength;
+  if (body.exceeded) {
+    context.findings.push(buildSvgBytesExceededFinding(body.actualBytes, byteLimit));
+    context.kind = 'unknown';
+    return metadata.status;
   }
 
+  const svgString = body.text;
   context.svgReport = inspectSvg(svgString);
   context.kind = context.mime === 'image/svg+xml' || context.svgReport.valid === true ? 'svg' : 'not-svg-source';
 

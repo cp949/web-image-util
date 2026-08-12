@@ -100,11 +100,16 @@ describe('extractSvgBody() — blob/file 경로', () => {
     }
   });
 
-  it.skip('Blob.size 가드 통과 후 UTF-8 bytes가 byteLimit 초과 → failure "byte-limit-exceeded", consumed true이다', async () => {
-    // jsdom에서 Blob.size는 UTF-8 바이트 수이므로 size === encodeBytes 가 성립한다.
-    // 사후 byte 체크가 트리거되려면 .size < byteLimit < encodeBytes 이어야 하는데
-    // jsdom 환경에서는 이 조건을 충족하는 Blob을 만들 수 없다.
-    // 브라우저 테스트(TASK-05+)로 이관 예정.
+  it('Blob.size 가드 통과 후 UTF-8 bytes가 byteLimit 초과 → 실제 바이트 수와 consumed true를 반환한다', async () => {
+    const blob = new Blob(['a'], { type: 'image/svg+xml' });
+    blob.text = async () => '가'.repeat(100);
+
+    const result = await extractSvgBody(blob, 'blob', 256);
+
+    expect('failure' in result).toBe(true);
+    if ('failure' in result) {
+      expect(result).toEqual({ failure: 'byte-limit-exceeded', consumed: true, actualBytes: 300 });
+    }
   });
 
   it('url-string → failure "fetch-not-attempted-in-this-task"이다', async () => {

@@ -125,6 +125,7 @@ const sanitizationFailureCode: InspectSvgSanitizationFailureCode = 'svg-bytes-ex
 const sanitizationFailure: InspectSvgSanitizationFailure = {
   code: sanitizationFailureCode,
   message: 'SVG input size exceeds the configured byte limit.',
+  details: { actualBytes: 11, maxBytes: 10 },
 };
 const sanitizationLightweightImpact: InspectSvgSanitizationLightweightImpact = {
   kind: 'lightweight',

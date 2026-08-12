@@ -150,4 +150,112 @@ describe('inspectSvgSource() — fetch: "body" 모드', () => {
     expect(finding?.details).toEqual({ actualBytes: 500, maxBytes: 100 });
     expect(result.kind).toBe('unknown');
   });
+
+  it('Content-Length가 byteLimit 초과면 응답 본문 스트림을 취소한다', async () => {
+    const cancel = vi.fn();
+    const response = new Response(
+      new ReadableStream({
+        pull(controller) {
+          controller.enqueue(new TextEncoder().encode('a'.repeat(500)));
+        },
+        cancel,
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/svg+xml',
+          'Content-Length': '500',
+        },
+      }
+    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+
+    await inspectSvgSource('https://example.com/foo.svg', { fetch: 'body', byteLimit: 100 });
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('Content-Length가 없어도 실제 본문이 byteLimit 초과면 svg-bytes-exceeded를 보고한다', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('a'.repeat(500), {
+          status: 200,
+          headers: { 'Content-Type': 'image/svg+xml' },
+        })
+      )
+    );
+
+    const result = await inspectSvgSource('https://example.com/foo.svg', { fetch: 'body', byteLimit: 100 });
+
+    const finding = result.findings.find((item) => item.code === 'svg-bytes-exceeded');
+    expect(finding?.details).toEqual({ actualBytes: null, maxBytes: 100 });
+    expect(result.kind).toBe('unknown');
+    expect(result.source.consumed).toBe(true);
+  });
+
+  it('Content-Length가 실제 본문보다 작아도 본문으로 byteLimit 초과를 판정한다', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('a'.repeat(500), {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/svg+xml',
+            'Content-Length': '50',
+          },
+        })
+      )
+    );
+
+    const result = await inspectSvgSource('https://example.com/foo.svg', { fetch: 'body', byteLimit: 100 });
+
+    const finding = result.findings.find((item) => item.code === 'svg-bytes-exceeded');
+    expect(finding?.details).toEqual({ actualBytes: null, maxBytes: 100 });
+    expect(result.source.bytes).toBeNull();
+    expect(result.kind).toBe('unknown');
+  });
+
+  it('다중 청크 본문을 조기 취소하면 전체 크기를 알 수 없으므로 actualBytes가 null이다', async () => {
+    const chunks = [new Uint8Array(60), new Uint8Array(60), new Uint8Array(500)];
+    const response = new Response(
+      new ReadableStream({
+        pull(controller) {
+          const chunk = chunks.shift();
+          if (chunk) controller.enqueue(chunk);
+          else controller.close();
+        },
+      }),
+      { status: 200, headers: { 'Content-Type': 'image/svg+xml' } }
+    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+
+    const result = await inspectSvgSource('https://example.com/foo.svg', { fetch: 'body', byteLimit: 100 });
+
+    const finding = result.findings.find((item) => item.code === 'svg-bytes-exceeded');
+    expect(finding?.details).toEqual({ actualBytes: null, maxBytes: 100 });
+  });
+
+  it('byteLimit 초과 후 스트림 취소가 실패해도 svg-bytes-exceeded finding을 유지한다', async () => {
+    const response = new Response(
+      new ReadableStream({
+        pull(controller) {
+          controller.enqueue(new Uint8Array(101));
+        },
+        cancel() {
+          return Promise.reject(new Error('cancel failed'));
+        },
+      }),
+      { status: 200, headers: { 'Content-Type': 'image/svg+xml' } }
+    );
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+
+    const result = await inspectSvgSource('https://example.com/foo.svg', { fetch: 'body', byteLimit: 100 });
+
+    expect(result.findings.find((item) => item.code === 'svg-bytes-exceeded')?.details).toEqual({
+      actualBytes: null,
+      maxBytes: 100,
+    });
+    expect(result.findings.some((item) => item.code === 'fetch-failed')).toBe(false);
+  });
 });
