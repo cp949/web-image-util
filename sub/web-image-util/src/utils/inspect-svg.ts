@@ -1,6 +1,6 @@
-import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import type { ComplexityAnalysisResult } from '../core/svg-complexity-analyzer';
 import { ImageProcessError } from '../errors.internal';
+import { MAX_SVG_BYTES } from '../svg-contract.internal';
 import { detectRuntimeEnvironment } from './environment.internal';
 import { parseAndClassifySvg } from './svg-document.internal';
 import {

@@ -7,9 +7,9 @@
  */
 
 import { ImageProcessError } from '../../../errors.internal';
+import { MAX_SVG_BYTES } from '../../../svg-contract.internal';
 import { tryParseDataURL } from '../../../utils/data-url';
 import { isInlineSvg } from '../../../utils/svg-detection';
-import { MAX_SVG_BYTES } from '../options.internal';
 import { checkSvgSizeLimit, createSvgSizeLimitError } from './safety.internal';
 
 /**

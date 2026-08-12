@@ -10,8 +10,8 @@
  * 부수효과 없는 진단 함수에 둔다.
  */
 
-import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import { ImageProcessError } from '../errors.internal';
+import { MAX_SVG_BYTES } from '../svg-contract.internal';
 import { detectRuntimeEnvironment } from '../utils/environment.internal';
 import { parseAndClassifySvg } from '../utils/svg-document.internal';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';

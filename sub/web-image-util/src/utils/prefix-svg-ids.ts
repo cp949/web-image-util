@@ -1,5 +1,5 @@
-import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
 import { ImageProcessError } from '../errors.internal';
+import { MAX_SVG_BYTES } from '../svg-contract.internal';
 import { detectRuntimeEnvironment } from './environment.internal';
 import { detectStyleDeoptReasons, parseSvgDocument, serializeSvgDocument } from './prefix-svg-ids/dom-utils.internal';
 import { applyIdRewrites, collectIdElements, planIdRewrites } from './prefix-svg-ids/id-rewrite.internal';

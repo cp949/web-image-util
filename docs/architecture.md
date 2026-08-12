@@ -52,7 +52,8 @@
 | `src/core/output-pipeline.internal.ts` | 출력 경로 deep module — 소스 정규화, 파이프라인 구성·누적 연산 재생, resize 1회 런타임 가드, 포맷/품질 기본값, 인코딩, `CanvasLease` consume/detach, Result 래핑 |
 | `src/core/source-converter/index.ts` | `convertToImageElement` / `getImageDimensions` 오케스트레이션 |
 | `src/core/source-converter/detect.internal.ts` | `detectSourceType()`과 `SourceType` 정의 |
-| `src/core/source-converter/options.internal.ts` | 내부 옵션 타입과 `MAX_SVG_BYTES` 등 상수 |
+| `src/svg-contract.internal.ts` | SVG 처리 계약 leaf — `MAX_SVG_BYTES`, `SvgSanitizerMode`. core와 진단 API가 같은 방향으로 공유 |
+| `src/core/source-converter/options.internal.ts` | 내부 옵션 타입과 fetch 기본값 상수 |
 | `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.internal.ts`, `loader.internal.ts`, `safety.internal.ts` |
 | `src/core/source-converter/url/` | HTTP/Blob URL 로더 — `policy.internal.ts`, `fetch-guards.internal.ts`, `loader.internal.ts` |
 | `src/core/source-converter/loaders/` | 형태별 입력 변환기 — `string.internal.ts`, `blob.internal.ts`, `canvas.internal.ts` |
@@ -113,9 +114,10 @@
 | `'metadata'` | HEAD | × | MIME/Content-Length 진단 |
 | `'body'` | GET | ○ (1회) | byte cap 내 본문 sniff |
 
-정책 헬퍼/상수의 단일 출처는 다음 두 모듈입니다.
+정책 헬퍼/상수의 단일 출처는 다음 모듈입니다.
 
-- `src/core/source-converter/options.internal.ts` — `MAX_SVG_BYTES`, `DEFAULT_FETCH_TIMEOUT_MS`, `DEFAULT_ALLOWED_PROTOCOLS`
+- `src/svg-contract.internal.ts` — `MAX_SVG_BYTES` (SVG 입력 byte cap의 단일 정의)
+- `src/core/source-converter/options.internal.ts` — `DEFAULT_FETCH_TIMEOUT_MS`, `DEFAULT_ALLOWED_PROTOCOLS`
 - `src/core/source-converter/url/policy.internal.ts` — `checkAllowedProtocol()`, `hasExplicitUrlScheme()`, `isProtocolRelativeUrl()`, `isAbortLikeError()`, `normalizePolicyUrl()`, `isBlockedSvgPolicyRef()`, `isSvgResourcePath()`
 - `src/core/source-converter/url/fetch-guards.internal.ts` — `createFetchAbortHandle()`(timeout + AbortSignal 합성), `checkResponseSize()`(Content-Length 기반 byte cap 사전 검증)
 

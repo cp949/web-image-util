@@ -99,6 +99,7 @@ export type {
 export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstants } from './base';
 
 // Re-import types from base.ts to make them available
+import type { SvgSanitizerMode } from '../svg-contract.internal';
 import type { GeometrySize, OutputFormat, ResizeBackground } from './base';
 // 본문(ImageProcessor 등)이 사용하는 출력 계약 타입 — 정의는 output-types leaf
 import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './output-types';
@@ -253,14 +254,9 @@ export { ImageErrorCode, ImageProcessError } from '../errors.internal';
 // PROCESSOR NAMESPACE - Processor-related types
 // ============================================================================
 
-/**
- * SVG sanitizer 적용 정책.
- *
- * - lightweight: 기본값. 빠른 렌더링 보호용 경량 guard를 적용한다.
- * - strict: SVG로 판정된 입력에만 DOMPurify 기반 strict sanitizer를 적용한다.
- * - skip: 호출처가 이미 정제한 SVG라고 보고 sanitizer와 SVG 보안 assert를 건너뛴다.
- */
-export type SvgSanitizerMode = 'lightweight' | 'strict' | 'skip';
+// SvgSanitizerMode의 정의는 SVG 계약 leaf(../svg-contract.internal.ts)가 소유한다.
+// core·진단 API와 같은 방향으로 공유하기 위함이며, 이 재export가 공개 표면을 유지한다.
+export type { SvgSanitizerMode } from '../svg-contract.internal';
 
 /**
  * Processor global options

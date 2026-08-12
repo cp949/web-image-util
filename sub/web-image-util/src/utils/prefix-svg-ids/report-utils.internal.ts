@@ -1,4 +1,4 @@
-import { MAX_SVG_BYTES } from '../../core/source-converter/options.internal';
+import { MAX_SVG_BYTES } from '../../svg-contract.internal';
 import type { RuntimeEnvironment } from '../environment.internal';
 import type { SvgIdPrefixDeoptReason, SvgIdPrefixResult, SvgIdPrefixWarning } from './types.internal';
 

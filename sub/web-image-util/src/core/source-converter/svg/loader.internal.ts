@@ -5,7 +5,7 @@
  * 하이브리드 경로로 이미지를 디코딩한다.
  */
 
-import type { SvgSanitizerMode } from '../../../types';
+import type { SvgSanitizerMode } from '../../../svg-contract.internal';
 import { ImageProcessError } from '../../../types';
 import { debugLog, productionLog } from '../../../utils/debug.internal';
 import { enhanceSvgForBrowser } from '../../../utils/svg-compatibility/index';

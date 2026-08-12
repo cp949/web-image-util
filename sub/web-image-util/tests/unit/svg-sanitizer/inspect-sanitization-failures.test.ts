@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options.internal';
+import { MAX_SVG_BYTES } from '../../../src/svg-contract.internal';
 import { inspectSvgSanitization } from '../../../src/svg-sanitizer/inspect-sanitization';
 import { DEFAULT_MAX_NODE_COUNT } from '../../../src/svg-sanitizer/types';
 import { sanitizeSvgForRendering } from '../../../src/utils/svg-sanitizer';

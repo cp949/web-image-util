@@ -1,4 +1,4 @@
-import { MAX_SVG_BYTES } from '../core/source-converter/options.internal';
+import { MAX_SVG_BYTES } from '../svg-contract.internal';
 import { detectRuntimeEnvironment } from './environment.internal';
 import type { InspectSvgReport } from './inspect-svg';
 import { inspectSvg } from './inspect-svg';

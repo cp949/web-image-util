@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options.internal';
+import { MAX_SVG_BYTES } from '../../../src/svg-contract.internal';
 import {
   assertInspectSvgSourceInput,
   assertInspectSvgSourceOptions,

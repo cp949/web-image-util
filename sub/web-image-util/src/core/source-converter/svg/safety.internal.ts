@@ -5,10 +5,10 @@
  * 정책으로 검증하는 헬퍼를 제공한다.
  */
 
+import { MAX_SVG_BYTES } from '../../../svg-contract.internal';
 import { ImageProcessError } from '../../../types';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../../../utils/svg-policy-utils.internal';
-import { MAX_SVG_BYTES } from '../options.internal';
 import { isBlockedSvgPolicyRef } from '../url/policy.internal';
 
 /**

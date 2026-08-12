@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MAX_SVG_BYTES } from '../../../src/core/source-converter/options.internal';
+import { MAX_SVG_BYTES } from '../../../src/svg-contract.internal';
 import { inspectSvg } from '../../../src/utils/inspect-svg';
 
 describe('inspectSvg() 파싱 경계', () => {

@@ -2,7 +2,8 @@
  * source-converter 내부에서 공유하는 옵션 리졸버와 상수다.
  */
 
-import type { ProcessorOptions, SvgSanitizerMode } from '../../types';
+import type { SvgSanitizerMode } from '../../svg-contract.internal';
+import type { ProcessorOptions } from '../../types';
 import { ImageProcessError } from '../../types';
 
 /** SVG 처리 경로를 제어하는 내부 전용 모드 타입이다. 공개 index.ts에서 재export하지 않는다. */
@@ -33,13 +34,6 @@ export function resolveSvgSanitizerMode(options: InternalSourceConverterOptions 
     details: { mode },
   });
 }
-
-/**
- * SVG 입력 최대 허용 바이트 수 (10MiB).
- * 실제 SVG 파일은 대부분 수백KB 이하이며,
- * 이 상한선은 정상 사용을 막지 않으면서 비정상적인 메모리 소모를 초기에 차단한다.
- */
-export const MAX_SVG_BYTES = 10 * 1024 * 1024;
 
 /** 기본 fetch 타임아웃 (30초). */
 export const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
