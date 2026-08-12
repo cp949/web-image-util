@@ -1,11 +1,8 @@
 import { productionLog } from '../utils/debug.internal';
-import { applySmoothing, createOwnedCanvas } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
 import type { ImageAnalysis } from './high-res-detector.internal';
 import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector.internal';
-// Memory management optimized for browser environment
-import { SteppedProcessor } from './stepped-processor.internal';
-import { TiledProcessor } from './tiled-processor.internal';
+import { RESIZE_STRATEGY_ADAPTERS } from './resize-strategy.internal';
 
 /**
  * High-resolution processing options
@@ -100,21 +97,19 @@ export class HighResolutionManager {
         targetHeight,
         strategy,
         opts,
-        progressTracker
+        progressTracker,
+        analysis
       );
 
-      // 5. Post-processing and optimization
+      // 5. Generate result
       progressTracker?.update('finalizing', 90, 'Finalizing...');
-      const optimizedCanvas = await HighResolutionManager.postProcess(canvas, opts);
-
-      // 6. Generate result
       const processingTime = (Date.now() - startTime) / 1000;
       memoryPeakUsage = HighResolutionManager.getCurrentMemoryUsage();
 
       progressTracker?.update('completed', 100, 'Processing completed');
 
       return {
-        canvas: optimizedCanvas,
+        canvas,
         analysis,
         strategy,
         processingTime: Math.round(processingTime * 100) / 100,
@@ -226,7 +221,8 @@ export class HighResolutionManager {
     targetHeight: number,
     strategy: ProcessingStrategy,
     opts: HighResolutionOptions & { quality: 'fast' | 'balanced' | 'high' },
-    progressTracker: ReturnType<typeof this.createProgressTracker> | null
+    progressTracker: ReturnType<typeof this.createProgressTracker> | null,
+    analysis: ImageAnalysis
   ): Promise<HTMLCanvasElement> {
     const progressCallback = progressTracker
       ? (current: number, total: number) => {
@@ -235,71 +231,21 @@ export class HighResolutionManager {
         }
       : undefined;
 
-    switch (strategy) {
-      case ProcessingStrategy.DIRECT:
-        return HighResolutionManager.directResize(img, targetWidth, targetHeight, opts.quality);
-
-      case ProcessingStrategy.CHUNKED:
-        return HighResolutionManager.chunkedResize(img, targetWidth, targetHeight, opts, progressCallback);
-
-      case ProcessingStrategy.STEPPED:
-        return SteppedProcessor.resizeWithSteps(img, targetWidth, targetHeight, {
-          quality: opts.quality === 'fast' ? 'fast' : 'high',
-          maxSteps: opts.quality === 'high' ? 15 : 8,
-        });
-
-      case ProcessingStrategy.TILED:
-        return TiledProcessor.resizeInTiles(img, targetWidth, targetHeight, {
-          quality: opts.quality === 'fast' ? 'fast' : 'high',
-          onProgress: progressCallback,
-          enableMemoryMonitoring: true,
-          maxConcurrency: opts.quality === 'fast' ? 4 : 2,
-        });
-
-      default:
-        throw createImageError('FEATURE_NOT_SUPPORTED', {
-          cause: new Error(`Unsupported processing strategy: ${strategy}`),
-        });
+    const adapter = RESIZE_STRATEGY_ADAPTERS[strategy];
+    if (!adapter) {
+      // forceStrategy로 임의 문자열이 들어오는 런타임 경로 방어
+      throw createImageError('FEATURE_NOT_SUPPORTED', {
+        cause: new Error(`Unsupported processing strategy: ${strategy}`),
+      });
     }
-  }
 
-  /**
-   * Direct resizing
-   * @private
-   */
-  private static async directResize(
-    img: HTMLImageElement,
-    targetWidth: number,
-    targetHeight: number,
-    quality: 'fast' | 'balanced' | 'high'
-  ): Promise<HTMLCanvasElement> {
-    // 결과 canvas는 호출자 소유 — pool을 거치지 않는다
-    const { canvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);
-    applySmoothing(ctx, quality);
-
-    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-    return canvas;
-  }
-
-  /**
-   * Chunk-based resizing
-   * @private
-   */
-  private static async chunkedResize(
-    img: HTMLImageElement,
-    targetWidth: number,
-    targetHeight: number,
-    opts: HighResolutionOptions & { quality: 'fast' | 'balanced' | 'high' },
-    progressCallback?: (current: number, total: number) => void
-  ): Promise<HTMLCanvasElement> {
-    const analysis = HighResolutionDetector.analyzeImage(img);
-    const tileSize = Math.min(2048, analysis.recommendedChunkSize);
-
-    return TiledProcessor.resizeInTiles(img, targetWidth, targetHeight, {
-      tileSize,
-      quality: opts.quality === 'fast' ? 'fast' : 'high',
+    return adapter.execute({
+      img,
+      targetWidth,
+      targetHeight,
+      quality: opts.quality,
+      analysis,
       onProgress: progressCallback,
-      maxConcurrency: 2,
     });
   }
 
@@ -325,21 +271,6 @@ export class HighResolutionManager {
         global.gc();
       }
     }
-  }
-
-  /**
-   * Post-processing and optimization
-   * @private
-   */
-  private static async postProcess(canvas: HTMLCanvasElement, opts: HighResolutionOptions): Promise<HTMLCanvasElement> {
-    // Post-processing based on quality
-    if (opts.quality === 'high') {
-      // No additional optimization in high-quality mode
-      return canvas;
-    }
-
-    // Additional optimization logic can be implemented if needed
-    return canvas;
   }
 
   /**
@@ -435,15 +366,8 @@ export class HighResolutionManager {
     const timeEstimate = HighResolutionDetector.estimateProcessingTime(analysis);
     let estimatedTime = timeEstimate.estimatedSeconds;
 
-    // Time adjustment based on strategy
-    switch (recommendedStrategy) {
-      case ProcessingStrategy.STEPPED:
-        estimatedTime *= 1.5;
-        break;
-      case ProcessingStrategy.TILED:
-        estimatedTime *= 2.0;
-        break;
-    }
+    // 전략별 예상 시간 배수는 adapter가 소유한다
+    estimatedTime *= RESIZE_STRATEGY_ADAPTERS[recommendedStrategy].timeMultiplier;
 
     return {
       canProcess: validation.canProcess,
