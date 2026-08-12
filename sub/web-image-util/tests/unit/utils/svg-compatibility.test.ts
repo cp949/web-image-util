@@ -50,6 +50,26 @@ describe('SVG 호환성 보정', () => {
     expect(result.enhancedSvg).not.toContain('xlink:href=');
     expect(result.report.modernizedSyntax).toBe(1);
   });
+
+  it('퍼센트 단위 도형만 있으면 콘텐츠 BBox 대신 defaultSize로 폴백한다', () => {
+    // %는 뷰포트 기준 상대값이라 user unit으로 읽으면 좌표계가 어긋난다
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><rect x="10%" y="10%" width="80%" height="80%" fill="red"/></svg>';
+
+    const result = enhanceBrowserCompatibility(svg, { mode: 'fit-content' });
+
+    expect(result.enhancedSvg).toContain('viewBox="0 0 512 512"');
+    expect(result.report.warnings.some((w) => w.includes('Content bbox unavailable'))).toBe(true);
+  });
+
+  it('단위 없는 도형은 콘텐츠 BBox로 viewBox를 계산한다', () => {
+    // 위 퍼센트 케이스의 대조군: 기존 동작이 유지되는지 확인한다
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect x="10" y="10" width="80" height="80" fill="red"/></svg>';
+
+    const result = enhanceBrowserCompatibility(svg, { mode: 'fit-content' });
+
+    expect(result.enhancedSvg).toContain('viewBox="10 10 80 80"');
+  });
 });
 
 describe('내부 헬퍼 — toMsg', () => {
@@ -172,6 +192,28 @@ describe('내부 헬퍼 — heuristicBBoxFromString', () => {
     const svg = '<svg><rect x="10" y="10" width="50" height="0"/></svg>';
     expect(heuristicBBoxFromString(svg)).toBeNull();
   });
+
+  it('퍼센트 단위 rect는 무시하고 null을 반환한다', () => {
+    // %는 뷰포트 기준 상대값이라 이 시점에 환산 기준이 없다
+    const svg = '<svg><rect x="10%" y="10%" width="80%" height="80%"/></svg>';
+    expect(heuristicBBoxFromString(svg)).toBeNull();
+  });
+
+  it('퍼센트 단위 circle은 무시하고 null을 반환한다', () => {
+    const svg = '<svg><circle cx="50%" cy="50%" r="40%"/></svg>';
+    expect(heuristicBBoxFromString(svg)).toBeNull();
+  });
+
+  it('px 단위 도형은 user unit과 동일하게 계산한다', () => {
+    const svg = '<svg><rect x="10px" y="20px" width="100px" height="50px"/></svg>';
+    expect(heuristicBBoxFromString(svg)).toEqual({ minX: 10, minY: 20, width: 100, height: 50 });
+  });
+
+  it('퍼센트 도형과 단위 없는 도형이 섞이면 단위 없는 도형만 계산한다', () => {
+    const svg =
+      '<svg><rect x="0%" y="0%" width="100%" height="100%"/><rect x="10" y="20" width="100" height="50"/></svg>';
+    expect(heuristicBBoxFromString(svg)).toEqual({ minX: 10, minY: 20, width: 100, height: 50 });
+  });
 });
 
 describe('내부 헬퍼 — heuristicBBox', () => {
@@ -270,6 +312,52 @@ describe('내부 헬퍼 — heuristicBBox', () => {
     // Number.isFinite(y) 거짓 분기: x는 유한하지만 y가 비숫자인 좌표는 무시된다
     const root = parseSvg('<polyline points="10,a"/>');
     expect(heuristicBBox(root)).toBeNull();
+  });
+
+  it('퍼센트 단위 rect는 BBox 계산에서 무시한다', () => {
+    // %는 뷰포트 기준 상대값이라 이 시점에 환산 기준이 없다
+    const root = parseSvg('<rect x="10%" y="10%" width="80%" height="80%"/>');
+    expect(heuristicBBox(root)).toBeNull();
+  });
+
+  it('퍼센트 단위 circle은 BBox 계산에서 무시한다', () => {
+    const root = parseSvg('<circle cx="50%" cy="50%" r="40%"/>');
+    expect(heuristicBBox(root)).toBeNull();
+  });
+
+  it('퍼센트 단위 ellipse는 BBox 계산에서 무시한다', () => {
+    const root = parseSvg('<ellipse cx="50%" cy="50%" rx="40%" ry="30%"/>');
+    expect(heuristicBBox(root)).toBeNull();
+  });
+
+  it('퍼센트 단위 line은 BBox 계산에서 무시한다', () => {
+    const root = parseSvg('<line x1="10%" y1="20%" x2="90%" y2="80%"/>');
+    expect(heuristicBBox(root)).toBeNull();
+  });
+
+  it('em·vw 등 다른 상대 단위 도형도 BBox 계산에서 무시한다', () => {
+    const emRoot = parseSvg('<rect x="1em" y="1em" width="10em" height="5em"/>');
+    expect(heuristicBBox(emRoot)).toBeNull();
+
+    const vwRoot = parseSvg('<circle cx="50vw" cy="50vh" r="10vw"/>');
+    expect(heuristicBBox(vwRoot)).toBeNull();
+  });
+
+  it('px 단위 도형은 user unit과 동일하게 계산한다', () => {
+    const root = parseSvg('<rect x="10px" y="20px" width="100px" height="50px"/>');
+    expect(heuristicBBox(root)).toEqual({ minX: 10, minY: 20, width: 100, height: 50 });
+  });
+
+  it('단위가 붙은 points 좌표는 건너뛴다', () => {
+    // points는 <number> 목록이라 단위 접미사가 허용되지 않는다
+    const root = parseSvg('<polyline points="10%,10% 90%,80%"/>');
+    expect(heuristicBBox(root)).toBeNull();
+  });
+
+  it('퍼센트 도형과 단위 없는 도형이 섞이면 단위 없는 도형만 계산한다', () => {
+    // 배경용 100% rect는 무시하고 실제 좌표를 가진 circle만 반영한다
+    const root = parseSvg('<rect width="100%" height="100%"/><circle cx="200" cy="200" r="50"/>');
+    expect(heuristicBBox(root)).toEqual({ minX: 150, minY: 150, width: 100, height: 100 });
   });
 });
 

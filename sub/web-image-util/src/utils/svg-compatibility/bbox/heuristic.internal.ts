@@ -5,11 +5,48 @@
  * 전체 SVG 렌더링 없이 동작하므로 SSR/Node 환경에서도 안전하다.
  */
 
+import { hasWhitespaceBeforeSvgLengthUnit, parseSvgLength } from '../../svg-length.internal';
+
+/**
+ * 도형의 좌표·크기 속성을 user unit 숫자로 읽는다.
+ *
+ * @description 단위 없음(user unit)과 `px`만 좌표계 숫자와 1:1 대응한다.
+ * `%`/`em`/`vw`는 뷰포트나 폰트를 기준으로 삼는데, 이 휴리스틱은 뷰포트 크기가
+ * 아직 정해지지 않은 시점(viewBox 산출 직전)에 호출되므로 환산 기준이 없다.
+ * 그런 값은 NaN으로 돌려주고, 호출부의 유한값·양수 가드가 해당 도형을 BBox에서 제외한다.
+ *
+ * @param raw 속성 원문(`"80"`, `"80px"`, `"80%"` 등)
+ * @returns user unit 숫자, 환산 기준이 없거나 문법이 잘못됐으면 NaN
+ */
+function toUserUnitNumber(raw: string): number {
+  const { value, unit } = parseSvgLength(raw);
+  if (value === null) return Number.NaN;
+  if (unit !== null && unit !== 'px') return Number.NaN;
+  // "80 px"처럼 숫자와 단위 사이에 공백이 있으면 SVG 문법상 무효다.
+  if (hasWhitespaceBeforeSvgLengthUnit(raw)) return Number.NaN;
+  return value;
+}
+
+/**
+ * `points` 목록의 좌표 토큰 하나를 숫자로 읽는다.
+ *
+ * @description `points`는 `<length>`가 아니라 `<number>` 목록이라 단위 접미사가 허용되지 않는다.
+ *
+ * @param token 공백·콤마로 분리된 좌표 토큰
+ * @returns 좌표 숫자, 단위가 붙었거나 숫자가 아니면 NaN
+ */
+function toPointNumber(token: string): number {
+  const { value, unit } = parseSvgLength(token);
+  if (value === null || unit !== null) return Number.NaN;
+  return value;
+}
+
 /**
  * SVG 마크업 문자열에서 정규식만으로 근사 BBox를 추출한다.
  *
  * @description DOM 파싱이 실패하거나 사용할 수 없는 환경에서 마지막 폴백으로 쓴다.
  * `<circle>`과 `<rect>`만 인식하며, 중첩이나 transform은 무시한다.
+ * 좌표·크기가 `%`/`em`처럼 환산 기준이 필요한 단위면 그 도형은 계산에서 제외한다.
  *
  * @param svgString 분석할 원본 SVG 마크업
  * @returns 인식된 도형의 BBox, 도형이 하나도 없으면 null
@@ -35,9 +72,9 @@ export function heuristicBBoxFromString(
     /<circle[^>]*cx=["']?([^"'\s]+)["']?[^>]*cy=["']?([^"'\s]+)["']?[^>]*r=["']?([^"'\s]+)["']?[^>]*\/?>/gi;
   let circleMatch = circleRegex.exec(svgString);
   while (circleMatch !== null) {
-    const cx = parseFloat(circleMatch[1]);
-    const cy = parseFloat(circleMatch[2]);
-    const r = parseFloat(circleMatch[3]);
+    const cx = toUserUnitNumber(circleMatch[1]);
+    const cy = toUserUnitNumber(circleMatch[2]);
+    const r = toUserUnitNumber(circleMatch[3]);
     if (r > 0) push(cx - r, cy - r, cx + r, cy + r);
     circleMatch = circleRegex.exec(svgString);
   }
@@ -47,10 +84,10 @@ export function heuristicBBoxFromString(
     /<rect[^>]*x=["']?([^"'\s]+)["']?[^>]*y=["']?([^"'\s]+)["']?[^>]*width=["']?([^"'\s]+)["']?[^>]*height=["']?([^"'\s]+)["']?[^>]*\/?>/gi;
   let rectMatch = rectRegex.exec(svgString);
   while (rectMatch !== null) {
-    const x = parseFloat(rectMatch[1]);
-    const y = parseFloat(rectMatch[2]);
-    const w = parseFloat(rectMatch[3]);
-    const h = parseFloat(rectMatch[4]);
+    const x = toUserUnitNumber(rectMatch[1]);
+    const y = toUserUnitNumber(rectMatch[2]);
+    const w = toUserUnitNumber(rectMatch[3]);
+    const h = toUserUnitNumber(rectMatch[4]);
     if (w > 0 && h > 0) push(x, y, x + w, y + h);
     rectMatch = rectRegex.exec(svgString);
   }
@@ -67,6 +104,8 @@ export function heuristicBBoxFromString(
  * @description DOM 쿼리와 attribute 파싱만 사용하므로 layout 엔진 없이 동작한다.
  * 지원: rect, circle, ellipse, line, polyline, polygon.
  * 비지원(무시): path, text, filter/mask/marker, transform.
+ * 좌표·크기가 `%`/`em`처럼 환산 기준이 필요한 단위인 도형도 제외한다
+ * (뷰포트 크기가 정해지기 전에 호출되므로 환산할 기준이 없다).
  * 비지원 요소를 보완하려면 paddingPercent로 안전 마진을 둘 것.
  *
  * @param root 분석 대상 SVG 루트 요소
@@ -88,36 +127,36 @@ export function heuristicBBox(root: Element): { minX: number; minY: number; widt
 
   // rect
   root.querySelectorAll('rect').forEach((el) => {
-    const x = parseFloat(el.getAttribute('x') || '0');
-    const y = parseFloat(el.getAttribute('y') || '0');
-    const w = parseFloat(el.getAttribute('width') || '0');
-    const h = parseFloat(el.getAttribute('height') || '0');
+    const x = toUserUnitNumber(el.getAttribute('x') || '0');
+    const y = toUserUnitNumber(el.getAttribute('y') || '0');
+    const w = toUserUnitNumber(el.getAttribute('width') || '0');
+    const h = toUserUnitNumber(el.getAttribute('height') || '0');
     if (w > 0 && h > 0) push(x, y, x + w, y + h);
   });
 
   // circle
   root.querySelectorAll('circle').forEach((el) => {
-    const cx = parseFloat(el.getAttribute('cx') || '0');
-    const cy = parseFloat(el.getAttribute('cy') || '0');
-    const r = parseFloat(el.getAttribute('r') || '0');
+    const cx = toUserUnitNumber(el.getAttribute('cx') || '0');
+    const cy = toUserUnitNumber(el.getAttribute('cy') || '0');
+    const r = toUserUnitNumber(el.getAttribute('r') || '0');
     if (r > 0) push(cx - r, cy - r, cx + r, cy + r);
   });
 
   // ellipse
   root.querySelectorAll('ellipse').forEach((el) => {
-    const cx = parseFloat(el.getAttribute('cx') || '0');
-    const cy = parseFloat(el.getAttribute('cy') || '0');
-    const rx = parseFloat(el.getAttribute('rx') || '0');
-    const ry = parseFloat(el.getAttribute('ry') || '0');
+    const cx = toUserUnitNumber(el.getAttribute('cx') || '0');
+    const cy = toUserUnitNumber(el.getAttribute('cy') || '0');
+    const rx = toUserUnitNumber(el.getAttribute('rx') || '0');
+    const ry = toUserUnitNumber(el.getAttribute('ry') || '0');
     if (rx > 0 && ry > 0) push(cx - rx, cy - ry, cx + rx, cy + ry);
   });
 
   // line
   root.querySelectorAll('line').forEach((el) => {
-    const x1 = parseFloat(el.getAttribute('x1') || '0');
-    const y1 = parseFloat(el.getAttribute('y1') || '0');
-    const x2 = parseFloat(el.getAttribute('x2') || '0');
-    const y2 = parseFloat(el.getAttribute('y2') || '0');
+    const x1 = toUserUnitNumber(el.getAttribute('x1') || '0');
+    const y1 = toUserUnitNumber(el.getAttribute('y1') || '0');
+    const x2 = toUserUnitNumber(el.getAttribute('x2') || '0');
+    const y2 = toUserUnitNumber(el.getAttribute('y2') || '0');
     push(x1, y1, x2, y2);
   });
 
@@ -128,7 +167,7 @@ export function heuristicBBox(root: Element): { minX: number; minY: number; widt
     const numbers = pts
       .split(/[\s,]+/)
       .filter(Boolean)
-      .map(parseFloat);
+      .map(toPointNumber);
     for (let i = 0; i < numbers.length - 1; i += 2) {
       const x = numbers[i],
         y = numbers[i + 1];
