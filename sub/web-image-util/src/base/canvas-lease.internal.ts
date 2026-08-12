@@ -17,7 +17,7 @@ type CanvasLeaseConsumeResult<T> = T extends HTMLCanvasElement ? never : T;
  * 이중 반환이 코드 리뷰가 아닌 실행 시점에 걸린다.
  */
 export class CanvasLease {
-  private state: 'active' | 'released' | 'detached' = 'active';
+  private state: 'active' | 'consuming' | 'released' | 'detached' = 'active';
 
   constructor(private readonly leasedCanvas: HTMLCanvasElement) {}
 
@@ -35,6 +35,7 @@ export class CanvasLease {
     fn: (canvas: HTMLCanvasElement) => Promise<CanvasLeaseConsumeResult<T>> | CanvasLeaseConsumeResult<T>
   ): Promise<CanvasLeaseConsumeResult<T>> {
     this.assertActive('consume');
+    this.state = 'consuming';
     try {
       return await fn(this.leasedCanvas);
     } finally {

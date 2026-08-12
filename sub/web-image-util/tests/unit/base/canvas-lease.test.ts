@@ -47,7 +47,7 @@ describe('CanvasLease', () => {
     it('임대 canvas를 콜백 결과로 반환할 수 없다', async () => {
       const lease = new CanvasLease(leased);
 
-      // @ts-expect-error 임대 canvas는 consume 결과로 module 밖에 노출할 수 없다.
+      // @ts-expect-error 임대 canvas는 consume 결과로 모듈 밖에 노출할 수 없다.
       await lease.consume((canvas) => canvas);
     });
 
@@ -60,6 +60,27 @@ describe('CanvasLease', () => {
           throw new Error('변환 실패');
         })
       ).rejects.toThrow('변환 실패');
+      expect(releaseSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('비동기 콜백 실행 중 release를 호출해도 canvas를 한 번만 반환한다', async () => {
+      const releaseSpy = vi.spyOn(pool, 'release');
+      const lease = new CanvasLease(leased);
+      let finishConsume!: () => void;
+
+      const consuming = lease.consume(
+        () =>
+          new Promise<void>((resolve) => {
+            finishConsume = resolve;
+          })
+      );
+
+      lease.release();
+      expect(releaseSpy).not.toHaveBeenCalled();
+
+      finishConsume();
+      await consuming;
+
       expect(releaseSpy).toHaveBeenCalledTimes(1);
     });
 
