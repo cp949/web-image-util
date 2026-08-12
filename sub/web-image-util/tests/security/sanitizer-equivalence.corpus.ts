@@ -50,6 +50,14 @@ export const SANITIZER_EQUIVALENCE_CORPUS: SanitizerEquivalenceCase[] = [
     },
   },
   {
+    name: 'URI: 경계 따옴표가 포함된 fragment 유사값은 양쪽 모두 제거한다',
+    svg: `${SVG_OPEN}<image href='"#frag"'/></svg>`,
+    expected: {
+      lightweight: { removes: ['"#frag"'] },
+      strict: { removes: ['"#frag"'] },
+    },
+  },
+  {
     name: 'URI: http 절대 URL은 양쪽 모두 제거한다',
     svg: imageHref('http://evil.example.com/a.png'),
     expected: {

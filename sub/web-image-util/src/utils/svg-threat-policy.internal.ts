@@ -16,7 +16,7 @@ import {
   isSvgDataImageRef,
   MAX_NESTED_SVG_DEPTH,
 } from './svg-data-url-policy.internal';
-import { decodeCssEscapes, normalizePolicyValue } from './svg-policy-utils.internal';
+import { decodeCssEscapes, decodeHtmlEntities, normalizePolicyValue } from './svg-policy-utils.internal';
 
 /**
  * 위협 정책 모드.
@@ -54,7 +54,21 @@ export function isAllowedUri(value: string, mode: SvgThreatPolicyMode): boolean 
   if (mode === 'strict') {
     return value.trim().startsWith('#');
   }
+  if (startsWithPolicyBoundaryQuote(value)) {
+    return false;
+  }
   return normalizePolicyValue(value).startsWith('#');
+}
+
+function startsWithPolicyBoundaryQuote(value: string): boolean {
+  for (const char of decodeHtmlEntities(value)) {
+    const codePoint = char.codePointAt(0) ?? 0;
+    if (char.trim().length === 0 || codePoint <= 0x20 || (codePoint >= 0x7f && codePoint <= 0x9f)) {
+      continue;
+    }
+    return char === '"' || char === "'" || char === '\\';
+  }
+  return false;
 }
 
 /**
@@ -110,6 +124,10 @@ export function isBlockedPipelineUriRef(ref: string): boolean {
 
   if (normalizedRef === '') {
     return false;
+  }
+
+  if (startsWithPolicyBoundaryQuote(ref)) {
+    return true;
   }
 
   if (normalizedRef.startsWith('data:') && (isSafeRasterDataImageRef(ref) || isSanitizedSvgDataImageRef(ref))) {

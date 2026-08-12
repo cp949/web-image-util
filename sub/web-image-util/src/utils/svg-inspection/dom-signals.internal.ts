@@ -1,5 +1,4 @@
-import { normalizePolicyValue } from '../svg-policy-utils.internal';
-import { isEventHandlerAttributeName } from '../svg-threat-policy.internal';
+import { isBlockedPipelineUriRef, isEventHandlerAttributeName } from '../svg-threat-policy.internal';
 import { isReferenceAttribute, readReferenceAttribute } from './reference-attribute.internal';
 import { pushCappedSample } from './sample-utils.internal';
 
@@ -20,14 +19,10 @@ export interface SvgDomSecuritySignals {
  * 미지 스킴 포함)를 제거 대상으로 센다. `data:` 값은 embedded image 단계가
  * 별도로 처리하므로 본 판정에서 제외해 이중 카운트를 막는다.
  */
-function isExternalSvgReference(value: string): boolean {
-  const normalized = normalizePolicyValue(value);
+function isRemovedSvgReference(value: string): boolean {
   // 모든 data: 값은 embedded image 단계가 처리하므로 제외
-  if (normalized.startsWith('data:')) return false;
-  // 내부 fragment 참조 제외
-  if (normalized.startsWith('#')) return false;
-
-  return true;
+  if (value.trim().toLowerCase().startsWith('data:')) return false;
+  return value.trim() === '' || isBlockedPipelineUriRef(value);
 }
 
 /** DOM 기반 SVG 보안 신호를 한 번의 순회로 수집한다. */
@@ -61,7 +56,7 @@ export function collectSvgDomSecuritySignals(doc: Document): SvgDomSecuritySigna
       }
       if (isReferenceAttribute(element, attrName)) {
         const value = readReferenceAttribute(element, attrName) ?? '';
-        if (isExternalSvgReference(value)) {
+        if (isRemovedSvgReference(value)) {
           signals.externalHrefCount += 1;
           pushCappedSample(signals.externalHrefSamples, lowered);
         }

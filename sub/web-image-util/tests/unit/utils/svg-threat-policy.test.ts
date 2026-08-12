@@ -29,6 +29,7 @@ describe('위협 정책 — isAllowedUri', () => {
       expect(isAllowedUri('http://evil.example.com/a.png', mode)).toBe(false);
       expect(isAllowedUri('javascript:alert(1)', mode)).toBe(false);
       expect(isAllowedUri('data:text/html,x', mode)).toBe(false);
+      expect(isAllowedUri('"#frag"', mode)).toBe(false);
     }
   });
 
@@ -85,6 +86,7 @@ describe('위협 정책 — isBlockedPipelineUriRef', () => {
     expect(isBlockedPipelineUriRef('/a.png')).toBe(true);
     expect(isBlockedPipelineUriRef('a.png')).toBe(true);
     expect(isBlockedPipelineUriRef('vbscript:alert(1)')).toBe(true);
+    expect(isBlockedPipelineUriRef('"#frag"')).toBe(true);
   });
 
   it('fragment와 빈 값은 차단하지 않는다 — 빈 값은 fetch/실행 대상이 없다', () => {
