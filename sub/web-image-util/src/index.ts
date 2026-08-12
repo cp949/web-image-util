@@ -140,6 +140,8 @@ export type {
   ResultElement,
   ResultFile,
   ResultMetadata,
+  ScaleConfig,
+  ScaleValue,
   SmartResizeOptions,
   SvgComplexityMetrics,
   // SVG utility types

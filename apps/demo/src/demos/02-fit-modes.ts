@@ -1,11 +1,12 @@
-import { processImage, type ResizeFit } from '@cp949/web-image-util';
+import { processImage } from '@cp949/web-image-util';
 
 export const meta = {
   title: 'Fit 모드 비교',
   description: '같은 입력·같은 목표 크기로 5개 fit 모드를 시각적으로 비교한다.',
 };
 
-const FITS: ResizeFit[] = ['cover', 'contain', 'fill', 'maxFit', 'minFit'];
+// 박스 기반 fit만 비교한다 — scale은 목표 크기가 아니라 배율을 받으므로 이 데모의 축이 아니다
+const FITS = ['cover', 'contain', 'fill', 'maxFit', 'minFit'] as const;
 const TARGET = { width: 300, height: 200 };
 
 export async function run(target: HTMLElement): Promise<void> {

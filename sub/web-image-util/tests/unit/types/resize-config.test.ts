@@ -5,6 +5,7 @@ import {
   isFillConfig,
   isMaxFitConfig,
   isMinFitConfig,
+  isScaleConfig,
   type ResizeConfig,
   validateResizeConfig,
 } from '../../../src/types/resize-config';
@@ -66,8 +67,61 @@ describe('ResizeConfig Types', () => {
         expect(() => validateResizeConfig(config)).not.toThrow();
       });
 
-      it('should throw error for fill config without height', () => {
-        const config = { fit: 'fill', width: 300 } as any;
+      it('width만 지정한 fill config를 허용한다 (height는 렌더 시점에 원본 비율로 계산)', () => {
+        const config: ResizeConfig = { fit: 'fill', width: 300 };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it('height만 지정한 fill config를 허용한다', () => {
+        const config: ResizeConfig = { fit: 'fill', height: 200 };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it('width·height 모두 없는 fill config는 거부한다', () => {
+        const config = { fit: 'fill' } as any;
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
+      });
+
+      it('음수 width의 fill config는 거부한다', () => {
+        const config = { fit: 'fill', width: -300 } as any;
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
+      });
+    });
+
+    describe('scale config', () => {
+      it('균일 배율 scale config를 허용한다', () => {
+        const config: ResizeConfig = { fit: 'scale', scale: 1.5 };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it('축별 배율 scale config를 허용한다', () => {
+        const configs: ResizeConfig[] = [
+          { fit: 'scale', scale: { sx: 2 } },
+          { fit: 'scale', scale: { sy: 0.5 } },
+          { fit: 'scale', scale: { sx: 2, sy: 0.75 } },
+        ];
+        configs.forEach((config) => {
+          expect(() => validateResizeConfig(config)).not.toThrow();
+        });
+      });
+
+      it('0 이하의 균일 배율은 거부한다', () => {
+        const config = { fit: 'scale', scale: 0 } as any;
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
+      });
+
+      it('유한하지 않은 배율은 거부한다', () => {
+        const config = { fit: 'scale', scale: Number.POSITIVE_INFINITY } as any;
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
+      });
+
+      it('0 이하의 축별 배율은 거부한다', () => {
+        const config = { fit: 'scale', scale: { sx: -1 } } as any;
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
+      });
+
+      it('sx·sy가 모두 없는 객체 배율은 거부한다', () => {
+        const config = { fit: 'scale', scale: {} } as any;
         expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
       });
     });
@@ -220,6 +274,13 @@ describe('ResizeConfig Types', () => {
       expect(isMinFitConfig(config)).toBe(true);
       expect(isCoverConfig(config)).toBe(false);
       expect(isMaxFitConfig(config)).toBe(false);
+    });
+
+    it('scale config를 정확히 식별한다', () => {
+      const config: ResizeConfig = { fit: 'scale', scale: 2 };
+      expect(isScaleConfig(config)).toBe(true);
+      expect(isCoverConfig(config)).toBe(false);
+      expect(isFillConfig(config)).toBe(false);
     });
   });
 

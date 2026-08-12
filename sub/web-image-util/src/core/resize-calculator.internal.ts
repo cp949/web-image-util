@@ -9,7 +9,7 @@
  */
 
 import type { GeometryPoint, GeometrySize } from '../types/base';
-import type { Padding, ResizeConfig } from '../types/resize-config';
+import type { Padding, ResizeConfig, ScaleValue } from '../types/resize-config';
 
 // ============================================================================
 // INTERFACES - Interface definitions
@@ -171,9 +171,10 @@ export class ResizeCalculator {
    * Calculate the actual size the image will be drawn based on fit mode
    * - cover: Scale to fill canvas completely
    * - contain: Scale to fit within canvas
-   * - fill: Fit exactly to canvas size
+   * - fill: Fit exactly to canvas size (한 축 생략 시 원본 비율로 계산)
    * - maxFit: Only allow shrinking
    * - minFit: Only allow enlarging
+   * - scale: 원본 크기에 배율 적용
    */
   private calculateImageSize(originalWidth: number, originalHeight: number, config: ResizeConfig): GeometrySize {
     switch (config.fit) {
@@ -187,6 +188,8 @@ export class ResizeCalculator {
         return this.calculateMaxFitSize(originalWidth, originalHeight, config);
       case 'minFit':
         return this.calculateMinFitSize(originalWidth, originalHeight, config);
+      case 'scale':
+        return this.calculateScaleSize(originalWidth, originalHeight, config.scale);
       default:
         throw new Error(`Unknown fit mode: ${(config as any).fit}`);
     }
@@ -201,8 +204,9 @@ export class ResizeCalculator {
    *
    * @description
    * Calculate canvas size based on fit mode
-   * - cover/contain/fill: target width/height is canvas size (fixed)
-   * - maxFit/minFit: image size is canvas size (variable)
+   * - cover/contain: target width/height is canvas size (fixed)
+   * - fill/maxFit/minFit/scale: image size is canvas size (variable)
+   *   (fill 양축 지정 시 imageSize == target이므로 기존 결과와 동일)
    * - Apply additional padding if present
    *
    * @example
@@ -228,12 +232,12 @@ export class ResizeCalculator {
     let baseWidth: number;
     let baseHeight: number;
 
-    if (config.fit === 'cover' || config.fit === 'contain' || config.fit === 'fill') {
-      // cover/contain/fill: target size is canvas size
+    if (config.fit === 'cover' || config.fit === 'contain') {
+      // cover/contain: target size is canvas size
       baseWidth = config.width;
       baseHeight = config.height;
     } else {
-      // maxFit/minFit: image size is canvas size
+      // fill/maxFit/minFit/scale: image size is canvas size
       baseWidth = imageSize.width;
       baseHeight = imageSize.height;
     }
@@ -357,19 +361,25 @@ export class ResizeCalculator {
    * Logic to fit exactly while ignoring aspect ratio
    * - Image may be stretched or compressed
    * - Same as CSS object-fit: fill
+   * - 한 축만 지정하면 나머지 축은 원본 비율로 계산한다 (종횡비 유지)
    */
   private calculateFillSize(
     originalWidth: number,
     originalHeight: number,
-    config: { width: number; height: number }
+    config: { width?: number; height?: number }
   ): GeometrySize {
     const { width: targetW, height: targetH } = config;
 
     // Return target size as is (ignore aspect ratio)
-    return {
-      width: targetW,
-      height: targetH,
-    };
+    if (targetW != null && targetH != null) {
+      return { width: targetW, height: targetH };
+    }
+
+    // 단일 축 지정: 나머지 축은 원본 비율로 계산 (validateResizeConfig가 최소 1축을 보장)
+    if (targetW != null) {
+      return { width: targetW, height: Math.round(targetW * (originalHeight / originalWidth)) };
+    }
+    return { width: Math.round((targetH as number) * (originalWidth / originalHeight)), height: targetH as number };
   }
 
   /**
@@ -427,6 +437,31 @@ export class ResizeCalculator {
     return {
       width: Math.round(originalWidth * scale),
       height: Math.round(originalHeight * scale),
+    };
+  }
+
+  /**
+   * Calculate scale size
+   *
+   * @description
+   * 원본 크기에 배율을 적용한다
+   * - 균일 배율(number): 두 축에 같은 배율
+   * - 축별 배율({ sx }, { sy }, { sx, sy }): 생략한 축은 1로 처리 (원본 유지)
+   */
+  private calculateScaleSize(originalWidth: number, originalHeight: number, scale: ScaleValue): GeometrySize {
+    if (typeof scale === 'number') {
+      return {
+        width: Math.round(originalWidth * scale),
+        height: Math.round(originalHeight * scale),
+      };
+    }
+
+    const sx = 'sx' in scale ? scale.sx : 1;
+    const sy = 'sy' in scale ? scale.sy : 1;
+
+    return {
+      width: Math.round(originalWidth * sx),
+      height: Math.round(originalHeight * sy),
     };
   }
 }

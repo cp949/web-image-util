@@ -67,11 +67,39 @@ export interface ContainConfig extends BaseResizeConfig {
 /**
  * Fill mode: Fit image to exact specified size (ignore aspect ratio, may stretch or compress)
  * Same behavior as CSS object-fit: fill
+ * - 한 축만 지정하면 나머지 축은 렌더 시점에 원본 비율로 계산한다
+ * - At least one of width or height is required
  */
-export interface FillConfig extends BaseResizeConfig {
-  fit: 'fill';
-  width: number;
-  height: number;
+export type FillConfig =
+  | (BaseResizeConfig & {
+      fit: 'fill';
+      width: number;
+      height?: number;
+    })
+  | (BaseResizeConfig & {
+      fit: 'fill';
+      width?: number;
+      height: number;
+    })
+  | (BaseResizeConfig & {
+      fit: 'fill';
+      width: number;
+      height: number;
+    });
+
+/**
+ * scale 배율 값 — 균일 배율(number) 또는 축별 배율({ sx }, { sy }, { sx, sy })
+ */
+export type ScaleValue = number | { sx: number } | { sy: number } | { sx: number; sy: number };
+
+/**
+ * Scale mode: 원본 크기 기준 배율 리사이즈
+ * - 원본 크기는 렌더 시점에 해석되므로 config는 배율만 담는다
+ * - 생략한 축의 배율은 1로 처리한다
+ */
+export interface ScaleConfig extends BaseResizeConfig {
+  fit: 'scale';
+  scale: ScaleValue;
 }
 
 /**
@@ -128,17 +156,18 @@ export type MinFitConfig =
  * ResizeConfig Discriminated Union type
  *
  * @description
- * Resizing configuration type supporting 5 fit modes:
+ * Resizing configuration type supporting 6 fit modes:
  * - cover: Fill entire area (may crop)
  * - contain: Fit entire image (may create empty space)
- * - fill: Exact size fit (ignore aspect ratio)
+ * - fill: Exact size fit (ignore aspect ratio; 한 축만 지정하면 나머지는 원본 비율)
  * - maxFit: Only allow shrinking (no enlargement)
  * - minFit: Only allow enlargement (no shrinking)
+ * - scale: 원본 크기 기준 배율 (렌더 시점에 원본 크기로 해석)
  *
  * Utilizes TypeScript's Discriminated Union to
  * narrow types by fit field and enforce required/optional properties for each mode.
  */
-export type ResizeConfig = CoverConfig | ContainConfig | FillConfig | MaxFitConfig | MinFitConfig;
+export type ResizeConfig = CoverConfig | ContainConfig | FillConfig | MaxFitConfig | MinFitConfig | ScaleConfig;
 
 // ============================================================================
 // TYPE GUARDS - Type guard functions
@@ -179,19 +208,32 @@ export function isMinFitConfig(config: ResizeConfig): config is MinFitConfig {
   return config.fit === 'minFit';
 }
 
+/**
+ * ScaleConfig type guard
+ */
+export function isScaleConfig(config: ResizeConfig): config is ScaleConfig {
+  return config.fit === 'scale';
+}
+
 // ============================================================================
 // RUNTIME VALIDATION - Runtime validation function
 // ============================================================================
 
+/** scale 축 배율 하나가 유한 양수인지 검사한다 */
+function isValidScaleFactor(value: number): boolean {
+  return Number.isFinite(value) && value > 0;
+}
+
 /**
  * ResizeConfig runtime validation function
- * - maxFit/minFit: Either width or height is required
- * - cover/contain/fill: Both width and height are required
+ * - maxFit/minFit/fill: Either width or height is required
+ * - cover/contain: Both width and height are required
+ * - scale: 배율(균일 또는 축별)은 유한 양수여야 한다
  * @throws {ImageProcessError} If configuration is invalid
  */
 export function validateResizeConfig(config: ResizeConfig): void {
-  // maxFit and minFit require at least one of width or height
-  if (config.fit === 'maxFit' || config.fit === 'minFit') {
+  // maxFit, minFit, fill require at least one of width or height
+  if (config.fit === 'maxFit' || config.fit === 'minFit' || config.fit === 'fill') {
     if (!config.width && !config.height) {
       throw new ImageProcessError(`${config.fit} requires at least width or height`, 'INVALID_DIMENSIONS');
     }
@@ -201,8 +243,8 @@ export function validateResizeConfig(config: ResizeConfig): void {
     }
   }
 
-  // cover, contain, fill require both width and height
-  if (config.fit === 'cover' || config.fit === 'contain' || config.fit === 'fill') {
+  // cover and contain require both width and height
+  if (config.fit === 'cover' || config.fit === 'contain') {
     // First check for undefined/null (0 is invalid but checked separately)
     if (config.width === undefined || config.width === null || config.height === undefined || config.height === null) {
       throw new ImageProcessError(`${config.fit} requires both width and height`, 'INVALID_DIMENSIONS');
@@ -210,6 +252,28 @@ export function validateResizeConfig(config: ResizeConfig): void {
     // Check if width or height is 0 or negative
     if (config.width <= 0 || config.height <= 0) {
       throw new ImageProcessError(`${config.fit} width and height must be positive numbers`, 'INVALID_DIMENSIONS');
+    }
+  }
+
+  // scale requires finite positive factors (uniform or per-axis)
+  if (config.fit === 'scale') {
+    const { scale } = config;
+    if (typeof scale === 'number') {
+      if (!isValidScaleFactor(scale)) {
+        throw new ImageProcessError('scale must be a finite positive number', 'INVALID_DIMENSIONS');
+      }
+    } else {
+      const hasSx = typeof scale === 'object' && scale !== null && 'sx' in scale;
+      const hasSy = typeof scale === 'object' && scale !== null && 'sy' in scale;
+      if (!hasSx && !hasSy) {
+        throw new ImageProcessError('scale requires at least sx or sy', 'INVALID_DIMENSIONS');
+      }
+      if (
+        (hasSx && !isValidScaleFactor((scale as { sx: number }).sx)) ||
+        (hasSy && !isValidScaleFactor((scale as { sy: number }).sy))
+      ) {
+        throw new ImageProcessError('scale factors must be finite positive numbers', 'INVALID_DIMENSIONS');
+      }
     }
   }
 

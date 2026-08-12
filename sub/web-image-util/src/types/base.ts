@@ -88,8 +88,9 @@ export const OutputFormats = {
  * - fill: Ignore ratio and fit exactly
  * - maxFit: Only allow shrinking, no enlargement (replaces inside)
  * - minFit: Only allow enlargement, no shrinking (replaces outside)
+ * - scale: 원본 크기 기준 배율 (원본 크기는 렌더 시점에 해석)
  */
-export type ResizeFit = 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit';
+export type ResizeFit = 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit' | 'scale';
 
 /**
  * Fit constants
@@ -98,6 +99,7 @@ export const ResizeFitConstants = {
   COVER: 'cover' as const,
   CONTAIN: 'contain' as const,
   FILL: 'fill' as const,
+  SCALE: 'scale' as const,
 } as const;
 
 /**

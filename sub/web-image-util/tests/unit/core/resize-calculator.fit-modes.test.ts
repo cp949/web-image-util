@@ -150,6 +150,109 @@ describe('ResizeCalculator - fit 모드', () => {
     });
   });
 
+  describe('fill 모드 — 단일 축 지정', () => {
+    it('width만 지정하면 height를 원본 비율로 계산한다', () => {
+      // 400x300 → width 300: height = Math.round(300 * (300/400)) = 225
+      const result = calculator.calculateFinalLayout(400, 300, {
+        fit: 'fill',
+        width: 300,
+      });
+
+      expect(result.imageSize).toEqual({ width: 300, height: 225 });
+      expect(result.canvasSize).toEqual({ width: 300, height: 225 });
+      expect(result.position).toEqual({ x: 0, y: 0 });
+    });
+
+    it('height만 지정하면 width를 원본 비율로 계산한다', () => {
+      // 400x300 → height 300: width = Math.round(300 * (400/300)) = 400
+      const result = calculator.calculateFinalLayout(400, 300, {
+        fit: 'fill',
+        height: 300,
+      });
+
+      expect(result.imageSize).toEqual({ width: 400, height: 300 });
+      expect(result.canvasSize).toEqual({ width: 400, height: 300 });
+    });
+
+    it('단일 축 지정에서도 padding이 캔버스에 더해진다', () => {
+      const result = calculator.calculateFinalLayout(400, 300, {
+        fit: 'fill',
+        width: 200,
+        padding: 10,
+      });
+
+      expect(result.imageSize).toEqual({ width: 200, height: 150 });
+      expect(result.canvasSize).toEqual({ width: 220, height: 170 });
+      expect(result.position).toEqual({ x: 10, y: 10 });
+    });
+  });
+
+  describe('scale 모드', () => {
+    it('균일 배율로 원본 크기를 조정한다', () => {
+      // 400x300 → scale 0.5: Math.round(400*0.5)=200, Math.round(300*0.5)=150
+      const result = calculator.calculateFinalLayout(400, 300, {
+        fit: 'scale',
+        scale: 0.5,
+      });
+
+      expect(result.imageSize).toEqual({ width: 200, height: 150 });
+      expect(result.canvasSize).toEqual({ width: 200, height: 150 });
+      expect(result.position).toEqual({ x: 0, y: 0 });
+    });
+
+    it('sx만 지정하면 세로는 원본을 유지한다', () => {
+      const result = calculator.calculateFinalLayout(400, 300, {
+        fit: 'scale',
+        scale: { sx: 2 },
+      });
+
+      expect(result.imageSize).toEqual({ width: 800, height: 300 });
+      expect(result.canvasSize).toEqual({ width: 800, height: 300 });
+    });
+
+    it('sy만 지정하면 가로는 원본을 유지한다', () => {
+      const result = calculator.calculateFinalLayout(400, 300, {
+        fit: 'scale',
+        scale: { sy: 2 },
+      });
+
+      expect(result.imageSize).toEqual({ width: 400, height: 600 });
+      expect(result.canvasSize).toEqual({ width: 400, height: 600 });
+    });
+
+    it('sx·sy를 함께 지정하면 축별 배율을 적용한다', () => {
+      const result = calculator.calculateFinalLayout(400, 300, {
+        fit: 'scale',
+        scale: { sx: 2, sy: 3 },
+      });
+
+      expect(result.imageSize).toEqual({ width: 800, height: 900 });
+      expect(result.canvasSize).toEqual({ width: 800, height: 900 });
+    });
+
+    it('배율 결과는 반올림한다', () => {
+      // 333x333 → scale 0.5: Math.round(166.5)=167
+      const result = calculator.calculateFinalLayout(333, 333, {
+        fit: 'scale',
+        scale: 0.5,
+      });
+
+      expect(result.imageSize).toEqual({ width: 167, height: 167 });
+    });
+
+    it('scale 모드에서도 padding이 캔버스에 더해진다', () => {
+      const result = calculator.calculateFinalLayout(400, 300, {
+        fit: 'scale',
+        scale: 0.5,
+        padding: 20,
+      });
+
+      expect(result.imageSize).toEqual({ width: 200, height: 150 });
+      expect(result.canvasSize).toEqual({ width: 240, height: 190 });
+      expect(result.position).toEqual({ x: 20, y: 20 });
+    });
+  });
+
   describe('fill 모드', () => {
     it('이미지를 정확한 목표 크기로 늘린다', () => {
       const result = calculator.calculateFinalLayout(1000, 1000, {

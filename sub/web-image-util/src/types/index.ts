@@ -119,6 +119,8 @@ export type {
   MinFitConfig,
   Padding,
   ResizeConfig,
+  ScaleConfig,
+  ScaleValue,
 } from './resize-config';
 
 export {
@@ -127,6 +129,7 @@ export {
   isFillConfig,
   isMaxFitConfig,
   isMinFitConfig,
+  isScaleConfig,
   validateResizeConfig,
 } from './resize-config';
 
