@@ -1,4 +1,5 @@
 import type { ImageFormat, OutputFormat, OutputOptions } from '../types';
+import { normalizeMimeType } from './source-utils/mime.internal';
 
 export type ImageFormatOrUnknown = ImageFormat | 'unknown';
 
@@ -24,7 +25,8 @@ const IMAGE_FORMAT_BY_MIME_TYPE: Record<string, ImageFormatOrUnknown> = {
   'image/svg+xml': 'svg',
 };
 
-const MIME_TYPE_BY_FORMAT: Record<ImageFormat, string> = {
+/** 포맷 → MIME 정본 테이블. 라이브러리의 다른 포맷↔MIME 매핑은 이 테이블의 소비자다. */
+export const MIME_TYPE_BY_FORMAT: Record<ImageFormat, string> = {
   jpeg: 'image/jpeg',
   jpg: 'image/jpeg',
   png: 'image/png',
@@ -113,13 +115,6 @@ export function resolveOutputFormat(preferred: OutputFormat, options: ResolveOut
   }
 
   return DEFAULT_OUTPUT_FALLBACK_ORDER.find((format) => supported.includes(format)) ?? 'png';
-}
-
-/**
- * MIME 타입 비교를 위해 파라미터를 제거하고 소문자로 정규화한다.
- */
-function normalizeMimeType(mimeType: string): string {
-  return mimeType.split(';', 1)[0]?.trim().toLowerCase() ?? '';
 }
 
 /**

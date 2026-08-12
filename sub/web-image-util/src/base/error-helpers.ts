@@ -5,6 +5,8 @@
  */
 
 import { type ImageErrorCodeType, type ImageErrorDetails, ImageProcessError } from '../errors.internal';
+import type { ImageFormat } from '../types/base';
+import { detectCanvasFormatSupport } from '../utils/browser-capabilities/index';
 import type { ErrorContext } from './error-context.internal';
 import { globalErrorHandler } from './error-handler';
 
@@ -112,15 +114,11 @@ export function createImageError(
 
 /**
  * Format support check
+ *
+ * @description Canvas encoder 지원 프로브와 캐시는 utils/browser-capabilities가 단일 소유한다.
  */
 export async function isFormatSupported(format: string): Promise<boolean> {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(!!blob), `image/${format}`, 0.8);
-  });
+  return detectCanvasFormatSupport(format as ImageFormat);
 }
 
 /**

@@ -7,16 +7,13 @@
  */
 
 import type { ImageFormat } from '../../types/base';
+import { formatToMimeType } from '../format-utils';
 import { createImageElement } from '../image-element.internal';
 import { capabilityCache } from './cache.internal';
 import type { BrowserCapabilities } from './types';
 
 function getCanvasFormatCacheKey(format: ImageFormat): string {
   return `canvas-format-support:${format}`;
-}
-
-function getCanvasMimeType(format: ImageFormat): string {
-  return format === 'jpg' ? 'image/jpeg' : `image/${format}`;
 }
 
 /**
@@ -38,7 +35,8 @@ export function detectCanvasFormatSupport(format: ImageFormat): boolean {
     const canvas = globalThis.document.createElement('canvas');
     canvas.width = canvas.height = 1;
 
-    const mimeType = getCanvasMimeType(format);
+    // 포맷→MIME 변환은 format-utils 정본 테이블을 소비한다.
+    const mimeType = formatToMimeType(format);
     const supported = canvas.toDataURL(mimeType, 0.5).startsWith(`data:${mimeType}`);
     capabilityCache.set(getCanvasFormatCacheKey(format), supported);
     return supported;

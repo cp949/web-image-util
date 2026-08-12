@@ -9,28 +9,12 @@ import { detectSourceType } from '../../core/source-converter/detect.internal';
 import type { ImageSource } from '../../types';
 import { ImageFormats } from '../../types';
 import { parseDataURLMimeType } from '../data-url';
+import { mimeTypeToImageFormat } from '../format-utils';
 import type { ImageInfo } from './types';
 
-/** MIME 타입을 공개 이미지 포맷 값으로 변환한다. */
+/** MIME 타입을 공개 이미지 포맷 값으로 변환한다. 매핑 정본은 format-utils가 소유한다. */
 export function formatFromMimeType(mimeType: string): ImageInfo['format'] {
-  const normalized = mimeType.toLowerCase().split(';')[0].trim();
-
-  switch (normalized) {
-    case 'image/jpeg':
-      return ImageFormats.JPEG;
-    case 'image/png':
-      return ImageFormats.PNG;
-    case 'image/webp':
-      return ImageFormats.WEBP;
-    case 'image/avif':
-      return ImageFormats.AVIF;
-    case 'image/gif':
-      return ImageFormats.GIF;
-    case 'image/svg+xml':
-      return ImageFormats.SVG;
-    default:
-      return 'unknown';
-  }
+  return mimeTypeToImageFormat(mimeType);
 }
 
 /** 파일명이나 URL 경로의 확장자에서 이미지 포맷 힌트를 얻는다. */

@@ -21,6 +21,7 @@ import {
   SmartFormatSelector,
 } from '../../../src/core/smart-format';
 import { ImageFormats } from '../../../src/types';
+import { capabilityCache } from '../../../src/utils/browser-capabilities/cache.internal';
 
 // -----------------------------------------------------------------------
 // 헬퍼
@@ -63,12 +64,12 @@ describe('ImagePurpose', () => {
 
 describe('SmartFormatSelector.selectOptimalFormat', () => {
   beforeEach(() => {
-    (FormatDetector as any).supportCache.clear();
+    capabilityCache.clear();
     vi.clearAllMocks();
   });
 
   afterEach(() => {
-    (FormatDetector as any).supportCache.clear();
+    capabilityCache.clear();
     vi.restoreAllMocks();
   });
 
@@ -340,12 +341,12 @@ describe('SmartFormatSelector.selectOptimalFormat', () => {
 
 describe('SmartFormatSelector.batchOptimize', () => {
   beforeEach(() => {
-    (FormatDetector as any).supportCache.clear();
+    capabilityCache.clear();
     vi.clearAllMocks();
   });
 
   afterEach(() => {
-    (FormatDetector as any).supportCache.clear();
+    capabilityCache.clear();
     vi.restoreAllMocks();
   });
 
@@ -409,12 +410,12 @@ describe('SmartFormatSelector.batchOptimize', () => {
 
 describe('편의 함수', () => {
   beforeEach(() => {
-    (FormatDetector as any).supportCache.clear();
+    capabilityCache.clear();
     vi.clearAllMocks();
   });
 
   afterEach(() => {
-    (FormatDetector as any).supportCache.clear();
+    capabilityCache.clear();
     vi.restoreAllMocks();
   });
 

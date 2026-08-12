@@ -12,6 +12,7 @@ vi.mock('../../../src/utils/image-element.internal');
 
 import { FORMAT_MIME_MAP, FormatDetector } from '../../../src/base/format-detector';
 import { ImageFormats } from '../../../src/types';
+import { capabilityCache } from '../../../src/utils/browser-capabilities/cache.internal';
 import { createImageElement } from '../../../src/utils/image-element.internal';
 
 // -----------------------------------------------------------------------
@@ -74,12 +75,12 @@ describe('FORMAT_MIME_MAP', () => {
 describe('FormatDetector', () => {
   beforeEach(() => {
     // 각 테스트 전 지원 여부 캐시를 초기화한다
-    (FormatDetector as any).supportCache.clear();
+    capabilityCache.clear();
     vi.resetAllMocks();
   });
 
   afterEach(() => {
-    (FormatDetector as any).supportCache.clear();
+    capabilityCache.clear();
     vi.restoreAllMocks();
   });
 
@@ -159,7 +160,7 @@ describe('FormatDetector', () => {
       const countAfterFirst = vi.mocked(createImageElement).mock.calls.length;
 
       // 캐시 초기화 후 재호출
-      (FormatDetector as any).supportCache.clear();
+      capabilityCache.clear();
       await FormatDetector.isSupported(ImageFormats.AVIF);
 
       expect(vi.mocked(createImageElement).mock.calls.length).toBeGreaterThan(countAfterFirst);
