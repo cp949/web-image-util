@@ -11,6 +11,7 @@ import type { FilterChain } from '../filters/plugin-system';
 import { filterManager, getMissingFilterNames } from '../filters/plugin-system';
 import { ImageProcessError } from '../types';
 import { productionLog } from '../utils/debug.internal';
+import { formatToMimeType } from '../utils/format-utils';
 import type { AutoProcessingResult } from './auto-high-res';
 import { AutoHighResProcessor } from './auto-high-res';
 import { SmartFormatSelector } from './smart-format';
@@ -196,8 +197,8 @@ export class AdvancedImageProcessor {
 
           messages.push(`Format optimization: ${formatResult.format.toUpperCase()} (${formatResult.reason})`);
         } else if (typeof options.format === 'string') {
-          // Specific format specified
-          const mimeType = `image/${options.format}`;
+          // 포맷 명시 — MIME 결정은 정본 테이블 경유 ('jpg' 별칭 → image/jpeg)
+          const mimeType = formatToMimeType(options.format);
           blob = await canvasToBlob(canvas, { mimeType, quality: 0.8 });
 
           formatOptimization = {

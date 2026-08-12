@@ -149,5 +149,18 @@ describe('AdvancedImageProcessor.processImage format 옵션', () => {
       expect(result.processing.formatOptimization?.quality).toBe(0.8);
       expect(result.blob!.type).toBe('image/jpeg');
     });
+
+    it("별칭 'jpg' 지정 시 인코더에 표준 MIME image/jpeg 를 전달한다 (jsdom 은 비표준 image/jpg 도 관대하게 받으므로 전달 인자를 검증)", async () => {
+      const toBlobSpy = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob');
+
+      const img = createMockImage(200, 150);
+      const result = await AdvancedImageProcessor.processImage(img, {
+        resize: { width: 200, height: 150 },
+        format: 'jpg',
+      });
+
+      expect(result.blob).toBeDefined();
+      expect(toBlobSpy.mock.lastCall?.[1]).toBe('image/jpeg');
+    });
   });
 });

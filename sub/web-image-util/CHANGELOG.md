@@ -23,6 +23,7 @@
 
 - Fixed: strict 정책 진단이 빈 `href=""`를 보존으로 과소 보고하던 불일치를 수정했습니다. 실제 strict sanitizer는 빈 href 속성을 제거하며, 이제 진단도 제거 대상으로 셉니다.
 - Fixed: `createAvatar()`의 `fit` 옵션이 무시되고 항상 `'cover'`로 처리되던 결함을 수정했습니다. 이제 `fit: 'contain'`/`'fill'`이 리사이즈에 반영되며, 미지정 시 기본값 `'cover'`는 그대로 유지됩니다.
+- Fixed: advanced `AdvancedImageProcessor.processImage()`에서 `format: 'jpg'` 지정 시 비표준 MIME `image/jpg`로 인코딩을 시도해 브라우저가 PNG로 폴백하던 문제를 수정했습니다. 정본 포맷 테이블 경유로 `image/jpeg`로 인코딩합니다.
 
 ## [3.1.0] - 2026-08-12
 
