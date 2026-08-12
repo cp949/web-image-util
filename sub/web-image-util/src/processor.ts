@@ -20,7 +20,7 @@ import type {
   ResultDataURL,
   ResultFile,
 } from './types';
-import type { IImageProcessor, IShortcutBuilder } from './types/processor-interface';
+import type { IImageProcessor } from './types/processor-interface';
 import type { AfterResizeCall, ProcessorState } from './types/processor-state.internal';
 import type { ResizeConfig } from './types/resize-config';
 import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor.internal';
@@ -172,7 +172,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize>
    * await processImage(src).shortcut.scale(1.5).toBlob();                           // Scale adjustment
    * ```
    */
-  get shortcut(): IShortcutBuilder<TState> {
+  get shortcut(): ShortcutBuilder<TState> {
     return new ShortcutBuilder(this);
   }
 

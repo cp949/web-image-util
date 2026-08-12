@@ -1,149 +1,18 @@
 /**
  * Processor interface separation
  *
- * @description Defines core interfaces for ImageProcessor.
- * Separated interfaces only to prevent circular dependencies.
+ * @description Defines the core interface for ImageProcessor.
+ * ShortcutBuilder depends on this interface to prevent circular dependencies.
+ * (shortcut 메서드 표면은 ShortcutBuilder 클래스가 직접 공개 타입을 겸한다 —
+ * 별도 미러 인터페이스를 두지 않는다. 아래 ShortcutBuilder import는 type 전용이라
+ * 런타임 순환이 없다.)
  */
 
+import type { ShortcutBuilder } from '../shortcut/shortcut-builder';
 import type { OutputFormat } from './base';
 import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './output-types';
 import type { AfterResize, BeforeResize, ProcessorState } from './processor-state.internal';
-import type { ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig, ResizeConfig, ScaleValue } from './resize-config';
-
-/**
- * Shortcut API interface
- *
- * @description Defines Sharp.js style convenience methods.
- * Defined as interface only to prevent circular dependencies,
- * actual implementation is handled by ShortcutBuilder class.
- *
- * @template TState Processor state (BeforeResize | AfterResize)
- */
-export interface IShortcutBuilder<TState extends ProcessorState> {
-  // ============================================================================
-  // 🎯 Direct Mapping: Methods that can be converted immediately
-  // ============================================================================
-
-  /**
-   * Cover mode resizing (fills the box completely with image, may crop parts)
-   */
-  coverBox(
-    this: IShortcutBuilder<BeforeResize>,
-    width: number,
-    height: number,
-    options?: Partial<Omit<CoverConfig, 'fit' | 'width' | 'height'>>
-  ): IImageProcessor<AfterResize>;
-
-  /**
-   * Contain mode resizing (fits entire image within box, creates padding)
-   */
-  containBox(
-    this: IShortcutBuilder<BeforeResize>,
-    width: number,
-    height: number,
-    options?: Partial<Omit<ContainConfig, 'fit' | 'width' | 'height'>>
-  ): IImageProcessor<AfterResize>;
-
-  /**
-   * Fill mode resizing (stretches/compresses image to exact size, ignores aspect ratio)
-   */
-  exactSize(this: IShortcutBuilder<BeforeResize>, width: number, height: number): IImageProcessor<AfterResize>;
-
-  /**
-   * Maximum width limit (shrink only, no enlargement)
-   */
-  maxWidth(
-    this: IShortcutBuilder<BeforeResize>,
-    width: number,
-    options?: Partial<Omit<MaxFitConfig, 'fit' | 'width'>>
-  ): IImageProcessor<AfterResize>;
-
-  /**
-   * Maximum height limit (shrink only, no enlargement)
-   */
-  maxHeight(
-    this: IShortcutBuilder<BeforeResize>,
-    height: number,
-    options?: Partial<Omit<MaxFitConfig, 'fit' | 'height'>>
-  ): IImageProcessor<AfterResize>;
-
-  /**
-   * Maximum size limit (shrink only, no enlargement)
-   */
-  maxSize(
-    this: IShortcutBuilder<BeforeResize>,
-    size: { width: number; height: number },
-    options?: Partial<Omit<MaxFitConfig, 'fit' | 'width' | 'height'>>
-  ): IImageProcessor<AfterResize>;
-
-  /**
-   * Minimum width guarantee (enlarge only, no shrinking)
-   */
-  minWidth(
-    this: IShortcutBuilder<BeforeResize>,
-    width: number,
-    options?: Partial<Omit<MinFitConfig, 'fit' | 'width'>>
-  ): IImageProcessor<AfterResize>;
-
-  /**
-   * Minimum height guarantee (enlarge only, no shrinking)
-   */
-  minHeight(
-    this: IShortcutBuilder<BeforeResize>,
-    height: number,
-    options?: Partial<Omit<MinFitConfig, 'fit' | 'height'>>
-  ): IImageProcessor<AfterResize>;
-
-  /**
-   * Minimum size guarantee (enlarge only, no shrinking)
-   */
-  minSize(
-    this: IShortcutBuilder<BeforeResize>,
-    size: { width: number; height: number },
-    options?: Partial<Omit<MinFitConfig, 'fit' | 'width' | 'height'>>
-  ): IImageProcessor<AfterResize>;
-
-  // ============================================================================
-  // 🎯 Scale and exact size adjustment methods (v3.0+)
-  // 원본 크기 의존 설정도 공개 resize()로 전달된다 — 해석은 렌더 시점
-  // ============================================================================
-
-  /**
-   * Resize to exact width (height maintains aspect ratio)
-   * @since v3.0.0
-   */
-  exactWidth(this: IShortcutBuilder<BeforeResize>, width: number): IImageProcessor<AfterResize>;
-
-  /**
-   * Resize to exact height (width maintains aspect ratio)
-   * @since v3.0.0
-   */
-  exactHeight(this: IShortcutBuilder<BeforeResize>, height: number): IImageProcessor<AfterResize>;
-
-  /**
-   * Scale-based resizing
-   * @since v3.0.0
-   */
-  scale(this: IShortcutBuilder<BeforeResize>, scale: ScaleValue): IImageProcessor<AfterResize>;
-
-  /**
-   * X-axis scale resizing (convenience method)
-   * @since v3.0.0
-   */
-  scaleX(this: IShortcutBuilder<BeforeResize>, scaleX: number): IImageProcessor<AfterResize>;
-
-  /**
-   * Y-axis scale resizing (convenience method)
-   * @since v3.0.0
-   */
-  scaleY(this: IShortcutBuilder<BeforeResize>, scaleY: number): IImageProcessor<AfterResize>;
-
-  /**
-   * Individual X/Y-axis scale resizing (convenience method)
-   * @since v3.0.0
-   */
-  scaleXY(this: IShortcutBuilder<BeforeResize>, scaleX: number, scaleY: number): IImageProcessor<AfterResize>;
-}
+import type { ResizeConfig } from './resize-config';
 
 /**
  * Image processor interface
@@ -160,7 +29,7 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * @description Provides Sharp.js style convenient resizing methods.
    * Supports auto-completion and type checking through type-safe interface.
    */
-  shortcut: IShortcutBuilder<TState>;
+  shortcut: ShortcutBuilder<TState>;
 
   /**
    * Image resizing

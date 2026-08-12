@@ -1,50 +1,26 @@
 /**
- * Shortcut API type definitions
+ * Shortcut API type definitions (호환용 별칭 모음)
  *
- * @description Type system for Sharp.js style convenience methods.
- * Supports lazy operations through ScaleOperation and ResizeOperation.
+ * @description shortcut의 원본 크기 의존 연산이 공개 resize() 설정
+ * (ScaleConfig, 단일 축 FillConfig)으로 합류하면서 이 파일의 타입들은
+ * 실제 처리 경로에서 더 이상 사용되지 않는다. 공개 export 호환을 위해 유지한다.
  */
+
+import type { ScaleValue } from './resize-config';
 
 /**
  * Scale operation type
  *
- * @description Union type for ratio-based resizing.
- * Processed as lazy operation since source size is required.
- *
- * @example
- * ```typescript
- * // Uniform scale
- * const scale1: ScaleOperation = 2;
- *
- * // X-axis only scale
- * const scale2: ScaleOperation = { sx: 2 };
- *
- * // Y-axis only scale
- * const scale3: ScaleOperation = { sy: 1.5 };
- *
- * // Individual X/Y axis scale
- * const scale4: ScaleOperation = { sx: 2, sy: 1.5 };
- * ```
+ * @deprecated `ScaleValue`를 사용하세요. 동일한 union의 별칭이다.
  */
-export type ScaleOperation = number | { sx: number } | { sy: number } | { sx: number; sy: number };
+export type ScaleOperation = ScaleValue;
 
 /**
  * Lazy operation type that requires source size
  *
- * @description Operations that can only be converted to final ResizeConfig after knowing source image size.
- * Converted to ResizeConfig in LazyRenderPipeline after source loading.
- *
- * @example
- * ```typescript
- * // Scale-based resizing
- * const op1: ResizeOperation = { type: 'scale', value: 2 };
- *
- * // Width fitting (height maintains ratio)
- * const op2: ResizeOperation = { type: 'toWidth', width: 800 };
- *
- * // Height fitting (width maintains ratio)
- * const op3: ResizeOperation = { type: 'toHeight', height: 600 };
- * ```
+ * @deprecated 내부 사설 통로가 제거되어 처리 경로에서 사용되지 않는다.
+ * scale은 `{ fit: 'scale', scale }`, toWidth/toHeight는
+ * `{ fit: 'fill', width }` / `{ fit: 'fill', height }` 설정으로 대체됐다.
  */
 export type ResizeOperation =
   | { type: 'scale'; value: ScaleOperation }
@@ -54,8 +30,8 @@ export type ResizeOperation =
 /**
  * Direct mapping operation type that can be converted immediately
  *
- * @description Operations that can be directly converted to ResizeConfig without source size.
- * Uses Discriminated Union pattern to ensure type safety.
+ * @deprecated 처리 경로에서 사용되지 않는다. shortcut 메서드는
+ * ResizeConfig를 직접 구성해 공개 resize()를 호출한다.
  *
  * @example
  * ```typescript

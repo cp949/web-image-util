@@ -5,6 +5,7 @@
  * prevent incorrect usage at compile time.
  */
 
+import type { ShortcutBuilder } from '../shortcut/shortcut-builder';
 import type {
   BlurOptions,
   ImageSource,
@@ -15,7 +16,6 @@ import type {
   ResultDataURL,
   ResultFile,
 } from '../types';
-import type { IShortcutBuilder } from './processor-interface';
 import type { AfterResize, BeforeResize, ProcessorState } from './processor-state.internal';
 import type { ResizeConfig } from './resize-config';
 
@@ -34,7 +34,7 @@ export interface TypedImageProcessor<TState extends ProcessorState = BeforeResiz
    * @description Provides Sharp.js style convenient resizing methods.
    * Supports autocomplete and type checking through type-safe interface.
    */
-  shortcut: IShortcutBuilder<TState>;
+  shortcut: ShortcutBuilder<TState>;
 
   /**
    * Image resizing (can only be called once)

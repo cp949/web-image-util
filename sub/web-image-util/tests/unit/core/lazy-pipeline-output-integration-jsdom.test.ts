@@ -3,7 +3,7 @@
  *
  * 목적:
  * - resize/blur 누적 후 단일 렌더로 출력 메서드에 도달하는 경로의 회귀를 방지한다.
- * - Shortcut API(_addResizeOperation 경유)의 scale/toWidth 분기가 의도대로 동작함을 검증한다.
+ * - Shortcut API(공개 resize() 경유)의 scale/exactWidth 분기가 의도대로 동작함을 검증한다.
  *
  * 분리 기준:
  * - 검증 진입점은 processImage() 공개 표면으로만 한다. 내부 LazyRenderPipeline 직접 import는 사용하지 않는다.
