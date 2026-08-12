@@ -118,7 +118,7 @@ export class LazyRenderPipeline {
       const metadata: ResultMetadata = {
         width: canvas.width,
         height: canvas.height,
-        format: 'canvas' as any,
+        // format은 인코딩 시점(toBlob 등)에 결정된다 — 렌더 단계에서는 없다.
         size: canvas.width * canvas.height * 4, // RGBA estimation
         processingTime: performance.now() - startTime,
         operations: this.operations.length,

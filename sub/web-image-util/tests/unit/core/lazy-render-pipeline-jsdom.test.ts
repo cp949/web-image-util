@@ -356,6 +356,17 @@ describe('LazyRenderPipeline — render() lease 계약', () => {
     expect(releaseSpy).not.toHaveBeenCalled();
   });
 
+  it('render() metadata의 format은 인코딩 전 단계이므로 정의되지 않는다', () => {
+    const img = createMockImage(800, 600);
+    const p = new LazyRenderPipeline(img);
+
+    const { metadata } = p.render();
+
+    // 인코딩 포맷은 출력 메서드(toBlob 등)가 결정한다 — 렌더 단계에는 포맷이 없다.
+    // ImageFormat union에 없는 'canvas' 같은 값이 타입 우회로 흘러가면 안 된다.
+    expect(metadata.format).toBeUndefined();
+  });
+
   it('layout 분석은 render()당 한 번만 수행된다', () => {
     const img = createMockImage(800, 600);
     const p = new LazyRenderPipeline(img);
