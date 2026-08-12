@@ -2,7 +2,7 @@
  * canvas-utils.ts 단위 테스트
  *
  * ManagedCanvas 클래스, withManagedCanvas 헬퍼, createOwnedCanvas,
- * setupHighQualityCanvas, 풀 관리 함수의
+ * 풀 관리 함수의
  * 구조적 속성(dimension, 호출 횟수, dispose 상태)을 검증한다.
  */
 
@@ -15,7 +15,6 @@ import {
   getCanvasPoolStats,
   ManagedCanvas,
   setCanvasPoolMaxSize,
-  setupHighQualityCanvas,
   withManagedCanvas,
 } from '../../../src/base/canvas-utils.internal';
 import { ImageProcessError } from '../../../src/types';
@@ -310,152 +309,6 @@ describe('canvasToBlob (통합 인코더)', () => {
       code: 'OUTPUT_FAILED',
     });
     toBlobSpy.mockRestore();
-  });
-});
-
-// ============================================================================
-// setupHighQualityCanvas
-// ============================================================================
-
-describe('setupHighQualityCanvas', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('기본 옵션으로 논리 크기와 동일한 캔버스를 생성한다', () => {
-    const { canvas } = setupHighQualityCanvas(200, 150);
-    // useDevicePixelRatio 기본값 false이고 scale 기본값 1이므로 totalScale=1
-    expect(canvas.width).toBe(200);
-    expect(canvas.height).toBe(150);
-  });
-
-  it('scale 옵션이 적용되어 캔버스 크기가 배율에 맞게 커진다', () => {
-    const { canvas } = setupHighQualityCanvas(100, 80, { scale: 2 });
-    expect(canvas.width).toBe(200);
-    expect(canvas.height).toBe(160);
-  });
-
-  it('scale이 4를 초과하면 4로 클램프된다', () => {
-    const { canvas } = setupHighQualityCanvas(100, 100, { scale: 10 });
-    // Math.min(4, Math.max(1, 10)) = 4
-    expect(canvas.width).toBe(400);
-    expect(canvas.height).toBe(400);
-  });
-
-  it('scale이 1 미만이면 1로 클램프된다', () => {
-    const { canvas } = setupHighQualityCanvas(100, 100, { scale: 0.1 });
-    // Math.min(4, Math.max(1, 0.1)) = 1
-    expect(canvas.width).toBe(100);
-    expect(canvas.height).toBe(100);
-  });
-
-  it('CSS 논리 크기가 width/height로 설정된다', () => {
-    const { canvas } = setupHighQualityCanvas(300, 200, { scale: 2 });
-    expect(canvas.style.width).toBe('300px');
-    expect(canvas.style.height).toBe('200px');
-  });
-
-  it('imageSmoothingEnabled는 true이다', () => {
-    const { context } = setupHighQualityCanvas(100, 100);
-    expect(context.imageSmoothingEnabled).toBe(true);
-  });
-
-  it('기본 imageSmoothingQuality는 high이다', () => {
-    const { context } = setupHighQualityCanvas(100, 100);
-    expect(context.imageSmoothingQuality).toBe('high');
-  });
-
-  it('imageSmoothingQuality 옵션을 지정하면 해당 값이 적용된다', () => {
-    const { context } = setupHighQualityCanvas(100, 100, { imageSmoothingQuality: 'low' });
-    expect(context.imageSmoothingQuality).toBe('low');
-  });
-
-  it('useDevicePixelRatio=true이면 devicePixelRatio가 scale에 반영된다', () => {
-    const originalDpr = window.devicePixelRatio;
-    Object.defineProperty(window, 'devicePixelRatio', { value: 2, configurable: true });
-    try {
-      const { canvas } = setupHighQualityCanvas(100, 100, { useDevicePixelRatio: true });
-      // totalScale = Math.min(4, Math.max(1, 2 * 1)) = 2
-      expect(canvas.width).toBe(200);
-      expect(canvas.height).toBe(200);
-    } finally {
-      Object.defineProperty(window, 'devicePixelRatio', { value: originalDpr, configurable: true });
-    }
-  });
-
-  it('useDevicePixelRatio=false이면 devicePixelRatio가 무시된다', () => {
-    const originalDpr = window.devicePixelRatio;
-    Object.defineProperty(window, 'devicePixelRatio', { value: 3, configurable: true });
-    try {
-      const { canvas } = setupHighQualityCanvas(100, 100, { useDevicePixelRatio: false });
-      // deviceScale = 1(무시), totalScale = 1
-      expect(canvas.width).toBe(100);
-    } finally {
-      Object.defineProperty(window, 'devicePixelRatio', { value: originalDpr, configurable: true });
-    }
-  });
-
-  it('useDevicePixelRatio=true이고 devicePixelRatio가 0이면 1로 폴백한다', () => {
-    const originalDpr = window.devicePixelRatio;
-    Object.defineProperty(window, 'devicePixelRatio', { value: 0, configurable: true });
-    try {
-      // dpr=0, scale=2: 폴백(||1) 있으면 deviceScale=1 → totalScale=min(4,max(1,1*2))=2 → width 200
-      // 폴백 없으면 deviceScale=0 → totalScale=min(4,max(1,0*2))=1 → width 100
-      const { canvas } = setupHighQualityCanvas(100, 100, { useDevicePixelRatio: true, scale: 2 });
-      expect(canvas.width).toBe(200);
-    } finally {
-      Object.defineProperty(window, 'devicePixelRatio', { value: originalDpr, configurable: true });
-    }
-  });
-
-  it('scale과 useDevicePixelRatio를 동시에 지정하면 곱한 값이 적용된다', () => {
-    const originalDpr = window.devicePixelRatio;
-    Object.defineProperty(window, 'devicePixelRatio', { value: 2, configurable: true });
-    try {
-      // dpr=2, scale=1.5: 2*1.5=3 → width 300 (합이면 2+1.5=3.5 → 350, 클램프 미적용으로 구별 가능)
-      const { canvas } = setupHighQualityCanvas(100, 100, { scale: 1.5, useDevicePixelRatio: true });
-      expect(canvas.width).toBe(300);
-    } finally {
-      Object.defineProperty(window, 'devicePixelRatio', { value: originalDpr, configurable: true });
-    }
-  });
-
-  it('scale과 useDevicePixelRatio 곱이 4를 초과하면 4로 클램프된다', () => {
-    const originalDpr = window.devicePixelRatio;
-    Object.defineProperty(window, 'devicePixelRatio', { value: 3, configurable: true });
-    try {
-      const { canvas } = setupHighQualityCanvas(100, 100, { scale: 2, useDevicePixelRatio: true });
-      // totalScale = Math.min(4, Math.max(1, 6)) = 4
-      expect(canvas.width).toBe(400);
-    } finally {
-      Object.defineProperty(window, 'devicePixelRatio', { value: originalDpr, configurable: true });
-    }
-  });
-
-  it('imageSmoothingQuality: medium 옵션이 컨텍스트에 적용된다', () => {
-    const { context } = setupHighQualityCanvas(100, 100, { imageSmoothingQuality: 'medium' });
-    expect(context.imageSmoothingQuality).toBe('medium');
-  });
-
-  it('willReadFrequently: true이면 getContext에 해당 옵션이 전달된다', () => {
-    const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
-    setupHighQualityCanvas(100, 100, { willReadFrequently: true });
-    expect(getContextSpy).toHaveBeenCalledWith('2d', expect.objectContaining({ willReadFrequently: true }));
-  });
-
-  it('willReadFrequently 미지정 시 getContext에 willReadFrequently:false가 전달된다', () => {
-    const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
-    setupHighQualityCanvas(100, 100);
-    expect(getContextSpy).toHaveBeenCalledWith('2d', expect.objectContaining({ willReadFrequently: false }));
-  });
-
-  it('context.scale에 totalScale 값으로 스케일이 적용된다', () => {
-    // jsdom에서 CanvasRenderingContext2D가 전역으로 노출되지 않으므로 인스턴스로 prototype을 가져온다
-    const tempCtx = document.createElement('canvas').getContext('2d')!;
-    const scaleSpy = vi.spyOn(Object.getPrototypeOf(tempCtx), 'scale');
-    setupHighQualityCanvas(100, 100, { scale: 2 });
-    // totalScale = Math.min(4, Math.max(1, 1 * 2)) = 2
-    expect(scaleSpy).toHaveBeenCalledWith(2, 2);
   });
 });
 

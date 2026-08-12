@@ -155,7 +155,7 @@ export function createOwnedCanvas(
   return { canvas, ctx };
 }
 
-/** advanced 계열 품질 어휘 — 코어 RenderQuality('low'|'medium'|'high')와 별개 정본 */
+/** advanced 계열 품질 어휘 — 코어 렌더러(고정 high 스무딩)에는 품질 어휘가 없다 */
 export type SmoothingQuality = 'fast' | 'balanced' | 'high';
 
 /**
@@ -251,60 +251,4 @@ export function clearCanvasPool(): void {
  */
 export function setCanvasPoolMaxSize(size: number): void {
   CanvasPool.getInstance().setMaxPoolSize(size);
-}
-
-// Canvas options for SVG high-quality rendering
-export interface HighQualityCanvasOptions {
-  scale?: number; // Custom scale factor
-  imageSmoothingQuality?: 'low' | 'medium' | 'high'; // Image smoothing quality
-  willReadFrequently?: boolean; // Whether to read pixels frequently
-  useDevicePixelRatio?: boolean; // Whether to use devicePixelRatio (default: false)
-}
-
-/**
- * Canvas setup function for high-quality rendering
- * Creates high-resolution Canvas considering DevicePixelRatio and user settings.
- *
- * @param width - Logical width
- * @param height - Logical height
- * @param options - High-quality options
- * @returns Canvas and Context objects
- */
-export function setupHighQualityCanvas(
-  width: number,
-  height: number,
-  options: HighQualityCanvasOptions = {}
-): { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D } {
-  const canvas = document.createElement('canvas');
-
-  // Calculate scale considering DevicePixelRatio - controllable via options
-  const deviceScale = options.useDevicePixelRatio ? window.devicePixelRatio || 1 : 1;
-  const userScale = options.scale || 1;
-  const totalScale = Math.min(4, Math.max(1, deviceScale * userScale));
-
-  // Set actual Canvas size (high-resolution)
-  canvas.width = width * totalScale;
-  canvas.height = height * totalScale;
-
-  // Set CSS size to logical size
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-
-  // Context setup
-  const context = canvas.getContext('2d', {
-    willReadFrequently: options.willReadFrequently || false,
-  });
-
-  if (!context) {
-    throw new Error('Could not get 2D context from canvas');
-  }
-
-  // Apply scale
-  context.scale(totalScale, totalScale);
-
-  // High-quality rendering settings
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = options.imageSmoothingQuality || 'high';
-
-  return { canvas, context };
 }

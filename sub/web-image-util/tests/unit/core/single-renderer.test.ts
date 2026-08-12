@@ -2,7 +2,7 @@
  * single-renderer 단위 테스트
  *
  * analyzeAllOperations (레이아웃 계산),
- * renderLayout (레이아웃 검증, 품질 옵션, 배경 채우기, Canvas Pool 활용) 을 검증한다.
+ * renderLayout (레이아웃 검증, 스무딩, 배경 채우기, Canvas Pool 활용) 을 검증한다.
  * 픽셀 비교는 하지 않으며, 구조적 속성(크기, 필터 문자열, ctx 상태, Pool 호출)만 확인한다.
  */
 
@@ -396,9 +396,9 @@ describe('renderLayout', () => {
     });
   });
 
-  describe('품질 옵션', () => {
+  describe('스무딩', () => {
     // drawImage 시점의 ctx 스무딩 상태를 캡처하는 헬퍼
-    function renderAndCaptureSmoothing(options?: Parameters<typeof renderLayout>[2]) {
+    function renderAndCaptureSmoothing() {
       const source = createDrawableSource(100, 100);
       const tempCtx = document.createElement('canvas').getContext('2d')!;
       const observed: Array<{ enabled: boolean; quality: string }> = [];
@@ -410,7 +410,7 @@ describe('renderLayout', () => {
       let lease: CanvasLease | null = null;
 
       try {
-        lease = renderLayout(source, makeLayout(), options);
+        lease = renderLayout(source, makeLayout());
         return observed;
       } finally {
         lease?.release();
@@ -418,36 +418,10 @@ describe('renderLayout', () => {
       }
     }
 
-    it('옵션이 없으면 고품질 스무딩이 기본이다', () => {
+    it('항상 고품질 스무딩으로 렌더링한다', () => {
       const observed = renderAndCaptureSmoothing();
 
       expect(observed).toEqual([{ enabled: true, quality: 'high' }]);
-    });
-
-    it('quality low 는 스무딩을 비활성화한다', () => {
-      const observed = renderAndCaptureSmoothing({ quality: 'low' });
-
-      expect(observed).toHaveLength(1);
-      expect(observed[0].enabled).toBe(false);
-    });
-
-    it('quality medium 은 medium 스무딩을 적용한다', () => {
-      const observed = renderAndCaptureSmoothing({ quality: 'medium' });
-
-      expect(observed).toEqual([{ enabled: true, quality: 'medium' }]);
-    });
-
-    it('smoothing: false 명시 오버라이드는 quality 보다 우선한다', () => {
-      const observed = renderAndCaptureSmoothing({ quality: 'high', smoothing: false });
-
-      expect(observed).toHaveLength(1);
-      expect(observed[0].enabled).toBe(false);
-    });
-
-    it('smoothing: true 명시 오버라이드는 quality low 에서도 스무딩을 켠다', () => {
-      const observed = renderAndCaptureSmoothing({ quality: 'low', smoothing: true });
-
-      expect(observed).toEqual([{ enabled: true, quality: 'low' }]);
     });
   });
 

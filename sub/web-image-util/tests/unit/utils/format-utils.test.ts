@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { FORMAT_INFO, OUTPUT_FORMAT_INFO } from '../../../src/types';
 import {
   formatToMimeType,
   getOutputFilename,
@@ -63,16 +62,5 @@ describe('포맷 유틸', () => {
     expect(resolveOutputFormat('webp', { supported: ['png'], fallback: 'jpeg' })).toBe('png');
     expect(resolveOutputFormat('png', { supported: ['png'] })).toBe('png');
     expect(resolveOutputFormat('webp', { supported: ['avif'], fallback: 'jpeg' })).toBe('png');
-  });
-
-  it('공개 리터럴 상수 FORMAT_INFO/OUTPUT_FORMAT_INFO는 정본 테이블과 동기화되어 있다', () => {
-    // FORMAT_INFO는 리터럴 타입 계약 때문에 정본 테이블을 직접 참조하지 못한다.
-    // 값이 어긋나면 이 테스트가 잡는다.
-    for (const [format, info] of Object.entries(FORMAT_INFO)) {
-      expect(info.mimeType).toBe(formatToMimeType(format as keyof typeof FORMAT_INFO));
-    }
-    for (const [format, info] of Object.entries(OUTPUT_FORMAT_INFO)) {
-      expect(info.mimeType).toBe(formatToMimeType(format as keyof typeof OUTPUT_FORMAT_INFO));
-    }
   });
 });

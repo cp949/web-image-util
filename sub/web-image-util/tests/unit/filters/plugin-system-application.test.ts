@@ -119,23 +119,6 @@ describe('FilterPluginManager 필터 적용', () => {
       });
       expect(result.data[0]).toBe(10);
     });
-
-    it('optimize:true 옵션이 에러 없이 동작한다', () => {
-      const manager = FilterPluginManager.getInstance();
-      manager.register(createDummyPlugin('c1', FilterCategory.COLOR));
-      manager.register(createDummyPlugin('b1', FilterCategory.BLUR));
-      const input = createImageData(1, 1, [0, 0, 0, 255]);
-      expect(() =>
-        manager.applyFilterChain(input, {
-          filters: [
-            { name: 'c1', params: { value: 5 } },
-            { name: 'b1', params: { value: 5 } },
-            { name: 'c1', params: { value: 5 } },
-          ],
-          optimize: true,
-        })
-      ).not.toThrow();
-    });
   });
 
   describe('validateFilterChain', () => {

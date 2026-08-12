@@ -89,7 +89,6 @@ export { BlendMode };
 export interface FilterChain {
   filters: FilterOptions[];
   preview?: boolean;
-  optimize?: boolean; // 체인 최적화 여부
   name?: string; // 프리셋 등에 사용할 체인 이름
 }
 
@@ -258,62 +257,14 @@ export class FilterPluginManager {
     copiedData.set(imageData.data);
     let result = new ImageData(copiedData, imageData.width, imageData.height);
 
-    // When optimization option is enabled
-    const filters = filterChain.optimize ? this.optimizeFilterChain(filterChain.filters) : filterChain.filters;
-
     // Apply only enabled filters
-    const enabledFilters = filters.filter((filter) => filter.enabled !== false);
+    const enabledFilters = filterChain.filters.filter((filter) => filter.enabled !== false);
 
     for (const filterOption of enabledFilters) {
       result = this.applyFilter(result, filterOption);
     }
 
     return result;
-  }
-
-  /**
-   * Optimize filter chain
-   * Combine filters of same category or remove unnecessary filters
-   * @param filters - Filter array to optimize
-   * @returns Optimized filter array
-   */
-  private optimizeFilterChain(filters: FilterOptions[]): FilterOptions[] {
-    const optimized: FilterOptions[] = [];
-    const colorFilters: FilterOptions[] = [];
-
-    for (const filter of filters) {
-      const plugin = this.plugins.get(filter.name);
-      if (!plugin) continue;
-
-      // Collect color filters separately to check combination possibility
-      if (plugin.category === FilterCategory.COLOR) {
-        colorFilters.push(filter);
-      } else {
-        // Process color filters first if they are accumulated
-        if (colorFilters.length > 0) {
-          optimized.push(...this.mergeColorFilters(colorFilters));
-          colorFilters.length = 0;
-        }
-        optimized.push(filter);
-      }
-    }
-
-    // Process remaining color filters
-    if (colorFilters.length > 0) {
-      optimized.push(...this.mergeColorFilters(colorFilters));
-    }
-
-    return optimized;
-  }
-
-  /**
-   * Merge color filters
-   * @param colorFilters - Color filters to merge
-   * @returns Merged filter array
-   */
-  private mergeColorFilters(colorFilters: FilterOptions[]): FilterOptions[] {
-    // Currently simple implementation, more complex merge logic needed in practice
-    return colorFilters;
   }
 
   /**

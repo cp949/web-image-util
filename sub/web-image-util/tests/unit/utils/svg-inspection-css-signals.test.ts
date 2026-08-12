@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collectSvgCssReferenceSignals } from '../../../src/utils/svg-inspection';
+import { collectSvgCssReferenceSignals } from '../../../src/utils/svg-inspection/css-signals.internal';
 
 function parseSvg(svg: string): Document {
   return new DOMParser().parseFromString(svg, 'image/svg+xml');

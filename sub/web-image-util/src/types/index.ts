@@ -100,7 +100,6 @@ export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstant
 
 // Re-import types from base.ts to make them available
 import type { GeometrySize, OutputFormat, ResizeBackground } from './base';
-import { ImageFormats, OutputFormats } from './base';
 // 본문(ImageProcessor 등)이 사용하는 출력 계약 타입 — 정의는 output-types leaf
 import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './output-types';
 // Import ResizeConfig type for use in ImageProcessor
@@ -318,36 +317,6 @@ export interface ProcessorSourceOptions {
 export const OPTIMAL_QUALITY_BY_FORMAT = OutputOptimalQuality;
 
 // ============================================================================
-// EXPORTS - Type guards and other utilities
-// ============================================================================
-
-// Export type guard functions
-export * from './guards';
-
-// Provide main format information
-// Remove format metadata that cannot be obtained directly from Canvas API
-// Use browser's Image object or separate library when needed
-export const FORMAT_INFO = {
-  // Provide only basic MIME types (used in Canvas toBlob)
-  [ImageFormats.JPEG]: { mimeType: 'image/jpeg' },
-  [ImageFormats.JPG]: { mimeType: 'image/jpeg' },
-  [ImageFormats.PNG]: { mimeType: 'image/png' },
-  [ImageFormats.WEBP]: { mimeType: 'image/webp' },
-  [ImageFormats.AVIF]: { mimeType: 'image/avif' },
-  [ImageFormats.GIF]: { mimeType: 'image/gif' },
-  [ImageFormats.SVG]: { mimeType: 'image/svg+xml' },
-} as const;
-
-// Output format information
-export const OUTPUT_FORMAT_INFO = {
-  [OutputFormats.JPEG]: { mimeType: 'image/jpeg' },
-  [OutputFormats.JPG]: { mimeType: 'image/jpeg' },
-  [OutputFormats.PNG]: { mimeType: 'image/png' },
-  [OutputFormats.WEBP]: { mimeType: 'image/webp' },
-  [OutputFormats.AVIF]: { mimeType: 'image/avif' },
-} as const;
-
-// ============================================================================
 // SHORTCUT API TYPES - Shortcut API-related types
 // ============================================================================
 
@@ -359,8 +328,6 @@ export { isScaleX, isScaleXY, isScaleY, isUniformScale } from './shortcut-types'
 // SVG QUALITY ENHANCEMENT TYPES - SVG quality enhancement related types
 // ============================================================================
 
-// Re-export SVG size information and Canvas high-quality setting types
-export type { HighQualityCanvasOptions } from '../base/canvas-utils.internal';
 // SVG complexity analysis and quality system types
 export type { ComplexityAnalysisResult, QualityLevel, SvgComplexityMetrics } from '../core/svg-complexity-analyzer';
 export type { SvgDimensions } from '../utils/svg-dimensions';

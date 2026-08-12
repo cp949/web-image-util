@@ -35,35 +35,6 @@ export interface FinalLayout {
 }
 
 /**
- * 렌더링 품질 수준
- *
- * - low: 속도 우선 (imageSmoothingEnabled = false)
- * - medium: 균형 (imageSmoothingQuality = 'medium')
- * - high: 품질 우선 (imageSmoothingQuality = 'high')
- */
-export type RenderQuality = 'low' | 'medium' | 'high';
-
-/**
- * 렌더링 옵션
- *
- * 배경색은 옵션이 아니라 레이아웃({@link FinalLayout.background})이 운반한다 —
- * 분석기가 ResizeConfig 에서 결정한 값을 렌더러는 그대로 그린다.
- */
-export interface RenderOptions {
-  /**
-   * 렌더링 품질 수준
-   * @default 'high'
-   */
-  quality?: RenderQuality;
-
-  /**
-   * 이미지 스무딩 명시 오버라이드.
-   * 지정하면 quality 에 의한 자동 결정보다 우선한다.
-   */
-  smoothing?: boolean;
-}
-
-/**
  * 모든 연산을 분석해 최종 레이아웃을 계산한다.
  *
  * 복잡한 수학 계산은 전부 이 함수가 담당하고,
@@ -143,9 +114,8 @@ function analyzeBlurOperation(layout: FinalLayout, options: BlurOptions): void {
  * - 렌더링 중 오류가 나면 lease가 canvas를 pool로 반환한다.
  *
  * @param layout {@link analyzeAllOperations}가 계산한 최종 레이아웃
- * @param options 품질/스무딩 정책 (생략 시 고품질 스무딩)
  */
-export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout, options?: RenderOptions): CanvasLease {
+export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout): CanvasLease {
   // 1. 레이아웃 검증 — pool 획득 전에 잘못된 값을 걸러낸다
   validateLayout(layout);
 
@@ -159,8 +129,9 @@ export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout,
       throw new ImageProcessError('Cannot create Canvas 2D context', 'CANVAS_CONTEXT_ERROR');
     }
 
-    // 3. 품질/스무딩 설정 적용
-    applyQualitySettings(ctx, options?.quality ?? 'high', options?.smoothing);
+    // 3. 고품질 스무딩 고정 — 코어 출력 경로는 품질 선택지를 노출하지 않는다
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     // 4. 배경 채우기 — transparent 면 아무것도 하지 않는다
     if (layout.background && layout.background !== 'transparent') {
@@ -238,25 +209,6 @@ function validateLayout(layout: FinalLayout): void {
     productionLog.warn(
       `Warning: Large canvas size (${width}x${height}). This may cause memory issues on some devices.`
     );
-  }
-}
-
-/**
- * Canvas 품질 설정 적용
- *
- * - low: 스무딩 비활성 (속도 우선), medium/high: 해당 수준의 스무딩
- * - smoothingOverride 지정 시 quality 에 의한 자동 결정보다 우선한다
- */
-function applyQualitySettings(
-  ctx: CanvasRenderingContext2D,
-  quality: RenderQuality,
-  smoothingOverride?: boolean
-): void {
-  ctx.imageSmoothingEnabled = smoothingOverride ?? quality !== 'low';
-
-  // imageSmoothingQuality 는 스무딩이 켜진 경우에만 의미가 있다
-  if (ctx.imageSmoothingEnabled) {
-    ctx.imageSmoothingQuality = quality;
   }
 }
 

@@ -9,14 +9,11 @@
 
 import type { ComplexityAnalysisResult } from '../../core/svg-complexity-analyzer';
 import { analyzeSvgComplexity } from '../../core/svg-complexity-analyzer';
-import {
-  collectSvgDomSecuritySignals,
-  isReferenceAttribute,
-  pushCappedSample,
-  readReferenceAttribute,
-} from '../svg-inspection';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../svg-policy-utils.internal';
 import { isBlockedPipelineUriRef } from '../svg-threat-policy.internal';
+import { collectSvgDomSecuritySignals } from './dom-signals.internal';
+import { isReferenceAttribute, readReferenceAttribute } from './reference-attribute.internal';
+import { pushCappedSample } from './sample-utils.internal';
 import type { InspectSvgDimensions, InspectSvgFinding } from './types.internal';
 
 const DIM_ATTR_REGEX = /^(\d+(?:\.\d+)?)\s*([a-z%]*)$/;
