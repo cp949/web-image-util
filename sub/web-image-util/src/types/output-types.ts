@@ -4,6 +4,7 @@
  * 출력 결과(Result* 가족)와 출력·처리 옵션(OutputOptions, BlurOptions)의
  * 정의 지점이다 — 공개는 `types/index.ts`의 재export를 경유한다.
  * 구현은 `result-implementations.internal.ts`가 담당한다(타입↔구현 대칭).
+ * 다섯 결과가 공유하는 파생 변환은 `result-base.internal.ts`가 소유한다.
  */
 
 import type { GeometrySize, OutputFormat } from './base';
