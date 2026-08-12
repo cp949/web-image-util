@@ -344,8 +344,5 @@ export function createFilterPlugin<TParams>(config: {
   apply: (imageData: ImageData, params: TParams) => ImageData;
   validate: (params: TParams) => FilterValidationResult;
 }): FilterPlugin<TParams> {
-  return {
-    ...config,
-    preview: config.apply, // Default to same as full application
-  };
+  return { ...config };
 }

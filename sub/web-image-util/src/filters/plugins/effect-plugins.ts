@@ -37,11 +37,6 @@ export const GrayscaleFilterPlugin: FilterPlugin<Record<string, never>> = {
     // Always valid since no parameters
     return { valid: true };
   },
-
-  preview(imageData: ImageData): ImageData {
-    // Preview is same as full application
-    return this.apply(imageData, {});
-  },
 };
 
 /**

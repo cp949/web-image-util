@@ -3,9 +3,7 @@
  *
  * 검증 범위:
  *   - config 필드(name / description / category / defaultParams / apply / validate) 보존
- *   - preview 기본값 = apply (동일 참조)
- *   - config 타입이 preview 필드를 허용하지 않으며, as any로 주입해도 apply로 덮어쓰인다
- *   - 반환 플러그인이 filterManager에 등록·조회 가능한 FilterPlugin 계약을 만족
+ *   - 반환 플러그인이 레지스트리에 등록·조회 가능한 FilterPlugin 계약을 만족
  *   - apply / validate 호출이 config 함수로 위임
  */
 
@@ -90,40 +88,6 @@ describe('createFilterPlugin 팩토리', () => {
       const config = makeConfig();
       const plugin = createFilterPlugin<TestParams>(config);
       expect(plugin.validate).toBe(config.validate);
-    });
-  });
-
-  describe('preview 기본값', () => {
-    it('config에 preview를 주지 않으면 result.preview가 result.apply와 동일 참조다', () => {
-      const config = makeConfig();
-      const plugin = createFilterPlugin<TestParams>(config);
-      expect(plugin.preview).toBe(plugin.apply);
-    });
-
-    it('result.preview는 config.apply와도 동일 참조다', () => {
-      const config = makeConfig();
-      const plugin = createFilterPlugin<TestParams>(config);
-      expect(plugin.preview).toBe(config.apply);
-    });
-
-    // TASK 스펙은 "config.preview를 명시하면 그 함수가 우선한다"를 요구했으나
-    // 현재 구현(advanced-index.ts:346-353)의 config 타입에는 preview 필드가 없으며
-    // 본체가 { ...config, preview: config.apply }로 항상 apply로 채운다.
-    // 아래 두 케이스는 이 실제 계약을 고정한다 (스펙/구현 불일치 주석으로 가시화).
-    it('config 타입은 preview 속성을 허용하지 않는다', () => {
-      const config = makeConfig();
-      createFilterPlugin<TestParams>(
-        // @ts-expect-error — config 타입에 preview 필드가 없음. override 경로는 미지원.
-        { ...config, preview: () => {} }
-      );
-    });
-
-    it('as any로 preview를 주입해도 result.preview는 apply로 덮어쓰인다', () => {
-      const customPreview = (imageData: ImageData, _params: TestParams): ImageData => imageData;
-      const config = makeConfig();
-      const plugin = createFilterPlugin<TestParams>({ ...config, preview: customPreview } as any);
-      expect(plugin.preview).toBe(config.apply);
-      expect(plugin.preview).not.toBe(customPreview);
     });
   });
 

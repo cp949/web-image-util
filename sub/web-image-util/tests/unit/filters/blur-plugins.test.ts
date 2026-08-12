@@ -107,13 +107,6 @@ describe('BlurFilterPlugin', () => {
       expect(BlurFilterPlugin.validate({ radius: 'bad' as any }).valid).toBe(false);
     });
   });
-
-  it('preview는 radius를 최대 5로 제한해도 결과 크기는 동일하다', () => {
-    const input = fillImageData(4, 4, 128, 128, 128);
-    const result = BlurFilterPlugin.preview!(input, { radius: 10 });
-    expect(result.width).toBe(4);
-    expect(result.height).toBe(4);
-  });
 });
 
 describe('SharpenFilterPlugin', () => {

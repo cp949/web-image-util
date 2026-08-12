@@ -105,13 +105,6 @@ describe('BrightnessFilterPlugin', () => {
       expect(result.warnings).toBeDefined();
     });
   });
-
-  it('preview는 apply와 동일한 결과를 반환한다', () => {
-    const input = px(100, 100, 100);
-    const applied = BrightnessFilterPlugin.apply(input, { value: 30 });
-    const previewed = BrightnessFilterPlugin.preview!(input, { value: 30 });
-    expect(previewed.data[0]).toBe(applied.data[0]);
-  });
 });
 
 describe('ContrastFilterPlugin', () => {
@@ -228,17 +221,6 @@ describe('SaturationFilterPlugin', () => {
       expect(result.valid).toBe(true);
       expect(result.warnings).toBeDefined();
     });
-  });
-
-  it('canOptimizeWith는 색상 관련 필터와 true를 반환한다', () => {
-    expect(SaturationFilterPlugin.canOptimizeWith!({ name: 'brightness' } as any)).toBe(true);
-    expect(SaturationFilterPlugin.canOptimizeWith!({ name: 'contrast' } as any)).toBe(true);
-    expect(SaturationFilterPlugin.canOptimizeWith!({ name: 'hue' } as any)).toBe(true);
-  });
-
-  it('canOptimizeWith는 무관한 필터와 false를 반환한다', () => {
-    expect(SaturationFilterPlugin.canOptimizeWith!({ name: 'blur' } as any)).toBe(false);
-    expect(SaturationFilterPlugin.canOptimizeWith!({ name: 'grayscale' } as any)).toBe(false);
   });
 });
 

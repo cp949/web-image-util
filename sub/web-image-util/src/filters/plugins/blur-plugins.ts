@@ -175,12 +175,6 @@ export const BlurFilterPlugin: FilterPlugin<{ radius: number }> = {
       warnings: warnings.length > 0 ? warnings : undefined,
     };
   },
-
-  preview(imageData: ImageData, params: { radius: number }): ImageData {
-    // Limit to small blur values in preview
-    const previewParams = { radius: Math.min(params.radius, 5) };
-    return this.apply(imageData, previewParams);
-  },
 };
 
 /**

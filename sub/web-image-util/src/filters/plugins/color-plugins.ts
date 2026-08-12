@@ -51,11 +51,6 @@ export const BrightnessFilterPlugin: FilterPlugin<{ value: number }> = {
       warnings: warnings.length > 0 ? warnings : undefined,
     };
   },
-
-  preview(imageData: ImageData, params: { value: number }): ImageData {
-    // Preview is same as full application
-    return this.apply(imageData, params);
-  },
 };
 
 /**
@@ -150,11 +145,6 @@ export const SaturationFilterPlugin: FilterPlugin<{ value: number }> = {
       errors: errors.length > 0 ? errors : undefined,
       warnings: warnings.length > 0 ? warnings : undefined,
     };
-  },
-
-  canOptimizeWith(otherFilter: FilterPlugin): boolean {
-    // Can be optimized with other color adjustment filters
-    return ['brightness', 'contrast', 'hue'].includes(otherFilter.name);
   },
 };
 

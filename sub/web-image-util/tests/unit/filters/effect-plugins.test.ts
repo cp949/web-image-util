@@ -61,13 +61,6 @@ describe('GrayscaleFilterPlugin', () => {
   it('validate는 항상 valid:true를 반환한다', () => {
     expect(GrayscaleFilterPlugin.validate({}).valid).toBe(true);
   });
-
-  it('preview는 apply와 동일한 결과를 반환한다', () => {
-    const input = px(200, 100, 50);
-    const applied = GrayscaleFilterPlugin.apply(input, {});
-    const previewed = GrayscaleFilterPlugin.preview!(input, {});
-    expect(Array.from(previewed.data.slice(0, 3))).toEqual(Array.from(applied.data.slice(0, 3)));
-  });
 });
 
 describe('SepiaFilterPlugin', () => {

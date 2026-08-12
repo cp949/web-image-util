@@ -41,16 +41,6 @@ export interface FilterPlugin<TParams = unknown> {
    * @returns 검증 결과
    */
   validate(params: TParams): FilterValidationResult;
-
-  /**
-   * 작은 샘플 이미지로 빠른 미리보기를 생성한다.
-   */
-  preview?(imageData: ImageData, params: TParams): ImageData;
-
-  /**
-   * 다른 필터와 결합 최적화가 가능한지 판단한다.
-   */
-  canOptimizeWith?(otherFilter: FilterPlugin<unknown>): boolean;
 }
 
 /**
@@ -80,7 +70,6 @@ export interface FilterOptions<TParams = unknown> {
   blend?: BlendMode;
   opacity?: number; // 0 ~ 1
   enabled?: boolean; // 필터 활성화 여부
-  id?: string; // 체인 내부 식별자
 }
 
 export { BlendMode };
@@ -88,8 +77,6 @@ export { BlendMode };
 /** 여러 필터를 순차 적용할 때 사용하는 체인 설정이다. */
 export interface FilterChain {
   filters: FilterOptions[];
-  preview?: boolean;
-  name?: string; // 프리셋 등에 사용할 체인 이름
 }
 
 /**
