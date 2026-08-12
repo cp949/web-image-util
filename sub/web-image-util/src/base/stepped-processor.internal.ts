@@ -1,11 +1,11 @@
-import { applySmoothing, createOwnedCanvas } from './canvas-utils.internal';
+import { applySmoothing, createOwnedCanvas, type SmoothingQuality } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
 
 /**
  * Stepped reduction quality options
  */
 export interface SteppedProcessingOptions {
-  quality?: 'fast' | 'high';
+  quality?: SmoothingQuality;
   maxSteps?: number;
   minStepRatio?: number;
 }
@@ -175,7 +175,7 @@ export class SteppedProcessor {
     sourceCanvas: HTMLCanvasElement,
     targetWidth: number,
     targetHeight: number,
-    quality: 'fast' | 'high' = 'high'
+    quality: SmoothingQuality = 'high'
   ): Promise<HTMLCanvasElement> {
     // 반환되는 canvas는 호출자가 소비 후 직접 폐기한다 — pool 미사용
     const { canvas: targetCanvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);
@@ -193,7 +193,7 @@ export class SteppedProcessor {
     img: HTMLImageElement,
     targetWidth: number,
     targetHeight: number,
-    quality: 'fast' | 'high' = 'high'
+    quality: SmoothingQuality = 'high'
   ): Promise<HTMLCanvasElement> {
     // 결과 canvas는 호출자 소유 — pool을 거치지 않는다
     const { canvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);

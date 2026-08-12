@@ -49,7 +49,7 @@ const chunkedAdapter: ResizeStrategyAdapter = {
   async execute({ img, targetWidth, targetHeight, quality, analysis, onProgress }) {
     return TiledProcessor.resizeInTiles(img, targetWidth, targetHeight, {
       tileSize: Math.min(2048, analysis.recommendedChunkSize),
-      quality: quality === 'fast' ? 'fast' : 'high',
+      quality,
       onProgress,
       // 청크 경로는 메모리 절약이 목적이라 동시성을 늘리지 않는다
       maxConcurrency: 2,
@@ -62,7 +62,7 @@ const steppedAdapter: ResizeStrategyAdapter = {
   timeMultiplier: 1.5,
   async execute({ img, targetWidth, targetHeight, quality }) {
     return SteppedProcessor.resizeWithSteps(img, targetWidth, targetHeight, {
-      quality: quality === 'fast' ? 'fast' : 'high',
+      quality,
       maxSteps: quality === 'high' ? 15 : 8,
     });
   },
@@ -73,7 +73,7 @@ const tiledAdapter: ResizeStrategyAdapter = {
   timeMultiplier: 2.0,
   async execute({ img, targetWidth, targetHeight, quality, onProgress }) {
     return TiledProcessor.resizeInTiles(img, targetWidth, targetHeight, {
-      quality: quality === 'fast' ? 'fast' : 'high',
+      quality,
       onProgress,
       enableMemoryMonitoring: true,
       maxConcurrency: quality === 'fast' ? 4 : 2,

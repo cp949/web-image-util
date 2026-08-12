@@ -66,7 +66,7 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
     expect(opts?.maxSteps).toBe(8);
   });
 
-  it('forceStrategy="stepped", quality 미지정(balanced) → SteppedProcessor에 quality="high", maxSteps=8 이 전달된다', async () => {
+  it('forceStrategy="stepped", quality 미지정(balanced) → SteppedProcessor에 quality="balanced", maxSteps=8 이 전달된다', async () => {
     const stubCanvas = document.createElement('canvas');
     const steppedSpy = vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
 
@@ -78,7 +78,7 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
 
     expect(steppedSpy).toHaveBeenCalledOnce();
     const opts = steppedSpy.mock.calls[0]?.[3];
-    expect(opts?.quality).toBe('high'); // 'balanced' !== 'fast' → 'high'로 변환
+    expect(opts?.quality).toBe('balanced'); // 강등 없이 그대로 전달
     expect(opts?.maxSteps).toBe(8); // 'balanced' !== 'high' → 8
   });
 
@@ -97,7 +97,7 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
     expect(tiledSpy.mock.calls[0]?.[1]).toBe(50); // targetWidth
     expect(tiledSpy.mock.calls[0]?.[2]).toBe(50); // targetHeight
     const opts = tiledSpy.mock.calls[0]?.[3];
-    expect(opts?.quality).toBe('high'); // 기본 quality='balanced' → 'high'로 변환
+    expect(opts?.quality).toBe('balanced'); // 강등 없이 그대로 전달
     expect(opts?.maxConcurrency).toBe(2); // 기본 quality='balanced' → 2
     expect(opts?.enableMemoryMonitoring).toBe(true); // 항상 true
     expect(result.strategy).toBe(ProcessingStrategy.TILED);
@@ -167,7 +167,7 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
     expect(opts?.maxConcurrency).toBe(2);
   });
 
-  it('forceStrategy="chunked", quality="balanced"(기본) → TiledProcessor에 quality="high", maxConcurrency=2 가 전달된다', async () => {
+  it('forceStrategy="chunked", quality="balanced"(기본) → TiledProcessor에 quality="balanced", maxConcurrency=2 가 전달된다', async () => {
     const stubCanvas = document.createElement('canvas');
     const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
 
@@ -179,8 +179,8 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
 
     expect(tiledSpy).toHaveBeenCalledOnce();
     const opts = tiledSpy.mock.calls[0]?.[3];
-    // 'balanced' !== 'fast' → 'high'로 변환
-    expect(opts?.quality).toBe('high');
+    // 강등 없이 그대로 전달
+    expect(opts?.quality).toBe('balanced');
     expect(opts?.maxConcurrency).toBe(2);
   });
 });
