@@ -21,3 +21,13 @@ _Avoid_: 반환 생략, no-release
 **소유 canvas (owned canvas)**:
 처음부터 호출자 소유로 생성되어 pool과 무관한 canvas. 결과 canvas를 호출자에게 직접 반환하는 경로(합성, 고해상도 처리)가 사용한다.
 _Avoid_: 임시 canvas, 신규 canvas
+
+### SVG 보안
+
+**위협 정책 (threat policy)**:
+SVG에서 무엇이 위험한 참조·요소·속성인가에 대한 판정 규칙의 단일 소유자. 경량·strict 두 집행 엔진과 진단, intake guard는 모두 이 정책의 소비자다.
+_Avoid_: sanitizer 규칙, 보안 필터
+
+**집행 엔진 (enforcement engine)**:
+위협 정책을 SVG 문서에 적용해 위험 요소를 실제로 제거하는 메커니즘. 무엇이 위험한가는 정의하지 않고 어떻게 제거하는가만 담당한다.
+_Avoid_: sanitizer 본체, 정화 로직
