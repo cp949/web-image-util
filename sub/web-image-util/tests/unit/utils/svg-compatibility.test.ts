@@ -383,3 +383,17 @@ describe('기존 viewBox에서 width/height 주입 — 구분자와 공백', () 
     expect(enhancedSvg).toContain('height="64"');
   });
 });
+
+describe('width/height 단서로 viewBox 생성 — 공백 포함 값의 px 판정', () => {
+  it('숫자와 단위 사이에 공백이 있으면 px 크기로 인정하지 않고 defaultSize로 폴백한다', () => {
+    const { enhancedSvg, report } = enhanceBrowserCompatibility('<svg width="100 px" height="100 px"></svg>');
+    expect(enhancedSvg).toContain('viewBox="0 0 512 512"');
+    expect(report.warnings).toContain('Non-px or partial size detected. Falling back to defaultSize for viewBox.');
+  });
+
+  it('숫자와 단위가 공백 없이 붙어있으면 정상적으로 px 크기로 인정한다', () => {
+    const { enhancedSvg, report } = enhanceBrowserCompatibility('<svg width="100px" height="100px"></svg>');
+    expect(enhancedSvg).toContain('viewBox="0 0 100 100"');
+    expect(report.warnings).not.toContain('Non-px or partial size detected. Falling back to defaultSize for viewBox.');
+  });
+});
