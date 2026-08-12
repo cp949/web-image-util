@@ -57,7 +57,8 @@
 | `src/core/source-converter/url/` | HTTP/Blob URL 로더 — `policy.internal.ts`, `fetch-guards.internal.ts`, `loader.internal.ts` |
 | `src/core/source-converter/loaders/` | 형태별 입력 변환기 — `string.internal.ts`, `blob.internal.ts`, `canvas.internal.ts` |
 | `src/utils/svg-detection.ts` | `isInlineSvg()` 등 SVG 문자열 판정 |
-| `src/utils/svg-sanitizer.ts` | `sanitizeSvgForRendering()`, `sanitizeSvg()` (deprecated alias) |
+| `src/utils/svg-sanitizer.ts` | `sanitizeSvgForRendering()`, `sanitizeSvg()` (deprecated alias) — 경량 집행 엔진(정규식 메커니즘) |
+| `src/utils/svg-threat-policy.internal.ts` | SVG 위협 정책 단일 소유자 — URI/CSS 허용 판정, 금지 요소 목록, XXE 절단. 경량·strict 두 집행 엔진과 진단 수집기, intake guard가 공유 |
 | `src/utils/inspect-svg.ts` | SVG 문자열 진단 API — 부수효과 없이 findings·dimensions·sanitizer 추천을 반환하는 진단 레이어 |
 | `src/utils/inspect-svg-source.ts` | SVG 입력 source(`string`/`Blob`/`File`/`URL`) 진단. 기본 fetch 없음, `inspectSvg()` 위임으로 본문 분석 |
 | `src/utils/prefix-svg-ids.ts` | SVG `id`와 fragment reference를 prefix하는 standalone 정규화 유틸 — 파이프라인 외부, `@cp949/web-image-util/utils` 서브패스 |
@@ -68,7 +69,7 @@
 | `src/core/single-renderer.internal.ts` | 누적 연산 분석(`analyzeAllOperations`)과 최종 Canvas drawImage 렌더링(`renderLayout` → `CanvasLease`) |
 | `src/types/resize-config.ts` | ResizeConfig 타입 시스템 |
 
-진단 API의 판정 기준은 층별로 다르다: `inspectSvg()`/`inspectSvgSource()`는 변환 경로 intake guard(`assertSafeSvgContent`)의 거부 기준을, `inspectSvgSanitization()`은 선택한 정책의 sanitizer가 실제 치환하는 기준을 따른다. 이 정합은 `sub/web-image-util/tests/unit/utils/svg-inspection-axis-alignment.test.ts`가 고정하며, 사용자 관점 서술은 [SVG-SECURITY.md](../SVG-SECURITY.md)의 "진단 API의 판정 기준 차이" 절에 있다.
+진단 API의 판정 기준은 층별로 다르다: `inspectSvg()`/`inspectSvgSource()`는 변환 경로 intake guard(`assertSafeSvgContent`)의 거부 기준을, `inspectSvgSanitization()`은 선택한 정책의 sanitizer가 실제 치환하는 기준을 따른다. 판정 규칙 자체는 위협 정책 모듈(`src/utils/svg-threat-policy.internal.ts`)이 단일 소유하며, 두 sanitizer의 동작 차이는 동치성 코퍼스(`sub/web-image-util/tests/security/sanitizer-equivalence.corpus.ts`)가 전수 고정한다. 이 정합은 `sub/web-image-util/tests/unit/utils/svg-inspection-axis-alignment.test.ts`가 고정하며, 사용자 관점 서술은 [SVG-SECURITY.md](../SVG-SECURITY.md)의 "진단 API의 판정 기준 차이" 절에 있다.
 
 ## 공개 API 표면
 

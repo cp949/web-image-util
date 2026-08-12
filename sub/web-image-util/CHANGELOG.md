@@ -2,6 +2,27 @@
 
 이 파일은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따르며, 이 프로젝트는 [Semantic Versioning](https://semver.org/lang/ko/)을 사용합니다.
 
+## [Unreleased]
+
+### 보안
+
+- Security: 경량(lightweight) SVG sanitizer의 위협 정책을 strict와 단일 모듈로 통일하고 다음 구멍을 폐쇄했습니다. 두 정책의 동작 차이는 동치성 코퍼스 테스트로 전수 고정됩니다.
+  - `href`/`xlink:href`/`src` 판정을 denylist(`http:`/`https:`/`//`/`data:`/`javascript:`)에서 allowlist(내부 프래그먼트 `#id`와 안전한 `data:image/*`만 보존)로 반전했습니다. 미지 스킴(`vbscript:`, `file:`, `ftp:`, `blob:`, `mailto:` 등)과 bare 상대 경로가 보존되던 동작이 폐쇄됩니다.
+  - `fill`/`filter`/`mask` 등 CSS presentation 속성 11종의 외부 `url()`이 정제 없이 통과하던 격차를 폐쇄했습니다. 문자열 인자 `@import`/`expression()`/`image-set()`/`-moz-binding`도 strict와 같이 값 단위로 폐기합니다.
+  - DOCTYPE/`<!ENTITY>` 선언(XXE 표면)을 경량 경로에서도 절단합니다.
+  - `attributeName`으로 `href`를 타겟팅하는 `<animate>`/`<set>` 요소를 제거합니다(좌표 애니메이션 등 일반 animate/set은 보존).
+  - HTML 엔티티로 숨긴 CSS 위협은 값 전체를 폐기합니다(fail-closed).
+
+### 변경
+
+- Changed: 상대·절대 경로 참조(`./a.png`, `/a.png` 등)가 포함된 SVG의 기본 경로 처리 결과가 오류(`INVALID_SOURCE`)에서 "참조 제거 후 렌더링"으로 바뀌었습니다. 외부 `http(s)` URL과 같은 무해화 방식으로 통일한 것입니다.
+- Changed: 경량 sanitizer의 외부 CSS `url()` 치환값이 `url(#invalid)`에서 `none`으로 통일되었습니다.
+- Changed: `inspectSvgSanitization()`의 lightweight/skip 보고가 통일된 위협 정책을 따릅니다 — 상대 경로·빈 `href`·presentation 속성 CSS·DOCTYPE 절단이 stage로 보고됩니다.
+
+### 수정
+
+- Fixed: strict 정책 진단이 빈 `href=""`를 보존으로 과소 보고하던 불일치를 수정했습니다. 실제 strict sanitizer는 빈 href 속성을 제거하며, 이제 진단도 제거 대상으로 셉니다.
+
 ## [3.1.0] - 2026-08-12
 
 ### 추가

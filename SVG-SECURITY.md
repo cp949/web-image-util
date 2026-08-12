@@ -23,7 +23,7 @@ await processImage(userProvidedSource, { svgSanitizer: 'strict' }).toBlob();
 
 기본값은 "모든 SVG를 가장 강하게 정제"가 아니라 "기존 SVG 렌더링을 깨지 않게 다룸"입니다.
 
-- **렌더링 보존성**: `strict`는 내부 프래그먼트가 아닌 `href`/`src`를 보수적으로 제거합니다. 아이콘, 필터, 패턴, 이미지 참조를 활용하는 정상 SVG도 결과가 달라질 수 있습니다.
+- **렌더링 보존성**: URI·CSS 판정 정책은 두 모드가 동일하지만, `strict`는 DOMPurify allowlist로 `<use>`와 animate 계열 요소까지 제거합니다. sprite/애니메이션 패턴을 쓰는 정상 SVG도 결과가 달라질 수 있습니다.
 - **성능과 번들**: `strict`는 DOMPurify, DOMParser, XMLSerializer를 동적으로 불러옵니다. 기본 경로(`lightweight`)는 이를 top-level로 끌어오지 않습니다.
 - **역할 분리**: 이 패키지는 이미지 처리 라이브러리입니다. 신뢰 경계 판단은 호출처가 명시적으로 하도록 설계했습니다.
 
@@ -46,22 +46,24 @@ await processImage(userProvidedSource, { svgSanitizer: 'strict' }).toBlob();
 
 ### `lightweight`
 
-렌더링 파이프라인을 보호하기 위한 경량 방어층입니다. 정규식 기반으로 위험 패턴을 제거하고, 제거 후에도 위험 참조가 남으면 `INVALID_SOURCE`로 차단합니다.
+렌더링 파이프라인을 보호하기 위한 경량 방어층입니다. 정규식 기반으로 위험 패턴을 제거하고, 제거 후에도 위험 참조가 남으면 `INVALID_SOURCE`로 차단합니다. 판정 규칙(위협 정책)은 `strict`와 같은 모듈을 공유하며, 두 정책의 의도된 동작 차이는 동치성 코퍼스(`sub/web-image-util/tests/security/sanitizer-equivalence.corpus.ts`)에 전부 등재되어 있습니다.
 
 처리:
 
 - `<script>`, `<foreignObject>`, `on*` 이벤트 핸들러 속성 제거
-- `href`/`xlink:href`/`src`의 `http:`, `https:`, `//`, 비이미지 `data:`, `javascript:` 참조 제거
+- DOCTYPE/ENTITY 선언 절단 (XXE 표면)
+- `href`/`xlink:href`/`src`는 내부 프래그먼트(`#id`)와 안전한 `data:image/*`만 보존 — 외부 URL, 상대·절대 경로, 미지 스킴(`vbscript:` 등), 빈 값은 제거
 - `data:image/png|jpeg|webp`는 크기 제한 안에서 보존, `data:image/svg+xml`은 nested SVG를 같은 정책으로 재정제 후 보존
-- `style` 속성과 `<style>` 본문의 외부 `url(...)` 제거, CSS escape/문자 참조 우회 패턴 처리(아래 "CSS escape 우회 처리" 참조)
-- 정제 후 잔여 외부 참조(`./`, `../`, `/`, 외부 URL) 차단
+- `style`·presentation 속성(`fill`, `filter`, `mask` 등 11종)과 `<style>` 본문의 CSS 정제 — 내부 참조가 아닌 `url(...)`은 `none` 치환, `@import`/`expression()`/`image-set()`/`-moz-binding`은 값 단위 폐기, CSS escape/문자 참조 우회 패턴 처리(아래 "CSS escape 우회 처리" 참조)
+- `attributeName`으로 `href`를 타겟팅하는 `<animate>`/`<set>` 제거 (좌표 애니메이션 등 일반 animate/set은 보존)
 - 원본/정제 후 SVG 크기 제한, 브라우저 호환성 보정 유지
 
 처리하지 않음:
 
 - DOM 기반의 완전한 sanitizer 역할, 모든 우회 기법/브라우저별 파서 차이까지 포괄하는 보장
-- DOCTYPE/ENTITY 정제, 정제 후 노드 개수 제한
-- 중첩 깊이, `viewBox`/좌표 상한, 순환 참조, SMIL 분석
+- `<use>` 등 참조 요소 자체의 제거 (href 정책으로 참조 값만 방어)
+- 정제 후 노드 개수 제한
+- 중첩 깊이, `viewBox`/좌표 상한, 순환 참조, SMIL 무한 애니메이션 분석
 - 메타데이터 제거, 접근성/다크모드/RTL/Retina 보정
 
 ### `strict`
@@ -140,14 +142,16 @@ nested SVG 재정제에서 byte cap 초과 또는 parse 실패가 발생하면 n
 
 | API | 답하는 질문 | 판정 기준 |
 | --- | --- | --- |
-| `inspectSvg()` / `inspectSvgSource()` | 변환(`processImage()`)이 이 입력을 거부하는가, strict sanitizer를 권해야 하는가 | 변환 경로의 안전성 검사와 같은 기준. 외부 URL(`http(s)`, `//`)뿐 아니라 상대·절대 경로(`./`, `../`, `/`)와 안전하지 않은 `data:` 참조도 finding으로 보고합니다 |
+| `inspectSvg()` / `inspectSvgSource()` | 입력 원문에 intake guard 기준의 위험 참조가 있는가, strict sanitizer를 권해야 하는가 | 변환 경로의 안전성 검사와 같은 기준. 내부 프래그먼트(`#id`)와 안전한 `data:image/*`가 아닌 참조를 finding으로 보고합니다 |
 | `inspectSvgSanitization()` | 선택한 sanitizer 정책을 적용하면 무엇이 바뀌는가 | 해당 정책의 sanitizer가 실제로 치환·제거하는 것만 stage로 보고합니다 |
+
+위협 정책이 두 sanitizer에 단일 모듈로 공유된 뒤로 URI·CSS 판정 축은 대부분 수렴했습니다 — 상대·절대 경로, 미지 스킴, presentation 속성 CSS는 두 진단이 같은 방향으로 보고합니다. 남은 차이는 분류 축의 차이입니다.
 
 대표 사례:
 
-- **상대·절대 경로 참조**(`href="./rel.png"` 등): `inspectSvg()`는 finding을 보고합니다 — 변환 경로가 이 입력을 거부하기 때문입니다. `inspectSvgSanitization()`의 `lightweight` 정책은 stage를 보고하지 않습니다 — lightweight sanitizer는 이 값을 바꾸지 않기 때문입니다. 두 보고 모두 사실이며, lightweight sanitizer가 바꾸지 않아도 변환은 실패합니다.
-- **CSS `url()` 안의 raster `data:` 이미지**: `inspectSvgSanitization()`은 stage로 보고합니다 — lightweight sanitizer가 CSS의 `data:` 참조를 치환하기 때문입니다. `inspectSvg()`는 안전한 raster `data:image/*`를 finding으로 보고하지 않습니다 — 변환 경로가 이를 거부하지 않기 때문입니다.
-- **CSS `url()` 함수 바깥의 위험 구문과 presentation 속성**: 문자열 인자 형태의 `@import "…"`, `expression()`, 내부 참조만 담은 `-moz-binding`, 문자열 인자 형태의 `image-set()`, 그리고 `fill` 같은 presentation 속성의 `url()`은 `strict` 정책의 `inspectSvgSanitization()`만 보고합니다. lightweight sanitizer와 변환 경로의 안전성 검사는 이들을 건드리지 않습니다. 단, `style` 속성이나 `<style>` 태그의 CSS 텍스트 안에서 외부 URL이 `url()` 함수 형태로 등장하면(`@import url(http://…)` 등) 나머지 두 층도 그 `url()` 참조를 보고합니다 — presentation 속성은 이 경우에도 `strict` 정책만 검사합니다.
+- **`data:` 참조**: `inspectSvg()`는 안전하지 않은 `data:`를 finding으로 보고하고, `inspectSvgSanitization()`은 embedded image stage(`data-image-blocked`/`data-image-preserved`/`nested-svg-resanitized`)로 분류합니다 — 같은 사실을 다른 축으로 보고하는 것입니다.
+- **CSS `url()` 안의 raster `data:` 이미지**: `inspectSvgSanitization()`은 stage로 보고합니다 — sanitizer가 CSS의 `data:` 참조를 치환하기 때문입니다. `inspectSvg()`는 안전한 raster `data:image/*`를 finding으로 보고하지 않습니다 — 변환 경로가 이를 거부하지 않기 때문입니다.
+- **presentation 속성과 구문형 CSS 위협**: `fill` 같은 presentation 속성의 `url()`, 문자열 인자 `@import "…"`/`image-set()`, `expression()`, `-moz-binding`은 두 정책의 sanitizer가 제거하고 `inspectSvgSanitization()`이 stage로 보고합니다. 변환 경로의 intake guard와 `inspectSvg()`는 `style` 속성/`<style>` 본문의 `url()`만 검사하므로 이들에 finding을 내지 않습니다 — sanitizer가 앞단에서 제거하므로 보안 공백은 아닙니다.
 
 `inspectSvg()`의 finding 유무가 변환 경로의 거부 여부와, `lightweight` stage가 lightweight sanitizer의 실제 치환과 일치하는지는 회귀 테스트(`sub/web-image-util/tests/unit/utils/svg-inspection-axis-alignment.test.ts`)로 고정되어 있습니다. 두 검사는 판정 기준을 공유하지만 추출 방식이 다르므로(진단은 DOM 순회, 변환 경로와 lightweight sanitizer는 원문 정규식), 주석 안의 참조 같은 경계 입력에서는 변환 경로가 진단보다 보수적으로 거부하거나 lightweight sanitizer가 stage 보고 없이 치환할 수 있습니다.
 
@@ -172,15 +176,15 @@ nested SVG 재정제에서 byte cap 초과 또는 parse 실패가 발생하면 n
 | --- | --- |
 | 확장자가 아닌 내용으로 SVG 여부 판단 | 제공 |
 | `<script>`, `on*`, `<foreignObject>` 제거 | `lightweight`, `strict` 제공 |
-| 외부 `href`/`src` 참조 차단 | `lightweight`는 잔여 위험 참조 차단, `strict`는 내부 프래그먼트만 보존 |
-| CSS 외부 URL 차단 | `lightweight`는 `url(...)` 중심, `strict`는 `image-set(...)`, `@import` 등 추가 처리 |
+| 외부 `href`/`src` 참조 차단 | 두 정책 공통 — 내부 프래그먼트와 안전한 `data:image/*`만 보존 |
+| CSS 외부 URL 차단 | 두 정책 공통 — `url(...)` allowlist + `image-set(...)`, `@import`, `expression()`, `-moz-binding` 폐기 |
 | `javascript:` 등 위험 스킴 차단, 비이미지 `data:` 제거 | `lightweight`, `strict` 제공 |
-| DOCTYPE/ENTITY 제거 | `strict` 제공 |
+| DOCTYPE/ENTITY 제거 | `lightweight`, `strict` 제공 |
 | 입력 파일 크기 제한 | 제공 |
 | 정제 후 노드 개수 제한 | `strict` 제공 |
 | 메타데이터 제거 | `@cp949/web-image-util/svg-sanitizer`의 `removeMetadata: true` 제공 |
 | 중첩 깊이, `viewBox`/좌표 상한, ID 충돌 방지 prefix | 향후 후보 |
-| SMIL 무한 애니메이션, `<use>`/`<filter>`/`<pattern>` 순환 참조 감지 | 미제공 |
+| SMIL 무한 애니메이션, `<use>`/`<filter>`/`<pattern>` 순환 참조 감지 | href 타겟팅 `<animate>`/`<set>` 제거는 제공, 그 외 미제공 |
 | 접근성 속성 자동 보정, SVGO 최적화 | 미제공 |
 | CSP 헤더, `<img>`/Shadow DOM/iframe sandbox 격리 정책 | 라이브러리 범위 밖 |
 | 정제와 호환성 보정을 모두 건너뛰는 디버깅 경로 | `unsafe_processImage()` 제공(프로덕션 금지) |
