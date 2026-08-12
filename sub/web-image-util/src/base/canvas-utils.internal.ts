@@ -155,6 +155,22 @@ export function createOwnedCanvas(
   return { canvas, ctx };
 }
 
+/** advanced 계열 품질 어휘 — 코어 RenderQuality('low'|'medium'|'high')와 별개 정본 */
+export type SmoothingQuality = 'fast' | 'balanced' | 'high';
+
+/**
+ * quality → imageSmoothing 매핑 정본.
+ * fast: 스무딩 끔 / balanced: medium / high: high.
+ */
+export function applySmoothing(ctx: CanvasRenderingContext2D, quality: SmoothingQuality): void {
+  if (quality === 'fast') {
+    ctx.imageSmoothingEnabled = false;
+    return;
+  }
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = quality === 'high' ? 'high' : 'medium';
+}
+
 /**
  * 통합 canvas→Blob 인코더 옵션.
  *

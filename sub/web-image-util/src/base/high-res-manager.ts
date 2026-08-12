@@ -1,5 +1,5 @@
 import { productionLog } from '../utils/debug.internal';
-import { createOwnedCanvas } from './canvas-utils.internal';
+import { applySmoothing, createOwnedCanvas } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
 import type { ImageAnalysis } from './high-res-detector.internal';
 import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector.internal';
@@ -275,18 +275,7 @@ export class HighResolutionManager {
   ): Promise<HTMLCanvasElement> {
     // 결과 canvas는 호출자 소유 — pool을 거치지 않는다
     const { canvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);
-    switch (quality) {
-      case 'fast':
-        ctx.imageSmoothingEnabled = false;
-        break;
-      case 'high':
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        break;
-      default:
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'medium';
-    }
+    applySmoothing(ctx, quality);
 
     ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
     return canvas;

@@ -3,7 +3,7 @@
  * Transparent system that automatically processes high-resolution images
  */
 
-import { createOwnedCanvas } from '../base/canvas-utils.internal';
+import { applySmoothing, createOwnedCanvas } from '../base/canvas-utils.internal';
 import { HighResolutionDetector } from '../base/high-res-detector.internal';
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
@@ -337,20 +337,7 @@ export class AutoHighResProcessor {
     const startTime = Date.now();
 
     const { canvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);
-
-    // Quality settings
-    switch (quality) {
-      case 'fast':
-        ctx.imageSmoothingEnabled = false;
-        break;
-      case 'high':
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        break;
-      default:
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'medium';
-    }
+    applySmoothing(ctx, quality);
 
     ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 

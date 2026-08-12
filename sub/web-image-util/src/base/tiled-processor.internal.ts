@@ -1,4 +1,4 @@
-import { createOwnedCanvas, withManagedCanvas } from './canvas-utils.internal';
+import { applySmoothing, createOwnedCanvas, withManagedCanvas } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
 
 /**
@@ -76,9 +76,9 @@ export class TiledProcessor {
 
     // 결과 canvas는 호출자 소유 — pool을 거치지 않는다 (타일 중간 canvas만 pool 사용)
     const { canvas: resultCanvas, ctx: resultCtx } = createOwnedCanvas(targetWidth, targetHeight);
+    // 주의: 'high'가 아니면 브라우저 기본 스무딩을 유지한다 (기존 동작 보존 — 정리는 balanced fix에서)
     if (opts.quality === 'high') {
-      resultCtx.imageSmoothingEnabled = true;
-      resultCtx.imageSmoothingQuality = 'high';
+      applySmoothing(resultCtx, 'high');
     }
 
     await TiledProcessor.processTiles(img, tiles, scaleX, scaleY, resultCtx, opts);
@@ -184,13 +184,8 @@ export class TiledProcessor {
     quality: 'fast' | 'high'
   ): Promise<void> {
     await withManagedCanvas(tile.width, tile.height, (tileCanvas, tileCtx) => {
-      // Tile Canvas setup
-      if (quality === 'high') {
-        tileCtx.imageSmoothingEnabled = true;
-        tileCtx.imageSmoothingQuality = 'high';
-      } else {
-        tileCtx.imageSmoothingEnabled = false;
-      }
+      // 타일 canvas 스무딩 설정
+      applySmoothing(tileCtx, quality);
 
       // Draw corresponding part of source image to tile Canvas with scaling
       tileCtx.drawImage(

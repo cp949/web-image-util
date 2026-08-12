@@ -1,4 +1,4 @@
-import { createOwnedCanvas } from './canvas-utils.internal';
+import { applySmoothing, createOwnedCanvas } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
 
 /**
@@ -161,8 +161,7 @@ export class SteppedProcessor {
   private static async imageToCanvas(img: HTMLImageElement): Promise<HTMLCanvasElement> {
     // 반환되는 canvas는 호출자가 소비 후 직접 폐기한다 — pool 미사용
     const { canvas, ctx } = createOwnedCanvas(img.width, img.height);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    applySmoothing(ctx, 'high');
 
     ctx.drawImage(img, 0, 0);
     return canvas;
@@ -180,12 +179,7 @@ export class SteppedProcessor {
   ): Promise<HTMLCanvasElement> {
     // 반환되는 canvas는 호출자가 소비 후 직접 폐기한다 — pool 미사용
     const { canvas: targetCanvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);
-    if (quality === 'high') {
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-    } else {
-      ctx.imageSmoothingEnabled = false;
-    }
+    applySmoothing(ctx, quality);
 
     ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
     return targetCanvas;
@@ -203,12 +197,7 @@ export class SteppedProcessor {
   ): Promise<HTMLCanvasElement> {
     // 결과 canvas는 호출자 소유 — pool을 거치지 않는다
     const { canvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);
-    if (quality === 'high') {
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-    } else {
-      ctx.imageSmoothingEnabled = false;
-    }
+    applySmoothing(ctx, quality);
 
     ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
     return canvas;

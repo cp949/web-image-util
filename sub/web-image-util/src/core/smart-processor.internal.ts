@@ -5,7 +5,7 @@
  * Users don't need to know complex strategies, internal optimization is automatic.
  */
 
-import { createOwnedCanvas } from '../base/canvas-utils.internal';
+import { applySmoothing, createOwnedCanvas } from '../base/canvas-utils.internal';
 import { createImageError } from '../base/error-helpers';
 import type { ProcessingStrategy } from '../base/high-res-detector.internal';
 import { HighResolutionManager } from '../base/high-res-manager';
@@ -100,9 +100,8 @@ export class SmartProcessor {
   ): Promise<HTMLCanvasElement> {
     const { canvas, ctx } = createOwnedCanvas(width, height);
 
-    // Basic high-quality settings
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    // 기본 고품질 설정
+    applySmoothing(ctx, 'high');
 
     // Simple progress reporting
     if (options.onProgress) {
