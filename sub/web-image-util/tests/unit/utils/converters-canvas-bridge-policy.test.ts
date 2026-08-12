@@ -1,18 +1,19 @@
 /**
  * canvas-bridge / policy 변환 경계 단위 테스트.
  *
- * canvasToBlob fallback, imageElementToCanvas context 오류, shouldReencodeBlob,
+ * canvasToBlob fallback, withImageElementCanvas 임대·반환 계약, shouldReencodeBlob,
  * getBlobReencodeOptions, shouldReuseFile 분기를 각각 잠근다.
  * getBlobDimensions는 이벤트 revoke 계약만 검증한다.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { ImageProcessError } from '../../../src/types';
 import {
   canvasToBlob,
   canvasToDataURL,
   getBlobDimensions,
-  imageElementToCanvas,
+  withImageElementCanvas,
 } from '../../../src/utils/converters/canvas-bridge.internal';
 import {
   getBlobReencodeOptions,
@@ -248,13 +249,30 @@ describe('canvasToDataURL — 인자 전달 및 반환값 확인', () => {
 });
 
 // ─────────────────────────────────────────────
-// imageElementToCanvas
+// withImageElementCanvas
 // ─────────────────────────────────────────────
 
-describe('imageElementToCanvas — 이미지 → Canvas 변환', () => {
+describe('withImageElementCanvas — 임대 canvas에 그리고 pool로 반환', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
+
+  /**
+   * getContext를 대체 컨텍스트로 바꾸고 drawImage spy를 돌려준다.
+   *
+   * node-canvas는 drawImage에 넘긴 HTMLImageElement를 자체 Image 타입으로 변환하므로,
+   * 원본 참조를 검증하려면 컨텍스트 자체를 주입해야 한다.
+   * clearRect·setTransform은 CanvasPool이 획득(acquire)·반환(release) 시 호출하는 초기화 메서드다.
+   */
+  const stubCanvasContext = () => {
+    const drawImageSpy = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: drawImageSpy,
+      clearRect: vi.fn(),
+      setTransform: vi.fn(),
+    } as any);
+    return drawImageSpy;
+  };
 
   it('getContext가 null을 반환하면 CANVAS_CREATION_FAILED 코드로 reject한다', async () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
@@ -263,41 +281,63 @@ describe('imageElementToCanvas — 이미지 → Canvas 변환', () => {
     img.width = 100;
     img.height = 50;
 
-    await expect(imageElementToCanvas(img)).rejects.toMatchObject({
+    await expect(withImageElementCanvas(img, (canvas) => canvas.width)).rejects.toMatchObject({
       code: 'CANVAS_CREATION_FAILED',
     });
   });
 
   it('정상 경로에서 이미지 width·height를 canvas에 반영하고 drawImage(img, 0, 0)을 호출한다', async () => {
-    // node-canvas는 drawImage에 전달된 HTMLImageElement를 자체 Image 타입으로 변환하므로
-    // getContext를 mock해 drawImage spy를 직접 주입하면 원본 참조를 검증할 수 있다
-    const drawImageSpy = vi.fn();
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage: drawImageSpy } as any);
+    const drawImageSpy = stubCanvasContext();
 
     const img = document.createElement('img') as HTMLImageElement;
     img.width = 120;
     img.height = 80;
 
-    const resultCanvas = await imageElementToCanvas(img);
+    const size = await withImageElementCanvas(img, (canvas) => ({ width: canvas.width, height: canvas.height }));
 
-    expect(resultCanvas.width).toBe(120);
-    expect(resultCanvas.height).toBe(80);
-    expect(resultCanvas).toBeInstanceOf(HTMLCanvasElement);
+    expect(size).toEqual({ width: 120, height: 80 });
     // 이미지를 실제로 캔버스에 그렸는지, 올바른 좌표로 그렸는지 확인한다
     expect(drawImageSpy).toHaveBeenCalledWith(img, 0, 0);
   });
 
-  it('반환된 에러는 ImageProcessError 인스턴스다', async () => {
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+  it('콜백 결과를 그대로 반환하고 임대 canvas를 pool로 돌려준다', async () => {
+    stubCanvasContext();
+    const releaseSpy = vi.spyOn(CanvasPool.getInstance(), 'release');
 
     const img = document.createElement('img') as HTMLImageElement;
+    img.width = 10;
+    img.height = 10;
 
-    try {
-      await imageElementToCanvas(img);
-      expect.fail('에러가 발생해야 한다');
-    } catch (err) {
-      expect(err).toBeInstanceOf(ImageProcessError);
-    }
+    await expect(withImageElementCanvas(img, () => 'derived')).resolves.toBe('derived');
+    expect(releaseSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('콜백이 실패해도 임대 canvas를 pool로 돌려주고 에러를 전파한다', async () => {
+    stubCanvasContext();
+    const releaseSpy = vi.spyOn(CanvasPool.getInstance(), 'release');
+
+    const img = document.createElement('img') as HTMLImageElement;
+    img.width = 10;
+    img.height = 10;
+
+    await expect(
+      withImageElementCanvas(img, () => {
+        throw new Error('콜백 실패');
+      })
+    ).rejects.toThrow('콜백 실패');
+    expect(releaseSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('그리기 전에 실패해도 임대 canvas를 pool로 돌려준다', async () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    const releaseSpy = vi.spyOn(CanvasPool.getInstance(), 'release');
+
+    const img = document.createElement('img') as HTMLImageElement;
+    img.width = 10;
+    img.height = 10;
+
+    await expect(withImageElementCanvas(img, (canvas) => canvas.width)).rejects.toBeInstanceOf(ImageProcessError);
+    expect(releaseSpy).toHaveBeenCalledTimes(1);
   });
 });
 

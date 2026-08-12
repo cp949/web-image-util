@@ -70,7 +70,8 @@ describe('*Detailed 변환 유틸 반환 형태 (jsdom-safe)', () => {
 
     it('재인코딩 경로 → originalSize에 원본 이미지 치수가 채워진다', async () => {
       // jsdom은 Blob → ObjectURL → img.load 경로가 막혀 있으므로(TESTING-GUIDE 알려진 제약),
-      // 동일 코드 분기(ensure.ts:80-88)를 진입시키는 HTMLImageElement 입력을 사용한다.
+      // 동일 코드 분기(ensureBlobDetailed의 convertToImageElement → withImageElementCanvas 재인코딩)를
+      // 진입시키는 HTMLImageElement 입력을 사용한다.
       const srcCanvas = createTestCanvas(200, 150, 'red');
       const img = await ensureImageElement(srcCanvas);
 
@@ -97,7 +98,7 @@ describe('*Detailed 변환 유틸 반환 형태 (jsdom-safe)', () => {
     });
 
     it('재인코딩 경로(HTMLImageElement 입력) → originalSize에 원본 이미지 치수가 채워진다', async () => {
-      // ensure.ts:149-156 경로: HTMLImageElement 입력은 convertToImageElement → imageElementToCanvas → 재인코딩을 거쳐
+      // ensureDataURLDetailed의 재인코딩 분기: HTMLImageElement 입력은 convertToImageElement → withImageElementCanvas → 재인코딩을 거쳐
       // originalSize에 원본 치수가 채워진다.
       const srcCanvas = createTestCanvas(180, 120, 'green');
       const img = await ensureImageElement(srcCanvas);
@@ -112,7 +113,7 @@ describe('*Detailed 변환 유틸 반환 형태 (jsdom-safe)', () => {
 
     it('기존 Data URL 문자열 입력 → quality/format 옵션을 넘겨도 원본 문자열 그대로 재사용한다(options 무시)', async () => {
       // canvas.toDataURL()이 반환하는 유효한 PNG Data URL은 jsdom(resources: 'usable')에서 img.onload가 발화한다.
-      // ensure.ts:139-141 경로: convertToImageElement로 이미지를 디코딩해 width/height를 계산한다.
+      // ensureDataURLDetailed의 Data URL no-op 분기: convertToImageElement로 이미지를 디코딩해 width/height를 계산한다.
       const canvas = createTestCanvas(60, 40);
       const inputDataURL = canvas.toDataURL('image/png');
 
@@ -142,7 +143,7 @@ describe('*Detailed 변환 유틸 반환 형태 (jsdom-safe)', () => {
     });
 
     it('재인코딩 경로(HTMLImageElement 입력) → originalSize에 원본 이미지 치수가 채워진다', async () => {
-      // File이 아닌 HTMLImageElement 입력은 재인코딩 경로(ensure.ts:213-225)를 탄다.
+      // File이 아닌 HTMLImageElement 입력은 ensureFileDetailed의 재인코딩 경로를 탄다.
       // ensureBlobDetailed가 originalSize를 채우면 FileResultImpl 5번째 인자로 전파된다.
       const srcCanvas = createTestCanvas(160, 100, 'blue');
       const img = await ensureImageElement(srcCanvas);

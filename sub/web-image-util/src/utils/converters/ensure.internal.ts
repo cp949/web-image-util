@@ -10,7 +10,7 @@ import type { ImageSource, ResultBlob, ResultDataURL, ResultFile } from '../../t
 import { ImageProcessError } from '../../types';
 import { BlobResultImpl, DataURLResultImpl, FileResultImpl } from '../../types/result-implementations.internal';
 import { isDataURLString } from '../data-url';
-import { canvasToBlob, canvasToDataURL, getBlobDimensions, imageElementToCanvas } from './canvas-bridge.internal';
+import { canvasToBlob, canvasToDataURL, getBlobDimensions, withImageElementCanvas } from './canvas-bridge.internal';
 import {
   getBlobReencodeOptions,
   getFinalFilename,
@@ -51,9 +51,8 @@ export async function ensureBlob(
     }
 
     const imageElement = await convertToImageElement(source);
-    const canvas = await imageElementToCanvas(imageElement);
     const outputOptions = source instanceof Blob ? getBlobReencodeOptions(source, options) : options;
-    return await canvasToBlob(canvas, outputOptions);
+    return await withImageElementCanvas(imageElement, (canvas) => canvasToBlob(canvas, outputOptions));
   } catch (error) {
     throw new ImageProcessError('Error occurred while ensuring Blob output', 'CONVERSION_FAILED', { cause: error });
   }
@@ -84,11 +83,14 @@ export async function ensureBlobDetailed(
     }
 
     const imageElement = await convertToImageElement(source);
-    const canvas = await imageElementToCanvas(imageElement);
     const outputOptions = source instanceof Blob ? getBlobReencodeOptions(source, options) : options;
-    const blob = await canvasToBlob(canvas, outputOptions);
+    const encoded = await withImageElementCanvas(imageElement, async (canvas) => ({
+      blob: await canvasToBlob(canvas, outputOptions),
+      width: canvas.width,
+      height: canvas.height,
+    }));
 
-    return new BlobResultImpl(blob, canvas.width, canvas.height, Date.now() - startTime, {
+    return new BlobResultImpl(encoded.blob, encoded.width, encoded.height, Date.now() - startTime, {
       width: imageElement.width,
       height: imageElement.height,
     });
@@ -121,8 +123,7 @@ export async function ensureDataURL(
     }
 
     const imageElement = await convertToImageElement(source);
-    const canvas = await imageElementToCanvas(imageElement);
-    return canvasToDataURL(canvas, options);
+    return await withImageElementCanvas(imageElement, (canvas) => canvasToDataURL(canvas, options));
   } catch (error) {
     throw new ImageProcessError('Error occurred while ensuring Data URL output', 'CONVERSION_FAILED', { cause: error });
   }
@@ -153,10 +154,13 @@ export async function ensureDataURLDetailed(
     }
 
     const imageElement = await convertToImageElement(source);
-    const canvas = await imageElementToCanvas(imageElement);
-    const dataURL = canvasToDataURL(canvas, options);
+    const encoded = await withImageElementCanvas(imageElement, (canvas) => ({
+      dataURL: canvasToDataURL(canvas, options),
+      width: canvas.width,
+      height: canvas.height,
+    }));
 
-    return new DataURLResultImpl(dataURL, canvas.width, canvas.height, Date.now() - startTime, {
+    return new DataURLResultImpl(encoded.dataURL, encoded.width, encoded.height, Date.now() - startTime, {
       width: imageElement.width,
       height: imageElement.height,
     });

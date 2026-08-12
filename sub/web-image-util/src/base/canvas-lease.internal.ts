@@ -1,6 +1,14 @@
 import { CanvasPool } from './canvas-pool.internal';
 
-type CanvasLeaseConsumeResult<T> = T extends HTMLCanvasElement ? never : T;
+/**
+ * consume 콜백이 돌려줄 수 있는 값의 타입.
+ *
+ * canvas 자신을 직접 반환하면 pool로 돌아간 canvas가 밖으로 새므로 never로 막는다.
+ * 콜백 내부의 side effect나 임의 객체 그래프까지 타입으로 판별할 수는 없으므로,
+ * consume 콜백은 canvas 참조를 별도로 보관하지 않는 내부 신뢰 코드여야 한다.
+ * consume을 감싸는 헬퍼가 같은 제약을 이어받을 때 이 타입을 재사용한다.
+ */
+export type CanvasLeaseConsumeResult<T> = T extends HTMLCanvasElement ? never : T;
 
 /**
  * CanvasPool에서 빌린 canvas의 소유권을 표현하는 handle.

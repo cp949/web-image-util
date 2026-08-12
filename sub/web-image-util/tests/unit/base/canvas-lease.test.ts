@@ -154,4 +154,19 @@ describe('CanvasLease', () => {
       lease.release();
     });
   });
+
+  describe('consume 반환 타입', () => {
+    it('canvas가 없는 재귀 결과 타입을 허용한다', () => {
+      interface RecursiveResult {
+        value: string;
+        next?: RecursiveResult;
+      }
+
+      const consumeRecursiveResult = (lease: CanvasLease): void => {
+        void lease.consume((): RecursiveResult => ({ value: '완료' }));
+      };
+
+      expect(consumeRecursiveResult).toBeTypeOf('function');
+    });
+  });
 });
