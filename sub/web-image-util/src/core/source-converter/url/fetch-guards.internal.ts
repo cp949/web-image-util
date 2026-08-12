@@ -1,8 +1,12 @@
 /**
- * fetch 호출에 공통으로 적용되는 abort/타임아웃/응답 크기 가드 헬퍼다.
+ * 원격 응답에 적용하는 본문 가드를 단일 소유하는 모듈이다.
  *
- * 본 모듈은 텍스트(SVG) 응답이 아닌 일반 바이너리 응답 처리에만 책임진다.
- * SVG 응답 검증은 svg/safety.ts를 사용한다.
+ * 담당 범위는 abort/타임아웃 결합, 선언된 본문 크기 사전 차단, 스트리밍 바이트 상한과
+ * 본문 취소다. 프로토콜 허용 판정은 policy.internal.ts가 소유한다.
+ *
+ * 디코드 방식만 어댑터로 갈라진다 — 바이너리는 이 모듈의 `readCheckedBlobResponse`,
+ * 텍스트는 svg/safety.internal.ts가 `readGuardedResponseStream` 위에 얹는다.
+ * 상한 값과 오류 코드는 호출자가 주입하므로 SVG 경로와 일반 소스 경로가 같은 가드를 공유한다.
  */
 
 import { ImageProcessError } from '../../../types';
@@ -11,6 +15,42 @@ import { ImageProcessError } from '../../../types';
 export interface FetchAbortHandle {
   signal: AbortSignal | undefined;
   dispose: () => void;
+}
+
+/** 본문 크기 상한 초과 시 던질 오류를 만드는 팩토리다. */
+export type ExceededErrorFactory = (actualBytes: number) => ImageProcessError;
+
+/** 본문 읽기 실패를 도메인 오류로 감싸는 함수다. 반드시 throw해야 한다. */
+export type ReadErrorWrapper = (error: unknown) => never;
+
+/** 가드가 적용된 본문 읽기 옵션이다. */
+export interface GuardedBodyOptions {
+  /** 최대 허용 바이트 수. 0이면 무제한. */
+  maxBytes: number;
+  /** 상한 초과 오류 팩토리. */
+  createExceededError: ExceededErrorFactory;
+  /** 본문 읽기 실패 래퍼. 지정하지 않으면 원본 오류를 그대로 전파한다. */
+  wrapReadError?: ReadErrorWrapper;
+}
+
+/** 상한 검증을 통과한 본문 바이트다. */
+export interface GuardedBodyBytes {
+  /** 읽은 순서대로의 본문 청크. */
+  chunks: Uint8Array[];
+  /** 실제로 읽은 총 바이트 수. */
+  bytes: number;
+}
+
+/** Blob 어댑터가 받을 수 있는 추가 옵션이다. */
+export interface ReadCheckedResponseOptions {
+  /** 본문 읽기 실패를 도메인 오류로 감싼다. 지정하지 않으면 원본 오류를 그대로 전파한다. */
+  wrapReadError?: ReadErrorWrapper;
+}
+
+/** 크기 검증을 통과한 Blob과 실제 바이트 수다. */
+export interface CheckedBlobResponse {
+  blob: Blob;
+  bytes: number;
 }
 
 /**
@@ -83,30 +123,141 @@ export function createFetchAbortHandle(timeoutMs: number, userSignal?: AbortSign
   return { signal: controller.signal, dispose: runCleanups };
 }
 
+/** 표준 SOURCE_BYTES_EXCEEDED 오류를 만든다. */
+function createBytesExceededError(actualBytes: number, maxBytes: number, label: string): ImageProcessError {
+  return new ImageProcessError(
+    `${label} response size (${actualBytes} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
+    'SOURCE_BYTES_EXCEEDED',
+    { details: { actualBytes, maxBytes, label } }
+  );
+}
+
+/** 스트림 정리 실패가 상한 초과 오류를 가리지 않도록 취소 오류를 삼킨다. */
+async function cancelBodyQuietly(response: Response): Promise<void> {
+  try {
+    await response.body?.cancel();
+  } catch {
+    // 크기 초과 오류가 공개 error code로 안정적으로 전달되도록 cancel 실패는 삼킨다.
+  }
+}
+
+/** reader 취소 실패도 같은 이유로 삼킨다. */
+async function cancelReaderQuietly(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<void> {
+  try {
+    await reader.cancel();
+  } catch {
+    // 크기 초과 오류가 공개 error code로 안정적으로 전달되도록 cancel 실패는 삼킨다.
+  }
+}
+
 /**
- * 응답 Content-Length 헤더가 최대 허용 크기를 초과하면 SOURCE_LOAD_FAILED 오류를 던진다.
- * Content-Length 헤더가 없으면 검사를 건너뛴다.
+ * 응답이 선언한 Content-Length가 상한을 넘으면 본문을 취소하고 오류를 던진다.
+ *
+ * Content-Length는 힌트일 뿐이므로 헤더가 없거나 숫자가 아니면 검사를 건너뛴다.
+ * 실제 상한은 `readGuardedResponseStream`의 누적 바이트 검사가 강제한다.
  *
  * @param response fetch 응답 객체
  * @param maxBytes 최대 허용 바이트 수. 0이면 무제한.
- * @param label 오류 메시지에 사용할 레이블
+ * @param createExceededError 상한 초과 오류 팩토리
  */
-export function checkResponseSize(response: Response, maxBytes: number, label: string): void {
+export async function assertDeclaredSizeWithinLimit(
+  response: Response,
+  maxBytes: number,
+  createExceededError: ExceededErrorFactory
+): Promise<void> {
   if (maxBytes === 0) return;
 
   const contentLengthHeader = response.headers.get('content-length');
   if (!contentLengthHeader) return;
 
-  const contentLength = Number(contentLengthHeader);
+  // Number()는 "999999999x" 같은 숫자 접두사+비숫자 접미사에서 NaN을 반환해 검사를
+  // 건너뛴다(fail-open). parseInt로 숫자 접두사를 살려 fail-closed를 유지한다.
+  const contentLength = Number.parseInt(contentLengthHeader, 10);
   if (!Number.isFinite(contentLength)) return;
+  if (contentLength <= maxBytes) return;
 
-  if (contentLength > maxBytes) {
-    throw new ImageProcessError(
-      `${label} response size (${contentLength} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
-      'SOURCE_BYTES_EXCEEDED',
-      { details: { actualBytes: contentLength, maxBytes, label } }
-    );
+  await cancelBodyQuietly(response);
+  throw createExceededError(contentLength);
+}
+
+/**
+ * 응답 Content-Length 헤더가 최대 허용 크기를 초과하면 SOURCE_BYTES_EXCEEDED 오류를 던진다.
+ *
+ * 초과가 확인되면 본문 스트림을 취소해 남은 바이트를 받지 않는다.
+ *
+ * @param response fetch 응답 객체
+ * @param maxBytes 최대 허용 바이트 수. 0이면 무제한.
+ * @param label 오류 메시지에 사용할 레이블
+ */
+export async function checkResponseSize(response: Response, maxBytes: number, label: string): Promise<void> {
+  await assertDeclaredSizeWithinLimit(response, maxBytes, (actualBytes) =>
+    createBytesExceededError(actualBytes, maxBytes, label)
+  );
+}
+
+/**
+ * 스트림이 없는 응답의 본문을 통째로 읽고, 실패를 어댑터가 지정한 오류로 감싼다.
+ *
+ * 디코드 API(`response.blob()` / `response.text()`)는 어댑터가 고르므로 읽기 함수를 주입받는다.
+ *
+ * @param read 본문 전체를 읽는 함수
+ * @param wrapReadError 읽기 실패 래퍼. 지정하지 않으면 원본 오류를 그대로 전파한다.
+ * @returns 읽은 본문
+ */
+export async function readWholeBody<T>(read: () => Promise<T>, wrapReadError?: ReadErrorWrapper): Promise<T> {
+  try {
+    return await read();
+  } catch (error) {
+    if (wrapReadError) wrapReadError(error);
+    throw error;
   }
+}
+
+/**
+ * 응답 본문 스트림을 읽으면서 누적 바이트가 상한을 넘지 않는지 검증한다.
+ *
+ * 상한을 넘으면 스트림을 취소하고 `createExceededError`가 만든 오류를 던진다.
+ * 디코드는 하지 않는다 — 호출자가 Blob 조립이나 텍스트 디코드를 선택한다.
+ *
+ * @param body 응답 본문 스트림
+ * @param options 상한과 오류 조립 방식
+ * @returns 상한 검증을 통과한 본문 청크와 실제 바이트 수
+ */
+export async function readGuardedResponseStream(
+  body: ReadableStream<Uint8Array>,
+  options: GuardedBodyOptions
+): Promise<GuardedBodyBytes> {
+  const { maxBytes, createExceededError, wrapReadError } = options;
+
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      bytes += value.byteLength;
+      if (maxBytes > 0 && bytes > maxBytes) {
+        await cancelReaderQuietly(reader);
+        throw createExceededError(bytes);
+      }
+
+      chunks.push(new Uint8Array(value));
+    }
+  } catch (error) {
+    // 상한 초과 오류는 공개 계약이므로 래핑 대상에서 제외한다.
+    if (error instanceof ImageProcessError) {
+      throw error;
+    }
+    if (wrapReadError) wrapReadError(error);
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+
+  return { chunks, bytes };
 }
 
 /**
@@ -115,51 +266,36 @@ export function checkResponseSize(response: Response, maxBytes: number, label: s
  * @param response fetch 응답 객체
  * @param maxBytes 최대 허용 바이트 수. 0이면 무제한.
  * @param label 오류 메시지에 사용할 레이블
- * @returns 크기 검증을 통과한 Blob
+ * @param options 본문 읽기 실패 래핑 방식
+ * @returns 크기 검증을 통과한 Blob과 실제 바이트 수
  */
-export async function readCheckedBlobResponse(response: Response, maxBytes: number, label: string): Promise<Blob> {
-  checkResponseSize(response, maxBytes, label);
+export async function readCheckedBlobResponse(
+  response: Response,
+  maxBytes: number,
+  label: string,
+  options: ReadCheckedResponseOptions = {}
+): Promise<CheckedBlobResponse> {
+  const createExceededError: ExceededErrorFactory = (actualBytes) =>
+    createBytesExceededError(actualBytes, maxBytes, label);
 
+  await assertDeclaredSizeWithinLimit(response, maxBytes, createExceededError);
+
+  // 스트림이 없는 응답은 Blob으로 한 번에 읽고 같은 상한을 적용한다.
   if (!response.body) {
-    const blob = await response.blob();
+    const blob = await readWholeBody(() => response.blob(), options.wrapReadError);
     if (maxBytes > 0 && blob.size > maxBytes) {
-      throw new ImageProcessError(
-        `${label} response size (${blob.size} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
-        'SOURCE_BYTES_EXCEEDED',
-        { details: { actualBytes: blob.size, maxBytes, label } }
-      );
+      throw createExceededError(blob.size);
     }
 
-    return blob;
+    return { blob, bytes: blob.size };
   }
 
-  const reader = response.body.getReader();
-  const chunks: BlobPart[] = [];
-  let totalBytes = 0;
+  const { chunks, bytes } = await readGuardedResponseStream(response.body, {
+    maxBytes,
+    createExceededError,
+    wrapReadError: options.wrapReadError,
+  });
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-
-      totalBytes += value.byteLength;
-      if (maxBytes > 0 && totalBytes > maxBytes) {
-        await reader.cancel();
-        throw new ImageProcessError(
-          `${label} response size (${totalBytes} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
-          'SOURCE_BYTES_EXCEEDED',
-          { details: { actualBytes: totalBytes, maxBytes, label } }
-        );
-      }
-
-      chunks.push(new Uint8Array(value));
-    }
-
-    const contentType = response.headers.get('content-type') ?? '';
-    return new Blob(chunks, { type: contentType });
-  } finally {
-    reader.releaseLock();
-  }
+  const contentType = response.headers.get('content-type') ?? '';
+  return { blob: new Blob(chunks as BlobPart[], { type: contentType }), bytes };
 }

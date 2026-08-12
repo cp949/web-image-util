@@ -119,6 +119,13 @@
 - `src/svg-contract.internal.ts` — `MAX_SVG_BYTES` (SVG 입력 byte cap의 단일 정의)
 - `src/core/source-converter/options.internal.ts` — `DEFAULT_FETCH_TIMEOUT_MS`, `DEFAULT_ALLOWED_PROTOCOLS`
 - `src/core/source-converter/url/policy.internal.ts` — `checkAllowedProtocol()`, `hasExplicitUrlScheme()`, `isProtocolRelativeUrl()`, `isAbortLikeError()`, `normalizePolicyUrl()`, `isBlockedSvgPolicyRef()`, `isSvgResourcePath()`
-- `src/core/source-converter/url/fetch-guards.internal.ts` — `createFetchAbortHandle()`(timeout + AbortSignal 합성), `checkResponseSize()`(Content-Length 기반 byte cap 사전 검증)
+- `src/core/source-converter/url/fetch-guards.internal.ts` — 원격 본문 가드의 단일 소유 모듈
+  - `createFetchAbortHandle()` — timeout + AbortSignal 합성. `AbortSignal.timeout`/`AbortSignal.any`를 우선 쓰고, 없으면 수동 타이머·리스너로 폴백하며 `dispose()`가 둘 다 정리한다.
+  - `assertDeclaredSizeWithinLimit()` / `checkResponseSize()` — Content-Length 기반 byte cap 사전 검증. 초과가 확인되면 본문 스트림을 취소한 뒤 오류를 던진다.
+  - `readGuardedResponseStream()` — 본문 스트림 누적 byte cap 강제. 초과 시 reader를 취소하며, 취소 실패는 삼켜 byte cap 오류 코드를 보존한다.
+  - `readWholeBody()` — 스트림이 없는 응답의 전체 읽기와 실패 래핑.
+  - `readCheckedBlobResponse()` — 바이너리 어댑터(`{ blob, bytes }` 반환).
 
-진단 모듈(`src/utils/inspect-svg-source.ts`)은 위 헬퍼/상수를 그대로 import해 fetch 정책을 적용합니다. 신규 정책/가드 함수를 별도로 신설하지 않는 것이 RM-004 결정 D14의 단일 출처 원칙입니다. byte cap을 사용자 옵션으로 상향하는 것은 금지되며, `options.byteLimit`은 `MAX_SVG_BYTES` 이하로만 허용됩니다.
+상한 값과 오류 코드는 호출자가 주입하므로 디코드 방식만 어댑터로 갈라집니다. 텍스트 어댑터는 `src/core/source-converter/svg/safety.internal.ts`의 `readCheckedTextResponse()`이며, 같은 가드 위에 `MAX_SVG_BYTES`와 `SVG_BYTES_EXCEEDED`를 주입합니다.
+
+진단 모듈(`src/utils/inspect-svg-source.ts`)과 이미지 메타데이터 모듈(`src/utils/image-info/remote-fetch.internal.ts`)은 위 헬퍼/상수를 그대로 import해 fetch 정책을 적용합니다. 신규 정책/가드 함수를 별도로 신설하지 않는 것이 RM-004 결정 D14의 단일 출처 원칙입니다. byte cap을 사용자 옵션으로 상향하는 것은 금지되며, `options.byteLimit`은 `MAX_SVG_BYTES` 이하로만 허용됩니다.

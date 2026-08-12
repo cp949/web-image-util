@@ -3,12 +3,22 @@
  *
  * 크기 한도 검사, 콘텐츠 화이트리스트 검사, 그리고 fetch 응답 본문을 fail-closed
  * 정책으로 검증하는 헬퍼를 제공한다.
+ *
+ * 원격 본문 가드 자체는 url/fetch-guards.internal.ts가 소유한다. 이 모듈은 그 위에
+ * SVG 상한(MAX_SVG_BYTES)과 SVG 오류 코드를 주입한 텍스트 어댑터만 얹는다.
  */
 
 import { MAX_SVG_BYTES } from '../../../svg-contract.internal';
 import { ImageProcessError } from '../../../types';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../../../utils/svg-policy-utils.internal';
+import {
+  assertDeclaredSizeWithinLimit,
+  type ExceededErrorFactory,
+  type ReadErrorWrapper,
+  readGuardedResponseStream,
+  readWholeBody,
+} from '../url/fetch-guards.internal';
 import { isBlockedSvgPolicyRef } from '../url/policy.internal';
 
 /**
@@ -60,91 +70,73 @@ export function checkSvgSizeLimit(svgString: string, label: string): void {
   }
 }
 
-/**
- * 응답 헤더에 선언된 SVG 본문 크기가 허용 한도를 넘는지 사전 확인한다.
- *
- * @param response fetch 응답 객체
- * @param label 에러 메시지에 포함할 입력 출처 레이블
- */
-function checkSvgContentLengthHeader(response: Response, label: string): void {
-  const declaredLength = response.headers.get('content-length');
-  if (!declaredLength) {
-    return;
-  }
+/** 본문 청크를 순서대로 UTF-8 디코드한다. */
+function decodeUtf8Chunks(chunks: Uint8Array[]): string {
+  const decoder = new TextDecoder();
+  const parts: string[] = [];
 
-  const parsedLength = Number.parseInt(declaredLength, 10);
-  if (Number.isFinite(parsedLength) && parsedLength > MAX_SVG_BYTES) {
-    throw createSvgSizeLimitError(label, parsedLength);
+  for (const chunk of chunks) {
+    parts.push(decoder.decode(chunk, { stream: true }));
   }
+  // 마지막 호출로 미완성 멀티바이트 시퀀스를 정리한다.
+  parts.push(decoder.decode());
+
+  return parts.join('');
+}
+
+/** 크기 검증을 통과한 텍스트 본문과 실제 바이트 수다. */
+export interface CheckedTextResponse {
+  text: string;
+  bytes: number;
 }
 
 /**
  * 원격 텍스트 응답 본문을 fail-closed 정책으로 읽고 크기를 검증한다.
  *
+ * 가드는 공유 module(url/fetch-guards.internal)이 수행하고, 이 함수는 SVG 상한과
+ * SVG 오류 코드를 주입한 뒤 결과 바이트를 문자열로 디코드한다.
+ *
+ * `bytes`는 디코드 전 수신 바이트 수다. TextDecoder가 BOM을 제거하고 잘못된 시퀀스를
+ * U+FFFD로 치환하므로, 디코드한 문자열을 재인코딩해 세면 실제 수신량과 어긋난다.
+ * 스트림이 없는 응답만은 원시 바이트를 알 수 없어 UTF-8 재인코딩 값을 쓴다.
+ *
  * @param response fetch 응답 객체
  * @param label 에러 메시지에 포함할 입력 출처 레이블
- * @returns 검증된 응답 문자열
+ * @param maxBytes 최대 허용 바이트 수 (기본값: MAX_SVG_BYTES)
+ * @returns 검증된 응답 문자열과 실제 바이트 수
  */
-export async function readCheckedTextResponse(response: Response, label: string): Promise<string> {
-  checkSvgContentLengthHeader(response, label);
-
-  if (!response.body) {
-    try {
-      const responseText = await response.text();
-      checkSvgSizeLimit(responseText, label);
-      return responseText;
-    } catch (error) {
-      if (error instanceof ImageProcessError) {
-        throw error;
-      }
-
-      throw new ImageProcessError(
-        `${label} response body could not be safely verified; load is blocked`,
-        'INVALID_SOURCE',
-        { cause: error, details: { label } }
-      );
-    }
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  const chunks: string[] = [];
-  let totalBytes = 0;
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-
-      const decodedChunk = decoder.decode(value, { stream: true });
-
-      totalBytes += value.byteLength;
-      if (totalBytes > MAX_SVG_BYTES) {
-        await reader.cancel();
-        throw createSvgSizeLimitError(label, totalBytes);
-      }
-
-      chunks.push(decodedChunk);
-    }
-
-    const tailChunk = decoder.decode();
-    chunks.push(tailChunk);
-    return chunks.join('');
-  } catch (error) {
-    if (error instanceof ImageProcessError) {
-      throw error;
-    }
-
+export async function readCheckedTextResponse(
+  response: Response,
+  label: string,
+  maxBytes = MAX_SVG_BYTES
+): Promise<CheckedTextResponse> {
+  const createExceededError: ExceededErrorFactory = (actualBytes) =>
+    createSvgSizeLimitError(label, actualBytes, maxBytes);
+  const wrapReadError: ReadErrorWrapper = (error) => {
     throw new ImageProcessError(
       `${label} response body could not be safely verified; load is blocked`,
       'INVALID_SOURCE',
       { cause: error, details: { label } }
     );
-  } finally {
-    reader.releaseLock();
+  };
+
+  await assertDeclaredSizeWithinLimit(response, maxBytes, createExceededError);
+
+  // 스트림이 없는 응답은 텍스트로 한 번에 읽고 같은 상한을 적용한다.
+  if (!response.body) {
+    const responseText = await readWholeBody(() => response.text(), wrapReadError);
+    const actualBytes = getUtf8ByteLength(responseText);
+    if (maxBytes > 0 && actualBytes > maxBytes) throw createExceededError(actualBytes);
+    return { text: responseText, bytes: actualBytes };
   }
+
+  const { chunks, bytes } = await readGuardedResponseStream(response.body, {
+    maxBytes,
+    createExceededError,
+    wrapReadError,
+  });
+
+  return { text: decodeUtf8Chunks(chunks), bytes };
 }
 
 /**
@@ -155,7 +147,7 @@ export async function readCheckedTextResponse(response: Response, label: string)
  * @returns 검증된 SVG 문자열
  */
 export async function readVerifiedSvgResponse(response: Response, label: string): Promise<string> {
-  const responseText = await readCheckedTextResponse(response, label);
+  const { text: responseText } = await readCheckedTextResponse(response, label);
   if (!isInlineSvg(responseText)) {
     const contentType = response.headers.get('content-type') ?? null;
     throw new ImageProcessError('Remote response is not a valid SVG', 'INVALID_SOURCE', {

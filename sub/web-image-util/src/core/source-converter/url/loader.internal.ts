@@ -59,7 +59,7 @@ export async function loadBlobUrl(
       }
 
       contentType = response.headers.get('content-type')?.toLowerCase() || '';
-      blob = await readCheckedBlobResponse(response, maxBytes, 'Blob URL');
+      ({ blob } = await readCheckedBlobResponse(response, maxBytes, 'Blob URL'));
     } finally {
       handle.dispose();
     }
@@ -194,7 +194,7 @@ export async function loadImageFromUrl(
             });
           }
 
-          const responseText = await readCheckedTextResponse(response, 'remote XML response');
+          const { text: responseText } = await readCheckedTextResponse(response, 'remote XML response');
           // XML MIME 응답은 실제 SVG 루트가 확인된 경우에만 SVG로 처리한다.
           const isActualSvg = isXmlMime && isInlineSvg(responseText);
           if (isActualSvg) {
@@ -211,7 +211,7 @@ export async function loadImageFromUrl(
           return loadImageElementDirectly();
         }
 
-        const responseBlob = await readCheckedBlobResponse(response, maxBytes, 'URL');
+        const { blob: responseBlob } = await readCheckedBlobResponse(response, maxBytes, 'URL');
         return new Promise((resolve, reject) => {
           const img = document.createElement('img');
           const objectUrl = URL.createObjectURL(responseBlob);

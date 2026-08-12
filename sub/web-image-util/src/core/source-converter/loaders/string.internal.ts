@@ -85,7 +85,7 @@ export async function convertStringToElement(
           }
 
           // 응답 크기가 최대 허용 바이트를 초과하면 차단한다.
-          checkResponseSize(response, maxBytes, 'remote SVG URL');
+          await checkResponseSize(response, maxBytes, 'remote SVG URL');
 
           svgContent = await readVerifiedSvgResponse(response, 'remote SVG response');
         } catch (fetchError) {
@@ -141,7 +141,7 @@ export async function convertStringToElement(
           }
 
           // 응답 크기가 최대 허용 바이트를 초과하면 차단한다.
-          checkResponseSize(response, maxBytes, 'SVG resource path');
+          await checkResponseSize(response, maxBytes, 'SVG resource path');
 
           svgContent = await readVerifiedSvgResponse(response, 'remote SVG response');
         } catch (fetchError) {

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { convertToImageElement } from '../../../../src/core/source-converter/index';
+import { MAX_SVG_BYTES } from '../../../../src/svg-contract.internal';
 import { ImageProcessError } from '../../../../src/types';
 import { createAbortableFetchMock, createSuccessResponse, withFetchMock } from './helpers';
 
@@ -39,6 +40,37 @@ describe('원격 소스 로딩 보호: SVG URL 경로', () => {
         })
       ).rejects.toMatchObject({ code: 'SOURCE_BYTES_EXCEEDED' });
     });
+  });
+
+  it('Content-Length가 숫자 접두사 + 비숫자 접미사(예: "999999999x")여도 본문을 읽기 전에 거부한다', async () => {
+    // MAX_SVG_BYTES(고정 상한)를 넘는 SVG를 준비해, 사전 차단이 아니라 사후 검사에만
+    // 걸리는지(=fail-open) 구분한다. 사전 차단이 살아있다면 text()는 호출되지 않아야 한다.
+    const oversizedSvg = `<svg>${'x'.repeat(MAX_SVG_BYTES + 1)}</svg>`;
+    const textSpy = vi.fn().mockResolvedValue(oversizedSvg);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: {
+        get(name: string) {
+          const lower = name.toLowerCase();
+          if (lower === 'content-type') return 'image/svg+xml';
+          if (lower === 'content-length') return '999999999x';
+          return null;
+        },
+      },
+      text: textSpy,
+      body: null,
+    });
+
+    await withFetchMock(fetchMock, async () => {
+      // Content-Length(≈953MB)가 DEFAULT_MAX_SOURCE_BYTES(100MB)도 SVG 상한(10MB)도
+      // 모두 초과하므로, 먼저 도는 remote-SVG-URL 사전 검사가 SOURCE_BYTES_EXCEEDED로 막는다.
+      await expect(convertToImageElement('https://example.com/malicious.svg', {})).rejects.toMatchObject({
+        code: 'SOURCE_BYTES_EXCEEDED',
+      });
+    });
+
+    // 사전 차단이 동작했다면 본문(response.text())을 읽지 않아야 한다.
+    expect(textSpy).not.toHaveBeenCalled();
   });
 
   it('.svg URL 요청이 fetchTimeoutMs 내에 응답하지 않으면 오류가 발생한다', async () => {

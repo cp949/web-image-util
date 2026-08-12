@@ -1,13 +1,15 @@
 /**
  * 원격 URL fetch 기반 이미지 메타데이터 수집.
  *
- * SSRF 가드(허용 protocol 검증), 본문 크기 상한, abort/timeout 등 외부 입력에 적용해야 할
- * 안전 조치를 모두 이 모듈에 모아 둔다. 응답 본문에서 포맷을 결정하는 로직(`fetchImageFormat`)도
- * 응답 prefix 처리와 강하게 결합되어 있어 함께 둔다.
+ * SSRF 가드(허용 protocol 검증), 본문 크기 상한, abort/timeout은 공유 가드 module
+ * (core/source-converter/url)이 소유한다. 이 모듈은 그 가드를 소비하면서 응답 본문에서
+ * 포맷을 결정하는 로직(`fetchImageFormat`)을 담당한다 — 응답 prefix 처리와 강하게 결합돼 있다.
  *
  * 보안 모델은 [SVG-SECURITY.md]의 외부 입력 처리 원칙을 따른다.
  */
 
+import { createFetchAbortHandle, readCheckedBlobResponse } from '../../core/source-converter/url/fetch-guards.internal';
+import { checkAllowedProtocol } from '../../core/source-converter/url/policy.internal';
 import { ImageFormats, ImageProcessError } from '../../types';
 import { isDataURLString } from '../data-url';
 import { isInlineSvg } from '../svg-detection';
@@ -117,66 +119,6 @@ function formatFromResponsePrefix(bytes: Uint8Array, contentType: string): Image
   return formatFromMimeType(contentType);
 }
 
-function assertFetchSourceProtocol(source: string, allowedProtocols: string[]): void {
-  let url: URL;
-
-  try {
-    url = new URL(source);
-  } catch (error) {
-    throw new ImageProcessError(`Invalid URL: ${source}`, 'INVALID_SOURCE', { cause: error, details: { source } });
-  }
-
-  if (!allowedProtocols.includes(url.protocol)) {
-    throw new ImageProcessError(`Protocol not allowed: ${url.protocol}`, 'INVALID_SOURCE', { details: { source } });
-  }
-}
-
-function createFetchSourceAbortController(
-  timeoutMs: number | undefined,
-  abortSignal: AbortSignal | undefined
-): { signal?: AbortSignal; cleanup: () => void } {
-  if ((timeoutMs === undefined || timeoutMs === 0) && !abortSignal) {
-    return { cleanup: () => {} };
-  }
-
-  const controller = new AbortController();
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  let isCleanedUp = false;
-
-  const abort = () => controller.abort();
-  const cleanup = () => {
-    if (isCleanedUp) {
-      return;
-    }
-
-    isCleanedUp = true;
-
-    if (timeoutId !== undefined) {
-      clearTimeout(timeoutId);
-      timeoutId = undefined;
-    }
-
-    abortSignal?.removeEventListener('abort', abort);
-    controller.signal.removeEventListener('abort', cleanup);
-  };
-
-  if (abortSignal) {
-    if (abortSignal.aborted) {
-      controller.abort();
-    } else {
-      abortSignal.addEventListener('abort', abort, { once: true });
-    }
-  }
-
-  if (timeoutMs !== undefined && timeoutMs > 0) {
-    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  }
-
-  controller.signal.addEventListener('abort', cleanup, { once: true });
-
-  return { signal: controller.signal, cleanup };
-}
-
 function sanitizeFetchSourceOptions(
   fetchOptions: FetchImageSourceBlobOptions['fetchOptions'] | undefined
 ): Omit<RequestInit, 'body' | 'method' | 'signal'> {
@@ -186,104 +128,12 @@ function sanitizeFetchSourceOptions(
   return safeOptions;
 }
 
-function throwSourceBytesExceeded(actualBytes: number, maxBytes: number, label: string): never {
-  throw new ImageProcessError(
-    `${label} response size (${actualBytes} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
-    'SOURCE_BYTES_EXCEEDED',
-    { details: { actualBytes, maxBytes, label } }
-  );
-}
-
+/** 본문 읽기 실패를 이미지 소스 도메인 오류로 감싼다. */
 function wrapFetchSourceBodyReadError(error: unknown): never {
-  if (error instanceof ImageProcessError && error.code === 'SOURCE_BYTES_EXCEEDED') {
-    throw error;
-  }
-
   throw new ImageProcessError('Failed to read image URL response body', 'SOURCE_LOAD_FAILED', {
     cause: error,
     details: { kind: 'response-body' },
   });
-}
-
-async function checkFetchSourceContentLength(response: Response, maxBytes: number, label: string): Promise<void> {
-  if (maxBytes === 0) return;
-
-  const contentLengthHeader = response.headers.get('content-length');
-  if (!contentLengthHeader) return;
-
-  const contentLength = Number(contentLengthHeader);
-  if (!Number.isFinite(contentLength)) return;
-
-  if (contentLength > maxBytes) {
-    if (response.body) {
-      try {
-        await response.body.cancel();
-      } catch {
-        // 크기 초과 오류가 공개 error code로 안정적으로 전달되도록 cancel 실패는 삼킨다.
-      }
-    }
-
-    throwSourceBytesExceeded(contentLength, maxBytes, label);
-  }
-}
-
-async function readFetchSourceBlob(
-  response: Response,
-  maxBytes: number,
-  label: string
-): Promise<{ blob: Blob; bytes: number }> {
-  await checkFetchSourceContentLength(response, maxBytes, label);
-
-  if (!response.body) {
-    let blob: Blob;
-
-    try {
-      blob = await response.blob();
-    } catch (error) {
-      wrapFetchSourceBodyReadError(error);
-    }
-
-    if (maxBytes > 0 && blob.size > maxBytes) {
-      throwSourceBytesExceeded(blob.size, maxBytes, label);
-    }
-
-    return { blob, bytes: blob.size };
-  }
-
-  const reader = response.body.getReader();
-  const chunks: BlobPart[] = [];
-  let totalBytes = 0;
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      totalBytes += value.byteLength;
-
-      if (maxBytes > 0 && totalBytes > maxBytes) {
-        try {
-          await reader.cancel();
-        } catch {
-          // 크기 초과 오류가 public contract이므로 스트림 정리 실패가 이를 가리지 않게 한다.
-        }
-
-        throwSourceBytesExceeded(totalBytes, maxBytes, label);
-      }
-
-      chunks.push(new Uint8Array(value));
-    }
-  } catch (error) {
-    wrapFetchSourceBodyReadError(error);
-  } finally {
-    reader.releaseLock();
-  }
-
-  const contentType = response.headers.get('content-type') ?? '';
-  return {
-    blob: new Blob(chunks, { type: contentType }),
-    bytes: totalBytes,
-  };
 }
 
 /**
@@ -342,15 +192,15 @@ export async function fetchImageSourceBlob(
   const allowedProtocols = options.allowedProtocols ?? DEFAULT_FETCH_SOURCE_PROTOCOLS;
   const maxBytes = options.maxBytes ?? 100 * 1024 * 1024;
 
-  assertFetchSourceProtocol(url, allowedProtocols);
+  checkAllowedProtocol(url, allowedProtocols);
 
-  const { signal, cleanup } = createFetchSourceAbortController(options.timeoutMs, options.abortSignal);
+  const handle = createFetchAbortHandle(options.timeoutMs ?? 0, options.abortSignal);
 
   try {
     const response = await fetch(url, {
       ...sanitizeFetchSourceOptions(options.fetchOptions),
       method: 'GET',
-      ...(signal ? { signal } : {}),
+      ...(handle.signal ? { signal: handle.signal } : {}),
     });
 
     if (!response.ok) {
@@ -358,7 +208,9 @@ export async function fetchImageSourceBlob(
     }
 
     const contentType = response.headers.get('content-type') ?? '';
-    const { blob, bytes } = await readFetchSourceBlob(response, maxBytes, 'image URL');
+    const { blob, bytes } = await readCheckedBlobResponse(response, maxBytes, 'image URL', {
+      wrapReadError: wrapFetchSourceBodyReadError,
+    });
 
     return {
       blob,
@@ -378,6 +230,6 @@ export async function fetchImageSourceBlob(
       details: { url, kind: 'fetch' },
     });
   } finally {
-    cleanup();
+    handle.dispose();
   }
 }

@@ -1,4 +1,5 @@
 import { DEFAULT_ALLOWED_PROTOCOLS, DEFAULT_FETCH_TIMEOUT_MS } from '../../core/source-converter/options.internal';
+import { type CheckedTextResponse, readCheckedTextResponse } from '../../core/source-converter/svg/safety.internal';
 import { checkResponseSize, createFetchAbortHandle } from '../../core/source-converter/url/fetch-guards.internal';
 import {
   checkAllowedProtocol,
@@ -6,6 +7,7 @@ import {
   normalizePolicyUrl,
 } from '../../core/source-converter/url/policy.internal';
 import { buildSvgBytesExceededFinding } from '../../svg-contract.internal';
+import { ImageProcessError } from '../../types';
 import type { InspectSvgReport } from '../inspect-svg';
 import { inspectSvg } from '../inspect-svg';
 import { decideSvgFromSniff } from './sniff-decision.internal';
@@ -16,8 +18,6 @@ import type {
   InspectSvgSourceKind,
   InspectSvgSourceOptions,
 } from './types.internal';
-
-const textEncoder = new TextEncoder();
 
 interface UrlFetchContext {
   mime: string | null;
@@ -33,42 +33,6 @@ interface ResponseMetadata {
   mime: string | null;
   bytes: number | null;
   status: number;
-}
-
-type BoundedTextResult =
-  | { exceeded: false; text: string; actualBytes: number }
-  | { exceeded: true; actualBytes: number | null };
-
-async function readBoundedText(response: Response, byteLimit: number): Promise<BoundedTextResult> {
-  if (!response.body) {
-    const text = await response.text();
-    const actualBytes = textEncoder.encode(text).byteLength;
-    return actualBytes > byteLimit ? { exceeded: true, actualBytes } : { exceeded: false, text, actualBytes };
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  const chunks: string[] = [];
-  let actualBytes = 0;
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      actualBytes += value.byteLength;
-      if (actualBytes > byteLimit) {
-        await reader.cancel().catch(() => undefined);
-        return { exceeded: true, actualBytes: null };
-      }
-      chunks.push(decoder.decode(value, { stream: true }));
-    }
-
-    chunks.push(decoder.decode());
-    return { exceeded: false, text: chunks.join(''), actualBytes };
-  } finally {
-    reader.releaseLock();
-  }
 }
 
 export interface HandleUrlSvgSourceFetchParams {
@@ -206,27 +170,42 @@ async function fetchUrlBody(
   pushFetchStatusFinding(context.findings, 'GET', metadata.status);
 
   try {
-    checkResponseSize(response, byteLimit, 'inspect-svg-source body');
+    // 공유 가드가 초과 시 본문 취소까지 수행한다.
+    //
+    // 이 사전 검사는 아래 readCheckedTextResponse가 내부에서 반복하는 헤더 판정과 겹치지만
+    // 지우면 안 된다 — Content-Length 초과를 여기서 잡아야 헤더가 선언한 크기를 bytes로
+    // 보고할 수 있다. 어댑터 안에서 잡히면 실제 수신량만 알 수 있어 보고값이 달라진다.
+    await checkResponseSize(response, byteLimit, 'inspect-svg-source body');
   } catch {
     // byte 초과 finding은 공유 계약(빌더)으로 조립한다. 이 분기는 초과한 Content-Length를 실제 크기로 쓴다.
-    await response.body?.cancel().catch(() => undefined);
     context.findings.push(buildSvgBytesExceededFinding(context.bytes, byteLimit));
     context.kind = 'unknown';
     return metadata.status;
   }
 
-  const body = await readBoundedText(response, byteLimit);
-  context.consumed = true;
-  context.findings.push({ code: 'body-consumed-once', message: 'Response body was consumed once.' });
-  context.bytes = body.actualBytes;
-
-  if (body.exceeded) {
-    context.findings.push(buildSvgBytesExceededFinding(body.actualBytes, byteLimit));
-    context.kind = 'unknown';
-    return metadata.status;
+  const hasResponseStream = response.body !== null;
+  let body: CheckedTextResponse;
+  try {
+    body = await readCheckedTextResponse(response, 'inspect-svg-source body', byteLimit);
+  } catch (error) {
+    if (error instanceof ImageProcessError && error.code === 'SVG_BYTES_EXCEEDED') {
+      context.consumed = true;
+      context.findings.push({ code: 'body-consumed-once', message: 'Response body was consumed once.' });
+      // 스트림은 상한을 넘는 순간 취소하므로 전체 크기를 알 수 없다 — 부분 누적치를 크기로
+      // 보고하면 오해를 부르므로 null을 쓴다. 스트림이 없는 응답만 실측값을 보고한다.
+      const actualBytes = hasResponseStream ? null : ((error.details?.actualBytes as number | undefined) ?? null);
+      context.bytes = actualBytes;
+      context.findings.push(buildSvgBytesExceededFinding(actualBytes, byteLimit));
+      context.kind = 'unknown';
+      return metadata.status;
+    }
+    throw error;
   }
 
   const svgString = body.text;
+  context.consumed = true;
+  context.findings.push({ code: 'body-consumed-once', message: 'Response body was consumed once.' });
+  context.bytes = body.bytes;
   context.svgReport = inspectSvg(svgString);
   context.kind = context.mime === 'image/svg+xml' || context.svgReport.valid === true ? 'svg' : 'not-svg-source';
 

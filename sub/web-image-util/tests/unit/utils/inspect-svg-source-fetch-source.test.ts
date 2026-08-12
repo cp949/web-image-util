@@ -6,6 +6,38 @@ describe('handleUrlSvgSourceFetch()', () => {
     vi.unstubAllGlobals();
   });
 
+  it('BOM이 붙은 스트림 본문의 bytes는 수신한 원시 바이트 수를 보고한다', async () => {
+    // TextDecoder가 BOM을 제거하므로, 디코드한 문자열을 재인코딩해 세면 3바이트가 사라진다.
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>';
+    const bodyBytes = new Uint8Array([0xef, 0xbb, 0xbf, ...new TextEncoder().encode(svg)]);
+
+    const response = {
+      ok: true,
+      status: 200,
+      body: new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(bodyBytes);
+          controller.close();
+        },
+      }),
+      headers: new Headers({ 'Content-Type': 'image/svg+xml' }),
+    } as unknown as Response;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+
+    const result = await handleUrlSvgSourceFetch({
+      source: 'https://example.com/icon.svg',
+      mime: null,
+      extension: 'svg',
+      bytes: null,
+      kind: 'svg',
+      findings: [],
+      options: { fetch: 'body' },
+      byteLimit: 10_000,
+    });
+
+    expect(result.bytes).toBe(bodyBytes.byteLength);
+  });
+
   it('fetch: never이면 fetch를 수행하지 않고 fetch-disabled-by-option을 반환한다', async () => {
     const result = await handleUrlSvgSourceFetch({
       source: 'https://example.com/icon.svg',
@@ -83,5 +115,32 @@ describe('handleUrlSvgSourceFetch()', () => {
     expect(result.consumed).toBe(true);
     expect(result.findings.some((finding) => finding.code === 'body-consumed-once')).toBe(true);
     expect(result.fetchInfo).toEqual({ mode: 'body', performed: true, status: 200 });
+  });
+
+  it('스트림 없는 본문이 byteLimit을 초과하면 측정한 actualBytes를 보존한다', async () => {
+    const response = {
+      ok: true,
+      status: 200,
+      body: null,
+      headers: new Headers({ 'Content-Type': 'image/svg+xml' }),
+      text: vi.fn().mockResolvedValue('a'.repeat(101)),
+    } as unknown as Response;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+
+    const result = await handleUrlSvgSourceFetch({
+      source: 'https://example.com/icon.svg',
+      mime: null,
+      extension: 'svg',
+      bytes: null,
+      kind: 'svg',
+      findings: [],
+      options: { fetch: 'body' },
+      byteLimit: 100,
+    });
+
+    expect(result.findings.find((finding) => finding.code === 'svg-bytes-exceeded')?.details).toEqual({
+      actualBytes: 101,
+      maxBytes: 100,
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImageProcessError } from '../../../../src';
 import { fetchImageSourceBlob } from '../../../../src/utils';
 import { createAbortableFetchMock, withFetchMock } from '../../../utils';
@@ -72,6 +72,18 @@ describe('fetchImageSourceBlob', () => {
       await expect(fetchImageSourceBlob('data:image/png;base64,abc')).rejects.toMatchObject({
         code: 'INVALID_SOURCE',
       });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it('URL 형식 자체가 잘못되면 파싱 실패 원인을 cause로 보존한다', async () => {
+    const fetchMock = vi.fn();
+
+    await withFetchMock(fetchMock, async () => {
+      const error: unknown = await fetchImageSourceBlob('not a valid url').catch((e) => e);
+      expect(error).toBeInstanceOf(ImageProcessError);
+      expect((error as ImageProcessError).code).toBe('INVALID_SOURCE');
+      expect((error as ImageProcessError).cause).toBeInstanceOf(TypeError);
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });
@@ -183,55 +195,89 @@ describe('fetchImageSourceBlob', () => {
     });
   });
 
-  it('성공 후 timeout timer를 정리한다', async () => {
-    vi.useFakeTimers();
-    const fetchMock = vi.fn().mockResolvedValue(new Response(new Uint8Array([1])));
-
-    try {
-      await withFetchMock(fetchMock, async () => {
-        await fetchImageSourceBlob('https://example.com/image', { timeoutMs: 1000 });
-        expect(vi.getTimerCount()).toBe(0);
-      });
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('성공 후 caller abort listener를 제거한다', async () => {
-    const controller = new AbortController();
-    const addEventListenerSpy = vi.spyOn(controller.signal, 'addEventListener');
-    const removeEventListenerSpy = vi.spyOn(controller.signal, 'removeEventListener');
-    const fetchMock = vi.fn().mockResolvedValue(new Response(new Uint8Array([1])));
-
-    try {
-      await withFetchMock(fetchMock, async () => {
-        await fetchImageSourceBlob('https://example.com/image', { abortSignal: controller.signal });
-      });
-
-      const abortListenerCall = addEventListenerSpy.mock.calls.find(([type]) => type === 'abort');
-      expect(abortListenerCall).toBeDefined();
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('abort', abortListenerCall?.[1]);
-    } finally {
-      addEventListenerSpy.mockRestore();
-      removeEventListenerSpy.mockRestore();
-    }
-  });
-
   it('timeout으로 중단된 fetch를 SOURCE_LOAD_FAILED로 반환한다', async () => {
-    vi.useFakeTimers();
+    // 네이티브 AbortSignal.timeout은 fake timer로 진행되지 않으므로 짧은 실제 타임아웃을 쓴다.
     const fetchMock = createAbortableFetchMock();
 
-    try {
-      await withFetchMock(fetchMock, async () => {
-        const promise = fetchImageSourceBlob('https://example.com/image', { timeoutMs: 1000 });
-        const assertion = expect(promise).rejects.toMatchObject({ code: 'SOURCE_LOAD_FAILED' });
-        await vi.advanceTimersByTimeAsync(1000);
-        await assertion;
-        expect(fetchMock).toHaveBeenCalledWith('https://example.com/image', expect.objectContaining({ method: 'GET' }));
+    await withFetchMock(fetchMock, async () => {
+      await expect(fetchImageSourceBlob('https://example.com/image', { timeoutMs: 20 })).rejects.toMatchObject({
+        code: 'SOURCE_LOAD_FAILED',
       });
-    } finally {
-      vi.useRealTimers();
-    }
+      expect(fetchMock).toHaveBeenCalledWith('https://example.com/image', expect.objectContaining({ method: 'GET' }));
+    });
+  });
+
+  // AbortSignal.timeout / AbortSignal.any가 없는 환경에서만 수동 타이머와 리스너가 생기므로,
+  // 누수 정리 계약은 폴백 경로를 강제해야 실제로 검증된다.
+  describe('AbortSignal 폴백 환경', () => {
+    let originalTimeout: (typeof AbortSignal)['timeout'];
+    let originalAny: (typeof AbortSignal)['any'];
+
+    beforeEach(() => {
+      originalTimeout = AbortSignal.timeout;
+      originalAny = AbortSignal.any;
+      (AbortSignal as any).timeout = undefined;
+      (AbortSignal as any).any = undefined;
+    });
+
+    afterEach(() => {
+      (AbortSignal as any).timeout = originalTimeout;
+      (AbortSignal as any).any = originalAny;
+    });
+
+    it('성공 후 폴백 timeout timer를 정리한다', async () => {
+      vi.useFakeTimers();
+      const fetchMock = vi.fn().mockResolvedValue(new Response(new Uint8Array([1])));
+
+      try {
+        await withFetchMock(fetchMock, async () => {
+          await fetchImageSourceBlob('https://example.com/image', { timeoutMs: 1000 });
+          expect(vi.getTimerCount()).toBe(0);
+        });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('성공 후 caller abort listener를 제거한다', async () => {
+      const controller = new AbortController();
+      const addEventListenerSpy = vi.spyOn(controller.signal, 'addEventListener');
+      const removeEventListenerSpy = vi.spyOn(controller.signal, 'removeEventListener');
+      const fetchMock = vi.fn().mockResolvedValue(new Response(new Uint8Array([1])));
+
+      try {
+        await withFetchMock(fetchMock, async () => {
+          // 타임아웃 signal과 함께 있어야 수동 결합 경로로 진입한다.
+          await fetchImageSourceBlob('https://example.com/image', {
+            timeoutMs: 1000,
+            abortSignal: controller.signal,
+          });
+        });
+
+        const abortListenerCall = addEventListenerSpy.mock.calls.find(([type]) => type === 'abort');
+        expect(abortListenerCall).toBeDefined();
+        expect(removeEventListenerSpy).toHaveBeenCalledWith('abort', abortListenerCall?.[1]);
+      } finally {
+        addEventListenerSpy.mockRestore();
+        removeEventListenerSpy.mockRestore();
+      }
+    });
+
+    it('폴백 timeout으로 중단된 fetch를 SOURCE_LOAD_FAILED로 반환한다', async () => {
+      vi.useFakeTimers();
+      const fetchMock = createAbortableFetchMock();
+
+      try {
+        await withFetchMock(fetchMock, async () => {
+          const promise = fetchImageSourceBlob('https://example.com/image', { timeoutMs: 1000 });
+          const assertion = expect(promise).rejects.toMatchObject({ code: 'SOURCE_LOAD_FAILED' });
+          await vi.advanceTimersByTimeAsync(1000);
+          await assertion;
+        });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   it('HTTP 실패를 SOURCE_LOAD_FAILED로 반환한다', async () => {

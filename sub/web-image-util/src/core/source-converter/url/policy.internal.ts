@@ -85,9 +85,9 @@ export function checkAllowedProtocol(url: string, allowedProtocols: string[]): v
   let protocol: string;
   try {
     protocol = new URL(url).protocol;
-  } catch {
-    // URL 파싱에 실패하면 잘못된 소스로 간주한다
-    throw new ImageProcessError(`Invalid URL format: ${url}`, 'INVALID_SOURCE', { details: { url } });
+  } catch (error) {
+    // URL 파싱에 실패하면 잘못된 소스로 간주한다. 진단을 위해 파싱 오류를 cause로 보존한다.
+    throw new ImageProcessError(`Invalid URL format: ${url}`, 'INVALID_SOURCE', { cause: error, details: { url } });
   }
 
   if (!allowedProtocols.includes(protocol)) {
