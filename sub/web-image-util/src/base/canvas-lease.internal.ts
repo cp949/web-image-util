@@ -71,3 +71,15 @@ export class CanvasLease {
     }
   }
 }
+
+/**
+ * CanvasPool에서 canvas를 빌려 {@link CanvasLease}로 감싼다.
+ *
+ * pool을 거치는 유일한 획득 경로다 — 호출자는 pool을 직접 만지지 않고
+ * lease의 consume/detach만으로 canvas 수명을 끝낸다.
+ * 결과 canvas를 호출자에게 그대로 넘겨야 하면 pool 대신
+ * `createOwnedCanvas`(owned canvas)를 쓴다.
+ */
+export function leaseCanvas(width: number, height: number): CanvasLease {
+  return new CanvasLease(CanvasPool.getInstance().acquire(width, height));
+}

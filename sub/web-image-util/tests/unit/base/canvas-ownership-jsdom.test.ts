@@ -1,8 +1,8 @@
 /**
  * Canvas 소유권 회귀 테스트.
  *
- * withManagedCanvas 콜백에서 임대(pool acquire) canvas를 그대로 반환하면
- * finally의 release가 clearRect를 실행해 호출자는 빈 canvas를 받는다.
+ * 임대(lease) canvas를 consume 콜백 밖으로 내보내면 release의 clearRect가
+ * 실행되어 호출자는 빈 canvas를 받는다.
  * 이 파일은 "반환된 canvas는 호출자 소유이며 픽셀이 보존된다"는 계약을
  * 공개 seam(smartResize)과 합성 경로(composeImages grid)에서 고정한다.
  */

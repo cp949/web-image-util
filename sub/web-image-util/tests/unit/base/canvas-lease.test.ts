@@ -5,9 +5,10 @@
  * - consume: 파생물 생성 후 pool로 반환
  * - detach: 소유권을 호출자에게 이전 (pool로 돌아가지 않음)
  * - 이중 반환/사용 후 접근은 오류
+ * - leaseCanvas: pool을 거치는 유일한 획득 경로
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CanvasLease } from '../../../src/base/canvas-lease.internal';
+import { CanvasLease, leaseCanvas } from '../../../src/base/canvas-lease.internal';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 
 describe('CanvasLease', () => {
@@ -117,6 +118,39 @@ describe('CanvasLease', () => {
       lease.release();
 
       expect(releaseSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('leaseCanvas', () => {
+    it('지정한 크기의 canvas를 pool에서 임대해 lease로 감싼다', () => {
+      const acquireSpy = vi.spyOn(pool, 'acquire');
+
+      const lease = leaseCanvas(120, 80);
+
+      expect(acquireSpy).toHaveBeenCalledWith(120, 80);
+      expect(lease.canvas.width).toBe(120);
+      expect(lease.canvas.height).toBe(80);
+      lease.release();
+    });
+
+    it('consume이 끝나면 canvas가 pool로 돌아간다', async () => {
+      const before = pool.getStats().totalReleased;
+
+      await leaseCanvas(64, 64).consume((canvas) => canvas.width);
+
+      expect(pool.getStats().totalReleased).toBe(before + 1);
+    });
+
+    it('consume 콜백이 throw해도 canvas가 pool로 돌아간다', async () => {
+      const before = pool.getStats().totalReleased;
+
+      await expect(
+        leaseCanvas(64, 64).consume(() => {
+          throw new Error('테스트 에러');
+        })
+      ).rejects.toThrow('테스트 에러');
+
+      expect(pool.getStats().totalReleased).toBe(before + 1);
     });
   });
 });

@@ -7,8 +7,7 @@
  * - 중간 Canvas 를 만들지 않고 최종 결과만 생성한다
  */
 
-import { CanvasLease } from '../base/canvas-lease.internal';
-import { CanvasPool } from '../base/canvas-pool.internal';
+import { type CanvasLease, leaseCanvas } from '../base/canvas-lease.internal';
 import { type BlurOptions, ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import { debugLog, productionLog } from '../utils/debug.internal';
@@ -110,7 +109,7 @@ function analyzeBlurOperation(layout: FinalLayout, options: BlurOptions): void {
  * - drawImage 한 번으로 모든 처리를 완료한다 — SVG 품질 보존의 핵심.
  *
  * **Canvas 소유권 규칙 (중요)**
- * - 반환되는 canvas는 {@link CanvasPool}에서 획득하고 즉시 {@link CanvasLease}로 감싼다.
+ * - 반환되는 canvas는 {@link leaseCanvas}로 pool에서 임대한다({@link CanvasLease}).
  * - 렌더링 중 오류가 나면 lease가 canvas를 pool로 반환한다.
  *
  * @param layout {@link analyzeAllOperations}가 계산한 최종 레이아웃
@@ -119,9 +118,9 @@ export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout)
   // 1. 레이아웃 검증 — pool 획득 전에 잘못된 값을 걸러낸다
   validateLayout(layout);
 
-  // 2. 최종 Canvas 생성 — pool에서 우선 획득
-  const canvas = CanvasPool.getInstance().acquire(Math.round(layout.width), Math.round(layout.height));
-  const lease = new CanvasLease(canvas);
+  // 2. 최종 Canvas 생성 — pool에서 임대
+  const lease = leaseCanvas(Math.round(layout.width), Math.round(layout.height));
+  const canvas = lease.canvas;
 
   try {
     const ctx = canvas.getContext('2d');

@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { TiledProcessor } from '../../../src/base/tiled-processor.internal';
 import { createDrawableImage } from './tiled-processor.helpers';
 
@@ -67,5 +68,44 @@ describe('TiledProcessor.resizeInTiles', () => {
     });
     expect(result.width).toBe(16);
     expect(result.height).toBe(16);
+  });
+
+  describe('canvas 소유권', () => {
+    let pool: CanvasPool;
+
+    beforeEach(() => {
+      pool = CanvasPool.getInstance();
+      pool.clear();
+    });
+
+    it('타일 canvas는 임대이며 타일 수만큼 pool로 반환된다', async () => {
+      const img = createDrawableImage(16, 16);
+      const before = pool.getStats().totalReleased;
+
+      await TiledProcessor.resizeInTiles(img, 16, 16, {
+        tileSize: 8,
+        overlapSize: 0,
+        maxConcurrency: 1,
+        enableMemoryMonitoring: false,
+      });
+
+      // 16×16을 tileSize=8로 나누면 타일 4개 — 각각 consume 종료 시 1회씩 반환된다
+      expect(pool.getStats().totalReleased).toBe(before + 4);
+    });
+
+    it('결과 canvas는 호출자 소유라 pool로 반환되지 않는다', async () => {
+      const img = createDrawableImage(16, 16);
+      const releaseSpy = vi.spyOn(pool, 'release');
+
+      const result = await TiledProcessor.resizeInTiles(img, 16, 16, {
+        tileSize: 8,
+        overlapSize: 0,
+        maxConcurrency: 1,
+        enableMemoryMonitoring: false,
+      });
+
+      expect(releaseSpy).not.toHaveBeenCalledWith(result);
+      releaseSpy.mockRestore();
+    });
   });
 });

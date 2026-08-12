@@ -1,4 +1,5 @@
-import { applySmoothing, createOwnedCanvas, type SmoothingQuality, withManagedCanvas } from './canvas-utils.internal';
+import { leaseCanvas } from './canvas-lease.internal';
+import { applySmoothing, createOwnedCanvas, type SmoothingQuality } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
 
 /**
@@ -180,7 +181,15 @@ export class TiledProcessor {
     resultCtx: CanvasRenderingContext2D,
     quality: SmoothingQuality
   ): Promise<void> {
-    await withManagedCanvas(tile.width, tile.height, (tileCanvas, tileCtx) => {
+    // 타일 canvas는 pool 임대 — 결과 canvas에 합성한 뒤 즉시 pool로 돌아간다
+    await leaseCanvas(tile.width, tile.height).consume((tileCanvas) => {
+      const tileCtx = tileCanvas.getContext('2d');
+      if (!tileCtx) {
+        throw createImageError('CANVAS_CREATION_FAILED', {
+          cause: new Error('Failed to create CanvasRenderingContext2D'),
+        });
+      }
+
       // 타일 canvas 스무딩 설정
       applySmoothing(tileCtx, quality);
 
