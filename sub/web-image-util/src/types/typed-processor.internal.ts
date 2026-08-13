@@ -121,13 +121,3 @@ export type ResizedProcessor = TypedImageProcessor<AfterResize>;
  * Processor factory function type
  */
 export type ProcessorFactory = (source: ImageSource) => InitialProcessor;
-
-/**
- * Type utility: Check current state
- */
-export type GetProcessorState<T> = T extends TypedImageProcessor<infer S> ? S : never;
-
-/**
- * Type utility: Whether resize() can be called
- */
-export type CanCallResize<T> = T extends TypedImageProcessor<BeforeResize> ? true : false;
