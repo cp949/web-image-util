@@ -194,7 +194,7 @@ describe('ResizePerformance', () => {
     });
   });
 
-  describe('배치 프리셋 라우팅', () => {
+  describe('일괄 처리 프리셋 라우팅', () => {
     afterEach(() => {
       vi.restoreAllMocks();
     });

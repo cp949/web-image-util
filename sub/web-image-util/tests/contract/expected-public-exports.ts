@@ -152,7 +152,7 @@ export const ADVANCED_VALUE_EXPORTS = [
   'AutoHighResProcessor',
   'autoSmartResize',
   'smartResizeWithProgress',
-  // 배치 리사이저
+  // 일괄 리사이저
   'BatchResizer',
   // 에러 핸들러
   'globalErrorHandler',

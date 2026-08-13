@@ -1,7 +1,7 @@
 /**
  * HighResolutionManager.batchSmartResize 행동 테스트
  *
- * 배치 함수는 내부적으로 smartResize 를 위임하므로 vi.spyOn 으로 격리하고
+ * 일괄 처리 함수는 내부적으로 smartResize 를 위임하므로 vi.spyOn 으로 격리하고
  * - 반환 배열 길이 / globalIndex 매핑
  * - onBatchProgress 콜백 계약
  * - smartResize 전달 인자(targetWidth/Height/processingOptions)
@@ -119,7 +119,7 @@ describe('HighResolutionManager.batchSmartResize', () => {
   });
 
   it('smartResize 에 targetWidth/targetHeight/processingOptions 가 그대로 전달된다', async () => {
-    // 회귀 위험: targetWidth/Height 뒤바뀜 or processingOptions 누락 시 배치 경로 전체가 조용히 오작동
+    // 회귀 위험: targetWidth/Height 뒤바뀜 or processingOptions 누락 시 일괄 처리 경로 전체가 조용히 오작동
     // concurrency/onBatchProgress 는 batchSmartResize 자체가 소비하고 smartResize 에는 전달하지 않는다
     const images = [createMockImage(100, 100), createMockImage(200, 200)];
     const onBatchProgress = vi.fn();

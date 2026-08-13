@@ -336,7 +336,7 @@ describe('브라우저 성능 스모크 테스트', () => {
     expect(result.blob.size).toBeGreaterThan(0);
   });
 
-  it('작은 병렬 배치가 브라우저 예산 안에 끝난다', async () => {
+  it('작은 병렬 일괄 처리가 브라우저 예산 안에 끝난다', async () => {
     const source = createFixtureCanvas(400, 300);
     const startTime = performance.now();
     const jobs = Array.from({ length: 6 }, () =>

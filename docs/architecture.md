@@ -12,7 +12,7 @@
 
 1. **입력 처리**: 파일, URL, SVG 등 여러 소스를 `HTMLImageElement`로 변환
 2. **연산 누적**: `.resize()`, `.blur()` 같은 체이닝 메서드를 `LazyRenderPipeline`에 저장
-3. **배치 렌더링**: 최종 출력 시점에 단 한 번의 Canvas 처리로 전체 연산 실행
+3. **일괄 렌더링**: 최종 출력 시점에 단 한 번의 Canvas 처리로 전체 연산 실행
 4. **포맷 변환**: Canvas 결과를 Blob, DataURL, File 등으로 변환
 
 ## 핵심 특성

@@ -22,7 +22,7 @@ let globalPerformanceProfile: ResizeProfile = 'balanced';
  *
  * @description `setProfile()`로 지정한 프로파일은 `getProfile()`과 인자 없는 `getConfig()`에만
  * 반영된다. `processImage()` 체인, 프리셋 함수, 출력 파이프라인은 이 값을 참조하지 않으므로
- * 프로파일을 바꿔도 이미지 처리 결과는 그대로다. 아래 배치 헬퍼들도 각자 고정 설정을 쓴다.
+ * 프로파일을 바꿔도 이미지 처리 결과는 그대로다. 아래 일괄 처리 헬퍼들도 각자 고정 설정을 쓴다.
  *
  * 설정값을 직접 읽어 자체 처리 파이프라인에 반영하려는 호출자를 위한 표면이다.
  *
