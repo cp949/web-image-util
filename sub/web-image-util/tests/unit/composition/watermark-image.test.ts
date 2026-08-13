@@ -175,12 +175,15 @@ describe('ImageWatermark', () => {
 
     const origins = drawImageSpy.mock.calls.map(([, x, y]) => ({ x: x as number, y: y as number }));
 
-    const oldPadding = { width: 40, height: 20 };
-    const leftEdgeTile = origins.find(({ x }) => x < -oldPadding.width && x + 41.2132034356 > 0);
-    const topEdgeTile = origins.find(({ y }) => y < -oldPadding.height && y + 31.2132034356 > 0);
+    // 40×20 타일의 45도 AABB는 42.426... × 42.426...이다. 회전 기준은 타일 중심이므로
+    // 타일 점유 범위의 오른쪽 끝은 x + 40/2 + AABB/2, 아래쪽 끝은 y + 20/2 + AABB/2다.
+    // 기존 패딩 (40, 20) 바깥에 있으면서도 그 끝이 0을 넘어 Canvas와 교차하는 타일을 찾는다.
+    const aabb = 42.4264068712;
+    const rightEdgeOf = (x: number) => x + 40 / 2 + aabb / 2;
+    const bottomEdgeOf = (y: number) => y + 20 / 2 + aabb / 2;
+    const leftEdgeTile = origins.find(({ x }) => x < -40 && rightEdgeOf(x) > 0);
+    const topEdgeTile = origins.find(({ y }) => y < -20 && bottomEdgeOf(y) > 0);
 
-    // 45도 회전 AABB는 42.426... × 42.426...이다. 아래 타일들은 기존 시작점
-    // (-40, -20)보다 바깥에 있지만 회전 후 오른쪽/아래쪽 끝이 0을 넘어 Canvas와 교차한다.
     expect(leftEdgeTile?.x).toBeCloseTo(-40.4264068712);
     expect(topEdgeTile?.y).toBeCloseTo(-22.4264068712);
   });

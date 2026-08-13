@@ -34,6 +34,12 @@ export interface TileBounds {
   endY: number;
 }
 
+/**
+ * 객체 하나의 draw 원점을 정하고 그 회전 상태 범위 안에서 `draw`를 호출한다.
+ *
+ * 회전 변환의 수명은 이 함수가 소유한다. `draw`가 예외를 던져도 Canvas 상태는 복구된다.
+ * Canvas 스타일(font, fillStyle, blend mode, alpha)은 호출자 몫이며, 호출자 상태 범위 안에서 부른다.
+ */
 export function placeOnce(ctx: CanvasRenderingContext2D, spec: PlaceOnceSpec, draw: (origin: Point) => void): Point {
   const origin = PositionCalculator.calculatePosition(
     spec.position,
@@ -57,6 +63,18 @@ export function placeOnce(ctx: CanvasRenderingContext2D, spec: PlaceOnceSpec, dr
   return origin;
 }
 
+/**
+ * frame 회전 모드의 타일 루프 범위.
+ *
+ * 프레임 전체를 회전하면 캔버스를 덮는 범위가 캔버스 사각형과 어긋난다. 루프 경계를 캔버스 축
+ * 기준으로 두면 커버리지가 한쪽으로 쏠리므로 역회전 bounding box에서 파생시킨다. rotation이 0이면
+ * 그 범위가 정확히 `[0, width] × [0, height]`라 회전 없는 출력은 그대로다.
+ *
+ * 타일 실효 범위는 원점 기준 `[x, x+width] × [y, y+height]`다(텍스트는 `textBaseline='top'`).
+ * `startY`에만 패딩이 없는 비대칭은 추출 전 동작을 그대로 옮긴 것이다.
+ * strokeText의 lineWidth 번짐도 패딩에 반영하지 않는다 — 최외곽 타일에서 lineWidth/2만큼
+ * 모자라지만, 반영하면 회전 없는 경로의 타일 배치까지 바뀐다.
+ */
 export function computeFrameTileBounds(containerSize: Size, tileSize: Size, rotation?: number): TileBounds {
   const bounds = getOriginRotationCoverageBounds(containerSize.width, containerSize.height, rotation);
 
@@ -94,6 +112,12 @@ export function computePerTileBounds(containerSize: Size, tileSize: Size, rotati
   };
 }
 
+/**
+ * 타일 격자의 draw 원점을 생성한다.
+ *
+ * stagger 오프셋은 루프 첫 행을 짝수로 두고 세는 행 번호를 따른다. 반복 패턴에서 어느 행이
+ * 어긋나는지는 임의 기준이며, 회전 0에서는 추출 전과 같은 행이 어긋난다.
+ */
 export function* iterateTileGrid(bounds: TileBounds, spacing: Point, stagger = false): Iterable<Point> {
   let rowIndex = 0;
   for (let y = bounds.startY; y < bounds.endY; y += spacing.y) {
@@ -106,7 +130,15 @@ export function* iterateTileGrid(bounds: TileBounds, spacing: Point, stagger = f
   }
 }
 
+/**
+ * 반복 타일의 draw 원점을 생성하며 각 원점마다 `draw`를 호출한다.
+ *
+ * `rotationMode`는 두 회전 표현을 가른다. frame 모드는 캔버스 원점을 한 번 회전해 연속 대각선 띠를
+ * 만들고, per-tile 모드는 격자를 캔버스 축에 정렬한 채 타일마다 자기 중심을 회전한다. 의도적으로
+ * 다른 표현이므로 하나로 합치지 않는다.
+ */
 export function placeTiled(ctx: CanvasRenderingContext2D, spec: PlaceTiledSpec, draw: (origin: Point) => void): void {
+  // spacing이 유한 양수가 아니면 아래 타일 루프가 전진하지 않아 브라우저가 멈춘다.
   requirePositiveSpacing(spec.spacing.x, 'spacing.x', spec.context);
   requirePositiveSpacing(spec.spacing.y, 'spacing.y', spec.context);
 
@@ -121,6 +153,7 @@ export function placeTiled(ctx: CanvasRenderingContext2D, spec: PlaceTiledSpec, 
 function placeFrameTiles(ctx: CanvasRenderingContext2D, spec: PlaceTiledSpec, draw: (origin: Point) => void): void {
   const bounds = computeFrameTileBounds(spec.containerSize, spec.tileSize, spec.rotation);
 
+  // 타일 중심이 아니라 캔버스 원점을 회전시킨다. 회전은 루프 전체에 걸리므로 상태 범위도 루프를 덮는다.
   withCanvasState(ctx, () => {
     const rotation = spec.rotation ?? 0;
     if (rotation !== 0) {
