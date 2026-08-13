@@ -24,11 +24,14 @@ const CAPABILITIES_CACHE_KEY = 'browser-capabilities';
 
 /**
  * 브라우저 기능을 모두 감지한다 (비동기)
+ *
+ * @description 같은 모듈의 `detectSyncCapabilities()`를 직접 호출하므로 export에 대한
+ * spy로 내부 호출을 바꿀 수 없다. 테스트는 공개 결과 또는 하위 feature 감지 모듈을 경계로 삼는다.
  */
 export async function detectBrowserCapabilities(options: DetectionOptions = {}): Promise<BrowserCapabilities> {
   const { useCache = true, timeout = 5000, debug = false } = options;
 
-  // Check cached results
+  // 캐시된 결과를 먼저 확인한다.
   if (useCache) {
     const cached = capabilityCache.get<BrowserCapabilities>(CAPABILITIES_CACHE_KEY);
     if (cached) {
@@ -39,12 +42,12 @@ export async function detectBrowserCapabilities(options: DetectionOptions = {}):
 
   if (debug) console.log('[BrowserCapabilities] Starting new detection...');
 
-  // Detect synchronous capabilities first
+  // 동기 기능을 먼저 감지한다.
   const syncCapabilities = detectSyncCapabilities();
 
   if (debug) console.log('[BrowserCapabilities] Synchronous capabilities detected:', syncCapabilities);
 
-  // Detect asynchronous format support
+  // 비동기 포맷 지원 여부를 감지한다.
   const [webp, avif] = await Promise.all([detectWebPSupport(timeout), detectAVIFSupport(timeout)]);
 
   const capabilities: BrowserCapabilities = {
@@ -55,7 +58,7 @@ export async function detectBrowserCapabilities(options: DetectionOptions = {}):
 
   if (debug) console.log('[BrowserCapabilities] All capabilities detected:', capabilities);
 
-  // Store in cache
+  // 이후 호출을 위해 결과를 캐시에 저장한다.
   if (useCache) {
     capabilityCache.set(CAPABILITIES_CACHE_KEY, capabilities);
   }

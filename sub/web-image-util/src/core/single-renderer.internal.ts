@@ -69,10 +69,10 @@ export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: 
 }
 
 /**
- * Analyze resize operation - utilizing calculateFinalLayout
+ * calculateFinalLayout으로 resize 연산의 레이아웃을 분석한다.
  */
 function analyzeResizeOperation(sourceImage: HTMLImageElement, layout: FinalLayout, config: ResizeConfig): FinalLayout {
-  // Calculate precise layout using calculateFinalLayout
+  // 원본 크기와 설정으로 최종 레이아웃을 계산한다.
   const result = calculateFinalLayout(sourceImage.naturalWidth, sourceImage.naturalHeight, config);
 
   return {
