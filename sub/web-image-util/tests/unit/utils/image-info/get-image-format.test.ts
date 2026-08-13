@@ -116,6 +116,19 @@ describe('formatFromBlobMetadata — 포맷 판정 우선순위', () => {
     expect(formatFromBlobMetadata(file)).toBe('png');
   });
 
+  it('File name은 URL 스킴으로 해석하지 않고 확장자를 읽는다', () => {
+    const cases = [
+      ['http:photo.png', 'png'],
+      ['https://example.com.svg', 'svg'],
+      ['C:\\fakepath\\사진 100%.png', 'png'],
+      ['보고서:2026.png', 'png'],
+    ] as const;
+
+    for (const [name, expected] of cases) {
+      expect(formatFromBlobMetadata(new File(['data'], name, { type: '' }))).toBe(expected);
+    }
+  });
+
   it('Blob type도 unknown이고 name도 없으면 unknown을 반환한다', () => {
     // 일반 Blob은 name 속성이 없어 bytes 단계 전에 unknown이 된다
     const blob = new Blob(['data'], { type: '' });

@@ -13,7 +13,7 @@ import type { ImageSource } from '../../types';
 import { ImageFormats } from '../../types';
 import { parseDataURLMimeType } from '../data-url';
 import { mimeTypeToImageFormat } from '../format-utils';
-import { getFormatFromPath } from '../source-utils/path.internal';
+import { getFormatFromFileName, getFormatFromPath } from '../source-utils/path.internal';
 import type { ImageInfo } from './types';
 
 /** MIME 타입을 공개 이미지 포맷 값으로 변환한다. 매핑 정본은 format-utils가 소유한다. */
@@ -98,7 +98,7 @@ export function formatFromBlobMetadata(blob: Blob): ImageInfo['format'] {
   }
 
   const name = (blob as File).name;
-  return typeof name === 'string' ? getFormatFromPath(name) : 'unknown';
+  return typeof name === 'string' ? getFormatFromFileName(name) : 'unknown';
 }
 
 /** 입력 소스에서 포맷을 확인한다. 필요한 경우에만 바이트를 읽는다. */

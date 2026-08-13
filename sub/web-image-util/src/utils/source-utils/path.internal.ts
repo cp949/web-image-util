@@ -19,8 +19,18 @@ const IMAGE_FORMAT_BY_EXTENSION: Record<string, ImageFormat> = {
 
 /** 경로 또는 URL 문자열의 마지막 확장자를 ImageFormat으로 매핑한다. */
 export function getFormatFromPath(source: string): ImageFormat | 'unknown' {
-  const pathname = getPathnameWithoutSuffix(source);
-  const extension = pathname.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase();
+  return getFormatFromExtension(getPathnameWithoutSuffix(source));
+}
+
+/** File.name의 마지막 확장자를 ImageFormat으로 매핑한다. */
+export function getFormatFromFileName(name: string): ImageFormat | 'unknown' {
+  // 파일명은 URL이 아니므로 `http:photo.png` 같은 합법적인 이름을 스킴으로 해석하지 않는다.
+  return getFormatFromExtension(name.split('#', 1)[0]?.split('?', 1)[0] ?? name);
+}
+
+/** 정규화된 경로 또는 파일명의 확장자를 공통 포맷 테이블에서 찾는다. */
+function getFormatFromExtension(source: string): ImageFormat | 'unknown' {
+  const extension = source.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase();
 
   return extension ? (IMAGE_FORMAT_BY_EXTENSION[extension] ?? 'unknown') : 'unknown';
 }
