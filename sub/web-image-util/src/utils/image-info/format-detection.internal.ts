@@ -14,6 +14,7 @@ import { ImageFormats } from '../../types';
 import { parseDataURLMimeType } from '../data-url';
 import { mimeTypeToImageFormat } from '../format-utils';
 import { resolveMimeFirstBlobFormat } from '../source-utils/blob-projection.internal';
+import { detectFormatFromBytes } from '../source-utils/byte-signature.internal';
 import { getFormatFromPath } from '../source-utils/path.internal';
 import { inspectBlobMetadata } from '../source-utils/source-facts.internal';
 import type { ImageInfo } from './types';
@@ -29,67 +30,24 @@ export function formatFromDataUrl(input: string): ImageInfo['format'] {
   return mimeType ? formatFromMimeType(mimeType) : 'unknown';
 }
 
-/** 바이너리 시그니처에서 이미지 포맷을 가볍게 판정한다. */
+/**
+ * 바이너리 시그니처에서 이미지 포맷을 가볍게 판정한다.
+ *
+ * detectFormatFromBytes가 판정하는 bmp/tiff/ico는 공개 ImageFormat이 표현하지 못하므로
+ * unknown으로 접는다. 로더(blob.internal.ts)는 같은 facts를 자기 폴백으로 다르게 투영한다.
+ */
 export function formatFromBytes(bytes: Uint8Array): ImageInfo['format'] {
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47 &&
-    bytes[4] === 0x0d &&
-    bytes[5] === 0x0a &&
-    bytes[6] === 0x1a &&
-    bytes[7] === 0x0a
-  ) {
-    return ImageFormats.PNG;
-  }
+  const format = detectFormatFromBytes(bytes);
 
-  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-    return ImageFormats.JPEG;
+  switch (format) {
+    case 'bmp':
+    case 'tiff':
+    case 'ico':
+    case 'unknown':
+      return 'unknown';
+    default:
+      return format;
   }
-
-  if (
-    bytes.length >= 12 &&
-    bytes[0] === 0x52 &&
-    bytes[1] === 0x49 &&
-    bytes[2] === 0x46 &&
-    bytes[3] === 0x46 &&
-    bytes[8] === 0x57 &&
-    bytes[9] === 0x45 &&
-    bytes[10] === 0x42 &&
-    bytes[11] === 0x50
-  ) {
-    return ImageFormats.WEBP;
-  }
-
-  if (
-    bytes.length >= 6 &&
-    bytes[0] === 0x47 &&
-    bytes[1] === 0x49 &&
-    bytes[2] === 0x46 &&
-    bytes[3] === 0x38 &&
-    (bytes[4] === 0x37 || bytes[4] === 0x39) &&
-    bytes[5] === 0x61
-  ) {
-    return ImageFormats.GIF;
-  }
-
-  if (
-    bytes.length >= 12 &&
-    bytes[4] === 0x66 &&
-    bytes[5] === 0x74 &&
-    bytes[6] === 0x79 &&
-    bytes[7] === 0x70 &&
-    bytes[8] === 0x61 &&
-    bytes[9] === 0x76 &&
-    bytes[10] === 0x69 &&
-    bytes[11] === 0x66
-  ) {
-    return ImageFormats.AVIF;
-  }
-
-  return 'unknown';
 }
 
 /** Blob/File에서 추가 로딩 없이 알 수 있는 포맷 힌트를 얻는다. */
