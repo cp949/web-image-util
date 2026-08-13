@@ -3,9 +3,8 @@
  *
  * @description
  * vitest가 실행하는 테스트가 아니라 tsc(타입체크)만으로 검증하는 파일이다.
- * `ImageProcessErrorOptions`, `ImageErrorDetails`, `ImageErrorDetailsByCode`가
- * 루트 엔트리(`../../src`)와 타입 허브(`../../src/types`) 양쪽에서
- * 타입으로 import 가능한지 확인한다.
+ * 공개 타입이 지정된 엔트리에서 import 가능한지 확인하고, 제거한 타입이 이전
+ * 엔트리에서 다시 노출되지 않는지 검증한다.
  */
 
 import type {
@@ -66,7 +65,11 @@ import type {
   ScaleValue as ScaleValueFromTypes,
 } from '../../src/types';
 
+// @ts-expect-error ImageFormat은 루트 엔트리만 소유하며 /advanced에서는 노출하지 않는다.
+type ImageFormatFromAdvanced = import('@cp949/web-image-util/advanced').ImageFormat;
+
 const code: ImageErrorCodeType = 'INVALID_SOURCE';
+void (null as unknown as ImageFormatFromAdvanced);
 const codeFromTypes: ImageErrorCodeTypeFromTypes = code;
 const options: ImageProcessErrorOptions = {
   cause: new Error('root cause'),
