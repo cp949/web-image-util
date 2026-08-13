@@ -1,9 +1,12 @@
 /**
  * 입력 소스의 형태를 판별해 변환 경로를 라우팅하는 모듈이다.
  *
- * 판정은 이 모듈이 단독으로 소유한다. 반환 union이 SVG 하위 유형까지 구분하므로
- * 하위 로더는 같은 술어(`isSvgDataURL`, `isInlineSvg`, `isSvgResourcePath` 등)를
+ * 문자열 입력의 판정은 이 모듈이 단독으로 소유한다. 반환 union이 SVG 하위 유형까지 구분하므로
+ * 문자열 로더는 같은 술어(`isSvgDataURL`, `isInlineSvg`, `isSvgResourcePath` 등)를
  * 다시 호출하지 않고 판정 결과만 보고 분기한다.
+ *
+ * Blob 입력은 아직 여기까지 오지 않았다 — `loaders/blob.internal.ts`가 `'svg-blob'` 판정을
+ * 쓰지 않고 MIME/파일명/본문 스니핑을 자체적으로 다시 수행한다.
  */
 
 import type { ImageSource } from '../../types';
@@ -63,43 +66,43 @@ export function isSvgSourceType(type: SourceType): boolean {
 export function detectStringSourceType(source: string): StringSourceType {
   const trimmed = source.trim();
 
-  // Detect Data URL SVG (priority - check before general Data URL)
+  // 일반 Data URL보다 SVG Data URL을 먼저 판정한다.
   if (isSvgDataURL(trimmed)) {
     return 'svg-datauri';
   }
 
-  // Detect inline SVG XML (accurate check)
+  // 인라인 SVG XML 본문인지 확인한다.
   if (isInlineSvg(trimmed)) {
     return 'svg-inline';
   }
 
-  // Detect other Data URLs
+  // SVG가 아닌 Data URL을 판정한다.
   if (isDataURLString(trimmed)) {
     return 'dataurl';
   }
 
-  // Detect HTTP/HTTPS URLs
+  // HTTP/HTTPS URL을 판정한다.
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     // 실제 MIME 판정은 로딩 시점에 수행하고, 여기서는 확장자만 힌트로 사용한다.
     return isSvgResourcePath(trimmed) ? 'svg-url' : 'url';
   }
 
-  // Detect protocol-relative URLs
+  // protocol-relative URL을 판정한다.
   if (isProtocolRelativeUrl(trimmed)) {
     return isSvgResourcePath(trimmed) ? 'svg-url' : 'url';
   }
 
-  // Detect Blob URL (URL created by createObjectURL)
+  // createObjectURL로 만든 Blob URL을 판정한다.
   if (trimmed.startsWith('blob:')) {
     return 'bloburl';
   }
 
-  // File path - check SVG extension
+  // 파일 경로의 SVG 확장자를 확인한다.
   if (isSvgResourcePath(trimmed)) {
     return 'svg-path';
   }
 
-  // Treat the rest as file paths
+  // 나머지 문자열은 일반 파일 경로로 처리한다.
   return 'path';
 }
 

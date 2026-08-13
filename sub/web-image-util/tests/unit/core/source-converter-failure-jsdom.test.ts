@@ -242,6 +242,21 @@ describe('convertToImageElement — index.ts 분기', () => {
 
     await expect(convertToImageElement('relative/path.png')).rejects.toBe(original);
   });
+
+  it('문자열 판정 결과를 문자열 로더에 그대로 전달한다', async () => {
+    const detectedType = 'svg-path';
+    const detectStringSourceType = vi.fn(() => detectedType);
+    const image = originalDocumentCreateElement.call(document, 'img') as HTMLImageElement;
+    const convertStringToElement = vi.fn(() => Promise.resolve(image));
+
+    vi.doMock('../../../src/core/source-converter/detect.internal', () => ({ detectStringSourceType }));
+    vi.doMock('../../../src/core/source-converter/loaders/string.internal', () => ({ convertStringToElement }));
+    const { convertToImageElement } = await import('../../../src/core/source-converter/index');
+
+    await expect(convertToImageElement('./assets/icon.svg')).resolves.toBe(image);
+    expect(detectStringSourceType).toHaveBeenCalledOnce();
+    expect(convertStringToElement).toHaveBeenCalledWith('./assets/icon.svg', detectedType, undefined);
+  });
 });
 
 describe('getImageDimensions — index.ts 폴백 분기', () => {
@@ -284,21 +299,19 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     (globalThis as any)._SVG_MOCK_MODE = true;
   });
 
-  it('detectStringSourceType이 알 수 없는 타입을 반환하면 INVALID_SOURCE로 거부한다', async () => {
-    // detect를 mock해 switch default를 결정적으로 실행한다.
-    vi.doMock('../../../src/core/source-converter/detect.internal', () => ({
-      detectStringSourceType: vi.fn(() => 'arrayBuffer'),
-    }));
+  it('문자열 판정 union에 없는 타입은 INVALID_SOURCE로 거부한다', async () => {
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    await expect(convertStringToElement('whatever')).rejects.toMatchObject({ code: 'INVALID_SOURCE' });
+    await expect(convertStringToElement('whatever', 'arrayBuffer' as never)).rejects.toMatchObject({
+      code: 'INVALID_SOURCE',
+    });
   });
 
   it('원격 SVG URL 응답이 ok가 아니면 SOURCE_LOAD_FAILED로 차단한다', async () => {
     globalThis.fetch = vi.fn(() => Promise.resolve(new Response('nope', { status: 404 }))) as any;
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    await expect(convertStringToElement('https://example.com/icon.svg')).rejects.toMatchObject({
+    await expect(convertStringToElement('https://example.com/icon.svg', 'svg-url')).rejects.toMatchObject({
       code: 'SOURCE_LOAD_FAILED',
     });
   });
@@ -308,7 +321,7 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     globalThis.fetch = vi.fn(() => Promise.reject(abortErr)) as any;
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    await expect(convertStringToElement('https://example.com/icon.svg')).rejects.toMatchObject({
+    await expect(convertStringToElement('https://example.com/icon.svg', 'svg-url')).rejects.toMatchObject({
       code: 'SOURCE_LOAD_FAILED',
       details: { kind: 'aborted' },
     });
@@ -318,7 +331,7 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     globalThis.fetch = vi.fn(() => Promise.reject(new TypeError('network down'))) as any;
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    await expect(convertStringToElement('https://example.com/icon.svg')).rejects.toMatchObject({
+    await expect(convertStringToElement('https://example.com/icon.svg', 'svg-url')).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
     });
   });
@@ -330,7 +343,7 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
     // mock 모드로 인해 1x1 PNG img가 반환된다(디코딩 우회).
-    const result = await convertStringToElement('https://example.com/icon.svg');
+    const result = await convertStringToElement('https://example.com/icon.svg', 'svg-url');
     expect(result).toBeInstanceOf(HTMLImageElement);
   });
 
@@ -338,7 +351,7 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     globalThis.fetch = vi.fn(() => Promise.resolve(new Response('nope', { status: 500 }))) as any;
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    await expect(convertStringToElement('./assets/icon.svg')).rejects.toMatchObject({
+    await expect(convertStringToElement('./assets/icon.svg', 'svg-path')).rejects.toMatchObject({
       code: 'SOURCE_LOAD_FAILED',
     });
   });
@@ -348,7 +361,7 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     globalThis.fetch = vi.fn(() => Promise.reject(abortErr)) as any;
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    await expect(convertStringToElement('./assets/icon.svg')).rejects.toMatchObject({
+    await expect(convertStringToElement('./assets/icon.svg', 'svg-path')).rejects.toMatchObject({
       code: 'SOURCE_LOAD_FAILED',
       details: { kind: 'aborted' },
     });
@@ -358,18 +371,17 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     globalThis.fetch = vi.fn(() => Promise.reject(new TypeError('fs error'))) as any;
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    await expect(convertStringToElement('/assets/icon.svg')).rejects.toMatchObject({
+    await expect(convertStringToElement('/assets/icon.svg', 'svg-path')).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
     });
   });
 
   it('차단된 프로토콜을 가진 SVG 경로(javascript:..svg)는 프로토콜 차단 오류를 전파한다', async () => {
-    // checkAllowedProtocol catch(L120-127)에서 isProtocolBlocked가 true면 재throw한다.
-    // detect는 javascript: 스킴을 url로 보지 않고 isSvgResourcePath가 true면 'svg'로 분류한다.
+    // checkAllowedProtocol에서 프로토콜 차단으로 판정한 INVALID_SOURCE는 그대로 전파한다.
     globalThis.fetch = vi.fn(() => Promise.reject(new Error('should not fetch'))) as any;
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    await expect(convertStringToElement('javascript:alert(1)//x.svg')).rejects.toMatchObject({
+    await expect(convertStringToElement('javascript:alert(1)//x.svg', 'svg-path')).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
     });
   });
@@ -380,7 +392,7 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     ) as any;
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    const result = await convertStringToElement('./assets/icon.svg');
+    const result = await convertStringToElement('./assets/icon.svg', 'svg-path');
     expect(result).toBeInstanceOf(HTMLImageElement);
   });
 });

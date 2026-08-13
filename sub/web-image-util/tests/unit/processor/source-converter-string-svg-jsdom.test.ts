@@ -1,7 +1,7 @@
 /**
  * 문자열/SVG source-converter 라우팅 행동 보강 테스트.
  *
- * convertStringToElement가 입력 분류(data URL / 인라인 SVG / 원격 URL)에 따라
+ * convertStringToElement가 전달받은 판정(data URL / 인라인 SVG / 원격 URL)에 따라
  * 올바른 loader로 분기하고 SVG 로딩 오류를 보존하는 호출 계약을 검증한다.
  * 실제 이미지 디코딩과 네트워크 fetch는 loader mock으로 차단한다.
  */
@@ -34,7 +34,7 @@ const SVG_WITH_PREAMBLE =
 const PNG_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
-describe('convertStringToElement — 문자열 입력 분류 및 loader 위임', () => {
+describe('convertStringToElement — 문자열 판정별 loader 위임', () => {
   beforeEach(() => {
     // loader mock은 즉시 HTMLImageElement를 반환해 실제 디코딩/네트워크를 차단한다.
     vi.mocked(convertSvgToElement).mockImplementation(() => Promise.resolve(document.createElement('img')));
@@ -52,7 +52,7 @@ describe('convertStringToElement — 문자열 입력 분류 및 loader 위임',
   it('이미지 data URL은 URL loader로 위임되고 createObjectURL이나 SVG loader를 쓰지 않는다', async () => {
     const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL');
 
-    await convertStringToElement(PNG_DATA_URL);
+    await convertStringToElement(PNG_DATA_URL, 'dataurl');
 
     expect(vi.mocked(loadImageFromUrl)).toHaveBeenCalledTimes(1);
     expect(vi.mocked(loadImageFromUrl).mock.calls[0]![0]).toBe(PNG_DATA_URL);
@@ -61,7 +61,7 @@ describe('convertStringToElement — 문자열 입력 분류 및 loader 위임',
   });
 
   it('인라인 SVG 문자열은 SVG loader로 위임되고 원문/옵션이 전달된다', async () => {
-    await convertStringToElement(MINIMAL_SVG, { crossOrigin: 'anonymous' });
+    await convertStringToElement(MINIMAL_SVG, 'svg-inline', { crossOrigin: 'anonymous' });
 
     expect(vi.mocked(convertSvgToElement)).toHaveBeenCalledTimes(1);
     const call = vi.mocked(convertSvgToElement).mock.calls[0]!;
@@ -73,7 +73,7 @@ describe('convertStringToElement — 문자열 입력 분류 및 loader 위임',
   });
 
   it('XML preamble과 공백이 섞인 SVG는 URL로 오판되지 않고 SVG loader로 위임된다', async () => {
-    await convertStringToElement(SVG_WITH_PREAMBLE);
+    await convertStringToElement(SVG_WITH_PREAMBLE, 'svg-inline');
 
     expect(vi.mocked(convertSvgToElement)).toHaveBeenCalledTimes(1);
     // 원문(preamble 포함)이 그대로 SVG loader에 전달된다.
@@ -85,7 +85,7 @@ describe('convertStringToElement — 문자열 입력 분류 및 loader 위임',
   it('비-SVG 원격 URL은 URL loader로 분기하며 SVG loader를 호출하지 않는다', async () => {
     const url = 'https://example.com/photo.png';
 
-    await convertStringToElement(url, { crossOrigin: 'use-credentials' });
+    await convertStringToElement(url, 'url', { crossOrigin: 'use-credentials' });
 
     expect(vi.mocked(loadImageFromUrl)).toHaveBeenCalledTimes(1);
     const call = vi.mocked(loadImageFromUrl).mock.calls[0]!;
@@ -98,7 +98,7 @@ describe('convertStringToElement — 문자열 입력 분류 및 loader 위임',
   it('blob: URL은 Blob URL loader로 분기한다', async () => {
     const blobUrl = 'blob:http://localhost/abcdef';
 
-    await convertStringToElement(blobUrl);
+    await convertStringToElement(blobUrl, 'bloburl');
 
     expect(vi.mocked(loadBlobUrl)).toHaveBeenCalledTimes(1);
     expect(vi.mocked(loadBlobUrl).mock.calls[0]![0]).toBe(blobUrl);
@@ -108,10 +108,10 @@ describe('convertStringToElement — 문자열 입력 분류 및 loader 위임',
 
   it('SVG data URL은 SVG loader로 위임되고 URL loader를 쓰지 않는다', async () => {
     const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL');
-    // URL 인코딩 형식의 SVG data URL — detect에서 isSvgDataURL로 'svg'로 분류된다.
+    // URL 인코딩 형식의 SVG data URL을 복원하는 판정을 전달한다.
     const svgDataUrl = `data:image/svg+xml,${encodeURIComponent(MINIMAL_SVG)}`;
 
-    await convertStringToElement(svgDataUrl);
+    await convertStringToElement(svgDataUrl, 'svg-datauri');
 
     expect(vi.mocked(convertSvgToElement)).toHaveBeenCalledTimes(1);
     // data URL에서 복원된 SVG 본문이 첫 번째 인자로 전달된다(원본 data URL이 아님).
@@ -124,7 +124,7 @@ describe('convertStringToElement — 문자열 입력 분류 및 loader 위임',
     const loaderError = new ImageProcessError('SVG load failed', 'SOURCE_LOAD_FAILED');
     vi.mocked(convertSvgToElement).mockRejectedValueOnce(loaderError);
 
-    await expect(convertStringToElement(MINIMAL_SVG)).rejects.toBe(loaderError);
+    await expect(convertStringToElement(MINIMAL_SVG, 'svg-inline')).rejects.toBe(loaderError);
     expect(vi.mocked(loadImageFromUrl)).not.toHaveBeenCalled();
   });
 
@@ -133,6 +133,6 @@ describe('convertStringToElement — 문자열 입력 분류 및 loader 위임',
     const plainError = new Error('decode boom');
     vi.mocked(convertSvgToElement).mockRejectedValueOnce(plainError);
 
-    await expect(convertStringToElement(MINIMAL_SVG)).rejects.toBe(plainError);
+    await expect(convertStringToElement(MINIMAL_SVG, 'svg-inline')).rejects.toBe(plainError);
   });
 });

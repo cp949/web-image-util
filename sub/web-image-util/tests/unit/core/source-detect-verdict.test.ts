@@ -17,7 +17,6 @@ import {
 /** 스니핑 판정에 충분한 최소 인라인 SVG 문자열 */
 const MINIMAL_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="1" height="1"/></svg>';
 
-const DETECT_MODULE_PATH = '../../../src/core/source-converter/detect.internal';
 const STRING_LOADER_PATH = '../../../src/core/source-converter/loaders/string.internal';
 
 describe('detectStringSourceType — 문자열 판정 표', () => {
@@ -91,20 +90,16 @@ describe('detectSourceType — 문자열 위임과 SVG Blob 구분', () => {
 
 describe('convertStringToElement — 문자열 형태가 아니라 판정 결과로 분기한다', () => {
   afterEach(() => {
-    // vi.doMock 팩토리 등록은 resetModules로 지워지지 않으므로 명시적으로 해제한다.
-    vi.doUnmock(DETECT_MODULE_PATH);
     vi.resetModules();
     vi.restoreAllMocks();
   });
 
-  /** 판정 결과를 고정한 뒤 문자열 로더를 새로 로드한다. */
+  /** 지정한 판정 결과를 문자열 로더에 전달하는 호출 함수를 만든다. */
   async function loadStringConverterWithVerdict(verdict: string) {
-    vi.doMock(DETECT_MODULE_PATH, () => ({
-      detectStringSourceType: vi.fn(() => verdict),
-    }));
     const fetchSpy = vi.fn(() => Promise.reject(new Error('fetch는 호출되지 않아야 한다')));
     vi.stubGlobal('fetch', fetchSpy);
-    const { convertStringToElement } = await import(STRING_LOADER_PATH);
+    const { convertStringToElement: loadString } = await import(STRING_LOADER_PATH);
+    const convertStringToElement = (source: string) => loadString(source, verdict as never);
     return { convertStringToElement, fetchSpy };
   }
 
@@ -114,6 +109,17 @@ describe('convertStringToElement — 문자열 형태가 아니라 판정 결과
     await expect(convertStringToElement(MINIMAL_SVG)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
       message: expect.stringContaining('Invalid URL format'),
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("판정이 'svg-inline'이면 http URL 문자열도 SVG 본문으로 넘긴다", async () => {
+    const { convertStringToElement, fetchSpy } = await loadStringConverterWithVerdict('svg-inline');
+
+    // SVG 본문이 아니므로 공통 SVG 처리기가 거부한다 — fetch나 Data URL 복원으로 새지 않는다.
+    await expect(convertStringToElement('https://example.com/icon.svg')).rejects.toMatchObject({
+      code: 'SOURCE_LOAD_FAILED',
+      message: expect.stringContaining('No <svg> element found'),
     });
     expect(fetchSpy).not.toHaveBeenCalled();
   });

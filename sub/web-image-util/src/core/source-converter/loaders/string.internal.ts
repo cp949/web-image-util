@@ -7,7 +7,7 @@
  */
 
 import { ImageProcessError } from '../../../types';
-import { detectStringSourceType } from '../detect.internal';
+import type { StringSourceType } from '../detect.internal';
 import {
   buildSvgRenderOptions,
   DEFAULT_ALLOWED_PROTOCOLS,
@@ -108,11 +108,9 @@ function checkResourcePathProtocol(source: string, options: InternalSourceConver
 /** 문자열 기반 입력을 HTMLImageElement로 변환한다. */
 export async function convertStringToElement(
   source: string,
+  sourceType: StringSourceType,
   options?: InternalSourceConverterOptions
 ): Promise<HTMLImageElement> {
-  // 판정은 여기서 한 번만 수행하고, 아래 분기는 판정 결과만 신뢰한다.
-  const sourceType = detectStringSourceType(source);
-
   switch (sourceType) {
     case 'svg-datauri': {
       // SVG Data URL은 먼저 문자열로 복원한 뒤 공통 SVG 처리기로 넘긴다.

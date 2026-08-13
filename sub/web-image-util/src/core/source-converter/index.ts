@@ -7,6 +7,7 @@
 
 import type { ImageSource, ProcessorOptions } from '../../types';
 import { ImageProcessError } from '../../types';
+import { detectStringSourceType } from './detect.internal';
 import { convertBlobToElement, detectMimeTypeFromBuffer } from './loaders/blob.internal';
 import { convertCanvasToElement } from './loaders/canvas.internal';
 import { convertStringToElement } from './loaders/string.internal';
@@ -98,7 +99,8 @@ export async function convertToImageElement(
     }
 
     if (typeof source === 'string') {
-      return convertStringToElement(source, internalOptions);
+      const sourceType = detectStringSourceType(source);
+      return convertStringToElement(source, sourceType, internalOptions);
     }
 
     throw new ImageProcessError(`Unsupported source type: ${typeof source}`, 'INVALID_SOURCE');
