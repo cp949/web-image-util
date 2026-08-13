@@ -10,6 +10,7 @@ import { createImageError } from '../base/error-helpers';
 import type { ProcessingStrategy } from '../base/high-res-detector.internal';
 import { HighResolutionManager } from '../base/high-res-manager';
 import type { SmartResizeOptions } from '../types';
+import { readMemoryBudget } from '../utils/browser-capabilities/index';
 import { AutoMemoryManager } from './auto-memory-manager.internal';
 import { type BatchResizeJob, BatchResizer } from './batch-resizer';
 import type { ResizeProfile } from './performance-config';
@@ -182,16 +183,12 @@ export class SmartProcessor {
 
   /**
    * Automatic memory limit calculation
+   *
+   * 메모리 예산은 browser-capabilities/memory.internal.ts가 단일 소유한다. 이 메서드는
+   * "가용 메모리의 20%" 정책만 로컬로 유지한다.
    */
   private static getAutoMemoryLimit(): number {
-    if (typeof performance !== 'undefined' && 'memory' in performance) {
-      const memory = (performance as any).memory;
-      // Set about 20% of available memory as limit
-      return Math.round(((memory.jsHeapSizeLimit - memory.usedJSHeapSize) * 0.2) / (1024 * 1024));
-    }
-
-    // Default: 256MB
-    return 256;
+    return Math.round(readMemoryBudget().availableMB * 0.2);
   }
 
   /**
