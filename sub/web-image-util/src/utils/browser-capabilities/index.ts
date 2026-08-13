@@ -17,5 +17,8 @@ export {
 
 export { detectCanvasFormatSupport, detectFormatSupport, getCachedFormatSupport } from './format-detection.internal';
 
+export type { MemoryBudget } from './memory.internal';
+export { readMemoryBudget, requestMemoryRelief } from './memory.internal';
+
 export { FEATURE_PERFORMANCE_WEIGHTS, PROCESSING_MODE_DESCRIPTIONS } from './performance.internal';
 export type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from './types';
