@@ -48,7 +48,14 @@ export class FormatDetector {
     return supported;
   }
 
-  /** 압축 효율을 우선해 최적 포맷을 선택한다. */
+  /**
+   * 압축 효율을 우선해 최적 포맷을 선택한다.
+   *
+   * @description 라이브러리 내부에서 호출하는 곳이 없다. `/advanced` 공개 표면으로만
+   * 존재하며, 호출자가 직접 포맷을 고를 때 쓰는 참고용 정책이다. 실제 출력 기본 포맷은
+   * core/output-pipeline.internal.ts의 getBestFormat(WebP > PNG)이 결정하고,
+   * 썸네일 프리셋은 presets/index.ts에서 WebP > JPEG를 쓴다. 이 함수만 AVIF를 우선한다.
+   */
   static async getBestFormat(hasTransparency: boolean = false): Promise<ImageFormat> {
     // Case with transparency
     if (hasTransparency) {

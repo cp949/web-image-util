@@ -105,6 +105,10 @@ export async function createThumbnail(source: ImageSource, options: ThumbnailOpt
 
   // Set default options
   const defaultOptions = {
+    // WebP 미지원 시 jpeg로 떨어진다. 썸네일은 사진 입력을 전제로 하고 기본 배경도
+    // 불투명(#ffffff)이라 투명도를 보존할 필요가 없으므로, 파일 크기가 작은 jpeg를 쓴다.
+    // 범용 출력 경로(core/output-pipeline.internal.ts의 getBestFormat)는 투명도 보존을
+    // 우선해 png로 떨어지므로 두 폴백이 다르다.
     format: (await getOptimalFormat('webp', 'jpeg')) as 'webp' | 'jpeg' | 'png',
     quality: 0.8,
     fit: 'cover' as const,
@@ -383,7 +387,8 @@ export async function createSocialImage(source: ImageSource, options: SocialImag
 /**
  * Optimal format selection utility
  *
- * @description Selects the optimal image format by checking browser support
+ * @description Selects the optimal image format by checking browser support.
+ * 폴백 포맷은 이 함수가 아니라 호출자가 정한다 — 프리셋마다 투명도 요구가 다르기 때문이다.
  * @param preferredFormat Preferred format
  * @param fallbackFormat Fallback format
  * @returns Supported format

@@ -368,7 +368,14 @@ export class OutputPipeline {
 // 포맷/파일명 순수 함수
 // ==============================================
 
-/** 브라우저 지원에 따라 기본 출력 포맷을 고른다. WebP 지원 시 WebP, 아니면 PNG. */
+/**
+ * 브라우저 지원에 따라 기본 출력 포맷을 고른다. WebP 지원 시 WebP, 아니면 PNG.
+ *
+ * @description 호출자가 format을 지정하지 않은 모든 출력에 적용되는 범용 기본값이라
+ * 입력의 투명도 유무를 알 수 없다. 그래서 폴백은 알파를 보존하는 png다.
+ * 썸네일 프리셋(presets/index.ts의 createThumbnail)은 사진 입력을 전제로 하므로
+ * 같은 상황에서 jpeg로 떨어진다 — 의도된 차이다.
+ */
 function getBestFormat(): OutputFormat {
   if (detectCanvasFormatSupport('webp')) {
     return 'webp';
