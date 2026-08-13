@@ -52,6 +52,13 @@
 
 ### 수정
 
+- Fixed: 문자열 소스의 scheme·확장자 판정과 Blob/File의 MIME·파일명·본문 판정을 공통 facts 모듈로 통일했습니다. 대문자 `HTTP(S):`/`BLOB:` URL이 잘못된 로더로 분기되던 문제, 매개변수 포함 SVG MIME과 대문자 `.SVG` 파일명을 놓치던 문제를 수정했습니다. 공개 소스 판정 API의 MIME 우선 반환 계약은 유지됩니다.
+- Fixed: Blob/File과 Blob URL의 모호한 MIME(`application/octet-stream`, `text/plain`, 빈 MIME, XML 계열)은 크기 상한 확인 후 첫 4KB를 스니핑해 실제 SVG를 복구합니다. 원격 HTTP 응답은 `image/svg+xml`, 표준 XML MIME, `+xml`, legacy XML external parsed entity MIME만 SVG 후보로 확장해 일반 octet-stream/text 응답을 SVG로 오인하지 않습니다.
+- Fixed: `detectImageSourceInfo()`와 `detectImageStringSourceInfo()`가 인라인 SVG 문자열의 `format`을 `'unknown'` 대신 `'svg'`로 반환합니다. `type: 'inline-svg'`와 `isSvg: true`는 이전에도 같았고, `format`만 판정 결과와 어긋나 있었습니다. `blob:` URL의 `format`은 종전대로 `'unknown'`입니다 — Blob URL 문자열에 들어 있는 `.svg`는 실제 콘텐츠 타입의 근거가 아니기 때문입니다.
+- Fixed: `getImageDimensions()`와 `getImageInfo()`가 SVG `Blob`/`File`에 대해서만 소스 크기 상한을 적용하지 않던 문제를 수정했습니다. 이 경로는 크기를 확인하지 않고 본문 전체를 텍스트로 읽고 있었습니다. 이제 다른 입력과 같은 상한(기본 100MB)을 적용합니다.
+  - 상한을 넘는 SVG `Blob`의 치수 조회가 선언 치수 반환에서 `SOURCE_BYTES_EXCEEDED` 오류로 바뀝니다. 같은 크기의 다른 포맷은 이전에도 같은 오류를 냈으므로 동작이 일치하게 됩니다.
+  - 상한 검사는 본문을 읽기 전에 수행합니다.
+- Fixed: MIME이 비어 있거나 `text/xml`·`application/xml`인 SVG `Blob`의 치수 조회가 원본 선언 치수 대신 렌더링 경로를 타던 문제를 수정했습니다. 치수 조회와 이미지 변환이 이제 같은 판정 결과를 사용합니다.
 - Fixed: `getImageFormat()`과 `getImageInfo()`가 `#`나 `?`가 들어간 `File` 이름에서 확장자를 놓치던 문제를 수정했습니다. 두 문자는 파일명에 쓸 수 있으므로 이제 이름 전체를 먼저 읽습니다(`사진#1.png` → `png`, `report?draft.webp` → `webp`).
   - SVG에서 결과가 달라집니다. `formatFromBytes`에 SVG 시그니처가 없어 이름 판정을 놓치면 바이트 폴백이 복구하지 못했습니다. `사진#1.svg` 같은 `File`의 `format`이 `'unknown'`에서 `'svg'`로 바뀝니다.
   - 다른 포맷은 바이트 시그니처로 복구되고 있었으므로 반환값이 아니라 불필요한 32바이트 읽기가 사라집니다.

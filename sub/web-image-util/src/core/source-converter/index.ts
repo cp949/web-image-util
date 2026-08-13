@@ -7,35 +7,21 @@
 
 import type { ImageSource, ProcessorOptions } from '../../types';
 import { ImageProcessError } from '../../types';
-import { detectStringSourceType } from './detect.internal';
+import { detectSourceTypeAsync, type SourceType } from './detect.internal';
 import { convertBlobToElement, detectMimeTypeFromBuffer } from './loaders/blob.internal';
 import { convertCanvasToElement } from './loaders/canvas.internal';
 import { convertStringToElement } from './loaders/string.internal';
-import type { InternalSourceConverterOptions } from './options.internal';
+import { DEFAULT_MAX_SOURCE_BYTES, type InternalSourceConverterOptions } from './options.internal';
 
 /**
- * Convert all ImageSource types to HTMLImageElement (main function)
+ * 모든 ImageSource 입력을 HTMLImageElement로 정규화한다.
  *
- * @description
- * Converts various types of image sources to unified HTMLImageElement format.
- * This function plays a core role in normalizing all processor inputs.
+ * 비동기 판정 모듈이 확정한 소스 타입에 따라 형태별 로더로 위임한다.
  *
- * **Supported Types:**
- * - HTMLImageElement: Already loaded images are returned as-is
- * - HTMLCanvasElement: Convert to Data URL then load
- * - Blob/File: ObjectURL or SVG special processing
- * - ArrayBuffer/Uint8Array: Auto-detect MIME type then convert to Blob
- * - String: URL, Data URL, SVG XML, file path, etc.
- *
- * **SVG Special Processing:**
- * - SVG applies normalization, complexity analysis, high-quality rendering
- * - Use optimized conversion path to preserve vector quality
- *
- * @param source Image source to convert
- * @param options Conversion options (CORS settings, etc.)
- * @returns Fully loaded HTMLImageElement
- *
- * @throws {ImageProcessError} When source type is unsupported or conversion fails
+ * @param source 변환할 이미지 입력
+ * @param options CORS와 SVG 처리 정책을 포함한 변환 옵션
+ * @returns 로드가 끝난 HTMLImageElement
+ * @throws {ImageProcessError} 지원하지 않는 입력이거나 변환에 실패한 경우
  */
 export async function convertToImageElement(
   source: ImageSource,
@@ -44,62 +30,54 @@ export async function convertToImageElement(
   // 공개 시그니처는 ProcessorOptions를 유지하고, 내부 전달 시 한 번만 좁혀 사용한다.
   const internalOptions = options as InternalSourceConverterOptions | undefined;
   try {
-    if (source instanceof HTMLImageElement) {
-      // Check if image is already loaded
-      if (source.complete && source.naturalWidth > 0) {
-        return source;
+    const sourceType = await detectSourceTypeAsync(source, internalOptions?.maxSourceBytes ?? DEFAULT_MAX_SOURCE_BYTES);
+
+    if (sourceType === 'element') {
+      const image = source as HTMLImageElement;
+      // 이미 로드된 이미지면 이벤트를 기다리지 않고 그대로 반환한다.
+      if (image.complete && image.naturalWidth > 0) {
+        return image;
       }
 
-      // Wait until loading is complete
+      // 미로드 이미지는 load/error 이벤트로 완료를 결정한다.
       return new Promise((resolve, reject) => {
-        if (source.complete && source.naturalWidth > 0) {
-          resolve(source);
+        if (image.complete && image.naturalWidth > 0) {
+          resolve(image);
         } else {
-          source.onload = () => resolve(source);
-          source.onerror = () => reject(new ImageProcessError('Failed to load HTMLImageElement', 'SOURCE_LOAD_FAILED'));
+          image.onload = () => resolve(image);
+          image.onerror = () => reject(new ImageProcessError('Failed to load HTMLImageElement', 'SOURCE_LOAD_FAILED'));
         }
       });
     }
 
-    // HTMLCanvasElement processing
-    if (
-      source instanceof HTMLCanvasElement ||
-      (source && typeof source === 'object' && 'getContext' in source && 'toDataURL' in source)
-    ) {
+    if (sourceType === 'canvas') {
       return convertCanvasToElement(source as HTMLCanvasElement);
     }
 
-    // Blob detection - use both instanceof and duck typing
-    if (
-      source instanceof Blob ||
-      (source &&
-        typeof source === 'object' &&
-        'type' in source &&
-        'size' in source &&
-        ('slice' in source || 'arrayBuffer' in source))
-    ) {
-      return convertBlobToElement(source as Blob, internalOptions);
+    if (sourceType === 'blob' || sourceType === 'svg-blob') {
+      return convertBlobToElement(source as Blob, sourceType, internalOptions);
     }
 
-    if (source instanceof ArrayBuffer) {
-      const mimeType = detectMimeTypeFromBuffer(source);
-      const blob = new Blob([source], { type: mimeType });
-      return convertBlobToElement(blob, internalOptions);
+    if (sourceType === 'arrayBuffer') {
+      const buffer = source as ArrayBuffer;
+      const mimeType = detectMimeTypeFromBuffer(buffer);
+      const blob = new Blob([buffer], { type: mimeType });
+      return convertDetectedBlobToElement(blob, internalOptions);
     }
 
-    if (source instanceof Uint8Array) {
-      // Safely convert Uint8Array to ArrayBuffer
+    if (sourceType === 'uint8Array') {
+      // view가 가리키는 바이트 구간만 독립 ArrayBuffer로 복사한다.
+      const bytes = source as Uint8Array;
       const arrayBuffer =
-        source.buffer instanceof ArrayBuffer
-          ? source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength)
-          : source.slice().buffer;
+        bytes.buffer instanceof ArrayBuffer
+          ? bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+          : bytes.slice().buffer;
       const mimeType = detectMimeTypeFromBuffer(arrayBuffer);
       const blob = new Blob([arrayBuffer], { type: mimeType });
-      return convertBlobToElement(blob, internalOptions);
+      return convertDetectedBlobToElement(blob, internalOptions);
     }
 
     if (typeof source === 'string') {
-      const sourceType = detectStringSourceType(source);
       return convertStringToElement(source, sourceType, internalOptions);
     }
 
@@ -113,6 +91,16 @@ export async function convertToImageElement(
       cause: error,
     });
   }
+}
+
+/** MIME 판정으로 만든 내부 Blob을 최종 판정한 뒤 해당 로더로 전달한다. */
+async function convertDetectedBlobToElement(
+  blob: Blob,
+  options?: InternalSourceConverterOptions
+): Promise<HTMLImageElement> {
+  const maxSourceBytes = options?.maxSourceBytes ?? DEFAULT_MAX_SOURCE_BYTES;
+  const sourceType = await detectSourceTypeAsync(blob, maxSourceBytes);
+  return convertBlobToElement(blob, sourceType as Extract<SourceType, 'blob' | 'svg-blob'>, options);
 }
 
 /**

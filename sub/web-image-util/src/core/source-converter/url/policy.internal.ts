@@ -96,22 +96,6 @@ export function checkAllowedProtocol(url: string, allowedProtocols: string[]): v
 }
 
 /**
- * URL 또는 경로 문자열이 SVG 리소스를 가리키는지 판정한다.
- *
- * @param input 검사할 URL 또는 경로 문자열
- * @returns SVG 확장자를 가리키면 true
- */
-export function isSvgResourcePath(input: string): boolean {
-  try {
-    const parsedUrl = new URL(input);
-    return parsedUrl.pathname.toLowerCase().endsWith('.svg');
-  } catch {
-    const pathWithoutQueryOrHash = input.split('#', 1)[0]?.split('?', 1)[0] ?? input;
-    return pathWithoutQueryOrHash.toLowerCase().endsWith('.svg');
-  }
-}
-
-/**
  * SVG 보안 정책에서 차단해야 하는 참조인지 판정한다.
  *
  * 판정 규칙은 위협 정책 모듈(`utils/svg-threat-policy.internal`)이 소유한다 —

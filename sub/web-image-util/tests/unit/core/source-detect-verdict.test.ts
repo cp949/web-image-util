@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   detectSourceType,
+  detectSourceTypeAsync,
   detectStringSourceType,
   isSvgSourceType,
 } from '../../../src/core/source-converter/detect.internal';
@@ -53,8 +54,17 @@ describe('detectStringSourceType — 문자열 판정 표', () => {
     expect(detectStringSourceType('//cdn.example.com/photo.webp')).toBe('url');
   });
 
+  it('대문자 HTTP(S) 스킴도 원격 URL로 판정한다', () => {
+    expect(detectStringSourceType('HTTPS://example.com/icon.svg')).toBe('svg-url');
+    expect(detectStringSourceType('HTTP://example.com/photo.png')).toBe('url');
+  });
+
   it('Blob URL은 bloburl로 판정한다', () => {
     expect(detectStringSourceType('blob:https://example.com/123')).toBe('bloburl');
+  });
+
+  it('대문자 Blob 스킴도 bloburl로 판정한다', () => {
+    expect(detectStringSourceType('BLOB:https://example.com/123')).toBe('bloburl');
   });
 
   it('스킴 없는 .svg 경로는 svg-path로, 그 외 경로는 path로 판정한다', () => {
@@ -78,6 +88,25 @@ describe('detectSourceType — 문자열 위임과 SVG Blob 구분', () => {
     expect(detectSourceType(new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], { type: 'image/png' }))).toBe('blob');
   });
 
+  it('대문자 SVG MIME도 정규화해 svg-blob으로 판정한다', () => {
+    // Blob 생성자는 type을 소문자화하므로 정규화 누락은 실제 Blob으로 드러나지 않는다.
+    // 이 판정이 SVG 보안 경로의 게이트이므로 정규화 계약을 직접 고정한다.
+    const blob = new Blob([MINIMAL_SVG], { type: 'image/svg+xml' });
+    Object.defineProperty(blob, 'type', { value: 'IMAGE/SVG+XML' });
+
+    expect(detectSourceType(blob)).toBe('svg-blob');
+  });
+
+  it('파라미터가 붙은 SVG MIME도 svg-blob으로 판정한다', () => {
+    expect(detectSourceType(new Blob([MINIMAL_SVG], { type: 'image/svg+xml; charset=utf-8' }))).toBe('svg-blob');
+  });
+
+  it('대문자 SVG 확장자 File도 svg-blob으로 판정한다', () => {
+    expect(detectSourceType(new File([MINIMAL_SVG], 'photo.SVG', { type: 'application/octet-stream' }))).toBe(
+      'svg-blob'
+    );
+  });
+
   it('isSvgSourceType은 SVG 계열 판정만 참으로 본다', () => {
     expect(
       ['svg-inline', 'svg-datauri', 'svg-url', 'svg-path', 'svg-blob'].every((type) => isSvgSourceType(type as never))
@@ -85,6 +114,46 @@ describe('detectSourceType — 문자열 위임과 SVG Blob 구분', () => {
     expect(
       ['dataurl', 'url', 'bloburl', 'path', 'blob', 'element', 'canvas'].some((type) => isSvgSourceType(type as never))
     ).toBe(false);
+  });
+});
+
+describe('detectSourceTypeAsync — Blob 본문까지 포함한 최종 판정', () => {
+  it.each([
+    { caseName: 'MIME 없음', source: new Blob([MINIMAL_SVG], { type: '' }), expected: 'svg-blob' },
+    { caseName: 'text/xml MIME', source: new Blob([MINIMAL_SVG], { type: 'text/xml' }), expected: 'svg-blob' },
+    {
+      caseName: 'application/octet-stream MIME',
+      source: new Blob([MINIMAL_SVG], { type: 'application/octet-stream' }),
+      expected: 'svg-blob',
+    },
+    { caseName: 'text/plain MIME', source: new Blob([MINIMAL_SVG], { type: 'text/plain' }), expected: 'svg-blob' },
+    {
+      caseName: 'application/rss+xml MIME',
+      source: new Blob([MINIMAL_SVG], { type: 'application/rss+xml' }),
+      expected: 'svg-blob',
+    },
+    {
+      caseName: 'text/xml-external-parsed-entity MIME',
+      source: new Blob([MINIMAL_SVG], { type: 'text/xml-external-parsed-entity' }),
+      expected: 'svg-blob',
+    },
+    {
+      caseName: 'application/xml-external-parsed-entity MIME',
+      source: new Blob([MINIMAL_SVG], { type: 'application/xml-external-parsed-entity' }),
+      expected: 'svg-blob',
+    },
+    {
+      caseName: 'image/svg+xml MIME',
+      source: new Blob([MINIMAL_SVG], { type: 'image/svg+xml' }),
+      expected: 'svg-blob',
+    },
+    { caseName: '.svg 파일명', source: new File([MINIMAL_SVG], 'icon.svg', { type: '' }), expected: 'svg-blob' },
+  ])('$caseName SVG Blob을 $expected으로 최종 판정한다', async ({ source, expected }) => {
+    await expect(detectSourceTypeAsync(source)).resolves.toBe(expected);
+  });
+
+  it('명시적 비-SVG 이미지 MIME은 SVG처럼 보이는 본문을 스니핑하지 않는다', async () => {
+    await expect(detectSourceTypeAsync(new Blob([MINIMAL_SVG], { type: 'image/png' }))).resolves.toBe('blob');
   });
 });
 

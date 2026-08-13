@@ -170,6 +170,25 @@ describe('convertToImageElement — index.ts 분기', () => {
     expect(vi.mocked(convertBlobToElement).mock.calls[0]![0]).toBe(fakeBlob);
   });
 
+  it('Blob은 비동기 판정 결과를 Blob 로더에 그대로 전달한다', async () => {
+    const detectedType = 'svg-blob';
+    const detectSourceTypeAsync = vi.fn(() => Promise.resolve(detectedType));
+    const image = originalDocumentCreateElement.call(document, 'img') as HTMLImageElement;
+    const convertBlobToElement = vi.fn(() => Promise.resolve(image));
+
+    vi.doMock('../../../src/core/source-converter/detect.internal', () => ({ detectSourceTypeAsync }));
+    vi.doMock('../../../src/core/source-converter/loaders/blob.internal', () => ({
+      convertBlobToElement,
+      detectMimeTypeFromBuffer: vi.fn(() => 'image/png'),
+    }));
+    const { convertToImageElement } = await import('../../../src/core/source-converter/index');
+    const blob = new Blob([MINIMAL_SVG], { type: '' });
+
+    await expect(convertToImageElement(blob)).resolves.toBe(image);
+    expect(detectSourceTypeAsync).toHaveBeenCalledWith(blob, 100 * 1024 * 1024);
+    expect(convertBlobToElement).toHaveBeenCalledWith(blob, detectedType, undefined);
+  });
+
   it('ArrayBuffer 입력은 MIME을 감지해 Blob 경로로 위임한다', async () => {
     vi.doMock('../../../src/core/source-converter/loaders/blob.internal', () => ({
       convertBlobToElement: vi.fn(() => Promise.resolve(document.createElement('img'))),
@@ -243,18 +262,18 @@ describe('convertToImageElement — index.ts 분기', () => {
     await expect(convertToImageElement('relative/path.png')).rejects.toBe(original);
   });
 
-  it('문자열 판정 결과를 문자열 로더에 그대로 전달한다', async () => {
+  it('비동기 문자열 판정 결과를 문자열 로더에 그대로 전달한다', async () => {
     const detectedType = 'svg-path';
-    const detectStringSourceType = vi.fn(() => detectedType);
+    const detectSourceTypeAsync = vi.fn(() => Promise.resolve(detectedType));
     const image = originalDocumentCreateElement.call(document, 'img') as HTMLImageElement;
     const convertStringToElement = vi.fn(() => Promise.resolve(image));
 
-    vi.doMock('../../../src/core/source-converter/detect.internal', () => ({ detectStringSourceType }));
+    vi.doMock('../../../src/core/source-converter/detect.internal', () => ({ detectSourceTypeAsync }));
     vi.doMock('../../../src/core/source-converter/loaders/string.internal', () => ({ convertStringToElement }));
     const { convertToImageElement } = await import('../../../src/core/source-converter/index');
 
     await expect(convertToImageElement('./assets/icon.svg')).resolves.toBe(image);
-    expect(detectStringSourceType).toHaveBeenCalledOnce();
+    expect(detectSourceTypeAsync).toHaveBeenCalledOnce();
     expect(convertStringToElement).toHaveBeenCalledWith('./assets/icon.svg', detectedType, undefined);
   });
 });
@@ -305,6 +324,50 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     await expect(convertStringToElement('whatever', 'arrayBuffer' as never)).rejects.toMatchObject({
       code: 'INVALID_SOURCE',
     });
+  });
+
+  it('대문자 HTTP(S) 비-SVG URL도 원격 응답 크기 가드를 적용한다', async () => {
+    stubImgCreation('load');
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve(
+        new Response('12345', {
+          status: 200,
+          headers: { 'content-type': 'image/png', 'content-length': '5' },
+        })
+      )
+    ) as any;
+    const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
+
+    await expect(
+      convertStringToElement('HTTPS://example.com/photo.png', 'url', { maxSourceBytes: 4 })
+    ).rejects.toMatchObject({ code: 'SOURCE_BYTES_EXCEEDED' });
+  });
+
+  it.each([
+    'application/octet-stream',
+    'text/plain',
+  ])('Blob URL의 %s SVG 응답은 공통 스니핑 후 SVG 경로로 처리한다', async (contentType) => {
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve(new Response(MINIMAL_SVG, { status: 200, headers: { 'content-type': contentType } }))
+    ) as any;
+    const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
+
+    await expect(convertStringToElement('blob:http://localhost/svg', 'bloburl')).resolves.toBeInstanceOf(
+      HTMLImageElement
+    );
+  });
+
+  it.each([
+    'application/rss+xml',
+    'text/xml-external-parsed-entity',
+    'application/xml-external-parsed-entity',
+  ])('원격 %s SVG 응답은 공통 XML MIME 판정 후 SVG 경로로 처리한다', async (contentType) => {
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve(new Response(MINIMAL_SVG, { status: 200, headers: { 'content-type': contentType } }))
+    ) as any;
+    const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
+
+    await expect(convertStringToElement('https://example.com/image', 'url')).resolves.toBeInstanceOf(HTMLImageElement);
   });
 
   it('원격 SVG URL 응답이 ok가 아니면 SOURCE_LOAD_FAILED로 차단한다', async () => {

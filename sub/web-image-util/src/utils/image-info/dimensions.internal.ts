@@ -6,7 +6,7 @@
  * 통해 안전하게 로드한 뒤 자연 치수를 측정한다.
  */
 
-import { detectSourceType, detectStringSourceType } from '../../core/source-converter/detect.internal';
+import { detectSourceTypeAsync, detectStringSourceType } from '../../core/source-converter/detect.internal';
 import { convertToImageElement } from '../../core/source-converter/index';
 import type { ImageSource } from '../../types';
 import { extractSvgDimensions } from '../svg-dimensions';
@@ -45,9 +45,9 @@ function tryGetInlineSvgDimensions(source: ImageSource): ImageDimensions | undef
   };
 }
 
-/** MIME 또는 파일명으로 SVG가 확인된 Blob이면 원본 SVG 치수를 반환한다. */
+/** MIME, 파일명 또는 본문 스니핑으로 SVG가 확인된 Blob이면 원본 SVG 치수를 반환한다. */
 async function tryGetSvgBlobDimensions(source: ImageSource): Promise<ImageDimensions | undefined> {
-  if (!(source instanceof Blob) || detectSourceType(source) !== 'svg-blob') {
+  if (!(source instanceof Blob) || (await detectSourceTypeAsync(source)) !== 'svg-blob') {
     return undefined;
   }
 

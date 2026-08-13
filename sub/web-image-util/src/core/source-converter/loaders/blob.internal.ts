@@ -1,16 +1,13 @@
 /**
  * Blob/ArrayBuffer 입력을 HTMLImageElement로 변환하는 경로다.
  *
- * SVG Blob은 본문 스니핑을 통해 보안 검사 경로를 우회하지 못하게 한다.
+ * 판정 모듈이 본문까지 확인한 결과를 받아 SVG 보안 경로 또는 일반 이미지 경로만 실행한다.
  */
 
 import { ImageProcessError } from '../../../types';
-import { isInlineSvg, sniffSvgFromBlob } from '../../../utils/svg-detection';
-import {
-  buildSvgRenderOptions,
-  DEFAULT_MAX_SOURCE_BYTES,
-  type InternalSourceConverterOptions,
-} from '../options.internal';
+import { isInlineSvg } from '../../../utils/svg-detection';
+import { assertBlobSizeWithinLimit } from '../detect.internal';
+import { buildSvgRenderOptions, type InternalSourceConverterOptions } from '../options.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
 
 /**
@@ -96,37 +93,17 @@ export function detectMimeTypeFromBuffer(buffer: ArrayBuffer): string {
   return 'image/png';
 }
 
-/**
- * Convert Blob to HTMLImageElement (includes SVG high-quality processing)
- */
+/** 판정이 끝난 Blob을 일반 이미지 또는 SVG 보안 경로로 변환한다. */
 export async function convertBlobToElement(
   blob: Blob,
+  sourceType: 'blob' | 'svg-blob',
   options?: InternalSourceConverterOptions
 ): Promise<HTMLImageElement> {
-  // maxSourceBytes 옵션이 설정된 경우, Blob 크기가 한도를 초과하면 오류를 던진다
-  const maxBytes = options?.maxSourceBytes ?? DEFAULT_MAX_SOURCE_BYTES;
-  if (maxBytes > 0 && blob.size > maxBytes) {
-    throw new ImageProcessError(
-      `Blob size (${blob.size} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
-      'SOURCE_BYTES_EXCEEDED',
-      { details: { actualBytes: blob.size, maxBytes } }
-    );
-  }
+  // 직접 호출되더라도 본문을 읽기 전에 공통 크기 상한을 다시 적용한다.
+  assertBlobSizeWithinLimit(blob, options?.maxSourceBytes);
 
-  // MIME이 비어 있거나 XML 계열인 Blob도 본문을 스니핑해 SVG 경로를 우회하지 못하게 한다.
-  const normalizedType = blob.type.toLowerCase();
-  const shouldSniffSvg =
-    normalizedType === '' ||
-    normalizedType === 'image/svg+xml' ||
-    normalizedType.includes('text/xml') ||
-    normalizedType.includes('application/xml') ||
-    (blob as File).name?.endsWith('.svg');
-
-  // High-quality processing for SVG Blob
-  if (
-    shouldSniffSvg &&
-    (normalizedType === 'image/svg+xml' || (blob as File).name?.endsWith('.svg') || (await sniffSvgFromBlob(blob)))
-  ) {
+  // 판정 모듈이 확정한 SVG Blob만 보안 처리 경로로 보낸다.
+  if (sourceType === 'svg-blob') {
     const svgText = await blob.text();
     return convertSvgToElement(svgText, undefined, undefined, buildSvgRenderOptions(options));
   }

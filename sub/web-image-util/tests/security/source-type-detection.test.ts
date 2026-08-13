@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectSourceType } from '../../src/core/source-converter/detect.internal';
+import { detectSourceType, detectSourceTypeAsync } from '../../src/core/source-converter/detect.internal';
 import { isInlineSvg } from '../../src/utils/svg-detection';
 
 describe('보안: SVG 입력 검증', () => {
@@ -121,6 +121,20 @@ describe('보안: SVG 입력 검증', () => {
         type: 'image/png',
       });
       expect(detectSourceType(pngBlob)).toBe('blob');
+    });
+
+    it.each([
+      'application/octet-stream',
+      'text/plain',
+      'application/rss+xml',
+      'text/xml-external-parsed-entity',
+      'application/xml-external-parsed-entity',
+    ])('%s MIME으로 위장한 SVG 본문도 svg-blob으로 감지한다', async (mimeType) => {
+      const svgBlob = new Blob(['<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>'], {
+        type: mimeType,
+      });
+
+      await expect(detectSourceTypeAsync(svgBlob)).resolves.toBe('svg-blob');
     });
   });
 });

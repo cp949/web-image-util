@@ -163,9 +163,9 @@ nested SVG 재정제에서 byte cap 초과 또는 parse 실패가 발생하면 n
 | --- | --- |
 | 인라인 SVG 문자열 | 문자열이 실제 SVG 루트인지 판정 후 적용 |
 | SVG Data URL | 디코딩 후 SVG 확인되면 적용 |
-| 원격 `.svg` URL, `image/svg+xml`/`text/xml`/`application/xml` 응답 | 본문이 실제 SVG이면 적용 |
-| Blob/File | MIME, 파일명, 내용 스니핑으로 SVG 확인 후 적용 |
-| Blob URL | fetch로 본문을 읽어 SVG 확인 후 적용 |
+| 원격 `.svg` URL, SVG/XML MIME 응답 | URL scheme은 대소문자와 무관하게 판정합니다. `image/svg+xml`과 매개변수 포함 값, 표준 XML MIME, `+xml`, 두 legacy XML external parsed entity MIME의 본문이 실제 SVG이면 적용합니다. 일반 `application/octet-stream`·`text/plain` 원격 응답은 이 범위를 확장하지 않습니다. |
+| Blob/File | 크기 상한을 먼저 검사합니다. 정규화한 MIME과 파일명 확장자를 독립 facts로 수집하고 내부 변환은 어느 한쪽이 SVG이면 SVG 경로를 탑니다. MIME이 비었거나 octet-stream·text/plain·XML 계열이면 첫 4KB를 스니핑합니다. 공개 소스 판정 API의 MIME 우선 계약은 유지됩니다. |
+| Blob URL | fetch한 Blob에 직접 Blob/File과 같은 메타데이터·스니핑 정책을 적용해 SVG를 확인한 뒤 적용 |
 | ArrayBuffer/Uint8Array | 텍스트로 해석 가능한 SVG이면 적용 |
 
 ## 일반 SVG 보안 요구사항과 현재 상태

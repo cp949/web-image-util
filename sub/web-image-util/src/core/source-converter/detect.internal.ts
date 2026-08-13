@@ -1,19 +1,24 @@
 /**
  * 입력 소스의 형태를 판별해 변환 경로를 라우팅하는 모듈이다.
  *
- * 문자열 입력의 판정은 이 모듈이 단독으로 소유한다. 반환 union이 SVG 하위 유형까지 구분하므로
- * 문자열 로더는 같은 술어(`isSvgDataURL`, `isInlineSvg`, `isSvgResourcePath` 등)를
- * 다시 호출하지 않고 판정 결과만 보고 분기한다.
+ * 문자열 입력의 기초 사실은 `source-facts.internal.ts`가 단독으로 판정한다. 이 모듈은 그 사실을
+ * SVG 하위 유형까지 구분하는 내부 union으로 투영하며, 문자열 로더는 이 판정 결과만 보고 분기한다.
  *
- * Blob 입력은 아직 여기까지 오지 않았다 — `loaders/blob.internal.ts`가 `'svg-blob'` 판정을
- * 쓰지 않고 MIME/파일명/본문 스니핑을 자체적으로 다시 수행한다.
+ * 객체 입력과 Blob의 메타데이터 판정은 동기 함수가 담당하고, `detectSourceTypeAsync`가
+ * 크기 상한을 먼저 검사한 뒤 빈 MIME·octet-stream·text/plain·XML 후보의 본문을 스니핑해
+ * 최종 판정을 확정한다.
  */
 
 import type { ImageSource } from '../../types';
 import { ImageProcessError } from '../../types';
-import { isDataURLString, isSvgDataURL } from '../../utils/data-url';
-import { isInlineSvg } from '../../utils/svg-detection';
-import { isProtocolRelativeUrl, isSvgResourcePath } from './url/policy.internal';
+import {
+  type BlobSourceFacts,
+  classifyStringSource,
+  inspectBlobMetadata,
+  type StringSourceFacts,
+  sniffBlobSvgIfCandidate,
+} from '../../utils/source-utils/source-facts.internal';
+import { DEFAULT_MAX_SOURCE_BYTES } from './options.internal';
 
 /**
  * 문자열 입력의 판정 결과다.
@@ -64,46 +69,24 @@ export function isSvgSourceType(type: SourceType): boolean {
  * @returns 문자열 소스 타입
  */
 export function detectStringSourceType(source: string): StringSourceType {
-  const trimmed = source.trim();
+  return toInternalStringSourceType(classifyStringSource(source));
+}
 
-  // 일반 Data URL보다 SVG Data URL을 먼저 판정한다.
-  if (isSvgDataURL(trimmed)) {
-    return 'svg-datauri';
+/** 문자열 기초 사실을 내부 라우팅 union으로 투영한다. */
+function toInternalStringSourceType(facts: StringSourceFacts): StringSourceType {
+  switch (facts.transport) {
+    case 'inline':
+      return 'svg-inline';
+    case 'data-url':
+      return facts.formatHint === 'svg' ? 'svg-datauri' : 'dataurl';
+    case 'http':
+    case 'protocol-relative':
+      return facts.formatHint === 'svg' ? 'svg-url' : 'url';
+    case 'blob-url':
+      return 'bloburl';
+    case 'path':
+      return facts.formatHint === 'svg' ? 'svg-path' : 'path';
   }
-
-  // 인라인 SVG XML 본문인지 확인한다.
-  if (isInlineSvg(trimmed)) {
-    return 'svg-inline';
-  }
-
-  // SVG가 아닌 Data URL을 판정한다.
-  if (isDataURLString(trimmed)) {
-    return 'dataurl';
-  }
-
-  // HTTP/HTTPS URL을 판정한다.
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    // 실제 MIME 판정은 로딩 시점에 수행하고, 여기서는 확장자만 힌트로 사용한다.
-    return isSvgResourcePath(trimmed) ? 'svg-url' : 'url';
-  }
-
-  // protocol-relative URL을 판정한다.
-  if (isProtocolRelativeUrl(trimmed)) {
-    return isSvgResourcePath(trimmed) ? 'svg-url' : 'url';
-  }
-
-  // createObjectURL로 만든 Blob URL을 판정한다.
-  if (trimmed.startsWith('blob:')) {
-    return 'bloburl';
-  }
-
-  // 파일 경로의 SVG 확장자를 확인한다.
-  if (isSvgResourcePath(trimmed)) {
-    return 'svg-path';
-  }
-
-  // 나머지 문자열은 일반 파일 경로로 처리한다.
-  return 'path';
 }
 
 /**
@@ -134,19 +117,10 @@ export function detectSourceType(source: ImageSource): SourceType {
   }
 
   // Detect Blob - use both instanceof and duck typing
-  if (
-    source instanceof Blob ||
-    (source &&
-      typeof source === 'object' &&
-      'type' in source &&
-      'size' in source &&
-      ('slice' in source || 'arrayBuffer' in source))
-  ) {
-    // Detect SVG file
-    if (source.type === 'image/svg+xml' || (source as File).name?.endsWith('.svg')) {
-      return 'svg-blob';
-    }
-    return 'blob';
+  if (isBlobLikeSource(source)) {
+    const blob = source as Blob;
+    const facts = inspectBlobMetadata(blob);
+    return hasInternalSvgMetadataHint(facts) ? 'svg-blob' : 'blob';
   }
 
   if (source instanceof ArrayBuffer) {
@@ -162,4 +136,66 @@ export function detectSourceType(source: ImageSource): SourceType {
   }
 
   throw new ImageProcessError(`Unsupported source type: ${typeof source}`, 'INVALID_SOURCE');
+}
+
+/**
+ * Blob 본문 스니핑까지 포함해 입력 소스의 최종 형태를 판별한다.
+ *
+ * 동기 판정에서 SVG로 확정되지 않은 Blob 중 MIME이 비어 있거나 octet-stream·text/plain·XML
+ * 계열인 입력만 첫 4KB를 읽는다. 그 외 입력은 동기 판정 결과를 그대로 유지한다.
+ *
+ * @param source 분석할 이미지 입력
+ * @param maxSourceBytes Blob 본문을 읽기 전에 적용할 최대 바이트 수. 0이면 제한하지 않음
+ * @returns 후속 처리 파이프라인에 사용할 최종 소스 타입
+ */
+export async function detectSourceTypeAsync(
+  source: ImageSource,
+  maxSourceBytes = DEFAULT_MAX_SOURCE_BYTES
+): Promise<SourceType> {
+  if (isBlobLikeSource(source)) {
+    const blob = source as Blob;
+    assertBlobSizeWithinLimit(blob, maxSourceBytes);
+    const facts = inspectBlobMetadata(blob);
+    if (hasInternalSvgMetadataHint(facts)) {
+      return 'svg-blob';
+    }
+
+    return (await sniffBlobSvgIfCandidate(blob, facts)) ? 'svg-blob' : 'blob';
+  }
+
+  return detectSourceType(source);
+}
+
+/**
+ * 내부 라우팅은 MIME과 파일명 중 하나라도 SVG이면 보수적으로 SVG 경로를 선택한다.
+ *
+ * 공개 진단의 MIME 우선 정책(`blob-projection.internal.ts`)과 의도적으로 다르다.
+ * fetch로 얻은 Blob처럼 파일명이 없는 입력에서도 같은 술어를 쓰도록 export한다 —
+ * 소비자가 조건을 각자 조립하면 정책이 다시 갈린다.
+ */
+export function hasInternalSvgMetadataHint(facts: BlobSourceFacts): boolean {
+  return facts.mimeFormat === 'svg' || facts.fileNameFormat === 'svg';
+}
+
+/** 실제 Blob과 호환 가능한 Blob-like 입력을 함께 판정한다. */
+function isBlobLikeSource(source: ImageSource): boolean {
+  return (
+    source instanceof Blob ||
+    (typeof source === 'object' &&
+      source !== null &&
+      'type' in source &&
+      'size' in source &&
+      ('slice' in source || 'arrayBuffer' in source))
+  );
+}
+
+/** Blob 본문을 읽기 전에 설정된 소스 크기 상한을 검사한다. */
+export function assertBlobSizeWithinLimit(blob: Blob, maxBytes = DEFAULT_MAX_SOURCE_BYTES): void {
+  if (maxBytes > 0 && blob.size > maxBytes) {
+    throw new ImageProcessError(
+      `Blob size (${blob.size} bytes) exceeds the maximum allowed (${maxBytes} bytes)`,
+      'SOURCE_BYTES_EXCEEDED',
+      { details: { actualBytes: blob.size, maxBytes } }
+    );
+  }
 }

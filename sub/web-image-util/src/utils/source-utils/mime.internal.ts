@@ -9,7 +9,13 @@ export function normalizeMimeType(mimeType: string): string {
   return mimeType.split(';', 1)[0]?.trim().toLowerCase() ?? '';
 }
 
-/** XML 계열 MIME 타입(`text/xml`, `application/xml`, `*+xml`)인지 판정한다. */
+/** 표준 XML, legacy external parsed entity, `*+xml` MIME 타입인지 판정한다. */
 export function isXmlMimeType(mimeType: string): boolean {
-  return mimeType === 'text/xml' || mimeType === 'application/xml' || mimeType.endsWith('+xml');
+  return (
+    mimeType === 'text/xml' ||
+    mimeType === 'application/xml' ||
+    mimeType === 'text/xml-external-parsed-entity' ||
+    mimeType === 'application/xml-external-parsed-entity' ||
+    mimeType.endsWith('+xml')
+  );
 }

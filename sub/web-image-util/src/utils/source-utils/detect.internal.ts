@@ -5,14 +5,8 @@
  */
 
 import type { ImageFormat, ImageSource } from '../../types';
-import { sniffSvgFromBlob } from '../svg-detection';
-import {
-  DEFAULT_SVG_SNIFF_BYTES,
-  getBlobMetadataFormat,
-  isSvgBlobByMetadata,
-  shouldSniffBlobForSvg,
-} from './blob-sniff.internal';
-import { normalizeMimeType } from './mime.internal';
+import { resolveMimeFirstBlobFormat } from './blob-projection.internal';
+import { DEFAULT_SVG_SNIFF_BYTES, inspectBlobMetadata, sniffBlobSvgIfCandidate } from './source-facts.internal';
 import { detectImageStringSourceInfo, detectImageStringSourceType } from './string-detection.internal';
 import { isBlobSource, isCanvasElementSource, isImageElementSource } from './type-guards.internal';
 import type { DetectImageSourceInfoOptions, ImageSourceInfo, ImageSourceType, ImageStringSourceType } from './types';
@@ -36,7 +30,9 @@ export function detectImageSourceType(source: ImageSource): ImageSourceType {
   }
 
   if (isBlobSource(source)) {
-    return isSvgBlobByMetadata(source) ? 'svg-blob' : 'blob';
+    const facts = inspectBlobMetadata(source);
+    const format = resolveMimeFirstBlobFormat(facts);
+    return format === 'svg' ? 'svg-blob' : 'blob';
   }
 
   if (source instanceof ArrayBuffer) {
@@ -72,17 +68,23 @@ export async function detectImageSourceInfo(
   }
 
   if (isBlobSource(source)) {
-    const mimeType = normalizeMimeType(source.type);
-    const metadataFormat = getBlobMetadataFormat(source, mimeType);
+    const facts = inspectBlobMetadata(source);
+    const metadataFormat = resolveMimeFirstBlobFormat(facts);
     const shouldSniff = options.sniffSvgBlob ?? true;
     const sniffedSvg =
-      shouldSniff && metadataFormat !== 'svg' && shouldSniffBlobForSvg(source, mimeType)
-        ? await sniffSvgFromBlob(source, options.svgSniffBytes ?? DEFAULT_SVG_SNIFF_BYTES)
+      shouldSniff && metadataFormat !== 'svg'
+        ? await sniffBlobSvgIfCandidate(source, facts, options.svgSniffBytes ?? DEFAULT_SVG_SNIFF_BYTES)
         : false;
     const isSvg = metadataFormat === 'svg' || sniffedSvg;
     const format = isSvg ? 'svg' : metadataFormat;
 
-    return createNonStringSourceInfo(isSvg ? 'svg-blob' : 'blob', 'blob', mimeType || undefined, format, isSvg);
+    return createNonStringSourceInfo(
+      isSvg ? 'svg-blob' : 'blob',
+      'blob',
+      facts.normalizedMimeType || undefined,
+      format,
+      isSvg
+    );
   }
 
   if (source instanceof ArrayBuffer) {

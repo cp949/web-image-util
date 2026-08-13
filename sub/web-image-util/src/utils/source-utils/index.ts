@@ -6,7 +6,7 @@
  * - {@link ./mime}               MIME / data URL 헤더 파싱 헬퍼
  * - {@link ./path}               경로/URL 확장자 → ImageFormat 매핑
  * - {@link ./type-guards}        비문자열 소스(Element/Canvas/Blob)의 타입 가드
- * - {@link ./blob-sniff}         Blob 메타데이터 기반 포맷 추정과 SVG sniffing
+ * - `source-facts.internal.ts`   문자열·Blob 기초 판정 정본(비공개)
  * - {@link ./string-detection.internal}   문자열 소스의 동기 타입/상세 판정
  * - {@link ./detect.internal}             모든 소스 종류 통합 판정(동기/비동기)
  *

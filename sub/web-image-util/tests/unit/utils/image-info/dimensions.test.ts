@@ -22,6 +22,8 @@ describe('getImageDimensions', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    vi.doUnmock('../../../../src/core/source-converter/index');
+    vi.resetModules();
   });
 
   it('캔버스는 변환 없이 width/height를 반환한다', async () => {
@@ -82,6 +84,22 @@ describe('getImageDimensions', () => {
     const blob = new Blob(['<svg width="40" height="20"></svg>'], { type: 'image/svg+xml' });
 
     await expect(getImageDimensions(blob)).resolves.toEqual({ width: 40, height: 20 });
+  });
+
+  it.each([
+    { caseName: 'MIME 없음', type: '' },
+    { caseName: 'text/xml MIME', type: 'text/xml' },
+  ])('$caseName SVG Blob도 공통 변환 없이 원본 선언 치수를 반환한다', async ({ type }) => {
+    const convertToImageElement = vi.fn(() => Promise.reject(new Error('공통 변환 경로를 사용하면 안 된다')));
+    vi.resetModules();
+    vi.doMock('../../../../src/core/source-converter/index', () => ({ convertToImageElement }));
+    const { getImageDimensions: getInternalImageDimensions } = await import(
+      '../../../../src/utils/image-info/dimensions.internal'
+    );
+    const blob = new Blob(['<svg width="73" height="29"></svg>'], { type });
+
+    await expect(getInternalImageDimensions(blob)).resolves.toEqual({ width: 73, height: 29 });
+    expect(convertToImageElement).not.toHaveBeenCalled();
   });
 
   it('지원하지 않는 입력은 변환 단계에서 거부한다', async () => {

@@ -140,10 +140,11 @@ export async function convertStringToElement(
       });
       return convertSvgToElement(svgContent, undefined, undefined, buildSvgRenderOptions(options));
     }
-    case 'dataurl':
     case 'url':
+      return loadImageFromUrl(source, options?.crossOrigin, options, 'remote');
+    case 'dataurl':
     case 'path':
-      return loadImageFromUrl(source, options?.crossOrigin, options);
+      return loadImageFromUrl(source, options?.crossOrigin, options, 'direct');
     case 'bloburl':
       return loadBlobUrl(source, options);
     default: {

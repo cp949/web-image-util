@@ -7,7 +7,10 @@
 
 import { ImageProcessError } from '../../../types';
 import { productionLog } from '../../../utils/debug.internal';
-import { isInlineSvg, sniffSvgFromBlob } from '../../../utils/svg-detection';
+import { isXmlMimeType, normalizeMimeType } from '../../../utils/source-utils/mime.internal';
+import { inspectBlobMetadata, sniffBlobSvgIfCandidate } from '../../../utils/source-utils/source-facts.internal';
+import { isInlineSvg } from '../../../utils/svg-detection';
+import { hasInternalSvgMetadataHint } from '../detect.internal';
 import {
   buildSvgRenderOptions,
   DEFAULT_ALLOWED_PROTOCOLS,
@@ -23,7 +26,6 @@ import {
   hasExplicitUrlScheme,
   isAbortLikeError,
   isProtocolRelativeUrl,
-  isSvgResourcePath,
   normalizePolicyUrl,
 } from './policy.internal';
 
@@ -45,7 +47,6 @@ export async function loadBlobUrl(
     const timeoutMs = resolveFetchTimeoutMs(options);
     const handle = createFetchAbortHandle(timeoutMs, options?.abortSignal);
 
-    let contentType: string;
     let blob: Blob;
     try {
       // Blob URL도 fetch 응답을 통해 MIME 타입과 실제 콘텐츠를 함께 확인한다.
@@ -57,27 +58,18 @@ export async function loadBlobUrl(
         throw new ImageProcessError(`Failed to load Blob URL: ${response.status}`, 'SOURCE_LOAD_FAILED');
       }
 
-      contentType = response.headers.get('content-type')?.toLowerCase() || '';
       ({ blob } = await readCheckedBlobResponse(response, maxBytes, 'Blob URL'));
     } finally {
       handle.dispose();
     }
 
-    // 1차 판정: Content-Type 기반 SVG 감지
-    const isSvgMime = contentType.includes('image/svg+xml');
-
-    // 2차 판정: MIME이 비었거나 XML 계열일 때 본문 스니핑
-    const isEmptyMime = !contentType;
-    const isXmlMime = contentType.includes('text/xml') || contentType.includes('application/xml');
-
-    if (isSvgMime || isEmptyMime || isXmlMime) {
-      const isSvgContent = await sniffSvgFromBlob(blob);
-
-      // MIME 또는 본문 스니핑 중 하나라도 SVG로 확인되면 SVG 경로로 처리한다.
-      if (isSvgMime || isSvgContent) {
-        const svgContent = await blob.text();
-        return convertSvgToElement(svgContent, undefined, undefined, buildSvgRenderOptions(options));
-      }
+    // 직접 Blob 입력과 같은 내부 판정 술어를 쓴다. fetch 응답 Blob에는 파일명이 없어
+    // 파일명 힌트는 항상 'unknown'이지만, 조건을 여기서 다시 조립하면 정책이 갈린다.
+    const facts = inspectBlobMetadata(blob);
+    const isSvg = hasInternalSvgMetadataHint(facts) || (await sniffBlobSvgIfCandidate(blob, facts));
+    if (isSvg) {
+      const svgContent = await blob.text();
+      return convertSvgToElement(svgContent, undefined, undefined, buildSvgRenderOptions(options));
     }
 
     // SVG가 아니면 일반 이미지 로딩 경로를 사용한다.
@@ -112,11 +104,17 @@ export async function loadBlobUrl(
  * URL 응답을 읽어 HTMLImageElement로 변환한다.
  *
  * 원격 응답은 Content-Type 우선 판정 후, 필요할 때만 본문을 읽어 SVG 여부를 재확인한다.
+ *
+ * @param transport 상위 판정이 정한 전송 형태다. **기본값을 두지 않는다** —
+ *   `'remote'`만 fetch 검증(Content-Type 판정·응답 크기 가드)을 거치므로,
+ *   기본값이 있으면 새 호출자가 인자를 빠뜨렸을 때 원격 URL이 조용히 검증을 건너뛴다.
+ *   필수 매개변수로 두면 그 실수가 컴파일 타임에 드러난다.
  */
 export async function loadImageFromUrl(
   url: string,
-  crossOrigin?: string,
-  options?: InternalSourceConverterOptions
+  crossOrigin: string | undefined,
+  options: InternalSourceConverterOptions | undefined,
+  transport: 'remote' | 'direct'
 ): Promise<HTMLImageElement> {
   const loadImageElementDirectly = () =>
     new Promise<HTMLImageElement>((resolve, reject) => {
@@ -154,7 +152,7 @@ export async function loadImageFromUrl(
     const maxBytes = options?.maxSourceBytes !== undefined ? options.maxSourceBytes : DEFAULT_MAX_SOURCE_BYTES;
 
     // HTTP/HTTPS URL은 우선 fetch로 MIME 타입과 본문을 확인한다.
-    if (url.startsWith('http://') || url.startsWith('https://') || isProtocolRelativeUrl(url)) {
+    if (transport === 'remote') {
       // fetch 타임아웃과 AbortSignal을 fetch 분기 안에서 생성한다.
       const timeoutMs = resolveFetchTimeoutMs(options);
       const handle = createFetchAbortHandle(timeoutMs, options?.abortSignal);
@@ -170,13 +168,13 @@ export async function loadImageFromUrl(
           throw new ImageProcessError(`Failed to load URL: ${response.status}`, 'SOURCE_LOAD_FAILED');
         }
 
-        const contentType = response.headers.get('content-type')?.toLowerCase() || '';
+        const contentType = normalizeMimeType(response.headers.get('content-type') ?? '');
 
         // 1차 판정: Content-Type 기반 SVG 감지
-        const isSvgMime = contentType.includes('image/svg+xml');
+        const isSvgMime = contentType === 'image/svg+xml';
 
         // 2차 판정: XML 계열 MIME은 본문을 확인해 실제 SVG인지 본다.
-        const isXmlMime = contentType.includes('text/xml') || contentType.includes('application/xml');
+        const isXmlMime = isXmlMimeType(contentType);
 
         if (isSvgMime || isXmlMime) {
           if (isSvgMime) {
@@ -230,13 +228,12 @@ export async function loadImageFromUrl(
             details: { url, kind: 'aborted' },
           });
         }
-        // .svg URL은 fetch 실패 시 직접 로드로 넘기지 않고 차단한다 (fail-closed)
-        if (isSvgResourcePath(url)) {
-          throw new ImageProcessError('SVG URL could not be safely verified; load is blocked', 'INVALID_SOURCE', {
-            details: { url },
-          });
-        }
-        // 비-SVG URL은 기존 방식대로 직접 로드로 폴백한다
+        // 비-SVG URL은 기존 방식대로 직접 로드로 폴백한다.
+        //
+        // 여기에 있던 `.svg` 경로 fail-closed 차단은 제거했다. 상위 판정이 `.svg` 힌트를 가진 URL을
+        // `'svg-url'`/`'svg-path'`로 분류해 `fetchVerifiedSvgText()` 경로로 보내므로, 이 함수에는
+        // 포맷 힌트가 SVG가 아닌 URL만 도달한다. 판정 결과를 원문으로 되짚는 재판정을 없애기 위한 삭제이며,
+        // 라우팅 규칙이 바뀌면 이 전제가 깨진다는 점에 주의한다.
         productionLog.warn('Failed to check Content-Type, fallback to default image loading:', fetchError);
       } finally {
         handle.dispose();

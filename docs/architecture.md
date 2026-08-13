@@ -6,7 +6,7 @@
 
 `processImage()`는 입력 소스를 브라우저에서 렌더링 가능한 이미지 요소로 변환한 뒤, `ImageProcessor` 체이닝 API를 반환합니다. 문자열, URL, Blob/File, ArrayBuffer 계열 입력은 먼저 소스 타입을 판정하고, SVG 입력은 MIME과 내용 스니핑을 함께 확인한 다음 브라우저 렌더링에 맞게 정규화합니다.
 
-체이닝 단계에서는 `resize()`, `blur()` 같은 연산을 즉시 Canvas에 그리지 않고 누적만 합니다. `ImageProcessor`는 타입 상태 전이와 위임만 남긴 얇은 축적기이고, 연산은 `OutputPipeline`(`src/core/output-pipeline.internal.ts`)이 생성 시점부터 보유한 `LazyRenderPipeline`에 직접 쌓입니다. resize 1회 불변식의 런타임 가드와 설정 검증(`validateResizeConfig`)은 `LazyRenderPipeline.addResize` 한 곳이 소유하며, shortcut의 scale/exactWidth 계열도 별도 통로 없이 공개 `resize()` 설정(`fit: 'scale'`, 단일 축 `fit: 'fill'`)으로 합류합니다. 출력 경로 전체(소스 정규화, 포맷/품질 기본값, 인코딩, pool 반환, Result 래핑)는 `OutputPipeline`이 담당합니다. 최종 출력 메서드(`toBlob()`, `toDataURL()`, `toFile()`, `toCanvas()`)가 호출되면 `single-renderer`의 분석기(`analyzeAllOperations`)가 누적 연산을 최종 레이아웃으로 계산하고(fit 모드 계산은 `ResizeCalculator` 활용 — scale·단일 축 fill의 원본 크기 해석도 이 시점), 렌더러(`renderLayout`)가 레이아웃 검증·품질 설정·배경색·필터를 적용해 한 번의 `drawImage()`로 렌더링합니다. 결과 canvas는 `CanvasLease`로 반환됩니다.
+체이닝 단계에서는 `resize()`, `blur()` 같은 연산을 즉시 Canvas에 그리지 않고 누적만 합니다. `ImageProcessor`는 타입 상태 전이와 위임만 남긴 얇은 축적기이고, 연산은 `OutputPipeline`(`src/core/output-pipeline.internal.ts`)이 생성 시점부터 보유한 `LazyRenderPipeline`에 직접 쌓입니다. resize 1회 불변식의 런타임 가드와 설정 검증(`validateResizeConfig`)은 `LazyRenderPipeline.addResize` 한 곳이 소유하며, shortcut의 scale/exactWidth 계열도 별도 통로 없이 공개 `resize()` 설정(`fit: 'scale'`, 단일 축 `fit: 'fill'`)으로 합류합니다. 출력 경로 전체(소스 정규화, 포맷/품질 기본값, 인코딩, pool 반환, Result 래핑)는 `OutputPipeline`이 담당합니다. 최종 출력 메서드(`toBlob()`, `toDataURL()`, `toFile()`, `toCanvas()`)가 호출되면 `single-renderer`의 분석기(`analyzeAllOperations`)가 누적 연산을 최종 레이아웃으로 계산하고(fit 모드 계산은 `calculateFinalLayout()` 활용 — scale·단일 축 fill의 원본 크기 해석도 이 시점), 렌더러(`renderLayout`)가 레이아웃 검증·품질 설정·배경색·필터를 적용해 한 번의 `drawImage()`로 렌더링합니다. 결과 canvas는 `CanvasLease`로 반환됩니다.
 
 ## 핵심 흐름
 
@@ -51,7 +51,9 @@
 | `src/processor.ts` | `processImage()` 팩토리와 `ImageProcessor` 체이닝 API — 연산 축적과 타입 상태 전이만 담당하는 얇은 축적기 |
 | `src/core/output-pipeline.internal.ts` | 출력 경로 deep module — 소스 정규화, 파이프라인 구성·누적 연산 재생, resize 1회 런타임 가드, 포맷/품질 기본값, 인코딩, `CanvasLease` consume/detach, Result 래핑 |
 | `src/core/source-converter/index.ts` | `convertToImageElement` / `getImageDimensions` 오케스트레이션 |
-| `src/core/source-converter/detect.internal.ts` | `detectSourceType()`과 `SourceType` 정의 |
+| `src/core/source-converter/detect.internal.ts` | 공유 소스 facts를 내부 로더 verdict(`SourceType`)로 투영. **내부 라우팅 정책**(`hasInternalSvgMetadataHint` — MIME·파일명 중 하나라도 SVG면 보수적으로 SVG 경로)을 소유하며 Blob URL 로더도 이 술어를 쓴다 |
+| `src/utils/source-utils/source-facts.internal.ts` | 문자열 transport·포맷 힌트와 Blob MIME·파일명 facts의 단일 판정점. 소비자 정책은 담지 않는다 |
+| `src/utils/source-utils/blob-projection.internal.ts` | Blob facts → **공개 진단 정책**(`resolveMimeFirstBlobFormat` — MIME 우선, 모호할 때만 파일명). 내부 라우팅 정책과 의도적으로 다르며 공개 판정과 `image-info`가 공유 |
 | `src/svg-contract.internal.ts` | SVG 처리 계약 leaf — `MAX_SVG_BYTES`, `SvgSanitizerMode`. core와 진단 API가 같은 방향으로 공유 |
 | `src/core/source-converter/options.internal.ts` | 내부 옵션 타입과 fetch 기본값 상수 |
 | `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.internal.ts`, `loader.internal.ts`, `safety.internal.ts` |
@@ -96,10 +98,10 @@
 
 | 단계 | 모듈 | 역할 |
 | --- | --- | --- |
-| 1 | `detectSourceType()` *(source-converter/detect.internal.ts)* | string/Blob/File/URL 분기 |
+| 1 | `classifyStringSource()` / `inspectBlobMetadata()` *(source-utils/source-facts.internal.ts)* → `detectSourceTypeAsync()` *(source-converter/detect.internal.ts)* | 대소문자를 정규화한 scheme·경로 힌트와 Blob MIME·파일명 facts를 만든 뒤 내부 로더 verdict로 투영. Blob은 크기 상한을 먼저 검사하고 필요한 경우 본문 4KB 스니핑 |
 | 2 | `isInlineSvg()` *(utils/svg-detection.ts)* | 인라인 SVG XML 후보 검출 |
 | 3 | `stripXmlPreambleAndNoise()` *(utils/svg-detection.ts)* | BOM, XML 선언, 주석, DOCTYPE 정리 후 재판정 |
-| 4 | `sniffSvgFromBlob()` *(source-converter/svg/data-url.internal.ts)* | Blob 첫 4KB sniff |
+| 4 | `sniffSvgFromBlob()` *(utils/svg-detection.ts)* | Blob 첫 4KB sniff |
 | 5 | `parseSvgFromDataUrl()` *(source-converter/svg/data-url.internal.ts)* | Data URL decode + SVG 추출 |
 | 6 | `assertSafeSvgContent()` *(source-converter/svg/safety.internal.ts)* | sanitize 후 잔여 외부 참조 fail-closed 차단 |
 | 7 | `convertSvgToElement()` *(source-converter/svg/loader.internal.ts)* | SVG 정규화 + 고품질 브라우저 렌더링용 `HTMLImageElement` 변환 |
@@ -120,7 +122,7 @@
 
 - `src/svg-contract.internal.ts` — `MAX_SVG_BYTES` (SVG 입력 byte cap의 단일 정의)
 - `src/core/source-converter/options.internal.ts` — `DEFAULT_FETCH_TIMEOUT_MS`, `DEFAULT_ALLOWED_PROTOCOLS`
-- `src/core/source-converter/url/policy.internal.ts` — `checkAllowedProtocol()`, `hasExplicitUrlScheme()`, `isProtocolRelativeUrl()`, `isAbortLikeError()`, `normalizePolicyUrl()`, `isBlockedSvgPolicyRef()`, `isSvgResourcePath()`
+- `src/core/source-converter/url/policy.internal.ts` — `checkAllowedProtocol()`, `hasExplicitUrlScheme()`, `isProtocolRelativeUrl()`, `isAbortLikeError()`, `normalizePolicyUrl()`, `isBlockedSvgPolicyRef()`
 - `src/core/source-converter/url/fetch-guards.internal.ts` — 원격 본문 가드의 단일 소유 모듈
   - `createFetchAbortHandle()` — timeout + AbortSignal 합성. `AbortSignal.timeout`/`AbortSignal.any`를 우선 쓰고, 없으면 수동 타이머·리스너로 폴백하며 `dispose()`가 둘 다 정리한다.
   - `assertDeclaredSizeWithinLimit()` / `checkResponseSize()` — Content-Length 기반 byte cap 사전 검증. 초과가 확인되면 본문 스트림을 취소한 뒤 오류를 던진다.

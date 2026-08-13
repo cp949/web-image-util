@@ -61,6 +61,23 @@ describe('source utilities', () => {
       });
     });
 
+    it('인라인 SVG 문자열의 format은 svg다', () => {
+      expect(detectImageStringSourceInfo('<svg viewBox="0 0 1 1"></svg>')).toMatchObject({
+        type: 'inline-svg',
+        format: 'svg',
+        isSvg: true,
+      });
+    });
+
+    it('Blob URL 문자열의 .svg는 format·isSvg의 근거가 되지 않는다', () => {
+      expect(detectImageStringSourceInfo('blob:https://example.com/icon.svg')).toMatchObject({
+        type: 'blob-url',
+        format: 'unknown',
+        isSvg: false,
+        isBlobUrl: true,
+      });
+    });
+
     it('URL과 경로의 확장자에서 이미지 포맷을 추론한다', () => {
       expect(detectImageStringSourceInfo('https://example.com/photo.webp?x=1')).toMatchObject({
         type: 'http-url',
@@ -145,6 +162,27 @@ describe('source utilities', () => {
         family: 'blob',
         format: 'svg',
         isSvg: true,
+      });
+    });
+
+    it('#이 포함된 SVG File 이름을 URL 경로가 아닌 파일명으로 판정한다', async () => {
+      await expect(
+        detectImageSourceInfo(new File(['mock'], '사진#1.svg', { type: 'application/octet-stream' }))
+      ).resolves.toMatchObject({
+        type: 'svg-blob',
+        family: 'blob',
+        format: 'svg',
+        isSvg: true,
+      });
+    });
+
+    it('알려진 비-SVG MIME과 SVG 파일명이 충돌하면 공개 진단은 MIME을 우선한다', async () => {
+      await expect(
+        detectImageSourceInfo(new File(['mock'], 'photo.svg', { type: 'image/png' }))
+      ).resolves.toMatchObject({
+        type: 'blob',
+        format: 'png',
+        isSvg: false,
       });
     });
 
@@ -285,6 +323,8 @@ describe('mime parser', () => {
       expect(isXmlMimeType('application/xml')).toBe(true);
       expect(isXmlMimeType('image/svg+xml')).toBe(true);
       expect(isXmlMimeType('application/rss+xml')).toBe(true);
+      expect(isXmlMimeType('text/xml-external-parsed-entity')).toBe(true);
+      expect(isXmlMimeType('application/xml-external-parsed-entity')).toBe(true);
     });
 
     it('비XML MIME은 false로 판정한다', () => {

@@ -344,6 +344,16 @@ describe('PNG Blob — URL 정리 계약', () => {
     expect(err.details?.maxBytes).toBe(5);
   });
 
+  it('maxSourceBytes 초과 Blob은 SVG 본문 스니핑 전에 거부한다', async () => {
+    const blob = new Blob([MINIMAL_SVG], { type: '' });
+    const sliceSpy = vi.spyOn(blob, 'slice');
+
+    await expect(convertToImageElement(blob, { maxSourceBytes: 5 })).rejects.toMatchObject({
+      code: 'SOURCE_BYTES_EXCEEDED',
+    });
+    expect(sliceSpy).not.toHaveBeenCalled();
+  });
+
   // 이슈 4: maxSourceBytes 임계치 경계 — ±1 및 비활성 케이스 검증
 
   it('Blob 크기가 maxSourceBytes와 정확히 같으면 허용된다(경계 동등)', async () => {
