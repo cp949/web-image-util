@@ -4,11 +4,11 @@
  */
 
 import { canvasToBlob, createOwnedCanvas } from '../base/canvas-utils.internal';
-import type { ImageFormat } from '../base/format-detector';
 import type { SimpleImageWatermarkOptions, SimpleTextWatermarkOptions } from '../composition/simple-watermark';
 import { SimpleWatermark } from '../composition/simple-watermark';
 import type { FilterChain } from '../filters/plugin-system';
 import { applyFilterChain, getMissingFilterNames, validateFilterChain } from '../filters/plugin-system';
+import type { ImageFormat } from '../types';
 import { ImageProcessError } from '../types';
 import { productionLog } from '../utils/debug.internal';
 import { formatToMimeType } from '../utils/format-utils';

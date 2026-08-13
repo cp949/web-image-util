@@ -1,4 +1,4 @@
-import type { ImageFormat } from '../base/format-detector';
+import type { ImageFormat } from '../types';
 import { ImageFormats } from '../types';
 
 /**

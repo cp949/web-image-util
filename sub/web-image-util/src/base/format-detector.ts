@@ -4,8 +4,6 @@ import { ImageFormats } from '../types';
 import { detectAVIFSupport, detectWebPSupport } from '../utils/browser-capabilities/format-detection.internal';
 import { MIME_TYPE_BY_FORMAT } from '../utils/format-utils';
 
-export type { ImageFormat };
-
 /**
  * 이미지 포맷별 MIME 타입 매핑이다.
  *

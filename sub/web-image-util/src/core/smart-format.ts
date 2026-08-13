@@ -3,8 +3,8 @@
  * Automatic format optimization considering image characteristics and browser support
  */
 
-import type { ImageFormat } from '../base/format-detector';
 import { FORMAT_MIME_MAP, FormatDetector } from '../base/format-detector';
+import type { ImageFormat } from '../types';
 import {
   calculateFormatScores,
   type ImageAnalysis,

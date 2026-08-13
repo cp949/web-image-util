@@ -95,7 +95,6 @@ export * from './filters/plugins';
 
 export type AdvancedFilterOption<TParams = unknown> = Pick<FilterOptions<TParams>, 'name' | 'params'>;
 
-export type { ImageFormat } from './base/format-detector';
 // 포맷 관련 기능
 export { FORMAT_MIME_MAP, FormatDetector } from './base/format-detector';
 export type { HighResolutionOptions, ProcessingResult } from './base/high-res-manager';

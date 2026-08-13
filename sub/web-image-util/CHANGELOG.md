@@ -38,6 +38,9 @@
   - 이미지 확장자가 아니어도 마지막 확장자를 교체하고, 쿼리·해시(`?v=1`, `#preview`)를 제거합니다. `toFile('photo.txt', { format: 'png' })`의 결과가 `photo.txt.png`에서 `photo.png`로 바뀝니다.
 - Changed (**Breaking**): 공개 변환 옵션 타입 `EnsureBlobOptions`·`EnsureBlobDetailedOptions`·`EnsureDataURLOptions`·`EnsureDataURLDetailedOptions`를 `OutputOptions`의 type alias로, `EnsureFileDetailedOptions`를 `EnsureFileOptions`의 type alias로 축소했습니다. 일반 구조적 할당은 동일하지만, 이 타입들을 대상으로 한 TypeScript declaration merging은 더 이상 지원하지 않습니다.
 - Changed (**Breaking**): `inspectSvgSource()`의 byte 초과 finding이 세 진단 API 공통 계약으로 통일되었습니다. code가 `'byte-limit-exceeded'`에서 `'svg-bytes-exceeded'`로, `details`가 `{ byteLimit }`에서 `{ actualBytes, maxBytes }`로 바뀝니다(`actualBytes`는 측정된 실제 크기이며, 공통 스키마는 크기를 알 수 없는 경로를 위해 null도 허용합니다). 이제 `inspectSvg()`/`inspectSvgSource()`/`inspectSvgSanitization()`이 같은 사건(byte 한도 초과)을 같은 code·details 스키마로 보고하므로 소비자 파싱 코드를 하나로 쓸 수 있습니다.
+- Changed (**Breaking**): `@cp949/web-image-util/advanced`가 `ImageFormat` 타입을 더 이상 노출하지 않습니다. 같은 타입이 루트 진입점(`@cp949/web-image-util`)에 이미 존재하던 중복이었고, 이제 루트가 단독 소유합니다.
+  - 마이그레이션은 import 경로 한 줄 변경입니다. `import type { ImageFormat } from '@cp949/web-image-util/advanced'` → `import type { ImageFormat } from '@cp949/web-image-util'`. 타입 정의는 바뀌지 않습니다.
+  - `/advanced`의 값 export(`FORMAT_MIME_MAP`, `FormatDetector` 등)는 영향받지 않습니다.
 - Changed: `inspectSvgSanitization()`의 byte 초과 failure에 `details`(`{ actualBytes, maxBytes }`)가 추가되었습니다. `InspectSvgSanitizationFailure` 타입에 선택 필드 `details?`가 신설됩니다.
 - Changed: 상대·절대 경로 참조(`./a.png`, `/a.png` 등)가 포함된 SVG의 기본 경로 처리 결과가 오류(`INVALID_SOURCE`)에서 "참조 제거 후 렌더링"으로 바뀌었습니다. 외부 `http(s)` URL과 같은 무해화 방식으로 통일한 것입니다.
 - Changed: 경량 sanitizer의 외부 CSS `url()` 치환값이 `url(#invalid)`에서 `none`으로 통일되었습니다.
