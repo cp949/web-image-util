@@ -1,6 +1,5 @@
 import { createOwnedCanvas, canvasToBlob as encodeCanvasToBlob } from '../base/canvas-utils.internal';
-import { createImageElement } from '../utils/image-element.internal';
-import { loadImageElement } from '../utils/image-loader.internal';
+import { decodeImageFromUrl } from '../utils/image-decode.internal';
 import type { OutputOptions } from './index';
 
 /** format 미지정 시 기본 MIME으로 떨어지는 출력 MIME 결정. 이 모듈 안에서만 쓴다. */
@@ -57,9 +56,7 @@ export async function blobToUint8Array(blob: globalThis.Blob): Promise<Uint8Arra
  * IMAGE_LOAD_FAILED로 reject한다.
  */
 export async function loadImageFromUrl(url: string): Promise<HTMLImageElement> {
-  const img = createImageElement();
-  await loadImageElement(img, url);
-  return img;
+  return decodeImageFromUrl(url, { errorCode: 'IMAGE_LOAD_FAILED' });
 }
 
 /**
