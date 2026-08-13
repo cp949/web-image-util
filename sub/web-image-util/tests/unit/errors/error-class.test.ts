@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { ImageErrorCode, ImageProcessError } from '../../../src/errors.internal';
+import { ImageErrorCode, ImageProcessError } from '../../../src';
 
 describe('ImageProcessError 기본 생성', () => {
   it('name 필드는 항상 ImageProcessError이다', () => {

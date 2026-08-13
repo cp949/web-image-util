@@ -5,9 +5,9 @@ import {
   decodeSvgDataURL,
   estimateDataURLPayloadByteLength,
   estimateDataURLSize,
+  ImageProcessError,
   isDataURLString,
 } from '../../../src';
-import { ImageProcessError } from '../../../src/errors.internal';
 // 판정/헤더 파싱 헬퍼는 공개 barrel에 노출되지 않으므로 leaf 배럴에서 직접 import한다.
 import { isSvgDataURL, parseDataURLMimeType } from '../../../src/utils/data-url';
 // percent 헬퍼는 공개 barrel에 노출되지 않는 내부 함수이므로 모듈에서 직접 import한다.

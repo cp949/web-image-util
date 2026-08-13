@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ImageProcessError } from '../../../src/errors.internal';
+import { ImageProcessError } from '../../../src';
 import { MAX_SVG_BYTES } from '../../../src/svg-contract.internal';
 import { prefixSvgIds } from '../../../src/utils/prefix-svg-ids';
 import { extractIds } from './prefix-svg-ids-helpers';

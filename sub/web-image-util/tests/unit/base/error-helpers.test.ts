@@ -6,6 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ImageErrorCode, ImageProcessError } from '../../../src';
 import { ImageErrorHandler } from '../../../src/base/error-handler';
 import {
   createAndHandleError,
@@ -15,7 +16,6 @@ import {
   isFormatSupported,
   withErrorHandling,
 } from '../../../src/base/error-helpers';
-import { ImageErrorCode, ImageProcessError } from '../../../src/errors.internal';
 
 describe('createImageError', () => {
   it('반환값은 ImageProcessError 인스턴스이다', () => {

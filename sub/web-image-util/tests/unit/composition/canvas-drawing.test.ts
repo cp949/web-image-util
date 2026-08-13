@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
+import { ImageProcessError } from '../../../src';
 import {
   applyRotation,
   drawImageLayer,
@@ -11,7 +12,6 @@ import {
   requireCanvasContext,
   withCanvasState,
 } from '../../../src/composition/canvas-drawing.internal';
-import { ImageProcessError } from '../../../src/errors.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 describe('canvas-drawing', () => {

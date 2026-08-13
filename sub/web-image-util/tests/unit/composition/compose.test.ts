@@ -9,8 +9,8 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
+import { ImageProcessError } from '../../../src';
 import { type ComposeSpec, composeImages } from '../../../src/composition/compose';
-import { ImageProcessError } from '../../../src/errors.internal';
 import { createTestCanvas, getCanvasPixelData } from '../../utils/canvas-helper';
 
 // node-canvas 는 drawImage 소스로 Canvas 를 수락한다 — 색 지정 가능한 소스 헬퍼

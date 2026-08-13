@@ -6,8 +6,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ImageErrorCode, ImageProcessError } from '../../../src';
 import { globalErrorHandler, ImageErrorHandler } from '../../../src/base/error-handler';
-import { ImageErrorCode, ImageProcessError } from '../../../src/errors.internal';
 
 describe('ImageErrorHandler 싱글턴', () => {
   it('getInstance()를 여러 번 호출해도 같은 인스턴스를 반환한다', () => {

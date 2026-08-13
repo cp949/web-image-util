@@ -7,9 +7,9 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
+import { ImageProcessError } from '../../../src';
 import { ImageWatermark } from '../../../src/composition/image-watermark';
 import { Position } from '../../../src/composition/position-types';
-import { ImageProcessError } from '../../../src/errors.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 import { createTestImage } from './watermark-helpers';
 

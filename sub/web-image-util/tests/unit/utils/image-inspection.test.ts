@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { hasTransparency } from '../../../src';
+import { hasTransparency, ImageProcessError } from '../../../src';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
-import { ImageProcessError } from '../../../src/errors.internal';
 
 // Node 테스트용 Canvas 목이 픽셀 저장을 하지 않으므로 검사할 alpha 값을 직접 주입한다.
 function mockAlphaData(ctx: CanvasRenderingContext2D, alphaValues: number[]): void {
