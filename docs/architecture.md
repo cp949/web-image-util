@@ -129,7 +129,12 @@
   - `readGuardedResponseStream()` — 본문 스트림 누적 byte cap 강제. 초과 시 reader를 취소하며, 취소 실패는 삼켜 byte cap 오류 코드를 보존한다.
   - `readWholeBody()` — 스트림이 없는 응답의 전체 읽기와 실패 래핑.
   - `readCheckedBlobResponse()` — 바이너리 어댑터(`{ blob, bytes }` 반환).
+  - `readTruncatedResponsePrefix()` — 절단 읽기 어댑터. 상한까지만 읽고 스트림을 취소하며 초과를 오류로 올리지 않는다. 스트림이 없는 응답은 절단할 수 없으므로 빈 결과를 반환한다(본문 전체를 메모리에 올리지 않는다).
+
+상한 초과 처리는 두 갈래입니다. **거부 읽기**(`readGuardedResponseStream` 계열)는 오류를 던지고, **절단 읽기**(`readTruncatedResponsePrefix`)는 상한까지만 읽습니다. 앞부분 바이트만 필요한 스니핑 경로가 후자를 사용합니다.
 
 상한 값과 오류 코드는 호출자가 주입하므로 디코드 방식만 어댑터로 갈라집니다. 텍스트 어댑터는 `src/core/source-converter/svg/safety.internal.ts`의 `readCheckedTextResponse()`이며, 같은 가드 위에 `MAX_SVG_BYTES`와 `SVG_BYTES_EXCEEDED`를 주입합니다.
 
-진단 모듈(`src/utils/inspect-svg-source.ts`)과 이미지 메타데이터 모듈(`src/utils/image-info/remote-fetch.internal.ts`)은 위 헬퍼/상수를 그대로 import해 fetch 정책을 적용합니다. 신규 정책/가드 함수를 별도로 신설하지 않는 것이 RM-004 결정 D14의 단일 출처 원칙입니다. byte cap을 사용자 옵션으로 상향하는 것은 금지되며, `options.byteLimit`은 `MAX_SVG_BYTES` 이하로만 허용됩니다.
+진단 모듈(`src/utils/inspect-svg-source.ts`)과 이미지 메타데이터 모듈(`src/utils/image-info/remote-fetch.internal.ts`)은 위 헬퍼/상수를 그대로 import해 fetch 정책을 적용합니다. 신규 정책/가드 함수를 별도로 신설하지 않는 것이 RM-004 결정 D14의 단일 출처 원칙입니다. byte cap을 사용자 옵션으로 상향하는 것은 금지되며, `options.byteLimit`은 `MAX_SVG_BYTES` 이하로만 허용됩니다. 같은 이유로 `fetchImageFormat()`의 `sniffBytes`도 `MAX_SNIFF_BYTES`(64KiB)를 넘길 수 없습니다.
+
+`remote-fetch.internal.ts`의 두 공개 함수는 정책 적용 방식이 다릅니다. `fetchImageSourceBlob()`은 `allowedProtocols`를 옵션으로 받아 무조건 검사하고, `fetchImageFormat()`은 `DEFAULT_ALLOWED_PROTOCOLS`를 고정으로 쓰되 명시적 스킴 또는 protocol-relative 입력일 때만 검사합니다(상대 경로는 브라우저 자산 로딩 경로를 유지 — `url/loader.internal.ts`와 같은 규칙). 두 함수 모두 `createFetchAbortHandle()`로 타임아웃/중단을 결합하며, `fetchImageFormat()`은 기본 30초, `fetchImageSourceBlob()`은 기본 무제한입니다.

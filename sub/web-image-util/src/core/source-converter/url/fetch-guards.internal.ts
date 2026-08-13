@@ -7,6 +7,10 @@
  * 디코드 방식만 어댑터로 갈라진다 — 바이너리는 이 모듈의 `readCheckedBlobResponse`,
  * 텍스트는 svg/safety.internal.ts가 `readGuardedResponseStream` 위에 얹는다.
  * 상한 값과 오류 코드는 호출자가 주입하므로 SVG 경로와 일반 소스 경로가 같은 가드를 공유한다.
+ *
+ * 상한 초과 처리는 두 갈래다. **거부 읽기**(`readGuardedResponseStream` 계열)는 오류를 던지고,
+ * **절단 읽기**(`readTruncatedResponsePrefix`)는 상한까지만 읽고 스트림을 취소한다.
+ * 앞부분 바이트만 필요한 스니핑 경로가 후자를 쓴다.
  */
 
 import { ImageProcessError } from '../../../types';
@@ -258,6 +262,61 @@ export async function readGuardedResponseStream(
   }
 
   return { chunks, bytes };
+}
+
+/** 읽은 순서대로의 청크를 하나의 버퍼로 합친다. */
+function concatChunks(chunks: Uint8Array[], totalBytes: number): Uint8Array {
+  const merged = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return merged;
+}
+
+/**
+ * 응답 본문 앞부분만 읽고 상한에 도달하면 스트림을 취소한다.
+ *
+ * 절단 읽기다 — 상한 초과를 오류로 올리지 않는다. 포맷 스니핑처럼 앞부분 바이트만
+ * 필요한 경로가 쓴다. 스트림이 없는 응답은 절단할 방법이 없으므로 빈 결과를 반환한다.
+ * 본문 전체를 메모리에 올린 뒤 자르면 상한이 의미를 잃기 때문이다.
+ *
+ * @param response fetch 응답 객체
+ * @param byteLimit 읽을 최대 바이트 수. 0 이하면 읽지 않는다.
+ * @returns 상한까지만 읽은 본문 앞부분
+ */
+export async function readTruncatedResponsePrefix(response: Response, byteLimit: number): Promise<Uint8Array> {
+  const limit = Math.max(0, byteLimit);
+  if (limit === 0 || !response.body) {
+    return new Uint8Array();
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
+
+  try {
+    while (bytes < limit) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const remaining = limit - bytes;
+      const chunk = value.byteLength > remaining ? value.slice(0, remaining) : new Uint8Array(value);
+      chunks.push(chunk);
+      bytes += chunk.byteLength;
+    }
+
+    // 상한에 도달했다면 남은 바이트를 받지 않도록 스트림을 끊는다.
+    if (bytes >= limit) {
+      await cancelReaderQuietly(reader);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  return concatChunks(chunks, bytes);
 }
 
 /**

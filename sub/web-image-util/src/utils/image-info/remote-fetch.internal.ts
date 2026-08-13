@@ -2,16 +2,26 @@
  * 원격 URL fetch 기반 이미지 메타데이터 수집.
  *
  * SSRF 가드(허용 protocol 검증), 본문 크기 상한, abort/timeout은 공유 가드 module
- * (core/source-converter/url)이 소유한다. 이 모듈은 그 가드를 소비하면서 응답 본문에서
- * 포맷을 결정하는 로직(`fetchImageFormat`)을 담당한다 — 응답 prefix 처리와 강하게 결합돼 있다.
+ * (core/source-converter/url)이 소유한다. 두 공개 함수는 모두 그 가드를 소비하며,
+ * 이 모듈이 직접 소유하는 것은 포맷 판정 규칙과 스니핑 예산뿐이다.
  *
  * 보안 모델은 [SVG-SECURITY.md]의 외부 입력 처리 원칙을 따른다.
  */
 
-import { createFetchAbortHandle, readCheckedBlobResponse } from '../../core/source-converter/url/fetch-guards.internal';
-import { checkAllowedProtocol } from '../../core/source-converter/url/policy.internal';
+import { DEFAULT_ALLOWED_PROTOCOLS, DEFAULT_FETCH_TIMEOUT_MS } from '../../core/source-converter/options.internal';
+import {
+  createFetchAbortHandle,
+  readCheckedBlobResponse,
+  readTruncatedResponsePrefix,
+} from '../../core/source-converter/url/fetch-guards.internal';
+import {
+  checkAllowedProtocol,
+  hasExplicitUrlScheme,
+  isProtocolRelativeUrl,
+  normalizePolicyUrl,
+} from '../../core/source-converter/url/policy.internal';
 import { ImageFormats, ImageProcessError } from '../../types';
-import { isDataURLString } from '../data-url';
+import { classifyStringSource } from '../source-utils/source-facts.internal';
 import { isInlineSvg } from '../svg-detection';
 import { formatFromBytes, formatFromMimeType } from './format-detection.internal';
 import type {
@@ -22,86 +32,39 @@ import type {
 } from './types';
 
 const DEFAULT_FORMAT_SNIFF_BYTES = 4096;
+
+/**
+ * 포맷 스니핑이 읽을 수 있는 최대 바이트 수 (64KiB).
+ *
+ * 바이너리 시그니처 판정에는 앞 12바이트면 충분하다. SVG 루트가 긴 전치부 뒤에 있으면
+ * 스니핑하지 못할 수 있지만, 원격 본문을 제한 없이 읽지 않도록 이 예산을 우선한다.
+ */
+const MAX_SNIFF_BYTES = 64 * 1024;
+
 const DEFAULT_FETCH_SOURCE_PROTOCOLS = ['http:', 'https:'];
+
+/** 브라우저가 현재 문서를 기준으로 해석하는 자산 경로인지 판정한다. */
+function isBrowserAssetPath(source: string): boolean {
+  return source.startsWith('/') || source.startsWith('./') || source.startsWith('../');
+}
 
 /** 문자열 소스가 fetch로 조회 가능한 형태인지 판정한다. */
 function canFetchStringSource(source: string): boolean {
-  const trimmed = source.trim();
-  const lower = trimmed.toLowerCase();
+  const { transport } = classifyStringSource(source);
 
-  if (trimmed.length === 0 || isDataURLString(trimmed) || isInlineSvg(trimmed)) {
-    return false;
+  switch (transport) {
+    case 'http':
+    case 'protocol-relative':
+    case 'blob-url':
+      return true;
+    case 'path':
+      // facts는 'image-id'와 '/assets/image'를 모두 path로 준다. 둘을 가르는
+      // 경로 형태 판정은 이 모듈의 정책이므로 facts 모듈로 올리지 않는다.
+      return isBrowserAssetPath(source.trim());
+    case 'inline':
+    case 'data-url':
+      return false;
   }
-
-  return (
-    lower.startsWith('http://') ||
-    lower.startsWith('https://') ||
-    lower.startsWith('blob:') ||
-    trimmed.startsWith('//') ||
-    trimmed.startsWith('/') ||
-    trimmed.startsWith('./') ||
-    trimmed.startsWith('../')
-  );
-}
-
-/** Response 본문 앞부분만 읽어 포맷 스니핑에 필요한 바이트를 반환한다. */
-async function readResponsePrefix(response: Response, bytes: number): Promise<Uint8Array> {
-  const byteLimit = Math.max(0, bytes);
-  if (byteLimit === 0) {
-    return new Uint8Array();
-  }
-
-  if (!response.body) {
-    const buffer = await response.arrayBuffer();
-    return new Uint8Array(buffer, 0, Math.min(buffer.byteLength, byteLimit));
-  }
-
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let totalBytes = 0;
-  let shouldCancelReader = false;
-
-  try {
-    while (totalBytes < byteLimit) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-
-      const remainingBytes = byteLimit - totalBytes;
-      const chunk = value.byteLength > remainingBytes ? value.slice(0, remainingBytes) : value;
-      chunks.push(chunk);
-      totalBytes += chunk.byteLength;
-
-      if (value.byteLength > remainingBytes) {
-        shouldCancelReader = true;
-        break;
-      }
-    }
-
-    if (totalBytes >= byteLimit) {
-      shouldCancelReader = true;
-    }
-
-    if (shouldCancelReader) {
-      try {
-        await reader.cancel();
-      } catch {
-        // 스트림 정리 실패는 이미 읽은 prefix 기반 포맷 판정을 무효화하지 않는다.
-      }
-    }
-  } finally {
-    reader.releaseLock();
-  }
-
-  const prefix = new Uint8Array(totalBytes);
-  let offset = 0;
-  for (const chunk of chunks) {
-    prefix.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-
-  return prefix;
 }
 
 /** 응답 MIME과 본문 앞부분을 조합해 실제 이미지 포맷을 판정한다. */
@@ -141,6 +104,12 @@ function wrapFetchSourceBodyReadError(error: unknown): never {
  *
  * @description 확장자 힌트는 사용하지 않고 응답의 Content-Type과 앞부분 바이트/SVG 텍스트 루트를 확인한다.
  * fetch 대상이 아니거나 응답을 읽을 수 없거나 포맷을 알 수 없으면 `unknown`을 반환한다.
+ *
+ * - 명시적 스킴이나 protocol-relative 입력만 protocol 허용 여부를 검사한다. 상대 경로는
+ *   브라우저 자산 로딩 경로를 유지한다.
+ * - 기본 타임아웃은 30초다. `timeoutMs: 0`으로 끄거나 `abortSignal`로 직접 중단할 수 있다.
+ * - `sniffBytes`는 64KiB를 넘겨 지정해도 64KiB까지만 읽는다.
+ * - 정책 위반, 네트워크 실패, 중단을 포함한 모든 실패는 예외 대신 `unknown`으로 수렴한다.
  */
 export async function fetchImageFormat(
   source: string,
@@ -150,10 +119,23 @@ export async function fetchImageFormat(
     return 'unknown';
   }
 
+  const url = source.trim();
+  const byteLimit = Math.min(options.sniffBytes ?? DEFAULT_FORMAT_SNIFF_BYTES, MAX_SNIFF_BYTES);
+  let handle: ReturnType<typeof createFetchAbortHandle> | undefined;
+
   try {
-    const response = await fetch(source.trim(), {
-      ...options.fetchOptions,
+    // AbortSignal 생성 자체가 실패해도 공개 계약에 따라 unknown으로 수렴시킨다.
+    handle = createFetchAbortHandle(options.timeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS, options.abortSignal);
+
+    // 명시적 스킴이 있는 입력만 protocol을 검사한다 — url/loader.internal과 같은 규칙이다.
+    if (hasExplicitUrlScheme(url) || isProtocolRelativeUrl(url)) {
+      checkAllowedProtocol(normalizePolicyUrl(url), DEFAULT_ALLOWED_PROTOCOLS);
+    }
+
+    const response = await fetch(url, {
+      ...sanitizeFetchSourceOptions(options.fetchOptions),
       method: 'GET',
+      ...(handle.signal ? { signal: handle.signal } : {}),
     });
 
     if (!response.ok) {
@@ -161,11 +143,13 @@ export async function fetchImageFormat(
     }
 
     const contentType = response.headers.get('content-type') ?? '';
-    const prefix = await readResponsePrefix(response, options.sniffBytes ?? DEFAULT_FORMAT_SNIFF_BYTES);
+    const prefix = await readTruncatedResponsePrefix(response, byteLimit);
 
     return formatFromResponsePrefix(prefix, contentType);
   } catch {
     return 'unknown';
+  } finally {
+    handle?.dispose();
   }
 }
 

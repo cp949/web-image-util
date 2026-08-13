@@ -21,10 +21,19 @@ export interface ImageInfo extends ImageDimensions {
 
 /** 네트워크 조회 기반 이미지 포맷 판정 옵션이다. */
 export interface FetchImageFormatOptions {
-  /** 응답 앞부분에서 읽을 최대 바이트 수다. 기본값은 4096이다. */
+  /** 응답 앞부분에서 읽을 최대 바이트 수다. 기본값은 4096이며 64KiB를 넘겨 지정해도 64KiB까지만 읽는다. */
   sniffBytes?: number;
-  /** fetch 요청에 전달할 추가 옵션이다. `method`는 본문 스니핑을 위해 항상 GET으로 고정된다. */
-  fetchOptions?: Omit<RequestInit, 'body' | 'method'>;
+  /** fetch 타임아웃 밀리초다. 기본값은 30000이며 0이면 타임아웃을 두지 않는다. */
+  timeoutMs?: number;
+  /** 외부에서 요청을 중단할 AbortSignal이다. */
+  abortSignal?: AbortSignal;
+  /**
+   * fetch 요청에 전달할 추가 옵션이다.
+   *
+   * `method`는 본문 스니핑을 위해 항상 GET으로 고정되고, 중단은 `abortSignal`로 일원화하므로
+   * `signal`은 전달하더라도 무시된다.
+   */
+  fetchOptions?: Omit<RequestInit, 'body' | 'method' | 'signal'>;
 }
 
 export interface FetchImageSourceBlobOptions {

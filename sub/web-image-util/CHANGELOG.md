@@ -54,6 +54,13 @@
 - Changed: 첫 출력 이후에 호출한 `resize()`/`blur()`가 다음 출력에 반영됩니다. 기존에는 `resize()`/`blur()`는 조용히 무시되고 shortcut의 scale/exactWidth 계열만 반영되는 비대칭이 있었습니다.
 - Changed: shortcut의 scale/exactWidth 계열도 호출 시점에 설정을 검증합니다. 예를 들어 `exactWidth(0)`은 출력 시점이 아니라 호출 즉시 `INVALID_DIMENSIONS`로 거부됩니다.
 - Changed: `resize()` 중복 호출 오류 메시지가 경로별 3종에서 1종으로 통일되었습니다. 오류 코드 `MULTIPLE_RESIZE_NOT_ALLOWED`는 그대로입니다.
+- Changed (**Breaking**): `fetchImageFormat()`이 원격 본문 가드를 거칩니다. 기존에는 형제 함수 `fetchImageSourceBlob()`과 달리 protocol 검사·중단·본문 상한을 모두 건너뛰고 global `fetch`를 직접 호출했습니다.
+  - 기본 타임아웃 30초가 적용됩니다. 이전에는 응답하지 않는 서버에 요청이 무기한 매달렸습니다. `timeoutMs: 0`으로 이전 동작을 복원할 수 있습니다.
+  - `fetchOptions.signal`이 무시되며 타입에서도 제거되었습니다. 중단은 새 옵션 `abortSignal`로 일원화됩니다.
+  - `sniffBytes`가 `MAX_SNIFF_BYTES`(64KiB)로 제한됩니다. 더 큰 값을 지정해도 64KiB까지만 읽습니다. 바이너리 시그니처 판정에는 충분하지만, SVG 루트가 64KiB보다 긴 전치부 뒤에 있으면 Content-Type fallback 또는 `unknown`을 반환합니다.
+  - 본문 스트림이 없는 응답에서 본문 전체를 메모리에 올린 뒤 자르던 동작이 제거되었습니다. 이제 스니핑을 건너뛰고 Content-Type만 사용합니다.
+  - 명시적 스킴 또는 protocol-relative 입력은 `DEFAULT_ALLOWED_PROTOCOLS` 검사를 받습니다. 상대 경로는 종전대로 검사 없이 브라우저 자산 로딩 경로를 유지합니다. 판정 실패는 예외 없이 `'unknown'`으로 수렴하는 기존 계약 그대로입니다.
+- Added: `fetchImageFormat()`에 `timeoutMs`·`abortSignal` 옵션이 추가되었습니다.
 - Deprecated: `ResizeOperation`·`DirectResizeConfig` 타입과 `ScaleOperation` 별칭. shortcut 내부 통로가 공개 `resize()` 설정으로 합류하면서 처리 경로에서 사용되지 않습니다. `ScaleOperation` 대신 `ScaleValue`를 사용하세요.
 
 ### 수정
