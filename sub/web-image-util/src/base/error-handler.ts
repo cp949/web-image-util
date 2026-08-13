@@ -5,6 +5,7 @@
  */
 
 import type { ImageErrorCodeType, ImageProcessError } from '../errors.internal';
+import { readMemoryBudget, requestMemoryRelief } from '../utils/browser-capabilities/index';
 import type { ErrorContext } from './error-context.internal';
 
 /**
@@ -128,8 +129,7 @@ export class ImageErrorHandler {
     }
 
     // Attempt memory cleanup
-    if (typeof global !== 'undefined' && global.gc) {
-      global.gc();
+    if (requestMemoryRelief()) {
       console.info('Garbage collection triggered');
     }
   }
@@ -145,19 +145,20 @@ export class ImageErrorHandler {
 
   /**
    * Memory information collection
+   *
+   * 메모리 예산은 browser-capabilities/memory.internal.ts가 단일 소유한다. probe가 값을
+   * 못 내는 환경에서도 fallback이 채워지므로 이 메서드는 이제 항상 debug.memory*를 낸다
+   * (이전에는 {}를 반환해 필드 자체가 없었다).
    */
   private getMemoryInfo(): Partial<ErrorContext> {
-    if (typeof performance !== 'undefined' && 'memory' in performance) {
-      const memory = (performance as any).memory;
-      return {
-        debug: {
-          memoryUsedMB: Math.round(memory.usedJSHeapSize / (1024 * 1024)),
-          memoryLimitMB: Math.round(memory.jsHeapSizeLimit / (1024 * 1024)),
-          memoryPressure: memory.usedJSHeapSize / memory.jsHeapSizeLimit,
-        },
-      };
-    }
-    return {};
+    const budget = readMemoryBudget();
+    return {
+      debug: {
+        memoryUsedMB: budget.usedMB,
+        memoryLimitMB: budget.limitMB,
+        memoryPressure: budget.pressure,
+      },
+    };
   }
 
   /**

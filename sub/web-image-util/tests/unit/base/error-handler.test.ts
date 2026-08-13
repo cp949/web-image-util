@@ -303,10 +303,13 @@ describe('ImageErrorHandler collectEnhancedContext — performance.memory 분기
     expect((ctx.debug as any).memoryPressure).toBe(0.25);
   });
 
-  it('performance.memory가 없으면 debug 없이 timestamp만 포함된 컨텍스트가 반환된다', () => {
-    // 기본 jsdom performance에는 memory가 없으므로 debug는 포함되지 않는다
+  it('performance.memory가 없으면 메모리 예산 모듈의 단일 fallback 값이 debug에 채워진다', () => {
+    // 기본 jsdom performance에는 memory가 없으므로 readMemoryBudget()의 fallback을 탄다
+    // (usedMB:128, limitMB:512, pressure:0.25 — src/utils/browser-capabilities/memory.internal.ts)
     const ctx = handler.collectEnhancedContext('test');
     expect(ctx.timestamp).toBeGreaterThan(0);
-    expect(ctx.debug).toBeUndefined();
+    expect((ctx.debug as any).memoryUsedMB).toBe(128);
+    expect((ctx.debug as any).memoryLimitMB).toBe(512);
+    expect((ctx.debug as any).memoryPressure).toBe(0.25);
   });
 });
