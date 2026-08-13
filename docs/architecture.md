@@ -59,6 +59,7 @@
 | `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.internal.ts`, `loader.internal.ts`, `safety.internal.ts` |
 | `src/core/source-converter/url/` | HTTP/Blob URL 로더 — `policy.internal.ts`, `fetch-guards.internal.ts`, `loader.internal.ts` |
 | `src/core/source-converter/loaders/` | 형태별 입력 변환기 — `string.internal.ts`, `blob.internal.ts`, `canvas.internal.ts` |
+| `src/utils/image-decode.internal.ts` | 이미지 디코드의 단일 소유 모듈 — img 생성, `src` 할당 전 속성 설정, objectURL 수명, 오류 래핑. img 구동 방식만 어댑터로 갈린다 |
 | `src/utils/svg-detection.ts` | `isInlineSvg()` 등 SVG 문자열 판정 |
 | `src/utils/svg-sanitizer.ts` | `sanitizeSvgForRendering()`, `sanitizeSvg()` (deprecated alias) — 경량 집행 엔진(정규식 메커니즘) |
 | `src/utils/svg-threat-policy.internal.ts` | SVG 위협 정책 단일 소유자 — URI/CSS 허용 판정, 금지 요소 목록, XXE 절단. 경량·strict 두 집행 엔진과 진단 수집기, intake guard가 공유 |
@@ -138,3 +139,28 @@
 진단 모듈(`src/utils/inspect-svg-source.ts`)과 이미지 메타데이터 모듈(`src/utils/image-info/remote-fetch.internal.ts`)은 위 헬퍼/상수를 그대로 import해 fetch 정책을 적용합니다. 신규 정책/가드 함수를 별도로 신설하지 않는 것이 RM-004 결정 D14의 단일 출처 원칙입니다. byte cap을 사용자 옵션으로 상향하는 것은 금지되며, `options.byteLimit`은 `MAX_SVG_BYTES` 이하로만 허용됩니다. 같은 이유로 `fetchImageFormat()`의 `sniffBytes`도 `MAX_SNIFF_BYTES`(64KiB)를 넘길 수 없습니다.
 
 `remote-fetch.internal.ts`의 두 공개 함수는 정책 적용 방식이 다릅니다. `fetchImageSourceBlob()`은 `allowedProtocols`를 옵션으로 받아 무조건 검사하고, `fetchImageFormat()`은 `DEFAULT_ALLOWED_PROTOCOLS`를 고정으로 쓰되 명시적 스킴 또는 protocol-relative 입력일 때만 검사합니다(상대 경로는 브라우저 자산 로딩 경로를 유지 — `url/loader.internal.ts`와 같은 규칙). 두 함수 모두 `createFetchAbortHandle()`로 타임아웃/중단을 결합하며, `fetchImageFormat()`은 기본 30초, `fetchImageSourceBlob()`은 기본 무제한입니다.
+
+## 이미지 디코드
+
+`HTMLImageElement`에 소스를 붙이고 로드 완료를 기다리는 동작은 `src/utils/image-decode.internal.ts`가 단일 소유합니다. 변환 경로(Blob·URL·SVG·element·canvas)와 출력 경로(`toElement()`), 진단 보조(`getBlobDimensions()`)가 모두 이 모듈을 경유하므로 핸들러 해제와 objectURL revoke 규칙이 호출처마다 갈리지 않습니다.
+
+모듈이 소유하는 것과 어댑터가 소유하는 것을 나눕니다.
+
+| 소유자 | 책임 |
+| --- | --- |
+| 모듈 | img 생성(`createImageElement()` 경유), `crossOrigin`·`decoding` 설정(**`src` 할당 전**), objectURL 생성·revoke, 실패의 `ImageProcessError` 조립 |
+| 어댑터 | img를 로드 완료 상태까지 구동 — 핸들러 등록·해제와 `src` 할당 |
+
+입력별 진입점은 3개입니다.
+
+- `decodeImageFromUrl(src, options)` — data URL·object URL·일반 URL
+- `decodeImageFromBlob(blob, options)` — objectURL을 만들어 디코드하고 성공·실패와 무관하게 revoke
+- `decodeExistingImage(img, options)` — 이미 소스가 붙은 element의 완료 대기. `complete && naturalWidth > 0`이면 핸들러를 붙이지 않고 즉시 반환하며, `src`를 재할당하지 않습니다(재할당은 진행 중인 로드를 다시 시작시킵니다)
+
+`options.errorCode`에는 기본값을 두지 않습니다. `loadImageFromUrl()`의 `transport` 매개변수와 같은 이유로, 새 호출자가 인자를 빠뜨렸을 때 오류 코드가 조용히 다른 값으로 떨어지는 대신 컴파일 타임에 드러나게 합니다. 메시지는 `options.message`로 주입하며, `Failed to load image: ${url}`처럼 입력을 담은 진단 메시지를 유지하기 위해 통합하지 않습니다.
+
+어댑터는 `setImageDecodeAdapter()` / `resetImageDecodeAdapter()`로 교체합니다. 테스트가 실제 디코딩 없이 호출처를 구동하기 위한 진입점이며 `.internal` 모듈에만 존재합니다 — 어떤 배럴에도 export하지 않습니다. 어댑터는 실패 원인만 던지고 `ImageProcessError` 조립에 관여하지 않으므로, 어댑터를 바꿔도 호출처가 관찰하는 오류 코드와 메시지는 같습니다.
+
+디코드 타임아웃은 도입하지 않았습니다. 필요해지면 `createFetchAbortHandle()`과 같은 형태로 **모듈에** 추가합니다 — 타임아웃은 정책이고 어댑터는 구동 방식만 가릅니다.
+
+`src/utils/browser-capabilities/format-detection.internal.ts`의 포맷 지원 프로브는 이 모듈을 쓰지 않습니다. 실패 시 reject하지 않고 `resolve(false)`하며 자체 `setTimeout` 상한을 갖는 다른 오류 계약이기 때문입니다.

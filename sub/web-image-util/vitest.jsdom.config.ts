@@ -11,6 +11,10 @@ export default defineConfig({
     environment: 'jsdom',
     // jsdom 기본값은 외부 리소스 로드를 막아 blob/data URL 이미지 로드가 hang된다.
     // 'usable'로 두면 canvas 패키지와 함께 Image element 로드가 동작한다.
+    //
+    // isolate는 기본값(true)을 유지해야 한다. src/utils/image-decode.internal.ts의 디코드
+    // 어댑터 레지스트리는 모듈 스코프 mutable state라, isolate를 끄면 한 파일에서 주입한 스텁
+    // 어댑터가 다른 파일로 새어 들어가 실제 디코딩을 조용히 건너뛰고 거짓 통과를 만들 수 있다.
     environmentOptions: {
       jsdom: {
         resources: 'usable',

@@ -91,6 +91,10 @@
   - 커버리지를 채우면서 타일 수가 회전각에 따라 늘어납니다(위 기준에서 28개 → 48개).
 - Fixed: advanced `TextWatermark.addRepeatingPattern()`·`ImageWatermark.addRepeatingPattern()`에 `spacing.x` 또는 `spacing.y`를 0 이하나 `NaN`/`Infinity`로 넘기면 타일 루프가 끝나지 않아 브라우저가 멈추던 문제를 수정했습니다. 이제 유한 양수가 아니면 `ImageProcessError`(`OPTION_INVALID`, `details.option`에 `spacing.x`/`spacing.y`)로 거부합니다. `SimpleWatermark.addPattern({ spacing: 0 })`으로도 도달할 수 있던 경로입니다.
 - Fixed: advanced `TextWatermark.addToCanvas()`·`TextWatermark.addRepeatingPattern()`이 호출자 소유 Canvas의 2D 컨텍스트 상태를 되돌리지 않고 반환하던 문제를 수정했습니다. 텍스트 스타일 적용이 `save()`/`restore()` 범위 밖에 있어 호출 이후에도 `font`·`globalAlpha`·`fillStyle`·`strokeStyle`·`lineWidth`·`textBaseline`·`textAlign`이 워터마크 설정으로 남아, 같은 Canvas에 이어 그리는 코드가 영향을 받았습니다. 워터마크 출력 자체는 변하지 않습니다.
+- Fixed: `HTMLImageElement` 디코드를 `src/utils/image-decode.internal.ts` 단일 모듈로 모으면서 실패 오류의 진단 정보가 더 정확해졌습니다.
+  - SVG 로드 실패 메시지에서 `, error: [object Event]` 접미사가 사라집니다. `onerror` 핸들러가 받는 DOM `Event`를 문자열로 이어붙이던 코드였습니다.
+  - `HTMLImageElement`를 직접 넘긴 소스, Canvas 소스의 로드 실패(`SOURCE_LOAD_FAILED`)와 `toElement()` 출력 실패(`IMAGE_LOAD_FAILED`)가 이제 `cause`를 채웁니다. 메시지와 코드는 그대로입니다.
+  - 내부 유틸 `getBlobDimensions()`의 로드 실패가 plain `Error` 대신 `ImageProcessError`를 reject합니다. `ensureBlob`/`ensureFile` 등 공개 API는 이 실패를 `CONVERSION_FAILED`로 무조건 재래핑하므로, 소비자가 실제로 관찰하는 변화는 `error.cause`의 타입이 바뀌는 것뿐입니다.
 
 ## [3.1.0] - 2026-08-12
 
