@@ -7,6 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { convertToImageElement } from '../../../src/core/source-converter/index';
+import { resetImageDecodeAdapter, setImageDecodeAdapter } from '../../../src/utils/image-decode.internal';
 
 // SVG fetch 응답에 사용할 최소 유효 SVG 문자열
 const MINIMAL_SVG = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>';
@@ -56,8 +57,14 @@ describe('FetchAbortHandle 폴백 타이머 및 리스너 정리', () => {
     originalTimeout = AbortSignal.timeout;
     (AbortSignal as any).timeout = undefined;
 
-    // SVG 디코딩을 우회해 테스트를 단순하게 유지한다.
-    (globalThis as any)._SVG_MOCK_MODE = true;
+    // SVG 디코딩을 우회해 테스트를 단순하게 유지한다. 이 파일의 단정 대상은
+    // dispose/타이머 정리이지 디코딩이 아니다.
+    setImageDecodeAdapter({
+      decode: (img, src) => {
+        if (src !== undefined) img.src = src;
+        return Promise.resolve();
+      },
+    });
 
     vi.useFakeTimers();
   });
@@ -67,7 +74,7 @@ describe('FetchAbortHandle 폴백 타이머 및 리스너 정리', () => {
     if (originalAny !== undefined) {
       (AbortSignal as any).any = originalAny;
     }
-    delete (globalThis as any)._SVG_MOCK_MODE;
+    resetImageDecodeAdapter();
     vi.useRealTimers();
     vi.restoreAllMocks();
   });

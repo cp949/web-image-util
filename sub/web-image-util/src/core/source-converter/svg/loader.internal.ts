@@ -8,6 +8,7 @@
 import type { SvgSanitizerMode } from '../../../svg-contract.internal';
 import { ImageProcessError } from '../../../types';
 import { debugLog, productionLog } from '../../../utils/debug.internal';
+import { decodeImageFromBlob, decodeImageFromUrl, type ImageDecodeOptions } from '../../../utils/image-decode.internal';
 import { enhanceSvgForBrowser } from '../../../utils/svg-compatibility/index';
 import { extractSvgDimensions } from '../../../utils/svg-dimensions';
 import { sanitizeSvgForRendering } from '../../../utils/svg-sanitizer';
@@ -28,6 +29,14 @@ export interface SvgRenderingOptions {
   /** SVG sanitizer 정책 */
   sanitizerMode?: SvgSanitizerMode;
 }
+
+/**
+ * Blob URL 준비 실패만 Base64 폴백 대상으로 골라내기 위한 지역 신호다.
+ *
+ * 디코드 실패(`SOURCE_LOAD_FAILED`)와 구분해야 폴백이 실제 로드 실패를 삼키지 않는다.
+ * 이 코드는 같은 함수 안에서 즉시 소비되며 호출자에게 노출되지 않는다.
+ */
+const OBJECT_URL_FALLBACK_CODE = 'SVG_PROCESSING_FAILED' as const;
 
 /**
  * strict sanitizer는 opt-in일 때만 로드한다.
@@ -93,26 +102,6 @@ export async function convertSvgToElement(
   // 크기 초과 입력은 skip 경로에서도 차단한다.
   checkSvgSizeLimit(svgForSafety, 'inline SVG');
 
-  // 테스트 환경에서는 실제 SVG 디코딩을 우회해 타임아웃을 방지한다.
-  if (typeof globalThis !== 'undefined' && (globalThis as any)._SVG_MOCK_MODE) {
-    return new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = document.createElement('img');
-      img.onload = () => {
-        img.onload = null;
-        img.onerror = null;
-        resolve(img);
-      };
-      img.onerror = () => {
-        img.onload = null;
-        img.onerror = null;
-        reject(new ImageProcessError('Mock SVG image loading failed', 'IMAGE_LOAD_FAILED'));
-      };
-      // 최소 비용의 1x1 투명 PNG로 대체한다.
-      img.src =
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-    });
-  }
-
   try {
     // unsafe 경로는 호환성 보정을 건너뛰고, 그 외 경로는 브라우저 호환성 보정을 수행한다.
     const shouldSkipCompatibilityEnhancement = options?.passthroughMode === 'unsafe-pass-through';
@@ -152,64 +141,37 @@ export async function convertSvgToElement(
     const enhancedSvg = svgForLoad;
 
     // 8. 크기에 따라 Blob URL과 Base64를 선택하는 하이브리드 로딩을 적용한다.
-    return new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = document.createElement('img');
-      let objectUrl: string | null = null;
-
-      // Promise 결정 시 핸들러를 해제하고 Blob URL을 정리한다.
-      const cleanup = () => {
-        img.onload = null;
-        img.onerror = null;
-        if (objectUrl) {
-          URL.revokeObjectURL(objectUrl);
-        }
-      };
-
-      // 로드 성공 시 임시 URL을 정리한다.
-      img.onload = () => {
-        cleanup();
-        resolve(img);
-      };
-
-      // 로드 실패 시에도 임시 URL을 정리하고 표준 오류로 감싼다.
-      img.onerror = (error) => {
-        cleanup();
-        reject(
-          new ImageProcessError(
-            `SVG load failed: quality level ${qualityLevel}, size ${renderWidth}x${renderHeight}, error: ${error}`,
-            'SOURCE_LOAD_FAILED'
-          )
-        );
-      };
-
-      // SVG 크기에 따라 메모리 효율과 속도 사이의 균형점을 선택한다.
-      const svgSize = new Blob([enhancedSvg]).size;
-      const SIZE_THRESHOLD = 50 * 1024; // 50KB threshold
-
-      if (svgSize > SIZE_THRESHOLD) {
-        // 큰 SVG는 Blob URL이 메모리 사용량에 유리하다.
-        try {
-          const blob = new Blob([enhancedSvg], { type: 'image/svg+xml' });
-          objectUrl = URL.createObjectURL(blob);
-          img.src = objectUrl;
-        } catch (blobError) {
-          // Blob 생성이 실패하면 Base64 방식으로 폴백한다.
-          productionLog.warn('Failed to create Blob URL, fallback to Base64:', blobError);
-          img.src = createBase64DataUrl(enhancedSvg);
-        }
-      } else {
-        // 작은 SVG는 Base64가 더 단순하고 빠르다.
-        img.src = createBase64DataUrl(enhancedSvg);
-      }
-
+    const decodeOptions: ImageDecodeOptions = {
+      errorCode: 'SOURCE_LOAD_FAILED',
+      message: `SVG load failed: quality level ${qualityLevel}, size ${renderWidth}x${renderHeight}`,
       // 비동기 디코딩을 요청해 메인 스레드 부담을 줄인다.
-      img.decoding = 'async';
+      decoding: 'async',
+      crossOrigin: options?.crossOrigin,
+    };
 
-      // 필요 시 CORS 설정을 전달한다.
-      if (options?.crossOrigin) {
-        img.crossOrigin = options.crossOrigin;
+    // SVG 크기에 따라 메모리 효율과 속도 사이의 균형점을 선택한다.
+    const svgSize = new Blob([enhancedSvg]).size;
+    const SIZE_THRESHOLD = 50 * 1024; // 50KB threshold
+
+    if (svgSize > SIZE_THRESHOLD) {
+      // 큰 SVG는 Blob URL이 메모리 사용량에 유리하다.
+      try {
+        return await decodeImageFromBlob(new Blob([enhancedSvg], { type: 'image/svg+xml' }), {
+          ...decodeOptions,
+          objectUrlErrorCode: OBJECT_URL_FALLBACK_CODE,
+        });
+      } catch (blobError) {
+        const isDecodeFailure = blobError instanceof ImageProcessError && blobError.code !== OBJECT_URL_FALLBACK_CODE;
+        if (isDecodeFailure) {
+          throw blobError;
+        }
+        // Blob URL 준비가 실패하면 Base64 방식으로 폴백한다.
+        productionLog.warn('Failed to create Blob URL, fallback to Base64:', blobError);
       }
-    });
+    }
+
+    // 작은 SVG는 Base64가 더 단순하고 빠르다. Blob URL 준비 실패 시의 폴백 경로이기도 하다.
+    return await decodeImageFromUrl(createBase64DataUrl(enhancedSvg), decodeOptions);
   } catch (error) {
     if (error instanceof ImageProcessError) {
       throw error;

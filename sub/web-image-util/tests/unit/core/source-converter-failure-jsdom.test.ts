@@ -7,12 +7,13 @@
  * - src/core/source-converter/loaders/string.internal.ts (convertStringToElement)
  *
  * 실제 이미지 디코딩은 document.createElement('img')의 src setter를 가로채
- * onload/onerror를 동기적으로 발화시켜 결정적으로 구동한다(jsdom에서 SVG 디코딩은
- * 실제로 발화하지 않으므로 직접 구동이 필요하다).
- * fetch / URL.createObjectURL / _SVG_MOCK_MODE 등 모든 전역은 afterEach에서 복원한다.
+ * onload/onerror를 동기적으로 발화시켜 결정적으로 구동한다(jsdom도 canvas가 있으면
+ * 실제로 디코딩하지만, 성공·실패 시점이 환경에 좌우되므로 직접 구동해 결정성을 확보한다).
+ * SVG 경로처럼 jsdom이 이벤트를 발화하지 않는 디코드는 디코드 어댑터를 주입해 우회한다.
+ * fetch / URL.createObjectURL 등 모든 전역과 어댑터는 afterEach에서 복원한다.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ImageProcessError } from '../../../src/types';
 
@@ -72,7 +73,29 @@ function stubImgCreation(result: 'load' | 'error'): HTMLImageElement {
   return img;
 }
 
-afterEach(() => {
+/**
+ * 현재 모듈 그래프에 디코드 어댑터를 주입한다.
+ *
+ * afterEach의 `vi.resetModules()` 때문에 어댑터 레지스트리는 테스트마다 새 인스턴스다.
+ * 정적 import로는 테스트가 실제로 구동하는 인스턴스에 닿지 않으므로 동적 import를 쓴다.
+ *
+ * @param result 'load'면 즉시 성공, 'error'면 즉시 실패로 결정한다.
+ */
+async function stubDecodeAdapter(result: 'load' | 'error'): Promise<void> {
+  const { setImageDecodeAdapter } = await import('../../../src/utils/image-decode.internal');
+  setImageDecodeAdapter({
+    decode: (img, src) => {
+      if (src !== undefined) img.src = src;
+      return result === 'load' ? Promise.resolve() : Promise.reject(new Error('스텁 디코드 실패'));
+    },
+  });
+}
+
+afterEach(async () => {
+  // resetModules 전에 되돌려야 실제로 주입된 인스턴스가 복원된다.
+  const { resetImageDecodeAdapter } = await import('../../../src/utils/image-decode.internal');
+  resetImageDecodeAdapter();
+
   vi.restoreAllMocks();
   // vi.doMock 팩토리 등록은 resetModules로 지워지지 않으므로 명시적으로 해제한다.
   vi.doUnmock('../../../src/core/source-converter/loaders/canvas.internal');
@@ -89,7 +112,6 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
   URL.createObjectURL = originalCreateObjectURL;
   URL.revokeObjectURL = originalRevokeObjectURL;
-  delete (globalThis as any)._SVG_MOCK_MODE;
 });
 
 describe('convertToImageElement — index.ts 분기', () => {
@@ -313,11 +335,6 @@ describe('getImageDimensions — index.ts 폴백 분기', () => {
 });
 
 describe('convertStringToElement — string.ts fetch 분기', () => {
-  beforeEach(() => {
-    // 성공 경로의 downstream SVG 디코딩이 멈추지 않도록 mock 모드를 켠다.
-    (globalThis as any)._SVG_MOCK_MODE = true;
-  });
-
   it('문자열 판정 union에 없는 타입은 INVALID_SOURCE로 거부한다', async () => {
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
@@ -347,6 +364,7 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     'application/octet-stream',
     'text/plain',
   ])('Blob URL의 %s SVG 응답은 공통 스니핑 후 SVG 경로로 처리한다', async (contentType) => {
+    await stubDecodeAdapter('load');
     globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(MINIMAL_SVG, { status: 200, headers: { 'content-type': contentType } }))
     ) as any;
@@ -362,6 +380,7 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     'text/xml-external-parsed-entity',
     'application/xml-external-parsed-entity',
   ])('원격 %s SVG 응답은 공통 XML MIME 판정 후 SVG 경로로 처리한다', async (contentType) => {
+    await stubDecodeAdapter('load');
     globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(MINIMAL_SVG, { status: 200, headers: { 'content-type': contentType } }))
     ) as any;
@@ -400,12 +419,13 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
   });
 
   it('원격 SVG URL이 검증된 본문을 반환하면 SVG 로더로 위임한다(성공 경로)', async () => {
+    await stubDecodeAdapter('load');
     globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(MINIMAL_SVG, { status: 200, headers: { 'content-type': 'image/svg+xml' } }))
     ) as any;
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    // mock 모드로 인해 1x1 PNG img가 반환된다(디코딩 우회).
+    // 주입한 어댑터가 즉시 성공으로 결정해 실제 디코딩 없이 img가 반환된다.
     const result = await convertStringToElement('https://example.com/icon.svg', 'svg-url');
     expect(result).toBeInstanceOf(HTMLImageElement);
   });
@@ -450,6 +470,7 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
   });
 
   it('상대 SVG 경로가 검증된 본문을 반환하면 SVG 로더로 위임한다(성공 경로)', async () => {
+    await stubDecodeAdapter('load');
     globalThis.fetch = vi.fn(() =>
       Promise.resolve(new Response(MINIMAL_SVG, { status: 200, headers: { 'content-type': 'image/svg+xml' } }))
     ) as any;
@@ -573,6 +594,32 @@ describe('convertSvgToElement — svg/loader.ts 분기', () => {
     expect(warnSpy).toHaveBeenCalledTimes(1);
     // 폴백된 src는 base64 data URL이어야 한다.
     expect(img.src.startsWith('data:image/svg+xml')).toBe(true);
+  });
+
+  it('큰 SVG의 디코드가 실패하면 Base64로 폴백하지 않고 SOURCE_LOAD_FAILED로 거부한다', async () => {
+    const warnSpy = vi.fn();
+    vi.doMock('../../../src/utils/debug.internal', () => ({
+      debugLog: { log: vi.fn() },
+      productionLog: { warn: warnSpy },
+    }));
+    // objectURL 준비는 성공시키고 디코드만 실패시켜 두 실패를 가르는 분기를 겨눈다.
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:svg-large');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const { convertSvgToElement } = await import('../../../src/core/source-converter/svg/loader.internal');
+    stubImgCreation('error');
+
+    const filler = `<!--${'x'.repeat(60 * 1024)}-->`;
+    const largeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">${filler}<rect width="1" height="1"/></svg>`;
+
+    await expect(
+      convertSvgToElement(largeSvg, undefined, undefined, {
+        quality: 'high',
+        passthroughMode: 'unsafe-pass-through',
+      })
+    ).rejects.toMatchObject({ code: 'SOURCE_LOAD_FAILED' });
+
+    // 폴백이 일어났다면 경고가 남는다. 디코드 실패는 폴백 대상이 아니다.
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it('이미지 로드 실패(onerror)는 SOURCE_LOAD_FAILED로 거부한다', async () => {
