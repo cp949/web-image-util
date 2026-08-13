@@ -8,9 +8,7 @@
 | --- | --- | --- | --- |
 | High | SVG strict 모드 안내 | 신뢰할 수 없는 SVG 입력에서 소비자가 `svgSanitizer: 'strict'` 필요성을 놓칠 수 있음 | README, 타입 JSDoc, `SVG-SECURITY.md`의 선택 기준 유지 |
 | High | SVG 구조 제한 | depth, 큰 viewBox, 순환 참조, 무한 애니메이션 방어가 제한적 | `maxDepth`, 좌표 범위, 순환 참조 감지 순으로 설계 |
-| High | Node 전용 `global.gc()` | 브라우저 전용 라이브러리 원칙과 맞지 않는 런타임 분기 | Canvas/Blob URL 생명주기 관리로 통일 |
 | Medium | 고해상도 처리 로직 중복 | `HighResolutionManager`와 내부 processor가 발산할 수 있음 | 공통 내부 모듈 추출 또는 한 구현으로 통합 |
-| Medium | `performance.memory` 분산 참조 | Chromium 전용 API fallback이 파일마다 달라질 수 있음 | 브라우저 capabilities 유틸 한 곳으로 통합 |
 | Medium | advanced/high-res 테스트 공백 | 공개 고급 API 회귀를 놓치기 쉬움 | 공개 API 기준 단위/통합 테스트 추가 |
 
 ## 기록하지 않는 항목

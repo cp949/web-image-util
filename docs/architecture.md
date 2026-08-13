@@ -56,6 +56,7 @@
 | `src/utils/source-utils/byte-signature.internal.ts` | 매직바이트 → 이미지 포맷 판정의 단일 facts(`detectFormatFromBytes`). bmp/tiff/ico처럼 공개 `ImageFormat`이 표현 못 하는 값도 낸다 — 접는 판단은 소비자(`image-info`의 `formatFromBytes`, blob loader의 `detectMimeTypeFromBuffer`) 몫이다 |
 | `src/utils/source-utils/blob-projection.internal.ts` | Blob facts → **공개 진단 정책**(`resolveMimeFirstBlobFormat` — MIME 우선, 모호할 때만 파일명). 내부 라우팅 정책과 의도적으로 다르며 공개 판정과 `image-info`가 공유 |
 | `src/svg-contract.internal.ts` | SVG 처리 계약 leaf — `MAX_SVG_BYTES`, `SvgSanitizerMode`. core와 진단 API가 같은 방향으로 공유 |
+| `src/utils/browser-capabilities/memory.internal.ts` | 메모리 예산 단일 facts(`readMemoryBudget`) + GC 요청 메커니즘(`requestMemoryRelief`). probe는 `setMemoryProbe`로 주입 가능한 어댑터이고 fallback은 단일 값 하나다. 소비자 7곳(canvas-pool, performance-utils, error-handler, auto-memory-manager, high-res-manager, smart-processor, tiled-processor)이 각자의 임계값 정책만 로컬로 남긴다 |
 | `src/core/source-converter/options.internal.ts` | 내부 옵션 타입과 fetch 기본값 상수 |
 | `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.internal.ts`, `loader.internal.ts`, `safety.internal.ts` |
 | `src/core/source-converter/url/` | HTTP/Blob URL 로더 — `policy.internal.ts`, `fetch-guards.internal.ts`, `loader.internal.ts` |

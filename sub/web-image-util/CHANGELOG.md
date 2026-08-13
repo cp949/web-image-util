@@ -95,6 +95,10 @@
   - SVG 로드 실패 메시지에서 `, error: [object Event]` 접미사가 사라집니다. `onerror` 핸들러가 받는 DOM `Event`를 문자열로 이어붙이던 코드였습니다.
   - `HTMLImageElement`를 직접 넘긴 소스, Canvas 소스의 로드 실패(`SOURCE_LOAD_FAILED`)와 `toElement()` 출력 실패(`IMAGE_LOAD_FAILED`)가 이제 `cause`를 채웁니다. 메시지와 코드는 그대로입니다.
   - 내부 유틸 `getBlobDimensions()`의 로드 실패가 plain `Error` 대신 `ImageProcessError`를 reject합니다. `ensureBlob`/`ensureFile` 등 공개 API는 이 실패를 `CONVERSION_FAILED`로 무조건 재래핑하므로, 소비자가 실제로 관찰하는 변화는 `error.cause`의 타입이 바뀌는 것뿐입니다.
+- Fixed: `performance.memory`를 읽지 못하는 환경(Firefox/Safari, SSR, Node)에서 advanced `ResizePerformance.getMemoryInfo()`와 `ImageErrorHandler.collectEnhancedContext()`가 반환하던 메모리 fallback 값이 파일마다 다른 추측이던 것을 하나로 통일했습니다.
+  - `ResizePerformance.getMemoryInfo()`의 fallback이 `{ usedMB: 0, limitMB: 0, pressureLevel: 'low' }`에서 `{ usedMB: 128, limitMB: 512, pressureLevel: 'low' }`로 바뀝니다.
+  - `ImageErrorHandler.collectEnhancedContext()`가 이 환경에서도 이제 `debug.memoryUsedMB`/`memoryLimitMB`/`memoryPressure`를 채웁니다(이전에는 `debug` 필드 자체가 없었습니다).
+  - `HighResolutionManager.smartResize()`가 반환하는 `memoryPeakUsageMB`의 fallback 값이 `performance.memory`를 읽지 못하는 환경에서 `64`에서 `128`로 바뀝니다.
 
 ## [3.1.0] - 2026-08-12
 

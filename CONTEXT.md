@@ -83,3 +83,9 @@ _Avoid_: 워터마크 좌표 루프, 타일 위치 계산
 출력 시점에 단일 `drawImage()`로 실행하는 것과 `BatchResizer`·`batchSmartResize` 계열의 다중 이미지
 처리가 여기 속한다. 한국어 「배치」는 placement 전용이므로 batch 의미로 쓰지 않는다.
 _Avoid_: 배치 렌더링, 배치 처리, 벌크
+
+### 메모리 예산
+
+**메모리 예산 (memory budget)**:
+`performance.memory` 기반 현재 메모리 상태 — 사용량, 한도, 여유, 압력(0~1 비율)을 함께 담는다. `readMemoryBudget()` 하나가 단일 소유하며, 측정 불가 환경(비 Chromium, SSR, jsdom)의 fallback도 이 모듈이 소유하는 단일 값이다. 소비자별 임계값(풀 크기, 압박 버킷, GC 트리거 시점)은 예산이 아니라 소비자의 정책이다.
+_Avoid_: 메모리 정보, 메모리 상태 조회
