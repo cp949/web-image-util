@@ -164,9 +164,9 @@ describe('HighResolutionManager.smartResize', () => {
   // --------------------------------------------------------------------------
   // onMemoryWarning 콜백
   // --------------------------------------------------------------------------
-  // jsdom 환경에는 performance.memory 가 없으므로 getEstimatedUsage()가
-  // 폴백 값(used=64MB, limit=512MB)을 반환한다 → availableMB ≈ 448MB.
-  // 따라서 maxMemoryUsageMB 를 448 보다 크게/작게 주면 발화 분기를 강제할 수 있다.
+  // jsdom 환경에는 performance.memory 가 없으므로 readMemoryBudget()이
+  // 폴백 값(usedMB=128, limitMB=512)을 반환한다 → availableMB=384.
+  // 따라서 maxMemoryUsageMB 를 384 보다 크게/작게 주면 발화 분기를 강제할 수 있다.
   describe('onMemoryWarning 콜백', () => {
     it('availableMB 가 maxMemoryUsageMB 미만이면 onMemoryWarning 이 호출된다', async () => {
       // 448 < 500 → 발화
@@ -195,7 +195,7 @@ describe('HighResolutionManager.smartResize', () => {
       const arg = calls[0]!;
       expect(typeof arg.usageRatio).toBe('number');
       expect(typeof arg.availableMB).toBe('number');
-      // 폴백 추정: usageRatio = 64/512 = 0.125, availableMB = round(448) = 448
+      // 폴백 추정: pressure = 0.25, availableMB = 384
       expect(arg.usageRatio).toBeGreaterThanOrEqual(0);
       expect(arg.usageRatio).toBeLessThanOrEqual(1);
       expect(arg.availableMB).toBeGreaterThan(0);

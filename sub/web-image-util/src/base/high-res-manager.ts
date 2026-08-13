@@ -1,3 +1,4 @@
+import { readMemoryBudget, requestMemoryRelief } from '../utils/browser-capabilities/index';
 import { productionLog } from '../utils/debug.internal';
 import { createImageError } from './error-helpers';
 import type { ImageAnalysis } from './high-res-detector.internal';
@@ -254,22 +255,19 @@ export class HighResolutionManager {
    * @private
    */
   private static async checkAndManageMemory(opts: HighResolutionOptions, analysis: ImageAnalysis): Promise<void> {
-    const memoryInfo = HighResolutionManager.getEstimatedUsage();
-    const availableMB = (memoryInfo.limit - memoryInfo.used) / (1024 * 1024);
+    const budget = readMemoryBudget();
 
     // Memory warning occurred
-    if (opts.onMemoryWarning && availableMB < (opts.maxMemoryUsageMB || 256)) {
+    if (opts.onMemoryWarning && budget.availableMB < (opts.maxMemoryUsageMB || 256)) {
       opts.onMemoryWarning({
-        usageRatio: memoryInfo.used / memoryInfo.limit,
-        availableMB: Math.round(availableMB),
+        usageRatio: budget.pressure,
+        availableMB: budget.availableMB,
       });
     }
 
     // Trigger garbage collection when memory is low
     if (HighResolutionManager.isMemoryLow()) {
-      if (typeof global !== 'undefined' && global.gc) {
-        global.gc();
-      }
+      requestMemoryRelief();
     }
   }
 
@@ -306,8 +304,8 @@ export class HighResolutionManager {
    * @private
    */
   private static getCurrentMemoryUsage(): number {
-    const usage = HighResolutionManager.getEstimatedUsage();
-    return Math.round((usage.used / (1024 * 1024)) * 100) / 100;
+    const budget = readMemoryBudget();
+    return budget.usedMB;
   }
 
   /**
@@ -435,33 +433,12 @@ export class HighResolutionManager {
   /**
    * Simple memory shortage check
    * @private
+   *
+   * 메모리 예산은 browser-capabilities/memory.internal.ts가 단일 소유한다. 이름과
+   * 시그니처를 유지해 기존 vi.spyOn(HighResolutionManager as any, 'isMemoryLow')
+   * 호출부가 깨지지 않게 한다.
    */
   private static isMemoryLow(): boolean {
-    if (typeof performance !== 'undefined' && 'memory' in performance) {
-      const memory = (performance as any).memory;
-      const usageRatio = memory.usedJSHeapSize / memory.jsHeapSizeLimit;
-      return usageRatio > 0.8;
-    }
-    return false;
-  }
-
-  /**
-   * Estimate memory usage
-   * @private
-   */
-  private static getEstimatedUsage(): { used: number; limit: number } {
-    if (typeof performance !== 'undefined' && 'memory' in performance) {
-      const memory = (performance as any).memory;
-      return {
-        used: memory.usedJSHeapSize,
-        limit: memory.jsHeapSizeLimit,
-      };
-    }
-
-    // Default values (estimated)
-    return {
-      used: 64 * 1024 * 1024, // 64MB
-      limit: 512 * 1024 * 1024, // 512MB
-    };
+    return readMemoryBudget().pressure > 0.8;
   }
 }

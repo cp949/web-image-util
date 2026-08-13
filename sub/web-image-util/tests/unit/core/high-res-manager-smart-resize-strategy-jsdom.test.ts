@@ -357,13 +357,13 @@ describe('HighResolutionManager.batchSmartResize — 결과 순서/실패 전파
   });
 });
 
-describe('HighResolutionManager — getEstimatedUsage performance.memory 유무에 따른 안전값', () => {
+describe('HighResolutionManager — readMemoryBudget() 폴백 시 memoryPeakUsageMB 안전값', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
-  it('performance.memory 없을 때 memoryPeakUsageMB 는 fallback 상수(64MB)에 근접한 값이다', async () => {
+  it('performance.memory 없을 때 memoryPeakUsageMB 는 공유 fallback 상수(128MB)에 근접한 값이다', async () => {
     // memory 속성이 없는 performance 를 명시적으로 주입해 fallback 분기 진입을 보장한다
     vi.stubGlobal('performance', { now: () => 0 });
 
@@ -375,8 +375,8 @@ describe('HighResolutionManager — getEstimatedUsage performance.memory 유무�
       forceStrategy: ProcessingStrategy.STEPPED,
     });
 
-    // getEstimatedUsage fallback: used=64MB → getCurrentMemoryUsage()=64
-    expect(result.memoryPeakUsageMB).toBeCloseTo(64, 0);
+    // readMemoryBudget()의 단일 fallback: usedMB=128 → getCurrentMemoryUsage()=128 (src/utils/browser-capabilities/memory.internal.ts)
+    expect(result.memoryPeakUsageMB).toBeCloseTo(128, 0);
   });
 
   it('performance.memory 존재 시 memoryPeakUsageMB 는 stubbed usedJSHeapSize 를 반영한다', async () => {
