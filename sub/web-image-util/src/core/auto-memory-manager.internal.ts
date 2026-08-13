@@ -6,21 +6,8 @@
  */
 
 import { CanvasPool } from '../base/canvas-pool.internal';
+import { type MemoryBudget, readMemoryBudget, requestMemoryRelief } from '../utils/browser-capabilities/index';
 import { debugLog, productionLog } from '../utils/debug.internal';
-
-/**
- * Memory status information
- */
-interface MemoryInfo {
-  /** Memory pressure level (0-1) */
-  pressure: number;
-  /** Available memory (MB) */
-  availableMB: number;
-  /** Used memory (MB) */
-  usedMB: number;
-  /** Total memory limit (MB) */
-  limitMB: number;
-}
 
 /**
  * Automatic memory manager - Singleton pattern
@@ -56,7 +43,7 @@ export class AutoMemoryManager {
   /**
    * Perform memory optimization
    */
-  private async performOptimization(memoryInfo: MemoryInfo): Promise<void> {
+  private async performOptimization(memoryInfo: MemoryBudget): Promise<void> {
     const now = Date.now();
 
     // Skip if optimization was performed within the last 5 seconds (prevent too frequent execution)
@@ -75,8 +62,7 @@ export class AutoMemoryManager {
       debugLog.debug('[AutoMemoryManager] Canvas pool cleared due to memory pressure');
 
       // 2. Trigger garbage collection (in Node.js environment)
-      if (typeof global !== 'undefined' && global.gc) {
-        global.gc();
+      if (requestMemoryRelief()) {
         debugLog.debug('[AutoMemoryManager] Garbage collection triggered');
       }
 
@@ -94,29 +80,12 @@ export class AutoMemoryManager {
 
   /**
    * Query current memory information
+   *
+   * 메모리 예산은 browser-capabilities/memory.internal.ts가 단일 소유한다. 이 파일이
+   * 쓰던 shape·fallback 값이 그대로 그 모듈의 정본으로 승격됐다.
    */
-  getMemoryInfo(): MemoryInfo {
-    if (typeof performance !== 'undefined' && 'memory' in performance) {
-      const memory = (performance as any).memory;
-      const usedMB = memory.usedJSHeapSize / (1024 * 1024);
-      const limitMB = memory.jsHeapSizeLimit / (1024 * 1024);
-      const availableMB = limitMB - usedMB;
-
-      return {
-        pressure: memory.usedJSHeapSize / memory.jsHeapSizeLimit,
-        availableMB: Math.round(availableMB),
-        usedMB: Math.round(usedMB),
-        limitMB: Math.round(limitMB),
-      };
-    }
-
-    // Default values (environment where memory information cannot be obtained)
-    return {
-      pressure: 0.5,
-      availableMB: 256,
-      usedMB: 128,
-      limitMB: 512,
-    };
+  getMemoryInfo(): MemoryBudget {
+    return readMemoryBudget();
   }
 
   /**
