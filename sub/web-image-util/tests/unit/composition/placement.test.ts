@@ -73,6 +73,9 @@ describe('placement', () => {
     expect(rotateSpy).toHaveBeenCalledWith(Math.PI / 2);
     expect(translateSpy).toHaveBeenNthCalledWith(2, -85, -68);
     expect(draw).toHaveBeenCalledWith(origin);
+    expect(translateSpy.mock.invocationCallOrder[0]).toBeLessThan(rotateSpy.mock.invocationCallOrder[0]);
+    expect(rotateSpy.mock.invocationCallOrder[0]).toBeLessThan(translateSpy.mock.invocationCallOrder[1]);
+    expect(translateSpy.mock.invocationCallOrder[1]).toBeLessThan(draw.mock.invocationCallOrder[0]);
   });
 
   it('placeTiled: spacing이 유한 양수가 아니면 그리기 전에 OPTION_INVALID를 던진다', () => {

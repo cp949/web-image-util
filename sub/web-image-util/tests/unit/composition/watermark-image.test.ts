@@ -158,7 +158,7 @@ describe('ImageWatermark', () => {
     expect(translateSpy).toHaveBeenNthCalledWith(2, 10, 10);
   });
 
-  it('addRepeatingPattern: 비정사각형 회전 타일의 실제 bounding size로 가장자리 행을 확장한다', () => {
+  it('addRepeatingPattern: 비정사각형 회전 타일의 실제 bounding size로 가장자리 행·열을 확장한다', () => {
     const canvas = createTestCanvas(100, 80);
     const ctx = canvas.getContext('2d');
     if (!ctx) {
@@ -167,16 +167,21 @@ describe('ImageWatermark', () => {
     const drawImageSpy = vi.spyOn(ctx, 'drawImage');
 
     ImageWatermark.addRepeatingPattern(canvas, {
-      watermarkImage: createTestImage(40, 10),
+      watermarkImage: createTestImage(40, 20),
       position: Position.MIDDLE_CENTER,
-      spacing: { x: 50, y: 50 },
+      spacing: { x: 2, y: 10 },
       rotation: 45,
     });
 
-    const rowOrigins = Array.from(new Set(drawImageSpy.mock.calls.map(([, , y]) => y as number)));
-    expect(rowOrigins).toHaveLength(4);
-    expect(rowOrigins[0]).toBeCloseTo(-35.3553390593);
-    expect(rowOrigins[rowOrigins.length - 1]).toBeCloseTo(114.6446609407);
+    const origins = drawImageSpy.mock.calls.map(([, x, y]) => ({ x: x as number, y: y as number }));
+    const oldPadding = { width: 40, height: 20 };
+    const leftEdgeTile = origins.find(({ x }) => x < -oldPadding.width && x + 41.2132034356 > 0);
+    const topEdgeTile = origins.find(({ y }) => y < -oldPadding.height && y + 31.2132034356 > 0);
+
+    // 45도 회전 AABB는 42.426... × 42.426...이다. 아래 타일들은 기존 시작점
+    // (-40, -20)보다 바깥에 있지만 회전 후 오른쪽/아래쪽 끝이 0을 넘어 Canvas와 교차한다.
+    expect(leftEdgeTile?.x).toBeCloseTo(-40.4264068712);
+    expect(topEdgeTile?.y).toBeCloseTo(-22.4264068712);
   });
 
   it('addRepeatingPattern: spacing이 유한 양수가 아니면 OPTION_INVALID를 던진다', () => {

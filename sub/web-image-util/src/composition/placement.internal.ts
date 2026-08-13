@@ -95,25 +95,34 @@ export function placeTiled(ctx: CanvasRenderingContext2D, spec: PlaceTiledSpec, 
   requirePositiveSpacing(spec.spacing.x, 'spacing.x', spec.context);
   requirePositiveSpacing(spec.spacing.y, 'spacing.y', spec.context);
 
-  const bounds =
-    spec.rotationMode === 'frame'
-      ? computeFrameTileBounds(spec.containerSize, spec.tileSize, spec.rotation)
-      : computePerTileBounds(spec.containerSize, spec.tileSize, spec.rotation);
+  if (spec.rotationMode === 'frame') {
+    placeFrameTiles(ctx, spec, draw);
+    return;
+  }
+
+  placePerTileTiles(ctx, spec, draw);
+}
+
+function placeFrameTiles(ctx: CanvasRenderingContext2D, spec: PlaceTiledSpec, draw: (origin: Point) => void): void {
+  const bounds = computeFrameTileBounds(spec.containerSize, spec.tileSize, spec.rotation);
 
   withCanvasState(ctx, () => {
-    if (spec.rotationMode === 'frame') {
-      const rotation = spec.rotation ?? 0;
-      if (rotation !== 0) {
-        ctx.rotate((rotation * Math.PI) / 180);
-      }
+    const rotation = spec.rotation ?? 0;
+    if (rotation !== 0) {
+      ctx.rotate((rotation * Math.PI) / 180);
     }
 
     for (const origin of iterateTileGrid(bounds, spec.spacing, spec.stagger)) {
-      if (spec.rotationMode === 'frame') {
-        draw(origin);
-        continue;
-      }
+      draw(origin);
+    }
+  });
+}
 
+function placePerTileTiles(ctx: CanvasRenderingContext2D, spec: PlaceTiledSpec, draw: (origin: Point) => void): void {
+  const bounds = computePerTileBounds(spec.containerSize, spec.tileSize, spec.rotation);
+
+  withCanvasState(ctx, () => {
+    for (const origin of iterateTileGrid(bounds, spec.spacing, spec.stagger)) {
       withCanvasState(ctx, () => {
         applyRotation(ctx, {
           x: origin.x,
