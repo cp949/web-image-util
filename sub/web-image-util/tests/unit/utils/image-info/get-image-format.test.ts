@@ -4,7 +4,6 @@ import {
   formatFromBlobMetadata,
   formatFromBytes,
   formatFromMimeType,
-  formatFromPath,
 } from '../../../../src/utils/image-info/format-detection.internal';
 
 describe('getImageFormat', () => {
@@ -23,6 +22,21 @@ describe('getImageFormat', () => {
 
     try {
       await expect(getImageFormat('https://example.com/photo.webp?cache=1')).resolves.toBe('webp');
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('호스트명이 이미지 확장자로 끝나도 포맷으로 판정하지 않는다', async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn();
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    try {
+      // 확장자는 경로에서 읽어야 한다. 아래 입력은 경로가 비어 있고 호스트명만 .svg/.png로 끝난다.
+      await expect(getImageFormat('https://ex.com.svg')).resolves.toBe('unknown');
+      await expect(getImageFormat('//cdn.example.png')).resolves.toBe('unknown');
       expect(fetchMock).not.toHaveBeenCalled();
     } finally {
       globalThis.fetch = originalFetch;
@@ -55,31 +69,8 @@ describe('formatFromMimeType', () => {
   });
 });
 
-describe('formatFromPath', () => {
-  it('query string을 제거하고 확장자로 포맷을 판정한다', () => {
-    expect(formatFromPath('/img/photo.jpg?v=123')).toBe('jpg');
-    expect(formatFromPath('https://example.com/img.png?cache=1&t=2')).toBe('png');
-  });
-
-  it('hash를 제거하고 확장자로 포맷을 판정한다', () => {
-    expect(formatFromPath('/img/icon.svg#symbol')).toBe('svg');
-    expect(formatFromPath('https://example.com/img.jpeg#section')).toBe('jpeg');
-  });
-
-  it('.jpg와 .jpeg를 각각 jpg와 jpeg로 구별한다', () => {
-    expect(formatFromPath('photo.jpg')).toBe('jpg');
-    expect(formatFromPath('photo.jpeg')).toBe('jpeg');
-  });
-
-  it('.avif 확장자를 avif로 판정한다', () => {
-    expect(formatFromPath('photo.avif')).toBe('avif');
-  });
-
-  it('알 수 없는 확장자는 unknown을 반환한다', () => {
-    expect(formatFromPath('photo.bmp')).toBe('unknown');
-    expect(formatFromPath('noextension')).toBe('unknown');
-  });
-});
+// 경로 확장자 → 포맷 매핑 자체의 검증은 정본 소유자인
+// tests/unit/utils/source-utils.test.ts의 getFormatFromPath 블록에 있다.
 
 describe('formatFromBytes', () => {
   it('AVIF ftyp 시그니처를 avif로 판정한다', () => {

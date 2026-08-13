@@ -3,6 +3,9 @@
  *
  * MIME, 파일 경로 확장자, Data URL 헤더, 바이너리 매직바이트 순으로 가벼운 검증부터 시도한다.
  * 네트워크 fetch와 결합된 응답 prefix 기반 판정은 [`./remote-fetch.internal.ts`]가 담당한다.
+ *
+ * MIME 매핑 정본은 utils/format-utils가, 경로 확장자 매핑 정본은
+ * utils/source-utils/path.internal이 소유한다.
  */
 
 import { detectStringSourceType, isSvgSourceType } from '../../core/source-converter/detect.internal';
@@ -10,26 +13,12 @@ import type { ImageSource } from '../../types';
 import { ImageFormats } from '../../types';
 import { parseDataURLMimeType } from '../data-url';
 import { mimeTypeToImageFormat } from '../format-utils';
+import { getFormatFromPath } from '../source-utils/path.internal';
 import type { ImageInfo } from './types';
 
 /** MIME 타입을 공개 이미지 포맷 값으로 변환한다. 매핑 정본은 format-utils가 소유한다. */
 export function formatFromMimeType(mimeType: string): ImageInfo['format'] {
   return mimeTypeToImageFormat(mimeType);
-}
-
-/** 파일명이나 URL 경로의 확장자에서 이미지 포맷 힌트를 얻는다. */
-export function formatFromPath(input: string): ImageInfo['format'] {
-  const pathname = input.split(/[?#]/, 1)[0].toLowerCase();
-
-  if (pathname.endsWith('.jpg')) return ImageFormats.JPG;
-  if (pathname.endsWith('.jpeg')) return ImageFormats.JPEG;
-  if (pathname.endsWith('.png')) return ImageFormats.PNG;
-  if (pathname.endsWith('.webp')) return ImageFormats.WEBP;
-  if (pathname.endsWith('.avif')) return ImageFormats.AVIF;
-  if (pathname.endsWith('.gif')) return ImageFormats.GIF;
-  if (pathname.endsWith('.svg')) return ImageFormats.SVG;
-
-  return 'unknown';
 }
 
 /** Data URL 헤더에서 이미지 포맷을 추출한다. */
@@ -109,7 +98,7 @@ export function formatFromBlobMetadata(blob: Blob): ImageInfo['format'] {
   }
 
   const name = (blob as File).name;
-  return typeof name === 'string' ? formatFromPath(name) : 'unknown';
+  return typeof name === 'string' ? getFormatFromPath(name) : 'unknown';
 }
 
 /** 입력 소스에서 포맷을 확인한다. 필요한 경우에만 바이트를 읽는다. */
@@ -141,7 +130,7 @@ async function detectImageFormat(source: ImageSource): Promise<ImageInfo['format
     if (isSvgSourceType(sourceType)) return ImageFormats.SVG;
     if (sourceType === 'dataurl') return formatFromDataUrl(source.trim());
     if (sourceType === 'url' || sourceType === 'path' || sourceType === 'bloburl') {
-      return formatFromPath(source.trim());
+      return getFormatFromPath(source.trim());
     }
   }
 

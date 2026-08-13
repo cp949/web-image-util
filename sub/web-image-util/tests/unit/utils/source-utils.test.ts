@@ -241,6 +241,17 @@ describe('path parser', () => {
       expect(getFormatFromPath('https://example.com/dir.with.dot/photo.webp?download=true')).toBe('webp');
     });
 
+    it('URL로 파싱되지 않는 상대·절대 경로에서도 쿼리/해시를 걷어낸다', () => {
+      expect(getFormatFromPath('/img/photo.jpg?v=123')).toBe('jpg');
+      expect(getFormatFromPath('/img/icon.svg#symbol')).toBe('svg');
+    });
+
+    it('확장자는 경로에서만 읽고 호스트명에서는 읽지 않는다', () => {
+      expect(getFormatFromPath('https://ex.com.svg')).toBe('unknown');
+      expect(getFormatFromPath('//cdn.example.png')).toBe('unknown');
+      expect(getFormatFromPath('https://cdn.example.png/photo.webp')).toBe('webp');
+    });
+
     it('알 수 없는 확장자는 unknown으로 반환한다', () => {
       expect(getFormatFromPath('archive.zip')).toBe('unknown');
       expect(getFormatFromPath('https://example.com/file.bmp')).toBe('unknown');
