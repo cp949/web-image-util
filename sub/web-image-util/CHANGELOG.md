@@ -54,6 +54,12 @@
 - Fixed: `createAvatar()`의 `fit` 옵션이 무시되고 항상 `'cover'`로 처리되던 결함을 수정했습니다. 이제 `fit: 'contain'`/`'fill'`이 리사이즈에 반영되며, 미지정 시 기본값 `'cover'`는 그대로 유지됩니다.
 - Fixed: advanced `AdvancedImageProcessor.processImage()`에서 `format: 'jpg'` 지정 시 비표준 MIME `image/jpg`로 인코딩을 시도해 브라우저가 PNG로 폴백하던 문제를 수정했습니다. 정본 포맷 테이블 경유로 `image/jpeg`로 인코딩합니다.
 - Fixed: advanced 고해상도 처리에서 `quality: 'balanced'`(기본값)가 stepped/tiled 전략에 `'high'`로 강등 전달되어 의도된 medium 스무딩이 적용되지 않던 문제를 수정했습니다. `fast`의 스무딩 끔 동작도 tiled 결과 조립 단계까지 일관 적용됩니다.
+- Fixed: advanced `TextWatermark.addRepeatingPattern()`이 `rotation`을 지정하면 캔버스를 고르게 덮지 못하던 문제를 수정했습니다. 회전은 캔버스 원점에 걸리는데 타일 루프 경계는 회전 전 좌표계를 따라, 회전된 프레임에서 순회 범위가 캔버스와 어긋났습니다. 이제 캔버스 네 꼭짓점을 역회전한 bounding box에서 루프 경계를 파생시킵니다.
+  - 800×600 · spacing 200 · `rotation: -45` 기준 사분면 잉크 비율이 `3.8 / 3.8 / 1.9 / 1.7`(하단이 상단의 절반)에서 `3.3 / 3.2 / 3.2 / 3.2`로 바뀝니다.
+  - `rotation: 90`·`135`처럼 타일이 전부 캔버스 밖으로 나가 워터마크가 아예 그려지지 않던 각도도 정상 렌더링됩니다.
+  - `SimpleWatermark.addPattern()`은 기본값이 `rotation: -45`이므로 옵션을 주지 않아도 이 경로를 탑니다. `rotation`이 0이거나 미지정인 호출의 출력은 바뀌지 않습니다.
+  - 커버리지를 채우면서 타일 수가 회전각에 따라 늘어납니다(위 기준에서 28개 → 48개).
+- Fixed: advanced `TextWatermark.addRepeatingPattern()`에 `spacing.x` 또는 `spacing.y`를 0 이하로 넘기면 타일 루프가 끝나지 않아 브라우저가 멈추던 문제를 수정했습니다. 이제 유한 양수가 아니면 `ImageProcessError`(`OPTION_INVALID`)로 거부합니다. `SimpleWatermark.addPattern({ spacing: 0 })`으로도 도달할 수 있던 경로입니다.
 - Fixed: advanced `TextWatermark.addToCanvas()`·`TextWatermark.addRepeatingPattern()`이 호출자 소유 Canvas의 2D 컨텍스트 상태를 되돌리지 않고 반환하던 문제를 수정했습니다. 텍스트 스타일 적용이 `save()`/`restore()` 범위 밖에 있어 호출 이후에도 `font`·`globalAlpha`·`fillStyle`·`strokeStyle`·`lineWidth`·`textBaseline`·`textAlign`이 워터마크 설정으로 남아, 같은 Canvas에 이어 그리는 코드가 영향을 받았습니다. 워터마크 출력 자체는 변하지 않습니다.
 
 ## [3.1.0] - 2026-08-12

@@ -1,4 +1,10 @@
-import { applyRotation, requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
+import { ImageProcessError } from '../errors.internal';
+import {
+  applyRotation,
+  getOriginRotationCoverageBounds,
+  requireCanvasContext,
+  withCanvasState,
+} from './canvas-drawing.internal';
 import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 
@@ -38,6 +44,21 @@ export interface TextWatermarkOptions {
   style: TextStyle;
   rotation?: number; // degrees
   margin?: Point;
+}
+
+/**
+ * 반복 패턴의 타일 간격이 유한 양수인지 확인한다.
+ *
+ * 0 이하이거나 NaN/Infinity면 타일 루프가 전진하지 않거나 끝나지 않으므로 그리기 전에 거른다.
+ */
+function requirePositiveSpacing(value: number, option: string): void {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new ImageProcessError(
+      `TextWatermark.addRepeatingPattern: ${option} must be a positive number`,
+      'OPTION_INVALID',
+      { details: { option, minimum: 0 } }
+    );
+  }
 }
 
 /**
@@ -165,6 +186,10 @@ export class TextWatermark {
 
     const { text, style, rotation = 0, spacing, stagger = false } = options;
 
+    // spacing이 유한 양수가 아니면 아래 타일 루프가 전진하지 않아 브라우저가 멈춘다.
+    requirePositiveSpacing(spacing.x, 'spacing.x');
+    requirePositiveSpacing(spacing.y, 'spacing.y');
+
     // addToCanvas와 같은 이유로 스타일 적용을 save/restore 안으로 넣는다
     withCanvasState(ctx, () => {
       TextWatermark.applyTextStyle(ctx, style);
@@ -174,23 +199,35 @@ export class TextWatermark {
 
       // 여기는 타일 중심이 아니라 캔버스 원점을 회전시킨다. 연속된 대각선 텍스트 띠를 만드는
       // 별개 표현이므로 applyRotation(중심 기준)으로 합치지 않는다.
-      // 다만 아래 타일 루프의 경계는 회전 전 좌표계 기준이라, rotation이 0이 아니면
-      // 캔버스 하단 커버리지가 상단보다 낮아진다 — 별도 과제로 남긴다.
       if (rotation !== 0) {
         ctx.rotate((rotation * Math.PI) / 180);
       }
 
-      let yOffset = 0;
-      for (let y = 0; y < canvas.height + textHeight; y += spacing.y) {
-        const xOffset = stagger && yOffset % 2 === 1 ? spacing.x / 2 : 0;
+      // 회전된 프레임에서 캔버스를 덮는 범위는 캔버스 사각형과 어긋난다. 루프 경계를
+      // 캔버스 축 기준으로 두면 커버리지가 한쪽으로 쏠리므로 역회전 bounding box에서 파생시킨다.
+      // rotation이 0이면 이 범위가 정확히 [0, width] × [0, height]라 회전 없는 출력은 그대로다.
+      const bounds = getOriginRotationCoverageBounds(canvas.width, canvas.height, rotation);
 
-        for (let x = -textWidth; x < canvas.width + textWidth; x += spacing.x) {
+      // 타일 실효 범위는 textBaseline='top' 기준 [x, x+textWidth] × [y, y+textHeight]다.
+      // strokeText의 lineWidth 번짐은 패딩에 반영하지 않는다 — 최외곽 타일에서 lineWidth/2만큼
+      // 모자라지만, 반영하면 회전 없는 경로의 타일 배치까지 바뀐다.
+      const startX = bounds.minX - textWidth;
+      const endX = bounds.maxX + textWidth;
+      const endY = bounds.maxY + textHeight;
+
+      // stagger 오프셋은 루프 첫 행을 짝수로 두고 세는 행 번호를 따른다.
+      // 반복 패턴에서 어느 행이 어긋나는지는 임의 기준이며, 회전 0에서는 기존과 같은 행이 어긋난다.
+      let rowIndex = 0;
+      for (let y = bounds.minY; y < endY; y += spacing.y) {
+        const xOffset = stagger && rowIndex % 2 === 1 ? spacing.x / 2 : 0;
+
+        for (let x = startX; x < endX; x += spacing.x) {
           if (style.strokeWidth && style.strokeColor) {
             ctx.strokeText(text, x + xOffset, y);
           }
           ctx.fillText(text, x + xOffset, y);
         }
-        yOffset++;
+        rowIndex++;
       }
     });
 

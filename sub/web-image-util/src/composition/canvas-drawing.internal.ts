@@ -117,3 +117,55 @@ export function applyRotation(
   ctx.rotate((placement.rotation * Math.PI) / 180);
   ctx.translate(-centerX, -centerY);
 }
+
+/**
+ * 회전된 좌표계에서 캔버스 전체를 덮는 데 필요한 사각 범위.
+ *
+ * 좌표는 회전이 걸린 뒤의 user space 기준이다.
+ */
+export interface CoverageBounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+/**
+ * 캔버스 원점 회전(`ctx.rotate()` 단독 호출) 상태에서 캔버스 전체를 덮으려면
+ * user space의 어느 범위를 그려야 하는지 계산한다.
+ *
+ * `ctx.rotate(θ)`는 user space 좌표 `(x, y)`를 디바이스 좌표
+ * `(x·cosθ − y·sinθ, x·sinθ + y·cosθ)`로 보낸다. 따라서 디바이스 사각형
+ * `[0, width] × [0, height]`의 네 꼭짓점을 역변환해 user space로 옮기고,
+ * 그 bounding box를 취하면 캔버스를 빠짐없이 포함하는 범위가 된다.
+ * 회전된 프레임에서 그리는 타일 루프가 캔버스 축 기준 경계를 그대로 쓰면
+ * 커버리지가 한쪽으로 편중되므로, 루프 경계는 이 범위에서 파생시킨다.
+ *
+ * `rotation`이 0(또는 미지정·비유한값)이면 변환이 걸리지 않으므로 캔버스 사각형을
+ * 그대로 돌려준다. 부동소수 오차 없이 회전 없는 경로의 출력을 보존하기 위한 조기 반환이다.
+ */
+export function getOriginRotationCoverageBounds(width: number, height: number, rotation?: number): CoverageBounds {
+  if (!rotation || !Number.isFinite(rotation)) {
+    return { minX: 0, maxX: width, minY: 0, maxY: height };
+  }
+
+  const radians = (rotation * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+
+  const corners: Array<readonly [number, number]> = [
+    [0, 0],
+    [width, 0],
+    [0, height],
+    [width, height],
+  ];
+  const xs = corners.map(([x, y]) => x * cos + y * sin);
+  const ys = corners.map(([x, y]) => -x * sin + y * cos);
+
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
+  };
+}
