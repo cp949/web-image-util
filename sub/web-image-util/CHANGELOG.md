@@ -52,6 +52,10 @@
 
 ### 수정
 
+- Fixed: `getImageFormat()`과 `getImageInfo()`가 `#`나 `?`가 들어간 `File` 이름에서 확장자를 놓치던 문제를 수정했습니다. 두 문자는 파일명에 쓸 수 있으므로 이제 이름 전체를 먼저 읽습니다(`사진#1.png` → `png`, `report?draft.webp` → `webp`).
+  - SVG에서 결과가 달라집니다. `formatFromBytes`에 SVG 시그니처가 없어 이름 판정을 놓치면 바이트 폴백이 복구하지 못했습니다. `사진#1.svg` 같은 `File`의 `format`이 `'unknown'`에서 `'svg'`로 바뀝니다.
+  - 다른 포맷은 바이트 시그니처로 복구되고 있었으므로 반환값이 아니라 불필요한 32바이트 읽기가 사라집니다.
+  - URL에서 파생된 이름(`photo.png?v=1`, `icon.svg#symbol`)은 그대로 판정됩니다. 이름 전체에서 확장자를 찾지 못하면 쿼리·해시를 걷어내고 한 번 더 시도합니다.
 - Fixed: `getImageFormat()`과 `getImageInfo()`가 호스트명 끝의 점 확장자를 이미지 확장자로 오독하던 문제를 수정했습니다. 경로가 비어 있고 호스트명만 확장자로 끝나는 입력의 `format`이 `'svg'`/`'png'`에서 `'unknown'`으로 바뀝니다(`https://ex.com.svg`, `//cdn.example.png`). 같은 문자열을 `detectImageSourceType()`은 이미 이미지 확장자로 보지 않았기 때문에, 한 번의 호출 안에서 두 판정이 어긋나 있었습니다.
   - 경로 확장자 → 포맷 매핑 구현이 두 벌이던 것을 URL 파싱 기반 한 벌로 통일한 결과입니다. 호스트와 경로를 구분하지 않던 문자열 절단 방식이 제거됩니다.
   - 경로에 확장자가 있는 정상 입력(`https://example.com/photo.webp?cache=1`, `photo.jpg`, `File.name`)의 결과는 바뀌지 않습니다.

@@ -129,6 +129,30 @@ describe('formatFromBlobMetadata — 포맷 판정 우선순위', () => {
     }
   });
 
+  it('#와 ?는 파일명의 일부이므로 잘라내지 않고 확장자를 읽는다', () => {
+    const cases = [
+      ['사진#1.png', 'png'],
+      ['v1.0#final.jpg', 'jpg'],
+      ['report?draft.webp', 'webp'],
+      ['Q&A#2.svg', 'svg'],
+    ] as const;
+
+    for (const [name, expected] of cases) {
+      expect(formatFromBlobMetadata(new File(['data'], name, { type: '' }))).toBe(expected);
+    }
+  });
+
+  it('URL에서 파생된 파일명은 쿼리·해시를 걷어낸 확장자로도 판정한다', () => {
+    const cases = [
+      ['photo.png?v=1', 'png'],
+      ['icon.svg#symbol', 'svg'],
+    ] as const;
+
+    for (const [name, expected] of cases) {
+      expect(formatFromBlobMetadata(new File(['data'], name, { type: '' }))).toBe(expected);
+    }
+  });
+
   it('Blob type도 unknown이고 name도 없으면 unknown을 반환한다', () => {
     // 일반 Blob은 name 속성이 없어 bytes 단계 전에 unknown이 된다
     const blob = new Blob(['data'], { type: '' });
@@ -142,5 +166,12 @@ describe('getImageFormat — bytes fallback', () => {
     const pngSignature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const blob = new Blob([pngSignature], { type: '' });
     await expect(getImageFormat(blob)).resolves.toBe('png');
+  });
+
+  it('SVG는 바이트 시그니처가 없으므로 파일명 판정이 최종 답이 된다', async () => {
+    // formatFromBytes에 SVG 분기가 없어 파일명에서 놓치면 unknown으로 끝난다
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>';
+    const file = new File([svg], '사진#1.svg', { type: '' });
+    await expect(getImageFormat(file)).resolves.toBe('svg');
   });
 });
