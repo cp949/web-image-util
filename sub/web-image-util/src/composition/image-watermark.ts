@@ -1,4 +1,4 @@
-import { requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
+import { applyRotation, requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
 import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 
@@ -64,14 +64,14 @@ export class ImageWatermark {
       ctx.globalCompositeOperation = blendMode;
       ctx.globalAlpha = opacity;
 
-      // Set rotation
-      if (rotation !== 0) {
-        const centerX = watermarkPosition.x + watermarkSize.width / 2;
-        const centerY = watermarkPosition.y + watermarkSize.height / 2;
-        ctx.translate(centerX, centerY);
-        ctx.rotate((rotation * Math.PI) / 180);
-        ctx.translate(-centerX, -centerY);
-      }
+      // 워터마크 영역 중심을 기준으로 회전한다
+      applyRotation(ctx, {
+        x: watermarkPosition.x,
+        y: watermarkPosition.y,
+        width: watermarkSize.width,
+        height: watermarkSize.height,
+        rotation,
+      });
 
       // Draw image
       ctx.drawImage(
@@ -151,13 +151,14 @@ export class ImageWatermark {
 
         for (let x = -watermarkWidth; x < canvas.width + watermarkWidth; x += spacing.x) {
           withCanvasState(ctx, () => {
-            if (rotation !== 0) {
-              const centerX = x + xOffset + watermarkWidth / 2;
-              const centerY = y + watermarkHeight / 2;
-              ctx.translate(centerX, centerY);
-              ctx.rotate((rotation * Math.PI) / 180);
-              ctx.translate(-centerX, -centerY);
-            }
+            // 타일마다 자기 영역 중심을 기준으로 회전한다 (격자는 캔버스 축에 정렬된 채로 유지)
+            applyRotation(ctx, {
+              x: x + xOffset,
+              y,
+              width: watermarkWidth,
+              height: watermarkHeight,
+              rotation,
+            });
 
             ctx.drawImage(watermarkImage, x + xOffset, y, watermarkWidth, watermarkHeight);
           });

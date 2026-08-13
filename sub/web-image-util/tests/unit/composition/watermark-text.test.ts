@@ -6,7 +6,7 @@
  * 동일성까지만 단정한다.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Position } from '../../../src/composition/position-types';
 import { TextWatermark } from '../../../src/composition/text-watermark';
 import { ImageProcessError } from '../../../src/errors.internal';
@@ -33,6 +33,32 @@ describe('TextWatermark', () => {
       rotation: 45,
     });
     expect(result).toBe(canvas);
+  });
+
+  it('addToCanvas: 텍스트 영역 중심을 기준으로 회전한다', () => {
+    const canvas = createTestCanvas(400, 300);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+
+    // 폰트 메트릭은 실행 환경에 따라 달라지므로 폭을 고정해 중심 계산을 결정적으로 만든다
+    vi.spyOn(ctx, 'measureText').mockReturnValue({ width: 80 } as TextMetrics);
+    const translateSpy = vi.spyOn(ctx, 'translate');
+    const rotateSpy = vi.spyOn(ctx, 'rotate');
+
+    TextWatermark.addToCanvas(canvas, {
+      text: '회전 텍스트',
+      position: Position.CUSTOM,
+      customPosition: { x: 100, y: 60 },
+      style: { ...baseStyle, fontSize: 20 },
+      rotation: 90,
+    });
+
+    // 중심 = (100 + 80/2, 60 + 20/2) = (140, 70)
+    expect(translateSpy).toHaveBeenNthCalledWith(1, 140, 70);
+    expect(rotateSpy).toHaveBeenCalledWith(Math.PI / 2);
+    expect(translateSpy).toHaveBeenNthCalledWith(2, -140, -70);
   });
 
   it('addToCanvas: shadow·strokeColor 스타일을 적용한다', () => {

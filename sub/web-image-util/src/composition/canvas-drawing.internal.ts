@@ -94,7 +94,16 @@ export function drawShadowedImage(
   });
 }
 
-function applyRotation(
+/**
+ * 배치 영역의 중심을 기준으로 캔버스를 회전시킨다.
+ *
+ * `rotation`은 도(degree) 단위이고, 0 또는 undefined면 변환을 걸지 않는다.
+ * composition 모듈에서 "회전 기준점이 어디인가"를 정의하는 단일 지점이다 —
+ * 레이어·그림자·워터마크가 모두 이 함수를 거치므로 인라인으로 다시 적지 않는다.
+ *
+ * 변환을 되돌리는 책임은 호출자에게 있다. 반드시 {@link withCanvasState} 안에서 호출한다.
+ */
+export function applyRotation(
   ctx: CanvasRenderingContext2D,
   placement: Pick<DrawableImagePlacement, 'x' | 'y' | 'width' | 'height' | 'rotation'>
 ): void {

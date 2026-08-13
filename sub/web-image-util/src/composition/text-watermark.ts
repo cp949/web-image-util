@@ -1,4 +1,4 @@
-import { requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
+import { applyRotation, requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
 import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 
@@ -76,13 +76,14 @@ export class TextWatermark {
     );
 
     withCanvasState(ctx, () => {
-      if (rotation !== 0) {
-        const centerX = textPosition.x + textSize.width / 2;
-        const centerY = textPosition.y + textSize.height / 2;
-        ctx.translate(centerX, centerY);
-        ctx.rotate((rotation * Math.PI) / 180);
-        ctx.translate(-centerX, -centerY);
-      }
+      // 텍스트 영역 중심을 기준으로 회전한다
+      applyRotation(ctx, {
+        x: textPosition.x,
+        y: textPosition.y,
+        width: textSize.width,
+        height: textSize.height,
+        rotation,
+      });
 
       // Apply shadow effect
       if (style.shadow) {
@@ -167,6 +168,10 @@ export class TextWatermark {
     const textHeight = style.fontSize || 16;
 
     withCanvasState(ctx, () => {
+      // 여기는 타일 중심이 아니라 캔버스 원점을 회전시킨다. 연속된 대각선 텍스트 띠를 만드는
+      // 별개 표현이므로 applyRotation(중심 기준)으로 합치지 않는다.
+      // 다만 아래 타일 루프의 경계는 회전 전 좌표계 기준이라, rotation이 0이 아니면
+      // 캔버스 하단 커버리지가 상단보다 낮아진다 — 별도 과제로 남긴다.
       if (rotation !== 0) {
         ctx.rotate((rotation * Math.PI) / 180);
       }

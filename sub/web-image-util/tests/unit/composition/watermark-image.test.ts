@@ -6,7 +6,7 @@
  * 반환값 동일성까지만 단정한다.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ImageWatermark } from '../../../src/composition/image-watermark';
 import { Position } from '../../../src/composition/position-types';
 import { ImageProcessError } from '../../../src/errors.internal';
@@ -34,6 +34,29 @@ describe('ImageWatermark', () => {
       blendMode: 'multiply',
     });
     expect(result).toBe(canvas);
+  });
+
+  it('addToCanvas: 워터마크 영역 중심을 기준으로 회전한다', () => {
+    const canvas = createTestCanvas(400, 300);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+
+    const translateSpy = vi.spyOn(ctx, 'translate');
+    const rotateSpy = vi.spyOn(ctx, 'rotate');
+
+    ImageWatermark.addToCanvas(canvas, {
+      watermarkImage: createTestImage(40, 20),
+      position: Position.CUSTOM,
+      customPosition: { x: 100, y: 60 },
+      rotation: 90,
+    });
+
+    // 중심 = (100 + 40/2, 60 + 20/2) = (120, 70)
+    expect(translateSpy).toHaveBeenNthCalledWith(1, 120, 70);
+    expect(rotateSpy).toHaveBeenCalledWith(Math.PI / 2);
+    expect(translateSpy).toHaveBeenNthCalledWith(2, -120, -70);
   });
 
   it('addToCanvas: customPosition을 사용하면 해당 좌표로 그린다', () => {
@@ -108,6 +131,31 @@ describe('ImageWatermark', () => {
         spacing: { x: 80, y: 80 },
       })
     ).toThrow(ImageProcessError);
+  });
+
+  it('addRepeatingPattern: 타일마다 자기 중심을 기준으로 회전한다', () => {
+    // spacing을 캔버스보다 크게 잡아 타일이 정확히 1장만 그려지게 한다
+    const canvas = createTestCanvas(100, 100);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+
+    const translateSpy = vi.spyOn(ctx, 'translate');
+    const rotateSpy = vi.spyOn(ctx, 'rotate');
+
+    ImageWatermark.addRepeatingPattern(canvas, {
+      watermarkImage: createTestImage(20, 20),
+      position: Position.MIDDLE_CENTER,
+      spacing: { x: 200, y: 200 },
+      rotation: 90,
+    });
+
+    // 유일한 타일의 좌상단 = (-20, -20), 중심 = (-10, -10)
+    expect(rotateSpy).toHaveBeenCalledTimes(1);
+    expect(translateSpy).toHaveBeenNthCalledWith(1, -10, -10);
+    expect(rotateSpy).toHaveBeenCalledWith(Math.PI / 2);
+    expect(translateSpy).toHaveBeenNthCalledWith(2, 10, 10);
   });
 
   it('addRepeatingPattern: stagger=true·rotation 옵션을 처리한다', () => {

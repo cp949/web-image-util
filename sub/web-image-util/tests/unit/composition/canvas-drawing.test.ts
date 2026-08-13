@@ -4,6 +4,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import {
+  applyRotation,
   drawImageLayer,
   drawShadowedImage,
   requireCanvasContext,
@@ -44,6 +45,41 @@ describe('canvas-drawing', () => {
 
     expect(saveSpy).toHaveBeenCalledTimes(1);
     expect(restoreSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('applyRotation: 배치 영역 중심을 기준으로 translate·rotate·translate를 건다', () => {
+    const canvas = createTestCanvas(100, 100);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+
+    const translateSpy = vi.spyOn(ctx, 'translate');
+    const rotateSpy = vi.spyOn(ctx, 'rotate');
+
+    applyRotation(ctx, { x: 10, y: 20, width: 40, height: 20, rotation: 90 });
+
+    // 중심 = (10 + 40/2, 20 + 20/2) = (30, 30)
+    expect(translateSpy).toHaveBeenNthCalledWith(1, 30, 30);
+    expect(rotateSpy).toHaveBeenCalledWith(Math.PI / 2);
+    expect(translateSpy).toHaveBeenNthCalledWith(2, -30, -30);
+  });
+
+  it('applyRotation: rotation이 0이거나 없으면 변환을 걸지 않는다', () => {
+    const canvas = createTestCanvas(100, 100);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+
+    const translateSpy = vi.spyOn(ctx, 'translate');
+    const rotateSpy = vi.spyOn(ctx, 'rotate');
+
+    applyRotation(ctx, { x: 10, y: 20, width: 40, height: 20, rotation: 0 });
+    applyRotation(ctx, { x: 10, y: 20, width: 40, height: 20 });
+
+    expect(translateSpy).not.toHaveBeenCalled();
+    expect(rotateSpy).not.toHaveBeenCalled();
   });
 
   it('레이어 이미지의 투명도·블렌드·회전을 적용한 뒤 Canvas 상태를 복구한다', () => {
