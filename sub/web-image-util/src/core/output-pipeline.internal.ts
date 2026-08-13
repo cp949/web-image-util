@@ -41,7 +41,7 @@ import {
   mimeTypeToOutputFormat,
   outputFormatFromFilename,
 } from '../utils/format-utils';
-import { createImageElement } from '../utils/image-element.internal';
+import { decodeImageFromBlob } from '../utils/image-decode.internal';
 import { LazyRenderPipeline } from './lazy-render-pipeline.internal';
 import { convertToImageElement } from './source-converter/index';
 import type { SvgPassthroughMode } from './source-converter/options.internal';
@@ -425,36 +425,9 @@ function blobToDataURL(blob: Blob): Promise<string> {
  * Promise 결정 후 ObjectURL을 정리한다.
  */
 function blobToImageElement(blob: Blob): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    let objectUrl: string;
-    try {
-      objectUrl = URL.createObjectURL(blob);
-    } catch (error) {
-      reject(new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error }));
-      return;
-    }
-    const img = createImageElement();
-    const cleanup = () => {
-      img.onload = null;
-      img.onerror = null;
-      URL.revokeObjectURL(objectUrl);
-    };
-    img.onload = () => {
-      try {
-        cleanup();
-        resolve(img);
-      } catch (error) {
-        reject(new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error }));
-      }
-    };
-    img.onerror = () => {
-      try {
-        cleanup();
-        reject(new ImageProcessError('Image loading failed', 'IMAGE_LOAD_FAILED'));
-      } catch (error) {
-        reject(new ImageProcessError('Error occurred during Element conversion', 'OUTPUT_FAILED', { cause: error }));
-      }
-    };
-    img.src = objectUrl;
+  return decodeImageFromBlob(blob, {
+    errorCode: 'IMAGE_LOAD_FAILED',
+    objectUrlErrorCode: 'OUTPUT_FAILED',
+    objectUrlMessage: 'Error occurred during Element conversion',
   });
 }

@@ -11,7 +11,7 @@ import { canvasToBlob as encodeCanvasToBlob } from '../../base/canvas-utils.inte
 import { createImageError } from '../../base/error-helpers';
 import type { OutputOptions } from '../../types';
 import { formatToMimeType } from '../format-utils';
-import { createImageElement } from '../image-element.internal';
+import { decodeImageFromBlob } from '../image-decode.internal';
 
 /**
  * Convert Canvas to Blob
@@ -70,23 +70,10 @@ export async function withImageElementCanvas<T>(
  * Get Blob dimension information
  */
 export async function getBlobDimensions(blob: Blob): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = createImageElement();
-    const url = URL.createObjectURL(blob);
-
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({
-        width: img.width,
-        height: img.height,
-      });
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Unable to read Blob size information'));
-    };
-
-    img.src = url;
+  const img = await decodeImageFromBlob(blob, {
+    errorCode: 'IMAGE_LOAD_FAILED',
+    message: 'Unable to read Blob size information',
   });
+
+  return { width: img.width, height: img.height };
 }

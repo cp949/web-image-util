@@ -4,7 +4,7 @@
  * 판정 모듈이 본문까지 확인한 결과를 받아 SVG 보안 경로 또는 일반 이미지 경로만 실행한다.
  */
 
-import { ImageProcessError } from '../../../types';
+import { decodeImageFromBlob } from '../../../utils/image-decode.internal';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { assertBlobSizeWithinLimit } from '../detect.internal';
 import { buildSvgRenderOptions, type InternalSourceConverterOptions } from '../options.internal';
@@ -109,26 +109,8 @@ export async function convertBlobToElement(
   }
 
   // Regular Blob processing
-  return new Promise((resolve, reject) => {
-    const img = document.createElement('img');
-    const objectUrl = URL.createObjectURL(blob);
-
-    // Promise 결정 시 핸들러를 해제하고 Blob URL을 정리한다.
-    const cleanup = () => {
-      img.onload = null;
-      img.onerror = null;
-      URL.revokeObjectURL(objectUrl);
-    };
-    img.onload = () => {
-      cleanup();
-      resolve(img);
-    };
-
-    img.onerror = () => {
-      cleanup();
-      reject(new ImageProcessError('Failed to load Blob image', 'SOURCE_LOAD_FAILED'));
-    };
-
-    img.src = objectUrl;
+  return decodeImageFromBlob(blob, {
+    errorCode: 'SOURCE_LOAD_FAILED',
+    message: 'Failed to load Blob image',
   });
 }
