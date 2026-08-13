@@ -381,8 +381,9 @@ describe('HighResolutionManager — readMemoryBudget() 폴백 시 memoryPeakUsag
 
   it('performance.memory 존재 시 memoryPeakUsageMB 는 stubbed usedJSHeapSize 를 반영한다', async () => {
     // performance.memory 는 비표준 — vi.stubGlobal 로 주입하고 afterEach 에서 복구한다
+    // fallback 값(128)과 겹치지 않는 값을 써서 probe 경로가 실제로 동작함을 판별한다
     const fakeMemory = {
-      usedJSHeapSize: 128 * 1024 * 1024,
+      usedJSHeapSize: 200 * 1024 * 1024,
       jsHeapSizeLimit: 512 * 1024 * 1024,
       totalJSHeapSize: 256 * 1024 * 1024,
     };
@@ -396,7 +397,7 @@ describe('HighResolutionManager — readMemoryBudget() 폴백 시 memoryPeakUsag
       forceStrategy: ProcessingStrategy.STEPPED,
     });
 
-    // usedJSHeapSize=128MB → memoryPeakUsageMB ≈ 128
-    expect(result.memoryPeakUsageMB).toBeCloseTo(128, 0);
+    // usedJSHeapSize=200MB → memoryPeakUsageMB ≈ 200
+    expect(result.memoryPeakUsageMB).toBeCloseTo(200, 0);
   });
 });

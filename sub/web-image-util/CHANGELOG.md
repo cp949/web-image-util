@@ -99,6 +99,7 @@
   - `ResizePerformance.getMemoryInfo()`의 fallback이 `{ usedMB: 0, limitMB: 0, pressureLevel: 'low' }`에서 `{ usedMB: 128, limitMB: 512, pressureLevel: 'low' }`로 바뀝니다.
   - `ImageErrorHandler.collectEnhancedContext()`가 이 환경에서도 이제 `debug.memoryUsedMB`/`memoryLimitMB`/`memoryPressure`를 채웁니다(이전에는 `debug` 필드 자체가 없었습니다).
   - `HighResolutionManager.smartResize()`가 반환하는 `memoryPeakUsageMB`의 fallback 값이 `performance.memory`를 읽지 못하는 환경에서 `64`에서 `128`로 바뀝니다.
+  - `memoryPeakUsageMB`와 `onProgress` 콜백의 `memoryUsageMB`가 소수점 둘째 자리까지의 값 대신 정수 MB를 반환합니다. `performance.memory`를 읽지 못하는 fallback 환경과 실제로 읽는 환경(Chromium) 모두에 적용됩니다.
 
 ## [3.1.0] - 2026-08-12
 

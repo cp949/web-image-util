@@ -21,8 +21,11 @@ export interface MemoryProbe {
 }
 
 /**
- * performance.memory를 읽지 못하는 환경의 단일 fallback이다. auto-memory-manager가
- * 쓰던 값을 승격했다 — "낮은 압박" 가정이라 압박 분기가 새 환경에서 오탐하지 않는다.
+ * performance.memory를 읽지 못하는 환경의 단일 fallback이다. usedMB/limitMB(128/512)는
+ * auto-memory-manager의 기존 fallback에서 가져왔다 — 그쪽 값은 pressure 0.5·availableMB
+ * 256처럼 usedMB/limitMB와 맞지 않는 자기모순 상태였다. 여기서는 pressure(usedMB/limitMB)와
+ * availableMB(limitMB-usedMB)를 정합값으로 고쳐 "낮은 압박" 가정이 압박 분기를 새 환경에서
+ * 오탐시키지 않게 했다.
  */
 const FALLBACK_BUDGET: MemoryBudget = {
   usedMB: 128,
