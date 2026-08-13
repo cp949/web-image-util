@@ -135,13 +135,14 @@ describe('ResizePerformance', () => {
       restoreMemory = undefined;
     });
 
-    it('performance.memory가 없는 환경에서는 기본 pressureLevel low를 반환한다', () => {
-      // jsdom은 performance.memory를 제공하지 않으므로 폴백 경로를 탄다
+    it('performance.memory가 없는 환경에서는 메모리 예산 모듈의 단일 fallback을 반환한다', () => {
+      // jsdom은 performance.memory를 제공하지 않으므로 readMemoryBudget()의 fallback을 탄다
+      // (usedMB:128, limitMB:512, pressure:0.25 — src/utils/browser-capabilities/memory.internal.ts)
       const info = ResizePerformance.getMemoryInfo();
 
       expect(info.pressureLevel).toBe('low');
-      expect(info.usedMB).toBe(0);
-      expect(info.limitMB).toBe(0);
+      expect(info.usedMB).toBe(128);
+      expect(info.limitMB).toBe(512);
     });
 
     it('압박 비율이 0.5 미만이면 pressureLevel low를 반환한다', () => {

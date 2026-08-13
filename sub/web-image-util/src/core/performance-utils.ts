@@ -4,6 +4,7 @@
  * @description Provides simple performance control functions
  */
 
+import { readMemoryBudget } from '../utils/browser-capabilities/index';
 import { BatchResizer } from './batch-resizer';
 import { getPerformanceConfig, type ResizeProfile } from './performance-config';
 import { SmartProcessor } from './smart-processor.internal';
@@ -112,27 +113,23 @@ export class ResizePerformance {
 
   /**
    * Get simple memory information
+   *
+   * 메모리 예산은 browser-capabilities/memory.internal.ts가 단일 소유한다. 이 메서드는
+   * pressureLevel 버킷(0.5/0.8 임계값)만 로컬 정책으로 남긴다.
    */
   static getMemoryInfo(): {
     usedMB: number;
     limitMB: number;
     pressureLevel: 'low' | 'medium' | 'high';
   } {
-    if (typeof performance !== 'undefined' && 'memory' in performance) {
-      const memory = (performance as any).memory;
-      const usedMB = Math.round(memory.usedJSHeapSize / (1024 * 1024));
-      const limitMB = Math.round(memory.jsHeapSizeLimit / (1024 * 1024));
-      const pressure = memory.usedJSHeapSize / memory.jsHeapSizeLimit;
+    const { usedMB, limitMB, pressure } = readMemoryBudget();
 
-      let pressureLevel: 'low' | 'medium' | 'high';
-      if (pressure < 0.5) pressureLevel = 'low';
-      else if (pressure < 0.8) pressureLevel = 'medium';
-      else pressureLevel = 'high';
+    let pressureLevel: 'low' | 'medium' | 'high';
+    if (pressure < 0.5) pressureLevel = 'low';
+    else if (pressure < 0.8) pressureLevel = 'medium';
+    else pressureLevel = 'high';
 
-      return { usedMB, limitMB, pressureLevel };
-    }
-
-    return { usedMB: 0, limitMB: 0, pressureLevel: 'low' };
+    return { usedMB, limitMB, pressureLevel };
   }
 
   /**
