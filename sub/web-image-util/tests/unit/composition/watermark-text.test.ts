@@ -61,6 +61,54 @@ describe('TextWatermark', () => {
     expect(translateSpy).toHaveBeenNthCalledWith(2, -140, -70);
   });
 
+  it('addToCanvas: 호출자 Canvas의 컨텍스트 상태를 원래대로 되돌린다', () => {
+    const canvas = createTestCanvas(400, 300);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+
+    ctx.font = '10px monospace';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#123456';
+    ctx.strokeStyle = '#654321';
+    ctx.lineWidth = 1;
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'start';
+    const before = {
+      font: ctx.font,
+      globalAlpha: ctx.globalAlpha,
+      fillStyle: ctx.fillStyle,
+      strokeStyle: ctx.strokeStyle,
+      lineWidth: ctx.lineWidth,
+      textBaseline: ctx.textBaseline,
+      textAlign: ctx.textAlign,
+    };
+
+    TextWatermark.addToCanvas(canvas, {
+      text: '워터마크',
+      position: Position.TOP_LEFT,
+      style: {
+        ...baseStyle,
+        fontSize: 32,
+        color: '#ff0000',
+        opacity: 0.3,
+        strokeColor: '#00ff00',
+        strokeWidth: 4,
+      },
+    });
+
+    expect({
+      font: ctx.font,
+      globalAlpha: ctx.globalAlpha,
+      fillStyle: ctx.fillStyle,
+      strokeStyle: ctx.strokeStyle,
+      lineWidth: ctx.lineWidth,
+      textBaseline: ctx.textBaseline,
+      textAlign: ctx.textAlign,
+    }).toEqual(before);
+  });
+
   it('addToCanvas: shadow·strokeColor 스타일을 적용한다', () => {
     const canvas = createTestCanvas(400, 300);
     const result = TextWatermark.addToCanvas(canvas, {
@@ -154,6 +202,43 @@ describe('TextWatermark', () => {
         spacing: { x: 150, y: 100 },
       })
     ).toThrow(ImageProcessError);
+  });
+
+  it('addRepeatingPattern: 호출자 Canvas의 컨텍스트 상태를 원래대로 되돌린다', () => {
+    const canvas = createTestCanvas(400, 300);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+
+    ctx.font = '10px monospace';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#123456';
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'start';
+    const before = {
+      font: ctx.font,
+      globalAlpha: ctx.globalAlpha,
+      fillStyle: ctx.fillStyle,
+      textBaseline: ctx.textBaseline,
+      textAlign: ctx.textAlign,
+    };
+
+    TextWatermark.addRepeatingPattern(canvas, {
+      text: '기밀',
+      position: Position.MIDDLE_CENTER,
+      style: { ...baseStyle, fontSize: 28, color: '#ff0000', opacity: 0.1 },
+      rotation: -45,
+      spacing: { x: 150, y: 100 },
+    });
+
+    expect({
+      font: ctx.font,
+      globalAlpha: ctx.globalAlpha,
+      fillStyle: ctx.fillStyle,
+      textBaseline: ctx.textBaseline,
+      textAlign: ctx.textAlign,
+    }).toEqual(before);
   });
 
   it('addRepeatingPattern: stagger=true 옵션을 처리한다', () => {

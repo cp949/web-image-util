@@ -54,6 +54,7 @@
 - Fixed: `createAvatar()`의 `fit` 옵션이 무시되고 항상 `'cover'`로 처리되던 결함을 수정했습니다. 이제 `fit: 'contain'`/`'fill'`이 리사이즈에 반영되며, 미지정 시 기본값 `'cover'`는 그대로 유지됩니다.
 - Fixed: advanced `AdvancedImageProcessor.processImage()`에서 `format: 'jpg'` 지정 시 비표준 MIME `image/jpg`로 인코딩을 시도해 브라우저가 PNG로 폴백하던 문제를 수정했습니다. 정본 포맷 테이블 경유로 `image/jpeg`로 인코딩합니다.
 - Fixed: advanced 고해상도 처리에서 `quality: 'balanced'`(기본값)가 stepped/tiled 전략에 `'high'`로 강등 전달되어 의도된 medium 스무딩이 적용되지 않던 문제를 수정했습니다. `fast`의 스무딩 끔 동작도 tiled 결과 조립 단계까지 일관 적용됩니다.
+- Fixed: advanced `TextWatermark.addToCanvas()`·`TextWatermark.addRepeatingPattern()`이 호출자 소유 Canvas의 2D 컨텍스트 상태를 되돌리지 않고 반환하던 문제를 수정했습니다. 텍스트 스타일 적용이 `save()`/`restore()` 범위 밖에 있어 호출 이후에도 `font`·`globalAlpha`·`fillStyle`·`strokeStyle`·`lineWidth`·`textBaseline`·`textAlign`이 워터마크 설정으로 남아, 같은 Canvas에 이어 그리는 코드가 영향을 받았습니다. 워터마크 출력 자체는 변하지 않습니다.
 
 ## [3.1.0] - 2026-08-12
 

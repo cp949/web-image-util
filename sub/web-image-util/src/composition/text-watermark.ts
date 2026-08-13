@@ -55,27 +55,30 @@ export class TextWatermark {
 
     const { text, position, customPosition, style, rotation = 0, margin = { x: 10, y: 10 } } = options;
 
-    // Apply text style
-    TextWatermark.applyTextStyle(ctx, style);
-
-    // Measure text size
-    const textMetrics = ctx.measureText(text);
-    const textSize: Size = {
-      width: textMetrics.width,
-      height: style.fontSize || 16,
-    };
-
-    // Calculate position
-    const containerSize: Size = { width: canvas.width, height: canvas.height };
-    const textPosition = PositionCalculator.calculatePosition(
-      position,
-      customPosition || null,
-      containerSize,
-      textSize,
-      margin
-    );
-
+    // 스타일 적용부터 그리기까지를 하나의 save/restore 안에 둔다.
+    // applyTextStyle은 ctx의 font·globalAlpha·fillStyle·textBaseline 등을 바꾸므로,
+    // 밖에서 호출하면 호출자 소유 Canvas에 그 상태가 남는다.
     withCanvasState(ctx, () => {
+      // Apply text style
+      TextWatermark.applyTextStyle(ctx, style);
+
+      // Measure text size
+      const textMetrics = ctx.measureText(text);
+      const textSize: Size = {
+        width: textMetrics.width,
+        height: style.fontSize || 16,
+      };
+
+      // Calculate position
+      const containerSize: Size = { width: canvas.width, height: canvas.height };
+      const textPosition = PositionCalculator.calculatePosition(
+        position,
+        customPosition || null,
+        containerSize,
+        textSize,
+        margin
+      );
+
       // 텍스트 영역 중심을 기준으로 회전한다
       applyRotation(ctx, {
         x: textPosition.x,
@@ -162,12 +165,13 @@ export class TextWatermark {
 
     const { text, style, rotation = 0, spacing, stagger = false } = options;
 
-    TextWatermark.applyTextStyle(ctx, style);
-    const textMetrics = ctx.measureText(text);
-    const textWidth = textMetrics.width;
-    const textHeight = style.fontSize || 16;
-
+    // addToCanvas와 같은 이유로 스타일 적용을 save/restore 안으로 넣는다
     withCanvasState(ctx, () => {
+      TextWatermark.applyTextStyle(ctx, style);
+      const textMetrics = ctx.measureText(text);
+      const textWidth = textMetrics.width;
+      const textHeight = style.fontSize || 16;
+
       // 여기는 타일 중심이 아니라 캔버스 원점을 회전시킨다. 연속된 대각선 텍스트 띠를 만드는
       // 별개 표현이므로 applyRotation(중심 기준)으로 합치지 않는다.
       // 다만 아래 타일 루프의 경계는 회전 전 좌표계 기준이라, rotation이 0이 아니면
