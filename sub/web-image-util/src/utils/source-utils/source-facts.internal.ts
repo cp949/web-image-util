@@ -7,13 +7,14 @@
 import type { ImageFormat } from '../../types';
 import { isDataURLString, isSvgDataURL, parseDataURLMimeType } from '../data-url';
 import { mimeTypeToImageFormat } from '../format-utils';
-import { isInlineSvg, sniffSvgFromBlob } from '../svg-detection';
+import { DEFAULT_SVG_SNIFF_BYTES, isInlineSvg, sniffSvgFromBlob } from '../svg-detection';
 import { isXmlMimeType, normalizeMimeType } from './mime.internal';
 import { getFormatFromFileName, getFormatFromPath } from './path.internal';
 import { canReadBlobText } from './type-guards.internal';
 
-/** Blob SVG 스니핑에서 읽을 기본 바이트 수다. */
-export const DEFAULT_SVG_SNIFF_BYTES = 4096;
+// 정본은 svg-detection.ts가 소유한다 — 실제로 스니핑을 수행하는 sniffSvgFromBlob이
+// 자기 기본 파라미터로 이 값을 쓰므로, 상수도 같은 곳에 있어야 리터럴이 다시 갈리지 않는다.
+export { DEFAULT_SVG_SNIFF_BYTES };
 
 /** 문자열 입력의 전송 형태와 포맷 힌트다. */
 export interface StringSourceFacts {

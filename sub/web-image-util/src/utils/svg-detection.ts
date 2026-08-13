@@ -109,6 +109,10 @@ export function isInlineSvg(source: string): boolean {
   return /^<svg(?:[\s/>])/i.test(stripped);
 }
 
+/** Blob SVG 스니핑에서 읽을 기본 바이트 수다. 값 자체에 특별한 근거는 없다 — 대부분의 SVG
+ * 루트 태그가 이 범위 안에 있다는 경험칙이다. */
+export const DEFAULT_SVG_SNIFF_BYTES = 4096;
+
 /**
  * Blob 앞부분을 텍스트로 읽어 인라인 SVG 시그니처가 있는지 검사한다.
  *
@@ -119,7 +123,7 @@ export function isInlineSvg(source: string): boolean {
  * @param bytes 앞에서부터 읽을 최대 바이트 수
  * @returns SVG 콘텐츠로 판정되면 true
  */
-export async function sniffSvgFromBlob(blob: Blob, bytes = 4096): Promise<boolean> {
+export async function sniffSvgFromBlob(blob: Blob, bytes = DEFAULT_SVG_SNIFF_BYTES): Promise<boolean> {
   try {
     return isInlineSvg(await blob.slice(0, Math.max(0, bytes)).text());
   } catch {
