@@ -60,7 +60,7 @@ export class LazyRenderPipeline {
    * 🚀 Core: 모든 계산을 마친 뒤 단 한 번 렌더링한다.
    *
    * @param sourceImage 로딩이 끝난 소스 이미지 — scale·단일 축 fill 같은
-   *   원본 크기 의존 설정은 이 시점에 ResizeCalculator가 해석한다.
+   *   원본 크기 의존 설정은 이 시점에 calculateFinalLayout이 해석한다.
    *
    * 결과 canvas는 pool 소유이며 {@link CanvasLease}에 담겨 반환된다.
    * 소비자는 lease.consume()으로 파생물을 만들거나(사용 후 pool 반환),

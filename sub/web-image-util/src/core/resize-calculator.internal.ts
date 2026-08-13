@@ -1,5 +1,5 @@
 /**
- * ResizeCalculator: Dedicated class for resize calculation logic
+ * 리사이즈 레이아웃 계산 로직
  *
  * @description
  * - Handles calculation logic for the new ResizeConfig API
@@ -38,7 +38,7 @@ export interface NormalizedPadding {
  * Resize calculation result
  *
  * @description
- * Final layout information calculated by ResizeCalculator
+ * 계산된 최종 레이아웃 정보
  * - imageSize: Size of the image to be actually drawn (with scale applied)
  * - canvasSize: Final canvas size (including padding)
  * - position: Starting coordinates to draw the image within the canvas
@@ -106,19 +106,24 @@ function normalizePadding(padding?: Padding): NormalizedPadding {
 }
 
 // ============================================================================
-// RESIZE CALCULATOR - Main class
+// RESIZE CALCULATOR - Main entry point
 // ============================================================================
 
 /**
- * ResizeCalculator class
+ * Final layout calculation (main entry point)
+ *
+ * @param originalWidth - Original image width
+ * @param originalHeight - Original image height
+ * @param config - ResizeConfig settings
+ * @returns Calculated layout information
  *
  * @description
- * Dedicated class for resize calculation logic of the new ResizeConfig API
+ * Calls appropriate calculation functions based on fit mode,
+ * applies padding and returns final layout
  *
  * @example
  * ```typescript
- * const calculator = new ResizeCalculator();
- * const layout = calculator.calculateFinalLayout(
+ * const layout = calculateFinalLayout(
  *   1920, 1080,
  *   { fit: 'cover', width: 800, height: 600 }
  * );
@@ -129,339 +134,329 @@ function normalizePadding(padding?: Padding): NormalizedPadding {
  * // }
  * ```
  */
-export class ResizeCalculator {
-  /**
-   * Final layout calculation (main entry point)
-   *
-   * @param originalWidth - Original image width
-   * @param originalHeight - Original image height
-   * @param config - ResizeConfig settings
-   * @returns Calculated layout information
-   *
-   * @description
-   * Calls appropriate calculation methods based on fit mode,
-   * applies padding and returns final layout
-   */
-  calculateFinalLayout(originalWidth: number, originalHeight: number, config: ResizeConfig): LayoutResult {
-    // 1. Calculate image size (based on fit mode)
-    const imageSize = this.calculateImageSize(originalWidth, originalHeight, config);
+export function calculateFinalLayout(
+  originalWidth: number,
+  originalHeight: number,
+  config: ResizeConfig
+): LayoutResult {
+  // 1. Calculate image size (based on fit mode)
+  const imageSize = calculateImageSize(originalWidth, originalHeight, config);
 
-    // 2. Calculate canvas size (apply padding)
-    const canvasSize = this.calculateCanvasSize(imageSize, config);
+  // 2. Calculate canvas size (apply padding)
+  const canvasSize = calculateCanvasSize(imageSize, config);
 
-    // 3. Calculate image position (center alignment + padding)
-    const position = this.calculatePosition(imageSize, canvasSize, config);
+  // 3. Calculate image position (center alignment + padding)
+  const position = calculatePosition(imageSize, canvasSize, config);
 
+  return {
+    imageSize,
+    canvasSize,
+    position,
+  };
+}
+
+/**
+ * Calculate image size
+ *
+ * @param originalWidth - Original image width
+ * @param originalHeight - Original image height
+ * @param config - ResizeConfig settings
+ * @returns Image size with scale applied
+ *
+ * @description
+ * Calculate the actual size the image will be drawn based on fit mode
+ * - cover: Scale to fill canvas completely
+ * - contain: Scale to fit within canvas
+ * - fill: Fit exactly to canvas size (한 축 생략 시 원본 비율로 계산)
+ * - maxFit: Only allow shrinking
+ * - minFit: Only allow enlarging
+ * - scale: 원본 크기에 배율 적용
+ */
+function calculateImageSize(originalWidth: number, originalHeight: number, config: ResizeConfig): GeometrySize {
+  switch (config.fit) {
+    case 'cover':
+      return calculateCoverSize(originalWidth, originalHeight, config);
+    case 'contain':
+      return calculateContainSize(originalWidth, originalHeight, config);
+    case 'fill':
+      return calculateFillSize(originalWidth, originalHeight, config);
+    case 'maxFit':
+      return calculateMaxFitSize(originalWidth, originalHeight, config);
+    case 'minFit':
+      return calculateMinFitSize(originalWidth, originalHeight, config);
+    case 'scale':
+      return calculateScaleSize(originalWidth, originalHeight, config.scale);
+    default:
+      throw new Error(`Unknown fit mode: ${(config as any).fit}`);
+  }
+}
+
+/**
+ * Calculate canvas size
+ *
+ * @param imageSize - Calculated image size
+ * @param config - ResizeConfig settings
+ * @returns Final canvas size with padding applied
+ *
+ * @description
+ * Calculate canvas size based on fit mode
+ * - cover/contain: target width/height is canvas size (fixed)
+ * - fill/maxFit/minFit/scale: image size is canvas size (variable)
+ *   (fill 양축 지정 시 imageSize == target이므로 기존 결과와 동일)
+ * - Apply additional padding if present
+ *
+ * @example
+ * ```typescript
+ * // cover: Canvas is fixed to target size
+ * calculateCanvasSize({ width: 1422, height: 800 }, { fit: 'cover', width: 800, height: 800 });
+ * // → { width: 800, height: 800 }
+ *
+ * // maxFit: Image size becomes canvas size
+ * calculateCanvasSize({ width: 100, height: 100 }, { fit: 'maxFit', width: 300, height: 200 });
+ * // → { width: 100, height: 100 }
+ *
+ * // Apply padding
+ * calculateCanvasSize({ width: 800, height: 450 }, { fit: 'contain', width: 800, height: 800, padding: 20 });
+ * // → { width: 840, height: 840 }
+ * ```
+ */
+function calculateCanvasSize(imageSize: GeometrySize, config: ResizeConfig): GeometrySize {
+  // Normalize padding
+  const padding = normalizePadding(config.padding);
+
+  // Determine base canvas size based on fit mode
+  let baseWidth: number;
+  let baseHeight: number;
+
+  if (config.fit === 'cover' || config.fit === 'contain') {
+    // cover/contain: target size is canvas size
+    baseWidth = config.width;
+    baseHeight = config.height;
+  } else {
+    // fill/maxFit/minFit/scale: image size is canvas size
+    baseWidth = imageSize.width;
+    baseHeight = imageSize.height;
+  }
+
+  // Apply padding
+  return {
+    width: baseWidth + padding.left + padding.right,
+    height: baseHeight + padding.top + padding.bottom,
+  };
+}
+
+/**
+ * Calculate image position
+ *
+ * @param imageSize - Calculated image size
+ * @param canvasSize - Calculated canvas size
+ * @param config - ResizeConfig settings
+ * @returns Starting coordinates to draw the image within the canvas
+ *
+ * @description
+ * Calculate starting coordinates to draw image within canvas
+ * - cover: Center alignment, negative coordinates possible (clipped)
+ * - contain: Center alignment, margins created
+ * - fill: Start at (0, 0) coordinates
+ * - Consider padding
+ *
+ * @example
+ * ```typescript
+ * // Without padding (center alignment)
+ * calculatePosition({ width: 100, height: 100 }, { width: 200, height: 200 }, config);
+ * // → { x: 50, y: 50 }
+ *
+ * // With numeric padding
+ * calculatePosition({ width: 100, height: 100 }, { width: 140, height: 140 }, { ...config, padding: 20 });
+ * // → { x: 20, y: 20 } (shifted by padding amount)
+ *
+ * // With object padding
+ * calculatePosition({ width: 100, height: 100 }, { width: 120, height: 110 }, { ...config, padding: { top: 10, left: 20 } });
+ * // → { x: 20, y: 10 } (shifted by padding in each direction)
+ * ```
+ */
+function calculatePosition(imageSize: GeometrySize, canvasSize: GeometrySize, config: ResizeConfig): GeometryPoint {
+  // Normalize padding
+  const padding = normalizePadding(config.padding);
+
+  // Calculate actual placement area size excluding padding
+  const availableWidth = canvasSize.width - padding.left - padding.right;
+  const availableHeight = canvasSize.height - padding.top - padding.bottom;
+
+  // Center alignment: divide margins in half for placement
+  // - cover: negative coordinates if image is larger (clipped)
+  // - contain: positive coordinates if image is smaller (margins)
+  const x = padding.left + Math.round((availableWidth - imageSize.width) / 2);
+  const y = padding.top + Math.round((availableHeight - imageSize.height) / 2);
+
+  return { x, y };
+}
+
+// ============================================================================
+// FIT MODE CALCULATIONS - Calculation functions by fit mode
+// ============================================================================
+
+/**
+ * Calculate cover fit size
+ *
+ * @description
+ * Logic to fill area while maintaining aspect ratio
+ * - Scale image to completely cover canvas
+ * - Excess parts are clipped
+ * - Same as CSS object-fit: cover
+ */
+function calculateCoverSize(
+  originalWidth: number,
+  originalHeight: number,
+  config: { width: number; height: number }
+): GeometrySize {
+  const { width: targetW, height: targetH } = config;
+
+  // Choose larger of horizontal/vertical ratios to completely cover canvas
+  const scaleX = targetW / originalWidth;
+  const scaleY = targetH / originalHeight;
+  const scale = Math.max(scaleX, scaleY);
+
+  return {
+    width: Math.round(originalWidth * scale),
+    height: Math.round(originalHeight * scale),
+  };
+}
+
+/**
+ * Calculate contain fit size
+ *
+ * @description
+ * Logic to fit entire image while maintaining aspect ratio
+ * - Scale image to fit entirely within canvas
+ * - Margins may be created
+ * - Same as CSS object-fit: contain
+ */
+function calculateContainSize(
+  originalWidth: number,
+  originalHeight: number,
+  config: { width: number; height: number; withoutEnlargement?: boolean }
+): GeometrySize {
+  const { width: targetW, height: targetH } = config;
+
+  // Choose smaller of horizontal/vertical ratios to fit entire image
+  const scaleX = targetW / originalWidth;
+  const scaleY = targetH / originalHeight;
+  const scale = config.withoutEnlargement ? Math.min(scaleX, scaleY, 1) : Math.min(scaleX, scaleY);
+
+  return {
+    width: Math.round(originalWidth * scale),
+    height: Math.round(originalHeight * scale),
+  };
+}
+
+/**
+ * Calculate fill fit size
+ *
+ * @description
+ * Logic to fit exactly while ignoring aspect ratio
+ * - Image may be stretched or compressed
+ * - Same as CSS object-fit: fill
+ * - 한 축만 지정하면 나머지 축은 원본 비율로 계산한다 (종횡비 유지)
+ */
+function calculateFillSize(
+  originalWidth: number,
+  originalHeight: number,
+  config: { width?: number; height?: number }
+): GeometrySize {
+  const { width: targetW, height: targetH } = config;
+
+  // Return target size as is (ignore aspect ratio)
+  if (targetW != null && targetH != null) {
+    return { width: targetW, height: targetH };
+  }
+
+  // 단일 축 지정: 나머지 축은 원본 비율로 계산 (validateResizeConfig가 최소 1축을 보장)
+  if (targetW != null) {
+    return { width: targetW, height: Math.round(targetW * (originalHeight / originalWidth)) };
+  }
+  return { width: Math.round((targetH as number) * (originalWidth / originalHeight)), height: targetH as number };
+}
+
+/**
+ * Calculate MaxFit size
+ *
+ * @description
+ * Maximum size constraint logic (no enlargement)
+ * - Small images remain unchanged
+ * - Large images are shrunk
+ * - Maintains aspect ratio
+ */
+function calculateMaxFitSize(
+  originalWidth: number,
+  originalHeight: number,
+  config: { width?: number; height?: number }
+): GeometrySize {
+  const { width: maxW, height: maxH } = config;
+
+  // Minimum 1x scale (no enlargement)
+  let scale = 1;
+
+  // Apply maximum value constraints for each dimension
+  if (maxW) scale = Math.min(scale, maxW / originalWidth);
+  if (maxH) scale = Math.min(scale, maxH / originalHeight);
+
+  return {
+    width: Math.round(originalWidth * scale),
+    height: Math.round(originalHeight * scale),
+  };
+}
+
+/**
+ * Calculate MinFit size
+ *
+ * @description
+ * Minimum size guarantee logic (no shrinking)
+ * - Small images are enlarged
+ * - Large images remain unchanged
+ * - Maintains aspect ratio
+ */
+function calculateMinFitSize(
+  originalWidth: number,
+  originalHeight: number,
+  config: { width?: number; height?: number }
+): GeometrySize {
+  const { width: minW, height: minH } = config;
+
+  // Minimum 1x scale (no shrinking)
+  let scale = 1;
+
+  // Guarantee minimum values for each dimension
+  if (minW) scale = Math.max(scale, minW / originalWidth);
+  if (minH) scale = Math.max(scale, minH / originalHeight);
+
+  return {
+    width: Math.round(originalWidth * scale),
+    height: Math.round(originalHeight * scale),
+  };
+}
+
+/**
+ * Calculate scale size
+ *
+ * @description
+ * 원본 크기에 배율을 적용한다
+ * - 균일 배율(number): 두 축에 같은 배율
+ * - 축별 배율({ sx }, { sy }, { sx, sy }): 생략한 축은 1로 처리 (원본 유지)
+ */
+function calculateScaleSize(originalWidth: number, originalHeight: number, scale: ScaleValue): GeometrySize {
+  if (typeof scale === 'number') {
     return {
-      imageSize,
-      canvasSize,
-      position,
+      width: Math.max(1, Math.round(originalWidth * scale)),
+      height: Math.max(1, Math.round(originalHeight * scale)),
     };
   }
 
-  /**
-   * Calculate image size
-   *
-   * @param originalWidth - Original image width
-   * @param originalHeight - Original image height
-   * @param config - ResizeConfig settings
-   * @returns Image size with scale applied
-   *
-   * @description
-   * Calculate the actual size the image will be drawn based on fit mode
-   * - cover: Scale to fill canvas completely
-   * - contain: Scale to fit within canvas
-   * - fill: Fit exactly to canvas size (한 축 생략 시 원본 비율로 계산)
-   * - maxFit: Only allow shrinking
-   * - minFit: Only allow enlarging
-   * - scale: 원본 크기에 배율 적용
-   */
-  private calculateImageSize(originalWidth: number, originalHeight: number, config: ResizeConfig): GeometrySize {
-    switch (config.fit) {
-      case 'cover':
-        return this.calculateCoverSize(originalWidth, originalHeight, config);
-      case 'contain':
-        return this.calculateContainSize(originalWidth, originalHeight, config);
-      case 'fill':
-        return this.calculateFillSize(originalWidth, originalHeight, config);
-      case 'maxFit':
-        return this.calculateMaxFitSize(originalWidth, originalHeight, config);
-      case 'minFit':
-        return this.calculateMinFitSize(originalWidth, originalHeight, config);
-      case 'scale':
-        return this.calculateScaleSize(originalWidth, originalHeight, config.scale);
-      default:
-        throw new Error(`Unknown fit mode: ${(config as any).fit}`);
-    }
-  }
+  const sx = 'sx' in scale ? scale.sx : 1;
+  const sy = 'sy' in scale ? scale.sy : 1;
 
-  /**
-   * Calculate canvas size
-   *
-   * @param imageSize - Calculated image size
-   * @param config - ResizeConfig settings
-   * @returns Final canvas size with padding applied
-   *
-   * @description
-   * Calculate canvas size based on fit mode
-   * - cover/contain: target width/height is canvas size (fixed)
-   * - fill/maxFit/minFit/scale: image size is canvas size (variable)
-   *   (fill 양축 지정 시 imageSize == target이므로 기존 결과와 동일)
-   * - Apply additional padding if present
-   *
-   * @example
-   * ```typescript
-   * // cover: Canvas is fixed to target size
-   * calculateCanvasSize({ width: 1422, height: 800 }, { fit: 'cover', width: 800, height: 800 });
-   * // → { width: 800, height: 800 }
-   *
-   * // maxFit: Image size becomes canvas size
-   * calculateCanvasSize({ width: 100, height: 100 }, { fit: 'maxFit', width: 300, height: 200 });
-   * // → { width: 100, height: 100 }
-   *
-   * // Apply padding
-   * calculateCanvasSize({ width: 800, height: 450 }, { fit: 'contain', width: 800, height: 800, padding: 20 });
-   * // → { width: 840, height: 840 }
-   * ```
-   */
-  private calculateCanvasSize(imageSize: GeometrySize, config: ResizeConfig): GeometrySize {
-    // Normalize padding
-    const padding = normalizePadding(config.padding);
-
-    // Determine base canvas size based on fit mode
-    let baseWidth: number;
-    let baseHeight: number;
-
-    if (config.fit === 'cover' || config.fit === 'contain') {
-      // cover/contain: target size is canvas size
-      baseWidth = config.width;
-      baseHeight = config.height;
-    } else {
-      // fill/maxFit/minFit/scale: image size is canvas size
-      baseWidth = imageSize.width;
-      baseHeight = imageSize.height;
-    }
-
-    // Apply padding
-    return {
-      width: baseWidth + padding.left + padding.right,
-      height: baseHeight + padding.top + padding.bottom,
-    };
-  }
-
-  /**
-   * Calculate image position
-   *
-   * @param imageSize - Calculated image size
-   * @param canvasSize - Calculated canvas size
-   * @param config - ResizeConfig settings
-   * @returns Starting coordinates to draw the image within the canvas
-   *
-   * @description
-   * Calculate starting coordinates to draw image within canvas
-   * - cover: Center alignment, negative coordinates possible (clipped)
-   * - contain: Center alignment, margins created
-   * - fill: Start at (0, 0) coordinates
-   * - Consider padding
-   *
-   * @example
-   * ```typescript
-   * // Without padding (center alignment)
-   * calculatePosition({ width: 100, height: 100 }, { width: 200, height: 200 }, config);
-   * // → { x: 50, y: 50 }
-   *
-   * // With numeric padding
-   * calculatePosition({ width: 100, height: 100 }, { width: 140, height: 140 }, { ...config, padding: 20 });
-   * // → { x: 20, y: 20 } (shifted by padding amount)
-   *
-   * // With object padding
-   * calculatePosition({ width: 100, height: 100 }, { width: 120, height: 110 }, { ...config, padding: { top: 10, left: 20 } });
-   * // → { x: 20, y: 10 } (shifted by padding in each direction)
-   * ```
-   */
-  private calculatePosition(imageSize: GeometrySize, canvasSize: GeometrySize, config: ResizeConfig): GeometryPoint {
-    // Normalize padding
-    const padding = normalizePadding(config.padding);
-
-    // Calculate actual placement area size excluding padding
-    const availableWidth = canvasSize.width - padding.left - padding.right;
-    const availableHeight = canvasSize.height - padding.top - padding.bottom;
-
-    // Center alignment: divide margins in half for placement
-    // - cover: negative coordinates if image is larger (clipped)
-    // - contain: positive coordinates if image is smaller (margins)
-    const x = padding.left + Math.round((availableWidth - imageSize.width) / 2);
-    const y = padding.top + Math.round((availableHeight - imageSize.height) / 2);
-
-    return { x, y };
-  }
-
-  // ============================================================================
-  // FIT MODE CALCULATIONS - Calculation methods by fit mode
-  // ============================================================================
-
-  /**
-   * Calculate cover fit size
-   *
-   * @description
-   * Logic to fill area while maintaining aspect ratio
-   * - Scale image to completely cover canvas
-   * - Excess parts are clipped
-   * - Same as CSS object-fit: cover
-   */
-  private calculateCoverSize(
-    originalWidth: number,
-    originalHeight: number,
-    config: { width: number; height: number }
-  ): GeometrySize {
-    const { width: targetW, height: targetH } = config;
-
-    // Choose larger of horizontal/vertical ratios to completely cover canvas
-    const scaleX = targetW / originalWidth;
-    const scaleY = targetH / originalHeight;
-    const scale = Math.max(scaleX, scaleY);
-
-    return {
-      width: Math.round(originalWidth * scale),
-      height: Math.round(originalHeight * scale),
-    };
-  }
-
-  /**
-   * Calculate contain fit size
-   *
-   * @description
-   * Logic to fit entire image while maintaining aspect ratio
-   * - Scale image to fit entirely within canvas
-   * - Margins may be created
-   * - Same as CSS object-fit: contain
-   */
-  private calculateContainSize(
-    originalWidth: number,
-    originalHeight: number,
-    config: { width: number; height: number; withoutEnlargement?: boolean }
-  ): GeometrySize {
-    const { width: targetW, height: targetH } = config;
-
-    // Choose smaller of horizontal/vertical ratios to fit entire image
-    const scaleX = targetW / originalWidth;
-    const scaleY = targetH / originalHeight;
-    const scale = config.withoutEnlargement ? Math.min(scaleX, scaleY, 1) : Math.min(scaleX, scaleY);
-
-    return {
-      width: Math.round(originalWidth * scale),
-      height: Math.round(originalHeight * scale),
-    };
-  }
-
-  /**
-   * Calculate fill fit size
-   *
-   * @description
-   * Logic to fit exactly while ignoring aspect ratio
-   * - Image may be stretched or compressed
-   * - Same as CSS object-fit: fill
-   * - 한 축만 지정하면 나머지 축은 원본 비율로 계산한다 (종횡비 유지)
-   */
-  private calculateFillSize(
-    originalWidth: number,
-    originalHeight: number,
-    config: { width?: number; height?: number }
-  ): GeometrySize {
-    const { width: targetW, height: targetH } = config;
-
-    // Return target size as is (ignore aspect ratio)
-    if (targetW != null && targetH != null) {
-      return { width: targetW, height: targetH };
-    }
-
-    // 단일 축 지정: 나머지 축은 원본 비율로 계산 (validateResizeConfig가 최소 1축을 보장)
-    if (targetW != null) {
-      return { width: targetW, height: Math.round(targetW * (originalHeight / originalWidth)) };
-    }
-    return { width: Math.round((targetH as number) * (originalWidth / originalHeight)), height: targetH as number };
-  }
-
-  /**
-   * Calculate MaxFit size
-   *
-   * @description
-   * Maximum size constraint logic (no enlargement)
-   * - Small images remain unchanged
-   * - Large images are shrunk
-   * - Maintains aspect ratio
-   */
-  private calculateMaxFitSize(
-    originalWidth: number,
-    originalHeight: number,
-    config: { width?: number; height?: number }
-  ): GeometrySize {
-    const { width: maxW, height: maxH } = config;
-
-    // Minimum 1x scale (no enlargement)
-    let scale = 1;
-
-    // Apply maximum value constraints for each dimension
-    if (maxW) scale = Math.min(scale, maxW / originalWidth);
-    if (maxH) scale = Math.min(scale, maxH / originalHeight);
-
-    return {
-      width: Math.round(originalWidth * scale),
-      height: Math.round(originalHeight * scale),
-    };
-  }
-
-  /**
-   * Calculate MinFit size
-   *
-   * @description
-   * Minimum size guarantee logic (no shrinking)
-   * - Small images are enlarged
-   * - Large images remain unchanged
-   * - Maintains aspect ratio
-   */
-  private calculateMinFitSize(
-    originalWidth: number,
-    originalHeight: number,
-    config: { width?: number; height?: number }
-  ): GeometrySize {
-    const { width: minW, height: minH } = config;
-
-    // Minimum 1x scale (no shrinking)
-    let scale = 1;
-
-    // Guarantee minimum values for each dimension
-    if (minW) scale = Math.max(scale, minW / originalWidth);
-    if (minH) scale = Math.max(scale, minH / originalHeight);
-
-    return {
-      width: Math.round(originalWidth * scale),
-      height: Math.round(originalHeight * scale),
-    };
-  }
-
-  /**
-   * Calculate scale size
-   *
-   * @description
-   * 원본 크기에 배율을 적용한다
-   * - 균일 배율(number): 두 축에 같은 배율
-   * - 축별 배율({ sx }, { sy }, { sx, sy }): 생략한 축은 1로 처리 (원본 유지)
-   */
-  private calculateScaleSize(originalWidth: number, originalHeight: number, scale: ScaleValue): GeometrySize {
-    if (typeof scale === 'number') {
-      return {
-        width: Math.max(1, Math.round(originalWidth * scale)),
-        height: Math.max(1, Math.round(originalHeight * scale)),
-      };
-    }
-
-    const sx = 'sx' in scale ? scale.sx : 1;
-    const sy = 'sy' in scale ? scale.sy : 1;
-
-    return {
-      width: Math.max(1, Math.round(originalWidth * sx)),
-      height: Math.max(1, Math.round(originalHeight * sy)),
-    };
-  }
+  return {
+    width: Math.max(1, Math.round(originalWidth * sx)),
+    height: Math.max(1, Math.round(originalHeight * sy)),
+  };
 }

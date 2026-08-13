@@ -335,7 +335,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
   // ============================================================================
   // 🎯 Group 2: Scale and exact size adjustment methods
   // 원본 크기 의존 설정도 동일하게 공개 resize()로 전달한다 —
-  // 원본 크기 해석은 렌더 시점에 ResizeCalculator가 수행한다
+  // 원본 크기 해석은 렌더 시점에 calculateFinalLayout이 수행한다
   // ============================================================================
 
   /**

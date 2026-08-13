@@ -1,22 +1,16 @@
 /**
- * ResizeCalculator의 패딩 처리를 검증하는 단위 테스트다.
+ * calculateFinalLayout의 패딩 처리를 검증하는 단위 테스트다.
  *
  * 숫자형·객체형 패딩, 부분 지정, fit 모드와의 조합을 확인한다.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
-import { ResizeCalculator } from '../../../src/core/resize-calculator.internal';
+import { describe, expect, it } from 'vitest';
+import { calculateFinalLayout } from '../../../src/core/resize-calculator.internal';
 
-describe('ResizeCalculator - 패딩', () => {
-  let calculator: ResizeCalculator;
-
-  beforeEach(() => {
-    calculator = new ResizeCalculator();
-  });
-
+describe('calculateFinalLayout - 패딩', () => {
   describe('숫자형 패딩', () => {
     it('모든 변에 동일한 패딩을 적용한다', () => {
-      const result = calculator.calculateFinalLayout(100, 100, {
+      const result = calculateFinalLayout(100, 100, {
         fit: 'contain',
         width: 100,
         height: 100,
@@ -30,7 +24,7 @@ describe('ResizeCalculator - 패딩', () => {
     });
 
     it('cover 모드와 함께 동작한다', () => {
-      const result = calculator.calculateFinalLayout(200, 100, {
+      const result = calculateFinalLayout(200, 100, {
         fit: 'cover',
         width: 100,
         height: 100,
@@ -46,7 +40,7 @@ describe('ResizeCalculator - 패딩', () => {
 
   describe('객체형 패딩', () => {
     it('각 변에 서로 다른 패딩을 적용한다', () => {
-      const result = calculator.calculateFinalLayout(100, 100, {
+      const result = calculateFinalLayout(100, 100, {
         fit: 'contain',
         width: 100,
         height: 100,
@@ -60,7 +54,7 @@ describe('ResizeCalculator - 패딩', () => {
     });
 
     it('부분 객체 패딩을 처리한다', () => {
-      const result = calculator.calculateFinalLayout(100, 100, {
+      const result = calculateFinalLayout(100, 100, {
         fit: 'contain',
         width: 100,
         height: 100,
@@ -73,7 +67,7 @@ describe('ResizeCalculator - 패딩', () => {
     });
 
     it('빈 객체 패딩을 처리한다', () => {
-      const result = calculator.calculateFinalLayout(100, 100, {
+      const result = calculateFinalLayout(100, 100, {
         fit: 'contain',
         width: 100,
         height: 100,
@@ -88,7 +82,7 @@ describe('ResizeCalculator - 패딩', () => {
 
   describe('패딩 없음', () => {
     it('패딩 없이도 정상 동작한다', () => {
-      const result = calculator.calculateFinalLayout(100, 100, {
+      const result = calculateFinalLayout(100, 100, {
         fit: 'contain',
         width: 100,
         height: 100,
@@ -102,7 +96,7 @@ describe('ResizeCalculator - 패딩', () => {
   describe('maxFit/minFit 패딩', () => {
     it('maxFit 캔버스 크기에 패딩을 적용한다', () => {
       // maxFit은 이미지 크기가 캔버스 크기가 된다.
-      const result = calculator.calculateFinalLayout(100, 100, {
+      const result = calculateFinalLayout(100, 100, {
         fit: 'maxFit',
         width: 300,
         height: 200,
@@ -118,7 +112,7 @@ describe('ResizeCalculator - 패딩', () => {
 
     it('minFit 캔버스 크기에 패딩을 적용한다', () => {
       // minFit은 이미지 크기가 캔버스 크기가 된다.
-      const result = calculator.calculateFinalLayout(200, 150, {
+      const result = calculateFinalLayout(200, 150, {
         fit: 'minFit',
         width: 100,
         height: 80,
@@ -135,7 +129,7 @@ describe('ResizeCalculator - 패딩', () => {
 
   describe('대형 패딩 엣지 케이스', () => {
     it('매우 큰 패딩을 처리한다', () => {
-      const result = calculator.calculateFinalLayout(100, 100, {
+      const result = calculateFinalLayout(100, 100, {
         fit: 'contain',
         width: 100,
         height: 100,
@@ -148,7 +142,7 @@ describe('ResizeCalculator - 패딩', () => {
     });
 
     it('비대칭 대형 패딩을 처리한다', () => {
-      const result = calculator.calculateFinalLayout(50, 50, {
+      const result = calculateFinalLayout(50, 50, {
         fit: 'contain',
         width: 50,
         height: 50,

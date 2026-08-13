@@ -150,7 +150,7 @@ describe('LazyRenderPipeline — 원본 크기 의존 설정(scale·단일 축 f
   });
 
   it('scale 설정은 즉시 축적되고 render 시 분석기에 그대로 전달된다', () => {
-    // 원본 크기 해석은 ResizeCalculator가 담당한다 — 파이프라인은 변환하지 않는다
+    // 원본 크기 해석은 calculateFinalLayout이 담당한다 — 파이프라인은 변환하지 않는다
     const img = createMockImage(800, 600);
     const p = new LazyRenderPipeline();
 

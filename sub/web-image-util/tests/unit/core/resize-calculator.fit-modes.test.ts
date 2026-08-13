@@ -1,25 +1,19 @@
 /**
- * ResizeCalculator의 fit 모드별 동작을 검증하는 단위 테스트다.
+ * calculateFinalLayout의 fit 모드별 동작을 검증하는 단위 테스트다.
  *
  * cover / contain / fill / maxFit / minFit 각 모드의 이미지 크기·위치 계산을 확인한다.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
-import { ResizeCalculator } from '../../../src/core/resize-calculator.internal';
+import { describe, expect, it } from 'vitest';
+import { calculateFinalLayout } from '../../../src/core/resize-calculator.internal';
 
-describe('ResizeCalculator - fit 모드', () => {
-  let calculator: ResizeCalculator;
-
-  beforeEach(() => {
-    calculator = new ResizeCalculator();
-  });
-
+describe('calculateFinalLayout - fit 모드', () => {
   // cover는 비율을 유지하면서 영역을 채우고 필요하면 잘라낸다.
 
   describe('cover 모드', () => {
     it('가로형 이미지를 정사각형 영역에 cover 방식으로 채운다', () => {
       // 가로형 이미지를 정사각형 영역에 맞추면 높이를 기준으로 채워진다.
-      const result = calculator.calculateFinalLayout(1920, 1080, {
+      const result = calculateFinalLayout(1920, 1080, {
         fit: 'cover',
         width: 800,
         height: 800,
@@ -35,7 +29,7 @@ describe('ResizeCalculator - fit 모드', () => {
 
     it('세로형 이미지를 정사각형 영역에 cover 방식으로 채운다', () => {
       // 세로형 이미지를 정사각형 영역에 맞춘다.
-      const result = calculator.calculateFinalLayout(1080, 1920, {
+      const result = calculateFinalLayout(1080, 1920, {
         fit: 'cover',
         width: 800,
         height: 800,
@@ -50,7 +44,7 @@ describe('ResizeCalculator - fit 모드', () => {
 
     it('큰 이미지를 cover 방식으로 축소한다', () => {
       // 큰 정사각형 이미지를 작은 정사각형으로 축소한다.
-      const result = calculator.calculateFinalLayout(2000, 2000, {
+      const result = calculateFinalLayout(2000, 2000, {
         fit: 'cover',
         width: 500,
         height: 500,
@@ -63,7 +57,7 @@ describe('ResizeCalculator - fit 모드', () => {
 
     it('cover 후에도 원본 종횡비를 유지한다', () => {
       // cover 이후에도 원본 종횡비는 유지돼야 한다.
-      const result = calculator.calculateFinalLayout(1600, 900, {
+      const result = calculateFinalLayout(1600, 900, {
         fit: 'cover',
         width: 400,
         height: 400,
@@ -82,7 +76,7 @@ describe('ResizeCalculator - fit 모드', () => {
   describe('contain 모드', () => {
     it('가로형 이미지를 contain 방식으로 내접 축소한다', () => {
       // 가로형 이미지는 너비를 기준으로 맞추고 세로 여백이 생긴다.
-      const result = calculator.calculateFinalLayout(1920, 1080, {
+      const result = calculateFinalLayout(1920, 1080, {
         fit: 'contain',
         width: 800,
         height: 800,
@@ -98,7 +92,7 @@ describe('ResizeCalculator - fit 모드', () => {
 
     it('세로형 이미지를 contain 방식으로 내접 축소한다', () => {
       // 세로형 이미지도 같은 규칙으로 contain 계산을 검증한다.
-      const result = calculator.calculateFinalLayout(1080, 1920, {
+      const result = calculateFinalLayout(1080, 1920, {
         fit: 'contain',
         width: 800,
         height: 800,
@@ -112,7 +106,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('작은 이미지를 contain 방식으로 내접 확대한다', () => {
-      const result = calculator.calculateFinalLayout(100, 100, {
+      const result = calculateFinalLayout(100, 100, {
         fit: 'contain',
         width: 500,
         height: 500,
@@ -124,7 +118,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('contain 후에도 원본 종횡비를 유지한다', () => {
-      const result = calculator.calculateFinalLayout(800, 600, {
+      const result = calculateFinalLayout(800, 600, {
         fit: 'contain',
         width: 400,
         height: 400,
@@ -137,7 +131,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('withoutEnlargement가 true이면 캔버스는 고정하되 이미지는 확대하지 않는다', () => {
-      const result = calculator.calculateFinalLayout(100, 80, {
+      const result = calculateFinalLayout(100, 80, {
         fit: 'contain',
         width: 300,
         height: 300,
@@ -153,7 +147,7 @@ describe('ResizeCalculator - fit 모드', () => {
   describe('fill 모드 — 단일 축 지정', () => {
     it('width만 지정하면 height를 원본 비율로 계산한다', () => {
       // 400x300 → width 300: height = Math.round(300 * (300/400)) = 225
-      const result = calculator.calculateFinalLayout(400, 300, {
+      const result = calculateFinalLayout(400, 300, {
         fit: 'fill',
         width: 300,
       });
@@ -165,7 +159,7 @@ describe('ResizeCalculator - fit 모드', () => {
 
     it('height만 지정하면 width를 원본 비율로 계산한다', () => {
       // 400x300 → height 300: width = Math.round(300 * (400/300)) = 400
-      const result = calculator.calculateFinalLayout(400, 300, {
+      const result = calculateFinalLayout(400, 300, {
         fit: 'fill',
         height: 300,
       });
@@ -175,7 +169,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('단일 축 지정에서도 padding이 캔버스에 더해진다', () => {
-      const result = calculator.calculateFinalLayout(400, 300, {
+      const result = calculateFinalLayout(400, 300, {
         fit: 'fill',
         width: 200,
         padding: 10,
@@ -190,7 +184,7 @@ describe('ResizeCalculator - fit 모드', () => {
   describe('scale 모드', () => {
     it('균일 배율로 원본 크기를 조정한다', () => {
       // 400x300 → scale 0.5: Math.round(400*0.5)=200, Math.round(300*0.5)=150
-      const result = calculator.calculateFinalLayout(400, 300, {
+      const result = calculateFinalLayout(400, 300, {
         fit: 'scale',
         scale: 0.5,
       });
@@ -201,7 +195,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('sx만 지정하면 세로는 원본을 유지한다', () => {
-      const result = calculator.calculateFinalLayout(400, 300, {
+      const result = calculateFinalLayout(400, 300, {
         fit: 'scale',
         scale: { sx: 2 },
       });
@@ -211,7 +205,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('sy만 지정하면 가로는 원본을 유지한다', () => {
-      const result = calculator.calculateFinalLayout(400, 300, {
+      const result = calculateFinalLayout(400, 300, {
         fit: 'scale',
         scale: { sy: 2 },
       });
@@ -221,7 +215,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('sx·sy를 함께 지정하면 축별 배율을 적용한다', () => {
-      const result = calculator.calculateFinalLayout(400, 300, {
+      const result = calculateFinalLayout(400, 300, {
         fit: 'scale',
         scale: { sx: 2, sy: 3 },
       });
@@ -232,7 +226,7 @@ describe('ResizeCalculator - fit 모드', () => {
 
     it('배율 결과는 반올림한다', () => {
       // 333x333 → scale 0.5: Math.round(166.5)=167
-      const result = calculator.calculateFinalLayout(333, 333, {
+      const result = calculateFinalLayout(333, 333, {
         fit: 'scale',
         scale: 0.5,
       });
@@ -241,7 +235,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('양수 배율의 반올림 결과는 축마다 최소 1px을 보장한다', () => {
-      const result = calculator.calculateFinalLayout(1, 2, {
+      const result = calculateFinalLayout(1, 2, {
         fit: 'scale',
         scale: { sx: 0.1, sy: 0.2 },
       });
@@ -251,7 +245,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('scale 모드에서도 padding이 캔버스에 더해진다', () => {
-      const result = calculator.calculateFinalLayout(400, 300, {
+      const result = calculateFinalLayout(400, 300, {
         fit: 'scale',
         scale: 0.5,
         padding: 20,
@@ -265,7 +259,7 @@ describe('ResizeCalculator - fit 모드', () => {
 
   describe('fill 모드', () => {
     it('이미지를 정확한 목표 크기로 늘린다', () => {
-      const result = calculator.calculateFinalLayout(1000, 1000, {
+      const result = calculateFinalLayout(1000, 1000, {
         fit: 'fill',
         width: 800,
         height: 600,
@@ -277,7 +271,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('이미지를 정확한 목표 크기로 압축한다', () => {
-      const result = calculator.calculateFinalLayout(1920, 1080, {
+      const result = calculateFinalLayout(1920, 1080, {
         fit: 'fill',
         width: 600,
         height: 800,
@@ -289,7 +283,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('fill 모드는 종횡비를 유지하지 않는다', () => {
-      const result = calculator.calculateFinalLayout(1600, 900, {
+      const result = calculateFinalLayout(1600, 900, {
         fit: 'fill',
         width: 500,
         height: 500,
@@ -304,7 +298,7 @@ describe('ResizeCalculator - fit 모드', () => {
 
   describe('maxFit 모드', () => {
     it('큰 이미지를 최대 범위 내로 축소한다', () => {
-      const result = calculator.calculateFinalLayout(2000, 1500, {
+      const result = calculateFinalLayout(2000, 1500, {
         fit: 'maxFit',
         width: 800,
         height: 600,
@@ -315,7 +309,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('너비만 제약할 때 종횡비를 유지한다', () => {
-      const result = calculator.calculateFinalLayout(1920, 1080, {
+      const result = calculateFinalLayout(1920, 1080, {
         fit: 'maxFit',
         width: 800,
       });
@@ -325,7 +319,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('높이만 제약할 때 종횡비를 유지한다', () => {
-      const result = calculator.calculateFinalLayout(1920, 1080, {
+      const result = calculateFinalLayout(1920, 1080, {
         fit: 'maxFit',
         height: 600,
       });
@@ -335,7 +329,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('축소 시 원본 종횡비를 유지한다', () => {
-      const result = calculator.calculateFinalLayout(1600, 1200, {
+      const result = calculateFinalLayout(1600, 1200, {
         fit: 'maxFit',
         width: 400,
         height: 300,
@@ -350,7 +344,7 @@ describe('ResizeCalculator - fit 모드', () => {
 
   describe('minFit 모드', () => {
     it('소형 이미지를 최소 범위로 확대한다', () => {
-      const result = calculator.calculateFinalLayout(100, 80, {
+      const result = calculateFinalLayout(100, 80, {
         fit: 'minFit',
         width: 500,
         height: 400,
@@ -361,7 +355,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('큰 이미지를 축소하지 않는다', () => {
-      const result = calculator.calculateFinalLayout(2000, 1500, {
+      const result = calculateFinalLayout(2000, 1500, {
         fit: 'minFit',
         width: 800,
         height: 600,
@@ -372,7 +366,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('너비만 제약할 때 종횡비를 유지한다', () => {
-      const result = calculator.calculateFinalLayout(400, 300, {
+      const result = calculateFinalLayout(400, 300, {
         fit: 'minFit',
         width: 800,
       });
@@ -382,7 +376,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('높이만 제약할 때 종횡비를 유지한다', () => {
-      const result = calculator.calculateFinalLayout(400, 300, {
+      const result = calculateFinalLayout(400, 300, {
         fit: 'minFit',
         height: 600,
       });
@@ -392,7 +386,7 @@ describe('ResizeCalculator - fit 모드', () => {
     });
 
     it('확대 시 원본 종횡비를 유지한다', () => {
-      const result = calculator.calculateFinalLayout(200, 150, {
+      const result = calculateFinalLayout(200, 150, {
         fit: 'minFit',
         width: 800,
         height: 600,

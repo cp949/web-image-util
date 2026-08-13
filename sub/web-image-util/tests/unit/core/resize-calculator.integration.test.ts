@@ -1,27 +1,21 @@
 /**
- * ResizeCalculator의 성능·회귀·통합 동작을 검증하는 테스트다.
+ * calculateFinalLayout의 성능·회귀·통합 동작을 검증하는 테스트다.
  *
  * 성능 기대치, 과거 버그 회귀 방지, 여러 기능을 조합한 복합 시나리오를 확인한다.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
-import { ResizeCalculator } from '../../../src/core/resize-calculator.internal';
+import { describe, expect, it } from 'vitest';
+import { calculateFinalLayout } from '../../../src/core/resize-calculator.internal';
 import type { ResizeConfig } from '../../../src/types/resize-config';
 
 const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
 
-describe('ResizeCalculator - 성능', () => {
-  let calculator: ResizeCalculator;
-
-  beforeEach(() => {
-    calculator = new ResizeCalculator();
-  });
-
+describe('calculateFinalLayout - 성능', () => {
   it('1000회 반복 계산을 합리적인 시간 내에 완료한다', () => {
     const start = performance.now();
 
     for (let i = 0; i < 1000; i++) {
-      calculator.calculateFinalLayout(1920, 1080, {
+      calculateFinalLayout(1920, 1080, {
         fit: 'cover',
         width: 800,
         height: 600,
@@ -40,7 +34,7 @@ describe('ResizeCalculator - 성능', () => {
     const start = performance.now();
 
     for (let i = 0; i < 1000; i++) {
-      calculator.calculateFinalLayout(1920, 1080, {
+      calculateFinalLayout(1920, 1080, {
         fit: 'contain',
         width: 800,
         height: 600,
@@ -69,7 +63,7 @@ describe('ResizeCalculator - 성능', () => {
       const start = performance.now();
 
       for (let i = 0; i < 500; i++) {
-        calculator.calculateFinalLayout(1920, 1080, {
+        calculateFinalLayout(1920, 1080, {
           fit,
           width: 800,
           height: 600,
@@ -89,17 +83,11 @@ describe('ResizeCalculator - 성능', () => {
   });
 });
 
-describe('ResizeCalculator - 회귀 테스트', () => {
-  let calculator: ResizeCalculator;
-
-  beforeEach(() => {
-    calculator = new ResizeCalculator();
-  });
-
+describe('calculateFinalLayout - 회귀 테스트', () => {
   describe('maxFit 확대 버그', () => {
     it('91x114 이미지를 300x200으로 확대하지 않는다 (원래 버그)', () => {
       // 과거 버그: maxFit이 소형 이미지를 확대하는 문제가 있었다.
-      const result = calculator.calculateFinalLayout(91, 114, {
+      const result = calculateFinalLayout(91, 114, {
         fit: 'maxFit',
         width: 300,
         height: 200,
@@ -118,7 +106,7 @@ describe('ResizeCalculator - 회귀 테스트', () => {
       ];
 
       testCases.forEach(({ w, h, maxW, maxH }) => {
-        const result = calculator.calculateFinalLayout(w, h, {
+        const result = calculateFinalLayout(w, h, {
           fit: 'maxFit',
           width: maxW,
           height: maxH,
@@ -130,15 +118,9 @@ describe('ResizeCalculator - 회귀 테스트', () => {
   });
 });
 
-describe('ResizeCalculator - 통합 테스트', () => {
-  let calculator: ResizeCalculator;
-
-  beforeEach(() => {
-    calculator = new ResizeCalculator();
-  });
-
+describe('calculateFinalLayout - 통합 테스트', () => {
   it('cover + 대형 패딩 + 극단 종횡비 복합 시나리오를 처리한다', () => {
-    const result = calculator.calculateFinalLayout(3000, 1000, {
+    const result = calculateFinalLayout(3000, 1000, {
       fit: 'cover',
       width: 800,
       height: 800,
@@ -161,23 +143,23 @@ describe('ResizeCalculator - 통합 테스트', () => {
     const input = { width: 1920, height: 1080 };
     const target = { width: 800, height: 800 };
 
-    const coverResult = calculator.calculateFinalLayout(input.width, input.height, {
+    const coverResult = calculateFinalLayout(input.width, input.height, {
       fit: 'cover',
       ...target,
     });
-    const containResult = calculator.calculateFinalLayout(input.width, input.height, {
+    const containResult = calculateFinalLayout(input.width, input.height, {
       fit: 'contain',
       ...target,
     });
-    const fillResult = calculator.calculateFinalLayout(input.width, input.height, {
+    const fillResult = calculateFinalLayout(input.width, input.height, {
       fit: 'fill',
       ...target,
     });
-    const maxFitResult = calculator.calculateFinalLayout(input.width, input.height, {
+    const maxFitResult = calculateFinalLayout(input.width, input.height, {
       fit: 'maxFit',
       ...target,
     });
-    const minFitResult = calculator.calculateFinalLayout(input.width, input.height, {
+    const minFitResult = calculateFinalLayout(input.width, input.height, {
       fit: 'minFit',
       ...target,
     });

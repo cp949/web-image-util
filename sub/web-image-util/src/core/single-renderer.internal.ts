@@ -11,7 +11,7 @@ import { type CanvasLease, leaseCanvas } from '../base/canvas-lease.internal';
 import { type BlurOptions, ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import { debugLog, productionLog } from '../utils/debug.internal';
-import { ResizeCalculator } from './resize-calculator.internal';
+import { calculateFinalLayout } from './resize-calculator.internal';
 
 /**
  * Operation definition for lazy execution
@@ -69,13 +69,11 @@ export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: 
 }
 
 /**
- * Analyze resize operation - utilizing ResizeCalculator
+ * Analyze resize operation - utilizing calculateFinalLayout
  */
 function analyzeResizeOperation(sourceImage: HTMLImageElement, layout: FinalLayout, config: ResizeConfig): FinalLayout {
-  const calculator = new ResizeCalculator();
-
-  // Calculate precise layout using ResizeCalculator
-  const result = calculator.calculateFinalLayout(sourceImage.naturalWidth, sourceImage.naturalHeight, config);
+  // Calculate precise layout using calculateFinalLayout
+  const result = calculateFinalLayout(sourceImage.naturalWidth, sourceImage.naturalHeight, config);
 
   return {
     width: result.canvasSize.width,
