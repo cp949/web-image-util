@@ -4,83 +4,44 @@
  * 판정 모듈이 본문까지 확인한 결과를 받아 SVG 보안 경로 또는 일반 이미지 경로만 실행한다.
  */
 
+import { formatToMimeType } from '../../../utils/format-utils';
 import { decodeImageFromBlob } from '../../../utils/image-decode.internal';
-import { isInlineSvg } from '../../../utils/svg-detection';
+import { detectFormatFromBytes } from '../../../utils/source-utils/byte-signature.internal';
+import { DEFAULT_SVG_SNIFF_BYTES, isInlineSvg } from '../../../utils/svg-detection';
 import { assertBlobSizeWithinLimit } from '../detect.internal';
 import { buildSvgRenderOptions, type InternalSourceConverterOptions } from '../options.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
 
 /**
- * Auto-detect MIME type from ArrayBuffer
+ * ArrayBuffer 입력의 MIME 타입을 자동 판정한다.
  *
- * @param buffer ArrayBuffer data
- * @returns Detected MIME type
+ * 판정 표 자체는 detectFormatFromBytes가 소유한다(image-info의 formatFromBytes와 공유).
+ * 이 함수가 갖는 건 폴백 정책뿐이다 — 시그니처가 없으면 SVG 텍스트를 스니핑하고,
+ * 그래도 없으면 image/png로 떨어뜨린다.
  */
 export function detectMimeTypeFromBuffer(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
+  const format = detectFormatFromBytes(bytes);
 
-  // PNG signature: 89 50 4E 47 0D 0A 1A 0A
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47 &&
-    bytes[4] === 0x0d &&
-    bytes[5] === 0x0a &&
-    bytes[6] === 0x1a &&
-    bytes[7] === 0x0a
-  ) {
-    return 'image/png';
-  }
-
-  // JPEG signature: FF D8 FF
-  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-    return 'image/jpeg';
-  }
-
-  // WebP signature: RIFF ... WEBP (check file header)
-  if (bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) {
-    // Check WEBP signature (bytes 8-11)
-    if (bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
-      return 'image/webp';
-    }
-  }
-
-  // GIF signature: GIF87a or GIF89a
-  if (bytes.length >= 6) {
-    const gifSignature = String.fromCharCode(...bytes.slice(0, 3));
-    if (gifSignature === 'GIF') {
-      const version = String.fromCharCode(...bytes.slice(3, 6));
-      if (version === '87a' || version === '89a') {
-        return 'image/gif';
-      }
-    }
-  }
-
-  // BMP signature: BM
-  if (bytes.length >= 2 && bytes[0] === 0x42 && bytes[1] === 0x4d) {
-    return 'image/bmp';
-  }
-
-  // TIFF signature: II* (little-endian) or MM* (big-endian)
-  if (bytes.length >= 4) {
-    if (
-      (bytes[0] === 0x49 && bytes[1] === 0x49 && bytes[2] === 0x2a && bytes[3] === 0x00) ||
-      (bytes[0] === 0x4d && bytes[1] === 0x4d && bytes[2] === 0x00 && bytes[3] === 0x2a)
-    ) {
+  // bmp/tiff/ico는 공개 ImageFormat이 표현하지 못해 formatToMimeType에 넘길 수 없다 —
+  // 여기서만 쓰는 raw 컨테이너 MIME이라 로컬로 직접 매핑한다.
+  switch (format) {
+    case 'bmp':
+      return 'image/bmp';
+    case 'tiff':
       return 'image/tiff';
-    }
-  }
-
-  // ICO signature: 00 00 01 00
-  if (bytes.length >= 4 && bytes[0] === 0x00 && bytes[1] === 0x00 && bytes[2] === 0x01 && bytes[3] === 0x00) {
-    return 'image/x-icon';
+    case 'ico':
+      return 'image/x-icon';
+    case 'unknown':
+      break;
+    default:
+      // 여기 도달하면 format은 'png'|'jpeg'|'webp'|'gif'|'avif' — ImageFormat의 부분집합이다.
+      return formatToMimeType(format);
   }
 
   // 바이너리 시그니처가 없더라도 실제 SVG XML이면 보안 경로를 타도록 본문 앞부분을 스니핑한다.
   try {
-    const sniffLength = Math.min(bytes.length, 4096);
+    const sniffLength = Math.min(bytes.length, DEFAULT_SVG_SNIFF_BYTES);
     const decodedHead = new TextDecoder().decode(bytes.subarray(0, sniffLength));
     if (isInlineSvg(decodedHead)) {
       return 'image/svg+xml';
@@ -89,7 +50,6 @@ export function detectMimeTypeFromBuffer(buffer: ArrayBuffer): string {
     // 텍스트 디코딩 실패는 비-SVG 후보로 간주하고 기존 기본값으로 폴백한다.
   }
 
-  // Return PNG as default
   return 'image/png';
 }
 

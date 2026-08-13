@@ -137,6 +137,13 @@ describe('detectMimeTypeFromBuffer — 바이너리 시그니처 판정', () => 
     expect(detectMimeTypeFromBuffer(buf)).toBe('image/x-icon');
   });
 
+  it('AVIF ftyp 시그니처(4~11바이트 ftypavif)를 image/avif로 판정한다', () => {
+    // 이관 전에는 이 케이스가 어떤 시그니처와도 매치되지 않아 기본값 image/png로
+    // 잘못 떨어졌다 — ArrayBuffer/Uint8Array로 넘긴 AVIF 입력이 실제로 겪는 버그다.
+    const buf = new Uint8Array([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66]).buffer;
+    expect(detectMimeTypeFromBuffer(buf)).toBe('image/avif');
+  });
+
   it('SVG XML 본문을 image/svg+xml로 판정한다', () => {
     // detectMimeTypeFromBuffer 내부에서 new Uint8Array(buffer)로 바이트를 읽으므로
     // Node.js TextEncoder buffer도 정상 동작한다.
@@ -411,6 +418,20 @@ describe('ArrayBuffer / Uint8Array 입력 경로', () => {
     expect(vi.mocked(convertSvgToElement)).not.toHaveBeenCalled();
   });
 
+  it('AVIF ArrayBuffer는 image/avif Blob으로 재포장된다', async () => {
+    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-avif-ab');
+    vi.spyOn(URL, 'revokeObjectURL');
+    mockImgLoad('load');
+
+    const avifBuf = new Uint8Array([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66]).buffer;
+    await convertToImageElement(avifBuf);
+
+    expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
+    const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
+    expect(blobArg.type).toBe('image/avif');
+    expect(vi.mocked(convertSvgToElement)).not.toHaveBeenCalled();
+  });
+
   it('SVG XML ArrayBuffer는 image/svg+xml Blob으로 재포장되어 SVG 변환 경로를 사용한다', async () => {
     const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL');
 
@@ -438,6 +459,24 @@ describe('ArrayBuffer / Uint8Array 입력 경로', () => {
     expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
     const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
     expect(blobArg.type).toBe('image/png');
+    expect(vi.mocked(convertSvgToElement)).not.toHaveBeenCalled();
+  });
+
+  it('byteOffset이 있는 AVIF Uint8Array는 노출 구간만 image/avif Blob으로 재포장한다', async () => {
+    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-avif-u8');
+    vi.spyOn(URL, 'revokeObjectURL');
+    mockImgLoad('load');
+
+    const storage = new Uint8Array(16);
+    storage.set([0xff, 0xd8, 0xff, 0x00], 0);
+    storage.set([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66], 4);
+    const avifView = new Uint8Array(storage.buffer, 4, 12);
+    await convertToImageElement(avifView);
+
+    expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
+    const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
+    expect(blobArg.type).toBe('image/avif');
+    expect(blobArg.size).toBe(12);
     expect(vi.mocked(convertSvgToElement)).not.toHaveBeenCalled();
   });
 

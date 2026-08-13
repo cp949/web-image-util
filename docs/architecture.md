@@ -53,6 +53,7 @@
 | `src/core/source-converter/index.ts` | `convertToImageElement` / `getImageDimensions` 오케스트레이션 |
 | `src/core/source-converter/detect.internal.ts` | 공유 소스 facts를 내부 로더 verdict(`SourceType`)로 투영. **내부 라우팅 정책**(`hasInternalSvgMetadataHint` — MIME·파일명 중 하나라도 SVG면 보수적으로 SVG 경로)을 소유하며 Blob URL 로더도 이 술어를 쓴다 |
 | `src/utils/source-utils/source-facts.internal.ts` | 문자열 transport·포맷 힌트와 Blob MIME·파일명 facts의 단일 판정점. 소비자 정책은 담지 않는다 |
+| `src/utils/source-utils/byte-signature.internal.ts` | 매직바이트 → 이미지 포맷 판정의 단일 facts(`detectFormatFromBytes`). bmp/tiff/ico처럼 공개 `ImageFormat`이 표현 못 하는 값도 낸다 — 접는 판단은 소비자(`image-info`의 `formatFromBytes`, blob loader의 `detectMimeTypeFromBuffer`) 몫이다 |
 | `src/utils/source-utils/blob-projection.internal.ts` | Blob facts → **공개 진단 정책**(`resolveMimeFirstBlobFormat` — MIME 우선, 모호할 때만 파일명). 내부 라우팅 정책과 의도적으로 다르며 공개 판정과 `image-info`가 공유 |
 | `src/svg-contract.internal.ts` | SVG 처리 계약 leaf — `MAX_SVG_BYTES`, `SvgSanitizerMode`. core와 진단 API가 같은 방향으로 공유 |
 | `src/core/source-converter/options.internal.ts` | 내부 옵션 타입과 fetch 기본값 상수 |
