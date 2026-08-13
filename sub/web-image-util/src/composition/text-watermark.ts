@@ -59,17 +59,17 @@ export class TextWatermark {
     // applyTextStyle은 ctx의 font·globalAlpha·fillStyle·textBaseline 등을 바꾸므로,
     // 밖에서 호출하면 호출자 소유 Canvas에 그 상태가 남는다.
     withCanvasState(ctx, () => {
-      // Apply text style
+      // 텍스트 스타일 적용
       TextWatermark.applyTextStyle(ctx, style);
 
-      // Measure text size
+      // 텍스트 크기 측정
       const textMetrics = ctx.measureText(text);
       const textSize: Size = {
         width: textMetrics.width,
         height: style.fontSize || 16,
       };
 
-      // Calculate position
+      // 위치 계산
       const containerSize: Size = { width: canvas.width, height: canvas.height };
       const textPosition = PositionCalculator.calculatePosition(
         position,
