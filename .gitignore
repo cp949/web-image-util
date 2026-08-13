@@ -141,3 +141,6 @@ dist
 
 # TernJS port file
 .tern-port
+
+# 작업용 임시 산출물 (리뷰 리포트, handoff 문서 등)
+_tmp/
