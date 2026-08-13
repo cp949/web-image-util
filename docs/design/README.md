@@ -9,3 +9,4 @@
 - `2026-05-02-ensure-converters-design.md`: `ensureXxx()` 변환 API의 계약과 비범위
 - `2026-05-03-browser-smoke-release-gate-design.md`: browser smoke test를 `verify:release` gate로 둔 결정 근거
 - `2026-08-13-image-decode-seam-design.md`: 이미지 디코드를 단일 소유 모듈로 모으고 구동 방식만 adapter로 가른 결정 근거
+- `2026-08-13-svg-uri-ref-verdict-design.md`: SVG 참조 판정을 이유 코드 하나로 모으고 제거·거부·집계를 소비자 동작으로 남긴 결정 근거
