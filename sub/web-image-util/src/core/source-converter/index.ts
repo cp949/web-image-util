@@ -7,6 +7,7 @@
 
 import type { ImageSource, ProcessorOptions } from '../../types';
 import { ImageProcessError } from '../../types';
+import { decodeExistingImage } from '../../utils/image-decode.internal';
 import { detectSourceTypeAsync, type SourceType } from './detect.internal';
 import { convertBlobToElement, detectMimeTypeFromBuffer } from './loaders/blob.internal';
 import { convertCanvasToElement } from './loaders/canvas.internal';
@@ -33,20 +34,10 @@ export async function convertToImageElement(
     const sourceType = await detectSourceTypeAsync(source, internalOptions?.maxSourceBytes ?? DEFAULT_MAX_SOURCE_BYTES);
 
     if (sourceType === 'element') {
-      const image = source as HTMLImageElement;
-      // 이미 로드된 이미지면 이벤트를 기다리지 않고 그대로 반환한다.
-      if (image.complete && image.naturalWidth > 0) {
-        return image;
-      }
-
-      // 미로드 이미지는 load/error 이벤트로 완료를 결정한다.
-      return new Promise((resolve, reject) => {
-        if (image.complete && image.naturalWidth > 0) {
-          resolve(image);
-        } else {
-          image.onload = () => resolve(image);
-          image.onerror = () => reject(new ImageProcessError('Failed to load HTMLImageElement', 'SOURCE_LOAD_FAILED'));
-        }
+      // 로드 완료 판정과 핸들러 해제는 디코드 모듈이 소유한다.
+      return decodeExistingImage(source as HTMLImageElement, {
+        errorCode: 'SOURCE_LOAD_FAILED',
+        message: 'Failed to load HTMLImageElement',
       });
     }
 
