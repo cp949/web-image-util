@@ -65,6 +65,26 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * Convert to Canvas
    */
   toCanvas(): Promise<ResultCanvas>;
+
+  /**
+   * Canvas result with metadata
+   */
+  toCanvasDetailed(): Promise<ResultCanvas>;
+
+  /**
+   * Create HTMLImageElement directly
+   */
+  toElement(): Promise<HTMLImageElement>;
+
+  /**
+   * Convert to ArrayBuffer directly
+   */
+  toArrayBuffer(): Promise<ArrayBuffer>;
+
+  /**
+   * Convert to Uint8Array directly
+   */
+  toUint8Array(): Promise<Uint8Array>;
 }
 
 /**

@@ -29,10 +29,18 @@ describe('Shortcut API Type Safety', () => {
       it('should have all output methods', () => {
         const processor = factory(testImageUrl);
 
+        // 이 assertion들은 런타임에서는 항상 참이다(실제 ImageProcessor는 8개를 전부 구현함).
+        // 회귀 감지는 tsc가 담당한다 — IImageProcessor 선언이 다시 좁아지면
+        // 여기서 TS2339로 typecheck가 실패한다. vitest는 타입을 지우고 실행하므로
+        // 이 블록만으로는 못 잡는다 — pnpm typecheck가 실질적인 가드다.
         expect(typeof processor.toBlob, 'toBlob should be a function').toBe('function');
         expect(typeof processor.toDataURL, 'toDataURL should be a function').toBe('function');
         expect(typeof processor.toCanvas, 'toCanvas should be a function').toBe('function');
         expect(typeof processor.toFile, 'toFile should be a function').toBe('function');
+        expect(typeof processor.toCanvasDetailed, 'toCanvasDetailed should be a function').toBe('function');
+        expect(typeof processor.toElement, 'toElement should be a function').toBe('function');
+        expect(typeof processor.toArrayBuffer, 'toArrayBuffer should be a function').toBe('function');
+        expect(typeof processor.toUint8Array, 'toUint8Array should be a function').toBe('function');
       });
 
       it('should have chainable processing methods', () => {
