@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { processImage } from '../../src';
 import { CanvasPool } from '../../src/base/canvas-pool.internal';
+import { BlobResultImpl } from '../../src/types/result-implementations.internal';
 import { mimeTypeToOutputFormat } from '../../src/utils/format-utils';
 
 function createFixtureCanvas(width = 64, height = 48): HTMLCanvasElement {
@@ -134,6 +135,17 @@ async function loadCrossOriginImage(): Promise<HTMLImageElement> {
 }
 
 describe('브라우저 스모크 테스트', () => {
+  it('Blob 결과의 무옵션 toDataURL()은 Canvas 미지원·빈 원본 MIME을 보존한다', async () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2"/></svg>';
+    const payload = new Blob([svg], { type: 'image/svg+xml' });
+    const result = new BlobResultImpl(payload, 2, 2, 0);
+    const untypedResult = new BlobResultImpl(new Blob([svg]), 2, 2, 0);
+
+    await expect(result.toBlob()).resolves.toBe(payload);
+    await expect(result.toDataURL()).resolves.toMatch(/^data:image\/svg\+xml;base64,/);
+    await expect(untypedResult.toDataURL()).resolves.toMatch(/^data:application\/octet-stream;base64,/);
+  });
+
   it('실제 Canvas 입력을 PNG Blob으로 리사이즈한다', async () => {
     const result = await processImage(createFixtureCanvas())
       .resize({ fit: 'fill', width: 32, height: 24 })

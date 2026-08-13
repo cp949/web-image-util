@@ -1,11 +1,12 @@
 /**
  * 결과 객체 5종이 공유하는 파생 변환 구현이다.
  *
- * @description `toDataURL`/`toBlob`/`toFile`/`toArrayBuffer`/`toUint8Array`는
- *   전부 "재인코딩 소스 canvas 하나"에서 파생된다. 각 결과 타입이 채우는 것은
- *   그 소스를 만드는 방법(`renderCanvas`)과 기본 MIME뿐이다.
+ * @description 재인코딩이 필요한 `toDataURL`/`toBlob`/`toFile`/
+ *   `toArrayBuffer`/`toUint8Array`는 "재인코딩 소스 canvas 하나"에서 파생된다.
+ *   원본 바이트를 그대로 반환할 수 있는 결과 타입은 무옵션 fast-path를 둔다.
  */
 
+import { blobToDataURL } from '../utils/data-url';
 import type { GeometrySize, OutputFormat, OutputOptions, ResultMetadata } from './index';
 import {
   blobToArrayBuffer,
@@ -43,35 +44,26 @@ export abstract class ResultBase implements ResultMetadata {
   protected abstract renderCanvas(): Promise<HTMLCanvasElement>;
 
   /**
-   * `toBlob()`이 format 미지정일 때 쓸 기본 MIME이다.
+   * format 미지정일 때 쓸 기본 MIME이다. `toBlob()`과 `toDataURL()`이 공유한다.
    *
    * 원본 바이트를 들고 있는 결과 타입(Blob·File)은 원본 타입으로 오버라이드한다.
+   * 두 출력이 같은 훅을 쓰므로 한 결과 객체가 출력 종류에 따라 다른 포맷을
+   * 내놓지 않는다.
    */
-  protected defaultBlobMimeType(): string {
-    return 'image/png';
-  }
-
-  /**
-   * `toDataURL()`이 format 미지정일 때 쓸 기본 MIME이다.
-   *
-   * `defaultBlobMimeType()`과 분리돼 있다 — Blob·File 결과의 `toDataURL()`은
-   * 원본 타입이 아니라 `image/png`를 쓴다. 기존 동작을 그대로 유지하기 위한
-   * 분리이며, 두 훅의 통일 여부는 별도 판단 대상이다.
-   */
-  protected defaultDataURLMimeType(): string {
+  protected defaultMimeType(): string {
     return 'image/png';
   }
 
   /** Data URL로 변환한다. */
   async toDataURL(options?: OutputOptions): Promise<string> {
     const canvas = await this.renderCanvas();
-    return canvasToDataURL(canvas, options, this.defaultDataURLMimeType());
+    return canvasToDataURL(canvas, options, this.defaultMimeType());
   }
 
   /** Blob으로 변환한다. */
   async toBlob(options?: OutputOptions): Promise<globalThis.Blob> {
     const canvas = await this.renderCanvas();
-    return canvasToBlob(canvas, options, this.defaultBlobMimeType());
+    return canvasToBlob(canvas, options, this.defaultMimeType());
   }
 
   /** File 객체로 변환한다. */
@@ -98,14 +90,15 @@ export abstract class ResultBase implements ResultMetadata {
  *
  * @description `File`은 `Blob`의 서브클래스이므로 두 결과 타입의 변환 경로가
  *   완전히 같다 — object URL을 만들어 이미지로 로드한 뒤 canvas에 그린다.
- *   옵션이 없으면 재인코딩 없이 보유 중인 바이트를 그대로 돌려준다.
+ *   옵션이 없으면 `toBlob()`과 `toDataURL()` 모두 재인코딩 없이 보유 중인
+ *   바이트를 그대로 돌려준다.
  */
 export abstract class BlobBackedResult extends ResultBase {
   /** 이 결과가 보유한 원본 바이트다. */
   protected abstract get payload(): globalThis.Blob;
 
   /** 원본 바이트의 MIME을 재인코딩 기본값으로 쓴다. */
-  protected override defaultBlobMimeType(): string {
+  protected override defaultMimeType(): string {
     return this.payload.type;
   }
 
@@ -121,6 +114,15 @@ export abstract class BlobBackedResult extends ResultBase {
   /** HTMLImageElement로 변환한다. */
   async toElement(): Promise<HTMLImageElement> {
     return withObjectUrl(this.payload, (objectUrl) => loadImageFromUrl(objectUrl));
+  }
+
+  /** 옵션이 없으면 원본 바이트를 직접 Data URL로 바꿔 Canvas MIME 폴백을 피한다. */
+  override async toDataURL(options?: OutputOptions): Promise<string> {
+    if (!options) {
+      return blobToDataURL(this.payload);
+    }
+
+    return super.toDataURL(options);
   }
 
   /** 옵션이 없으면 보유 중인 바이트를 그대로 반환한다(재인코딩 없음). */

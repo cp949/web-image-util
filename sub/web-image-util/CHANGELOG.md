@@ -41,6 +41,12 @@
 - Changed (**Breaking**): `@cp949/web-image-util/advanced`가 `ImageFormat` 타입을 더 이상 노출하지 않습니다. 같은 타입이 루트 진입점(`@cp949/web-image-util`)에 이미 존재하던 중복이었고, 이제 루트가 단독 소유합니다.
   - 마이그레이션은 import 경로 한 줄 변경입니다. `import type { ImageFormat } from '@cp949/web-image-util/advanced'` → `import type { ImageFormat } from '@cp949/web-image-util'`. 타입 정의는 바뀌지 않습니다.
   - `/advanced`의 값 export(`FORMAT_MIME_MAP`, `FormatDetector` 등)는 영향받지 않습니다.
+- Changed (**Breaking**): Blob·File 결과 객체의 `toDataURL()`이 format을 지정하지 않으면 `toBlob()`과 같은 원본 MIME으로 변환합니다. 기존에는 `toBlob()`만 원본 MIME을 쓰고 `toDataURL()`은 항상 `image/png`를 써서, 같은 결과 객체의 두 출력이 서로 다른 포맷으로 갈렸습니다.
+  - 대상은 `ResultBlob`·`ResultFile`을 돌려주는 경로입니다 — `processImage().toBlob()`/`toFile()`의 결과, `ensureBlobDetailed()`·`ensureFileDetailed()`의 결과, preset `createThumbnail()`·`createAvatar()`·`createSocialImage()`의 결과. 예를 들어 JPEG Blob에서 만들어진 결과의 `toDataURL()`이 `data:image/png;...`에서 `data:image/jpeg;...`로 바뀝니다.
+  - 무옵션 `toDataURL()`은 원본 Blob·File 바이트를 직접 Data URL로 변환합니다. 따라서 Canvas가 인코딩하지 못하는 GIF·SVG 등의 MIME도 PNG로 폴백하지 않고 원본 MIME과 바이트를 보존합니다. `{ quality }` 또는 `{}`처럼 옵션 객체를 넘기면 기존처럼 Canvas로 재인코딩합니다.
+  - 원본 `Blob.type`이 빈 문자열이면 브라우저의 `FileReader.readAsDataURL()` 규칙에 따라 Data URL 헤더는 `application/octet-stream`이 됩니다.
+  - 이전 동작이 필요하면 `toDataURL({ format: 'png' })`처럼 format을 명시하세요. format을 지정한 호출의 동작은 바뀌지 않습니다.
+  - Canvas·Element·Data URL 결과 객체는 영향받지 않습니다. 이전에도 `toBlob()`과 `toDataURL()` 모두 `image/png`를 기본값으로 썼습니다.
 - Changed: `inspectSvgSanitization()`의 byte 초과 failure에 `details`(`{ actualBytes, maxBytes }`)가 추가되었습니다. `InspectSvgSanitizationFailure` 타입에 선택 필드 `details?`가 신설됩니다.
 - Changed: 상대·절대 경로 참조(`./a.png`, `/a.png` 등)가 포함된 SVG의 기본 경로 처리 결과가 오류(`INVALID_SOURCE`)에서 "참조 제거 후 렌더링"으로 바뀌었습니다. 외부 `http(s)` URL과 같은 무해화 방식으로 통일한 것입니다.
 - Changed: 경량 sanitizer의 외부 CSS `url()` 치환값이 `url(#invalid)`에서 `none`으로 통일되었습니다.

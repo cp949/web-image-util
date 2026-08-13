@@ -21,18 +21,13 @@ afterEach(() => {
 class StubResult extends ResultBase {
   constructor(
     private readonly source: HTMLCanvasElement | Promise<never>,
-    private readonly blobMime = 'image/png',
-    private readonly dataURLMime = 'image/png'
+    private readonly mime = 'image/png'
   ) {
     super(100, 80, 0);
   }
 
-  protected override defaultBlobMimeType(): string {
-    return this.blobMime;
-  }
-
-  protected override defaultDataURLMimeType(): string {
-    return this.dataURLMime;
+  protected override defaultMimeType(): string {
+    return this.mime;
   }
 
   protected async renderCanvas(): Promise<HTMLCanvasElement> {
@@ -61,7 +56,7 @@ describe('ResultBase.toBlob', () => {
     expect(blob.type).toBe('image/jpeg');
   });
 
-  it('format이 없으면 defaultBlobMimeType()을 MIME으로 쓴다', async () => {
+  it('format이 없으면 defaultMimeType()을 MIME으로 쓴다', async () => {
     const { canvas, toBlobSpy } = createMockCanvas();
 
     await new StubResult(canvas, 'image/webp').toBlob({ quality: 0.7 });
@@ -89,13 +84,12 @@ describe('ResultBase.toDataURL', () => {
     expect(dataURL).toBe('data:image/png;base64,mock');
   });
 
-  it('format이 없으면 defaultDataURLMimeType()을 MIME으로 쓴다', async () => {
+  it('format이 없으면 defaultMimeType()을 MIME으로 쓴다', async () => {
     const { canvas, toDataURLSpy } = createMockCanvas();
 
-    // blob 기본값과 dataURL 기본값이 서로 다를 수 있으므로 dataURL 쪽만 골라 쓴다
-    await new StubResult(canvas, 'image/webp', 'image/png').toDataURL();
+    await new StubResult(canvas, 'image/webp').toDataURL();
 
-    expect(toDataURLSpy).toHaveBeenCalledWith('image/png', undefined);
+    expect(toDataURLSpy).toHaveBeenCalledWith('image/webp', undefined);
   });
 });
 
@@ -122,7 +116,7 @@ describe('ResultBase.toFile', () => {
     expect(toBlobSpy).toHaveBeenCalledWith({ format: 'jpeg', quality: 0.9 });
   });
 
-  it('옵션 없이 호출하면 defaultBlobMimeType()이 File.type이 된다', async () => {
+  it('옵션 없이 호출하면 defaultMimeType()이 File.type이 된다', async () => {
     const { canvas } = createMockCanvas();
 
     const file = await new StubResult(canvas, 'image/webp').toFile('output.webp');
@@ -192,6 +186,18 @@ describe('ResultBase — 기본 MIME 훅', () => {
 
     expect(toBlobSpy).toHaveBeenCalledWith(expect.any(Function), 'image/png', undefined);
     expect(toDataURLSpy).toHaveBeenCalledWith('image/png', undefined);
+  });
+
+  it('오버라이드하면 toBlob·toDataURL이 같은 기본 MIME을 쓴다', async () => {
+    const { canvas, toBlobSpy, toDataURLSpy } = createMockCanvas();
+    const result = new StubResult(canvas, 'image/jpeg');
+
+    await result.toBlob();
+    await result.toDataURL();
+
+    // 훅이 하나이므로 출력 종류에 따라 기본 포맷이 갈리지 않는다
+    expect(toBlobSpy).toHaveBeenCalledWith(expect.any(Function), 'image/jpeg', undefined);
+    expect(toDataURLSpy).toHaveBeenCalledWith('image/jpeg', undefined);
   });
 });
 

@@ -57,7 +57,8 @@ export class DataURLResultImpl extends ResultBase implements ResultDataURL {
 /**
  * Blob 결과 객체 구현이다.
  *
- * @description 옵션 없는 `toBlob()`/`toFile()`은 보유 중인 Blob을 그대로 쓴다.
+ * @description 옵션 없는 `toBlob()`/`toDataURL()`/`toFile()`은 보유 중인
+ *   Blob 바이트를 그대로 쓴다.
  */
 export class BlobResultImpl extends BlobBackedResult implements ResultBlob {
   constructor(
@@ -80,8 +81,8 @@ export class BlobResultImpl extends BlobBackedResult implements ResultBlob {
 /**
  * File 결과 객체 구현이다.
  *
- * @description `File`은 `Blob`의 서브클래스이므로 옵션 없는 `toBlob()`은
- *   보유 중인 File을 그대로 반환한다.
+ * @description `File`은 `Blob`의 서브클래스이므로 옵션 없는 `toBlob()`/
+ *   `toDataURL()`은 보유 중인 File 바이트를 그대로 사용한다.
  */
 export class FileResultImpl extends BlobBackedResult implements ResultFile {
   constructor(

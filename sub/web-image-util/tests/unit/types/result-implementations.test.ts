@@ -210,6 +210,16 @@ describe.each(BLOB_BACKED)('$name — 무옵션 fast-path', (entry) => {
     expect(toCanvasSpy).not.toHaveBeenCalled();
   });
 
+  it('toDataURL() 옵션 없음 → 원본 MIME과 바이트를 보존하고 재인코딩하지 않는다', async () => {
+    const { impl } = entry.build('image/svg+xml');
+    const toCanvasSpy = openRenderPath(impl);
+
+    const dataURL = await impl.toDataURL();
+
+    expect(dataURL).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(toCanvasSpy).not.toHaveBeenCalled();
+  });
+
   it('toFile() 옵션 없음 → canvas를 거치지 않고 보유 바이트를 File로 래핑한다', async () => {
     const { impl } = entry.build('image/png');
     const toCanvasSpy = openRenderPath(impl);
@@ -268,13 +278,30 @@ describe.each(BLOB_BACKED)('$name — 기본 MIME', (entry) => {
     expect(result.type).toBe('image/webp');
   });
 
-  it('toDataURL()은 원본 payload.type이 아니라 image/png를 기본값으로 쓴다', async () => {
-    // toBlob과 다른 기본값이다. 의도된 비대칭이며 ResultBase가 훅 두 개로 분리해 유지한다.
+  it('toDataURL({ quality })도 format이 없으면 원본 payload.type으로 인코딩한다', async () => {
     const { impl, toDataURLSpy } = withMockCanvas('image/jpeg');
 
-    await impl.toDataURL();
+    await impl.toDataURL({ quality: 0.7 });
 
-    expect(toDataURLSpy).toHaveBeenCalledWith('image/png', undefined);
+    expect(toDataURLSpy).toHaveBeenCalledWith('image/jpeg', 0.7);
+  });
+
+  it('toDataURL({ format })은 지정한 format이 원본 타입을 이긴다', async () => {
+    const { impl, toDataURLSpy } = withMockCanvas('image/jpeg');
+
+    await impl.toDataURL({ format: 'webp', quality: 0.6 });
+
+    expect(toDataURLSpy).toHaveBeenCalledWith('image/webp', 0.6);
+  });
+
+  it('같은 결과 객체의 toBlob()과 toDataURL()이 서로 다른 기본 MIME으로 갈리지 않는다', async () => {
+    const { impl, toBlobSpy, toDataURLSpy } = withMockCanvas('image/jpeg');
+
+    await impl.toBlob({ quality: 0.7 });
+    await impl.toDataURL({ quality: 0.7 });
+
+    expect(toBlobSpy).toHaveBeenCalledWith(expect.any(Function), 'image/jpeg', 0.7);
+    expect(toDataURLSpy).toHaveBeenCalledWith('image/jpeg', 0.7);
   });
 });
 
