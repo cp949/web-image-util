@@ -1,3 +1,4 @@
+import { requestMemoryRelief } from '../utils/browser-capabilities/index';
 import { leaseCanvas } from './canvas-lease.internal';
 import { applySmoothing, createOwnedCanvas, type SmoothingQuality } from './canvas-utils.internal';
 import { createImageError } from './error-helpers';
@@ -165,8 +166,8 @@ export class TiledProcessor {
       await Promise.all(chunkPromises);
 
       // Simple memory cleanup after chunk processing
-      if (opts.enableMemoryMonitoring && typeof global !== 'undefined' && global.gc) {
-        global.gc();
+      if (opts.enableMemoryMonitoring) {
+        requestMemoryRelief();
       }
     }
   }
