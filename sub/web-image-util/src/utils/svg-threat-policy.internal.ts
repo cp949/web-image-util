@@ -37,28 +37,73 @@ export type NestedSvgSanitize = (svg: string, depth: number) => string;
 // ─────────────────────────────── URI 정책 ───────────────────────────────
 
 /**
- * `href`/`xlink:href`/`src` 값이 해당 모드에서 보존 가능한지 판정한다.
+ * 참조 판정이 갈린 근거.
  *
- * 두 모드 모두 allowlist다 — 문서 내부 프래그먼트(`#id`)만 보존하고 상대 경로,
- * 빈 값, 미지 스킴을 포함한 나머지는 제거한다. 차이는 정규화 방식뿐이다:
- * lightweight는 문자참조·노이즈 우회를 무력화하는 `normalizePolicyValue()`를,
- * strict는 단순 trim을 쓴다(느슨해지는 방향의 정규화는 strict에 적용하지 않는다).
+ * 소비자별 동작 차이는 이 코드에 대한 매핑으로만 표현한다 — 집행 엔진은 제거를,
+ * intake guard는 거부를, 진단 수집기는 집계를 각자 고른다.
  *
- * 안전한 `data:image/*` 참조는 `sanitizeUriValue()`가 이 판정 전에 분기 처리하므로
- * 여기서는 모든 `data:` 값을 차단 대상으로 본다.
+ * `empty`와 `normalized-empty`를 가르는 이유는 두 소비자의 "빈 값" 정의가 다르기
+ * 때문이다. 진단 수집기는 원본 `trim()` 기준으로 집계하고, intake guard는
+ * 정규화 기준으로 허용한다. `&#32;`가 두 축에서 갈리는 지점이다.
+ */
+export type UriRefReason =
+  | 'internal-fragment'
+  | 'empty'
+  | 'normalized-empty'
+  | 'boundary-quote'
+  | 'safe-raster-data'
+  | 'canonical-svg-data'
+  | 'nested-svg-data'
+  | 'unsafe-data'
+  | 'external';
+
+/**
+ * 참조 판정 결과.
+ *
+ * `verdict`는 위협 여부이지 허용 여부가 아니다. 빈 참조는 위협이 아니지만
+ * sanitizer는 제거한다 — 그 제거는 위협 대응이 아니라 위생 동작이다.
+ */
+export interface UriRefVerdict {
+  verdict: 'threat' | 'no-threat';
+  reason: UriRefReason;
+}
+
+/**
+ * `href`/`xlink:href`/`src` 값 하나를 판정해 위협 여부와 근거를 돌려준다.
+ *
+ * 검사 순서가 계약의 일부다.
+ * 1. `data:` 계열은 **원본 값 기준**으로 가른다. 정규화값 기준으로 바꾸면
+ *    `&#100;ata:...` 같은 입력이 data 분기를 타 진단 집계가 달라진다.
+ * 2. 빈 값 검사가 경계 따옴표보다 **먼저**다. `&quot;`(따옴표 단독)는 정규화하면
+ *    비므로 오늘 intake guard가 허용한다.
+ * 3. fragment 판정만 모드별 정규화를 쓴다 — strict는 `trim()`, lightweight는
+ *    문자참조·노이즈를 디코드하는 `normalizePolicyValue()`.
+ *
+ * 모드에 따라 reason이 갈릴 수 있다. `&#35;frag`는 strict에서 `external`,
+ * lightweight에서 `internal-fragment`다.
  *
  * @param value 원본 속성값
  * @param mode 위협 정책 모드
- * @returns 보존 가능하면 true
+ * @returns 위협 여부와 판정 근거
  */
-export function isAllowedUri(value: string, mode: SvgThreatPolicyMode): boolean {
-  if (mode === 'strict') {
-    return value.trim().startsWith('#');
+export function classifyUriRef(value: string, mode: SvgThreatPolicyMode): UriRefVerdict {
+  if (isDataURLString(value)) {
+    if (isSafeRasterDataImageRef(value)) return { verdict: 'no-threat', reason: 'safe-raster-data' };
+    if (isSanitizedSvgDataImageRef(value)) return { verdict: 'no-threat', reason: 'canonical-svg-data' };
+    if (isSvgDataImageRef(value)) return { verdict: 'threat', reason: 'nested-svg-data' };
+    return { verdict: 'threat', reason: 'unsafe-data' };
   }
-  if (startsWithPolicyBoundaryQuote(value)) {
-    return false;
-  }
-  return normalizePolicyValue(value).startsWith('#');
+
+  const trimmed = value.trim();
+  if (trimmed === '') return { verdict: 'no-threat', reason: 'empty' };
+
+  const normalizedPolicyValue = normalizePolicyValue(value);
+  if (normalizedPolicyValue === '') return { verdict: 'no-threat', reason: 'normalized-empty' };
+  if (startsWithPolicyBoundaryQuote(value)) return { verdict: 'threat', reason: 'boundary-quote' };
+
+  const normalized = mode === 'strict' ? trimmed : normalizedPolicyValue;
+  if (normalized.startsWith('#')) return { verdict: 'no-threat', reason: 'internal-fragment' };
+  return { verdict: 'threat', reason: 'external' };
 }
 
 function startsWithPolicyBoundaryQuote(value: string): boolean {
@@ -75,10 +120,9 @@ function startsWithPolicyBoundaryQuote(value: string): boolean {
 /**
  * `href`/`xlink:href`/`src` 값 정제의 공통 골격.
  *
- * - 안전한 raster `data:image/*`는 원본 그대로 보존
- * - `data:image/svg+xml`은 nested SVG를 콜백으로 재귀 정제한 뒤
- *   `data:image/svg+xml;base64,...`로 재인코딩 (디코드 실패는 fail-closed)
- * - 그 외에는 모드별 `isAllowedUri()` 판정
+ * 판정은 `classifyUriRef()`가 소유하고, 이 함수는 reason별 값 변환만 담당한다.
+ * nested SVG 재귀 정제(깊이 제한, 디코드 실패 fail-closed, canonical 재인코딩)는
+ * 판정이 아니라 메커니즘이므로 여기 남는다.
  *
  * @param value 원본 속성값
  * @param mode 위협 정책 모드
@@ -92,50 +136,24 @@ export function sanitizeUriValue(
   depth: number,
   nestedSanitize: NestedSvgSanitize
 ): string | null {
-  if (isSafeRasterDataImageRef(value)) {
-    return value;
+  const { reason } = classifyUriRef(value, mode);
+
+  switch (reason) {
+    case 'safe-raster-data':
+    case 'internal-fragment':
+      return value;
+
+    case 'canonical-svg-data':
+    case 'nested-svg-data': {
+      if (depth >= MAX_NESTED_SVG_DEPTH) return null;
+      const nestedSvg = decodeSvgDataImageRef(value);
+      if (!nestedSvg) return null;
+      return encodeSvgDataImageRef(nestedSanitize(nestedSvg, depth + 1));
+    }
+
+    default:
+      return null;
   }
-
-  if (isSvgDataImageRef(value)) {
-    if (depth >= MAX_NESTED_SVG_DEPTH) return null;
-    const nestedSvg = decodeSvgDataImageRef(value);
-    if (!nestedSvg) return null;
-    return encodeSvgDataImageRef(nestedSanitize(nestedSvg, depth + 1));
-  }
-
-  return isAllowedUri(value, mode) ? value : null;
-}
-
-/**
- * 파이프라인 intake guard의 URI 차단 판정.
- *
- * sanitizer의 lightweight 제거 판정(`isAllowedUri`)을 거울로 쓴다 — sanitizer가
- * 제거하는 참조는 guard도 차단한다. 예외 두 가지:
- * - 빈 값은 fetch/실행 대상이 없으므로 차단하지 않는다 (sanitizer는 속성을
- *   제거하지만 guard는 위험으로 보지 않는다)
- * - sanitizer가 보존한 안전한 raster와 canonical 재인코딩된 nested SVG는
- *   차단하지 않는다. 비-canonical `data:` 형식은 sanitizer 우회 가능성이
- *   있으므로 fail-closed로 차단한다.
- *
- * @param ref 정규화 전 또는 후의 참조 문자열
- * @returns 외부 또는 실행 가능한 URI면 true
- */
-export function isBlockedPipelineUriRef(ref: string): boolean {
-  const normalizedRef = normalizePolicyValue(ref);
-
-  if (normalizedRef === '') {
-    return false;
-  }
-
-  if (startsWithPolicyBoundaryQuote(ref)) {
-    return true;
-  }
-
-  if (isDataURLString(normalizedRef) && (isSafeRasterDataImageRef(ref) || isSanitizedSvgDataImageRef(ref))) {
-    return false;
-  }
-
-  return !normalizedRef.startsWith('#');
 }
 
 // ─────────────────────────────── CSS 정책 ───────────────────────────────
@@ -177,6 +195,76 @@ export function isAllowedCssUrl(urlValue: string): boolean {
 }
 
 /**
+ * CSS 위험 구문 1건. 탐지와 제거를 한 항목이 소유한다.
+ *
+ * 집행 엔진은 `createStripPattern()`으로 제거하고, 진단 수집기는 같은 패턴의
+ * replacer에서 센다. 두 소비자가 같은 테이블을 같은 순서로 순회한다.
+ */
+interface DangerousCssConstruct {
+  /** 문서에서 위험 구문 항목을 식별하는 코드. 런타임 판정에는 사용하지 않는다. */
+  code: 'at-import' | 'image-set' | 'expression' | 'moz-binding';
+  /** 존재 탐지 — `/g` 없이 두어 `lastIndex` 상태를 공유하지 않는다. */
+  detect: RegExp;
+  /** 값 단위 제거 — `/g`의 `lastIndex` 공유를 피해 팩토리로 제공한다. */
+  createStripPattern(): RegExp;
+}
+
+/**
+ * 위험 CSS 구문 테이블.
+ *
+ * 배열 순서가 곧 제거 순서다. `image-set()`은 상대 경로도 외부 리소스로
+ * 해석될 수 있어 함수 전체를 제거한다.
+ */
+export const DANGEROUS_CSS_CONSTRUCTS: readonly DangerousCssConstruct[] = [
+  {
+    code: 'at-import',
+    detect: /@import\b/i,
+    createStripPattern: () => /@import\b[^;]*(?:;|$)/gi,
+  },
+  {
+    code: 'image-set',
+    detect: /(?:-webkit-)?image-set\s*\(/i,
+    createStripPattern: () => /(?:-webkit-)?image-set\s*\([^)]*\)/gi,
+  },
+  {
+    code: 'expression',
+    detect: /expression\s*\(/i,
+    createStripPattern: () => /expression\s*\([^)]*\)/gi,
+  },
+  {
+    code: 'moz-binding',
+    detect: /-moz-binding\s*:/i,
+    createStripPattern: () => /-moz-binding\s*:[^;]*(?:;|$)/gi,
+  },
+];
+
+/** `url(` 자체는 제거 대상이 아니라 escape 우회 탐지 신호다. */
+const CSS_URL_FUNCTION_DETECT = /url\s*\(/i;
+
+/**
+ * CSS escape를 디코드해 감춰진 위험 구문이 드러나는지 확인한다.
+ *
+ * 디코드 결과를 함께 돌려주는 이유는 진단 수집기가 디코드된 문자열로 다시
+ * 세기 때문이다. 집행 엔진은 `revealsDangerous`만 보고 값 전체를 폐기한다.
+ *
+ * @param css 원본 CSS 문자열
+ * @returns 디코드 결과와 위험 노출 여부
+ */
+export function probeDecodedCss(css: string): { decoded: string; revealsDangerous: boolean } {
+  const decoded = decodeCssEscapes(css);
+  if (decoded === css) {
+    return { decoded, revealsDangerous: false };
+  }
+
+  const revealsDangerous =
+    DANGEROUS_CSS_CONSTRUCTS.some((construct) => construct.detect.test(decoded)) ||
+    CSS_URL_FUNCTION_DETECT.test(decoded) ||
+    hasExternalCssUrlLiteral(decoded);
+
+  return { decoded, revealsDangerous };
+}
+
+/**
  * style 속성, CSS presentation 속성, `<style>` 본문에서 외부 참조와 위험 CSS
  * 구문을 제거한다. 두 집행 엔진이 같은 함수를 소비하는 모드 무관 단일 정책이다.
  *
@@ -184,35 +272,28 @@ export function isAllowedCssUrl(urlValue: string): boolean {
  * 제거한다. `url(#id)` 같은 문서 내부 참조만 보존하고, `@import`,
  * `expression()`, `-moz-binding`, `image-set()` 및 외부 URL 문자열을 직접 받는
  * CSS 구문은 값 단위로 제거한다. CSS escape(예: `u\72l(...)`)는 디코드해 같은
- * 정책으로 판정하고, 디코드 후 위험 구문이 드러나면 값 전체를 폐기한다.
+ * 정책으로 판정하고, 디코드 후 위험 구문이 드러나면 값 전체를 폐기한다. 위험
+ * 구문 판정·제거는 `DANGEROUS_CSS_CONSTRUCTS` 테이블이 소유한다.
  *
  * @param css CSS 문자열
  * @returns 위험 참조가 제거된 CSS 문자열
  */
 export function sanitizeCssValue(css: string): string {
-  const decodedForPolicy = decodeCssEscapes(css);
-  const hasDecodedDangerousCss =
-    decodedForPolicy !== css &&
-    (/@import\b/i.test(decodedForPolicy) ||
-      /expression\s*\(/i.test(decodedForPolicy) ||
-      /-moz-binding\s*:/i.test(decodedForPolicy) ||
-      /url\s*\(/i.test(decodedForPolicy) ||
-      /(?:-webkit-)?image-set\s*\(/i.test(decodedForPolicy) ||
-      hasExternalCssUrlLiteral(decodedForPolicy));
-
-  if (hasDecodedDangerousCss) {
+  if (probeDecodedCss(css).revealsDangerous) {
     return '';
   }
 
-  const sanitizedCss = css
-    .replace(/@import\b[^;]*(?:;|$)/gi, '')
-    .replace(createCssImageSetFunctionPattern(), '')
-    .replace(/expression\s*\([^)]*\)/gi, '')
-    .replace(/-moz-binding\s*:[^;]*(?:;|$)/gi, '')
-    .replace(/url\s*\(\s*("([^"]*)"|'([^']*)'|([^)]*))\s*\)/gi, (match, _raw, doubleQuoted, singleQuoted, unquoted) => {
+  let sanitizedCss = css;
+  for (const construct of DANGEROUS_CSS_CONSTRUCTS) {
+    sanitizedCss = sanitizedCss.replace(construct.createStripPattern(), '');
+  }
+  sanitizedCss = sanitizedCss.replace(
+    /url\s*\(\s*("([^"]*)"|'([^']*)'|([^)]*))\s*\)/gi,
+    (match, _raw, doubleQuoted, singleQuoted, unquoted) => {
       const urlValue = doubleQuoted ?? singleQuoted ?? unquoted ?? '';
       return isAllowedCssUrl(urlValue) ? match : 'none';
-    });
+    }
+  );
 
   return hasExternalCssUrlLiteral(sanitizedCss) ? '' : sanitizedCss;
 }
@@ -229,16 +310,6 @@ export function sanitizeCssValue(css: string): string {
  */
 export function hasExternalCssUrlLiteral(css: string): boolean {
   return /(?:https?:|file:|data:|blob:|ftp:|\/\/)/i.test(css);
-}
-
-/**
- * CSS image-set 계열 함수 패턴을 생성한다.
- *
- * 상대 경로도 외부 리소스로 해석될 수 있으므로 strict 정책은 함수 전체를 제거한다.
- * `/g` 플래그의 lastIndex 상태 공유를 피하기 위해 상수 대신 팩토리로 제공한다.
- */
-export function createCssImageSetFunctionPattern(): RegExp {
-  return /(?:-webkit-)?image-set\s*\([^)]*\)/gi;
 }
 
 // ─────────────────────────── 요소·속성 정책 ───────────────────────────

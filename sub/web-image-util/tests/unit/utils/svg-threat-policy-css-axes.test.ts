@@ -128,7 +128,7 @@ describe('CSS 위험 구문 정책 3축 특성화 표', () => {
     expect(actual).toEqual(expected);
   });
 
-  it('코퍼스가 위험 구문 4종과 escape·복합 케이스를 덮는다', () => {
+  it('고정한 CSS 코퍼스가 17행이다', () => {
     expect(CSS_AXES_CORPUS).toHaveLength(17);
   });
 });

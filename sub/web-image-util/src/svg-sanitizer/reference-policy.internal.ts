@@ -10,20 +10,20 @@
  * 자신을 `nestedSanitize` 콜백으로 주입한다(types.ts의 `NestedSanitize`).
  */
 
-import { isAllowedUri, sanitizeUriValue } from '../utils/svg-threat-policy.internal';
+import { classifyUriRef, sanitizeUriValue } from '../utils/svg-threat-policy.internal';
 import type { NestedSanitize, StrictSvgSanitizerOptions } from './types';
 
 /**
  * URI 속성에서 허용할 수 있는 내부 참조인지 판정한다.
  *
  * strict sanitizer는 외부 로딩과 canvas taint를 줄이기 위해 `#id` 형태의
- * 문서 내부 프래그먼트 참조만 보존한다.
+ * 문서 내부 프래그먼트 참조만 보존한다. 판정은 위협 정책 모듈이 소유한다.
  *
  * @param value URI 속성값
  * @returns 내부 프래그먼트 참조이면 true
  */
 export function isSafeInternalReference(value: string): boolean {
-  return isAllowedUri(value, 'strict');
+  return classifyUriRef(value, 'strict').reason === 'internal-fragment';
 }
 
 /**

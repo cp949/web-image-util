@@ -1,9 +1,10 @@
-import { decodeCssEscapes, visitCssUrlValues } from '../svg-policy-utils.internal';
+import { visitCssUrlValues } from '../svg-policy-utils.internal';
 import {
   CSS_URL_PRESENTATION_ATTRIBUTES,
-  createCssImageSetFunctionPattern,
+  DANGEROUS_CSS_CONSTRUCTS,
   hasExternalCssUrlLiteral,
   isAllowedCssUrl,
+  probeDecodedCss,
 } from '../svg-threat-policy.internal';
 import { pushCappedSample } from './sample-utils.internal';
 
@@ -32,23 +33,12 @@ function countCssPolicyTriggersInPlainCss(cssText: string): number {
   let count = 0;
   let cssWithoutWholeConstructs = cssText;
 
-  cssWithoutWholeConstructs = cssWithoutWholeConstructs
-    .replace(/@import\b[^;]*(?:;|$)/gi, () => {
-      count += 1;
-      return '';
-    })
-    .replace(createCssImageSetFunctionPattern(), () => {
-      count += 1;
-      return '';
-    })
-    .replace(/expression\s*\([^)]*\)/gi, () => {
-      count += 1;
-      return '';
-    })
-    .replace(/-moz-binding\s*:[^;]*(?:;|$)/gi, () => {
+  for (const construct of DANGEROUS_CSS_CONSTRUCTS) {
+    cssWithoutWholeConstructs = cssWithoutWholeConstructs.replace(construct.createStripPattern(), () => {
       count += 1;
       return '';
     });
+  }
 
   count += countBlockedCssUrls(cssWithoutWholeConstructs);
   if (count === 0 && hasExternalCssUrlLiteral(cssWithoutWholeConstructs)) {
@@ -59,20 +49,10 @@ function countCssPolicyTriggersInPlainCss(cssText: string): number {
 }
 
 function countCssPolicyTriggers(cssText: string): number {
-  const decodedForPolicy = decodeCssEscapes(cssText);
-  const hasDecodedDangerousCss =
-    decodedForPolicy !== cssText &&
-    (/@import\b/i.test(decodedForPolicy) ||
-      /expression\s*\(/i.test(decodedForPolicy) ||
-      /-moz-binding\s*:/i.test(decodedForPolicy) ||
-      /url\s*\(/i.test(decodedForPolicy) ||
-      /(?:-webkit-)?image-set\s*\(/i.test(decodedForPolicy) ||
-      hasExternalCssUrlLiteral(decodedForPolicy));
-
-  if (hasDecodedDangerousCss) {
-    return Math.max(1, countCssPolicyTriggersInPlainCss(decodedForPolicy));
+  const { decoded, revealsDangerous } = probeDecodedCss(cssText);
+  if (revealsDangerous) {
+    return Math.max(1, countCssPolicyTriggersInPlainCss(decoded));
   }
-
   return countCssPolicyTriggersInPlainCss(cssText);
 }
 

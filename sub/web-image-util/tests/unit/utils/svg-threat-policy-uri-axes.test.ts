@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { collectSvgDomSecuritySignals } from '../../../src/utils/svg-inspection/dom-signals.internal';
-import { isAllowedUri, isBlockedPipelineUriRef, sanitizeUriValue } from '../../../src/utils/svg-threat-policy.internal';
+import { classifyUriRef, sanitizeUriValue, type UriRefReason } from '../../../src/utils/svg-threat-policy.internal';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -28,9 +28,9 @@ const REENCODED_SVG = CANONICAL_SVG_DATA;
 /**
  * 한 입력에 대한 6축의 답.
  *
- * - `allowedStrict` / `allowedLightweight`: `isAllowedUri(v, mode)`
+ * - `allowedStrict` / `allowedLightweight`: `classifyUriRef(v, mode).reason === 'internal-fragment'`
  * - `sanitizedStrict` / `sanitizedLightweight`: `sanitizeUriValue(v, mode, 0, passthroughNested)`
- * - `blockedPipeline`: `isBlockedPipelineUriRef(v)`
+ * - `blockedPipeline`: `classifyUriRef(v, 'lightweight').verdict === 'threat'`
  * - `domSignalCounted`: `collectSvgDomSecuritySignals` 경유 `externalHrefCount > 0`
  */
 interface UriAxes {
@@ -99,6 +99,11 @@ const URI_AXES_CORPUS: Array<[label: string, value: string, expected: UriAxes]> 
 
   // ── canonical-svg-data / nested-svg-data ──
   ['canonical svg data', CANONICAL_SVG_DATA, axes(false, false, REENCODED_SVG, REENCODED_SVG, false, false)],
+  [
+    '대문자 스킴 canonical svg data',
+    CANONICAL_SVG_DATA.replace('data:', 'DATA:'),
+    axes(false, false, REENCODED_SVG, REENCODED_SVG, false, false),
+  ],
   ['utf8 형식 svg data', NESTED_SVG_UTF8, axes(false, false, REENCODED_SVG, REENCODED_SVG, true, false)],
   ['url 인코딩 svg data', NESTED_SVG_URLENC, axes(false, false, REENCODED_SVG, REENCODED_SVG, true, false)],
 
@@ -150,7 +155,7 @@ function isCountedByDomSignals(value: string): boolean {
  * 바꾼 것이므로 실패로 다뤄야 한다.
  */
 function readAllowedAxis(value: string, mode: 'strict' | 'lightweight'): boolean {
-  return isAllowedUri(value, mode);
+  return classifyUriRef(value, mode).reason === 'internal-fragment';
 }
 
 function readSanitizedAxis(value: string, mode: 'strict' | 'lightweight'): string | null {
@@ -158,7 +163,7 @@ function readSanitizedAxis(value: string, mode: 'strict' | 'lightweight'): strin
 }
 
 function readBlockedPipelineAxis(value: string): boolean {
-  return isBlockedPipelineUriRef(value);
+  return classifyUriRef(value, 'lightweight').verdict === 'threat';
 }
 
 describe('URI 참조 판정 6축 특성화 표', () => {
@@ -174,7 +179,26 @@ describe('URI 참조 판정 6축 특성화 표', () => {
     expect(actual).toEqual(expected);
   });
 
-  it('코퍼스가 판정 분기 9종을 전부 덮는다', () => {
-    expect(URI_AXES_CORPUS).toHaveLength(38);
+  it('reason 9종을 각각 2행 이상 고정한다', () => {
+    const reasonCounts = new Map<UriRefReason, number>();
+    for (const [, value] of URI_AXES_CORPUS) {
+      const { reason } = classifyUriRef(value, 'lightweight');
+      reasonCounts.set(reason, (reasonCounts.get(reason) ?? 0) + 1);
+    }
+
+    const reasons: UriRefReason[] = [
+      'internal-fragment',
+      'empty',
+      'normalized-empty',
+      'boundary-quote',
+      'safe-raster-data',
+      'canonical-svg-data',
+      'nested-svg-data',
+      'unsafe-data',
+      'external',
+    ];
+    for (const reason of reasons) {
+      expect(reasonCounts.get(reason), reason).toBeGreaterThanOrEqual(2);
+    }
   });
 });

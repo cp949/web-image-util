@@ -11,7 +11,7 @@ import type { ComplexityAnalysisResult } from '../../core/svg-complexity-analyze
 import { analyzeSvgComplexity } from '../../core/svg-complexity-analyzer';
 import { parseSvgLength, parseViewBoxValues } from '../svg-length.internal';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../svg-policy-utils.internal';
-import { isBlockedPipelineUriRef } from '../svg-threat-policy.internal';
+import { classifyUriRef } from '../svg-threat-policy.internal';
 import { collectSvgDomSecuritySignals } from './dom-signals.internal';
 import { isReferenceAttribute, readReferenceAttribute } from './reference-attribute.internal';
 import { pushCappedSample } from './sample-utils.internal';
@@ -82,6 +82,18 @@ export function callComplexityWrapper(svgString: string): [ComplexityAnalysisRes
 }
 
 /**
+ * CSS escape·문자참조 변형까지 전개해 위협 참조가 하나라도 있는지 판정한다.
+ *
+ * 이 축은 sanitizer의 제거 판정이 아니라 렌더 경로 intake guard의 거부 판정을
+ * 거울로 쓴다 — `data:` 값도 정책 차단 대상이면 그대로 보고한다.
+ */
+function hasThreatUriRefVariant(value: string): boolean {
+  return getCssPolicyValueVariants(value).some(
+    (variant) => classifyUriRef(variant, 'lightweight').verdict === 'threat'
+  );
+}
+
+/**
  * DOM 기반으로 보안 finding을 수집한다.
  * DOMParser 파싱 성공 + svg 루트 경로에서만 호출한다.
  *
@@ -121,7 +133,7 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
 
   // external href/src 참조와 style attribute url() 검사.
   // external-href와 CSS finding은 DOM 보안 신호 helper 범위 밖이다. inspectSvg는
-  // embedded-image 단계가 없으므로 intake guard 판정(isBlockedPipelineUriRef) 기준으로
+  // embedded-image 단계가 없으므로 intake guard 판정(classifyUriRef) 기준으로
   // 비허용 data:도 정책 차단 대상이면 그대로 보고한다(sanitizer의 external-href stage가
   // data:를 embedded-image로 위임하는 것과 의미가 다르다). 의미 축(data: 포함 여부)이
   // 달라 helper의 externalHrefCount를 재사용하지 않고 직접 수집한다.
@@ -148,7 +160,7 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
         const styleAttr = el.getAttribute(attrName);
         if (styleAttr) {
           visitCssUrlValues(styleAttr, (urlValue) => {
-            if (getCssPolicyValueVariants(urlValue).some(isBlockedPipelineUriRef)) {
+            if (hasThreatUriRefVariant(urlValue)) {
               styleAttrExternalUrlCount++;
             }
           });
@@ -158,7 +170,7 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
       // external href/xlink:href/src 검사 (element당 한 번만 카운트)
       if (!elementHrefCounted && isReferenceAttribute(el, attrName)) {
         const value = readReferenceAttribute(el, attrName);
-        if (value !== null && getCssPolicyValueVariants(value).some(isBlockedPipelineUriRef)) {
+        if (value !== null && hasThreatUriRefVariant(value)) {
           externalHrefCount++;
           pushCappedSample(externalHrefSamples, lowered);
           elementHrefCounted = true;
@@ -170,7 +182,7 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
     if (el.tagName.toLowerCase() === 'style') {
       const cssText = el.textContent ?? '';
       visitCssUrlValues(cssText, (urlValue) => {
-        if (getCssPolicyValueVariants(urlValue).some(isBlockedPipelineUriRef)) {
+        if (hasThreatUriRefVariant(urlValue)) {
           styleTagExternalUrlCount++;
         }
       });

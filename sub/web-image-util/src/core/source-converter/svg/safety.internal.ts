@@ -12,6 +12,7 @@ import { MAX_SVG_BYTES } from '../../../svg-contract.internal';
 import { ImageProcessError } from '../../../types';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../../../utils/svg-policy-utils.internal';
+import { classifyUriRef } from '../../../utils/svg-threat-policy.internal';
 import {
   assertDeclaredSizeWithinLimit,
   type ExceededErrorFactory,
@@ -19,7 +20,6 @@ import {
   readGuardedResponseStream,
   readWholeBody,
 } from '../url/fetch-guards.internal';
-import { isBlockedSvgPolicyRef } from '../url/policy.internal';
 
 /**
  * 따옴표 안의 `>` 문자를 태그 종료로 오인하지 않도록 SVG 시작 태그를 순회하는 패턴이다.
@@ -159,6 +159,15 @@ export async function readVerifiedSvgResponse(response: Response, label: string)
 }
 
 /**
+ * 참조가 렌더 파이프라인 intake guard의 차단 대상인지 판정한다.
+ *
+ * 판정 규칙은 위협 정책 모듈이 소유한다 — guard는 위협으로 판정된 참조를 막는다.
+ */
+function isBlockedRef(ref: string): boolean {
+  return classifyUriRef(ref, 'lightweight').verdict === 'threat';
+}
+
+/**
  * CSS url() 함수 내부에 외부 URL이나 상대 경로 참조가 있는지 확인한다.
  *
  * @param cssText 검사할 CSS 텍스트
@@ -167,7 +176,7 @@ export async function readVerifiedSvgResponse(response: Response, label: string)
 function hasDangerousUrlRef(cssText: string): boolean {
   let hasDangerousRef = false;
   visitCssUrlValues(cssText, (value) => {
-    if (getCssPolicyValueVariants(value).some(isBlockedSvgPolicyRef)) {
+    if (getCssPolicyValueVariants(value).some(isBlockedRef)) {
       hasDangerousRef = true;
     }
   });
@@ -220,7 +229,7 @@ export function assertSafeSvgContent(svgString: string): void {
     refMatch = refAttrPattern.exec(attrs);
     while (refMatch !== null) {
       const refValue = refMatch[1] ?? refMatch[2] ?? refMatch[3];
-      if (refValue && isBlockedSvgPolicyRef(refValue)) {
+      if (refValue && isBlockedRef(refValue)) {
         throwUnsafeSvg('external-ref');
       }
       refMatch = refAttrPattern.exec(attrs);

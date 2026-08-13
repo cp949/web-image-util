@@ -8,39 +8,91 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  classifyUriRef,
   isAllowedCssUrl,
-  isAllowedUri,
-  isBlockedPipelineUriRef,
   isEventHandlerAttributeName,
   sanitizeCssValue,
   sanitizeUriValue,
 } from '../../../src/utils/svg-threat-policy.internal';
 
-describe('위협 정책 — isAllowedUri', () => {
-  it('두 모드 모두 내부 fragment만 허용한다', () => {
-    for (const mode of ['lightweight', 'strict'] as const) {
-      expect(isAllowedUri('#frag', mode)).toBe(true);
-      expect(isAllowedUri('', mode)).toBe(false);
-      expect(isAllowedUri('./a.png', mode)).toBe(false);
-      expect(isAllowedUri('a.png', mode)).toBe(false);
-      expect(isAllowedUri('/a.png', mode)).toBe(false);
-      expect(isAllowedUri('vbscript:alert(1)', mode)).toBe(false);
-      expect(isAllowedUri('file:///etc/passwd', mode)).toBe(false);
-      expect(isAllowedUri('http://evil.example.com/a.png', mode)).toBe(false);
-      expect(isAllowedUri('javascript:alert(1)', mode)).toBe(false);
-      expect(isAllowedUri('data:text/html,x', mode)).toBe(false);
-      expect(isAllowedUri('"#frag"', mode)).toBe(false);
+describe('위협 정책 — classifyUriRef', () => {
+  /** 판정 근거만 뽑는다. 문자열 매칭이 아니라 이유 코드로 단언한다. */
+  const reasonOf = (value: string, mode: 'strict' | 'lightweight') => classifyUriRef(value, mode).reason;
+  const verdictOf = (value: string, mode: 'strict' | 'lightweight') => classifyUriRef(value, mode).verdict;
+
+  it('내부 fragment는 두 모드 모두 위협이 아니다', () => {
+    for (const mode of ['strict', 'lightweight'] as const) {
+      expect(classifyUriRef('#frag', mode)).toEqual({ verdict: 'no-threat', reason: 'internal-fragment' });
     }
   });
 
-  it('lightweight는 정규화 우회(대소문자·공백·문자참조)를 무력화한다', () => {
-    expect(isAllowedUri('JaVaScRiPt:alert(1)', 'lightweight')).toBe(false);
-    expect(isAllowedUri(' jav\nascript:alert(1)', 'lightweight')).toBe(false);
-    expect(isAllowedUri('jav&#x61;script:alert(1)', 'lightweight')).toBe(false);
+  it('strict는 문자참조를 디코드하지 않아 모드별로 근거가 갈린다', () => {
+    expect(reasonOf('&#35;frag', 'strict')).toBe('external');
+    expect(reasonOf('&#35;frag', 'lightweight')).toBe('internal-fragment');
   });
 
-  it('strict는 선행 공백 뒤의 fragment를 허용한다', () => {
-    expect(isAllowedUri('  #frag', 'strict')).toBe(true);
+  it('lightweight는 문자참조·노이즈 우회를 무력화한다', () => {
+    expect(reasonOf('JaVaScRiPt:alert(1)', 'lightweight')).toBe('external');
+    expect(reasonOf(' jav\nascript:alert(1)', 'lightweight')).toBe('external');
+    expect(reasonOf('jav&#x61;script:alert(1)', 'lightweight')).toBe('external');
+  });
+
+  it('원본 trim이 빈 값과 정규화하면 비는 값을 구분한다', () => {
+    expect(reasonOf('', 'lightweight')).toBe('empty');
+    expect(reasonOf('  ', 'lightweight')).toBe('empty');
+    expect(reasonOf('&#32;', 'lightweight')).toBe('normalized-empty');
+    expect(reasonOf('&quot;', 'lightweight')).toBe('normalized-empty');
+  });
+
+  it('빈 값은 위협이 아니다 — intake guard가 통과시키는 근거다', () => {
+    expect(verdictOf('', 'lightweight')).toBe('no-threat');
+    expect(verdictOf('&#32;', 'lightweight')).toBe('no-threat');
+  });
+
+  it('경계 따옴표로 시작하는 값은 위협이다', () => {
+    expect(classifyUriRef('"#frag"', 'lightweight')).toEqual({ verdict: 'threat', reason: 'boundary-quote' });
+    expect(reasonOf('&quot;#frag&quot;', 'lightweight')).toBe('boundary-quote');
+    expect(reasonOf("'#f'", 'lightweight')).toBe('boundary-quote');
+    expect(reasonOf('\\#f', 'lightweight')).toBe('boundary-quote');
+  });
+
+  it('data: 계열을 안전 raster·canonical·재정제 대상·그 외로 가른다', () => {
+    const canonicalSvg = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>')}`;
+    expect(reasonOf('data:image/png;base64,iVBORw0KGgo=', 'lightweight')).toBe('safe-raster-data');
+    expect(reasonOf(canonicalSvg, 'lightweight')).toBe('canonical-svg-data');
+    expect(reasonOf('data:image/svg+xml;utf8,%3Csvg%2F%3E', 'lightweight')).toBe('nested-svg-data');
+    expect(reasonOf('data:text/html,x', 'lightweight')).toBe('unsafe-data');
+    expect(reasonOf('data:image/png', 'lightweight')).toBe('unsafe-data');
+  });
+
+  it('안전 raster와 canonical svg만 위협이 아니다', () => {
+    const canonicalSvg = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>')}`;
+    expect(verdictOf('data:image/png;base64,iVBORw0KGgo=', 'lightweight')).toBe('no-threat');
+    expect(verdictOf(canonicalSvg, 'lightweight')).toBe('no-threat');
+    expect(verdictOf('data:image/svg+xml;utf8,%3Csvg%2F%3E', 'lightweight')).toBe('threat');
+    expect(verdictOf('data:text/html,x', 'lightweight')).toBe('threat');
+  });
+
+  it('data: 감지는 원본 값 기준이다 — 문자참조로 감춘 스킴은 external이다', () => {
+    expect(reasonOf('&#100;ata:image/png;base64,iVBORw0KGgo=', 'lightweight')).toBe('external');
+  });
+
+  it('따옴표가 감싼 data:는 data 분기를 타지 않는다', () => {
+    expect(reasonOf('"data:image/png;base64,iVBORw0KGgo="', 'lightweight')).toBe('boundary-quote');
+  });
+
+  it('상대 경로·절대 경로·미지 스킴은 external이다', () => {
+    for (const value of [
+      './a.png',
+      '../a.png',
+      '/a.png',
+      'a.png',
+      '//cdn.example.com/a.png',
+      'vbscript:alert(1)',
+      'file:///etc/passwd',
+    ]) {
+      expect(classifyUriRef(value, 'lightweight')).toEqual({ verdict: 'threat', reason: 'external' });
+    }
   });
 });
 
@@ -75,29 +127,6 @@ describe('위협 정책 — sanitizeUriValue', () => {
     expect(sanitizeUriValue('http://evil.example.com/x', 'lightweight', 0, passthroughNested)).toBeNull();
     expect(sanitizeUriValue('./a.png', 'lightweight', 0, passthroughNested)).toBeNull();
     expect(sanitizeUriValue('./a.png', 'strict', 0, passthroughNested)).toBeNull();
-  });
-});
-
-describe('위협 정책 — isBlockedPipelineUriRef', () => {
-  it('fragment 외 모든 참조를 차단한다 — sanitizer 제거 판정의 거울', () => {
-    expect(isBlockedPipelineUriRef('http://evil.example.com/a.png')).toBe(true);
-    expect(isBlockedPipelineUriRef('./a.png')).toBe(true);
-    expect(isBlockedPipelineUriRef('../a.png')).toBe(true);
-    expect(isBlockedPipelineUriRef('/a.png')).toBe(true);
-    expect(isBlockedPipelineUriRef('a.png')).toBe(true);
-    expect(isBlockedPipelineUriRef('vbscript:alert(1)')).toBe(true);
-    expect(isBlockedPipelineUriRef('"#frag"')).toBe(true);
-  });
-
-  it('fragment와 빈 값은 차단하지 않는다 — 빈 값은 fetch/실행 대상이 없다', () => {
-    expect(isBlockedPipelineUriRef('#frag')).toBe(false);
-    expect(isBlockedPipelineUriRef('')).toBe(false);
-    expect(isBlockedPipelineUriRef('  ')).toBe(false);
-  });
-
-  it('sanitizer가 보존한 안전한 raster data URL은 차단하지 않는다', () => {
-    expect(isBlockedPipelineUriRef('data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==')).toBe(false);
-    expect(isBlockedPipelineUriRef('data:text/html,x')).toBe(true);
   });
 });
 

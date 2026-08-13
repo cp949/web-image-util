@@ -1,11 +1,10 @@
 /**
- * URL/프로토콜 검증 및 SVG 외부 참조 차단 정책 헬퍼다.
+ * URL/프로토콜 검증 정책 헬퍼다.
  *
  * 이 모듈은 fetch를 수행하지 않는다. 입력 문자열의 형태와 정책 비교만 다룬다.
  */
 
 import { ImageProcessError } from '../../../types';
-import { isBlockedPipelineUriRef } from '../../../utils/svg-threat-policy.internal';
 
 /**
  * 입력 문자열이 명시적 스킴을 가진 절대 URL인지 판정한다.
@@ -93,17 +92,4 @@ export function checkAllowedProtocol(url: string, allowedProtocols: string[]): v
   if (!allowedProtocols.includes(protocol)) {
     throw new ImageProcessError(`Protocol not allowed: ${protocol}`, 'INVALID_SOURCE', { details: { url } });
   }
-}
-
-/**
- * SVG 보안 정책에서 차단해야 하는 참조인지 판정한다.
- *
- * 판정 규칙은 위협 정책 모듈(`utils/svg-threat-policy.internal`)이 소유한다 —
- * sanitizer의 제거 판정과 이 intake guard의 차단 판정이 같은 술어를 거울로 쓴다.
- *
- * @param ref 정규화 전 또는 후의 참조 문자열
- * @returns 외부 또는 실행 가능한 URI면 true
- */
-export function isBlockedSvgPolicyRef(ref: string): boolean {
-  return isBlockedPipelineUriRef(ref);
 }

@@ -62,7 +62,7 @@
 | `src/utils/image-decode.internal.ts` | 이미지 디코드의 단일 소유 모듈 — img 생성, `src` 할당 전 속성 설정, objectURL 수명, 오류 래핑. img 구동 방식만 어댑터로 갈린다 |
 | `src/utils/svg-detection.ts` | `isInlineSvg()` 등 SVG 문자열 판정 |
 | `src/utils/svg-sanitizer.ts` | `sanitizeSvgForRendering()`, `sanitizeSvg()` (deprecated alias) — 경량 집행 엔진(정규식 메커니즘) |
-| `src/utils/svg-threat-policy.internal.ts` | SVG 위협 정책 단일 소유자 — URI/CSS 허용 판정, 금지 요소 목록, XXE 절단. 경량·strict 두 집행 엔진과 진단 수집기, intake guard가 공유 |
+| `src/utils/svg-threat-policy.internal.ts` | SVG 위협 정책 단일 소유자 — URI 참조 판정, CSS 참조·위험 구문 정책, 금지 요소 목록, XXE 절단. 경량·strict 두 집행 엔진과 진단 수집기, intake guard가 공유 |
 | `src/utils/inspect-svg.ts` | SVG 문자열 진단 API — 부수효과 없이 findings·dimensions·sanitizer 추천을 반환하는 진단 레이어 |
 | `src/utils/inspect-svg-source.ts` | SVG 입력 source(`string`/`Blob`/`File`/`URL`) 진단. 기본 fetch 없음, `inspectSvg()` 위임으로 본문 분석 |
 | `src/utils/prefix-svg-ids.ts` | SVG `id`와 fragment reference를 prefix하는 standalone 정규화 유틸 — 파이프라인 외부, `@cp949/web-image-util/utils` 서브패스 |
@@ -123,7 +123,7 @@
 
 - `src/svg-contract.internal.ts` — `MAX_SVG_BYTES` (SVG 입력 byte cap의 단일 정의)
 - `src/core/source-converter/options.internal.ts` — `DEFAULT_FETCH_TIMEOUT_MS`, `DEFAULT_ALLOWED_PROTOCOLS`
-- `src/core/source-converter/url/policy.internal.ts` — `checkAllowedProtocol()`, `hasExplicitUrlScheme()`, `isProtocolRelativeUrl()`, `isAbortLikeError()`, `normalizePolicyUrl()`, `isBlockedSvgPolicyRef()`
+- `src/core/source-converter/url/policy.internal.ts` — `checkAllowedProtocol()`, `hasExplicitUrlScheme()`, `isProtocolRelativeUrl()`, `isAbortLikeError()`, `normalizePolicyUrl()`
 - `src/core/source-converter/url/fetch-guards.internal.ts` — 원격 본문 가드의 단일 소유 모듈
   - `createFetchAbortHandle()` — timeout + AbortSignal 합성. `AbortSignal.timeout`/`AbortSignal.any`를 우선 쓰고, 없으면 수동 타이머·리스너로 폴백하며 `dispose()`가 둘 다 정리한다.
   - `assertDeclaredSizeWithinLimit()` / `checkResponseSize()` — Content-Length 기반 byte cap 사전 검증. 초과가 확인되면 본문 스트림을 취소한 뒤 오류를 던진다.

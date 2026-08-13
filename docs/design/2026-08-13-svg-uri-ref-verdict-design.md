@@ -142,7 +142,7 @@ export function probeDecodedCss(css: string): { decoded: string; revealsDangerou
 | 파일 | 변경 |
 | --- | --- |
 | `src/utils/svg-threat-policy.internal.ts` | `classifyUriRef` 신설. `isAllowedUri`·`isBlockedPipelineUriRef` 흡수 삭제. `sanitizeUriValue`를 reason 스위치로 재작성. `DANGEROUS_CSS_CONSTRUCTS`·`probeDecodedCss` 신설, 인라인 정규식 9개 대체 |
-| `src/utils/svg-inspection/dom-signals.internal.ts` | `isRemovedSvgReference` 삭제, reason 집합 판정으로 대체 |
+| `src/utils/svg-inspection/dom-signals.internal.ts` | `isRemovedSvgReference`의 판정 로직을 reason 집합 검사로 대체하고, 실제 책임에 맞게 `isCountedSvgReference`로 개명 |
 | `src/utils/svg-inspection/dom-analysis.internal.ts` | 3곳을 `variants.some(v => classifyUriRef(v, 'lightweight').verdict === 'threat')`로 전환 |
 | `src/utils/svg-inspection/css-signals.internal.ts` | 탐지·제거 정규식 사본 삭제, 테이블·`probeDecodedCss` 소비로 전환 |
 | `src/core/source-converter/url/policy.internal.ts` | `isBlockedSvgPolicyRef` 삭제 — `isBlockedPipelineUriRef` 한 줄 위임인 얇은 래퍼다 |
@@ -169,7 +169,7 @@ type UriAxes = {
 };
 ```
 
-`isRemovedSvgReference`는 모듈 private다. export를 늘리지 않고 `collectSvgDomSecuritySignals(doc)`로 구동해 pin한다 — 기존 `svg-inspection-dom-signals.test.ts`와 같은 방식이다.
+`isCountedSvgReference`는 모듈 private다. export를 늘리지 않고 `collectSvgDomSecuritySignals(doc)`로 구동해 pin한다 — 기존 `svg-inspection-dom-signals.test.ts`와 같은 방식이다.
 
 코퍼스는 reason 9종을 각각 최소 2개씩 덮고, 설계 단계에서 확인한 함정 4종을 반드시 포함한다.
 
