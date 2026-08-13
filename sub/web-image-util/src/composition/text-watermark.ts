@@ -1,10 +1,10 @@
-import { ImageProcessError } from '../errors.internal';
 import {
   applyRotation,
   getOriginRotationCoverageBounds,
   requireCanvasContext,
   withCanvasState,
 } from './canvas-drawing.internal';
+import { requirePositiveSpacing } from './errors.internal';
 import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 
@@ -44,21 +44,6 @@ export interface TextWatermarkOptions {
   style: TextStyle;
   rotation?: number; // degrees
   margin?: Point;
-}
-
-/**
- * 반복 패턴의 타일 간격이 유한 양수인지 확인한다.
- *
- * 0 이하이거나 NaN/Infinity면 타일 루프가 전진하지 않거나 끝나지 않으므로 그리기 전에 거른다.
- */
-function requirePositiveSpacing(value: number, option: string): void {
-  if (!Number.isFinite(value) || value <= 0) {
-    throw new ImageProcessError(
-      `TextWatermark.addRepeatingPattern: ${option} must be a positive number`,
-      'OPTION_INVALID',
-      { details: { option, minimum: 0 } }
-    );
-  }
 }
 
 /**
@@ -187,8 +172,8 @@ export class TextWatermark {
     const { text, style, rotation = 0, spacing, stagger = false } = options;
 
     // spacing이 유한 양수가 아니면 아래 타일 루프가 전진하지 않아 브라우저가 멈춘다.
-    requirePositiveSpacing(spacing.x, 'spacing.x');
-    requirePositiveSpacing(spacing.y, 'spacing.y');
+    requirePositiveSpacing(spacing.x, 'spacing.x', 'TextWatermark.addRepeatingPattern');
+    requirePositiveSpacing(spacing.y, 'spacing.y', 'TextWatermark.addRepeatingPattern');
 
     // addToCanvas와 같은 이유로 스타일 적용을 save/restore 안으로 넣는다
     withCanvasState(ctx, () => {

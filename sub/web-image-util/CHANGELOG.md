@@ -59,7 +59,7 @@
   - `rotation: 90`·`135`처럼 타일이 전부 캔버스 밖으로 나가 워터마크가 아예 그려지지 않던 각도도 정상 렌더링됩니다.
   - `SimpleWatermark.addPattern()`은 기본값이 `rotation: -45`이므로 옵션을 주지 않아도 이 경로를 탑니다. `rotation`이 0이거나 미지정인 호출의 출력은 바뀌지 않습니다.
   - 커버리지를 채우면서 타일 수가 회전각에 따라 늘어납니다(위 기준에서 28개 → 48개).
-- Fixed: advanced `TextWatermark.addRepeatingPattern()`에 `spacing.x` 또는 `spacing.y`를 0 이하로 넘기면 타일 루프가 끝나지 않아 브라우저가 멈추던 문제를 수정했습니다. 이제 유한 양수가 아니면 `ImageProcessError`(`OPTION_INVALID`)로 거부합니다. `SimpleWatermark.addPattern({ spacing: 0 })`으로도 도달할 수 있던 경로입니다.
+- Fixed: advanced `TextWatermark.addRepeatingPattern()`·`ImageWatermark.addRepeatingPattern()`에 `spacing.x` 또는 `spacing.y`를 0 이하나 `NaN`/`Infinity`로 넘기면 타일 루프가 끝나지 않아 브라우저가 멈추던 문제를 수정했습니다. 이제 유한 양수가 아니면 `ImageProcessError`(`OPTION_INVALID`, `details.option`에 `spacing.x`/`spacing.y`)로 거부합니다. `SimpleWatermark.addPattern({ spacing: 0 })`으로도 도달할 수 있던 경로입니다.
 - Fixed: advanced `TextWatermark.addToCanvas()`·`TextWatermark.addRepeatingPattern()`이 호출자 소유 Canvas의 2D 컨텍스트 상태를 되돌리지 않고 반환하던 문제를 수정했습니다. 텍스트 스타일 적용이 `save()`/`restore()` 범위 밖에 있어 호출 이후에도 `font`·`globalAlpha`·`fillStyle`·`strokeStyle`·`lineWidth`·`textBaseline`·`textAlign`이 워터마크 설정으로 남아, 같은 Canvas에 이어 그리는 코드가 영향을 받았습니다. 워터마크 출력 자체는 변하지 않습니다.
 
 ## [3.1.0] - 2026-08-12

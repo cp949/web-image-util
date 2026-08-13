@@ -1,4 +1,5 @@
 import { applyRotation, requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
+import { requirePositiveSpacing } from './errors.internal';
 import type { Point, Position, Size } from './position-types';
 import { PositionCalculator } from './position-types';
 
@@ -137,6 +138,10 @@ export class ImageWatermark {
       spacing,
       stagger = false,
     } = options;
+
+    // spacing이 유한 양수가 아니면 아래 타일 루프가 전진하지 않아 브라우저가 멈춘다.
+    requirePositiveSpacing(spacing.x, 'spacing.x', 'ImageWatermark.addRepeatingPattern');
+    requirePositiveSpacing(spacing.y, 'spacing.y', 'ImageWatermark.addRepeatingPattern');
 
     const watermarkWidth = watermarkImage.width * scale;
     const watermarkHeight = watermarkImage.height * scale;

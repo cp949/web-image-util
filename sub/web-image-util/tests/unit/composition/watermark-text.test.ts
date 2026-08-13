@@ -347,9 +347,7 @@ describe('TextWatermark', () => {
         });
 
       expect(addPattern).toThrow(ImageProcessError);
-      expect(addPattern).toThrowError(
-        expect.objectContaining({ code: 'OPTION_INVALID', details: { option, minimum: 0 } })
-      );
+      expect(addPattern).toThrowError(expect.objectContaining({ code: 'OPTION_INVALID', details: { option } }));
     }
   });
 

@@ -158,6 +158,30 @@ describe('ImageWatermark', () => {
     expect(translateSpy).toHaveBeenNthCalledWith(2, 10, 10);
   });
 
+  it('addRepeatingPattern: spacing이 유한 양수가 아니면 OPTION_INVALID를 던진다', () => {
+    // 방어가 없으면 타일 루프가 전진하지 않아 브라우저가 멈춘다. TextWatermark와 같은 계약이다.
+    const canvas = createTestCanvas(400, 300);
+    const invalidSpacings: Array<[{ x: number; y: number }, 'spacing.x' | 'spacing.y']> = [
+      [{ x: 0, y: 80 }, 'spacing.x'],
+      [{ x: 80, y: 0 }, 'spacing.y'],
+      [{ x: -10, y: 80 }, 'spacing.x'],
+      [{ x: 80, y: Number.NaN }, 'spacing.y'],
+      [{ x: Number.POSITIVE_INFINITY, y: 80 }, 'spacing.x'],
+    ];
+
+    for (const [spacing, option] of invalidSpacings) {
+      const addPattern = () =>
+        ImageWatermark.addRepeatingPattern(canvas, {
+          watermarkImage: createTestImage(20, 20),
+          position: Position.MIDDLE_CENTER,
+          spacing,
+        });
+
+      expect(addPattern).toThrow(ImageProcessError);
+      expect(addPattern).toThrowError(expect.objectContaining({ code: 'OPTION_INVALID', details: { option } }));
+    }
+  });
+
   it('addRepeatingPattern: stagger=true·rotation 옵션을 처리한다', () => {
     const canvas = createTestCanvas(400, 300);
     const result = ImageWatermark.addRepeatingPattern(canvas, {
