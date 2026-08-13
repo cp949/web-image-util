@@ -33,6 +33,17 @@ describe('placement', () => {
     expect(bounds.endY).toBeCloseTo(117.3205080757);
   });
 
+  it('computePerTileBounds: 회전 후 AABB가 원본보다 작아도 원본 타일 크기까지 패딩을 유지한다', () => {
+    // 40×20 타일을 90도 회전하면 AABB는 20×40이다. 폭이 줄었다고 패딩을 20으로 좁히면
+    // x = -25 타일(회전 후 [-15, 5])처럼 캔버스와 겹치는 가장자리 타일을 잃는다.
+    const bounds = computePerTileBounds({ width: 100, height: 80 }, { width: 40, height: 20 }, 90);
+
+    expect(bounds.startX).toBeCloseTo(-40);
+    expect(bounds.endX).toBeCloseTo(140);
+    expect(bounds.startY).toBeCloseTo(-40);
+    expect(bounds.endY).toBeCloseTo(120);
+  });
+
   it('iterateTileGrid: spacing으로 전진하고 홀수 행에 반 간격 stagger를 적용한다', () => {
     const points = Array.from(iterateTileGrid({ startX: -20, endX: 120, startY: 0, endY: 90 }, { x: 60, y: 50 }, true));
 
@@ -111,6 +122,7 @@ describe('placement', () => {
       throw new Error('Cannot get canvas context');
     }
     const rotateSpy = vi.spyOn(ctx, 'rotate');
+    const saveSpy = vi.spyOn(ctx, 'save');
     const draw = vi.fn();
 
     placeTiled(
@@ -126,6 +138,8 @@ describe('placement', () => {
       draw
     );
 
+    // 프레임 회전은 루프 전체를 덮는 상태 범위 하나로 끝난다.
+    expect(saveSpy).toHaveBeenCalledTimes(1);
     expect(rotateSpy).toHaveBeenCalledTimes(1);
     expect(rotateSpy).toHaveBeenCalledWith(Math.PI / 2);
     expect(draw.mock.calls.map(([origin]) => origin)).toEqual([{ x: -20, y: -100 }]);
@@ -139,6 +153,7 @@ describe('placement', () => {
     }
     const translateSpy = vi.spyOn(ctx, 'translate');
     const rotateSpy = vi.spyOn(ctx, 'rotate');
+    const saveSpy = vi.spyOn(ctx, 'save');
     const draw = vi.fn();
 
     placeTiled(
@@ -158,5 +173,7 @@ describe('placement', () => {
     expect(translateSpy).toHaveBeenNthCalledWith(1, -10, -10);
     expect(rotateSpy).toHaveBeenCalledWith(Math.PI / 2);
     expect(translateSpy).toHaveBeenNthCalledWith(2, 10, 10);
+    // 상태 범위는 타일당 하나다. 루프 밖에 save/restore를 더 두면 추출 전 Canvas 호출 순서와 어긋난다.
+    expect(saveSpy).toHaveBeenCalledTimes(1);
   });
 });

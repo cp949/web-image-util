@@ -174,6 +174,7 @@ describe('ImageWatermark', () => {
     });
 
     const origins = drawImageSpy.mock.calls.map(([, x, y]) => ({ x: x as number, y: y as number }));
+
     const oldPadding = { width: 40, height: 20 };
     const leftEdgeTile = origins.find(({ x }) => x < -oldPadding.width && x + 41.2132034356 > 0);
     const topEdgeTile = origins.find(({ y }) => y < -oldPadding.height && y + 31.2132034356 > 0);
@@ -182,6 +183,31 @@ describe('ImageWatermark', () => {
     // (-40, -20)보다 바깥에 있지만 회전 후 오른쪽/아래쪽 끝이 0을 넘어 Canvas와 교차한다.
     expect(leftEdgeTile?.x).toBeCloseTo(-40.4264068712);
     expect(topEdgeTile?.y).toBeCloseTo(-22.4264068712);
+  });
+
+  it('addRepeatingPattern: 회전 후 AABB가 작아져도 Canvas와 교차하는 가장자리 타일을 잃지 않는다', () => {
+    const canvas = createTestCanvas(100, 80);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+    const drawImageSpy = vi.spyOn(ctx, 'drawImage');
+
+    ImageWatermark.addRepeatingPattern(canvas, {
+      watermarkImage: createTestImage(40, 20),
+      position: Position.MIDDLE_CENTER,
+      spacing: { x: 5, y: 5 },
+      rotation: 90,
+    });
+
+    const origins = drawImageSpy.mock.calls.map(([, x, y]) => ({ x: x as number, y: y as number }));
+
+    // 40×20 타일의 90도 AABB는 20×40이라 폭이 절반으로 줄지만, 회전 기준은 타일 중심이다.
+    // x = -25 타일은 회전 후 [-15, 5]를 덮어 Canvas와 겹치므로 반드시 그려져야 한다.
+    const rightEdgeOf = (x: number) => x + 40 / 2 + 20 / 2;
+    const leftOverlapping = origins.filter(({ x }) => x < 0 && rightEdgeOf(x) > 0).map(({ x }) => x);
+
+    expect(Math.min(...leftOverlapping)).toBeCloseTo(-25);
   });
 
   it('addRepeatingPattern: spacing이 유한 양수가 아니면 OPTION_INVALID를 던진다', () => {

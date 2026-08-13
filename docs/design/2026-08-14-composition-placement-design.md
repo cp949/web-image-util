@@ -16,6 +16,10 @@
 axis-aligned bounding box가 더 커지므로 캔버스 가장자리의 타일이 누락된다. 기존 정사각형 90도
 테스트는 회전 전후 bounding size가 같아 이 결함을 드러내지 못한다.
 
+반대 방향도 성립한다. 회전 기준은 타일 중심이므로 bounding box가 원본보다 작아져도(40×20 타일의
+90도 회전은 20×40) 타일 점유 범위는 원점에서 `width/2`만큼 밀려 있다. 패딩을 bounding size로
+갈아끼우기만 하면 이 경우 오히려 기존보다 좁아져 겹치는 타일을 잃는다. 패딩은 두 크기 중 큰 쪽이다.
+
 ## 결정
 
 배치 규칙을 `src/composition/placement.internal.ts`에 모은다. 호출자는 무엇을 그릴지만 callback으로
@@ -59,7 +63,9 @@ iterateTileGrid(...): Iterable<Point>
 
 - `computeFrameTileBounds()`는 `getOriginRotationCoverageBounds()`로 프레임 회전 시 필요한 역회전
   캔버스 범위를 구한다.
-- `computePerTileBounds()`는 회전된 타일의 bounding size를 패딩으로 사용한다.
+- `computePerTileBounds()`는 원본 타일 크기와 회전된 bounding size 중 큰 쪽을 축별로 패딩에 쓴다.
+  회전 기준이 타일 중심이므로 bounding size만 쓰면 AABB가 작아지는 경우(40×20 타일의 90도 회전은
+  20×40) 패딩이 원본보다 좁아져 오히려 가장자리 타일을 잃는다. rotation 0에서는 두 값이 같다.
 - `iterateTileGrid()`는 bounds, spacing, stagger로 draw 원점들을 생성한다.
 - frame 모드는 루프 밖에서 `ctx.rotate()`를 한 번 적용한다.
 - per-tile 모드는 각 타일을 `withCanvasState()`로 감싸고 `applyRotation()`을 적용한다.
@@ -83,8 +89,8 @@ getRotatedTileBoundingSize(size: Size, rotation?: number): Size
 사용한다. 프레임 전체 회전 표현을 보존한다.
 
 **`ImageWatermark.addRepeatingPattern()`** —
-`placeTiled(..., rotationMode: 'per-tile', ...)`를 사용한다. 타일별 중심 회전을 보존하고 회전된
-bounding size로 커버리지 패딩을 계산한다.
+`placeTiled(..., rotationMode: 'per-tile', ...)`를 사용한다. 타일별 중심 회전을 보존하고 원본 크기와
+회전된 bounding size 중 큰 쪽으로 커버리지 패딩을 계산한다.
 
 ## 테스트 계약
 

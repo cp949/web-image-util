@@ -134,12 +134,15 @@ export interface CoverageBounds {
 /**
  * 중심 기준으로 회전한 타일의 axis-aligned bounding size를 계산한다.
  *
- * 반복 배치 경계는 회전 후 실제 점유 크기를 패딩으로 써야 캔버스 가장자리 타일을 누락하지 않는다.
+ * 반복 배치 경계는 회전 후 실제 점유 크기를 알아야 캔버스 가장자리 타일을 누락하지 않는다.
  * 회전이 없거나 비유한값이면 부동소수 계산 없이 입력 크기를 그대로 반환한다.
+ *
+ * 90도 회전처럼 결과가 입력보다 작아질 수 있으므로 이 값을 그대로 루프 패딩으로 쓰면 안 된다.
+ * 회전 기준점까지 감안한 패딩 결정은 호출자 몫이다.
  */
 export function getRotatedTileBoundingSize(size: Size, rotation?: number): Size {
   if (!rotation || !Number.isFinite(rotation)) {
-    return size;
+    return { width: size.width, height: size.height };
   }
 
   const radians = (rotation * Math.PI) / 180;
