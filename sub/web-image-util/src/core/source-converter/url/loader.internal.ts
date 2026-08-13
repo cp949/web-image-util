@@ -7,6 +7,7 @@
 
 import { ImageProcessError } from '../../../types';
 import { productionLog } from '../../../utils/debug.internal';
+import { decodeImageFromBlob, decodeImageFromUrl } from '../../../utils/image-decode.internal';
 import { isXmlMimeType, normalizeMimeType } from '../../../utils/source-utils/mime.internal';
 import { inspectBlobMetadata, sniffBlobSvgIfCandidate } from '../../../utils/source-utils/source-facts.internal';
 import { isInlineSvg } from '../../../utils/svg-detection';
@@ -73,24 +74,9 @@ export async function loadBlobUrl(
     }
 
     // SVG가 아니면 일반 이미지 로딩 경로를 사용한다.
-    return new Promise((resolve, reject) => {
-      const img = document.createElement('img');
-      const objectUrl = URL.createObjectURL(blob);
-      // Promise 결정 시 핸들러를 해제하고 Blob URL을 정리한다.
-      const cleanup = () => {
-        img.onload = null;
-        img.onerror = null;
-        URL.revokeObjectURL(objectUrl);
-      };
-      img.onload = () => {
-        cleanup();
-        resolve(img);
-      };
-      img.onerror = () => {
-        cleanup();
-        reject(new ImageProcessError(`Failed to load Blob URL image: ${blobUrl}`, 'SOURCE_LOAD_FAILED'));
-      };
-      img.src = objectUrl;
+    return decodeImageFromBlob(blob, {
+      errorCode: 'SOURCE_LOAD_FAILED',
+      message: `Failed to load Blob URL image: ${blobUrl}`,
     });
   } catch (error) {
     if (error instanceof ImageProcessError) {
@@ -117,28 +103,10 @@ export async function loadImageFromUrl(
   transport: 'remote' | 'direct'
 ): Promise<HTMLImageElement> {
   const loadImageElementDirectly = () =>
-    new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = document.createElement('img');
-
-      if (crossOrigin) {
-        img.crossOrigin = crossOrigin;
-      }
-
-      // Promise 결정 시 핸들러를 해제한다.
-      const cleanup = () => {
-        img.onload = null;
-        img.onerror = null;
-      };
-      img.onload = () => {
-        cleanup();
-        resolve(img);
-      };
-      img.onerror = () => {
-        cleanup();
-        reject(new ImageProcessError(`Failed to load image: ${url}`, 'SOURCE_LOAD_FAILED'));
-      };
-
-      img.src = url;
+    decodeImageFromUrl(url, {
+      errorCode: 'SOURCE_LOAD_FAILED',
+      message: `Failed to load image: ${url}`,
+      crossOrigin,
     });
 
   try {
@@ -195,26 +163,16 @@ export async function loadImageFromUrl(
         }
 
         const { blob: responseBlob } = await readCheckedBlobResponse(response, maxBytes, 'URL');
-        return new Promise((resolve, reject) => {
-          const img = document.createElement('img');
-          const objectUrl = URL.createObjectURL(responseBlob);
-
-          // Promise 결정 시 핸들러를 해제하고 Blob URL을 정리한다.
-          const cleanup = () => {
-            img.onload = null;
-            img.onerror = null;
-            URL.revokeObjectURL(objectUrl);
-          };
-          img.onload = () => {
-            cleanup();
-            resolve(img);
-          };
-          img.onerror = () => {
-            cleanup();
-            reject(new ImageProcessError(`Failed to load image: ${url}`, 'SOURCE_LOAD_FAILED'));
-          };
-
-          img.src = objectUrl;
+        // await를 붙이지 않는다. 원본 코드와 같은 제어 흐름을 유지하기 위해서다.
+        //
+        // 아래 catch는 ImageProcessError를 먼저 재던지므로 디코드 실패가 폴백으로 새지는 않는다.
+        // 그래도 await를 붙이면 두 가지가 달라진다. 첫째, `finally`의 handle.dispose()가 디코드가
+        // 끝난 뒤로 밀려 타임아웃 타이머와 abort 리스너가 디코드 구간 내내 살아 있게 된다.
+        // 둘째, decodeImageFromBlob이 ImageProcessError가 아닌 오류를 흘리게 되는 날
+        // await 버전은 그것을 조용한 직접 로드 폴백으로 삼켜 fail-open이 된다.
+        return decodeImageFromBlob(responseBlob, {
+          errorCode: 'SOURCE_LOAD_FAILED',
+          message: `Failed to load image: ${url}`,
         });
       } catch (fetchError) {
         if (fetchError instanceof ImageProcessError) {
