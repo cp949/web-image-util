@@ -3,7 +3,8 @@ import { createImageElement } from '../utils/image-element.internal';
 import { loadImageElement } from '../utils/image-loader.internal';
 import type { OutputOptions } from './index';
 
-export function resolveOutputMimeType(options?: OutputOptions, defaultMimeType = 'image/png'): string {
+/** format 미지정 시 기본 MIME으로 떨어지는 출력 MIME 결정. 이 모듈 안에서만 쓴다. */
+function resolveOutputMimeType(options?: OutputOptions, defaultMimeType = 'image/png'): string {
   return options?.format ? `image/${options.format}` : defaultMimeType;
 }
 
