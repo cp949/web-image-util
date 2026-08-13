@@ -11,3 +11,4 @@
 - `2026-08-13-image-decode-seam-design.md`: 이미지 디코드를 단일 소유 모듈로 모으고 구동 방식만 adapter로 가른 결정 근거
 - `2026-08-13-svg-uri-ref-verdict-design.md`: SVG 참조 판정을 이유 코드 하나로 모으고 제거·거부·집계를 소비자 동작으로 남긴 결정 근거
 - `2026-08-14-svg-warning-reference-axis-design.md`: 참조 판정 이관에서 빠진 경고 축을 소비자로 이관한 결정 근거
+- `2026-08-14-byte-signature-facts-design.md`: 매직바이트 이미지 포맷 판정을 detectFormatFromBytes 하나로 모으고 소비자별 폴백을 투영으로 남긴 결정 근거
