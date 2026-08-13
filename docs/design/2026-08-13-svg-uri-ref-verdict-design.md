@@ -148,6 +148,7 @@ export function probeDecodedCss(css: string): { decoded: string; revealsDangerou
 | `src/core/source-converter/url/policy.internal.ts` | `isBlockedSvgPolicyRef` 삭제 — `isBlockedPipelineUriRef` 한 줄 위임인 얇은 래퍼다 |
 | `src/core/source-converter/svg/safety.internal.ts` | 2곳을 `classifyUriRef` 직접 호출로 전환 |
 | `src/svg-sanitizer/reference-policy.internal.ts` | `isSafeInternalReference`를 `classifyUriRef(v, 'strict').reason === 'internal-fragment'`로 재작성 |
+| `src/svg-sanitizer/warnings.internal.ts` | 입력 URI 경고 축을 strict reason 집합 매핑으로 전환 |
 | `src/utils/svg-sanitizer.ts` | `sanitizeUriValue` 호출은 유지 — 계약 불변 |
 | `CONTEXT.md` | 도메인 용어 「참조 판정」·「이유 코드」 추가 |
 | `docs/design/README.md` | 현재 기록에 이 문서 추가 |
@@ -170,6 +171,8 @@ type UriAxes = {
 ```
 
 `isCountedSvgReference`는 모듈 private다. export를 늘리지 않고 `collectSvgDomSecuritySignals(doc)`로 구동해 pin한다 — 기존 `svg-inspection-dom-signals.test.ts`와 같은 방식이다.
+
+`tests/unit/svg-sanitizer/warnings-uri-axis.test.ts` (신설) — `collectInputPolicyWarnings`를 경유해 strict reason 9종과 공개 URI warning 출력의 기존 매핑을 고정한다.
 
 코퍼스는 reason 9종을 각각 최소 2개씩 덮고, 설계 단계에서 확인한 함정 4종을 반드시 포함한다.
 

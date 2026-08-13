@@ -7,10 +7,22 @@
  * 신호를 알려줄 수 있게 하는 진단용 로직이다.
  */
 
-import { isSafeRasterDataImageRef, isSvgDataImageRef } from '../utils/svg-data-url-policy.internal';
 import { parseAndClassifySvg } from '../utils/svg-document.internal';
+import { classifyUriRef, type UriRefReason } from '../utils/svg-threat-policy.internal';
 import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
-import { isSafeInternalReference } from './reference-policy.internal';
+
+/**
+ * 입력 단계에서 외부 URI 제거 경고를 만들지 않는 reason 집합.
+ *
+ * nested SVG는 재귀 정제 경로가 담당하고 내부 위험은 별도 경고로 보고된다.
+ * 나머지 reason은 strict 집행 결과와 무관하게 기존 공개 경고 계약대로 집계한다.
+ */
+const NON_WARNING_REFERENCE_REASONS: ReadonlySet<UriRefReason> = new Set<UriRefReason>([
+  'internal-fragment',
+  'safe-raster-data',
+  'canonical-svg-data',
+  'nested-svg-data',
+]);
 
 /**
  * 같은 경고가 반복 삽입되지 않도록 warnings 배열에 한 번만 추가한다.
@@ -57,13 +69,8 @@ export function collectInputPolicyWarnings(svg: string, warnings: string[]): voi
       }
 
       if (name === 'href' || name === 'xlink:href' || name === 'src' || localName === 'href' || localName === 'src') {
-        // 새 정책에서 안전한 data:image/* 참조는 보존되거나 nested sanitize 후 보존되므로 false-positive 경고를 내지 않는다.
-        // nested SVG 안의 위험 요소 제거는 enforceStrictDomPolicy에서 별도 경고로 보고된다.
-        if (
-          !isSafeInternalReference(attribute.value) &&
-          !isSafeRasterDataImageRef(attribute.value) &&
-          !isSvgDataImageRef(attribute.value)
-        ) {
+        const { reason } = classifyUriRef(attribute.value, 'strict');
+        if (!NON_WARNING_REFERENCE_REASONS.has(reason)) {
           pushUniqueWarning(warnings, '외부 URI 참조 속성이 제거되었습니다.');
         }
         continue;
