@@ -1,12 +1,6 @@
-import {
-  applyRotation,
-  getOriginRotationCoverageBounds,
-  requireCanvasContext,
-  withCanvasState,
-} from './canvas-drawing.internal';
-import { requirePositiveSpacing } from './errors.internal';
+import { requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
+import { placeOnce, placeTiled } from './placement.internal';
 import type { Point, Position, Size } from './position-types';
-import { PositionCalculator } from './position-types';
 
 /**
  * Text style options
@@ -75,41 +69,25 @@ export class TextWatermark {
         height: style.fontSize || 16,
       };
 
-      // 위치 계산
       const containerSize: Size = { width: canvas.width, height: canvas.height };
-      const textPosition = PositionCalculator.calculatePosition(
-        position,
-        customPosition || null,
-        containerSize,
-        textSize,
-        margin
+      placeOnce(
+        ctx,
+        { containerSize, objectSize: textSize, position, customPosition, margin, rotation },
+        (textPosition) => {
+          if (style.shadow) {
+            ctx.shadowColor = style.shadow.color;
+            ctx.shadowOffsetX = style.shadow.offsetX;
+            ctx.shadowOffsetY = style.shadow.offsetY;
+            ctx.shadowBlur = style.shadow.blur;
+          }
+
+          if (style.strokeWidth && style.strokeColor) {
+            ctx.strokeText(text, textPosition.x, textPosition.y);
+          }
+
+          ctx.fillText(text, textPosition.x, textPosition.y);
+        }
       );
-
-      // 텍스트 영역 중심을 기준으로 회전한다
-      applyRotation(ctx, {
-        x: textPosition.x,
-        y: textPosition.y,
-        width: textSize.width,
-        height: textSize.height,
-        rotation,
-      });
-
-      // Apply shadow effect
-      if (style.shadow) {
-        ctx.shadowColor = style.shadow.color;
-        ctx.shadowOffsetX = style.shadow.offsetX;
-        ctx.shadowOffsetY = style.shadow.offsetY;
-        ctx.shadowBlur = style.shadow.blur;
-      }
-
-      // Draw text (using textPosition.y since textBaseline = 'top')
-      const drawY = textPosition.y;
-
-      if (style.strokeWidth && style.strokeColor) {
-        ctx.strokeText(text, textPosition.x, drawY);
-      }
-
-      ctx.fillText(text, textPosition.x, drawY);
     });
 
     return canvas;
@@ -171,10 +149,6 @@ export class TextWatermark {
 
     const { text, style, rotation = 0, spacing, stagger = false } = options;
 
-    // spacing이 유한 양수가 아니면 아래 타일 루프가 전진하지 않아 브라우저가 멈춘다.
-    requirePositiveSpacing(spacing.x, 'spacing.x', 'TextWatermark.addRepeatingPattern');
-    requirePositiveSpacing(spacing.y, 'spacing.y', 'TextWatermark.addRepeatingPattern');
-
     // addToCanvas와 같은 이유로 스타일 적용을 save/restore 안으로 넣는다
     withCanvasState(ctx, () => {
       TextWatermark.applyTextStyle(ctx, style);
@@ -182,38 +156,24 @@ export class TextWatermark {
       const textWidth = textMetrics.width;
       const textHeight = style.fontSize || 16;
 
-      // 여기는 타일 중심이 아니라 캔버스 원점을 회전시킨다. 연속된 대각선 텍스트 띠를 만드는
-      // 별개 표현이므로 applyRotation(중심 기준)으로 합치지 않는다.
-      if (rotation !== 0) {
-        ctx.rotate((rotation * Math.PI) / 180);
-      }
-
-      // 회전된 프레임에서 캔버스를 덮는 범위는 캔버스 사각형과 어긋난다. 루프 경계를
-      // 캔버스 축 기준으로 두면 커버리지가 한쪽으로 쏠리므로 역회전 bounding box에서 파생시킨다.
-      // rotation이 0이면 이 범위가 정확히 [0, width] × [0, height]라 회전 없는 출력은 그대로다.
-      const bounds = getOriginRotationCoverageBounds(canvas.width, canvas.height, rotation);
-
-      // 타일 실효 범위는 textBaseline='top' 기준 [x, x+textWidth] × [y, y+textHeight]다.
-      // strokeText의 lineWidth 번짐은 패딩에 반영하지 않는다 — 최외곽 타일에서 lineWidth/2만큼
-      // 모자라지만, 반영하면 회전 없는 경로의 타일 배치까지 바뀐다.
-      const startX = bounds.minX - textWidth;
-      const endX = bounds.maxX + textWidth;
-      const endY = bounds.maxY + textHeight;
-
-      // stagger 오프셋은 루프 첫 행을 짝수로 두고 세는 행 번호를 따른다.
-      // 반복 패턴에서 어느 행이 어긋나는지는 임의 기준이며, 회전 0에서는 기존과 같은 행이 어긋난다.
-      let rowIndex = 0;
-      for (let y = bounds.minY; y < endY; y += spacing.y) {
-        const xOffset = stagger && rowIndex % 2 === 1 ? spacing.x / 2 : 0;
-
-        for (let x = startX; x < endX; x += spacing.x) {
+      placeTiled(
+        ctx,
+        {
+          containerSize: { width: canvas.width, height: canvas.height },
+          tileSize: { width: textWidth, height: textHeight },
+          spacing,
+          stagger,
+          rotation,
+          rotationMode: 'frame',
+          context: 'TextWatermark.addRepeatingPattern',
+        },
+        ({ x, y }) => {
           if (style.strokeWidth && style.strokeColor) {
-            ctx.strokeText(text, x + xOffset, y);
+            ctx.strokeText(text, x, y);
           }
-          ctx.fillText(text, x + xOffset, y);
+          ctx.fillText(text, x, y);
         }
-        rowIndex++;
-      }
+      );
     });
 
     return canvas;

@@ -1,4 +1,5 @@
 import { createCanvasContextError } from './errors.internal';
+import type { Size } from './position-types';
 
 export interface DrawableImagePlacement {
   image: HTMLImageElement;
@@ -128,6 +129,27 @@ export interface CoverageBounds {
   maxX: number;
   minY: number;
   maxY: number;
+}
+
+/**
+ * 중심 기준으로 회전한 타일의 axis-aligned bounding size를 계산한다.
+ *
+ * 반복 배치 경계는 회전 후 실제 점유 크기를 패딩으로 써야 캔버스 가장자리 타일을 누락하지 않는다.
+ * 회전이 없거나 비유한값이면 부동소수 계산 없이 입력 크기를 그대로 반환한다.
+ */
+export function getRotatedTileBoundingSize(size: Size, rotation?: number): Size {
+  if (!rotation || !Number.isFinite(rotation)) {
+    return size;
+  }
+
+  const radians = (rotation * Math.PI) / 180;
+  const absCos = Math.abs(Math.cos(radians));
+  const absSin = Math.abs(Math.sin(radians));
+
+  return {
+    width: size.width * absCos + size.height * absSin,
+    height: size.width * absSin + size.height * absCos,
+  };
 }
 
 /**

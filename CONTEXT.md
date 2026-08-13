@@ -69,3 +69,11 @@ _Avoid_: 이미지 로딩, img 로더
 **디코드 어댑터 (decode adapter)**:
 img를 로드 완료 상태까지 구동하는 방식만 갈라내는 seam. 핸들러 등록·해제와 `src` 할당을 담당하고, 오류 코드·메시지 조립에는 관여하지 않는다. 테스트가 실제 디코딩 없이 호출처를 구동할 때 교체한다.
 _Avoid_: 이미지 mock, 디코드 스텁 전역
+
+### 배치
+
+**배치 (placement)**:
+Canvas에 객체 하나 또는 반복 타일의 draw 원점을 정하고 회전 상태의 수명을 관리하는 동작.
+Position/margin 기반 단일 배치와 spacing/stagger 기반 반복 배치는 `placement.internal.ts`가 소유한다.
+반복 배치의 frame 회전과 per-tile 회전은 서로 다른 표현이며, 호출자가 모드를 명시한다.
+_Avoid_: 워터마크 좌표 루프, 타일 위치 계산

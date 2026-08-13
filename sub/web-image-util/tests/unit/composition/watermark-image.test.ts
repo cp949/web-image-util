@@ -158,6 +158,27 @@ describe('ImageWatermark', () => {
     expect(translateSpy).toHaveBeenNthCalledWith(2, 10, 10);
   });
 
+  it('addRepeatingPattern: 비정사각형 회전 타일의 실제 bounding size로 가장자리 행을 확장한다', () => {
+    const canvas = createTestCanvas(100, 80);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Cannot get canvas context');
+    }
+    const drawImageSpy = vi.spyOn(ctx, 'drawImage');
+
+    ImageWatermark.addRepeatingPattern(canvas, {
+      watermarkImage: createTestImage(40, 10),
+      position: Position.MIDDLE_CENTER,
+      spacing: { x: 50, y: 50 },
+      rotation: 45,
+    });
+
+    const rowOrigins = Array.from(new Set(drawImageSpy.mock.calls.map(([, , y]) => y as number)));
+    expect(rowOrigins).toHaveLength(4);
+    expect(rowOrigins[0]).toBeCloseTo(-35.3553390593);
+    expect(rowOrigins[rowOrigins.length - 1]).toBeCloseTo(114.6446609407);
+  });
+
   it('addRepeatingPattern: spacing이 유한 양수가 아니면 OPTION_INVALID를 던진다', () => {
     // 방어가 없으면 타일 루프가 전진하지 않아 브라우저가 멈춘다. TextWatermark와 같은 계약이다.
     const canvas = createTestCanvas(400, 300);

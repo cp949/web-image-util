@@ -1,7 +1,6 @@
-import { applyRotation, requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
-import { requirePositiveSpacing } from './errors.internal';
+import { requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
+import { placeOnce, placeTiled } from './placement.internal';
 import type { Point, Position, Size } from './position-types';
-import { PositionCalculator } from './position-types';
 
 /**
  * Image watermark options
@@ -50,37 +49,25 @@ export class ImageWatermark {
       height: watermarkImage.height * scale,
     };
 
-    // Calculate position
     const containerSize: Size = { width: canvas.width, height: canvas.height };
-    const watermarkPosition = PositionCalculator.calculatePosition(
-      position,
-      customPosition || null,
-      containerSize,
-      watermarkSize,
-      margin
-    );
 
     withCanvasState(ctx, () => {
       // Set blending mode and opacity
       ctx.globalCompositeOperation = blendMode;
       ctx.globalAlpha = opacity;
 
-      // 워터마크 영역 중심을 기준으로 회전한다
-      applyRotation(ctx, {
-        x: watermarkPosition.x,
-        y: watermarkPosition.y,
-        width: watermarkSize.width,
-        height: watermarkSize.height,
-        rotation,
-      });
-
-      // Draw image
-      ctx.drawImage(
-        watermarkImage,
-        watermarkPosition.x,
-        watermarkPosition.y,
-        watermarkSize.width,
-        watermarkSize.height
+      placeOnce(
+        ctx,
+        { containerSize, objectSize: watermarkSize, position, customPosition, margin, rotation },
+        (watermarkPosition) => {
+          ctx.drawImage(
+            watermarkImage,
+            watermarkPosition.x,
+            watermarkPosition.y,
+            watermarkSize.width,
+            watermarkSize.height
+          );
+        }
       );
     });
 
@@ -139,10 +126,6 @@ export class ImageWatermark {
       stagger = false,
     } = options;
 
-    // spacing이 유한 양수가 아니면 아래 타일 루프가 전진하지 않아 브라우저가 멈춘다.
-    requirePositiveSpacing(spacing.x, 'spacing.x', 'ImageWatermark.addRepeatingPattern');
-    requirePositiveSpacing(spacing.y, 'spacing.y', 'ImageWatermark.addRepeatingPattern');
-
     const watermarkWidth = watermarkImage.width * scale;
     const watermarkHeight = watermarkImage.height * scale;
 
@@ -150,26 +133,21 @@ export class ImageWatermark {
       ctx.globalCompositeOperation = blendMode;
       ctx.globalAlpha = opacity;
 
-      let yOffset = 0;
-      for (let y = -watermarkHeight; y < canvas.height + watermarkHeight; y += spacing.y) {
-        const xOffset = stagger && yOffset % 2 === 1 ? spacing.x / 2 : 0;
-
-        for (let x = -watermarkWidth; x < canvas.width + watermarkWidth; x += spacing.x) {
-          withCanvasState(ctx, () => {
-            // 타일마다 자기 영역 중심을 기준으로 회전한다 (격자는 캔버스 축에 정렬된 채로 유지)
-            applyRotation(ctx, {
-              x: x + xOffset,
-              y,
-              width: watermarkWidth,
-              height: watermarkHeight,
-              rotation,
-            });
-
-            ctx.drawImage(watermarkImage, x + xOffset, y, watermarkWidth, watermarkHeight);
-          });
+      placeTiled(
+        ctx,
+        {
+          containerSize: { width: canvas.width, height: canvas.height },
+          tileSize: { width: watermarkWidth, height: watermarkHeight },
+          spacing,
+          stagger,
+          rotation,
+          rotationMode: 'per-tile',
+          context: 'ImageWatermark.addRepeatingPattern',
+        },
+        ({ x, y }) => {
+          ctx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
         }
-        yOffset++;
-      }
+      );
     });
 
     return canvas;

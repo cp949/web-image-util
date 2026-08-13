@@ -9,6 +9,7 @@ import {
   drawImageLayer,
   drawShadowedImage,
   getOriginRotationCoverageBounds,
+  getRotatedTileBoundingSize,
   requireCanvasContext,
   withCanvasState,
 } from '../../../src/composition/canvas-drawing.internal';
@@ -121,6 +122,28 @@ describe('canvas-drawing', () => {
     expect(getOriginRotationCoverageBounds(80, 50, 0)).toEqual(canvasRect);
     expect(getOriginRotationCoverageBounds(80, 50, Number.NaN)).toEqual(canvasRect);
     expect(getOriginRotationCoverageBounds(80, 50, Number.POSITIVE_INFINITY)).toEqual(canvasRect);
+  });
+
+  it('getRotatedTileBoundingSize: 회전이 없거나 비유한값이면 입력 크기를 그대로 돌려준다', () => {
+    const size = { width: 40, height: 20 };
+
+    expect(getRotatedTileBoundingSize(size)).toEqual(size);
+    expect(getRotatedTileBoundingSize(size, 0)).toEqual(size);
+    expect(getRotatedTileBoundingSize(size, Number.NaN)).toEqual(size);
+  });
+
+  it('getRotatedTileBoundingSize: 정사각형 90도 회전은 크기를 보존한다', () => {
+    const bounds = getRotatedTileBoundingSize({ width: 20, height: 20 }, 90);
+
+    expect(bounds.width).toBeCloseTo(20);
+    expect(bounds.height).toBeCloseTo(20);
+  });
+
+  it('getRotatedTileBoundingSize: 비정사각형 비90도 회전의 axis-aligned 크기를 반환한다', () => {
+    const bounds = getRotatedTileBoundingSize({ width: 40, height: 20 }, 30);
+
+    expect(bounds.width).toBeCloseTo(44.6410161514);
+    expect(bounds.height).toBeCloseTo(37.3205080757);
   });
 
   it('레이어 이미지의 투명도·블렌드·회전을 적용한 뒤 Canvas 상태를 복구한다', () => {
