@@ -5,6 +5,7 @@
  */
 
 import { ImageProcessError } from '../errors.internal';
+import { readMemoryBudget } from '../utils/browser-capabilities/index';
 import { debugLog } from '../utils/debug.internal';
 
 export class CanvasPool {
@@ -38,24 +39,16 @@ export class CanvasPool {
 
   /**
    * 시스템 메모리 기준으로 최적 풀 크기를 계산한다.
+   *
+   * 메모리 예산은 utils/browser-capabilities/memory.internal.ts가 단일 소유한다 —
+   * probe와 fallback을 이 파일에서 다시 구현하지 않는다.
    */
   private getOptimalPoolSize(): number {
-    const memory = this.getAvailableMemory();
+    const memory = readMemoryBudget().availableMB;
     if (memory > 1024) return 15; // 1GB 이상
     if (memory > 512) return 12; // 512MB 이상
     if (memory > 256) return 10; // 256MB 이상
     return 8; // 기본값
-  }
-
-  /**
-   * 사용 가능한 메모리를 추정한다 (MB 단위).
-   */
-  private getAvailableMemory(): number {
-    if (typeof performance !== 'undefined' && 'memory' in performance) {
-      const memory = (performance as any).memory;
-      return (memory.jsHeapSizeLimit - memory.usedJSHeapSize) / (1024 * 1024);
-    }
-    return 512; // 기본값 (512MB)
   }
 
   /**
