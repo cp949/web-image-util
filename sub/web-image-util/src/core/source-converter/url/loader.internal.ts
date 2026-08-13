@@ -9,12 +9,11 @@ import { ImageProcessError } from '../../../types';
 import { productionLog } from '../../../utils/debug.internal';
 import { isInlineSvg, sniffSvgFromBlob } from '../../../utils/svg-detection';
 import {
+  buildSvgRenderOptions,
   DEFAULT_ALLOWED_PROTOCOLS,
   DEFAULT_MAX_SOURCE_BYTES,
   type InternalSourceConverterOptions,
   resolveFetchTimeoutMs,
-  resolvePassthroughMode,
-  resolveSvgSanitizerMode,
 } from '../options.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
 import { readCheckedTextResponse, readVerifiedSvgResponse } from '../svg/safety.internal';
@@ -77,11 +76,7 @@ export async function loadBlobUrl(
       // MIME 또는 본문 스니핑 중 하나라도 SVG로 확인되면 SVG 경로로 처리한다.
       if (isSvgMime || isSvgContent) {
         const svgContent = await blob.text();
-        return convertSvgToElement(svgContent, undefined, undefined, {
-          quality: 'auto',
-          passthroughMode: resolvePassthroughMode(options),
-          sanitizerMode: resolveSvgSanitizerMode(options),
-        });
+        return convertSvgToElement(svgContent, undefined, undefined, buildSvgRenderOptions(options));
       }
     }
 
@@ -186,24 +181,14 @@ export async function loadImageFromUrl(
         if (isSvgMime || isXmlMime) {
           if (isSvgMime) {
             const responseText = await readVerifiedSvgResponse(response, 'remote SVG response');
-            return convertSvgToElement(responseText, undefined, undefined, {
-              quality: 'auto',
-              crossOrigin: options?.crossOrigin,
-              passthroughMode: resolvePassthroughMode(options),
-              sanitizerMode: resolveSvgSanitizerMode(options),
-            });
+            return convertSvgToElement(responseText, undefined, undefined, buildSvgRenderOptions(options));
           }
 
           const { text: responseText } = await readCheckedTextResponse(response, 'remote XML response');
           // XML MIME 응답은 실제 SVG 루트가 확인된 경우에만 SVG로 처리한다.
           const isActualSvg = isXmlMime && isInlineSvg(responseText);
           if (isActualSvg) {
-            return convertSvgToElement(responseText, undefined, undefined, {
-              quality: 'auto',
-              crossOrigin: options?.crossOrigin,
-              passthroughMode: resolvePassthroughMode(options),
-              sanitizerMode: resolveSvgSanitizerMode(options),
-            });
+            return convertSvgToElement(responseText, undefined, undefined, buildSvgRenderOptions(options));
           }
 
           // SVG가 아닌 XML 응답은 이미 본문을 읽었으므로, 같은 Response를 다시 소비하지 말고

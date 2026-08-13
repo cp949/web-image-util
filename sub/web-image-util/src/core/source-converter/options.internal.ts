@@ -5,6 +5,7 @@
 import type { SvgSanitizerMode } from '../../svg-contract.internal';
 import type { ProcessorOptions } from '../../types';
 import { ImageProcessError } from '../../types';
+import type { SvgRenderingOptions } from './svg/loader.internal';
 
 /** SVG 처리 경로를 제어하는 내부 전용 모드 타입이다. 공개 index.ts에서 재export하지 않는다. */
 export type SvgPassthroughMode = 'safe' | 'unsafe-pass-through';
@@ -33,6 +34,23 @@ export function resolveSvgSanitizerMode(options: InternalSourceConverterOptions 
   throw new ImageProcessError(`Unsupported SVG sanitizer mode: ${String(mode)}`, 'INVALID_SOURCE', {
     details: { mode },
   });
+}
+
+/**
+ * SVG 공통 처리기(`convertSvgToElement`)에 넘길 렌더링 옵션을 조립한다.
+ *
+ * 소스 형태별 분기마다 같은 리터럴을 반복하지 않도록 조립 지점을 한 곳으로 모은다.
+ *
+ * @param options 내부 소스 변환 옵션
+ * @returns SVG 렌더링 옵션
+ */
+export function buildSvgRenderOptions(options: InternalSourceConverterOptions | undefined): SvgRenderingOptions {
+  return {
+    quality: 'auto',
+    crossOrigin: options?.crossOrigin,
+    passthroughMode: resolvePassthroughMode(options),
+    sanitizerMode: resolveSvgSanitizerMode(options),
+  };
 }
 
 /** 기본 fetch 타임아웃 (30초). */

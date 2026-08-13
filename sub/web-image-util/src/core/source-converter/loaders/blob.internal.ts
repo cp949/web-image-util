@@ -7,10 +7,9 @@
 import { ImageProcessError } from '../../../types';
 import { isInlineSvg, sniffSvgFromBlob } from '../../../utils/svg-detection';
 import {
+  buildSvgRenderOptions,
   DEFAULT_MAX_SOURCE_BYTES,
   type InternalSourceConverterOptions,
-  resolvePassthroughMode,
-  resolveSvgSanitizerMode,
 } from '../options.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
 
@@ -129,11 +128,7 @@ export async function convertBlobToElement(
     (normalizedType === 'image/svg+xml' || (blob as File).name?.endsWith('.svg') || (await sniffSvgFromBlob(blob)))
   ) {
     const svgText = await blob.text();
-    return convertSvgToElement(svgText, undefined, undefined, {
-      quality: 'auto',
-      passthroughMode: resolvePassthroughMode(options),
-      sanitizerMode: resolveSvgSanitizerMode(options),
-    });
+    return convertSvgToElement(svgText, undefined, undefined, buildSvgRenderOptions(options));
   }
 
   // Regular Blob processing

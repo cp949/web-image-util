@@ -5,7 +5,7 @@
  * 네트워크 fetch와 결합된 응답 prefix 기반 판정은 [`./remote-fetch.internal.ts`]가 담당한다.
  */
 
-import { detectSourceType } from '../../core/source-converter/detect.internal';
+import { detectStringSourceType, isSvgSourceType } from '../../core/source-converter/detect.internal';
 import type { ImageSource } from '../../types';
 import { ImageFormats } from '../../types';
 import { parseDataURLMimeType } from '../data-url';
@@ -137,8 +137,8 @@ async function detectImageFormat(source: ImageSource): Promise<ImageInfo['format
   }
 
   if (typeof source === 'string') {
-    const sourceType = detectSourceType(source);
-    if (sourceType === 'svg') return ImageFormats.SVG;
+    const sourceType = detectStringSourceType(source);
+    if (isSvgSourceType(sourceType)) return ImageFormats.SVG;
     if (sourceType === 'dataurl') return formatFromDataUrl(source.trim());
     if (sourceType === 'url' || sourceType === 'path' || sourceType === 'bloburl') {
       return formatFromPath(source.trim());

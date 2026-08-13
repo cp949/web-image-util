@@ -284,10 +284,10 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     (globalThis as any)._SVG_MOCK_MODE = true;
   });
 
-  it('detectSourceType이 알 수 없는 타입을 반환하면 INVALID_SOURCE로 거부한다', async () => {
-    // detect를 mock해 switch default(L184)를 결정적으로 실행한다.
+  it('detectStringSourceType이 알 수 없는 타입을 반환하면 INVALID_SOURCE로 거부한다', async () => {
+    // detect를 mock해 switch default를 결정적으로 실행한다.
     vi.doMock('../../../src/core/source-converter/detect.internal', () => ({
-      detectSourceType: vi.fn(() => 'arrayBuffer'),
+      detectStringSourceType: vi.fn(() => 'arrayBuffer'),
     }));
     const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 

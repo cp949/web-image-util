@@ -94,26 +94,26 @@ describe('보안: SVG 입력 검증', () => {
   });
 
   describe('Data URL SVG 보안 검증', () => {
-    it('스크립트가 포함된 Data URL SVG를 svg 타입으로 감지한다', () => {
+    it('스크립트가 포함된 Data URL SVG를 svg-datauri 타입으로 감지한다', () => {
       const xssDataUrl =
         'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E%3C%2Fsvg%3E';
-      expect(detectSourceType(xssDataUrl)).toBe('svg');
+      expect(detectSourceType(xssDataUrl)).toBe('svg-datauri');
     });
 
-    it('base64 인코딩된 Data URL SVG를 svg 타입으로 감지한다', () => {
+    it('base64 인코딩된 Data URL SVG를 svg-datauri 타입으로 감지한다', () => {
       // base64("<svg xmlns='http://www.w3.org/2000/svg'><rect/></svg>")
       const base64Svg =
         'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnPjxyZWN0Lz48L3N2Zz4=';
-      expect(detectSourceType(base64Svg)).toBe('svg');
+      expect(detectSourceType(base64Svg)).toBe('svg-datauri');
     });
   });
 
   describe('Blob 타입 SVG 감지', () => {
-    it('image/svg+xml MIME 타입의 Blob은 svg 타입으로 감지한다', () => {
+    it('image/svg+xml MIME 타입의 Blob은 svg-blob 타입으로 감지한다', () => {
       const svgBlob = new Blob(['<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>'], {
         type: 'image/svg+xml',
       });
-      expect(detectSourceType(svgBlob)).toBe('svg');
+      expect(detectSourceType(svgBlob)).toBe('svg-blob');
     });
 
     it('일반 MIME 타입의 Blob은 blob 타입으로 감지한다', () => {

@@ -6,13 +6,10 @@
  * 통해 안전하게 로드한 뒤 자연 치수를 측정한다.
  */
 
-import { detectSourceType } from '../../core/source-converter/detect.internal';
+import { detectSourceType, detectStringSourceType } from '../../core/source-converter/detect.internal';
 import { convertToImageElement } from '../../core/source-converter/index';
 import type { ImageSource } from '../../types';
-import { ImageFormats } from '../../types';
-import { isDataURLString } from '../data-url';
 import { extractSvgDimensions } from '../svg-dimensions';
-import { formatFromPath } from './format-detection.internal';
 import type { ImageDimensions, ImageOrientation } from './types';
 
 /** 이미지 요소가 이미 가진 치수 값을 읽는다. */
@@ -31,14 +28,13 @@ function dimensionsFromCanvas(canvas: HTMLCanvasElement): ImageDimensions {
   };
 }
 
-/** SVG 문자열이면 파싱 기반 치수를 반환하고, 아니면 undefined를 반환한다. */
+/**
+ * 인라인 SVG 문자열이면 파싱 기반 치수를 반환하고, 아니면 undefined를 반환한다.
+ *
+ * SVG Data URL과 `.svg` 경로는 본문을 아직 갖고 있지 않으므로 로드 경로로 넘긴다.
+ */
 function tryGetInlineSvgDimensions(source: ImageSource): ImageDimensions | undefined {
-  if (typeof source !== 'string' || detectSourceType(source) !== 'svg') {
-    return undefined;
-  }
-
-  const trimmed = source.trim();
-  if (isDataURLString(trimmed) || formatFromPath(trimmed) === ImageFormats.SVG) {
+  if (typeof source !== 'string' || detectStringSourceType(source) !== 'svg-inline') {
     return undefined;
   }
 
@@ -51,7 +47,7 @@ function tryGetInlineSvgDimensions(source: ImageSource): ImageDimensions | undef
 
 /** MIME 또는 파일명으로 SVG가 확인된 Blob이면 원본 SVG 치수를 반환한다. */
 async function tryGetSvgBlobDimensions(source: ImageSource): Promise<ImageDimensions | undefined> {
-  if (!(source instanceof Blob) || detectSourceType(source) !== 'svg') {
+  if (!(source instanceof Blob) || detectSourceType(source) !== 'svg-blob') {
     return undefined;
   }
 
