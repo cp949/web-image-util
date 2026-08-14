@@ -56,6 +56,7 @@ import type {
   ScaleConfig,
   ScaleValue,
 } from '../../src';
+import type { ProcessingStrategy } from '../../src/advanced-index';
 import type {
   ImageErrorCodeType as ImageErrorCodeTypeFromTypes,
   ImageErrorDetails as ImageErrorDetailsFromTypes,
@@ -88,9 +89,11 @@ const scaleConfig: ScaleConfig = { fit: 'scale', scale: scaleValue };
 const scaleConfigFromTypes: ScaleConfigFromTypes = scaleConfig;
 const resizeConfig: ResizeConfig = scaleConfig;
 const resizeConfigFromTypes: ResizeConfigFromTypes = resizeConfig;
+const processingStrategy: ProcessingStrategy = 'tiled';
 void scaleValueFromTypes;
 void scaleConfigFromTypes;
 void resizeConfigFromTypes;
+void processingStrategy;
 
 const inspectReport: InspectSvgReport = {
   valid: true,

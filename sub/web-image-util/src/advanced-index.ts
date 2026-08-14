@@ -97,6 +97,7 @@ export type AdvancedFilterOption<TParams = unknown> = Pick<FilterOptions<TParams
 
 // 포맷 관련 기능
 export { FORMAT_MIME_MAP, FormatDetector } from './base/format-detector';
+export type { ProcessingStrategy } from './base/high-res-detector.internal';
 export type { HighResolutionOptions, ProcessingResult } from './base/high-res-manager';
 
 // 고해상도 처리 수동 제어

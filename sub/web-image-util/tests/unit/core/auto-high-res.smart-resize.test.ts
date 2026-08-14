@@ -3,6 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HighResolutionDetector, ProcessingStrategy } from '../../../src/base/high-res-detector.internal';
 import { HighResolutionManager } from '../../../src/base/high-res-manager';
 import { AutoHighResProcessor } from '../../../src/core/auto-high-res';
 import { createDrawableImage, createMockImage, makeProcessingResult } from './auto-high-res.helpers';
@@ -149,52 +150,55 @@ describe('AutoHighResProcessor.smartResize', () => {
     });
   });
 
-  describe('autoTileThreshold(300MB) 분기', () => {
-    beforeEach(() => {
-      vi.spyOn(HighResolutionManager, 'smartResize').mockResolvedValue(makeProcessingResult());
-    });
-
-    it('estimatedMemoryMB 가 autoTileThreshold(300MB) 초과이면 balanced 전략은 tileProcessing=true 를 반환한다', async () => {
+  describe('실제 처리 전략 메타데이터', () => {
+    it('HighResolutionManager가 tiled를 선택하면 tileProcessing과 memoryOptimized가 true다', async () => {
+      vi.spyOn(HighResolutionManager, 'smartResize').mockResolvedValue(
+        makeProcessingResult({ strategy: ProcessingStrategy.TILED })
+      );
       const img = createMockImage(8870, 8870);
       const result = await AutoHighResProcessor.smartResize(img, 800, 600);
 
       expect(result.optimizations.tileProcessing).toBe(true);
       expect(result.optimizations.memoryOptimized).toBe(true);
+      expect(result.userMessage).toBeDefined();
+      expect(result.userMessage).toContain('memory');
     });
 
-    it('estimatedMemoryMB 가 autoTileThreshold(300MB) 미만이면 balanced 전략은 tileProcessing=false 를 반환한다', async () => {
-      const img = createMockImage(7300, 7300);
-      const result = await AutoHighResProcessor.smartResize(img, 800, 600);
+    it('HighResolutionManager가 stepped를 선택하면 tileProcessing과 memoryOptimized가 false다', async () => {
+      vi.spyOn(HighResolutionManager, 'smartResize').mockResolvedValue(
+        makeProcessingResult({ strategy: ProcessingStrategy.STEPPED })
+      );
+      const img = createMockImage(3000, 3000);
+      const result = await AutoHighResProcessor.smartResize(img, 800, 600, { priority: 'quality' });
 
       expect(result.optimizations.tileProcessing).toBe(false);
       expect(result.optimizations.memoryOptimized).toBe(false);
       expect(result.userMessage).toBeUndefined();
     });
 
-    it('isHighRes && memoryOptimized 이면 userMessage 가 설정된다', async () => {
+    it('300MB 초과 프리셋이어도 실제 전략이 direct면 tiled로 보고하지 않는다', async () => {
+      vi.spyOn(HighResolutionManager, 'smartResize').mockResolvedValue(
+        makeProcessingResult({ strategy: ProcessingStrategy.DIRECT })
+      );
       const img = createMockImage(8870, 8870);
-      const result = await AutoHighResProcessor.smartResize(img, 800, 600);
-
-      expect(result.userMessage).toBeDefined();
-      expect(result.userMessage).toContain('memory');
-    });
-
-    it('커스텀 autoTileThreshold 로 임계치 초과를 검증한다: tileProcessing=true', async () => {
-      const img = createMockImage(3000, 3000);
       const result = await AutoHighResProcessor.smartResize(img, 800, 600, {
-        thresholds: { autoTileThreshold: 30 },
-      });
-
-      expect(result.optimizations.tileProcessing).toBe(true);
-    });
-
-    it('커스텀 autoTileThreshold 로 임계치 미달을 검증한다: tileProcessing=false', async () => {
-      const img = createMockImage(3000, 3000);
-      const result = await AutoHighResProcessor.smartResize(img, 800, 600, {
-        thresholds: { autoTileThreshold: 40 },
+        priority: 'balanced',
       });
 
       expect(result.optimizations.tileProcessing).toBe(false);
+      expect(result.optimizations.memoryOptimized).toBe(false);
+      expect(result.userMessage).toBeUndefined();
+    });
+  });
+
+  describe('분석 재사용', () => {
+    it('표준 경로에서 HighResolutionDetector.analyzeImage를 한 번만 호출한다', async () => {
+      const analyzeSpy = vi.spyOn(HighResolutionDetector, 'analyzeImage');
+      const img = createDrawableImage(1000, 1000);
+
+      await AutoHighResProcessor.smartResize(img, 400, 300);
+
+      expect(analyzeSpy).toHaveBeenCalledOnce();
     });
   });
 

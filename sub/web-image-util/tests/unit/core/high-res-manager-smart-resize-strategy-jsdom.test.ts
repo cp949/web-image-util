@@ -1,10 +1,9 @@
 /**
- * HighResolutionManager.smartResize 의 forceStrategy 전달 계약 테스트
+ * HighResolutionManager.smartResize 의 전략 선택과 메모리 정리 계약 테스트
  *
- * STEPPED / TILED 경로는 실제 Canvas 렌더가 jsdom 에서 의미가 흔들리므로
- * SteppedProcessor / TiledProcessor 의 정적 메서드를 vi.spyOn 으로 격리하고
- * 호출 인자(치수, quality 변환, maxSteps/maxConcurrency/tileSize)를 검증한다.
- * TILED는 analysis.estimatedMemoryMB에 따라 light(옛 chunked)/heavy 두 preset으로 갈린다.
+ * forceStrategy 전달, quality 기반 자동 선택, 메모리 압박 시 CanvasPool 정리를 검증한다.
+ * STEPPED / TILED 렌더는 jsdom에서 의미가 흔들리므로 정적 메서드를 spy로 격리한다.
+ * TILED의 analysis.estimatedMemoryMB 기반 light(옛 chunked)/heavy preset도 함께 검증한다.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';

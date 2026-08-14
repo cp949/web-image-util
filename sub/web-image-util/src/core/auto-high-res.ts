@@ -3,7 +3,7 @@
  * Transparent system that automatically processes high-resolution images
  */
 
-import { HighResolutionDetector, ProcessingStrategy } from '../base/high-res-detector.internal';
+import { HighResolutionDetector, type ImageAnalysis, ProcessingStrategy } from '../base/high-res-detector.internal';
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
 import { getResizeStrategyAdapter } from '../base/resize-strategy.internal';
@@ -148,25 +148,41 @@ export class AutoHighResProcessor {
         processingResult = await HighResolutionManager.smartResize(img, targetWidth, targetHeight, highResOptions);
       } else {
         // Direct processing for standard resolution
-        processingResult = await AutoHighResProcessor.standardResize(img, targetWidth, targetHeight, strategy.quality);
+        processingResult = await AutoHighResProcessor.standardResize(
+          img,
+          targetWidth,
+          targetHeight,
+          strategy.quality,
+          analysis
+        );
       }
     } catch (error) {
       // Fallback processing on failure
       productionLog.warn('High-resolution processing failed, switching to standard processing:', error);
       onProgress?.(50, 'Changing processing method...');
-      processingResult = await AutoHighResProcessor.standardResize(img, targetWidth, targetHeight, 'balanced');
+      processingResult = await AutoHighResProcessor.standardResize(
+        img,
+        targetWidth,
+        targetHeight,
+        'balanced',
+        analysis
+      );
     }
 
     onProgress?.(100, 'Processing complete');
 
     // Configure result
+    const tileProcessing = processingResult.strategy === ProcessingStrategy.TILED;
+    const memoryOptimized = tileProcessing;
+    const appliedOptimizations = { memoryOptimized, tileProcessing };
+
     const autoResult: AutoProcessingResult = {
       canvas: processingResult.canvas,
       optimizations: {
         strategy: strategy.name,
-        memoryOptimized: strategy.memoryOptimized,
-        tileProcessing: strategy.tileProcessing,
-        estimatedTimeSaved: AutoHighResProcessor.calculateTimeSaved(analysis, strategy),
+        memoryOptimized,
+        tileProcessing,
+        estimatedTimeSaved: AutoHighResProcessor.calculateTimeSaved(analysis, appliedOptimizations),
       },
       stats: {
         originalSize: { width: img.width, height: img.height },
@@ -178,7 +194,7 @@ export class AutoHighResProcessor {
     };
 
     // Generate user message
-    if (shouldUseHighResPath && strategy.memoryOptimized) {
+    if (shouldUseHighResPath && memoryOptimized) {
       autoResult.userMessage = `High-resolution image processed memory-efficiently. (${strategy.name} applied)`;
     }
 
@@ -342,11 +358,11 @@ export class AutoHighResProcessor {
     img: HTMLImageElement,
     targetWidth: number,
     targetHeight: number,
-    quality: 'fast' | 'balanced' | 'high'
+    quality: 'fast' | 'balanced' | 'high',
+    analysis: ImageAnalysis
   ): Promise<ProcessingResult> {
     const startTime = Date.now();
 
-    const analysis = HighResolutionDetector.analyzeImage(img);
     const canvas = await getResizeStrategyAdapter(ProcessingStrategy.DIRECT)!.execute({
       img,
       targetWidth,

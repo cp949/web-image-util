@@ -67,7 +67,7 @@
   - 이미 `forceStrategy: 'tiled'`를 쓰던 코드도 확인이 필요합니다. `'tiled'`는 여전히 유효한 값이라 컴파일은 그대로 통과하지만, 64MB 이하 이미지에서는 이전까지 항상 적용되던 heavy 프리셋 대신 light 프리셋이 조용히 선택됩니다 — `maxConcurrency`가 줄어들 수 있고(`quality: 'fast'` 기준 4→2), `tileSize`가 바뀌며(1024→2048), `estimatedTime` 배수도 낮아집니다(2.0→1.0).
 - Changed: `AutoHighResProcessor`와 advanced 배치/단일 리사이즈 편의 함수(`fastResize`/`qualityResize`/`autoResize`/`ResizePerformance.*Batch`)가 내부적으로 쓰던 `SmartProcessor`를 걷어내고 `AutoHighResProcessor` 하나로 수렴했습니다. 공개 시그니처는 그대로입니다.
   - `fastResize`/`ResizePerformance.fastBatch`는 이제 내부적으로 `priority: 'speed'`를, `qualityResize`/`ResizePerformance.qualityBatch`는 `priority: 'quality'`를, `autoResize`는 `priority: 'balanced'`를 씁니다. 결과 이미지가 달라질 수 있습니다.
-  - 단일 이미지 리사이즈(`fastResize`/`qualityResize`/`autoResize`)의 메모리 사용량 상한이 가용 메모리의 20%(동적)에서 `AutoHighResProcessor`의 정적 임계값(300MB, `priority:'quality'`는 450MB)으로 바뀝니다.
+  - 단일 이미지 리사이즈(`fastResize`/`qualityResize`/`autoResize`)와 `ResizePerformance.*Batch`의 메모리 사용량 상한이 가용 메모리의 20%(동적)에서 `AutoHighResProcessor`의 정적 임계값(300MB, `priority:'quality'`는 450MB)으로 바뀝니다.
   - advanced `AutoHighResProcessor.smartResize()`의 옵션에 `forceStrategy`가 추가되었습니다(선택, 기본 미지정 — 기존 호출자는 영향 없습니다).
   - `fastResize`/`qualityResize`/`autoResize`/`ResizePerformance.*Batch`가 고해상도 처리 실패 시 예외를 던지는 대신 표준 처리 결과로 폴백합니다. 이전에는 모든 실패가 `PROCESSING_FAILED` 에러로 발생했습니다.
 

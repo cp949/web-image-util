@@ -1,3 +1,4 @@
+import type { ProcessingResult } from '../../../src/base/high-res-manager';
 import type { AutoProcessingResult } from '../../../src/core/auto-high-res';
 
 /**
@@ -42,7 +43,7 @@ export function makeValidation(
 /**
  * HighResolutionManager.smartResize 의 기본 반환값을 만든다.
  */
-export function makeProcessingResult(overrides: Partial<{ canvas: HTMLCanvasElement }> = {}) {
+export function makeProcessingResult(overrides: Partial<ProcessingResult> = {}): ProcessingResult {
   return {
     canvas: document.createElement('canvas'),
     analysis: {} as any,
