@@ -4,9 +4,55 @@
 
 import { describe, expect, it } from 'vitest';
 import { SvgOptimizer } from '../../../src/utils/svg-optimizer';
+import { collectReferencedIds } from '../../../src/utils/svg-optimizer/collect-referenced-ids.internal';
 import { optimizeGradients } from '../../../src/utils/svg-optimizer/optimize-gradients.internal';
 import { removeUnusedDefs } from '../../../src/utils/svg-optimizer/remove-unused-defs.internal';
 import { simplifyPaths } from '../../../src/utils/svg-optimizer/simplify-paths.internal';
+
+/** 테스트용 SVG 문서를 파싱한다. */
+function parse(svg: string): Document {
+  return new DOMParser().parseFromString(svg, 'image/svg+xml');
+}
+
+describe('collectReferencedIds 내부 판정', () => {
+  it('fill="url(#id)" 참조를 판정한다', () => {
+    const doc = parse('<svg xmlns="http://www.w3.org/2000/svg"><rect fill="url(#g1)" width="10" height="10"/></svg>');
+    expect(collectReferencedIds(doc)).toEqual(new Set(['g1']));
+  });
+
+  it('href="#id" 참조를 판정한다', () => {
+    const doc = parse('<svg xmlns="http://www.w3.org/2000/svg"><use href="#sym1"/></svg>');
+    expect(collectReferencedIds(doc)).toEqual(new Set(['sym1']));
+  });
+
+  it('xlink:href="#id" 참조를 판정한다(네임스페이스 인지)', () => {
+    const doc = parse(
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+        '<use xlink:href="#sym2"/></svg>'
+    );
+    expect(collectReferencedIds(doc)).toEqual(new Set(['sym2']));
+  });
+
+  it('참조가 없으면 빈 집합을 반환한다', () => {
+    const doc = parse('<svg xmlns="http://www.w3.org/2000/svg"><rect id="box" width="10" height="10"/></svg>');
+    expect(collectReferencedIds(doc)).toEqual(new Set());
+  });
+
+  it('여러 참조 형태가 섞여 있어도 모두 모은다', () => {
+    const doc = parse(
+      '<svg xmlns="http://www.w3.org/2000/svg">' +
+        '<rect fill="url(#g1)" width="5" height="5"/>' +
+        '<use href="#sym1"/>' +
+        '</svg>'
+    );
+    expect(collectReferencedIds(doc)).toEqual(new Set(['g1', 'sym1']));
+  });
+
+  it('외부 fragment 참조(sprite.svg#id)는 내부 참조로 세지 않는다', () => {
+    const doc = parse('<svg xmlns="http://www.w3.org/2000/svg"><use href="sprite.svg#sym1"/></svg>');
+    expect(collectReferencedIds(doc)).toEqual(new Set());
+  });
+});
 
 describe('SVG 최적화', () => {
   it('기본 옵션은 안전한 단계들을 켜고 요소 병합은 끈다', () => {
