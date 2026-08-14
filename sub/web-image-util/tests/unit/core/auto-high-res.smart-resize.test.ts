@@ -95,6 +95,22 @@ describe('AutoHighResProcessor.smartResize', () => {
       expect(onMemoryWarning).toHaveBeenCalledOnce();
     });
 
+    it('forceStrategy 옵션을 전달하면 highResOptions.forceStrategy 로 그대로 전달된다', async () => {
+      const img = createMockImage(3000, 3000);
+      await AutoHighResProcessor.smartResize(img, 800, 600, { forceStrategy: 'tiled' });
+
+      const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
+      expect(passedOpts.forceStrategy).toBe('tiled');
+    });
+
+    it('forceStrategy 를 지정하지 않으면 highResOptions.forceStrategy 는 undefined 다(더 이상 상시 강제하지 않는다)', async () => {
+      const img = createMockImage(3000, 3000);
+      await AutoHighResProcessor.smartResize(img, 800, 600, { priority: 'quality' });
+
+      const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
+      expect(passedOpts.forceStrategy).toBeUndefined();
+    });
+
     it('stats.originalSize 는 소스 이미지 크기를 반영한다', async () => {
       const img = createDrawableImage(1000, 1000);
       const result = await AutoHighResProcessor.smartResize(img, 400, 300);

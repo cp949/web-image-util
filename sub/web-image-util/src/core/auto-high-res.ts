@@ -83,6 +83,14 @@ export class AutoHighResProcessor {
       /** Quality priority: 'speed' (fast), 'balanced' (default), 'quality' (high quality) */
       priority?: 'speed' | 'balanced' | 'quality';
 
+      /**
+       * Force a specific processing strategy once inside the high-resolution machine.
+       * Most callers should rely on `priority` instead — this is an escape hatch for
+       * advanced callers (e.g. memory-efficient batch processing) that need a specific
+       * strategy regardless of what `priority` would otherwise select.
+       */
+      forceStrategy?: ProcessingStrategy;
+
       /** Progress callback */
       onProgress?: (progress: number, message: string) => void;
 
@@ -93,7 +101,7 @@ export class AutoHighResProcessor {
       thresholds?: Partial<AutoProcessingThresholds>;
     } = {}
   ): Promise<AutoProcessingResult> {
-    const { priority = 'balanced', onProgress, onMemoryWarning, thresholds: customThresholds } = options;
+    const { priority = 'balanced', onProgress, onMemoryWarning, thresholds: customThresholds, forceStrategy } = options;
 
     // Set thresholds
     const thresholds = { ...AutoHighResProcessor.defaultThresholds, ...customThresholds };
@@ -123,7 +131,7 @@ export class AutoHighResProcessor {
     // Configure high-resolution processing options
     const highResOptions: HighResolutionOptions = {
       quality: strategy.quality,
-      forceStrategy: strategy.processingStrategy,
+      forceStrategy,
       maxMemoryUsageMB: strategy.maxMemory,
       enableProgressTracking: !!onProgress,
       onProgress: onProgress
@@ -302,7 +310,6 @@ export class AutoHighResProcessor {
         return {
           name: 'High-speed Processing',
           quality: 'fast' as const,
-          processingStrategy: isHighMem ? analysis.strategy : undefined,
           memoryOptimized: isHighMem,
           tileProcessing: isHighMem,
           maxMemory: thresholds.autoTileThreshold,
@@ -312,7 +319,6 @@ export class AutoHighResProcessor {
         return {
           name: 'High-quality Processing',
           quality: 'high' as const,
-          processingStrategy: analysis.strategy,
           memoryOptimized: true,
           tileProcessing: isHighMem,
           maxMemory: thresholds.autoTileThreshold * 1.5,
@@ -322,7 +328,6 @@ export class AutoHighResProcessor {
         return {
           name: 'Balanced Optimization',
           quality: 'balanced' as const,
-          processingStrategy: analysis.strategy,
           memoryOptimized: isHighMem,
           tileProcessing: isHighMem,
           maxMemory: thresholds.autoTileThreshold,
