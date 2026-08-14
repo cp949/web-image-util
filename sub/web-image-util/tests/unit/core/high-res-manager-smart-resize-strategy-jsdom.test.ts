@@ -8,6 +8,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { ProcessingStrategy } from '../../../src/base/high-res-detector.internal';
 import { HighResolutionManager, type HighResolutionProgress } from '../../../src/base/high-res-manager';
 import { SteppedProcessor } from '../../../src/base/stepped-processor.internal';
@@ -303,6 +304,35 @@ describe('HighResolutionManager.smartResize — quality 기반 자동 전략 선
     const result = await HighResolutionManager.smartResize(img, 200, 200, { quality: 'high' });
 
     expect(result.strategy).toBe(ProcessingStrategy.DIRECT);
+  });
+});
+
+describe('HighResolutionManager.smartResize — 메모리 압박 시 CanvasPool 정리', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('isMemoryLow()=true 이면 CanvasPool.clear()가 호출된다', async () => {
+    vi.spyOn(HighResolutionManager as any, 'isMemoryLow').mockReturnValue(true);
+    const clearSpy = vi.spyOn(CanvasPool.prototype, 'clear');
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+    const img = createMockImage(300, 300);
+    await HighResolutionManager.smartResize(img, 50, 50, { forceStrategy: ProcessingStrategy.STEPPED });
+
+    expect(clearSpy).toHaveBeenCalledOnce();
+  });
+
+  it('isMemoryLow()=false 이면 CanvasPool.clear()가 호출되지 않는다', async () => {
+    const clearSpy = vi.spyOn(CanvasPool.prototype, 'clear');
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+    const img = createMockImage(300, 300);
+    await HighResolutionManager.smartResize(img, 50, 50, { forceStrategy: ProcessingStrategy.STEPPED });
+
+    expect(clearSpy).not.toHaveBeenCalled();
   });
 });
 

@@ -1,3 +1,4 @@
+import { CanvasPool } from './canvas-pool.internal';
 import { readMemoryBudget, requestMemoryRelief } from '../utils/browser-capabilities/index';
 import { productionLog } from '../utils/debug.internal';
 import { createImageError } from './error-helpers';
@@ -268,6 +269,7 @@ export class HighResolutionManager {
 
     // Trigger garbage collection when memory is low
     if (HighResolutionManager.isMemoryLow()) {
+      CanvasPool.getInstance().clear();
       requestMemoryRelief();
     }
   }
