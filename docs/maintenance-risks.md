@@ -8,7 +8,7 @@
 | --- | --- | --- | --- |
 | High | SVG strict 모드 안내 | 신뢰할 수 없는 SVG 입력에서 소비자가 `svgSanitizer: 'strict'` 필요성을 놓칠 수 있음 | README, 타입 JSDoc, `SVG-SECURITY.md`의 선택 기준 유지 |
 | High | SVG 구조 제한 | depth, 큰 viewBox, 순환 참조, 무한 애니메이션 방어가 제한적 | `maxDepth`, 좌표 범위, 순환 참조 감지 순으로 설계 |
-| Medium | 고해상도 처리 로직 중복 | `HighResolutionManager`와 내부 processor가 발산할 수 있음 | 공통 내부 모듈 추출 또는 한 구현으로 통합 |
+| Medium | 고해상도 전략 선택 임계값 불일치 | `high-res-detector`/`high-res-manager`/`auto-high-res`/`smart-processor` 4곳이 direct/stepped/tiled 선택 임계값을 각자 다른 숫자로 판정함(adapter 레지스트리 중복은 해소됨 — `docs/design/2026-08-14-resize-strategy-seam-design.md`) | 4개 지점의 임계값을 단일 소유자로 통합 |
 | Medium | advanced/high-res 테스트 공백 | 공개 고급 API 회귀를 놓치기 쉬움 | 공개 API 기준 단위/통합 테스트 추가 |
 
 ## 기록하지 않는 항목
