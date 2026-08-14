@@ -28,9 +28,9 @@ const URL_REFERENCE_ATTRIBUTES = [
   'marker-end',
 ] as const;
 
-/** 속성 값이 `url(#id)` 형태이면 id를 반환하고, 아니면 null을 반환한다. */
+/** 속성 값이 `url(#id)` 형태(따옴표·fallback 색상 포함)이면 id를 반환하고, 아니면 null을 반환한다. */
 function extractUrlReferenceId(value: string): string | null {
-  const match = /^url\(#([^)]+)\)$/.exec(value.trim());
+  const match = /^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)/.exec(value.trim());
   return match ? match[1] : null;
 }
 

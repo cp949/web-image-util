@@ -11,7 +11,7 @@
 <use href="#g1" .../>
 ```
 
-기본 옵션으로 `SvgOptimizer.optimize()`를 돌리면 1단계에서 `id="g1"`이 먼저 사라지고, `<use href="#g1"/>`는 대상을 잃는다 — 렌더링 회귀. 3단계 `optimizeGradients`(`optimize-gradients.internal.ts:74-76`)는 `gradient.getAttribute('id')`가 `null`이면 그 그라디언트를 그냥 건너뛰고(병합도 제거도 안 함), 4단계 `removeUnusedDefs`는 `defs` 안에서 id 자체를 못 찾으므로 아무 것도 지우지 못한다 — 1단계가 이미 모두 지워버려 뒤 단계가 무력화된 상태다.
+기본 옵션으로 `SvgOptimizer.optimize()`를 돌리면 1단계에서 `id="g1"`이 먼저 사라지고, `<use href="#g1"/>`는 대상을 잃는다 — 렌더링 회귀. 3단계 `optimizeGradients`(`optimize-gradients.internal.ts:74-76`)는 `gradient.getAttribute('id')`가 `null`이면 그 그라디언트를 그냥 건너뛰고(병합도 제거도 안 함), 4단계 `removeUnusedDefs`는 `defs` 안에서 id 자체를 못 찾으므로 아무 것도 지우지 못한다 — 1단계가 이미 모두 지워버려 뒤 단계가 무력화된 상태다. 이 무력화는 이번 수정 이후에도 구조적으로 남는다: 1단계가 참조되는 id를 보존하게 되면서 `definedIds ⊆ referencedIds`가 성립해, 4단계의 "미사용 정의만 제거" 루프는 여전히 아무것도 지울 대상이 없다(아래 재검토 조건 참고) — 이번 카드의 범위는 1단계가 참조 id를 지워버리는 결함 수정이며, 파이프라인 순서 자체의 재설계는 비범위다.
 
 "이 id가 참조되는가" 판정은 이미 두 곳에 갈라져 구현돼 있다.
 
@@ -164,3 +164,4 @@ export function collectReferencedIds(doc: Document): Set<string> {
 
 - `<style>`/CSS 내부 `url(#id)` 참조가 실제 렌더링 버그로 재현되면 별도 카드로 다룬다.
 - `optimize()`의 파싱 중복이 실측 성능 문제로 보고되면 파싱 1회 공유로 재설계한다.
+- `optimizeGradients`(3단계)의 중복 그라디언트 병합이 `fill`/`stroke`만 재작성하고 `xlink:href`/`href` 참조는 재작성하지 않아, 병합으로 삭제되는 id를 `xlink:href`로 참조하던 요소가 dangling 참조를 갖게 되는 경로가 있다(이번 수정으로 1단계가 참조 id를 보존하게 되면서 3단계의 병합 로직이 처음으로 실제 도달 가능해져 드러남 — 이전에는 1단계가 모든 id를 지워 3단계의 병합 경로 자체가 죽어 있었다). `main` 대비 회귀는 아니다(이전에는 이 문서의 참조가 더 광범위하게 깨져 있었다). 실측 재현이 보고되면 `optimizeGradients`의 참조 재작성을 `collectReferencedIds`가 인식하는 모든 참조 형태로 확장하는 별도 카드로 다룬다.

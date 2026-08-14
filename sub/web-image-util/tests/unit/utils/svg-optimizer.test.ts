@@ -21,6 +21,20 @@ describe('collectReferencedIds 내부 판정', () => {
     expect(collectReferencedIds(doc)).toEqual(new Set(['g1']));
   });
 
+  it('fill="url(#id) fallback색" 형태(색상 폴백 포함)도 판정한다', () => {
+    const doc = parse(
+      '<svg xmlns="http://www.w3.org/2000/svg"><rect fill="url(#g1) blue" width="10" height="10"/></svg>'
+    );
+    expect(collectReferencedIds(doc)).toEqual(new Set(['g1']));
+  });
+
+  it('fill="url(&quot;#id&quot;)" 형태(따옴표로 감싼 IRI)도 판정한다', () => {
+    const doc = parse(
+      '<svg xmlns="http://www.w3.org/2000/svg"><rect fill=\'url("#g1")\' width="10" height="10"/></svg>'
+    );
+    expect(collectReferencedIds(doc)).toEqual(new Set(['g1']));
+  });
+
   it('href="#id" 참조를 판정한다', () => {
     const doc = parse('<svg xmlns="http://www.w3.org/2000/svg"><use href="#sym1"/></svg>');
     expect(collectReferencedIds(doc)).toEqual(new Set(['sym1']));
@@ -139,6 +153,12 @@ describe('SVG 최적화', () => {
     const { optimizedSvg } = SvgOptimizer.optimize(svg);
     expect(optimizedSvg).toContain('id="g1"');
     expect(optimizedSvg).toContain('href="#g1"');
+  });
+
+  it('파싱에 실패하는 SVG는 기본 옵션에서도 id를 하나도 제거하지 않는다', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect id="box" width="1" height="1">';
+    const { optimizedSvg } = SvgOptimizer.optimize(svg);
+    expect(optimizedSvg).toContain('id="box"');
   });
 });
 
