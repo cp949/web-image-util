@@ -1,9 +1,10 @@
 /**
  * HighResolutionManager.smartResize 의 forceStrategy 전달 계약 테스트
  *
- * STEPPED / TILED / CHUNKED 경로는 실제 Canvas 렌더가 jsdom 에서 의미가 흔들리므로
+ * STEPPED / TILED 경로는 실제 Canvas 렌더가 jsdom 에서 의미가 흔들리므로
  * SteppedProcessor / TiledProcessor 의 정적 메서드를 vi.spyOn 으로 격리하고
  * 호출 인자(치수, quality 변환, maxSteps/maxConcurrency/tileSize)를 검증한다.
+ * TILED는 analysis.estimatedMemoryMB에 따라 light(옛 chunked)/heavy 두 preset으로 갈린다.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -82,13 +83,14 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
     expect(opts?.maxSteps).toBe(8); // 'balanced' !== 'high' → 8
   });
 
-  it('forceStrategy="tiled" 이면 TiledProcessor.resizeInTiles 가 올바른 치수와 옵션으로 호출된다', async () => {
+  it('forceStrategy="tiled" + 대형 이미지(heavy preset) 이면 TiledProcessor.resizeInTiles 가 올바른 치수와 옵션으로 호출된다', async () => {
     const stubCanvas = document.createElement('canvas');
     stubCanvas.width = 50;
     stubCanvas.height = 50;
     const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
 
-    const img = createMockImage(300, 300);
+    // 9000×9000×4 ≈ 309MB > 64 → heavy preset
+    const img = createMockImage(9000, 9000);
     const result = await HighResolutionManager.smartResize(img, 50, 50, {
       forceStrategy: ProcessingStrategy.TILED,
     });
@@ -98,16 +100,17 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
     expect(tiledSpy.mock.calls[0]?.[2]).toBe(50); // targetHeight
     const opts = tiledSpy.mock.calls[0]?.[3];
     expect(opts?.quality).toBe('balanced'); // 강등 없이 그대로 전달
-    expect(opts?.maxConcurrency).toBe(2); // 기본 quality='balanced' → 2
+    expect(opts?.maxConcurrency).toBe(2); // heavy preset, 기본 quality='balanced' → 2
     expect(opts?.enableMemoryMonitoring).toBe(true); // 항상 true
     expect(result.strategy).toBe(ProcessingStrategy.TILED);
   });
 
-  it('forceStrategy="tiled", quality="fast" → TiledProcessor에 quality="fast", maxConcurrency=4 가 전달된다', async () => {
+  it('forceStrategy="tiled", quality="fast" + 대형 이미지(heavy preset) → TiledProcessor에 quality="fast", maxConcurrency=4 가 전달된다', async () => {
     const stubCanvas = document.createElement('canvas');
     const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
 
-    const img = createMockImage(300, 300);
+    // 9000×9000×4 ≈ 309MB > 64 → heavy preset(quality 종속 동시성)
+    const img = createMockImage(9000, 9000);
     await HighResolutionManager.smartResize(img, 50, 50, {
       quality: 'fast',
       forceStrategy: ProcessingStrategy.TILED,
@@ -115,7 +118,7 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
 
     expect(tiledSpy).toHaveBeenCalledOnce();
     const opts = tiledSpy.mock.calls[0]?.[3];
-    // quality='fast' 분기: opts.quality === 'fast' → 'fast', maxConcurrency = 4
+    // heavy preset + quality='fast' 분기: opts.quality === 'fast' → 'fast', maxConcurrency = 4
     expect(opts?.quality).toBe('fast');
     expect(opts?.maxConcurrency).toBe(4);
   });
@@ -132,15 +135,16 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
     expect(result.strategy).toBe(ProcessingStrategy.STEPPED);
   });
 
-  it('forceStrategy="chunked" 이면 TiledProcessor.resizeInTiles 가 호출된다(chunkedResize 위임)', async () => {
+  it('forceStrategy="tiled" + 소형 이미지(light preset, 옛 chunked 대역) 이면 TiledProcessor.resizeInTiles 가 호출된다', async () => {
     const stubCanvas = document.createElement('canvas');
     stubCanvas.width = 50;
     stubCanvas.height = 50;
     const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
 
+    // 300×300×4 ≈ 0.34MB <= 64 → light preset(옛 chunkedAdapter 프리셋과 동치)
     const img = createMockImage(300, 300);
     await HighResolutionManager.smartResize(img, 50, 50, {
-      forceStrategy: ProcessingStrategy.CHUNKED,
+      forceStrategy: ProcessingStrategy.TILED,
     });
 
     expect(tiledSpy).toHaveBeenCalledOnce();
@@ -150,30 +154,30 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
     expect(opts?.maxConcurrency).toBe(2);
   });
 
-  it('forceStrategy="chunked", quality="fast" → TiledProcessor에 quality="fast", maxConcurrency=2 가 전달된다', async () => {
+  it('forceStrategy="tiled", quality="fast" + 소형 이미지(light preset) → TiledProcessor에 quality="fast", maxConcurrency=2 가 전달된다', async () => {
     const stubCanvas = document.createElement('canvas');
     const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
 
     const img = createMockImage(300, 300);
     await HighResolutionManager.smartResize(img, 50, 50, {
       quality: 'fast',
-      forceStrategy: ProcessingStrategy.CHUNKED,
+      forceStrategy: ProcessingStrategy.TILED,
     });
 
     expect(tiledSpy).toHaveBeenCalledOnce();
     const opts = tiledSpy.mock.calls[0]?.[3];
-    // chunkedResize: opts.quality === 'fast' ? 'fast' : 'high'
+    // light preset은 quality를 안 본다 — maxConcurrency는 항상 2
     expect(opts?.quality).toBe('fast');
     expect(opts?.maxConcurrency).toBe(2);
   });
 
-  it('forceStrategy="chunked", quality="balanced"(기본) → TiledProcessor에 quality="balanced", maxConcurrency=2 가 전달된다', async () => {
+  it('forceStrategy="tiled", quality="balanced"(기본) + 소형 이미지(light preset) → TiledProcessor에 quality="balanced", maxConcurrency=2 가 전달된다', async () => {
     const stubCanvas = document.createElement('canvas');
     const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
 
     const img = createMockImage(300, 300);
     await HighResolutionManager.smartResize(img, 50, 50, {
-      forceStrategy: ProcessingStrategy.CHUNKED,
+      forceStrategy: ProcessingStrategy.TILED,
       // quality 미지정 → 기본값 'balanced'
     });
 

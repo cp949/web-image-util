@@ -23,17 +23,21 @@ export interface ResizeStrategyInput {
   onProgress?: (current: number, total: number) => void;
 }
 
+/** tiled 실행의 타일 크기·동시성 프리셋을 가르는 경계 — high-res-detector.internal.ts의
+ * MEDIUM 임계값(64MB)과 같은 값이다(새 숫자를 만들지 않는다). */
+const TILED_LIGHT_THRESHOLD_MB = 64;
+
 /** 전략 adapter — 전략별 튜닝 지식은 전부 여기 산다 */
 export interface ResizeStrategyAdapter {
   readonly id: ProcessingStrategy;
-  /** validateProcessingCapability의 예상 소요시간 배수 */
-  readonly timeMultiplier: number;
+  /** validateProcessingCapability의 예상 소요시간 배수. tiled는 preset에 따라 갈리므로 analysis를 받는다. */
+  getTimeMultiplier(analysis: ImageAnalysis): number;
   execute(input: ResizeStrategyInput): Promise<HTMLCanvasElement>;
 }
 
 const directAdapter: ResizeStrategyAdapter = {
   id: ProcessingStrategy.DIRECT,
-  timeMultiplier: 1.0,
+  getTimeMultiplier: () => 1.0,
   async execute({ img, targetWidth, targetHeight, quality }) {
     // 결과 canvas는 호출자 소유 — pool을 거치지 않는다
     const { canvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);
@@ -43,23 +47,9 @@ const directAdapter: ResizeStrategyAdapter = {
   },
 };
 
-const chunkedAdapter: ResizeStrategyAdapter = {
-  id: ProcessingStrategy.CHUNKED,
-  timeMultiplier: 1.0,
-  async execute({ img, targetWidth, targetHeight, quality, analysis, onProgress }) {
-    return TiledProcessor.resizeInTiles(img, targetWidth, targetHeight, {
-      tileSize: Math.min(2048, analysis.recommendedChunkSize),
-      quality,
-      onProgress,
-      // 청크 경로는 메모리 절약이 목적이라 동시성을 늘리지 않는다
-      maxConcurrency: 2,
-    });
-  },
-};
-
 const steppedAdapter: ResizeStrategyAdapter = {
   id: ProcessingStrategy.STEPPED,
-  timeMultiplier: 1.5,
+  getTimeMultiplier: () => 1.5,
   async execute({ img, targetWidth, targetHeight, quality }) {
     return SteppedProcessor.resizeWithSteps(img, targetWidth, targetHeight, {
       quality,
@@ -70,13 +60,20 @@ const steppedAdapter: ResizeStrategyAdapter = {
 
 const tiledAdapter: ResizeStrategyAdapter = {
   id: ProcessingStrategy.TILED,
-  timeMultiplier: 2.0,
-  async execute({ img, targetWidth, targetHeight, quality, onProgress }) {
+  getTimeMultiplier: (analysis) => (analysis.estimatedMemoryMB <= TILED_LIGHT_THRESHOLD_MB ? 1.0 : 2.0),
+  async execute({ img, targetWidth, targetHeight, quality, analysis, onProgress }) {
+    // light: 옛 chunkedAdapter 프리셋(작은 타일, 동시성 고정) — 메모리 절약이 목적이라 동시성을 늘리지 않는다
+    // heavy: 옛 tiledAdapter 프리셋(기본 타일 크기, quality 따라 동시성)
+    const preset =
+      analysis.estimatedMemoryMB <= TILED_LIGHT_THRESHOLD_MB
+        ? { tileSize: Math.min(2048, analysis.recommendedChunkSize), maxConcurrency: 2 }
+        : { maxConcurrency: quality === 'fast' ? 4 : 2 };
+
     return TiledProcessor.resizeInTiles(img, targetWidth, targetHeight, {
+      ...preset,
       quality,
       onProgress,
       enableMemoryMonitoring: true,
-      maxConcurrency: quality === 'fast' ? 4 : 2,
     });
   },
 };
@@ -84,7 +81,6 @@ const tiledAdapter: ResizeStrategyAdapter = {
 /** 전략 → adapter 레지스트리 */
 export const RESIZE_STRATEGY_ADAPTERS: Record<ProcessingStrategy, ResizeStrategyAdapter> = {
   direct: directAdapter,
-  chunked: chunkedAdapter,
   stepped: steppedAdapter,
   tiled: tiledAdapter,
 };

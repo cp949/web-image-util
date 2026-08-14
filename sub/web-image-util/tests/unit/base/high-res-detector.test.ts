@@ -47,11 +47,11 @@ describe('HighResolutionDetector', () => {
         expect(result.strategy).toBe('direct');
       });
 
-      it('16MB 초과 64MB 이하는 chunked 전략을 사용한다', () => {
-        // 2049*2049 = 4,198,401 pixels → 16MB 초과, 64MB 이하
+      it('16MB 초과 64MB 이하는 tiled 전략을 사용한다(옛 chunked 대역)', () => {
+        // 2049*2049 = 4,198,401 pixels → 16MB 초과, 64MB 이하 → tiled(light preset 대역)
         const img = createMockImage(2049, 2049);
         const result = HighResolutionDetector.analyzeImage(img);
-        expect(result.strategy).toBe('chunked');
+        expect(result.strategy).toBe('tiled');
       });
 
       it('64MB 초과 256MB 이하는 stepped 전략을 사용한다', () => {
@@ -110,11 +110,11 @@ describe('HighResolutionDetector', () => {
         expect(result.processingComplexity).toBe('medium');
       });
 
-      it('chunked 전략은 medium 복잡도이다', () => {
-        // 2049*2049 → chunked
+      it('16~64MB의 tiled 전략(옛 chunked 대역)은 medium 복잡도이다', () => {
+        // 2049*2049 → tiled, estimatedMemoryMB≈16.0 <= 64 → medium(light preset 대역)
         const img = createMockImage(2049, 2049);
         const result = HighResolutionDetector.analyzeImage(img);
-        expect(result.strategy).toBe('chunked');
+        expect(result.strategy).toBe('tiled');
         expect(result.processingComplexity).toBe('medium');
       });
 

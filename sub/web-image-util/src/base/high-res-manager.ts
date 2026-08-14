@@ -366,7 +366,7 @@ export class HighResolutionManager {
     let estimatedTime = timeEstimate.estimatedSeconds;
 
     // 전략별 예상 시간 배수는 adapter가 소유한다. 런타임 임의 전략은 기존 switch default처럼 배수 1을 적용한다.
-    estimatedTime *= getResizeStrategyAdapter(recommendedStrategy)?.timeMultiplier ?? 1;
+    estimatedTime *= getResizeStrategyAdapter(recommendedStrategy)?.getTimeMultiplier(analysis) ?? 1;
 
     return {
       canProcess: validation.canProcess,

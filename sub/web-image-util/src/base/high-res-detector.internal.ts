@@ -3,13 +3,11 @@
  */
 export type ProcessingStrategy =
   | 'direct' // Direct processing (small size)
-  | 'chunked' // Chunk-based processing (medium size)
   | 'stepped' // Stepped reduction (large size)
-  | 'tiled'; // Tile-based processing (ultra-large size)
+  | 'tiled'; // Tile-based processing (medium~ultra-large size, preset이 갈린다)
 
 export const ProcessingStrategy = {
   DIRECT: 'direct' as const,
-  CHUNKED: 'chunked' as const,
   STEPPED: 'stepped' as const,
   TILED: 'tiled' as const,
 } as const;
@@ -69,7 +67,7 @@ export class HighResolutionDetector {
     const strategy = HighResolutionDetector.determineStrategy(estimatedMemory, width, height);
 
     // Calculate processing complexity
-    const processingComplexity = HighResolutionDetector.calculateComplexity(pixelCount, strategy);
+    const processingComplexity = HighResolutionDetector.calculateComplexity(pixelCount, strategy, estimatedMemoryMB);
 
     return {
       width,
@@ -97,10 +95,12 @@ export class HighResolutionDetector {
     }
 
     // Determine strategy based on memory usage
+    // MEDIUM 구간(옛 CHUNKED)은 TILED로 흡수됐다 — light preset은 resize-strategy.internal.ts가
+    // analysis.estimatedMemoryMB로 재판정해 고른다.
     if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.SMALL) {
       return ProcessingStrategy.DIRECT;
     } else if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.MEDIUM) {
-      return ProcessingStrategy.CHUNKED;
+      return ProcessingStrategy.TILED;
     } else if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.LARGE) {
       return ProcessingStrategy.STEPPED;
     } else {
@@ -111,22 +111,25 @@ export class HighResolutionDetector {
   /**
    * Calculate processing complexity
    * @private
+   *
+   * TILED는 옛 CHUNKED(medium)/옛 TILED(extreme) 두 대역을 흡수했다 — 그대로 두면
+   * 옛 chunked 대역(16~64MB)이 'extreme'로 튀어 estimateProcessingTime의 배수까지
+   * 잘못 부풀린다. estimatedMemoryMB로 두 대역을 다시 가른다.
    */
   private static calculateComplexity(
     pixelCount: number,
-    strategy: ProcessingStrategy
+    strategy: ProcessingStrategy,
+    estimatedMemoryMB: number
   ): 'low' | 'medium' | 'high' | 'extreme' {
     const megaPixels = pixelCount / (1024 * 1024);
 
     switch (strategy) {
       case ProcessingStrategy.DIRECT:
         return megaPixels < 2 ? 'low' : 'medium';
-      case ProcessingStrategy.CHUNKED:
-        return 'medium';
       case ProcessingStrategy.STEPPED:
         return 'high';
       case ProcessingStrategy.TILED:
-        return 'extreme';
+        return estimatedMemoryMB <= 64 ? 'medium' : 'extreme';
       default:
         return 'low';
     }
@@ -255,12 +258,6 @@ export class HighResolutionDetector {
         factors.push('Direct processing - fastest');
         break;
 
-      case ProcessingStrategy.CHUNKED:
-        baseTime = megaPixels * 0.2;
-        multiplier = 1.2; // Chunk overhead
-        factors.push('Chunk processing - memory efficient');
-        break;
-
       case ProcessingStrategy.STEPPED:
         baseTime = megaPixels * 0.3;
         multiplier = 1.5; // Stepped processing overhead
@@ -268,9 +265,16 @@ export class HighResolutionDetector {
         break;
 
       case ProcessingStrategy.TILED:
-        baseTime = megaPixels * 0.5;
-        multiplier = 2.0; // Tile processing overhead
-        factors.push('Tile processing - ultra-large images');
+        // light(옛 CHUNKED)/heavy(옛 TILED) preset 경계를 그대로 보존한다.
+        if (analysis.estimatedMemoryMB <= 64) {
+          baseTime = megaPixels * 0.2;
+          multiplier = 1.2; // Chunk overhead
+          factors.push('Chunk processing - memory efficient');
+        } else {
+          baseTime = megaPixels * 0.5;
+          multiplier = 2.0; // Tile processing overhead
+          factors.push('Tile processing - ultra-large images');
+        }
         break;
     }
 
@@ -319,14 +323,6 @@ export class HighResolutionDetector {
           disadvantages: ['High memory usage', 'Unsuitable for large images'],
         };
 
-      case ProcessingStrategy.CHUNKED:
-        return {
-          name: 'Chunk Processing',
-          description: 'Divides the image into small blocks for sequential processing.',
-          advantages: ['Memory efficient', 'Stable processing', 'Suitable for medium-sized images'],
-          disadvantages: ['Increased processing time', 'Boundary processing required'],
-        };
-
       case ProcessingStrategy.STEPPED:
         return {
           name: 'Stepped Reduction',
@@ -338,10 +334,16 @@ export class HighResolutionDetector {
       case ProcessingStrategy.TILED:
         return {
           name: 'Tile Processing',
-          description: 'Divides the image into tiles for individual processing.',
-          advantages: ['Can process ultra-large images', 'Limited memory usage', 'Scalability'],
+          description:
+            'Divides the image into tiles for individual processing. Tile size and concurrency are tuned to the measured memory footprint.',
+          advantages: [
+            'Can process ultra-large images',
+            'Limited memory usage',
+            'Scalability',
+            'Memory efficient for medium-sized images too',
+          ],
           disadvantages: [
-            'Longest processing time',
+            'Longest processing time for large images',
             'Complex tile boundary processing',
             'High implementation complexity',
           ],

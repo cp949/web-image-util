@@ -118,11 +118,11 @@ describe('HighResolutionManager.validateProcessingCapability', () => {
     expect(result.recommendedStrategy).toBe(ProcessingStrategy.DIRECT);
   });
 
-  it('forceStrategy 미지정 + 큰 이미지(2200×2200) → 자동 분석 경로에서 recommendedStrategy 가 "chunked" 다', () => {
+  it('forceStrategy 미지정 + 큰 이미지(2200×2200) → 자동 분석 경로에서 recommendedStrategy 가 "tiled" 다(옛 chunked 대역)', () => {
     const img = createMockImage(2200, 2200);
     const result = HighResolutionManager.validateProcessingCapability(img, 1000, 1000);
-    // 2200×2200×4 ≈ 18.5MB → SMALL(16MB) 초과, MEDIUM(64MB) 이하 → CHUNKED
-    expect(result.recommendedStrategy).toBe(ProcessingStrategy.CHUNKED);
+    // 2200×2200×4 ≈ 18.5MB → SMALL(16MB) 초과, MEDIUM(64MB) 이하 → TILED(옛 CHUNKED 대역이 흡수됨)
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.TILED);
   });
 
   it('STEPPED forceStrategy 는 DIRECT forceStrategy 보다 estimatedTime 이 크다(×1.5 보정 적용)', () => {
@@ -137,8 +137,10 @@ describe('HighResolutionManager.validateProcessingCapability', () => {
     expect(steppedResult.estimatedTime).toBeGreaterThan(directResult.estimatedTime);
   });
 
-  it('TILED forceStrategy 는 STEPPED forceStrategy 보다 estimatedTime 이 크다(×2.0 vs ×1.5 보정 적용)', () => {
-    const img = createMockImage(2200, 2200);
+  it('TILED forceStrategy 는 STEPPED forceStrategy 보다 estimatedTime 이 크다(×2.0 vs ×1.5 보정 적용, heavy preset 대역)', () => {
+    // 9000×9000×4 ≈ 309MB > 64 → tiled heavy preset(getTimeMultiplier=2.0). 2200×2200(18.5MB, light)이면
+    // getTimeMultiplier가 1.0이 되어 이 비교가 성립하지 않는다 — 반드시 heavy 대역 이미지를 써야 한다.
+    const img = createMockImage(9000, 9000);
     const steppedResult = HighResolutionManager.validateProcessingCapability(img, 1000, 1000, {
       forceStrategy: ProcessingStrategy.STEPPED,
     });
