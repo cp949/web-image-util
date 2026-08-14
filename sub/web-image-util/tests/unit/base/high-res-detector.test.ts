@@ -162,6 +162,33 @@ describe('HighResolutionDetector', () => {
     });
   });
 
+  describe('shouldUseHighResolutionPath()', () => {
+    it('픽셀 수가 기본 임계값(8,000,000)을 초과하면 true 를 반환한다', () => {
+      expect(HighResolutionDetector.shouldUseHighResolutionPath(8_000_001)).toBe(true);
+    });
+
+    it('픽셀 수가 기본 임계값 이하이고 scaleRatio 도 4 이하면 false 를 반환한다', () => {
+      expect(HighResolutionDetector.shouldUseHighResolutionPath(1_000_000, 2)).toBe(false);
+    });
+
+    it('픽셀 수는 낮아도 scaleRatio 가 4를 초과하면 true 를 반환한다', () => {
+      expect(HighResolutionDetector.shouldUseHighResolutionPath(100_000, 5)).toBe(true);
+    });
+
+    it('scaleRatio 를 생략하면 기본값 1로 취급해 픽셀 수만으로 판정한다', () => {
+      expect(HighResolutionDetector.shouldUseHighResolutionPath(1_000_000)).toBe(false);
+      expect(HighResolutionDetector.shouldUseHighResolutionPath(9_000_000)).toBe(true);
+    });
+
+    it('커스텀 pixelThreshold 를 낮추면 더 작은 픽셀 수도 true 를 반환한다', () => {
+      expect(HighResolutionDetector.shouldUseHighResolutionPath(500_000, 1, 400_000)).toBe(true);
+    });
+
+    it('경계값(정확히 임계값과 같음)은 초과가 아니므로 false 를 반환한다', () => {
+      expect(HighResolutionDetector.shouldUseHighResolutionPath(8_000_000, 4)).toBe(false);
+    });
+  });
+
   // ============================================================================
   // getMaxSafeDimension()
   // ============================================================================

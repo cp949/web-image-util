@@ -52,6 +52,21 @@ export class HighResolutionDetector {
   private static readonly BYTES_PER_PIXEL = 4;
 
   /**
+   * Default pixel-count threshold for routing into the high-resolution processing
+   * machine (HighResolutionManager) instead of a direct draw. Shared by
+   * AutoHighResProcessor and SmartProcessor via shouldUseHighResolutionPath() so both
+   * entry points treat the same image the same way.
+   */
+  static readonly DEFAULT_HIGH_RES_PIXEL_THRESHOLD = 8_000_000; // 8MP
+
+  /**
+   * Default scale-ratio threshold (source/target, larger axis) above which an image
+   * is routed into the high-resolution machine regardless of pixel count — a small
+   * image needing extreme downscale in one step can still produce quality artifacts.
+   */
+  static readonly DEFAULT_HIGH_RES_SCALE_RATIO_THRESHOLD = 4;
+
+  /**
    * Image analysis and optimal strategy determination
    *
    * @param img - Image element to analyze
@@ -80,6 +95,32 @@ export class HighResolutionDetector {
       recommendedChunkSize: HighResolutionDetector.getOptimalChunkSize(pixelCount),
       processingComplexity,
     };
+  }
+
+  /**
+   * Decide whether an image should be routed through the high-resolution processing
+   * machine (HighResolutionManager) instead of a direct draw.
+   *
+   * Single decision shared by AutoHighResProcessor and SmartProcessor so the same
+   * image is routed the same way regardless of entry point. Consumer-specific policy
+   * (which strategy to use once inside the machine, memory-pressure handling, etc.)
+   * stays local to each caller — this function only answers "in or out."
+   *
+   * @param totalPixels - Source image pixel count (width * height)
+   * @param scaleRatio - Larger-axis shrink ratio (source / target). Pass 1 (or omit)
+   *   when there's no target-relative scaling to consider.
+   * @param pixelThreshold - Pixel count above which the image is high-resolution
+   *   (default: DEFAULT_HIGH_RES_PIXEL_THRESHOLD)
+   * @param scaleRatioThreshold - Scale ratio above which the image is high-resolution
+   *   regardless of pixel count (default: DEFAULT_HIGH_RES_SCALE_RATIO_THRESHOLD)
+   */
+  static shouldUseHighResolutionPath(
+    totalPixels: number,
+    scaleRatio: number = 1,
+    pixelThreshold: number = HighResolutionDetector.DEFAULT_HIGH_RES_PIXEL_THRESHOLD,
+    scaleRatioThreshold: number = HighResolutionDetector.DEFAULT_HIGH_RES_SCALE_RATIO_THRESHOLD
+  ): boolean {
+    return totalPixels > pixelThreshold || scaleRatio > scaleRatioThreshold;
   }
 
   /**
