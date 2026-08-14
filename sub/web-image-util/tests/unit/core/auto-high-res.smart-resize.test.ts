@@ -19,7 +19,7 @@ describe('AutoHighResProcessor.smartResize', () => {
       highResSpy = vi.spyOn(HighResolutionManager, 'smartResize').mockResolvedValue(makeProcessingResult());
     });
 
-    it('총 픽셀 수가 8MP 미만이면 HighResolutionManager.smartResize 를 호출하지 않는다', async () => {
+    it('총 픽셀 수가 8MP 미만이고 스케일 비율도 4 이하면 HighResolutionManager.smartResize 를 호출하지 않는다', async () => {
       const img = createDrawableImage(2000, 2000);
       await AutoHighResProcessor.smartResize(img, 800, 600);
 

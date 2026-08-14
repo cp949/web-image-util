@@ -66,9 +66,9 @@ describe('SmartProcessor', () => {
   });
 
   // --------------------------------------------------------------------------
-  // shouldUseHighResProcessing — 픽셀 수 기반 분기
+  // HighResolutionDetector 게이트 위임 — 픽셀 수 기반 분기
   // --------------------------------------------------------------------------
-  describe('shouldUseHighResProcessing — 픽셀 수 기반 분기', () => {
+  describe('HighResolutionDetector 게이트 위임 — 픽셀 수 기반 분기', () => {
     it('1MP 이미지(< 4MP)는 표준 경로를 사용하며 HighResolutionManager 를 호출하지 않는다', async () => {
       // 1000×1000 = 1MP, 스케일 1.25x < 4 → 표준 경로 → drawImage 필요 → drawable
       const img = createDrawableImage(1000, 1000);
@@ -104,9 +104,9 @@ describe('SmartProcessor', () => {
   });
 
   // --------------------------------------------------------------------------
-  // shouldUseHighResProcessing — 스케일 비율 기반 분기
+  // HighResolutionDetector 게이트 위임 — 스케일 비율 기반 분기
   // --------------------------------------------------------------------------
-  describe('shouldUseHighResProcessing — 스케일 비율 기반 분기', () => {
+  describe('HighResolutionDetector 게이트 위임 — 스케일 비율 기반 분기', () => {
     it('스케일 비율이 4 초과이면 픽셀 수가 적어도 고해상도 경로를 사용한다', async () => {
       // 1000×100 = 0.1MP, 스케일 max(1000/100, 100/100) = 10 > 4
       const img = createMockImage(1000, 100);
@@ -115,7 +115,7 @@ describe('SmartProcessor', () => {
       expect(highResSpy).toHaveBeenCalledOnce();
     });
 
-    it('스케일 비율이 4 이하이고 픽셀 수도 4MP 미만이면 표준 경로를 사용한다', async () => {
+    it('스케일 비율이 4 이하이고 픽셀 수도 8MP 미만이면 표준 경로를 사용한다', async () => {
       // 800×600 = 0.48MP, 스케일 max(2, 1.5) = 2 <= 4 → 표준 경로 → drawable
       const img = createDrawableImage(800, 600);
       await SmartProcessor.process(img, 400, 400);
@@ -157,7 +157,7 @@ describe('SmartProcessor', () => {
 
     it('auto 전략 + 저픽셀(4MP 이하) + 고스케일(4 초과)이면 forceStrategy 가 "stepped" 다', async () => {
       // 1000×1000 = 1MP ≤ 4MP → selectInternalStrategy 에서 'stepped' 반환
-      // 스케일 max(1000/100, 1000/100) = 10 > 4 → shouldUseHighResProcessing = true
+      // 스케일 max(1000/100, 1000/100) = 10 > 4 → 게이트 판정 = true
       // 이 경로가 'direct' 가 아님을 보장: 'stepped' 를 'direct' 로 바꾸면 이 테스트가 실패해야 한다
       const img = createMockImage(1000, 1000);
       await SmartProcessor.process(img, 100, 100, { strategy: 'auto' });

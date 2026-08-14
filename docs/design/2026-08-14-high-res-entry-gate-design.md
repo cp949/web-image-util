@@ -16,7 +16,7 @@
 
 `docs/maintenance-risks.md`가 Medium 우선순위로 추적하던 "고해상도 전략 선택 임계값 불일치" 항목의 일부이자, `docs/design/2026-08-14-resize-strategy-seam-design.md`가 명시적으로 비범위 처리하며 남긴 재검토 조건("같은 이미지가 호출 경로에 따라 다른 전략으로 처리됨이 실제 버그로 보고되면 별도 카드로 통합을 다룬다")이 재현된 사례다.
 
-`SmartProcessor`는 `.internal.ts`라 직접 export되지 않지만, `src/core/performance-utils.ts`의 공개 함수(`fastResize`/`qualityResize`/`autoResize`/`ResizePerformance.resizeBatch`/`memoryEfficientBatch`)를 통해서만 도달 가능하다 — 이 게이트를 바꾸면 공개 API 소비자가 관찰 가능한 동작 변화가 생긴다.
+`SmartProcessor`는 `.internal.ts`라 직접 export되지 않지만, `src/core/performance-utils.ts`의 공개 함수(`fastResize`/`qualityResize`/`autoResize`/`ResizePerformance.fastBatch`/`qualityBatch`/`memoryEfficientBatch`)를 통해서만 도달 가능하다 — 이 게이트를 바꾸면 공개 API 소비자가 관찰 가능한 동작 변화가 생긴다.
 
 ## 결정
 
@@ -116,7 +116,7 @@ static shouldUseHighResolutionPath(
   - "auto 전략 + 4MP 초과 이미지면 forceStrategy 가 tiled 다"(2001×2001) → `HighResolutionManager.smartResize`까지 도달하려면 이제 8MP도 넘어야 한다. 같은 2829×2829로 fixture를 올린다(`selectInternalStrategy`의 4MP 내부 경계는 이 카드의 비범위라 그대로 유지 — 2829×2829도 4MP는 넘으므로 'tiled' 기대값은 그대로 유효).
   - 스케일 비율 기반 분기 테스트 3개는 무변경(임계값 4는 그대로).
 - `tests/unit/core/auto-high-res.smart-resize.test.ts`
-  - "극단적 종횡비" describe의 테스트 2개(10000×100, 100×10000 각각 800×600 목표 — scaleRatio 12.5, 16.67) → 기대값을 "표준 경로" → "고해상도 경로"로 뒤집는다. 이 파일의 다른 모든 fixture는 목표 대비 scaleRatio를 계산한 결과 4를 넘지 않아(최대 3.75) 영향 없음(전수 확인 완료).
+  - "극단적 종횡비" describe의 테스트 2개(10000×100, 100×10000 각각 800×600 목표 — scaleRatio 12.5, 16.67) → 기대값을 "표준 경로" → "고해상도 경로"로 뒤집는다. 이 파일의 나머지 fixture는 대부분 목표 대비 scaleRatio가 4를 넘지 않지만, "커스텀 highResPixelThreshold" 테스트(3000×3000, 원래 target 800×600)는 scaleRatio = max(3000/800, 3000/600) = 5.0으로 4를 초과한다 — 최초 전수 확인에서 세로 축(3000/600) 계산이 누락됐다(이 문서의 "최대 3.75, 전수 확인 완료" 서술은 애초 부정확했다). Task 3 구현 중 발견돼 컨트롤러 승인 하에 이 테스트의 target을 800×600 → 1000×1000(scaleRatio 3.0)으로 조정해 원래 검증 의도(픽셀 임계값 override)를 보존했다.
 - `tests/unit/core/auto-high-res.test.ts` — `validateProcessing()`만 테스트하는 파일이라 무변경(비범위).
 - `tests/unit/core/auto-high-res.batch.test.ts`, `auto-high-res.convenience.test.ts` — fixture가 모두 scaleRatio ≤ 3.33이라 무변경.
 
@@ -136,3 +136,4 @@ static shouldUseHighResolutionPath(
 
 - 위 "비범위"의 내부 경계 불일치가 별도로 재현 가능한 버그로 보고되면 후보 2와 함께든 별도로든 새 카드로 다룬다.
 - `scaleRatioThreshold`(4)가 실측 품질 기준으로 부적절하다고 판명되면 별도 설계로 재조정한다.
+- 저픽셀+고스케일(예: 10000×100→800×600, scaleRatio 12.5) 이미지가 `AutoHighResProcessor` 경로에서 진입 게이트는 통과하지만, `determineOptimalStrategy()`가 여전히 `forceStrategy: 'direct'`를 반환해 `HighResolutionManager`의 `directAdapter`가 `standardResize()`와 동일한 단순 `drawImage()` 연산을 수행함을 최종 브랜치 리뷰(2026-08-14)에서 확인했다. 진입 게이트 통합은 두 진입점의 라우팅 판정을 일치시키지만, 게이트를 통과한 뒤의 실제 처리 강도까지 일치시키지는 않는다 — `selectHighQualityStrategy`(scaleRatio 기반 stepped 선택)는 `forceStrategy`가 상시 채워져 있어 이 경로에서 도달 불가하다. 후보 2 카드(`forceStrategy` 상시 주입 재설계)가 이 간극을 함께 해소할 대상이다.
