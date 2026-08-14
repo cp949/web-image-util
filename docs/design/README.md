@@ -14,5 +14,4 @@
 - `2026-08-14-byte-signature-facts-design.md`: 매직바이트 이미지 포맷 판정을 detectFormatFromBytes 하나로 모으고 소비자별 폴백을 투영으로 남긴 결정 근거
 - `2026-08-14-processor-interface-parity-design.md`: shortcut 프로세서 인터페이스의 출력 메서드 표면을 실제 구현과 맞춘 결정 근거
 - `2026-08-14-composition-placement-design.md`: 워터마크 단일·반복 배치를 내부 모듈로 모으고 frame/per-tile 회전 표현을 보존한 결정 근거
-- `2026-08-15-svg-id-reference-integrity-design.md`: SVG id 참조 판정을 단일 모듈로 모으고
-  제거·병합 단계가 참조 무결성을 보존하게 한 결정 근거
+- `2026-08-15-svg-id-reference-integrity-design.md`: SVG id 참조 판정을 단일 모듈로 모으고 제거·병합 단계가 참조 무결성을 보존하게 한 결정 근거
