@@ -50,7 +50,7 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `index.ts` | `isInlineSvg(input)` | 문자열 → 인라인 SVG 여부 boolean (XML preamble/공백 허용) | 있음 | `tests/unit/utils/svg-detection.test.ts`, `tests/security/source-type-detection.test.ts` |
 | `index.ts` | `hasTransparency(source, options?)` | Canvas/이미지 → alpha 채널 샘플링 후 투명 픽셀 존재 boolean | 있음 | `tests/unit/utils/image-inspection.test.ts` |
 | `index.ts` | `ImageProcessError` / `ImageErrorCode` / `OPTIMAL_QUALITY_BY_FORMAT` | 에러 클래스 생성 및 코드 매핑 | 있음 | `tests/unit/errors/error-class.test.ts` |
-| `/advanced` | `AdvancedImageProcessor.processImage` / `.batchProcess` | resize + filter + watermark + format auto 묶음 처리 → `{ canvas, blob, stats }` | 부분 | `tests/unit/core/smart-processor.test.ts` (일부 시나리오) |
+| `/advanced` | `AdvancedImageProcessor.processImage` / `.batchProcess` | resize + filter + watermark + format auto 묶음 처리 → `{ canvas, blob, stats }` | 부분 | `tests/unit/core/advanced-processor-process-jsdom.test.ts`, `tests/unit/core/advanced-processor-batch-jsdom.test.ts` |
 | `/advanced` | `smartResize` / `processWithFilters` / `addWatermarkAndOptimize` (advanced-processor convenience) | 단계별 advanced 편의 함수 | 부분 | `tests/unit/core/advanced-convenience-jsdom.test.ts` |
 | `/advanced` | `AutoHighResProcessor` / `autoSmartResize` / `smartResizeWithProgress` | 고해상도 입력 → 메모리 안전한 단계적 다운스케일 결과 | 있음 | `tests/unit/core/auto-high-res.test.ts` |
 | `/advanced` | `BatchResizer` | 다중 입력 → 일괄 리사이즈 결과 배열 | 있음 | `tests/unit/core/batch-resizer.test.ts` |
