@@ -163,12 +163,13 @@ export class HighResolutionManager {
   /**
    * Select memory efficient strategy
    * @private
+   *
+   * chunked는 tiled의 preset으로 흡수됐다(resize-strategy.internal.ts) — 128/32MB 두 임계값이
+   * 같은 TILED로 수렴하므로 32MB 하나만 direct/tiled를 가른다.
    */
   private static selectMemoryEfficientStrategy(analysis: ImageAnalysis): ProcessingStrategy {
-    if (analysis.estimatedMemoryMB > 128) {
+    if (analysis.estimatedMemoryMB > 32) {
       return ProcessingStrategy.TILED;
-    } else if (analysis.estimatedMemoryMB > 32) {
-      return ProcessingStrategy.CHUNKED;
     }
     return ProcessingStrategy.DIRECT;
   }
@@ -176,13 +177,13 @@ export class HighResolutionManager {
   /**
    * Select fast processing strategy
    * @private
+   *
+   * chunked는 tiled의 preset으로 흡수됐다(resize-strategy.internal.ts) — 64MB 초과는 전부 TILED.
    */
   private static selectFastStrategy(analysis: ImageAnalysis): ProcessingStrategy {
     // Select simplest strategy first for fast processing
     if (analysis.estimatedMemoryMB <= 64) {
       return ProcessingStrategy.DIRECT;
-    } else if (analysis.estimatedMemoryMB <= 128) {
-      return ProcessingStrategy.CHUNKED;
     }
     return ProcessingStrategy.TILED;
   }

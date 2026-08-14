@@ -214,12 +214,12 @@ describe('HighResolutionManager.validateProcessingCapability — isMemoryLow 메
     expect(result.recommendedStrategy).toBe(ProcessingStrategy.TILED);
   });
 
-  it('메모리 부족이고 32<estimatedMemoryMB<=128이면 CHUNKED 전략을 추천한다', () => {
+  it('메모리 부족이고 estimatedMemoryMB>32이면 TILED 전략을 추천한다', () => {
     vi.spyOn(HighResolutionManager as any, 'isMemoryLow').mockReturnValue(true);
-    // 3700×3700×4 ≈ 52MB → 32<52<=128 → CHUNKED
+    // 3700×3700×4 ≈ 52MB → 32<52 → TILED(옛 CHUNKED 대역이 흡수됨)
     const img = createMockImage(3700, 3700);
     const result = HighResolutionManager.validateProcessingCapability(img, 500, 500);
-    expect(result.recommendedStrategy).toBe(ProcessingStrategy.CHUNKED);
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.TILED);
   });
 
   it('메모리 부족이지만 estimatedMemoryMB<=32이면 DIRECT 전략을 추천한다', () => {
@@ -247,11 +247,11 @@ describe('HighResolutionManager.validateProcessingCapability — quality 기반 
     expect(result.recommendedStrategy).toBe(ProcessingStrategy.DIRECT);
   });
 
-  it("quality='fast' + 64<mem<=128 → CHUNKED를 추천한다", () => {
-    // 5000×5000×4 ≈ 95MB → 64<95<=128 → CHUNKED (자동 분석 STEPPED를 fast 분기가 덮어씀)
+  it("quality='fast' + mem>64 → TILED를 추천한다", () => {
+    // 5000×5000×4 ≈ 95MB → 64<95 → TILED (자동 분석 STEPPED를 fast 분기가 덮어씀, 옛 CHUNKED 대역 흡수)
     const img = createMockImage(5000, 5000);
     const result = HighResolutionManager.validateProcessingCapability(img, 1000, 1000, { quality: 'fast' });
-    expect(result.recommendedStrategy).toBe(ProcessingStrategy.CHUNKED);
+    expect(result.recommendedStrategy).toBe(ProcessingStrategy.TILED);
   });
 
   it("quality='fast' + mem>128 → TILED를 추천한다", () => {
