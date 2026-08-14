@@ -70,6 +70,7 @@
   - 단일 이미지 리사이즈(`fastResize`/`qualityResize`/`autoResize`)와 `ResizePerformance.*Batch`의 메모리 사용량 상한이 가용 메모리의 20%(동적)에서 `AutoHighResProcessor`의 정적 임계값(300MB, `priority:'quality'`는 450MB)으로 바뀝니다.
   - advanced `AutoHighResProcessor.smartResize()`의 옵션에 `forceStrategy`가 추가되었습니다(선택, 기본 미지정 — 기존 호출자는 영향 없습니다).
   - `fastResize`/`qualityResize`/`autoResize`/`ResizePerformance.*Batch`가 고해상도 처리 실패 시 예외를 던지는 대신 표준 처리 결과로 폴백합니다. 이전에는 모든 실패가 `PROCESSING_FAILED` 에러로 발생했습니다.
+- Changed (**Breaking**): `SvgOptimizationOptions.mergeElements` 필드를 제거했습니다. 타입과 `SvgOptimizer.getDefaultOptions()`에만 존재했고 `SvgOptimizer.optimize()`의 어떤 단계도 읽지 않는 유령 필드였습니다. 이 필드를 명시적으로 채워 넘기던 객체 리터럴은 초과 속성 검사에 걸립니다 — 해당 줄을 지우세요.
 
 ### 수정
 
@@ -116,6 +117,9 @@
   - `HighResolutionManager.smartResize()`가 반환하는 `memoryPeakUsageMB`의 fallback 값이 `performance.memory`를 읽지 못하는 환경에서 `64`에서 `128`로 바뀝니다.
   - `memoryPeakUsageMB`와 `onProgress` 콜백의 `memoryUsageMB`가 소수점 둘째 자리까지의 값 대신 정수 MB를 반환합니다. `performance.memory`를 읽지 못하는 fallback 환경과 실제로 읽는 환경(Chromium) 모두에 적용됩니다.
   - `onMemoryWarning` 발화 여부가 Chromium의 raw 가용 메모리 대신 반올림된 정수 MB를 기준으로 결정됩니다. 설정한 `maxMemoryUsageMB`의 ±0.5MB 경계에서만 결과가 달라질 수 있습니다.
+- Fixed: `SvgOptimizer`의 기본 옵션(`removeMetadata: true`)이 `fill="url(#id)"`·`<use href="#id">` 등으로 참조되는 `id` 속성까지 무조건 제거해 렌더링이 깨지던 문제를 수정했습니다. 이제 참조되지 않는 `id`만 제거되며, 참조 여부는 `href`/`xlink:href`/`src`의 fragment 참조와 `fill`/`stroke`/`filter`/`clip-path`/`mask`/`marker-*`의 `url(#id)` 참조를 모두 판정합니다.
+  - `removeUnusedDefs`가 `xlink:href="#id"` 참조를 놓쳐 사용 중인 `<defs>` 정의를 미사용으로 오판해 제거하던 2차 결함도 같은 수정으로 해소됩니다.
+  - DOMParser를 쓸 수 없는 환경(순수 Node 등)에서는 참조 여부를 판정할 수 없으므로 이제 `id`를 하나도 제거하지 않습니다. 이전에는 이 환경에서도 무조건 전부 제거했습니다.
 
 ## [3.1.0] - 2026-08-12
 
