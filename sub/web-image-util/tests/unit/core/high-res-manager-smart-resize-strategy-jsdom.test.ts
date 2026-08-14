@@ -12,7 +12,7 @@ import { ProcessingStrategy } from '../../../src/base/high-res-detector.internal
 import { HighResolutionManager, type HighResolutionProgress } from '../../../src/base/high-res-manager';
 import { SteppedProcessor } from '../../../src/base/stepped-processor.internal';
 import { TiledProcessor } from '../../../src/base/tiled-processor.internal';
-import { createMockImage, makeProcessingResult } from './high-res-manager-helpers';
+import { createDrawableImage, createMockImage, makeProcessingResult } from './high-res-manager-helpers';
 
 describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', () => {
   afterEach(() => {
@@ -218,6 +218,91 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
         cause: expect.objectContaining({ message: 'Unsupported processing strategy: chunked' }),
       }),
     });
+  });
+});
+
+describe('HighResolutionManager.smartResize — quality 기반 자동 전략 선택(forceStrategy 미지정)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('quality="fast" + estimatedMemoryMB ≤ 64 이면 selectFastStrategy가 direct를 고른다', async () => {
+    // 300×300×4 ≈ 0.34MB ≤ 64MB → direct
+    const img = createDrawableImage(300, 300);
+    const result = await HighResolutionManager.smartResize(img, 50, 50, { quality: 'fast' });
+
+    expect(result.strategy).toBe(ProcessingStrategy.DIRECT);
+  });
+
+  it('quality="fast" + estimatedMemoryMB > 64 이면 selectFastStrategy가 tiled를 고른다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
+
+    // 9000×9000×4 ≈ 309MB > 64MB → tiled(heavy preset)
+    const img = createMockImage(9000, 9000);
+    const result = await HighResolutionManager.smartResize(img, 50, 50, { quality: 'fast' });
+
+    expect(tiledSpy).toHaveBeenCalledOnce();
+    expect(result.strategy).toBe(ProcessingStrategy.TILED);
+  });
+
+  it('quality="high" + scaleRatio < 0.3 + estimatedMemoryMB ≤ 256 이면 selectHighQualityStrategy가 stepped를 고른다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    const steppedSpy = vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+    // 1000×1000(≈3.8MB ≤ 256MB), target 200×200 → scaleRatio = min(200/1000, 200/1000) = 0.2 < 0.3
+    const img = createMockImage(1000, 1000);
+    const result = await HighResolutionManager.smartResize(img, 200, 200, { quality: 'high' });
+
+    expect(steppedSpy).toHaveBeenCalledOnce();
+    expect(result.strategy).toBe(ProcessingStrategy.STEPPED);
+  });
+
+  it('quality="high" + estimatedMemoryMB > 256 이면 scaleRatio 조건이 성립해도 tiled를 고른다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
+
+    // 9000×9000×4 ≈ 309MB > 256MB → estimatedMemoryMB<=256 조건이 깨져 stepped 분기를 건너뛰고 tiled로 간다
+    const img = createMockImage(9000, 9000);
+    const result = await HighResolutionManager.smartResize(img, 800, 600, { quality: 'high' });
+
+    expect(tiledSpy).toHaveBeenCalledOnce();
+    expect(result.strategy).toBe(ProcessingStrategy.TILED);
+  });
+
+  it('quality="balanced"(기본, 위 두 조건 모두 미해당)이면 analysis.strategy 를 그대로 쓴다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    const steppedSpy = vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+    // 5000×5000×4 ≈ 95.4MB — determineStrategy()의 64~256MB 구간 → analysis.strategy = 'stepped'
+    const img = createMockImage(5000, 5000);
+    const result = await HighResolutionManager.smartResize(img, 800, 600);
+
+    expect(steppedSpy).toHaveBeenCalledOnce();
+    expect(result.strategy).toBe(ProcessingStrategy.STEPPED);
+  });
+
+  it('isMemoryLow()=true 이면 quality 와 무관하게 selectMemoryEfficientStrategy 가 적용된다(32MB 초과 → tiled)', async () => {
+    vi.spyOn(HighResolutionManager as any, 'isMemoryLow').mockReturnValue(true);
+    const stubCanvas = document.createElement('canvas');
+    const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
+
+    // 3000×3000×4 ≈ 34.3MB > 32MB → tiled(light preset, ≤64MB)
+    const img = createMockImage(3000, 3000);
+    const result = await HighResolutionManager.smartResize(img, 800, 600, { quality: 'high' });
+
+    expect(tiledSpy).toHaveBeenCalledOnce();
+    expect(result.strategy).toBe(ProcessingStrategy.TILED);
+  });
+
+  it('isMemoryLow()=true + estimatedMemoryMB ≤ 32 이면 direct 를 고른다', async () => {
+    vi.spyOn(HighResolutionManager as any, 'isMemoryLow').mockReturnValue(true);
+
+    // 1000×1000×4 ≈ 3.8MB ≤ 32MB → direct
+    const img = createDrawableImage(1000, 1000);
+    const result = await HighResolutionManager.smartResize(img, 200, 200, { quality: 'high' });
+
+    expect(result.strategy).toBe(ProcessingStrategy.DIRECT);
   });
 });
 
