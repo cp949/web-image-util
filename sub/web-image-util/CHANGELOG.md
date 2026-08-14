@@ -68,6 +68,9 @@
 
 ### 수정
 
+- Fixed: 같은 이미지가 진입점(`AutoHighResProcessor.smartResize()`/`smartResizeWithProgress()` vs `fastResize()`/`qualityResize()`/`autoResize()`/`ResizePerformance.*Batch`가 내부적으로 쓰는 `SmartProcessor`)에 따라 고해상도 처리 경로 진입 여부가 다르게 판정되던 문제를 수정합니다. 두 진입점이 이제 픽셀 수(8,000,000 초과)와 스케일 비율(다운스케일 4배 초과) 기준을 공유합니다.
+  - `SmartProcessor`(`fastResize`/`qualityResize`/`autoResize`/배치 API) 쪽 픽셀 임계값이 4,000,000에서 8,000,000으로 상향됩니다. 4MP 초과 8MP 이하 이미지는 이제 표준 경로를 사용합니다.
+  - `AutoHighResProcessor.smartResize()`(및 advanced `smartResize`/`smartResizeWithProgress` export) 쪽에 스케일 비율 조건이 새로 적용됩니다. 픽셀 수가 8MP 미만이어도 요청한 축소 비율이 4배를 초과하면 고해상도 경로를 사용합니다.
 - Fixed: 문자열 소스의 scheme·확장자 판정과 Blob/File의 MIME·파일명·본문 판정을 공통 facts 모듈로 통일했습니다. 대문자 `HTTP(S):`/`BLOB:` URL이 잘못된 로더로 분기되던 문제, 매개변수 포함 SVG MIME과 대문자 `.SVG` 파일명을 놓치던 문제를 수정했습니다. 공개 소스 판정 API의 MIME 우선 반환 계약은 유지됩니다.
 - Fixed: Blob/File과 Blob URL의 모호한 MIME(`application/octet-stream`, `text/plain`, 빈 MIME, XML 계열)은 크기 상한 확인 후 첫 4KB를 스니핑해 실제 SVG를 복구합니다. 원격 HTTP 응답은 `image/svg+xml`, 표준 XML MIME, `+xml`, legacy XML external parsed entity MIME만 SVG 후보로 확장해 일반 octet-stream/text 응답을 SVG로 오인하지 않습니다.
 - Fixed: `detectImageSourceInfo()`와 `detectImageStringSourceInfo()`가 인라인 SVG 문자열의 `format`을 `'unknown'` 대신 `'svg'`로 반환합니다. `type: 'inline-svg'`와 `isSvg: true`는 이전에도 같았고, `format`만 판정 결과와 어긋나 있었습니다. `blob:` URL의 `format`은 종전대로 `'unknown'`입니다 — Blob URL 문자열에 들어 있는 `.svg`는 실제 콘텐츠 타입의 근거가 아니기 때문입니다.
