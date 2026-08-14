@@ -101,7 +101,7 @@ export class AutoHighResProcessor {
     // Analyze image
     const analysis = HighResolutionDetector.analyzeImage(img);
     const scaleRatio = Math.max(img.width / targetWidth, img.height / targetHeight);
-    const isHighRes = HighResolutionDetector.shouldUseHighResolutionPath(
+    const shouldUseHighResPath = HighResolutionDetector.shouldUseHighResolutionPath(
       analysis.totalPixels,
       scaleRatio,
       thresholds.highResPixelThreshold
@@ -136,7 +136,7 @@ export class AutoHighResProcessor {
     // Perform actual processing
     let processingResult: ProcessingResult;
     try {
-      if (isHighRes) {
+      if (shouldUseHighResPath) {
         processingResult = await HighResolutionManager.smartResize(img, targetWidth, targetHeight, highResOptions);
       } else {
         // Direct processing for standard resolution
@@ -170,7 +170,7 @@ export class AutoHighResProcessor {
     };
 
     // Generate user message
-    if (isHighRes && strategy.memoryOptimized) {
+    if (shouldUseHighResPath && strategy.memoryOptimized) {
       autoResult.userMessage = `High-resolution image processed memory-efficiently. (${strategy.name} applied)`;
     }
 

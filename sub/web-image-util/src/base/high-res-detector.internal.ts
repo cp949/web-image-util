@@ -55,7 +55,7 @@ export class HighResolutionDetector {
    * Default pixel-count threshold for routing into the high-resolution processing
    * machine (HighResolutionManager) instead of a direct draw. Shared by
    * AutoHighResProcessor and SmartProcessor via shouldUseHighResolutionPath() so both
-   * entry points treat the same image the same way.
+   * entry points use the same default routing criteria.
    */
   static readonly DEFAULT_HIGH_RES_PIXEL_THRESHOLD = 8_000_000; // 8MP
 
@@ -101,10 +101,10 @@ export class HighResolutionDetector {
    * Decide whether an image should be routed through the high-resolution processing
    * machine (HighResolutionManager) instead of a direct draw.
    *
-   * Single decision shared by AutoHighResProcessor and SmartProcessor so the same
-   * image is routed the same way regardless of entry point. Consumer-specific policy
-   * (which strategy to use once inside the machine, memory-pressure handling, etc.)
-   * stays local to each caller — this function only answers "in or out."
+   * Single decision shared by AutoHighResProcessor and SmartProcessor so both entry
+   * points use the same default routing criteria. Consumer-specific thresholds and
+   * policy (which strategy to use once inside the machine, memory-pressure handling,
+   * etc.) stay local to each caller — this function only answers "in or out."
    *
    * @param totalPixels - Source image pixel count (width * height)
    * @param scaleRatio - Larger-axis shrink ratio (source / target). Pass 1 (or omit)

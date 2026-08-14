@@ -73,7 +73,7 @@
 | `src/svg-sanitizer/index.ts` | `@cp949/web-image-util/svg-sanitizer` 서브패스 배럴 — `sanitizeSvgStrict`, `sanitizeSvgStrictDetailed`, `inspectSvgSanitization` export |
 | `src/core/lazy-render-pipeline.internal.ts` | 연산 누적과 최종 렌더링 트리거 |
 | `src/core/single-renderer.internal.ts` | 누적 연산 분석(`analyzeAllOperations`)과 최종 Canvas drawImage 렌더링(`renderLayout` → `CanvasLease`) |
-| `src/base/high-res-detector.internal.ts` | 이미지 크기 분석(`analyzeImage`)과 고해상도 처리 진입 게이트(`shouldUseHighResolutionPath`) 단일 소유 — `AutoHighResProcessor`/`SmartProcessor`가 이 게이트를 공유해 같은 이미지를 같은 기준으로 판정한다 |
+| `src/base/high-res-detector.internal.ts` | 이미지 크기 분석(`analyzeImage`)과 고해상도 처리 진입 게이트(`shouldUseHighResolutionPath`) 단일 소유 — `AutoHighResProcessor`/`SmartProcessor`가 이 게이트를 공유해 기본 임계값에서 같은 기준으로 판정한다. `AutoHighResProcessor` 커스텀 픽셀 임계값은 유지한다 |
 | `src/base/high-res-manager.ts` | advanced 고해상도 경로의 매니저 — 이미지 분석·전략 선택·메모리 점검만 담당하고 실행은 전략 adapter에 위임 |
 | `src/base/resize-strategy.internal.ts` | 고해상도 전략 seam — `RESIZE_STRATEGY_ADAPTERS` 레지스트리(direct/stepped/tiled)와 전략별 튜닝 지식(품질 매핑·단계 수·동시성·타일 크기·예상 시간 배수). tiled는 `analysis.estimatedMemoryMB`(64MB 경계)로 light(옛 chunked)/heavy 두 preset을 내부에서 고른다. 전략 추가 = adapter 1개 + 맵 1행 |
 | `src/base/canvas-utils.internal.ts` | canvas 생성·인코딩 leaf — `createOwnedCanvas`(호출자 소유 canvas, advanced 전 경로가 사용), `applySmoothing`(quality→imageSmoothing 매핑 정본), `canvasToBlob`(통합 인코더) |
