@@ -14,6 +14,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AutoHighResProcessor } from '../../src/advanced-index';
+import { RESIZE_STRATEGY_ADAPTERS } from '../../src/base/resize-strategy.internal';
 import { SteppedProcessor } from '../../src/base/stepped-processor.internal';
 import { TiledProcessor } from '../../src/base/tiled-processor.internal';
 
@@ -50,6 +51,12 @@ describe('advanced 공개 API 종단 경로 스모크 테스트 — 모킹 없�
     });
 
     expect(tiledSpy).toHaveBeenCalledOnce();
+    // AutoHighResProcessor.smartResize는 leaf가 던지면 DIRECT 폴백(standardResize)으로
+    // 조용히 전환된다 — 폴백도 크기가 맞는 캔버스를 실제로 그려내므로 위 크기/alpha
+    // 검증만으로는 "leaf가 정말 실행됐는지"와 "폴백이 대신 그렸는지"를 구분할 수 없다.
+    // pass-through spy가 기록한 실제 반환 canvas와 result.canvas의 객체 동일성을
+    // 확인해 leaf의 결과물이 그대로 흘러나왔음을 증명한다.
+    expect(result.canvas).toBe(await tiledSpy.mock.results[0]?.value);
     expect(result.canvas.width).toBe(4);
     expect(result.canvas.height).toBe(4);
     expect(result.optimizations.tileProcessing).toBe(true);
@@ -69,11 +76,20 @@ describe('advanced 공개 API 종단 경로 스모크 테스트 — 모킹 없�
     });
 
     expect(steppedSpy).toHaveBeenCalledOnce();
+    // tiled 테스트와 동일한 이유로, 폴백과 구분하기 위해 canvas 객체 동일성을 확인한다.
+    expect(result.canvas).toBe(await steppedSpy.mock.results[0]?.value);
     expect(result.canvas.width).toBe(4);
     expect(result.canvas.height).toBe(4);
 
     const ctx = result.canvas.getContext('2d')!;
     const pixel = ctx.getImageData(0, 0, 1, 1).data;
     expect(pixel[3]).toBeGreaterThan(0);
+  });
+
+  it('RESIZE_STRATEGY_ADAPTERS에 새 전략이 추가되면 이 스모크 파일도 갱신해야 함을 알려준다', () => {
+    // 새 전략이 registry에 추가되는데 이 파일에 대응 케이스가 없으면 여기서 실패한다.
+    // 실패 시 design 문서(2026-08-15-advanced-strategy-smoke-design.md)의
+    // "재검토 조건"에 따라 새 전략용 forceStrategy 테스트를 추가한다.
+    expect(Object.keys(RESIZE_STRATEGY_ADAPTERS).sort()).toEqual(['direct', 'stepped', 'tiled']);
   });
 });
