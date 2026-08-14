@@ -25,7 +25,10 @@ const METADATA_ELEMENT_PATTERNS: RegExp[] = [
   /<inkscape:[^>]*>/gi,
 ];
 
-/** 렌더링과 무관한 속성 패턴(id는 참조 여부에 따라 별도로 판정한다 — 아래 removeMetadata 참고). */
+/**
+ * 렌더링과 무관한 속성 패턴.
+ * id는 참조 여부에 따라 별도로 판정한다.
+ */
 const UNNECESSARY_ATTRIBUTE_PATTERNS: RegExp[] = [
   /xml:space="[^"]*"/g,
   /data-[^=]*="[^"]*"/g,

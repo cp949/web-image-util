@@ -2,12 +2,14 @@
  * 그라디언트 중복 제거·병합 모듈.
  *
  * `linearGradient`/`radialGradient`를 DOM 파싱으로 수집한 뒤 정지점/속성 해시가
- * 같은 정의를 하나만 남기고, 사라진 ID를 참조하는 fill/stroke를 살아남은 ID로 갱신한다.
+ * 같은 정의를 하나만 남긴다. 사라진 ID를 참조하는 presentation/fragment 속성은
+ * 살아남은 ID로 갱신한다.
  * DOMParser가 없거나 파싱이 실패하면 원본을 그대로 반환한다.
  */
 
 import { productionLog } from '../debug.internal';
 import { parseAndClassifySvg } from '../svg-document.internal';
+import { rewriteReferencedIds } from './collect-referenced-ids.internal';
 
 /** 그라디언트의 형태/속성/정지점을 합쳐 동일성 키를 만든다. */
 function hashGradient(gradient: Element): string {
@@ -29,21 +31,6 @@ function hashGradient(gradient: Element): string {
     .join(',');
 
   return `${type}:${attrs}:${stops}`;
-}
-
-/** 중복 그라디언트가 제거된 뒤, 사라진 ID를 참조하는 fill/stroke를 살아남은 ID로 교체한다. */
-function rewriteGradientReferences(doc: Document, replacementMap: Map<string, string>): void {
-  for (const [oldId, newId] of replacementMap) {
-    const elements = doc.querySelectorAll(`[fill="url(#${oldId})"], [stroke="url(#${oldId})"]`);
-    for (const element of Array.from(elements)) {
-      if (element.getAttribute('fill') === `url(#${oldId})`) {
-        element.setAttribute('fill', `url(#${newId})`);
-      }
-      if (element.getAttribute('stroke') === `url(#${oldId})`) {
-        element.setAttribute('stroke', `url(#${newId})`);
-      }
-    }
-  }
 }
 
 /**
@@ -89,7 +76,7 @@ export function optimizeGradients(svgString: string): string {
       }
     }
 
-    rewriteGradientReferences(doc, replacementMap);
+    rewriteReferencedIds(doc, replacementMap);
 
     return new XMLSerializer().serializeToString(doc);
   } catch (error) {

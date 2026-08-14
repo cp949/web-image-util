@@ -2,7 +2,10 @@
 
 ## 배경
 
-`SvgOptimizer.getDefaultOptions()`는 `removeMetadata`·`simplifyPaths`·`optimizeGradients`·`removeUnusedDefs`를 함께 켠다(`mergeElements`만 기본 false). 1단계 `removeMetadata`(`src/utils/svg-optimizer/remove-metadata.internal.ts:29-38`)의 `UNNECESSARY_ATTRIBUTE_PATTERNS`에 `/id="[^"]*"/g`가 있어, 참조 여부와 무관하게 문서의 모든 `id="..."`를 정규식으로 지운다. 뒤따르는 3·4단계는 그 id가 남아있다고 가정한다.
+`SvgOptimizer.getDefaultOptions()`는 `removeMetadata`·`simplifyPaths`·`optimizeGradients`·
+`removeUnusedDefs`를 함께 켠다(`mergeElements`만 기본 false). 1단계 `removeMetadata`의
+`UNNECESSARY_ATTRIBUTE_PATTERNS`에는 `/id="[^"]*"/g`가 있다. 참조 여부와 무관하게 문서의
+모든 `id="..."`를 지운다. 뒤따르는 3·4단계는 그 id가 남아있다고 가정한다.
 
 실측 재현:
 
@@ -11,102 +14,99 @@
 <use href="#g1" .../>
 ```
 
-기본 옵션으로 `SvgOptimizer.optimize()`를 돌리면 1단계에서 `id="g1"`이 먼저 사라지고, `<use href="#g1"/>`는 대상을 잃는다 — 렌더링 회귀. 3단계 `optimizeGradients`(`optimize-gradients.internal.ts:74-76`)는 `gradient.getAttribute('id')`가 `null`이면 그 그라디언트를 그냥 건너뛰고(병합도 제거도 안 함), 4단계 `removeUnusedDefs`는 `defs` 안에서 id 자체를 못 찾으므로 아무 것도 지우지 못한다 — 1단계가 이미 모두 지워버려 뒤 단계가 무력화된 상태다. 이 무력화는 이번 수정 이후에도 구조적으로 남는다: 1단계가 참조되는 id를 보존하게 되면서 `definedIds ⊆ referencedIds`가 성립해, 4단계의 "미사용 정의만 제거" 루프는 여전히 아무것도 지울 대상이 없다(아래 재검토 조건 참고) — 이번 카드의 범위는 1단계가 참조 id를 지워버리는 결함 수정이며, 파이프라인 순서 자체의 재설계는 비범위다.
+기본 옵션으로 `SvgOptimizer.optimize()`를 돌리면 1단계에서 `id="g1"`이 먼저 사라진다.
+`<use href="#g1"/>`는 대상을 잃는다 — 렌더링 회귀.
+
+3단계 `optimizeGradients`는 `gradient.getAttribute('id')`가 `null`이면 해당 그라디언트를
+건너뛴다. 4단계 `removeUnusedDefs`도 `defs` 안에서 id를 찾지 못해 아무것도 지우지 못한다.
+1단계가 뒤 단계를 무력화한 상태다. 수정 후에는 1단계가 참조 id를 보존하므로
+`definedIds ⊆ referencedIds`가 성립한다. 4단계의 "미사용 정의만 제거" 루프는 여전히
+지울 대상이 없다. 이번 카드의 범위는 참조 id 무결성이다.
+파이프라인 순서 재설계는 비범위다.
 
 "이 id가 참조되는가" 판정은 이미 두 곳에 갈라져 구현돼 있다.
 
-| 파일 | 판정 방식 | 커버리지 |
-| --- | --- | --- |
-| `remove-unused-defs.internal.ts:14-23`(`REFERENCE_ATTRIBUTES`) + `collectUsedIds()`(36-48행) | DOM `querySelector`로 `[fill="url(#id)"], [stroke="url(#id)"], ...` 8개 속성 + `[href="#id"]` 셀렉터만 검사 | `url(#id)` 스타일 O, `href="#id"` O, `xlink:href`/`src` **X** |
-| `prefix-svg-ids/reference-rewrite.internal.ts:5,41-49`(`REF_ATTR_NAMES`, `classifyFragmentReference()`) | `href`/`xlink:href`/`src` 속성 값을 읽어(네임스페이스 인지) internal/external/non-fragment로 분류 | fragment 속성 3종 O, `url(#id)` 스타일 **X**(`src/utils/prefix-svg-ids.ts:150` — "CSS 내부 `url(#id)` rewrite는 본 함수 비범위다"라고 명시) |
+- `remove-unused-defs.internal.ts`의 `collectUsedIds()`는 DOM `querySelector`로 8개
+  presentation 속성과 `[href="#id"]`만 검사한다. `url(#id)`와 `href`는 지원하지만
+  `xlink:href`·`src`는 지원하지 않는다.
+- `prefix-svg-ids/reference-rewrite.internal.ts`는 `REF_ATTR_NAMES`와
+  `classifyFragmentReference()`로 `href`·`xlink:href`·`src`를 분류한다. 네임스페이스를
+  인지하지만 presentation 속성의 `url(#id)`는 지원하지 않는다.
 
-`remove-unused-defs`의 `[href="#id"]` 셀렉터는 `xlink:href` 속성을 매칭하지 못한다 — 실제로 `<use xlink:href="#id">`만 있고 `href`는 없는 `<defs>` 정의를 미사용으로 오판해 제거하는 2차 결함이 이미 존재한다(이번 조사에서 재현 확인, 별도 테스트로 고정한다).
+`remove-unused-defs`의 `[href="#id"]` 셀렉터는 브라우저에서 `xlink:href`를 매치하지 않는다.
+`<use xlink:href="#id">`만 참조하는 `<defs>` 정의를 미사용으로 오판해 제거하는 2차 결함이다.
+jsdom은 이 셀렉터를 실제 브라우저와 다르게 처리하므로 별도 소비자 배선 테스트도 둔다.
 
-adapter count: 이 판정을 필요로 하는 소비자가 이미 둘(`remove-unused-defs`, `prefix-svg-ids`) 독립적으로 갈라져 존재한다 — 가상의 seam이 아니라 실제로 두 벌로 진화한 로직이다. `remove-metadata`는 판정 자체를 안 하는 세 번째, 가장 안전하지 않은 변형이다.
+adapter count: 판정 소비자는 `remove-unused-defs`와 `prefix-svg-ids` 두 곳이다. 독립 구현이
+두 벌로 진화했다. `remove-metadata`는 판정 자체가 없는 세 번째 변형이다.
 
 ## 결정
 
-id 참조 판정을 `collectReferencedIds(doc: Document): Set<string>` 단일 함수로 모은다. 위치: `src/utils/svg-optimizer/collect-referenced-ids.internal.ts`(신설).
+id 참조 판정을 `collectReferencedIds(doc: Document): Set<string>` 단일 함수로 모은다.
+위치: `src/utils/svg-optimizer/collect-referenced-ids.internal.ts`(신설).
 
-- `url(#id)` 스타일: `remove-unused-defs`의 `REFERENCE_ATTRIBUTES` 목록(`fill`/`stroke`/`filter`/`clip-path`/`mask`/`marker-start`/`marker-mid`/`marker-end`)을 그대로 옮긴다.
-- fragment 속성 스타일: `prefix-svg-ids/reference-rewrite.internal.ts`가 이미 가진 `REF_ATTR_NAMES`·`readReferenceAttribute()`·`classifyFragmentReference()`를 **import해서 재사용**한다("두 기존 구현 중 더 완전한 prefix-svg-ids쪽 정합") — 재구현하지 않는다.
+- `url(#id)` 스타일: `remove-unused-defs`의 `REFERENCE_ATTRIBUTES` 목록을 그대로 옮긴다.
+  대상은 `fill`·`stroke`·`filter`·`clip-path`·`mask`·`marker-start`·`marker-mid`·`marker-end`다.
+- fragment 속성 스타일: `prefix-svg-ids`의 `REF_ATTR_NAMES`·`readReferenceAttribute()`·
+  `classifyFragmentReference()`를 import해 재사용한다. 재구현하지 않는다.
 - 두 결과의 합집합을 반환한다.
+- 같은 모듈의 `rewriteReferencedIds(doc, replacements)`가 수집과 동일한 참조 형태를 재작성한다.
+  presentation 속성의 따옴표·fallback은 보존하고, fragment 속성은 기존
+  `rewriteFragmentReferences()`를 재사용한다.
 
 **소비자 배선:**
 
-- `remove-unused-defs.internal.ts`는 자체 `REFERENCE_ATTRIBUTES`·`collectUsedIds()`를 지우고 `collectReferencedIds(doc)`를 쓴다. `collectDefinedIds()`(defs 자식의 id 수집이라는 다른 책임)는 그대로 둔다.
-- `remove-metadata.internal.ts`는 참조 집합을 인자로 받는다: `removeMetadata(svgString: string, referencedIds: Set<string> | null): string`. `null`은 "판정 불가"(DOMParser 미가용·파싱 실패)를 뜻하며, 이 경우 **id를 하나도 지우지 않는다** — 렌더링을 깨느니 최적화를 덜 하는 쪽을 택하는 안전 우선 폴백이다. `UNNECESSARY_ATTRIBUTE_PATTERNS`에서 `id="..."` 정규식을 빼내 별도 조건부 치환(참조되지 않는 id만 제거)으로 옮긴다.
-- `optimizer.internal.ts`(오케스트레이터)가 배선 책임을 진다. `removeMetadata` 단계 진입 직전에 그 시점의 `optimizedSvg` 문자열을 `parseAndClassifySvg()`로 한 번 파싱하고, 성공하면 `collectReferencedIds(doc)`를, 실패하면 `null`을 넘긴다.
+- `remove-unused-defs.internal.ts`는 자체 판정을 지우고 `collectReferencedIds(doc)`를 쓴다.
+  defs 자식 id를 수집하는 `collectDefinedIds()`는 그대로 둔다.
+- `remove-metadata.internal.ts`는 `Set<string> | null` 참조 집합을 인자로 받는다. `null`은
+  DOMParser 미가용·파싱 실패를 뜻한다. 이 경우 안전하게 id를 하나도 지우지 않는다.
+- `optimizer.internal.ts`가 `removeMetadata` 직전에 `optimizedSvg`를 파싱한다. 성공하면
+  `collectReferencedIds(doc)`를, 실패하면 `null`을 넘긴다.
+- `optimize-gradients.internal.ts`는 중복 정의를 삭제한 뒤 `rewriteReferencedIds()`로
+  삭제된 id의 모든 presentation/fragment 참조를 살아남은 id로 바꾼다.
 
 **행동 변화(의도됨):**
 
 - 참조되는 id는 기본 옵션에서도 이제 보존된다(이번 수정의 목적).
-- 참조되지 않는 id는 기존과 동일하게 제거된다 — 기존 테스트(`svg-optimizer.test.ts`의 `not.toContain('id="box"')`, 참조 없는 단순 `<rect id="box">`)는 그대로 통과한다.
-- `remove-unused-defs`가 `xlink:href` 참조를 이제 인식한다 — 이전에 잘못 제거되던 `<defs>` 정의가 보존된다(2차 결함 해소).
-- **DOMParser 미가용 환경**(순수 Node 등)에서는 이제 id를 하나도 지우지 않는다. 이전에는 이 환경에서도 무조건 전부 지웠다. 이 환경에서는 애초에 `optimizeGradients`/`removeUnusedDefs`도 원본을 그대로 반환하므로(파서 없으면 스킵), 새로운 비대칭이 아니라 기존 패턴과의 정합이다.
+- 참조되지 않는 id는 기존과 동일하게 제거된다.
+- `remove-unused-defs`가 `xlink:href` 참조를 인식한다. 사용 중인 `<defs>` 정의를 보존한다.
+- `optimizeGradients`가 중복 정의를 병합해도 `href`/`xlink:href`/`src`와 8개
+  presentation 속성의 참조는 살아남은 id로 재작성된다.
+- **DOMParser 미가용 환경**에서는 id를 하나도 지우지 않는다. 이전에는 전부 지웠다.
+  이 환경에서는 `optimizeGradients`와 `removeUnusedDefs`도 원본을 반환하므로 기존 패턴과 맞는다.
 
-**부수 변경(공개 타입, Breaking):** `SvgOptimizationOptions.mergeElements` 필드를 제거한다. `types.ts`와 `getDefaultOptions()`에만 존재하고 `optimize()`의 5단계 어디에서도 읽지 않는 유령 필드다(구현 0줄) — 카드가 "정리 계기"로 지목한 항목이다. 실제 유사-요소-병합 기능을 새로 만드는 일은 하지 않는다(비범위, 아래 참고). enum을 실구현에 맞춰 좁히는 카드 4(`BlendMode`)와 같은 패턴 — "약속을 못 지키면 약속 자체를 없앤다."
+**부수 변경(공개 타입, Breaking):** `SvgOptimizationOptions.mergeElements` 필드를 제거한다.
+이 필드는 `types.ts`와 `getDefaultOptions()`에만 있고 `optimize()`가 읽지 않는다. 실제 요소 병합
+기능을 만드는 일은 비범위다. 구현되지 않은 공개 약속을 제거한다.
+타입을 실제 동작과 맞춘다.
 
 ## 변경 상세
 
 **`src/utils/svg-optimizer/collect-referenced-ids.internal.ts`(신설)**
 
 ```ts
-import {
-  classifyFragmentReference,
-  readReferenceAttribute,
-  REF_ATTR_NAMES,
-} from '../prefix-svg-ids/reference-rewrite.internal';
+export declare function collectReferencedIds(doc: Document): Set<string>;
 
-const URL_REFERENCE_ATTRIBUTES = [
-  'fill', 'stroke', 'filter', 'clip-path', 'mask',
-  'marker-start', 'marker-mid', 'marker-end',
-] as const;
-
-function extractUrlReferenceId(value: string): string | null {
-  const match = /^url\(#([^)]+)\)$/.exec(value.trim());
-  return match ? match[1] : null;
-}
-
-export function collectReferencedIds(doc: Document): Set<string> {
-  const referenced = new Set<string>();
-  const all = doc.getElementsByTagName('*');
-
-  for (let i = 0; i < all.length; i++) {
-    const el = all[i];
-
-    for (const attr of URL_REFERENCE_ATTRIBUTES) {
-      const value = el.getAttribute(attr);
-      if (!value) continue;
-      const id = extractUrlReferenceId(value);
-      if (id) referenced.add(id);
-    }
-
-    for (const attrName of el.getAttributeNames()) {
-      const lowered = attrName.toLowerCase();
-      if (!REF_ATTR_NAMES.has(lowered)) continue;
-      const value = readReferenceAttribute(el, attrName, lowered);
-      if (value === null) continue;
-      const classification = classifyFragmentReference(value);
-      if (classification.kind === 'internal') referenced.add(classification.token);
-    }
-  }
-
-  return referenced;
-}
+export declare function rewriteReferencedIds(
+  doc: Document,
+  replacements: Map<string, string>
+): void;
 ```
+
+두 함수는 같은 presentation 속성 목록과 `url(#id)` 패턴을 공유한다. fragment 읽기·쓰기는
+`prefix-svg-ids/reference-rewrite.internal.ts`의 기존 함수를 재사용한다.
 
 **`src/utils/svg-optimizer/remove-unused-defs.internal.ts`**
 
 - `REFERENCE_ATTRIBUTES` 상수와 `collectUsedIds()` 함수를 삭제한다.
 - `import { collectReferencedIds } from './collect-referenced-ids.internal';` 추가.
-- `removeUnusedDefs()` 안 `const usedIds = collectUsedIds(doc.documentElement, definedIds);` → `const usedIds = collectReferencedIds(doc);`로 교체.
-- 파일 상단 JSDoc의 판정 범위 서술(`fill/stroke/.../href="#id"`)을 `collectReferencedIds()` 위임과 `xlink:href`/`src` 포함으로 정정한다.
+- `removeUnusedDefs()`의 `collectUsedIds(...)` 호출을 `collectReferencedIds(doc)`로 교체한다.
+- 파일 상단 JSDoc에 `collectReferencedIds()` 위임과 `xlink:href`·`src` 포함을 기록한다.
 
 **`src/utils/svg-optimizer/remove-metadata.internal.ts`**
 
 - `UNNECESSARY_ATTRIBUTE_PATTERNS`에서 `/id="[^"]*"/g,` 줄(및 주석)을 제거한다.
-- `removeMetadata(svgString: string)` → `removeMetadata(svgString: string, referencedIds: Set<string> | null)`로 시그니처 변경.
+- `removeMetadata()`에 `referencedIds: Set<string> | null` 인자를 추가한다.
 - 함수 끝, `UNNECESSARY_ATTRIBUTE_PATTERNS` 루프 다음에 조건부 id 스트립을 추가한다:
   ```ts
   if (referencedIds !== null) {
@@ -116,7 +116,7 @@ export function collectReferencedIds(doc: Document): Set<string> {
 
 **`src/utils/svg-optimizer/optimizer.internal.ts`**
 
-- `import { parseAndClassifySvg } from '../svg-document.internal';`, `import { collectReferencedIds } from './collect-referenced-ids.internal';` 추가.
+- `parseAndClassifySvg`와 `collectReferencedIds` import를 추가한다.
 - `if (options.removeMetadata) { ... }` 블록을 다음으로 교체:
   ```ts
   if (options.removeMetadata) {
@@ -128,6 +128,12 @@ export function collectReferencedIds(doc: Document): Set<string> {
   ```
 - `getDefaultOptions()`에서 `mergeElements: false,` 줄을 삭제한다.
 
+**`src/utils/svg-optimizer/optimize-gradients.internal.ts`**
+
+- `fill`/`stroke` 전용 `rewriteGradientReferences()`를 삭제한다.
+- 중복 id의 `replacementMap`을 `rewriteReferencedIds()`에 넘긴다.
+- 따옴표·fallback을 포함한 8개 presentation 속성과 fragment 속성 3종을 모두 재작성한다.
+
 **`src/utils/svg-optimizer/types.ts`**
 
 - `SvgOptimizationOptions.mergeElements: boolean;` 필드(및 JSDoc 줄)를 삭제한다.
@@ -136,32 +142,36 @@ export function collectReferencedIds(doc: Document): Set<string> {
 
 **신규 — `tests/unit/utils/svg-optimizer.test.ts`:**
 
-- `describe('collectReferencedIds 내부 판정', ...)`: `url(#id)` 판정, `href="#id"` 판정, `xlink:href="#id"` 판정(네임스페이스), 참조 없을 때 빈 집합, 혼합 참조 전부 수집, 외부 fragment(`sprite.svg#id`)는 세지 않음 — 6개.
-- `describe('removeMetadata 내부 패스', ...)`: 참조 없는 id 제거, 참조되는 id 보존, `referencedIds: null`이면 모든 id 보존 — 3개.
-- `removeUnusedDefs 내부 패스`에 `xlink:href="#id"` 참조 보존 테스트 1개 추가(회귀 — 이전에는 오판 제거).
-- `SVG 최적화`(최상위 describe)에 기본 옵션 end-to-end 회귀 테스트 1개 추가: `<use href="#g1">` + `<defs><symbol id="g1">`가 `SvgOptimizer.optimize()` 기본 옵션에서 `id="g1"`과 `href="#g1"` 둘 다 보존.
+- `collectReferencedIds`: URL·fragment·namespace·외부 fragment·빈 집합·혼합 참조를 검증한다.
+- `removeMetadata`: 미참조 id 제거, 참조 id 보존, `null`일 때 전체 보존을 검증한다.
+- `removeUnusedDefs`: `xlink:href="#id"` 참조 정의 보존을 검증한다.
+- jsdom의 namespace selector 한계로 구배선에서도 통과하는 `xlink:href` 출력 테스트를 보완하도록
+  `src="#id"` 소비자 테스트를 추가한다. 이 테스트는 구형 `href` 전용 배선에서 실패한다.
+- 기본 옵션에서 `<use href="#g1">`의 대상 id가 보존되는 end-to-end 회귀를 검증한다.
+- 기본 옵션에서 중복 gradient 병합 후 `xlink:href`가 살아남은 id로 바뀌는 회귀를 검증한다.
+- `optimizeGradients`가 presentation·fragment 참조 형태를 모두 재작성하는지 검증한다.
 
 **기존 테스트 갱신:**
 
 - `getDefaultOptions()` 기대 객체(2곳)에서 `mergeElements: false,` 제거.
-- 나머지 기존 테스트(`removeUnusedDefs`/`optimizeGradients`/`simplifyPaths` 내부 패스 전체, "기본 최적화는..." 테스트의 `not.toContain('id="box"')`)는 **무변경으로 통과**해야 한다 — 동작 보존 리팩터의 회귀 방지망.
+- 나머지 기존 `removeUnusedDefs`·`optimizeGradients`·`simplifyPaths` 테스트는 그대로 통과해야 한다.
 
 ## 문서 계약
 
-- `CHANGELOG.md` `[Unreleased]` → `### 수정`(Fixed) 끝에 id 참조 무결성 수정 항목 추가, `### 변경`(Changed, Breaking) 끝에 `mergeElements` 필드 제거 항목 추가.
+- `CHANGELOG.md`: Fixed에 id 참조 무결성 수정, Changed에 `mergeElements` 제거를 추가한다.
 - `docs/design/README.md` — 이 설계 문서를 색인에 추가한다.
-- `docs/architecture.md` — svg-optimizer 내부 구조를 다루는 표 항목이 없어(현재 `/utils` 서브패스 노출 목록에 `SvgOptimizer` 한 줄만 존재) 갱신 대상 없음.
-- `docs/maintenance-risks.md` — 이 결함은 이번 재탐색(02.html)에서 신규 발견된 항목이라 기존에 기록이 없었다. 수정 완료로 새 행을 추가하지 않는다(완료된 항목은 이 문서가 추적하지 않는 컨벤션 — 카드 1·2도 동일하게 처리됨).
+- `docs/architecture.md`: svg-optimizer 내부 구조 표가 없어 갱신하지 않는다.
+- `docs/maintenance-risks.md`: 완료된 신규 결함은 추적하지 않는 정책에 따라
+  갱신하지 않는다.
 
 ## 비범위
 
-- `<style>` 태그·`style` 속성 내부 CSS의 `url(#id)` 참조 처리. `prefix-svg-ids`도 이 경우 전체를 deopt한다(`dom-utils.internal.ts`의 `detectStyleDeoptReasons()`) — 기존 정책과 동일하게 비범위로 남긴다.
-- `mergeElements`의 실제 구현(유사 요소 병합 기능 자체를 새로 만드는 일). 유령 필드 제거만 한다.
+- `<style>` 태그·`style` 속성 내부 CSS의 `url(#id)` 참조 처리.
+- `mergeElements`의 실제 구현. 유령 필드 제거만 한다.
 - `remove-unused-defs`의 다른 동작(빈 `defs` 제거, 파싱 실패 폴백 등)은 변경하지 않는다.
-- `optimizeGradients`/`removeUnusedDefs`의 독자적인 `parseAndClassifySvg()` 재파싱을 하나로 합치는 성능 최적화(각 패스가 이미 svgString을 받아 자체 파싱하는 기존 구조를 유지 — `optimizer.internal.ts`가 `removeMetadata`를 위해 한 번 더 파싱하게 되어 optimize() 1회당 파싱 횟수가 늘지만, 기존에도 옵션 조합에 따라 패스마다 독립 파싱하던 구조라 새로운 비일관성이 아니다).
+- `optimizeGradients`·`removeUnusedDefs`의 독자적인 파싱을 한 번으로 합치는 성능 최적화.
 
 ## 재검토 조건
 
 - `<style>`/CSS 내부 `url(#id)` 참조가 실제 렌더링 버그로 재현되면 별도 카드로 다룬다.
 - `optimize()`의 파싱 중복이 실측 성능 문제로 보고되면 파싱 1회 공유로 재설계한다.
-- `optimizeGradients`(3단계)의 중복 그라디언트 병합이 `fill`/`stroke`만 재작성하고 `xlink:href`/`href` 참조는 재작성하지 않아, 병합으로 삭제되는 id를 `xlink:href`로 참조하던 요소가 dangling 참조를 갖게 되는 경로가 있다(이번 수정으로 1단계가 참조 id를 보존하게 되면서 3단계의 병합 로직이 처음으로 실제 도달 가능해져 드러남 — 이전에는 1단계가 모든 id를 지워 3단계의 병합 경로 자체가 죽어 있었다). `main` 대비 회귀는 아니다(이전에는 이 문서의 참조가 더 광범위하게 깨져 있었다). 실측 재현이 보고되면 `optimizeGradients`의 참조 재작성을 `collectReferencedIds`가 인식하는 모든 참조 형태로 확장하는 별도 카드로 다룬다.

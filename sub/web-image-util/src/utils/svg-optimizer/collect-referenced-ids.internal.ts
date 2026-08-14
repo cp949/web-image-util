@@ -14,6 +14,7 @@ import {
   classifyFragmentReference,
   REF_ATTR_NAMES,
   readReferenceAttribute,
+  rewriteFragmentReferences,
 } from '../prefix-svg-ids/reference-rewrite.internal';
 
 /** url(#id) 형태로 참조될 수 있는 presentation 속성 목록. */
@@ -28,17 +29,23 @@ const URL_REFERENCE_ATTRIBUTES = [
   'marker-end',
 ] as const;
 
-/** 속성 값이 `url(#id)` 형태(따옴표·fallback 색상 포함)이면 id를 반환하고, 아니면 null을 반환한다. */
+/** 따옴표와 닫는 괄호를 보존하면서 presentation 속성의 첫 `url(#id)`를 분해한다. */
+const URL_REFERENCE_PATTERN = /^(\s*url\(\s*)(['"]?)#([^'")\s]+)\2(\s*\))/;
+
+/**
+ * 속성 값이 `url(#id)` 형태(따옴표·fallback 색상 포함)이면 id를 반환한다.
+ * 그 외 값이면 null을 반환한다.
+ */
 function extractUrlReferenceId(value: string): string | null {
-  const match = /^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)/.exec(value.trim());
-  return match ? match[1] : null;
+  const match = URL_REFERENCE_PATTERN.exec(value.trim());
+  return match ? match[3] : null;
 }
 
 /**
  * 문서 전체에서 실제로 참조되는 id 집합을 반환한다.
  *
  * @param doc 파싱된 SVG 문서
- * @returns 참조되는 id의 집합(정의 여부와 무관 — 대상이 실존하지 않는 dangling 참조의 id도 포함된다)
+ * @returns 참조되는 id의 집합. 정의 여부와 무관하므로 dangling 참조의 id도 포함된다.
  */
 export function collectReferencedIds(doc: Document): Set<string> {
   const referenced = new Set<string>();
@@ -69,4 +76,39 @@ export function collectReferencedIds(doc: Document): Set<string> {
   }
 
   return referenced;
+}
+
+/**
+ * 문서 전체의 내부 id 참조를 replacement map에 따라 다시 쓴다.
+ *
+ * presentation 속성은 기존 따옴표와 fallback 값을 보존한다. `href`/`xlink:href`/`src`는
+ * `prefix-svg-ids`의 네임스페이스 인지 재작성 로직을 재사용한다.
+ */
+export function rewriteReferencedIds(doc: Document, replacements: Map<string, string>): void {
+  const all = doc.getElementsByTagName('*');
+
+  for (let i = 0; i < all.length; i++) {
+    const el = all[i];
+
+    for (const attr of URL_REFERENCE_ATTRIBUTES) {
+      const value = el.getAttribute(attr);
+      if (value === null) continue;
+
+      const match = URL_REFERENCE_PATTERN.exec(value);
+      if (match === null) continue;
+
+      const replacement = replacements.get(match[3]);
+      if (replacement === undefined) continue;
+
+      el.setAttribute(
+        attr,
+        value.replace(
+          URL_REFERENCE_PATTERN,
+          (_matched, prefix, quote, _id, suffix) => `${prefix}${quote}#${replacement}${quote}${suffix}`
+        )
+      );
+    }
+  }
+
+  rewriteFragmentReferences(doc, replacements, new Set(replacements.keys()));
 }

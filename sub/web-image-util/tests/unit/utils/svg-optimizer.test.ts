@@ -155,6 +155,20 @@ describe('SVG 최적화', () => {
     expect(optimizedSvg).toContain('href="#g1"');
   });
 
+  it('기본 옵션에서 병합된 그라디언트의 xlink:href를 살아남은 id로 재작성한다', () => {
+    const stop = '<stop offset="0" stop-color="red"/>';
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+      `<defs><linearGradient id="ga">${stop}</linearGradient>` +
+      `<linearGradient id="gb">${stop}</linearGradient></defs>` +
+      '<linearGradient id="gc" xlink:href="#gb"/>' +
+      '<rect fill="url(#ga)"/><rect fill="url(#gc)"/></svg>';
+    const { optimizedSvg } = SvgOptimizer.optimize(svg);
+    expect(optimizedSvg).toContain('id="ga"');
+    expect(optimizedSvg).not.toContain('id="gb"');
+    expect(optimizedSvg).toContain('xlink:href="#ga"');
+  });
+
   it('파싱에 실패하는 SVG는 기본 옵션에서도 id를 하나도 제거하지 않는다', () => {
     const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect id="box" width="1" height="1">';
     const { optimizedSvg } = SvgOptimizer.optimize(svg);
@@ -270,16 +284,22 @@ describe('removeUnusedDefs 내부 패스', () => {
     expect(result).not.toContain('id="unused"');
   });
 
-  // 이 테스트는 현재 동작을 고정하는 목적이다. jsdom의 querySelectorAll이 네임스페이스 없는 `[href]`
-  // 셀렉터를 `xlink:href` 속성에도 매치시켜(스펙과 다르게) 구형 버그 코드로 되돌려도 이 테스트 하나만으로는
-  // RED가 나지 않는다 — 실질적 회귀 보호는 `collectReferencedIds()` 단위 테스트(Task 1,
-  // `describe('collectReferencedIds 내부 판정')`)가 담당한다.
+  // jsdom은 `[href]`를 `xlink:href`에도 매치한다. 이 테스트는 출력 계약을 고정하고,
+  // 아래 `src` 테스트가 구형 querySelector 배선으로의 회귀를 탐지한다.
   it('xlink:href="#id" 참조(구형 <use>)가 있으면 해당 정의를 보존한다', () => {
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
       '<defs><symbol id="sym2" viewBox="0 0 10 10"><circle r="5" cx="5" cy="5"/></symbol></defs>' +
       '<use xlink:href="#sym2" x="0" y="0"/></svg>';
     expect(removeUnusedDefs(svg)).toContain('id="sym2"');
+  });
+
+  it('src="#id" 참조를 공유 판정으로 찾아 정의를 보존한다', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg">' +
+      '<defs><symbol id="sym3" viewBox="0 0 10 10"><circle r="5" cx="5" cy="5"/></symbol></defs>' +
+      '<image src="#sym3"/></svg>';
+    expect(removeUnusedDefs(svg)).toContain('id="sym3"');
   });
 });
 
@@ -328,6 +348,30 @@ describe('optimizeGradients 내부 패스', () => {
     const result = optimizeGradients(svg);
     expect(result).toContain('url(#ga)');
     expect(result).not.toContain('url(#gb)');
+  });
+
+  it('중복 그라디언트 제거 후 모든 presentation·fragment 참조 형태를 재작성한다', () => {
+    const sameDef = '<stop offset="0" stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/>';
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+      '<defs>' +
+      `<linearGradient id="ga">${sameDef}</linearGradient>` +
+      `<linearGradient id="gb">${sameDef}</linearGradient>` +
+      '</defs>' +
+      '<rect data-case="quoted" fill=\'url("#gb") blue\'/>' +
+      '<rect data-case="filter" filter="url(#gb)"/>' +
+      '<use data-case="href" href="#gb"/>' +
+      '<use data-case="xlink" xlink:href="#gb"/>' +
+      '<image data-case="src" src="#gb"/>' +
+      '</svg>';
+    const doc = parse(optimizeGradients(svg));
+
+    expect(doc.querySelector('[data-case="quoted"]')?.getAttribute('fill')).toBe('url("#ga") blue');
+    expect(doc.querySelector('[data-case="filter"]')?.getAttribute('filter')).toBe('url(#ga)');
+    expect(doc.querySelector('[data-case="href"]')?.getAttribute('href')).toBe('#ga');
+    expect(doc.querySelector('[data-case="xlink"]')?.getAttribute('xlink:href')).toBe('#ga');
+    expect(doc.querySelector('[data-case="src"]')?.getAttribute('src')).toBe('#ga');
+    expect(doc.querySelector('linearGradient[id="gb"]')).toBeNull();
   });
 
   it('동일한 두 radialGradient 중 하나는 제거된다', () => {
