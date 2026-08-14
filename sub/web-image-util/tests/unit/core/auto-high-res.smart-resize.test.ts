@@ -66,8 +66,11 @@ describe('AutoHighResProcessor.smartResize', () => {
     });
 
     it('커스텀 highResPixelThreshold 를 높이면 9MP 이미지도 표준 경로를 사용한다', async () => {
+      // target 을 1000×1000 으로 둬 scaleRatio(=3000/1000=3)가 게이트 임계치(4)를 넘지 않게 한다.
+      // 800×600 target 이면 scaleRatio(=5)가 4를 넘어 픽셀 임계값 override 와 무관하게
+      // 고해상도 경로로 빠지므로, 이 테스트가 검증하려는 "픽셀 임계값 override" 의도가 가려진다.
       const img = createDrawableImage(3000, 3000);
-      await AutoHighResProcessor.smartResize(img, 800, 600, {
+      await AutoHighResProcessor.smartResize(img, 1000, 1000, {
         thresholds: { highResPixelThreshold: 20_000_000 },
       });
 
@@ -184,20 +187,23 @@ describe('AutoHighResProcessor.smartResize', () => {
       vi.spyOn(HighResolutionManager, 'smartResize').mockResolvedValue(makeProcessingResult());
     });
 
-    it('매우 넓은 이미지(10000×100)는 픽셀 수 1MP → 표준 경로를 사용한다', async () => {
+    it('매우 넓은 이미지(10000×100)는 스케일 비율이 4를 초과해 고해상도 경로를 사용한다(게이트 통합 — scaleRatio 조건 신설)', async () => {
+      // 10000×100 = 1MP(8MP 미만)이지만 800×600 목표 대비 스케일 max(10000/800, 100/600) = 12.5 > 4
+      // SmartProcessor와 게이트를 공유하며 AutoHighResProcessor 도 scaleRatio 조건을 새로 갖는다
       const highResSpy = vi.spyOn(HighResolutionManager, 'smartResize');
       const img = createDrawableImage(10000, 100);
       await AutoHighResProcessor.smartResize(img, 800, 600);
 
-      expect(highResSpy).not.toHaveBeenCalled();
+      expect(highResSpy).toHaveBeenCalledOnce();
     });
 
-    it('매우 높은 이미지(100×10000)는 픽셀 수 1MP → 표준 경로를 사용한다', async () => {
+    it('매우 높은 이미지(100×10000)는 스케일 비율이 4를 초과해 고해상도 경로를 사용한다(게이트 통합 — scaleRatio 조건 신설)', async () => {
+      // 100×10000 = 1MP(8MP 미만)이지만 800×600 목표 대비 스케일 max(100/800, 10000/600) = 16.67 > 4
       const highResSpy = vi.spyOn(HighResolutionManager, 'smartResize');
       const img = createDrawableImage(100, 10000);
       await AutoHighResProcessor.smartResize(img, 800, 600);
 
-      expect(highResSpy).not.toHaveBeenCalled();
+      expect(highResSpy).toHaveBeenCalledOnce();
     });
   });
 

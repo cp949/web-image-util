@@ -59,7 +59,7 @@ export interface AutoProcessingResult {
  */
 export class AutoHighResProcessor {
   private static defaultThresholds: AutoProcessingThresholds = {
-    highResPixelThreshold: 8_000_000, // 8MP (approx 4K)
+    highResPixelThreshold: HighResolutionDetector.DEFAULT_HIGH_RES_PIXEL_THRESHOLD, // 8MP (approx 4K)
     memoryWarningThreshold: 200, // 200MB
     autoTileThreshold: 300, // 300MB
     timeWarningThreshold: 10, // 10 seconds
@@ -100,7 +100,12 @@ export class AutoHighResProcessor {
 
     // Analyze image
     const analysis = HighResolutionDetector.analyzeImage(img);
-    const isHighRes = analysis.totalPixels > thresholds.highResPixelThreshold;
+    const scaleRatio = Math.max(img.width / targetWidth, img.height / targetHeight);
+    const isHighRes = HighResolutionDetector.shouldUseHighResolutionPath(
+      analysis.totalPixels,
+      scaleRatio,
+      thresholds.highResPixelThreshold
+    );
 
     onProgress?.(10, 'Analyzing image...');
 
