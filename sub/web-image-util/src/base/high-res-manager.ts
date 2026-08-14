@@ -164,8 +164,8 @@ export class HighResolutionManager {
    * Select memory efficient strategy
    * @private
    *
-   * chunked는 tiled의 preset으로 흡수됐다(resize-strategy.internal.ts) — 128/32MB 두 임계값이
-   * 같은 TILED로 수렴하므로 32MB 하나만 direct/tiled를 가른다.
+   * chunked is now a tiled preset (resize-strategy.internal.ts). The former 128MB and
+   * 32MB branches converge on TILED, leaving 32MB as the direct/tiled boundary.
    */
   private static selectMemoryEfficientStrategy(analysis: ImageAnalysis): ProcessingStrategy {
     if (analysis.estimatedMemoryMB > 32) {
@@ -178,7 +178,7 @@ export class HighResolutionManager {
    * Select fast processing strategy
    * @private
    *
-   * chunked는 tiled의 preset으로 흡수됐다(resize-strategy.internal.ts) — 64MB 초과는 전부 TILED.
+   * chunked is now a tiled preset (resize-strategy.internal.ts), so values above 64MB use TILED.
    */
   private static selectFastStrategy(analysis: ImageAnalysis): ProcessingStrategy {
     // Select simplest strategy first for fast processing
@@ -365,7 +365,7 @@ export class HighResolutionManager {
     const timeEstimate = HighResolutionDetector.estimateProcessingTime(analysis);
     let estimatedTime = timeEstimate.estimatedSeconds;
 
-    // 전략별 예상 시간 배수는 adapter가 소유한다. 런타임 임의 전략은 기존 switch default처럼 배수 1을 적용한다.
+    // The adapter owns each strategy's time multiplier. Unknown runtime values keep the former switch default of 1.
     estimatedTime *= getResizeStrategyAdapter(recommendedStrategy)?.getTimeMultiplier(analysis) ?? 1;
 
     return {

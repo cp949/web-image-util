@@ -164,7 +164,7 @@ export class SmartProcessor {
     }
 
     if (userStrategy === 'memory-efficient') {
-      // chunked는 tiled의 preset으로 흡수됐다(resize-strategy.internal.ts) — 크기 무관 tiled.
+      // chunked is now a tiled preset (resize-strategy.internal.ts), so image size no longer changes this choice.
       return 'tiled';
     }
 
@@ -173,7 +173,7 @@ export class SmartProcessor {
     }
 
     // 'auto': Automatic selection based on image size
-    // chunked는 tiled의 preset으로 흡수됐다 — 4MP 초과는 전부 tiled.
+    // chunked is now a tiled preset, so every image above 4MP uses tiled.
     if (pixelCount > 4_000_000) {
       return 'tiled';
     } else {

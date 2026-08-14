@@ -4,7 +4,7 @@
 export type ProcessingStrategy =
   | 'direct' // Direct processing (small size)
   | 'stepped' // Stepped reduction (large size)
-  | 'tiled'; // Tile-based processing (medium~ultra-large size, preset이 갈린다)
+  | 'tiled'; // Tile-based processing (medium to ultra-large sizes, with memory-based presets)
 
 export const ProcessingStrategy = {
   DIRECT: 'direct' as const,
@@ -95,8 +95,8 @@ export class HighResolutionDetector {
     }
 
     // Determine strategy based on memory usage
-    // MEDIUM 구간(옛 CHUNKED)은 TILED로 흡수됐다 — light preset은 resize-strategy.internal.ts가
-    // analysis.estimatedMemoryMB로 재판정해 고른다.
+    // The former CHUNKED range is now TILED. resize-strategy.internal.ts selects
+    // the light preset from analysis.estimatedMemoryMB.
     if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.SMALL) {
       return ProcessingStrategy.DIRECT;
     } else if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.MEDIUM) {
@@ -112,9 +112,9 @@ export class HighResolutionDetector {
    * Calculate processing complexity
    * @private
    *
-   * TILED는 옛 CHUNKED(medium)/옛 TILED(extreme) 두 대역을 흡수했다 — 그대로 두면
-   * 옛 chunked 대역(16~64MB)이 'extreme'로 튀어 estimateProcessingTime의 배수까지
-   * 잘못 부풀린다. estimatedMemoryMB로 두 대역을 다시 가른다.
+   * TILED absorbs the former CHUNKED (medium) and TILED (extreme) ranges.
+   * Keep the 16–64MB range at medium complexity so estimateProcessingTime does not
+   * apply the former heavy-path multiplier. estimatedMemoryMB distinguishes the ranges.
    */
   private static calculateComplexity(
     pixelCount: number,
@@ -265,7 +265,7 @@ export class HighResolutionDetector {
         break;
 
       case ProcessingStrategy.TILED:
-        // light(옛 CHUNKED)/heavy(옛 TILED) preset 경계를 그대로 보존한다.
+        // Preserve the former CHUNKED (light) and TILED (heavy) preset boundary.
         if (analysis.estimatedMemoryMB <= 64) {
           baseTime = megaPixels * 0.2;
           multiplier = 1.2; // Chunk overhead
@@ -337,13 +337,17 @@ export class HighResolutionDetector {
           description:
             'Divides the image into tiles for individual processing. Tile size and concurrency are tuned to the measured memory footprint.',
           advantages: [
+            'Memory efficient',
+            'Stable processing',
+            'Suitable for medium-sized images',
             'Can process ultra-large images',
             'Limited memory usage',
             'Scalability',
-            'Memory efficient for medium-sized images too',
           ],
           disadvantages: [
-            'Longest processing time for large images',
+            'Increased processing time',
+            'Boundary processing required',
+            'Longest processing time',
             'Complex tile boundary processing',
             'High implementation complexity',
           ],

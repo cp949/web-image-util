@@ -203,6 +203,22 @@ describe('HighResolutionManager.smartResize — forceStrategy 전달 계약', ()
       }),
     });
   });
+
+  it('제거된 forceStrategy="chunked"는 FEATURE_NOT_SUPPORTED 원인을 보존한다', async () => {
+    const img = createMockImage(300, 300);
+
+    await expect(
+      HighResolutionManager.smartResize(img, 50, 50, {
+        forceStrategy: 'chunked' as ProcessingStrategy,
+      })
+    ).rejects.toMatchObject({
+      code: 'RESIZE_FAILED',
+      cause: expect.objectContaining({
+        code: 'FEATURE_NOT_SUPPORTED',
+        cause: expect.objectContaining({ message: 'Unsupported processing strategy: chunked' }),
+      }),
+    });
+  });
 });
 
 describe('HighResolutionManager.smartResize — enableProgressTracking 진행률 shape', () => {

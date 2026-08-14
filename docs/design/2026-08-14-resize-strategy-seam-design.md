@@ -38,7 +38,7 @@ TiledProcessor.resizeInTiles(img, w, h, {
 
 ## 결정
 
-`ProcessingStrategy` 유니온에서 `CHUNKED`를 제거한다 — `'direct' | 'stepped' | 'tiled'` 3값. `chunked`가 하던 일(작은 타일, 낮은 동시성)은 `tiledAdapter.execute()` 내부의 preset 선택 로직으로 흡수한다:
+`ProcessingStrategy` 유니온에서 `CHUNKED`를 제거한다 — `'direct' | 'stepped' | 'tiled'` 3값. `chunked`가 하던 일(명시적 타일 크기, 낮은 동시성)은 `tiledAdapter.execute()` 내부의 preset 선택 로직으로 흡수한다:
 
 ```ts
 // resize-strategy.internal.ts, tiledAdapter.execute 내부
