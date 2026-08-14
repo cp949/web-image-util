@@ -3,10 +3,10 @@
  * Transparent system that automatically processes high-resolution images
  */
 
-import { applySmoothing, createOwnedCanvas } from '../base/canvas-utils.internal';
-import { HighResolutionDetector } from '../base/high-res-detector.internal';
+import { HighResolutionDetector, ProcessingStrategy } from '../base/high-res-detector.internal';
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
+import { getResizeStrategyAdapter } from '../base/resize-strategy.internal';
 import { productionLog } from '../utils/debug.internal';
 
 /**
@@ -341,17 +341,21 @@ export class AutoHighResProcessor {
   ): Promise<ProcessingResult> {
     const startTime = Date.now();
 
-    const { canvas, ctx } = createOwnedCanvas(targetWidth, targetHeight);
-    applySmoothing(ctx, quality);
-
-    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+    const analysis = HighResolutionDetector.analyzeImage(img);
+    const canvas = await getResizeStrategyAdapter(ProcessingStrategy.DIRECT)!.execute({
+      img,
+      targetWidth,
+      targetHeight,
+      quality,
+      analysis,
+    });
 
     const processingTime = (Date.now() - startTime) / 1000;
 
     return {
       canvas,
-      analysis: HighResolutionDetector.analyzeImage(img),
-      strategy: 'direct' as any,
+      analysis,
+      strategy: ProcessingStrategy.DIRECT,
       processingTime,
       memoryPeakUsageMB: 0,
       quality,
