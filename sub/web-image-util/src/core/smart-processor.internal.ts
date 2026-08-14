@@ -164,7 +164,8 @@ export class SmartProcessor {
     }
 
     if (userStrategy === 'memory-efficient') {
-      return pixelCount > 16_000_000 ? 'tiled' : 'chunked';
+      // chunked는 tiled의 preset으로 흡수됐다(resize-strategy.internal.ts) — 크기 무관 tiled.
+      return 'tiled';
     }
 
     if (userStrategy === 'quality') {
@@ -172,10 +173,9 @@ export class SmartProcessor {
     }
 
     // 'auto': Automatic selection based on image size
-    if (pixelCount > 16_000_000) {
-      return 'tiled'; // 16MP+: Tiled method
-    } else if (pixelCount > 4_000_000) {
-      return 'chunked'; // 4-16MP: Chunked method
+    // chunked는 tiled의 preset으로 흡수됐다 — 4MP 초과는 전부 tiled.
+    if (pixelCount > 4_000_000) {
+      return 'tiled';
     } else {
       return 'stepped'; // 4MP-: Stepped method
     }

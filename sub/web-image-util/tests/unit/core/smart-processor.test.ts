@@ -127,13 +127,13 @@ describe('SmartProcessor', () => {
   // selectInternalStrategy — 자동(auto) 전략 선택
   // --------------------------------------------------------------------------
   describe('selectInternalStrategy — auto 전략', () => {
-    it('auto 전략 + 4-16MP 이미지면 forceStrategy 가 "chunked" 다', async () => {
-      // 2001×2001 ≈ 4.004MP > 4MP, < 16MP → chunked
+    it('auto 전략 + 4MP 초과 이미지면 forceStrategy 가 "tiled" 다(옛 chunked 대역)', async () => {
+      // 2001×2001 ≈ 4.004MP > 4MP → tiled (옛 4-16MP chunked 대역이 흡수됨)
       const img = createMockImage(2001, 2001);
       await SmartProcessor.process(img, 800, 600, { strategy: 'auto' });
 
       const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
-      expect(passedOpts.forceStrategy).toBe('chunked');
+      expect(passedOpts.forceStrategy).toBe('tiled');
     });
 
     it('auto 전략 + 16MP 초과 이미지면 forceStrategy 가 "tiled" 다', async () => {
@@ -186,13 +186,13 @@ describe('SmartProcessor', () => {
       expect(passedOpts.forceStrategy).toBe('tiled');
     });
 
-    it('strategy="memory-efficient" + 4-16MP 이미지면 forceStrategy 가 "chunked" 다', async () => {
-      // 2001×2001 ≈ 4.004MP < 16MP → chunked
+    it('strategy="memory-efficient" + 4-16MP 이미지면 forceStrategy 가 "tiled" 다(옛 chunked 대역)', async () => {
+      // 2001×2001 ≈ 4.004MP → memory-efficient는 크기 무관 tiled(옛 chunked 대역이 흡수됨)
       const img = createMockImage(2001, 2001);
       await SmartProcessor.process(img, 800, 600, { strategy: 'memory-efficient' });
 
       const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
-      expect(passedOpts.forceStrategy).toBe('chunked');
+      expect(passedOpts.forceStrategy).toBe('tiled');
     });
   });
 
