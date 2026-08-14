@@ -7,7 +7,6 @@
 
 export {
   analyzePerformanceFeatures,
-  BrowserCapabilityDetector,
   DEFAULT_DETECTION_OPTIONS,
   detectBrowserCapabilities,
   detectSyncCapabilities,

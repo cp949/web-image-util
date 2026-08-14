@@ -15,3 +15,4 @@
 - `2026-08-14-processor-interface-parity-design.md`: shortcut 프로세서 인터페이스의 출력 메서드 표면을 실제 구현과 맞춘 결정 근거
 - `2026-08-14-composition-placement-design.md`: 워터마크 단일·반복 배치를 내부 모듈로 모으고 frame/per-tile 회전 표현을 보존한 결정 근거
 - `2026-08-15-svg-id-reference-integrity-design.md`: SVG id 참조 판정을 단일 모듈로 모으고 제거·병합 단계가 참조 무결성을 보존하게 한 결정 근거
+- `2026-08-15-browser-capability-detector-facade-design.md`: BrowserCapabilityDetector 위임 파사드를 제거하고 테스트 전용 clearCache를 배럴 밖 모듈 함수로 옮긴 결정 근거

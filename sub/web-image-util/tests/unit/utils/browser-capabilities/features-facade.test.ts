@@ -5,19 +5,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { features } from '../../../../src/index';
 import {
-  BrowserCapabilityDetector,
   detectBrowserCapabilities,
   detectFormatSupport,
   detectSyncCapabilities,
 } from '../../../../src/utils/browser-capabilities';
+import { clearCapabilityCacheForTesting } from '../../../../src/utils/browser-capabilities/cache.internal';
 
 describe('features 퍼사드 일관성', () => {
   beforeEach(() => {
-    BrowserCapabilityDetector.getInstance().clearCache();
+    clearCapabilityCacheForTesting();
   });
 
   afterEach(() => {
-    BrowserCapabilityDetector.getInstance().clearCache();
+    clearCapabilityCacheForTesting();
   });
 
   it('features.offscreenCanvas는 detectSyncCapabilities().offscreenCanvas와 일치한다', () => {

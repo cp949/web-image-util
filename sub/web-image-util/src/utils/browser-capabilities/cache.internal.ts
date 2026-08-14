@@ -38,3 +38,12 @@ class CapabilityCache {
 
 /** 모듈 내에서 공유하는 단일 캐시 인스턴스. */
 export const capabilityCache = new CapabilityCache();
+
+/**
+ * 캐시를 비운다.
+ *
+ * @internal 테스트 격리 전용. 공개 배럴에 등재하지 않는다.
+ */
+export function clearCapabilityCacheForTesting(): void {
+  capabilityCache.clear();
+}

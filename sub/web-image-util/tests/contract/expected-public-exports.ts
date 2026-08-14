@@ -75,7 +75,6 @@ export const ROOT_VALUE_EXPORTS = [
   'sanitizeSvgForRendering',
   // 브라우저 기능 감지 (루트 단독 소유)
   'analyzePerformanceFeatures',
-  'BrowserCapabilityDetector',
   'DEFAULT_DETECTION_OPTIONS',
   'detectBrowserCapabilities',
   'detectFormatSupport',

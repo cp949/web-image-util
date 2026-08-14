@@ -9,13 +9,13 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   analyzePerformanceFeatures,
-  BrowserCapabilityDetector,
   detectBrowserCapabilities,
   detectFormatSupport,
   getCachedBrowserCapabilities,
   getCachedFormatSupport,
   getOptimalProcessingMode,
 } from '../../../../src/utils/browser-capabilities';
+import { clearCapabilityCacheForTesting } from '../../../../src/utils/browser-capabilities/cache.internal';
 import {
   analyzePerformanceFeaturesInternal,
   determineOptimalProcessingMode,
@@ -168,11 +168,11 @@ describe('analyzePerformanceFeaturesInternal — 필드 파생', () => {
 describe('캐시 표면 행동', () => {
   // 매 테스트마다 싱글턴 캐시를 초기화해 테스트 간 누수를 막는다
   beforeEach(() => {
-    BrowserCapabilityDetector.getInstance().clearCache();
+    clearCapabilityCacheForTesting();
   });
 
   afterEach(() => {
-    BrowserCapabilityDetector.getInstance().clearCache();
+    clearCapabilityCacheForTesting();
   });
 
   describe('getCachedBrowserCapabilities', () => {
@@ -195,11 +195,11 @@ describe('캐시 표면 행동', () => {
       expect(cached).toEqual(detected);
     });
 
-    it('캐시 워밍 후 clearCache 하면 다시 undefined가 된다', async () => {
+    it('캐시 워밍 후 clearCapabilityCacheForTesting 하면 다시 undefined가 된다', async () => {
       await detectBrowserCapabilities();
       expect(getCachedBrowserCapabilities()).toBeDefined();
 
-      BrowserCapabilityDetector.getInstance().clearCache();
+      clearCapabilityCacheForTesting();
       expect(getCachedBrowserCapabilities()).toBeUndefined();
     });
   });

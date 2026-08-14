@@ -5,10 +5,11 @@
 import { describe, expect, it } from 'vitest';
 import { features } from '../../../../src/index';
 import {
-  BrowserCapabilityDetector,
   detectBrowserCapabilities,
   detectSyncCapabilities,
+  getCachedBrowserCapabilities,
 } from '../../../../src/utils/browser-capabilities';
+import { clearCapabilityCacheForTesting } from '../../../../src/utils/browser-capabilities/cache.internal';
 
 /**
  * window와 document를 undefined로 만들어 SSR 환경을 흉내낸다.
@@ -41,12 +42,6 @@ describe('SSR 환경 안전성', () => {
     expect(() => features.avif).not.toThrow();
     expect(() => features.offscreenCanvas).not.toThrow();
     expect(() => features.imageBitmap).not.toThrow();
-  });
-
-  it('BrowserCapabilityDetector.getInstance()는 항상 인스턴스를 반환한다', () => {
-    const instance = BrowserCapabilityDetector.getInstance();
-    expect(instance).toBeDefined();
-    expect(instance).toBeInstanceOf(BrowserCapabilityDetector);
   });
 
   it('window/document 없는 SSR 환경에서 detectSyncCapabilities는 예외를 던지지 않는다', () => {
@@ -98,28 +93,24 @@ describe('SSR 환경 안전성', () => {
     }
   });
 
-  it('SSR에서 로드된 detector도 환경 복원 후 isServerSide를 다시 계산한다', async () => {
-    const originalWindow = globalThis.window;
-    const originalDocument = globalThis.document;
-
-    // @ts-expect-error SSR 환경 시뮬레이션
-    delete globalThis.window;
-    // @ts-expect-error SSR 환경 시뮬레이션
-    delete globalThis.document;
-
+  it('SSR 판정은 호출마다 다시 평가된다 — 환경 복원 후에는 캐시가 다시 정상 동작한다', async () => {
+    // capabilityCache.isServerSide(cache.internal.ts)는 모듈 로드 시점에 얼어붙지 않고
+    // 매 get/set 호출마다 typeof window/document를 다시 읽는다. 이걸 검증하지 않으면
+    // 이 게터가 언젠가 메모이즈되도록 바뀌어도 어떤 테스트도 잡아내지 못한다.
+    clearCapabilityCacheForTesting();
+    const restore = simulateSSR();
     try {
-      const browserCapabilitiesModule = await import('../../../../src/utils/browser-capabilities');
-      const detector = browserCapabilitiesModule.BrowserCapabilityDetector.getInstance();
-
-      expect(detector.isServerSide).toBe(true);
-
-      globalThis.window = originalWindow;
-      globalThis.document = originalDocument;
-
-      expect(detector.isServerSide).toBe(false);
+      // SSR 중에는 capabilityCache.set이 저장을 건너뛴다.
+      await detectBrowserCapabilities({ timeout: 100 });
     } finally {
-      globalThis.window = originalWindow;
-      globalThis.document = originalDocument;
+      restore();
     }
+    expect(getCachedBrowserCapabilities()).toBeUndefined();
+
+    // 환경 복원 후에는 같은 판정이 새로 평가되어 정상적으로 캐시에 저장된다.
+    await detectBrowserCapabilities({ timeout: 100 });
+    expect(getCachedBrowserCapabilities()).toBeDefined();
+
+    clearCapabilityCacheForTesting();
   });
 });

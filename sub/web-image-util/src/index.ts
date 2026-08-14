@@ -154,7 +154,6 @@ export { ImageErrorCode, ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './
 export {
   analyzePerformanceFeatures,
   type BrowserCapabilities,
-  BrowserCapabilityDetector,
   DEFAULT_DETECTION_OPTIONS,
   type DetectionOptions,
   detectBrowserCapabilities,

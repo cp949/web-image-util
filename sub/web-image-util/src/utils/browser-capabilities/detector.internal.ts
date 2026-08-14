@@ -1,10 +1,9 @@
 /**
- * 동기/비동기 감지 함수와 성능 분석을 묶어 외부에 제공하는 파사드 계층이다.
+ * 브라우저 기능 감지와 성능 분석을 제공하는 모듈 함수 모음이다.
  *
- * @description 감지 로직은 모듈 함수가 소유하고, `BrowserCapabilityDetector`는 같은 동작을
- * 객체 형태로 쓰는 호출자를 위해 그 함수들에 위임한다. 인스턴스에 상태가 없고 캐시는 모듈 레벨
- * `capabilityCache`가 보관하므로 두 표면의 결과는 항상 같다. 캐시 키 `browser-capabilities`로
- * 종합 결과를 보관해 반복 호출 비용을 제거한다.
+ * @description 감지 로직을 이 모듈이 단독 소유한다. 캐시는 `cache.internal.ts`가 정의하는
+ * 모듈 레벨 `capabilityCache`를 이 모듈과 `format-detection.internal.ts`가 함께 쓴다 — 이
+ * 모듈은 캐시 키 `browser-capabilities`로 종합 결과를 보관해 반복 호출 비용을 제거한다.
  */
 
 import { capabilityCache } from './cache.internal';
@@ -16,7 +15,7 @@ import {
   detectWebWorkers,
   getDevicePixelRatio,
 } from './feature-detection.internal';
-import { detectAVIFSupport, detectFormatSupport, detectWebPSupport } from './format-detection.internal';
+import { detectAVIFSupport, detectWebPSupport } from './format-detection.internal';
 import { analyzePerformanceFeaturesInternal } from './performance.internal';
 import type { BrowserCapabilities, DetectionOptions, PerformanceFeatures } from './types';
 
@@ -105,68 +104,6 @@ export async function getOptimalProcessingMode(
 ): Promise<'main-thread' | 'web-worker' | 'offscreen'> {
   const performance = await analyzePerformanceFeatures(options);
   return performance.recommendedProcessingMode;
-}
-
-/**
- * Browser capability detector
- *
- * @description 위 모듈 함수들과 같은 동작을 객체 형태로 제공한다. 인스턴스 필드가 없고
- * 캐시는 모듈 레벨에 있으므로, 어느 쪽으로 호출하든 결과와 캐시 상태를 공유한다.
- */
-export class BrowserCapabilityDetector {
-  private static instance: BrowserCapabilityDetector;
-
-  /**
-   * Get singleton instance
-   */
-  static getInstance(): BrowserCapabilityDetector {
-    if (!BrowserCapabilityDetector.instance) {
-      BrowserCapabilityDetector.instance = new BrowserCapabilityDetector();
-    }
-    return BrowserCapabilityDetector.instance;
-  }
-
-  /**
-   * Detect all browser capabilities (asynchronous)
-   */
-  async detectCapabilities(options: DetectionOptions = {}): Promise<BrowserCapabilities> {
-    return detectBrowserCapabilities(options);
-  }
-
-  /**
-   * Analyze performance features
-   */
-  async analyzePerformance(options: DetectionOptions = {}): Promise<PerformanceFeatures> {
-    return analyzePerformanceFeatures(options);
-  }
-
-  /**
-   * Detect individual features (synchronous)
-   */
-  detectSyncFeatures(): Omit<BrowserCapabilities, 'webp' | 'avif'> {
-    return detectSyncCapabilities();
-  }
-
-  /**
-   * Detect format support (asynchronous)
-   */
-  async detectFormatSupport(timeout: number = 5000): Promise<{ webp: boolean; avif: boolean }> {
-    return detectFormatSupport(timeout);
-  }
-
-  /**
-   * Clear cache
-   */
-  clearCache(): void {
-    capabilityCache.clear();
-  }
-
-  /**
-   * Whether SSR environment
-   */
-  get isServerSide(): boolean {
-    return capabilityCache.isServerSide;
-  }
 }
 
 /**
