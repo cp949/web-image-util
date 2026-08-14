@@ -228,7 +228,9 @@ describe('ResizePerformance', () => {
         capturedConfig = this.getConfig() as unknown as Record<string, unknown>;
         return [] as unknown[];
       });
-      const smartResizeSpy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
+      const smartResizeSpy = vi
+        .spyOn(AutoHighResProcessor, 'smartResize')
+        .mockResolvedValue(makeAutoProcessingResult());
 
       const images = [{}, {}] as HTMLImageElement[];
       await ResizePerformance.memoryEfficientBatch(images, 300, 200);

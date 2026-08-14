@@ -1,6 +1,6 @@
-import { CanvasPool } from './canvas-pool.internal';
 import { readMemoryBudget, requestMemoryRelief } from '../utils/browser-capabilities/index';
 import { productionLog } from '../utils/debug.internal';
+import { CanvasPool } from './canvas-pool.internal';
 import { createImageError } from './error-helpers';
 import type { ImageAnalysis } from './high-res-detector.internal';
 import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector.internal';

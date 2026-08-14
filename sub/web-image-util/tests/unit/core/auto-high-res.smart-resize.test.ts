@@ -205,7 +205,7 @@ describe('AutoHighResProcessor.smartResize', () => {
 
     it('매우 넓은 이미지(10000×100)는 스케일 비율이 4를 초과해 고해상도 경로를 사용한다(게이트 통합 — scaleRatio 조건 신설)', async () => {
       // 10000×100 = 1MP(8MP 미만)이지만 800×600 목표 대비 스케일 max(10000/800, 100/600) = 12.5 > 4
-      // SmartProcessor와 게이트를 공유하며 AutoHighResProcessor 도 scaleRatio 조건을 새로 갖는다
+      // AutoHighResProcessor는 scaleRatio 조건을 통해 고해상도 경로를 결정한다
       const highResSpy = vi.spyOn(HighResolutionManager, 'smartResize');
       const img = createDrawableImage(10000, 100);
       await AutoHighResProcessor.smartResize(img, 800, 600);

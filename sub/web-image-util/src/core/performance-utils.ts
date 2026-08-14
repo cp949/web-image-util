@@ -37,7 +37,8 @@ async function resizeBatch(
 
   const jobs: BatchResizeJob<HTMLCanvasElement>[] = images.map((img, index) => ({
     id: `resize-${index}`,
-    operation: async () => (await AutoHighResProcessor.smartResize(img, width, height, { priority, forceStrategy })).canvas,
+    operation: async () =>
+      (await AutoHighResProcessor.smartResize(img, width, height, { priority, forceStrategy })).canvas,
   }));
 
   return processBatch(jobs, performance);
@@ -129,7 +130,8 @@ export class ResizePerformance {
     const jobs = images.map((img, index) => ({
       id: `memory-resize-${index}`,
       operation: async () =>
-        (await AutoHighResProcessor.smartResize(img, width, height, { priority: 'speed', forceStrategy: 'tiled' })).canvas,
+        (await AutoHighResProcessor.smartResize(img, width, height, { priority: 'speed', forceStrategy: 'tiled' }))
+          .canvas,
     }));
 
     return batcher.processAll(jobs);
