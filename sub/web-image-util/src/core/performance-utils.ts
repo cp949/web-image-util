@@ -4,10 +4,11 @@
  * @description Provides simple performance control functions
  */
 
+import type { ProcessingStrategy } from '../base/high-res-detector.internal';
 import { readMemoryBudget } from '../utils/browser-capabilities/index';
-import { BatchResizer } from './batch-resizer';
+import { AutoHighResProcessor } from './auto-high-res';
+import { type BatchResizeJob, BatchResizer } from './batch-resizer';
 import { getPerformanceConfig, type ResizeProfile } from './performance-config';
-import { SmartProcessor } from './smart-processor.internal';
 
 /**
  * 모듈 스코프에 보관하는 기본 성능 프로파일이다.
@@ -17,6 +18,37 @@ import { SmartProcessor } from './smart-processor.internal';
  * 프로파일을 바꿔도 `processImage()` 체인·프리셋·출력 파이프라인의 결과는 달라지지 않는다.
  */
 let globalPerformanceProfile: ResizeProfile = 'balanced';
+
+/**
+ * 이미지마다 AutoHighResProcessor.smartResize()를 호출해 배치 처리한다.
+ * ResizePerformance.fastBatch/qualityBatch가 쓰는 얇은 편의 계층이다.
+ */
+async function resizeBatch(
+  images: HTMLImageElement[],
+  width: number,
+  height: number,
+  options: {
+    priority?: 'speed' | 'balanced' | 'quality';
+    forceStrategy?: ProcessingStrategy;
+    performance?: ResizeProfile;
+  } = {}
+): Promise<HTMLCanvasElement[]> {
+  const { priority, forceStrategy, performance = 'balanced' } = options;
+
+  const jobs: BatchResizeJob<HTMLCanvasElement>[] = images.map((img, index) => ({
+    id: `resize-${index}`,
+    operation: async () => (await AutoHighResProcessor.smartResize(img, width, height, { priority, forceStrategy })).canvas,
+  }));
+
+  return processBatch(jobs, performance);
+}
+
+/**
+ * ResizeProfile 기준으로 구성한 BatchResizer에 작업을 흘려보낸다.
+ */
+async function processBatch<T>(jobs: BatchResizeJob<T>[], performance: ResizeProfile = 'balanced'): Promise<T[]> {
+  return new BatchResizer(performance).processAll(jobs);
+}
 
 /**
  * Performance control utilities
@@ -69,20 +101,14 @@ export class ResizePerformance {
    * Fast batch processing - uses fast profile
    */
   static async fastBatch(images: HTMLImageElement[], width: number, height: number): Promise<HTMLCanvasElement[]> {
-    return SmartProcessor.resizeBatch(images, width, height, {
-      performance: 'fast',
-      strategy: 'fast',
-    });
+    return resizeBatch(images, width, height, { performance: 'fast', priority: 'speed' });
   }
 
   /**
    * High-quality batch processing - uses quality profile
    */
   static async qualityBatch(images: HTMLImageElement[], width: number, height: number): Promise<HTMLCanvasElement[]> {
-    return SmartProcessor.resizeBatch(images, width, height, {
-      performance: 'quality',
-      strategy: 'quality',
-    });
+    return resizeBatch(images, width, height, { performance: 'quality', priority: 'quality' });
   }
 
   /**
@@ -102,10 +128,8 @@ export class ResizePerformance {
 
     const jobs = images.map((img, index) => ({
       id: `memory-resize-${index}`,
-      operation: () =>
-        SmartProcessor.process(img, width, height, {
-          strategy: 'memory-efficient',
-        }),
+      operation: async () =>
+        (await AutoHighResProcessor.smartResize(img, width, height, { priority: 'speed', forceStrategy: 'tiled' })).canvas,
     }));
 
     return batcher.processAll(jobs);
@@ -183,30 +207,19 @@ export class ResizePerformance {
  * Fast resizing
  */
 export async function fastResize(img: HTMLImageElement, width: number, height: number): Promise<HTMLCanvasElement> {
-  return SmartProcessor.process(img, width, height, {
-    performance: 'fast',
-    strategy: 'fast',
-  });
+  return (await AutoHighResProcessor.smartResize(img, width, height, { priority: 'speed' })).canvas;
 }
 
 /**
  * High-quality resizing
  */
 export async function qualityResize(img: HTMLImageElement, width: number, height: number): Promise<HTMLCanvasElement> {
-  return SmartProcessor.process(img, width, height, {
-    performance: 'quality',
-    strategy: 'quality',
-  });
+  return (await AutoHighResProcessor.smartResize(img, width, height, { priority: 'quality' })).canvas;
 }
 
 /**
  * Auto-optimized resizing
  */
 export async function autoResize(img: HTMLImageElement, width: number, height: number): Promise<HTMLCanvasElement> {
-  const recommendation = ResizePerformance.getRecommendation(1, img.width * img.height);
-
-  return SmartProcessor.process(img, width, height, {
-    performance: recommendation.profile,
-    strategy: 'auto',
-  });
+  return (await AutoHighResProcessor.smartResize(img, width, height, { priority: 'balanced' })).canvas;
 }

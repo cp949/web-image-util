@@ -2,9 +2,10 @@
  * ResizePerformance 단위 테스트 (버그 수정용 회귀 테스트 포함)
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AutoHighResProcessor } from '../../../src/core/auto-high-res';
 import { BatchResizer } from '../../../src/core/batch-resizer';
 import { autoResize, fastResize, qualityResize, ResizePerformance } from '../../../src/core/performance-utils';
-import { SmartProcessor } from '../../../src/core/smart-processor.internal';
+import { makeAutoProcessingResult } from './auto-high-res.helpers';
 
 /**
  * performance.memory를 복구 가능한 방식으로 주입한다.
@@ -200,28 +201,22 @@ describe('ResizePerformance', () => {
       vi.restoreAllMocks();
     });
 
-    it('fastBatch는 SmartProcessor.resizeBatch에 fast performance/strategy를 전달한다', async () => {
-      const spy = vi.spyOn(SmartProcessor, 'resizeBatch').mockResolvedValue([] as HTMLCanvasElement[]);
-      const images = [] as HTMLImageElement[];
+    it('fastBatch는 이미지마다 AutoHighResProcessor.smartResize를 priority="speed"로 호출한다', async () => {
+      const spy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
+      const img = {} as HTMLImageElement;
 
-      await ResizePerformance.fastBatch(images, 300, 200);
+      await ResizePerformance.fastBatch([img], 300, 200);
 
-      expect(spy).toHaveBeenCalledWith(images, 300, 200, {
-        performance: 'fast',
-        strategy: 'fast',
-      });
+      expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'speed' });
     });
 
-    it('qualityBatch는 SmartProcessor.resizeBatch에 quality performance/strategy를 전달한다', async () => {
-      const spy = vi.spyOn(SmartProcessor, 'resizeBatch').mockResolvedValue([] as HTMLCanvasElement[]);
-      const images = [] as HTMLImageElement[];
+    it('qualityBatch는 이미지마다 AutoHighResProcessor.smartResize를 priority="quality"로 호출한다', async () => {
+      const spy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
+      const img = {} as HTMLImageElement;
 
-      await ResizePerformance.qualityBatch(images, 300, 200);
+      await ResizePerformance.qualityBatch([img], 300, 200);
 
-      expect(spy).toHaveBeenCalledWith(images, 300, 200, {
-        performance: 'quality',
-        strategy: 'quality',
-      });
+      expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'quality' });
     });
 
     it('memoryEfficientBatch는 concurrency 1, canvas pool 비활성, 64MB 정책으로 BatchResizer를 구성한다', async () => {
@@ -233,7 +228,7 @@ describe('ResizePerformance', () => {
         capturedConfig = this.getConfig() as unknown as Record<string, unknown>;
         return [] as unknown[];
       });
-      const processSpy = vi.spyOn(SmartProcessor, 'process').mockResolvedValue({} as HTMLCanvasElement);
+      const smartResizeSpy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
 
       const images = [{}, {}] as HTMLImageElement[];
       await ResizePerformance.memoryEfficientBatch(images, 300, 200);
@@ -247,11 +242,12 @@ describe('ResizePerformance', () => {
       // 이미지 수만큼 작업이 구성된다
       expect(processAllSpy.mock.calls[0]![0]).toHaveLength(2);
 
-      // 각 작업은 SmartProcessor.process를 memory-efficient strategy로 호출한다
+      // 각 작업은 AutoHighResProcessor.smartResize를 priority="speed" + forceStrategy="tiled"로 호출한다
       const jobs = processAllSpy.mock.calls[0]![0] as Array<{ operation: () => Promise<unknown> }>;
       await jobs[0]!.operation();
-      expect(processSpy).toHaveBeenCalledWith(images[0], 300, 200, {
-        strategy: 'memory-efficient',
+      expect(smartResizeSpy).toHaveBeenCalledWith(images[0], 300, 200, {
+        priority: 'speed',
+        forceStrategy: 'tiled',
       });
     });
   });
@@ -261,58 +257,31 @@ describe('ResizePerformance', () => {
       vi.restoreAllMocks();
     });
 
-    it('fastResize는 SmartProcessor.process에 fast performance/strategy를 전달한다', async () => {
-      const spy = vi.spyOn(SmartProcessor, 'process').mockResolvedValue({} as HTMLCanvasElement);
+    it('fastResize는 AutoHighResProcessor.smartResize를 priority="speed"로 호출한다', async () => {
+      const spy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
       const img = {} as HTMLImageElement;
 
       await fastResize(img, 300, 200);
 
-      expect(spy).toHaveBeenCalledWith(img, 300, 200, {
-        performance: 'fast',
-        strategy: 'fast',
-      });
+      expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'speed' });
     });
 
-    it('qualityResize는 SmartProcessor.process에 quality performance/strategy를 전달한다', async () => {
-      const spy = vi.spyOn(SmartProcessor, 'process').mockResolvedValue({} as HTMLCanvasElement);
+    it('qualityResize는 AutoHighResProcessor.smartResize를 priority="quality"로 호출한다', async () => {
+      const spy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
       const img = {} as HTMLImageElement;
 
       await qualityResize(img, 300, 200);
 
-      expect(spy).toHaveBeenCalledWith(img, 300, 200, {
-        performance: 'quality',
-        strategy: 'quality',
-      });
+      expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'quality' });
     });
 
-    it('autoResize는 추천 프로파일과 auto strategy를 SmartProcessor.process에 전달한다', async () => {
-      const spy = vi.spyOn(SmartProcessor, 'process').mockResolvedValue({} as HTMLCanvasElement);
-      // 픽셀 수 1MP, 단일 이미지 → getRecommendation은 quality 추천(5개 이하)
+    it('autoResize는 AutoHighResProcessor.smartResize를 priority="balanced"로 호출한다', async () => {
+      const spy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
       const img = { width: 1000, height: 1000 } as HTMLImageElement;
 
       await autoResize(img, 300, 200);
 
-      expect(spy).toHaveBeenCalledWith(img, 300, 200, {
-        performance: 'quality',
-        strategy: 'auto',
-      });
-    });
-
-    it('autoResize는 메모리 압박이 high이면 fast 프로파일을 전달한다', async () => {
-      const spy = vi.spyOn(SmartProcessor, 'process').mockResolvedValue({} as HTMLCanvasElement);
-      vi.spyOn(ResizePerformance, 'getMemoryInfo').mockReturnValue({
-        usedMB: 900,
-        limitMB: 1000,
-        pressureLevel: 'high',
-      });
-      const img = { width: 1000, height: 1000 } as HTMLImageElement;
-
-      await autoResize(img, 300, 200);
-
-      expect(spy).toHaveBeenCalledWith(img, 300, 200, {
-        performance: 'fast',
-        strategy: 'auto',
-      });
+      expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'balanced' });
     });
   });
 });
