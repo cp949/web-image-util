@@ -73,12 +73,11 @@ describe('removeMetadata 내부 패스', () => {
 });
 
 describe('SVG 최적화', () => {
-  it('기본 옵션은 안전한 단계들을 켜고 요소 병합은 끈다', () => {
+  it('기본 옵션은 안전한 단계들을 켠다', () => {
     expect(SvgOptimizer.getDefaultOptions()).toEqual({
       removeMetadata: true,
       simplifyPaths: true,
       optimizeGradients: true,
-      mergeElements: false,
       removeUnusedDefs: true,
       precision: 3,
     });
@@ -123,7 +122,6 @@ describe('SVG 최적화', () => {
       removeMetadata: false,
       simplifyPaths: false,
       optimizeGradients: false,
-      mergeElements: false,
       removeUnusedDefs: false,
       precision: 3,
     });

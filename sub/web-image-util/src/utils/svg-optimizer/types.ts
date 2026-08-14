@@ -11,8 +11,6 @@ export interface SvgOptimizationOptions {
   simplifyPaths: boolean;
   /** 중복 그라디언트를 병합·최적화한다. */
   optimizeGradients: boolean;
-  /** 유사한 요소를 병합한다. */
-  mergeElements: boolean;
   /** 사용되지 않는 정의(defs)를 제거한다. */
   removeUnusedDefs: boolean;
   /** 수치 정밀도(소수점 자릿수). */

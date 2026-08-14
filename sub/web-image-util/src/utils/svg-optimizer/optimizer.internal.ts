@@ -32,8 +32,6 @@ export class SvgOptimizer {
       removeMetadata: true,
       simplifyPaths: true,
       optimizeGradients: true,
-      // 안전을 위해 기본값은 false.
-      mergeElements: false,
       removeUnusedDefs: true,
       // 소수점 3자리 유지.
       precision: 3,
