@@ -62,7 +62,9 @@
   - 명시적 스킴 또는 protocol-relative 입력은 `DEFAULT_ALLOWED_PROTOCOLS` 검사를 받습니다. 상대 경로는 종전대로 검사 없이 브라우저 자산 로딩 경로를 유지합니다. 판정 실패는 예외 없이 `'unknown'`으로 수렴하는 기존 계약 그대로입니다.
 - Added: `fetchImageFormat()`에 `timeoutMs`·`abortSignal` 옵션이 추가되었습니다.
 - Deprecated: `ResizeOperation`·`DirectResizeConfig` 타입과 `ScaleOperation` 별칭. shortcut 내부 통로가 공개 `resize()` 설정으로 합류하면서 처리 경로에서 사용되지 않습니다. `ScaleOperation` 대신 `ScaleValue`를 사용하세요.
-- Changed (**Breaking**): `ProcessingStrategy`(`/advanced`의 `HighResolutionOptions.forceStrategy`·`ProcessingResult.strategy`)에서 `'chunked'`가 제거되었습니다. `chunkedAdapter`와 `tiledAdapter`가 둘 다 `TiledProcessor`를 호출하는 같은 실행기였고 차이는 옵션 프리셋뿐이었습니다 — 이제 `tiled` adapter가 `analysis.estimatedMemoryMB`(64MB 경계)로 그 프리셋을 내부에서 고릅니다. `forceStrategy: 'chunked'`를 쓰던 코드는 `'tiled'`로 바꾸세요. 같은 메모리 대역에서 같은 프리셋이 선택되므로 동작은 동치입니다.
+- Changed (**Breaking**): `ProcessingStrategy`(`/advanced`의 `HighResolutionOptions.forceStrategy`·`ProcessingResult.strategy`)에서 `'chunked'`가 제거되었습니다. `chunkedAdapter`와 `tiledAdapter`가 둘 다 `TiledProcessor`를 호출하는 같은 실행기였고 차이는 옵션 프리셋뿐이었습니다 — 이제 `tiled` adapter가 `analysis.estimatedMemoryMB`(64MB 경계)로 그 프리셋을 내부에서 고릅니다. `forceStrategy: 'chunked'`를 쓰던 코드는 `'tiled'`로 바꾸세요.
+  - 이 동치는 64MB 이하 이미지에서만 성립합니다. 64MB를 넘는 이미지는 동치가 아닙니다 — 이전에 `'chunked'`가 항상 주던 `tileSize: 2048`·`maxConcurrency: 2`·`timeMultiplier 1.0` 대신, 이제 heavy 프리셋(`tileSize` 미지정 → `TiledProcessor` 기본값 1024, `maxConcurrency: quality === 'fast' ? 4 : 2`, `timeMultiplier 2.0`)이 적용됩니다.
+  - 이미 `forceStrategy: 'tiled'`를 쓰던 코드도 확인이 필요합니다. `'tiled'`는 여전히 유효한 값이라 컴파일은 그대로 통과하지만, 64MB 이하 이미지에서는 이전까지 항상 적용되던 heavy 프리셋 대신 light 프리셋이 조용히 선택됩니다 — `maxConcurrency`가 줄어들 수 있고(`quality: 'fast'` 기준 4→2), `tileSize`가 바뀌며(1024→2048), `estimatedTime` 배수도 낮아집니다(2.0→1.0).
 
 ### 수정
 

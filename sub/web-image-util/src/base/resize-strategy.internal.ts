@@ -62,8 +62,8 @@ const tiledAdapter: ResizeStrategyAdapter = {
   id: ProcessingStrategy.TILED,
   getTimeMultiplier: (analysis) => (analysis.estimatedMemoryMB <= TILED_LIGHT_THRESHOLD_MB ? 1.0 : 2.0),
   async execute({ img, targetWidth, targetHeight, quality, analysis, onProgress }) {
-    // light: 옛 chunkedAdapter 프리셋(작은 타일, 동시성 고정) — 메모리 절약이 목적이라 동시성을 늘리지 않는다
-    // heavy: 옛 tiledAdapter 프리셋(기본 타일 크기, quality 따라 동시성)
+    // light: 옛 chunkedAdapter 프리셋(명시적 타일 크기 2048, 동시성 고정) — 메모리 절약이 목적이라 동시성을 늘리지 않는다
+    // heavy: 옛 tiledAdapter 프리셋(TiledProcessor 기본 타일 크기 1024, quality 따라 동시성)
     const preset =
       analysis.estimatedMemoryMB <= TILED_LIGHT_THRESHOLD_MB
         ? { tileSize: Math.min(2048, analysis.recommendedChunkSize), maxConcurrency: 2 }
