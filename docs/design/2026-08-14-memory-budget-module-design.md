@@ -53,7 +53,7 @@
 
 `src/utils/browser-capabilities/memory.internal.ts`를 신설한다. `readMemoryBudget()`과 `requestMemoryRelief()`를 `index.ts` 배럴에 추가하고, `setMemoryProbe`/`resetMemoryProbe`는 `src/utils/image-decode.internal.ts`의 `setImageDecodeAdapter`/`resetImageDecodeAdapter` 선례를 따라 배럴에 올리지 않는다 — 테스트 전용 진입점은 파일에서 직접 import한다.
 
-fallback은 `auto-memory-manager.internal.ts`가 이미 쓰던 값(`{ usedMB: 128, limitMB: 512, availableMB: 384, pressure: 0.25 }`)으로 통일한다. 7곳 중 4개 필드를 모두 갖춘 유일한 fallback이고 "낮은 압박" 기본값이라 새 환경에서 압박 분기가 오탐하지 않는다. **behavior change**: `performance.memory`가 없는 환경(Firefox/Safari, SSR, jsdom 테스트)에서 이관된 소비자들이 관측하는 기본값이 달라진다 — 특히 `error-handler`는 지금까지 `debug` 필드 자체를 생략했으나 이관 후에는 fallback 값을 채운 `debug.memory*`를 항상 포함한다(아래 소비자 투영·테스트 계약 참고).
+fallback은 `auto-memory-manager.internal.ts`의 기존 `usedMB: 128`, `limitMB: 512`를 기준으로 삼고, 모순이던 파생값 `availableMB: 256`, `pressure: 0.5`를 각각 `384`, `0.25`로 정합화해 통일한다. 7곳 중 4개 필드를 모두 갖춘 유일한 fallback을 출발점으로 삼았고 "낮은 압박" 기본값이라 새 환경에서 압박 분기가 오탐하지 않는다. **behavior change**: `performance.memory`가 없는 환경(Firefox/Safari, SSR, jsdom 테스트)에서 이관된 소비자들이 관측하는 기본값이 달라진다 — 특히 `error-handler`는 지금까지 `debug` 필드 자체를 생략했으나 이관 후에는 fallback 값을 채운 `debug.memory*`를 항상 포함한다(아래 소비자 투영·테스트 계약 참고).
 
 `tiled-processor.internal.ts`를 이관 대상에 포함한다. 이 파일의 gc 트리거 정책(압력 체크 없이 `enableMemoryMonitoring` 플래그만으로 매 청크 호출)은 그대로 유지한다 — `requestMemoryRelief()`는 메커니즘(가드된 `global.gc()` 호출)만 제공하고, 언제 부를지는 각 소비자의 정책으로 남긴다.
 
@@ -76,8 +76,8 @@ export interface MemoryProbe {
 }
 
 /** performance.memory를 읽지 못하는 환경(비 Chromium, SSR, jsdom)의 단일 fallback이다.
- * auto-memory-manager가 쓰던 값을 그대로 승격했다 — "낮은 압박" 가정이라 압박 분기가
- * 새 환경에서 오탐하지 않는다. */
+ * auto-memory-manager가 쓰던 usedMB/limitMB를 기준으로 모순이던 파생값을 정합화했다.
+ * "낮은 압박" 가정이라 압박 분기가 새 환경에서 오탐하지 않는다. */
 const FALLBACK_BUDGET: MemoryBudget = {
   usedMB: 128,
   limitMB: 512,
@@ -142,7 +142,7 @@ export function requestMemoryRelief(): boolean {
 
 **`auto-memory-manager.internal.ts`** — 로컬 `interface MemoryInfo`(14행) 삭제, `MemoryBudget`을 import해 대체. `getMemoryInfo()`는 `readMemoryBudget()`의 얇은 위임이 된다(shape가 이미 동일하므로 필드 매핑 불필요). `performOptimization()`의 gc 블록은 `if (requestMemoryRelief()) { debugLog.debug(...) }`로 교체해 트리거 시에만 로그를 남기던 기존 동작을 유지한다. pressure > 0.8 체크는 이 파일에 그대로 남는다(호출 여부 정책).
 
-**`high-res-manager.ts`** — `isMemoryLow()`는 이름과 시그니처(`private static isMemoryLow(): boolean`)를 유지한 채 본문만 `readMemoryBudget().pressure > 0.8`로 교체한다. 기존 `vi.spyOn(HighResolutionManager as any, 'isMemoryLow')`(`tests/unit/core/high-res-manager-validate-jsdom.test.ts:210`) 호출부를 건드리지 않기 위해서다. `getEstimatedUsage()`는 삭제하고 `checkAndManageMemory()`가 `readMemoryBudget().availableMB`를 직접 쓰도록 재작성한다(bytes 왕복 변환 제거). gc 블록은 `requestMemoryRelief()`로 교체.
+**`high-res-manager.ts`** — `isMemoryLow()`는 이름과 시그니처(`private static isMemoryLow(): boolean`)를 유지한 채 본문만 `readMemoryBudget().pressure > 0.8`로 교체한다. 기존 `vi.spyOn(HighResolutionManager as any, 'isMemoryLow')`(`tests/unit/core/high-res-manager-validate-jsdom.test.ts:210`) 호출부를 건드리지 않기 위해서다. `getEstimatedUsage()`는 삭제하고 `checkAndManageMemory()`가 `readMemoryBudget().availableMB`를 직접 쓰도록 재작성한다(bytes 왕복 변환 제거). 이때 `onMemoryWarning` 발화 조건도 기존 raw float 대신 반올림된 `availableMB`를 비교하므로 정수 MB 임계값의 ±0.5MB 경계에서 결과가 달라질 수 있다. 콜백에 전달하는 `availableMB`는 기존에도 반올림했으므로 값 정밀도는 그대로다. `getCurrentMemoryUsage()`도 반올림된 `usedMB`를 사용하므로 진행률 콜백과 결과 통계는 소수점 둘째 자리 대신 정수 MB를 낸다. gc 블록은 `requestMemoryRelief()`로 교체.
 
 **`smart-processor.internal.ts`** — `getAutoMemoryLimit()`은 "availableMB의 20%"라는 계산 정책은 그대로 두고, probe만 `readMemoryBudget().availableMB`로 위임한다.
 

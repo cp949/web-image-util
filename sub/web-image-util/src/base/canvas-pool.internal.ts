@@ -44,10 +44,10 @@ export class CanvasPool {
    * probe와 fallback을 이 파일에서 다시 구현하지 않는다.
    */
   private getOptimalPoolSize(): number {
-    const memory = readMemoryBudget().availableMB;
-    if (memory > 1024) return 15; // 1GB 이상
-    if (memory > 512) return 12; // 512MB 이상
-    if (memory > 256) return 10; // 256MB 이상
+    const availableMemoryMB = readMemoryBudget().availableMB;
+    if (availableMemoryMB > 1024) return 15; // 1GB 이상
+    if (availableMemoryMB > 512) return 12; // 512MB 이상
+    if (availableMemoryMB > 256) return 10; // 256MB 이상
     return 8; // 기본값
   }
 

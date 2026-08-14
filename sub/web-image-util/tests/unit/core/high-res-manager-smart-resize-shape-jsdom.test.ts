@@ -169,7 +169,7 @@ describe('HighResolutionManager.smartResize', () => {
   // 따라서 maxMemoryUsageMB 를 384 보다 크게/작게 주면 발화 분기를 강제할 수 있다.
   describe('onMemoryWarning 콜백', () => {
     it('availableMB 가 maxMemoryUsageMB 미만이면 onMemoryWarning 이 호출된다', async () => {
-      // 448 < 500 → 발화
+      // 384 < 500 → 발화
       const onMemoryWarning = vi.fn();
       const img = createDrawableImage(100, 100);
       await HighResolutionManager.smartResize(img, 50, 50, {
@@ -202,7 +202,7 @@ describe('HighResolutionManager.smartResize', () => {
     });
 
     it('availableMB 가 maxMemoryUsageMB 이상이면 onMemoryWarning 이 호출되지 않는다', async () => {
-      // 448 >= 64 → 미발화
+      // 384 >= 64 → 미발화
       const onMemoryWarning = vi.fn();
       const img = createDrawableImage(100, 100);
       await HighResolutionManager.smartResize(img, 50, 50, {
@@ -214,8 +214,8 @@ describe('HighResolutionManager.smartResize', () => {
       expect(onMemoryWarning).not.toHaveBeenCalled();
     });
 
-    it('maxMemoryUsageMB 미지정(기본 256) + jsdom 폴백(available≈448) → 미발화', async () => {
-      // 기본값 분기 보호: 448 >= 256 → 미발화
+    it('maxMemoryUsageMB 미지정(기본 256) + jsdom 폴백(availableMB=384) → 미발화', async () => {
+      // 기본값 분기 보호: 384 >= 256 → 미발화
       const onMemoryWarning = vi.fn();
       const img = createDrawableImage(100, 100);
       await HighResolutionManager.smartResize(img, 50, 50, {

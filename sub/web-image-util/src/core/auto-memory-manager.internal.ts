@@ -81,8 +81,9 @@ export class AutoMemoryManager {
   /**
    * Query current memory information
    *
-   * 메모리 예산은 browser-capabilities/memory.internal.ts가 단일 소유한다. 이 파일이
-   * 쓰던 shape·fallback 값이 그대로 그 모듈의 정본으로 승격됐다.
+   * 메모리 예산은 browser-capabilities/memory.internal.ts가 단일 소유한다. 이 파일의
+   * 기존 usedMB/limitMB를 유지하고, 모순이던 availableMB/pressure는 두 값에서 유도한
+   * 정합값으로 통일했다.
    */
   getMemoryInfo(): MemoryBudget {
     return readMemoryBudget();
