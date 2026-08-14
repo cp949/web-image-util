@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { SvgOptimizer } from '../../../src/utils/svg-optimizer';
 import { collectReferencedIds } from '../../../src/utils/svg-optimizer/collect-referenced-ids.internal';
 import { optimizeGradients } from '../../../src/utils/svg-optimizer/optimize-gradients.internal';
+import { removeMetadata } from '../../../src/utils/svg-optimizer/remove-metadata.internal';
 import { removeUnusedDefs } from '../../../src/utils/svg-optimizer/remove-unused-defs.internal';
 import { simplifyPaths } from '../../../src/utils/svg-optimizer/simplify-paths.internal';
 
@@ -54,6 +55,23 @@ describe('collectReferencedIds 내부 판정', () => {
   });
 });
 
+describe('removeMetadata 내부 패스', () => {
+  it('참조되지 않는 id는 제거된다', () => {
+    const svg = '<svg><rect id="box" width="10" height="10"/></svg>';
+    expect(removeMetadata(svg, new Set())).not.toContain('id="box"');
+  });
+
+  it('참조되는 id는 보존된다', () => {
+    const svg = '<svg><rect id="g1" width="10" height="10"/></svg>';
+    expect(removeMetadata(svg, new Set(['g1']))).toContain('id="g1"');
+  });
+
+  it('referencedIds가 null이면(참조 판정 불가) 모든 id를 보존한다', () => {
+    const svg = '<svg><rect id="box" width="10" height="10"/></svg>';
+    expect(removeMetadata(svg, null)).toContain('id="box"');
+  });
+});
+
 describe('SVG 최적화', () => {
   it('기본 옵션은 안전한 단계들을 켜고 요소 병합은 끈다', () => {
     expect(SvgOptimizer.getDefaultOptions()).toEqual({
@@ -67,8 +85,7 @@ describe('SVG 최적화', () => {
   });
 
   it('기본 최적화는 메타데이터와 불필요한 공백을 제거하고 결과 metadata를 반환한다', () => {
-    const svg = `
-      <?xml version="1.0"?>
+    const svg = `<?xml version="1.0"?>
       <!-- editor comment -->
       <svg width="10" height="10" xmlns:dc="http://purl.org/dc/elements/1.1/" data-name="sample">
         <title>sample title</title>
@@ -114,6 +131,16 @@ describe('SVG 최적화', () => {
     expect(optimizedSvg).toBe('<svg><title>keep</title><rect id="box" width="10" height="10" /></svg>');
     expect(result.optimizations).toEqual(['whitespace cleanup']);
     expect(result.compressionRatio).toBe(0);
+  });
+
+  it('기본 옵션에서 참조되는 id는 보존되어 렌더링이 깨지지 않는다(회귀)', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg">' +
+      '<defs><symbol id="g1" viewBox="0 0 10 10"><circle r="5" cx="5" cy="5"/></symbol></defs>' +
+      '<use href="#g1" x="0" y="0"/></svg>';
+    const { optimizedSvg } = SvgOptimizer.optimize(svg);
+    expect(optimizedSvg).toContain('id="g1"');
+    expect(optimizedSvg).toContain('href="#g1"');
   });
 });
 

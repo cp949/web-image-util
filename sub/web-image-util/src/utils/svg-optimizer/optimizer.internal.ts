@@ -9,7 +9,9 @@
  */
 
 import { productionLog } from '../debug.internal';
+import { parseAndClassifySvg } from '../svg-document.internal';
 import { cleanupWhitespace } from './cleanup-whitespace.internal';
+import { collectReferencedIds } from './collect-referenced-ids.internal';
 import { optimizeGradients } from './optimize-gradients.internal';
 import { removeMetadata } from './remove-metadata.internal';
 import { removeUnusedDefs } from './remove-unused-defs.internal';
@@ -55,9 +57,11 @@ export class SvgOptimizer {
     const optimizations: string[] = [];
 
     try {
-      // 1. 메타데이터 제거.
+      // 1. 메타데이터 제거(참조되는 id는 보존).
       if (options.removeMetadata) {
-        optimizedSvg = removeMetadata(optimizedSvg);
+        const parsed = parseAndClassifySvg(optimizedSvg);
+        const referencedIds = parsed.ok ? collectReferencedIds(parsed.doc) : null;
+        optimizedSvg = removeMetadata(optimizedSvg, referencedIds);
         optimizations.push('metadata removal');
       }
 

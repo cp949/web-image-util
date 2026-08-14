@@ -25,12 +25,10 @@ const METADATA_ELEMENT_PATTERNS: RegExp[] = [
   /<inkscape:[^>]*>/gi,
 ];
 
-/** 렌더링과 무관한 속성 패턴. */
+/** 렌더링과 무관한 속성 패턴(id는 참조 여부에 따라 별도로 판정한다 — 아래 removeMetadata 참고). */
 const UNNECESSARY_ATTRIBUTE_PATTERNS: RegExp[] = [
   /xml:space="[^"]*"/g,
   /data-[^=]*="[^"]*"/g,
-  // 렌더링에 불필요한 ID 속성 제거.
-  /id="[^"]*"/g,
   // 빈 style 속성.
   /style=""/g,
   // 빈 transform 속성.
@@ -41,9 +39,11 @@ const UNNECESSARY_ATTRIBUTE_PATTERNS: RegExp[] = [
  * SVG 문자열에서 메타데이터와 부가 속성을 제거한다.
  *
  * @param svgString 원본 SVG 문자열
+ * @param referencedIds 문서 내에서 실제로 참조되는 id 집합. `null`이면 참조 여부를
+ *   판정할 수 없다는 뜻이며(DOMParser 미가용·파싱 실패) 안전하게 모든 id를 보존한다.
  * @returns 메타데이터가 제거된 SVG 문자열
  */
-export function removeMetadata(svgString: string): string {
+export function removeMetadata(svgString: string, referencedIds: Set<string> | null): string {
   let cleaned = svgString;
 
   // XML 주석 제거.
@@ -68,6 +68,12 @@ export function removeMetadata(svgString: string): string {
   // 렌더링에 불필요한 속성 제거.
   for (const regex of UNNECESSARY_ATTRIBUTE_PATTERNS) {
     cleaned = cleaned.replace(regex, '');
+  }
+
+  // 참조되지 않는 id만 제거한다 — 참조된 id를 지우면 url(#id)/href="#id" 대상이 사라진다.
+  // referencedIds를 판정할 수 없으면(null) 안전하게 모든 id를 보존한다.
+  if (referencedIds !== null) {
+    cleaned = cleaned.replace(/id="([^"]*)"/g, (match, id) => (referencedIds.has(id) ? match : ''));
   }
 
   return cleaned;
