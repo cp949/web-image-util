@@ -7,7 +7,7 @@
 
 import { applySmoothing, createOwnedCanvas } from '../base/canvas-utils.internal';
 import { createImageError } from '../base/error-helpers';
-import type { ProcessingStrategy } from '../base/high-res-detector.internal';
+import { HighResolutionDetector, type ProcessingStrategy } from '../base/high-res-detector.internal';
 import { HighResolutionManager } from '../base/high-res-manager';
 import type { SmartResizeOptions } from '../types';
 import { readMemoryBudget } from '../utils/browser-capabilities/index';
@@ -51,7 +51,8 @@ export class SmartProcessor {
       const strategy = options.strategy || 'auto';
 
       // Determine automatic optimization
-      const shouldUseHighRes = SmartProcessor.shouldUseHighResProcessing(img.width, img.height, width, height);
+      const scaleRatio = Math.max(img.width / width, img.height / height);
+      const shouldUseHighRes = HighResolutionDetector.shouldUseHighResolutionPath(img.width * img.height, scaleRatio);
 
       if (!shouldUseHighRes) {
         // Regular resizing - simple and fast
@@ -71,23 +72,6 @@ export class SmartProcessor {
     } catch (error) {
       throw createImageError('PROCESSING_FAILED', { cause: error instanceof Error ? error : new Error(String(error)) });
     }
-  }
-
-  /**
-   * Automatically determine if high-resolution processing is needed
-   * Users don't need to know this complex logic
-   */
-  private static shouldUseHighResProcessing(
-    originalWidth: number,
-    originalHeight: number,
-    targetWidth: number,
-    targetHeight: number
-  ): boolean {
-    const originalPixels = originalWidth * originalHeight;
-    const targetPixels = targetWidth * targetHeight;
-
-    // Simple heuristic: 4MP or more, or large scaling needed
-    return originalPixels > 4_000_000 || Math.max(originalWidth / targetWidth, originalHeight / targetHeight) > 4;
   }
 
   /**

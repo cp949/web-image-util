@@ -1,7 +1,7 @@
 /**
  * SmartProcessor 단위 테스트
  *
- * 자동 고해상도 분기 결정(shouldUseHighResProcessing)과
+ * 자동 고해상도 분기 결정(HighResolutionDetector.shouldUseHighResolutionPath 위임)과
  * 내부 전략 변환 로직(selectInternalStrategy, mapStrategyToQuality)을 검증한다.
  * HighResolutionManager 와 AutoMemoryManager 는 spy 로 격리한다.
  */
@@ -77,9 +77,18 @@ describe('SmartProcessor', () => {
       expect(highResSpy).not.toHaveBeenCalled();
     });
 
-    it('4MP 초과 이미지는 고해상도 경로를 사용한다', async () => {
-      // 2001×2001 ≈ 4.004MP > 4MP → 고해상도 경로 → 모킹됨
-      const img = createMockImage(2001, 2001);
+    it('4MP 초과 8MP 이하 이미지는 표준 경로를 사용한다(게이트 통합 — 임계값 4MP→8MP 상향)', async () => {
+      // 2001×2001 ≈ 4.004MP — 이전엔 4MP 임계값으로 고해상도 경로였으나,
+      // AutoHighResProcessor와 게이트를 공유하며 8MP로 상향돼 이제 표준 경로다
+      const img = createDrawableImage(2001, 2001);
+      await SmartProcessor.process(img, 800, 600);
+
+      expect(highResSpy).not.toHaveBeenCalled();
+    });
+
+    it('8MP 초과 이미지는 고해상도 경로를 사용한다', async () => {
+      // 2829×2829 = 8,003,241 pixels > 8,000,000 → 고해상도 경로 → 모킹됨
+      const img = createMockImage(2829, 2829);
       await SmartProcessor.process(img, 800, 600);
 
       expect(highResSpy).toHaveBeenCalledOnce();
@@ -128,8 +137,9 @@ describe('SmartProcessor', () => {
   // --------------------------------------------------------------------------
   describe('selectInternalStrategy — auto 전략', () => {
     it('auto 전략 + 4MP 초과 이미지면 forceStrategy 가 "tiled" 다(옛 chunked 대역)', async () => {
-      // 2001×2001 ≈ 4.004MP > 4MP → tiled (옛 4-16MP chunked 대역이 흡수됨)
-      const img = createMockImage(2001, 2001);
+      // 2829×2829 = 8,003,241 pixels — 4MP(selectInternalStrategy 경계, 이 카드의 비범위) 초과이면서
+      // 8MP(진입 게이트, 이번 카드로 4MP→8MP 상향) 도 초과해야 HighResolutionManager 까지 도달한다
+      const img = createMockImage(2829, 2829);
       await SmartProcessor.process(img, 800, 600, { strategy: 'auto' });
 
       const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
@@ -162,7 +172,8 @@ describe('SmartProcessor', () => {
   // --------------------------------------------------------------------------
   describe('selectInternalStrategy — 명시적 전략', () => {
     it('strategy="fast" 이면 forceStrategy 가 "direct" 다', async () => {
-      const img = createMockImage(2001, 2001);
+      // 진입 게이트(8MP)를 넘겨야 highRes 경로로 들어가 convertToInternalOptions 가 실행된다
+      const img = createMockImage(2829, 2829);
       await SmartProcessor.process(img, 800, 600, { strategy: 'fast' });
 
       const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
@@ -170,7 +181,8 @@ describe('SmartProcessor', () => {
     });
 
     it('strategy="quality" 이면 forceStrategy 가 "stepped" 다', async () => {
-      const img = createMockImage(2001, 2001);
+      // 진입 게이트(8MP)를 넘겨야 highRes 경로로 들어가 convertToInternalOptions 가 실행된다
+      const img = createMockImage(2829, 2829);
       await SmartProcessor.process(img, 800, 600, { strategy: 'quality' });
 
       const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
@@ -187,8 +199,9 @@ describe('SmartProcessor', () => {
     });
 
     it('strategy="memory-efficient" + 4-16MP 이미지면 forceStrategy 가 "tiled" 다(옛 chunked 대역)', async () => {
-      // 2001×2001 ≈ 4.004MP → memory-efficient는 크기 무관 tiled(옛 chunked 대역이 흡수됨)
-      const img = createMockImage(2001, 2001);
+      // 2829×2829 = 8,003,241 pixels ≈ 8MP — 진입 게이트(8MP)를 넘기면서도 4-16MP 대역 안이라
+      // memory-efficient는 크기 무관 tiled(옛 chunked 대역이 흡수됨)
+      const img = createMockImage(2829, 2829);
       await SmartProcessor.process(img, 800, 600, { strategy: 'memory-efficient' });
 
       const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
@@ -201,7 +214,8 @@ describe('SmartProcessor', () => {
   // --------------------------------------------------------------------------
   describe('mapStrategyToQuality — 전략↔품질 매핑', () => {
     it('strategy="fast" 이면 quality 가 "fast" 다', async () => {
-      const img = createMockImage(2001, 2001);
+      // 진입 게이트(8MP)를 넘겨야 highRes 경로로 들어가 convertToInternalOptions 가 실행된다
+      const img = createMockImage(2829, 2829);
       await SmartProcessor.process(img, 800, 600, { strategy: 'fast' });
 
       const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
@@ -209,7 +223,8 @@ describe('SmartProcessor', () => {
     });
 
     it('strategy="memory-efficient" 이면 quality 가 "fast" 다', async () => {
-      const img = createMockImage(2001, 2001);
+      // 진입 게이트(8MP)를 넘겨야 highRes 경로로 들어가 convertToInternalOptions 가 실행된다
+      const img = createMockImage(2829, 2829);
       await SmartProcessor.process(img, 800, 600, { strategy: 'memory-efficient' });
 
       const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
@@ -217,7 +232,8 @@ describe('SmartProcessor', () => {
     });
 
     it('strategy="quality" 이면 quality 가 "high" 다', async () => {
-      const img = createMockImage(2001, 2001);
+      // 진입 게이트(8MP)를 넘겨야 highRes 경로로 들어가 convertToInternalOptions 가 실행된다
+      const img = createMockImage(2829, 2829);
       await SmartProcessor.process(img, 800, 600, { strategy: 'quality' });
 
       const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
@@ -225,7 +241,8 @@ describe('SmartProcessor', () => {
     });
 
     it('strategy="auto"(기본값) 이면 quality 가 "balanced" 다', async () => {
-      const img = createMockImage(2001, 2001);
+      // 진입 게이트(8MP)를 넘겨야 highRes 경로로 들어가 convertToInternalOptions 가 실행된다
+      const img = createMockImage(2829, 2829);
       await SmartProcessor.process(img, 800, 600, { strategy: 'auto' });
 
       const [, , , passedOpts] = highResSpy.mock.calls[0] as any[];
@@ -255,7 +272,8 @@ describe('SmartProcessor', () => {
     it('HighResolutionManager.smartResize 가 에러를 던지면 ImageProcessError 로 래핑된다', async () => {
       vi.spyOn(HighResolutionManager, 'smartResize').mockRejectedValue(new Error('처리 실패'));
 
-      const img = createMockImage(2001, 2001);
+      // 진입 게이트(8MP)를 넘겨야 highRes 경로(HighResolutionManager.smartResize)로 들어간다
+      const img = createMockImage(2829, 2829);
 
       await expect(SmartProcessor.process(img, 800, 600)).rejects.toThrow(
         expect.objectContaining({ code: 'PROCESSING_FAILED' })
