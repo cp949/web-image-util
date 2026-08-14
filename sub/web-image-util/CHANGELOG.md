@@ -65,12 +65,20 @@
 - Changed (**Breaking**): `ProcessingStrategy`(`/advanced`의 `HighResolutionOptions.forceStrategy`·`ProcessingResult.strategy`)에서 `'chunked'`가 제거되었습니다. `chunkedAdapter`와 `tiledAdapter`가 둘 다 `TiledProcessor`를 호출하는 같은 실행기였고 차이는 옵션 프리셋뿐이었습니다 — 이제 `tiled` adapter가 `analysis.estimatedMemoryMB`(64MB 경계)로 그 프리셋을 내부에서 고릅니다. `forceStrategy: 'chunked'`를 쓰던 코드는 `'tiled'`로 바꾸세요.
   - 이 동치는 64MB 이하 이미지에서만 성립합니다. 64MB를 넘는 이미지는 동치가 아닙니다 — 이전에 `'chunked'`가 항상 주던 `tileSize: 2048`·`maxConcurrency: 2`·`timeMultiplier 1.0` 대신, 이제 heavy 프리셋(`tileSize` 미지정 → `TiledProcessor` 기본값 1024, `maxConcurrency: quality === 'fast' ? 4 : 2`, `timeMultiplier 2.0`)이 적용됩니다.
   - 이미 `forceStrategy: 'tiled'`를 쓰던 코드도 확인이 필요합니다. `'tiled'`는 여전히 유효한 값이라 컴파일은 그대로 통과하지만, 64MB 이하 이미지에서는 이전까지 항상 적용되던 heavy 프리셋 대신 light 프리셋이 조용히 선택됩니다 — `maxConcurrency`가 줄어들 수 있고(`quality: 'fast'` 기준 4→2), `tileSize`가 바뀌며(1024→2048), `estimatedTime` 배수도 낮아집니다(2.0→1.0).
+- Changed: `AutoHighResProcessor`와 advanced 배치/단일 리사이즈 편의 함수(`fastResize`/`qualityResize`/`autoResize`/`ResizePerformance.*Batch`)가 내부적으로 쓰던 `SmartProcessor`를 걷어내고 `AutoHighResProcessor` 하나로 수렴했습니다. 공개 시그니처는 그대로입니다.
+  - `fastResize`/`ResizePerformance.fastBatch`는 이제 내부적으로 `priority: 'speed'`를, `qualityResize`/`ResizePerformance.qualityBatch`는 `priority: 'quality'`를, `autoResize`는 `priority: 'balanced'`를 씁니다. 결과 이미지가 달라질 수 있습니다.
+  - 단일 이미지 리사이즈(`fastResize`/`qualityResize`/`autoResize`)의 메모리 사용량 상한이 가용 메모리의 20%(동적)에서 `AutoHighResProcessor`의 정적 임계값(300MB, `priority:'quality'`는 450MB)으로 바뀝니다.
+  - advanced `AutoHighResProcessor.smartResize()`의 옵션에 `forceStrategy`가 추가되었습니다(선택, 기본 미지정 — 기존 호출자는 영향 없습니다).
 
 ### 수정
 
 - Fixed: 같은 이미지가 진입점(`AutoHighResProcessor.smartResize()`/`smartResizeWithProgress()` vs `fastResize()`/`qualityResize()`/`autoResize()`/`ResizePerformance.*Batch`가 내부적으로 쓰는 `SmartProcessor`)에 따라 고해상도 처리 경로 진입 여부가 다르게 판정되던 문제를 수정합니다. 두 진입점이 이제 픽셀 수(8,000,000 초과)와 스케일 비율(다운스케일 4배 초과) 기준을 공유합니다.
   - `SmartProcessor`(`fastResize`/`qualityResize`/`autoResize`/배치 API) 쪽 픽셀 임계값이 4,000,000에서 8,000,000으로 상향됩니다. 4MP 초과 8MP 이하 이미지는 이제 표준 경로를 사용합니다.
   - `AutoHighResProcessor.smartResize()`(및 advanced `smartResize`/`smartResizeWithProgress` export) 쪽에 스케일 비율 조건이 새로 적용됩니다. 픽셀 수가 8MP 미만이어도 요청한 축소 비율이 4배를 초과하면 고해상도 경로를 사용합니다.
+- Fixed: `AutoHighResProcessor.smartResize()`(및 `fastResize`/`qualityResize`/`autoResize`/`ResizePerformance.*Batch`)가 고해상도 처리 경로에 진입해도 내부적으로 항상 특정 전략을 강제해, `HighResolutionManager`의 실제 전략 선택 로직(메모리 압박 시 절약 전략, `priority:'quality'`의 scaleRatio 기반 stepped 선택 등)이 한 번도 실행되지 못하던 문제를 수정합니다.
+  - `priority:'quality'`로 저픽셀+고스케일 이미지(예: scaleRatio 12.5)를 리사이즈하면 이제 실제로 stepped 전략을 쓸 수 있습니다. 이전에는 게이트를 통과해도 결국 `drawImage()` 1회로 귀결됐습니다.
+  - 브라우저 메모리 압박이 높을 때(`performance.memory` 사용률 80% 초과) 고해상도 리사이즈가 이제 실제로 메모리 절약 전략(32MB 경계)으로 전환됩니다.
+- Fixed: `HighResolutionManager`를 직접 쓰는 고급 소비자도 이제 메모리 압박 시(`CanvasPool.clear()`) 캔버스 풀 정리 혜택을 받습니다. 이전에는 `SmartProcessor` 경로(`fastResize`/`qualityResize`/`autoResize`/배치 API)에서만 트리거됐습니다.
 - Fixed: 문자열 소스의 scheme·확장자 판정과 Blob/File의 MIME·파일명·본문 판정을 공통 facts 모듈로 통일했습니다. 대문자 `HTTP(S):`/`BLOB:` URL이 잘못된 로더로 분기되던 문제, 매개변수 포함 SVG MIME과 대문자 `.SVG` 파일명을 놓치던 문제를 수정했습니다. 공개 소스 판정 API의 MIME 우선 반환 계약은 유지됩니다.
 - Fixed: Blob/File과 Blob URL의 모호한 MIME(`application/octet-stream`, `text/plain`, 빈 MIME, XML 계열)은 크기 상한 확인 후 첫 4KB를 스니핑해 실제 SVG를 복구합니다. 원격 HTTP 응답은 `image/svg+xml`, 표준 XML MIME, `+xml`, legacy XML external parsed entity MIME만 SVG 후보로 확장해 일반 octet-stream/text 응답을 SVG로 오인하지 않습니다.
 - Fixed: `detectImageSourceInfo()`와 `detectImageStringSourceInfo()`가 인라인 SVG 문자열의 `format`을 `'unknown'` 대신 `'svg'`로 반환합니다. `type: 'inline-svg'`와 `isSvg: true`는 이전에도 같았고, `format`만 판정 결과와 어긋나 있었습니다. `blob:` URL의 `format`은 종전대로 `'unknown'`입니다 — Blob URL 문자열에 들어 있는 `.svg`는 실제 콘텐츠 타입의 근거가 아니기 때문입니다.

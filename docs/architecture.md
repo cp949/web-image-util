@@ -56,7 +56,7 @@
 | `src/utils/source-utils/byte-signature.internal.ts` | 매직바이트 → 이미지 포맷 판정의 단일 facts(`detectFormatFromBytes`). bmp/tiff/ico처럼 공개 `ImageFormat`이 표현 못 하는 값도 낸다 — 접는 판단은 소비자(`image-info`의 `formatFromBytes`, blob loader의 `detectMimeTypeFromBuffer`) 몫이다 |
 | `src/utils/source-utils/blob-projection.internal.ts` | Blob facts → **공개 진단 정책**(`resolveMimeFirstBlobFormat` — MIME 우선, 모호할 때만 파일명). 내부 라우팅 정책과 의도적으로 다르며 공개 판정과 `image-info`가 공유 |
 | `src/svg-contract.internal.ts` | SVG 처리 계약 leaf — `MAX_SVG_BYTES`, `SvgSanitizerMode`. core와 진단 API가 같은 방향으로 공유 |
-| `src/utils/browser-capabilities/memory.internal.ts` | 메모리 예산 단일 facts(`readMemoryBudget`) + GC 요청 메커니즘(`requestMemoryRelief`). probe는 `setMemoryProbe`로 주입 가능한 어댑터이고 fallback은 단일 값 하나다. 소비자 7곳(canvas-pool, performance-utils, error-handler, auto-memory-manager, high-res-manager, smart-processor, tiled-processor)이 각자의 임계값 정책만 로컬로 남긴다 |
+| `src/utils/browser-capabilities/memory.internal.ts` | 메모리 예산 단일 facts(`readMemoryBudget`) + GC 요청 메커니즘(`requestMemoryRelief`). probe는 `setMemoryProbe`로 주입 가능한 어댑터이고 fallback은 단일 값 하나다. 소비자 6곳(canvas-pool, performance-utils, error-handler, auto-memory-manager, high-res-manager, tiled-processor)이 각자의 임계값 정책만 로컬로 남긴다 |
 | `src/core/source-converter/options.internal.ts` | 내부 옵션 타입과 fetch 기본값 상수 |
 | `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.internal.ts`, `loader.internal.ts`, `safety.internal.ts` |
 | `src/core/source-converter/url/` | HTTP/Blob URL 로더 — `policy.internal.ts`, `fetch-guards.internal.ts`, `loader.internal.ts` |
@@ -73,8 +73,8 @@
 | `src/svg-sanitizer/index.ts` | `@cp949/web-image-util/svg-sanitizer` 서브패스 배럴 — `sanitizeSvgStrict`, `sanitizeSvgStrictDetailed`, `inspectSvgSanitization` export |
 | `src/core/lazy-render-pipeline.internal.ts` | 연산 누적과 최종 렌더링 트리거 |
 | `src/core/single-renderer.internal.ts` | 누적 연산 분석(`analyzeAllOperations`)과 최종 Canvas drawImage 렌더링(`renderLayout` → `CanvasLease`) |
-| `src/base/high-res-detector.internal.ts` | 이미지 크기 분석(`analyzeImage`)과 고해상도 처리 진입 게이트(`shouldUseHighResolutionPath`) 단일 소유 — `AutoHighResProcessor`/`SmartProcessor`가 이 게이트를 공유해 기본 임계값에서 같은 기준으로 판정한다. `AutoHighResProcessor` 커스텀 픽셀 임계값은 유지한다 |
-| `src/base/high-res-manager.ts` | advanced 고해상도 경로의 매니저 — 이미지 분석·전략 선택·메모리 점검만 담당하고 실행은 전략 adapter에 위임 |
+| `src/base/high-res-detector.internal.ts` | 이미지 크기 분석(`analyzeImage`)과 고해상도 처리 진입 게이트(`shouldUseHighResolutionPath`) 단일 소유 — `AutoHighResProcessor`가 이 게이트를 쓴다(유일한 진입점). `AutoHighResProcessor` 커스텀 픽셀 임계값은 유지한다 |
+| `src/base/high-res-manager.ts` | advanced 고해상도 경로의 매니저 — 이미지 분석·전략 선택·메모리 점검(압박 시 `CanvasPool.clear()` + GC 요청)만 담당하고 실행은 전략 adapter에 위임 |
 | `src/base/resize-strategy.internal.ts` | 고해상도 전략 seam — `RESIZE_STRATEGY_ADAPTERS` 레지스트리(direct/stepped/tiled)와 전략별 튜닝 지식(품질 매핑·단계 수·동시성·타일 크기·예상 시간 배수). tiled는 `analysis.estimatedMemoryMB`(64MB 경계)로 light(옛 chunked)/heavy 두 preset을 내부에서 고른다. 전략 추가 = adapter 1개 + 맵 1행 |
 | `src/base/canvas-utils.internal.ts` | canvas 생성·인코딩 leaf — `createOwnedCanvas`(호출자 소유 canvas, advanced 전 경로가 사용), `applySmoothing`(quality→imageSmoothing 매핑 정본), `canvasToBlob`(통합 인코더) |
 | `src/types/resize-config.ts` | ResizeConfig 타입 시스템 |
