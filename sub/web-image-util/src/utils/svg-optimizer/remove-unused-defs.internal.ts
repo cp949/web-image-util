@@ -1,26 +1,16 @@
 /**
  * 미사용 `<defs>` 정의 제거 모듈.
  *
- * `<defs>` 안의 ID 목록을 수집한 뒤, 문서 전체에서 fill/stroke/filter/clip-path/mask/
- * marker-start/marker-mid/marker-end 또는 `href="#id"` 형태로 참조되지 않는 정의만
- * 제거한다. 비워진 `<defs>`도 같이 제거된다. DOMParser가 없거나 파싱이 실패하면
- * 원본을 그대로 반환한다.
+ * `<defs>` 안의 ID 목록을 수집한 뒤, 문서 전체에서 실제로 참조되는 id인지
+ * `collectReferencedIds()`(fill/stroke/filter/clip-path/mask/marker-* 의 `url(#id)`,
+ * href/xlink:href/src의 fragment 참조)로 판정해 참조되지 않는 정의만 제거한다.
+ * 비워진 `<defs>`도 같이 제거된다. DOMParser가 없거나 파싱이 실패하면 원본을
+ * 그대로 반환한다.
  */
 
 import { productionLog } from '../debug.internal';
 import { parseAndClassifySvg } from '../svg-document.internal';
-
-/** ID 하나가 문서에서 참조되는지 검사할 때 사용할 속성 셀렉터 목록. */
-const REFERENCE_ATTRIBUTES = [
-  'fill',
-  'stroke',
-  'filter',
-  'clip-path',
-  'mask',
-  'marker-start',
-  'marker-mid',
-  'marker-end',
-] as const;
+import { collectReferencedIds } from './collect-referenced-ids.internal';
 
 /** 주어진 `<defs>` 노드에서 ID를 가진 자식 ID 집합을 반환한다. */
 function collectDefinedIds(defs: Element): Set<string> {
@@ -30,21 +20,6 @@ function collectDefinedIds(defs: Element): Set<string> {
     if (id) definedIds.add(id);
   }
   return definedIds;
-}
-
-/** 문서 전체에서 실제로 사용되는 ID 집합을 반환한다. */
-function collectUsedIds(documentRoot: Element, definedIds: Set<string>): Set<string> {
-  const usedIds = new Set<string>();
-
-  for (const id of definedIds) {
-    const selectors = REFERENCE_ATTRIBUTES.map((attr) => `[${attr}="url(#${id})"]`).concat(`[href="#${id}"]`);
-    const references = documentRoot.querySelectorAll(selectors.join(', '));
-    if (references.length > 0) {
-      usedIds.add(id);
-    }
-  }
-
-  return usedIds;
 }
 
 /**
@@ -71,7 +46,7 @@ export function removeUnusedDefs(svgString: string): string {
     }
 
     const definedIds = collectDefinedIds(defs);
-    const usedIds = collectUsedIds(doc.documentElement, definedIds);
+    const usedIds = collectReferencedIds(doc);
 
     // 사용되지 않는 정의만 제거.
     for (const id of definedIds) {

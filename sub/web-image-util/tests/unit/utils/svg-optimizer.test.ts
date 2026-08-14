@@ -224,6 +224,18 @@ describe('removeUnusedDefs 내부 패스', () => {
     expect(result).toContain('id="used"');
     expect(result).not.toContain('id="unused"');
   });
+
+  // 이 테스트는 현재 동작을 고정하는 목적이다. jsdom의 querySelectorAll이 네임스페이스 없는 `[href]`
+  // 셀렉터를 `xlink:href` 속성에도 매치시켜(스펙과 다르게) 구형 버그 코드로 되돌려도 이 테스트 하나만으로는
+  // RED가 나지 않는다 — 실질적 회귀 보호는 `collectReferencedIds()` 단위 테스트(Task 1,
+  // `describe('collectReferencedIds 내부 판정')`)가 담당한다.
+  it('xlink:href="#id" 참조(구형 <use>)가 있으면 해당 정의를 보존한다', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+      '<defs><symbol id="sym2" viewBox="0 0 10 10"><circle r="5" cx="5" cy="5"/></symbol></defs>' +
+      '<use xlink:href="#sym2" x="0" y="0"/></svg>';
+    expect(removeUnusedDefs(svg)).toContain('id="sym2"');
+  });
 });
 
 describe('optimizeGradients 내부 패스', () => {
