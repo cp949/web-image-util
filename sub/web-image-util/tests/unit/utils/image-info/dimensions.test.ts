@@ -40,6 +40,40 @@ describe('getImageDimensions', () => {
     await expect(getImageDimensions(img)).resolves.toEqual({ width: 640, height: 480 });
   });
 
+  it.each([
+    {
+      caseName: 'naturalWidth/Height가 0이면 width/height로 폴백한다',
+      naturalWidth: 0,
+      naturalHeight: 0,
+      width: 40,
+      height: 30,
+      expected: { width: 40, height: 30 },
+    },
+    {
+      caseName: 'naturalWidth/Height가 양수면 width/height보다 우선한다',
+      naturalWidth: 12,
+      naturalHeight: 8,
+      width: 99,
+      height: 99,
+      expected: { width: 12, height: 8 },
+    },
+  ])('변환된 HTMLImageElement의 $caseName', async ({ naturalWidth, naturalHeight, width, height, expected }) => {
+    const element = document.createElement('img');
+    Object.defineProperties(element, {
+      naturalWidth: { configurable: true, value: naturalWidth },
+      naturalHeight: { configurable: true, value: naturalHeight },
+      width: { configurable: true, value: width },
+      height: { configurable: true, value: height },
+    });
+    const convertToImageElement = vi.fn(() => Promise.resolve(element));
+    vi.resetModules();
+    vi.doMock('../../../../src/core/source-converter/index', () => ({ convertToImageElement }));
+    const { getImageDimensions: getPublicImageDimensions } = await import('../../../../src');
+
+    await expect(getPublicImageDimensions('relative/path.png')).resolves.toEqual(expected);
+    expect(convertToImageElement).toHaveBeenCalledWith('relative/path.png');
+  });
+
   it('인라인 SVG 문자열은 SVG 파서로 치수를 추출한다', async () => {
     await expect(getImageDimensions('<svg width="120" height="60"></svg>')).resolves.toEqual({
       width: 120,

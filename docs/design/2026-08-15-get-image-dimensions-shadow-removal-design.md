@@ -59,12 +59,12 @@ adapter count: `source-converter`판 `getImageDimensions`를 소비하는 곳은
 
 **삭제:**
 
-- `naturalWidth/Height가 0이면 width/height 속성으로 폴백한다`(source-converter-failure-jsdom.test.ts) — 삭제 대상 함수 전용, 대체 없음.
+- `naturalWidth/Height가 0이면 width/height 속성으로 폴백한다`(source-converter-failure-jsdom.test.ts) — 삭제 대상 함수 전용 테스트는 지우고, 아래 공개 API 테스트로 계약을 이관한다.
 - `naturalWidth/Height가 양수면 그 값을 사용한다`(같은 파일) — 위와 동일.
 
-**이관하지 않음:** 두 테스트가 검증하던 "naturalWidth 0 → width 폴백" 로직은 `image-info/dimensions.internal.ts`의 `dimensionsFromElement`에 동일하게 존재하지만, 그 경로를 향한 신규 테스트는 이 카드의 범위가 아니다 — 삭제하는 것은 프로덕션 코드와 그 코드만 검증하던 테스트의 쌍이므로, 커버리지 분모와 분자가 함께 줄어 순 커버리지 손실이 없다(둘 다 vitest.jsdom.config.ts에 coverage threshold가 없어 게이트 영향도 없다).
+**이관:** 두 테스트가 검증하던 `naturalWidth || width` / `naturalHeight || height` 계약은 `image-info/dimensions.internal.ts`의 `dimensionsFromElement`에도 남아 있다. `tests/unit/utils/image-info/dimensions.test.ts`의 공개 `getImageDimensions()` 경로로 두 케이스를 이관해, 삭제 대상 구현과 무관하게 남은 계약의 회귀를 검증한다.
 
-**최종 테스트 개수:** `tests/unit/core/source-converter-failure-jsdom.test.ts` 파일 내 describe 블록 1개(테스트 2개) 삭제. 나머지 describe 블록은 전부 그대로 유지.
+**최종 테스트 개수:** `tests/unit/core/source-converter-failure-jsdom.test.ts` 파일 내 describe 블록 1개(테스트 2개) 삭제. `tests/unit/utils/image-info/dimensions.test.ts`에 동일 계약의 공개 API 테스트 2개 추가.
 
 ## 문서 계약
 
@@ -76,5 +76,4 @@ adapter count: `source-converter`판 `getImageDimensions`를 소비하는 곳은
 ## 비범위
 
 - `image-info/dimensions.internal.ts`의 `getImageDimensions` 자체 동작 변경.
-- `naturalWidth 0 → width 폴백` 분기에 대한 신규 테스트 추가(이관 대상 없음 — 위 "테스트 계약" 참고).
 - 같은 리뷰 문서의 다른 카드(카드 5 `BrowserCapabilityDetector`, 카드 7 `ResizePerformanceOptions` 유령 필드 등).
