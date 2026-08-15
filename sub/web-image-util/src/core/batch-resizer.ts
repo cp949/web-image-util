@@ -21,6 +21,12 @@ export interface BatchResizeJob<T = any> {
 /**
  * Simplified batch resizer
  *
+ * `/advanced` 서브엔트리의 `AdvancedImageProcessor.batchProcess()`도 concurrency 기반
+ * 청크 실행을 별도로 구현한다 — 런타임 구현끼리 호출하거나 로직을 공유하지 않는다. 이쪽은 timeout과
+ * `AutoMemoryManager.checkAndOptimize()` 메모리 점검을 갖고 progress 콜백은 없다;
+ * `batchProcess()`는 반대로 `onProgress`/`onImageComplete` 콜백을 갖고 timeout·메모리
+ * 점검은 없다. 필요에 따라 골라 쓰되, 기능 추가 시 다른 쪽도 같이 볼 것.
+ *
  * @example
  * ```typescript
  * const batcher = new BatchResizer('fast');

@@ -296,6 +296,11 @@ export class AdvancedImageProcessor {
 
   /**
    * Batch processing - efficiently process multiple images
+   *
+   * 같은 `/advanced` 배럴로 재노출되는 `BatchResizer.processAll()`(`core/batch-resizer.ts`)도 concurrency 기반
+   * 청크 실행을 별도로 구현한다 — 런타임 구현끼리 호출하거나 로직을 공유하지 않는다. 이쪽은 `onProgress`/
+   * `onImageComplete` 콜백을 갖고 timeout·`AutoMemoryManager` 메모리 점검은 없다;
+   * `BatchResizer`는 반대로 timeout·메모리 점검을 갖고 progress 콜백은 없다.
    */
   static async batchProcess(
     sources: Array<{

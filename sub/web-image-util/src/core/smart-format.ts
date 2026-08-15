@@ -46,6 +46,14 @@ export interface FormatOptimizationResult {
  *
  * @description Class that automatically selects optimal format by analyzing image characteristics and browser support
  * Comprehensively considers color complexity, transparency, image purpose, etc.
+ *
+ * 이 클래스와 서로 무관하게 "최적 포맷"을 정의하는 곳이 적어도 두 곳 더 있다(프리셋 폴백까지
+ * 세면 셋) — 병합 대상은 아니고
+ * 참조용 교차 링크다: core 경로의 기본값은 `OutputPipeline`의 내부 `getBestFormat()`
+ * (`core/output-pipeline.internal.ts`, webp>png 2줄 판정)이 결정하고, `FormatDetector`
+ * (`base/format-detector.ts`)의 `getBestFormat()`은 이 클래스와 별개로 avif>webp>png/jpeg를
+ * 고르는 참고용 정책(내부 호출자 0건, `/advanced` 공개 표면 전용)이다. 이 클래스만 픽셀
+ * 샘플링(색상 복잡도·투명도·엣지 비율)으로 실제 이미지를 분석한다.
  */
 export class SmartFormatSelector {
   /**

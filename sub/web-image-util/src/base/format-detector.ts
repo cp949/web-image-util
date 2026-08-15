@@ -55,6 +55,9 @@ export class FormatDetector {
    * 존재하며, 호출자가 직접 포맷을 고를 때 쓰는 참고용 정책이다. 실제 출력 기본 포맷은
    * core/output-pipeline.internal.ts의 getBestFormat(WebP > PNG)이 결정하고,
    * 썸네일 프리셋은 presets/index.ts에서 WebP > JPEG를 쓴다. 이 함수만 AVIF를 우선한다.
+   * `core/smart-format.ts`의 `SmartFormatSelector.selectOptimalFormat()`과도 무관하다 —
+   * 그쪽은 픽셀 샘플링으로 이미지를 분석해 포맷을 고르고, 이 함수는 호출자가 넘긴 투명도
+   * 플래그와 브라우저 지원 여부만 본다.
    */
   static async getBestFormat(hasTransparency: boolean = false): Promise<ImageFormat> {
     // Case with transparency
