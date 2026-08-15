@@ -12,4 +12,4 @@ export {
   type SvgInspectionPolicy,
   XLINK_NAMESPACE,
 } from './reference-attribute.internal';
-export { MAX_SAMPLE_LENGTH, MAX_SAMPLES_PER_STAGE, pushCappedSample } from './sample-utils.internal';
+export { pushCappedSample } from './sample-utils.internal';
