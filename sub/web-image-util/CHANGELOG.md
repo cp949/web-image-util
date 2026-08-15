@@ -126,6 +126,9 @@
   - `removeUnusedDefs`가 `xlink:href="#id"` 참조를 놓쳐 사용 중인 `<defs>` 정의를 제거하던 2차 결함도 해소됩니다.
   - `optimizeGradients`가 중복 정의 병합 시 `fill`/`stroke`만 재작성해 다른 참조에 삭제된 id를 남기던 결함도 해소됩니다. `href`/`xlink:href`/`src`와 모든 대상 presentation 속성을 재작성합니다.
   - DOMParser를 쓸 수 없거나 SVG 문자열이 XML로 파싱되지 않으면 `id`를 하나도 제거하지 않습니다. 이전에는 이 경우에도 전부 제거했습니다.
+- Fixed: `BlendMode.DARKEN`/`LIGHTEN`/`COLOR_DODGE`/`COLOR_BURN`/`HARD_LIGHT`/`SOFT_LIGHT`/`DIFFERENCE`/`EXCLUSION` 8종이 `MULTIPLY`/`SCREEN`/`OVERLAY`와 달리 아무 효과 없이 필터 결과를 그대로 통과시키던(=`NORMAL`과 픽셀 동일) 문제를 수정했습니다. 이제 8종 모두 CSS Compositing 표준 공식으로 실제 블렌딩합니다. `BlendMode`에 없는 값을 타입 우회로 넘기면(TypeScript 사용자에게는 도달 불가능) 조용히 통과하는 대신 예외를 던집니다.
+  - `applyFilter()`에 빈 문자열(`''`) 같은 falsy `blend` 값을 넘기면 이제 이 예외 경로를 탑니다. 이전에는 조용히 블렌딩을 건너뛰었습니다.
+  - `validateFilterChain()`이 이제 `blend` 값의 `BlendMode` 멤버십을 검증해 `valid:false`와 에러를 반환합니다. 이전에는 사전 검증을 통과한 뒤 실제 적용(`applyFilterChain()`) 단계에서만 예외가 났습니다.
 
 ## [3.1.0] - 2026-08-12
 
