@@ -19,7 +19,6 @@ describe('toCanvasDetailed() 행동 검증', () => {
   describe('반환 형태와 메타데이터', () => {
     it('HTMLCanvasElement와 처리 치수를 반환한다', async () => {
       const canvas = createTestCanvas(400, 300, 'red');
-      // toCanvasDetailed은 TypedImageProcessor 인터페이스 외부 메서드이므로 구체 클래스로 호출한다
       const result = await new ImageProcessor(canvas)
         .resize({ fit: 'cover', width: 200, height: 200 })
         .toCanvasDetailed();

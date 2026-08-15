@@ -23,7 +23,7 @@ import type {
 import type { IImageProcessor } from './types/processor-interface';
 import type { AfterResizeCall, ProcessorState } from './types/processor-state.internal';
 import type { ResizeConfig } from './types/resize-config';
-import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './types/typed-processor.internal';
+import type { BeforeResize, InitialProcessor } from './types/typed-processor.internal';
 
 /**
  * 타입 안전한 이미지 처리 체이닝 API를 제공한다.
@@ -40,19 +40,17 @@ import type { BeforeResize, InitialProcessor, TypedImageProcessor } from './type
  *   .blur(2)
  *   .toBlob();
  *
- * // ❌ Compilation error: duplicate resize() calls
+ * // ❌ Throws at runtime: duplicate resize() calls (the state types don't block this at compile time)
  * const processor = processImage(source)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
- *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 Type error!
+ *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 ImageProcessError: MULTIPLE_RESIZE_NOT_ALLOWED
  *
  * // ✅ For multiple sizes: use separate instances
  * const small = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
  * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  * ```
  */
-export class ImageProcessor<TState extends ProcessorState = BeforeResize>
-  implements TypedImageProcessor<TState>, IImageProcessor<TState>
-{
+export class ImageProcessor<TState extends ProcessorState = BeforeResize> implements IImageProcessor<TState> {
   // 출력 경로 deep module. 연산 축적·1회 제약 런타임 가드·렌더·인코딩 전부 여기에 있다.
   private readonly output: OutputPipeline;
 

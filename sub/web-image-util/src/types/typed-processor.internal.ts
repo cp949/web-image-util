@@ -3,119 +3,28 @@
  *
  * @description Tracks resize() call state with TypeScript type system to
  * prevent incorrect usage at compile time.
+ *
+ * The interface itself lives in ./processor-interface (IImageProcessor) —
+ * ShortcutBuilder depends on that file to avoid a circular import with
+ * processor.ts. This module only derives the state-specific aliases from it.
  */
 
-import type { ShortcutBuilder } from '../shortcut/shortcut-builder';
-import type {
-  BlurOptions,
-  ImageSource,
-  OutputFormat,
-  OutputOptions,
-  ResultBlob,
-  ResultCanvas,
-  ResultDataURL,
-  ResultFile,
-} from '../types';
-import type { AfterResize, BeforeResize, ProcessorState } from './processor-state.internal';
-import type { ResizeConfig } from './resize-config';
+import type { ImageSource } from '../types';
+import type { IImageProcessor } from './processor-interface';
+import type { AfterResize, BeforeResize } from './processor-state.internal';
 
 // Re-export for use by other modules
 export type { AfterResize, BeforeResize } from './processor-state.internal';
 
 /**
- * Type-safe image processor interface
- *
- * @template TState Current processor state (BeforeResize | AfterResize)
- */
-export interface TypedImageProcessor<TState extends ProcessorState = BeforeResize> {
-  /**
-   * Shortcut API accessor
-   *
-   * @description Provides Sharp.js style convenient resizing methods.
-   * Supports autocomplete and type checking through type-safe interface.
-   */
-  shortcut: ShortcutBuilder<TState>;
-
-  /**
-   * Image resizing (can only be called once)
-   *
-   * @description The resize() method can only be called once.
-   * Multiple calls will result in compile error.
-   *
-   * @param config Resizing configuration
-   * @returns Processor instance in state after resize() call
-   *
-   * @example
-   * ```typescript
-   * const processor = processImage(source)
-   *   .resize({ fit: 'cover', width: 300, height: 200 });
-   * ```
-   */
-  resize(this: TypedImageProcessor<BeforeResize>, config: ResizeConfig): TypedImageProcessor<AfterResize>;
-
-  /**
-   * Apply blur effect
-   *
-   * @description Can be used regardless of whether resize() has been called.
-   * @param radius Blur radius (default: 2)
-   * @param options Blur options (optional)
-   * @returns Processor instance with same state
-   */
-  blur(radius?: number, options?: Partial<BlurOptions>): TypedImageProcessor<TState>;
-
-  /**
-   * Return result as Blob
-   */
-  toBlob(options?: OutputOptions): Promise<ResultBlob>;
-  toBlob(format: OutputFormat): Promise<ResultBlob>;
-
-  /**
-   * Return result as Canvas
-   */
-  toCanvas(): Promise<ResultCanvas>;
-
-  /**
-   * Return result as Canvas with detailed metadata
-   */
-  toCanvasDetailed(): Promise<ResultCanvas>;
-
-  /**
-   * Return result as Data URL
-   */
-  toDataURL(options?: OutputOptions): Promise<ResultDataURL>;
-  toDataURL(format: OutputFormat): Promise<ResultDataURL>;
-
-  /**
-   * Return result as File
-   */
-  toFile(filename: string, options?: OutputOptions): Promise<ResultFile>;
-  toFile(filename: string, format: OutputFormat): Promise<ResultFile>;
-
-  /**
-   * Return result as HTMLImageElement
-   */
-  toElement(): Promise<HTMLImageElement>;
-
-  /**
-   * Return result as ArrayBuffer
-   */
-  toArrayBuffer(): Promise<ArrayBuffer>;
-
-  /**
-   * Return result as Uint8Array
-   */
-  toUint8Array(): Promise<Uint8Array>;
-}
-
-/**
  * Initial processor type (before resize() call)
  */
-export type InitialProcessor = TypedImageProcessor<BeforeResize>;
+export type InitialProcessor = IImageProcessor<BeforeResize>;
 
 /**
  * Resizing complete processor type (after resize() call)
  */
-export type ResizedProcessor = TypedImageProcessor<AfterResize>;
+export type ResizedProcessor = IImageProcessor<AfterResize>;
 
 /**
  * Processor factory function type

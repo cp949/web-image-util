@@ -32,14 +32,30 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
   shortcut: ShortcutBuilder<TState>;
 
   /**
-   * Image resizing
-   * Transitions to AfterResize state after resize() call.
+   * Image resizing (can only be called once)
+   *
+   * @description The resize() method can only be called once.
+   * ImageProcessor rejects additional calls at runtime; the current state types
+   * do not enforce this restriction at compile time.
+   *
+   * @param config Resizing configuration
+   * @returns Processor instance in state after resize() call
+   *
+   * @example
+   * ```typescript
+   * const processor = processImage(source)
+   *   .resize({ fit: 'cover', width: 300, height: 200 });
+   * ```
    */
   resize(this: IImageProcessor<BeforeResize>, config: ResizeConfig): IImageProcessor<AfterResize>;
 
   /**
-   * Image blur effect
-   * Supports chaining while maintaining state.
+   * Apply blur effect
+   *
+   * @description Can be used regardless of whether resize() has been called.
+   * @param radius Blur radius (default: 2)
+   * @param options Blur options (optional)
+   * @returns Processor instance with same state
    */
   blur(radius?: number, options?: Partial<BlurOptions>): IImageProcessor<TState>;
 
@@ -86,13 +102,3 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    */
   toUint8Array(): Promise<Uint8Array>;
 }
-
-/**
- * Initial processor type (before resize() call)
- */
-export type InitialProcessorInterface = IImageProcessor<BeforeResize>;
-
-/**
- * Resized processor type (after resize() call)
- */
-export type ResizedProcessorInterface = IImageProcessor<AfterResize>;

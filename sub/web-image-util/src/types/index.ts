@@ -91,9 +91,9 @@ export type {
 // The following types are used only internally by the library and users don't need to use them directly:
 // - ProcessorState, BeforeResize, AfterResize: Internal state machine
 // - AfterResizeCall: TypeScript compiler constraint for resize() state transition
-// - TypedImageProcessor, InitialProcessor, ResizedProcessor: Internal implementation types
+// - IImageProcessor, InitialProcessor, ResizedProcessor: Internal implementation types
 //
-// Users only need to use the ImageProcessor interface.
+// Users only need to use the ImageProcessor class (exported from '../processor').
 // ============================================================================
 
 export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstants } from './base';
@@ -101,10 +101,6 @@ export { ImageErrorCodeConstants, ImageFormats, OutputFormats, ResizeFitConstant
 // Re-import types from base.ts to make them available
 import type { SvgSanitizerMode } from '../svg-contract.internal';
 import type { GeometrySize, OutputFormat, ResizeBackground } from './base';
-// 본문(ImageProcessor 등)이 사용하는 출력 계약 타입 — 정의는 output-types leaf
-import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './output-types';
-// Import ResizeConfig type for use in ImageProcessor
-import type { ResizeConfig } from './resize-config';
 
 // ============================================================================
 // RESIZE TYPES - Resize-related types
@@ -284,18 +280,6 @@ export interface ProcessorOptions {
 }
 
 /**
- * Image processor interface
- */
-export interface ImageProcessor {
-  resize(config: ResizeConfig): ImageProcessor;
-  blur(radius?: number, options?: Partial<BlurOptions>): ImageProcessor;
-  toBlob(options?: OutputOptions): Promise<ResultBlob>;
-  toDataURL(options?: OutputOptions): Promise<ResultDataURL>;
-  toFile(filename: string, options?: OutputOptions): Promise<ResultFile>;
-  toCanvas(): Promise<ResultCanvas>;
-}
-
-/**
  * Source conversion options
  */
 export interface ProcessorSourceOptions {
@@ -319,7 +303,7 @@ export const OPTIMAL_QUALITY_BY_FORMAT = OutputOptimalQuality;
 // SHORTCUT API TYPES - Shortcut API-related types
 // ============================================================================
 
-export type { IImageProcessor, InitialProcessorInterface, ResizedProcessorInterface } from './processor-interface';
+export type { IImageProcessor } from './processor-interface';
 export type { DirectResizeConfig, ResizeOperation, ScaleOperation } from './shortcut-types';
 export { isScaleX, isScaleXY, isScaleY, isUniformScale } from './shortcut-types';
 
