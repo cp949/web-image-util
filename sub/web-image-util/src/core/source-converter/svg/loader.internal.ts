@@ -107,8 +107,9 @@ export async function convertSvgToElement(
     const shouldSkipCompatibilityEnhancement = options?.passthroughMode === 'unsafe-pass-through';
     const svgForLoad = shouldSkipCompatibilityEnhancement ? svgForSafety : enhanceSvgForBrowser(svgForSafety);
 
-    // 2. 원본 SVG의 크기 정보를 추출한다.
-    const dimensions = extractSvgDimensions(svgForLoad);
+    // 2. sanitizer 적용 후, 호환성 보강 전 SVG에서 유효 크기를 추출한다.
+    // 보강 후에는 새 viewBox 때문에 extractSvgDimensions()가 기존 width/height를 다시 우선한다.
+    const dimensions = extractSvgDimensions(svgForSafety);
 
     // 3. 목표 렌더링 크기를 결정한다.
     const finalWidth = targetWidth || dimensions.width;

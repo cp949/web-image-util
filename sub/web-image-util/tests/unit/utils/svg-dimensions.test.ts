@@ -1,3 +1,8 @@
+/**
+ * extractSvgDimensions()의 속성, viewBox, 콘텐츠 BBox 우선순위와 폴백을 검증한다.
+ * 렌더 경로의 fit-content 정책과 반환 치수가 같은지도 경계값으로 고정한다.
+ */
+
 import { describe, expect, it } from 'vitest';
 
 import { extractSvgDimensions } from '../../../src/utils/svg-dimensions';
@@ -94,9 +99,16 @@ describe('extractSvgDimensions()', () => {
       expect(result.height).toBe(50);
     });
 
-    it('hasExplicitSize는 속성 존재 여부 그대로 true다', () => {
+    it('hasExplicitSize는 양수 width/height 단서가 모두 있으므로 true다', () => {
       const result = extractSvgDimensions(SVG_SIZE_MISMATCHES_CONTENT);
       expect(result.hasExplicitSize).toBe(true);
+    });
+
+    it('콘텐츠 BBox의 한 축이 0이면 렌더 경로와 같이 그 축을 defaultSize로 보정한다', () => {
+      const svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="200"><line x1="0" y1="0" x2="0" y2="50"/></svg>';
+
+      expect(extractSvgDimensions(svg)).toMatchObject({ width: 512, height: 50 });
     });
   });
 

@@ -64,17 +64,21 @@ resolveEffectiveViewBox(root, opts, report?, svgString?)
 - `viewBox`가 없으면 `resolveEffectiveViewBox()`를 렌더 경로와 동일한 옵션으로 호출해
   `width`/`height`를 그 결과값으로 채운다(속성값을 우선하지 않는다 — 렌더 경로도 fit-content
   모드에서 BBox 산출 성공 시 명시값을 무시하므로 동일하게 맞춘다).
-  옵션: `{ ...DEFAULT_OPTIONS, mode: 'fit-content' }`
-  (`enableLiveBBox: false`, `enableHeuristicBBox: true`, `paddingPercent: 0`,
-  `ensureNonZeroViewport: true`, `defaultSize: {width:512,height:512}`는 `DEFAULT_OPTIONS`와
-  이미 일치 — `enhanceSvgForBrowser()`가 넘기는 옵션과 동일).
-- `hasExplicitSize`는 속성 존재 여부 그대로 유지(의미 변경 안 함).
+  옵션: `SVG_RENDERING_OPTIONS`. `enhanceSvgForBrowser()`와 같은 상수를 공유해
+  `enableLiveBBox: false`, `enableHeuristicBBox: true`, `paddingPercent: 0`,
+  `ensureNonZeroViewport: true`, `defaultSize: {width:512,height:512}`를 함께 고정한다.
+- `hasExplicitSize`는 두 속성이 모두 양수 값으로 파싱되는지 나타내는 기존 의미를 유지한다.
 
 ### 3. `image-info/dimensions.internal.ts`
 
-코드 변경 없음 — `extractSvgDimensions()`를 그대로 호출하므로 자동으로 수혜.
+`extractSvgDimensions()`를 그대로 호출하므로 자동으로 수혜.
 
-### 4. 의존 방향
+### 4. `loader.internal.ts`
+
+sanitizer 적용 후·호환성 보강 전 문자열에서 유효 크기를 추출한다. 보강 후 문자열에는 새
+`viewBox`가 있으므로 기존 `width`/`height` 우선 분기로 되돌아가 BBox 결과를 잃는다.
+
+### 5. 의존 방향
 
 새로 생기는 의존: `svg-dimensions.ts → svg-compatibility/viewbox-policy.internal.ts`.
 역방향 의존 없음(확인 완료) — 순환 없음.
@@ -98,5 +102,14 @@ CHANGELOG에 **Fixed**로 기재한다(Breaking 아님 — 실제 렌더 결과�
 
 - 크기 정보 전혀 없는 SVG → 기존 100×100 pin을 512×512로 교체.
 - width/height는 있지만 viewBox 없고 콘텐츠 BBox가 다른 SVG(신규) → BBox 값과 일치.
+- 콘텐츠 BBox 한 축이 0인 SVG → 렌더 적용부와 같이 해당 축을 `defaultSize`로 보정.
+
+`tests/unit/utils/image-info/dimensions.test.ts`:
+
+- 공개 `getImageDimensions()`에서 Case A, Case B, BBox 실패 fallback을 각각 검증.
+
+`tests/unit/core/source-converter-failure-jsdom.test.ts`:
+
+- 보강 전에 산출한 콘텐츠 BBox가 렌더 경로의 선택 크기로 유지되는지 검증.
 
 기존 `svg-compatibility.test.ts`, `runtime-contract.test.ts`는 무수정 통과 확인.

@@ -100,3 +100,10 @@ export const DEFAULT_OPTIONS: Required<Omit<SvgCompatibilityOptions, 'defaultSiz
   enableHeuristicBBox: true,
   ensureNonZeroViewport: true,
 };
+
+/** 이미지 처리 파이프라인과 유효 크기 조회가 공유하는 SVG 렌더링 옵션이다. */
+export const SVG_RENDERING_OPTIONS: Required<SvgCompatibilityOptions> = {
+  ...DEFAULT_OPTIONS,
+  mode: 'fit-content',
+  preferResponsive: false,
+};

@@ -100,7 +100,7 @@ export function resolveEffectiveViewBox(
   report?: SvgCompatibilityReport,
   svgString?: string
 ): { minX: number; minY: number; width: number; height: number } {
-  const r = report ?? createThrowawayReport();
+  const reportSink = report ?? createThrowawayReport();
 
   // width/height 단서를 attribute와 style 양쪽에서 모두 수집한다.
   const { wAttr, hAttr } = extractSizeHints(root);
@@ -115,23 +115,28 @@ export function resolveEffectiveViewBox(
       return { minX: 0, minY: 0, width: wVal!, height: hVal! };
     }
     // fit-content: 실제 콘텐츠 BBox에 맞춘다. 측정 실패 시 width/height 사이즈를 그대로 사용한다.
-    const bbox = computeBBox(root, opts, r, svgString) ?? { minX: 0, minY: 0, width: wVal!, height: hVal! };
+    const bbox = computeBBox(root, opts, reportSink, svgString) ?? {
+      minX: 0,
+      minY: 0,
+      width: wVal!,
+      height: hVal!,
+    };
     return padBBox(bbox, opts.paddingPercent);
   }
 
   // Case B) 한쪽만 있거나 px 외 단위 → defaultSize 폴백 사실을 기록한다.
   if ((wAttr || hAttr) && (!wIsPxLike || !hIsPxLike)) {
-    r.warnings.push('Non-px or partial size detected. Falling back to defaultSize for viewBox.');
+    reportSink.warnings.push('Non-px or partial size detected. Falling back to defaultSize for viewBox.');
   }
 
   // Case C) 단서가 전혀 없는 경우, 모드와 ensureNonZeroViewport에 따라 콘텐츠 기반 산출을 시도한다.
   if (opts.mode === 'fit-content' || opts.ensureNonZeroViewport) {
-    const bbox = computeBBox(root, opts, r, svgString);
+    const bbox = computeBBox(root, opts, reportSink, svgString);
     if (bbox && bbox.width > 0 && bbox.height > 0) {
       return padBBox(bbox, opts.paddingPercent);
     }
     // 디버깅을 위해 BBox 산출 결과를 그대로 기록한다.
-    r.warnings.push(
+    reportSink.warnings.push(
       `Content bbox unavailable (${bbox ? `${bbox.width}x${bbox.height}` : 'null'}). Falling back to defaultSize.`
     );
   }

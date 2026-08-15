@@ -88,6 +88,26 @@ describe('getImageDimensions', () => {
     });
   });
 
+  it.each([
+    {
+      caseName: 'width/height가 모두 있어도 콘텐츠 BBox를 우선한다',
+      svg: '<svg width="100" height="200"><rect width="50" height="40"/></svg>',
+      expected: { width: 50, height: 40 },
+    },
+    {
+      caseName: 'width 한 축만 있어도 콘텐츠 BBox를 우선한다',
+      svg: '<svg width="100"><rect x="10" y="20" width="50" height="40"/></svg>',
+      expected: { width: 50, height: 40 },
+    },
+    {
+      caseName: 'BBox를 계산할 수 없으면 defaultSize로 폴백한다',
+      svg: '<svg width="100"><path d="M0 0L10 10"/></svg>',
+      expected: { width: 512, height: 512 },
+    },
+  ])('viewBox 없는 인라인 SVG는 $caseName', async ({ svg, expected }) => {
+    await expect(getImageDimensions(svg)).resolves.toEqual(expected);
+  });
+
   it('.svg 참조를 포함한 인라인 SVG는 로드 경로로 새지 않고 파서 치수를 반환한다', async () => {
     // 본문 안의 `sprite.svg#icon`은 경로 확장자 힌트와 겹친다. 판정이 svg-inline이므로
     // 이미지 로드 없이 파서만으로 끝나야 한다 — 50KB를 넘겨 로드 경로가 반드시

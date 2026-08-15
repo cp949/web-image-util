@@ -3,14 +3,14 @@
  * Size information processing for improved SVG rendering quality
  */
 
-import { DEFAULT_OPTIONS } from './svg-compatibility/options';
+import { SVG_RENDERING_OPTIONS } from './svg-compatibility/options';
 import { resolveEffectiveViewBox } from './svg-compatibility/viewbox-policy.internal';
 import { parseAndClassifySvg } from './svg-document.internal';
 import { parseSvgLength, parseViewBoxValues } from './svg-length.internal';
 
 // 렌더 경로(enhanceSvgForBrowser)가 실제로 쓰는 fit-content 정책과 동일하게 맞춘다.
 // viewBox가 없는 SVG는 이 옵션으로 유효 크기를 계산해야 렌더 결과와 divergence가 없다.
-const EFFECTIVE_SIZE_OPTS = { ...DEFAULT_OPTIONS, mode: 'fit-content' as const };
+const EFFECTIVE_SIZE_OPTS = SVG_RENDERING_OPTIONS;
 
 // Interface for holding SVG size information
 export interface SvgDimensions {
@@ -22,7 +22,7 @@ export interface SvgDimensions {
     width: number;
     height: number;
   };
-  hasExplicitSize: boolean; // whether width, height attributes are explicitly set
+  hasExplicitSize: boolean; // whether both width and height provide positive parsed values
 }
 
 /**
@@ -63,8 +63,9 @@ export function extractSvgDimensions(svgString: string): SvgDimensions {
   const effective = resolveEffectiveViewBox(svgElement, EFFECTIVE_SIZE_OPTS, undefined, svgString);
 
   return {
-    width: effective.width,
-    height: effective.height,
+    // applyViewBoxPolicy()도 0/음수 축을 같은 defaultSize로 보정한다.
+    width: effective.width > 0 ? effective.width : EFFECTIVE_SIZE_OPTS.defaultSize.width,
+    height: effective.height > 0 ? effective.height : EFFECTIVE_SIZE_OPTS.defaultSize.height,
     hasExplicitSize: Boolean(width && height),
   };
 }

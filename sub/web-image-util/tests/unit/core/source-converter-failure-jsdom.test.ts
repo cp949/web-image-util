@@ -448,6 +448,17 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
 });
 
 describe('convertSvgToElement — svg/loader.ts 분기', () => {
+  it('viewBox 없는 SVG는 콘텐츠 BBox를 렌더 크기로 사용한다', async () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="200"><rect width="50" height="50"/></svg>';
+    const { convertSvgToElement } = await import('../../../src/core/source-converter/svg/loader.internal');
+    stubImgCreation('error');
+
+    await expect(convertSvgToElement(svg, undefined, undefined, { quality: 'high' })).rejects.toMatchObject({
+      code: 'SOURCE_LOAD_FAILED',
+      message: expect.stringContaining('size 50x50'),
+    });
+  });
+
   it('sanitizerMode 미지정 + unsafe-pass-through는 skip으로 해석되고 호환성 보정을 건너뛴다', async () => {
     const enhanceSpy = vi.fn((s: string) => s);
     vi.doMock('../../../src/utils/svg-compatibility/index', () => ({

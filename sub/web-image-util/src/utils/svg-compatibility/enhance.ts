@@ -8,7 +8,12 @@
 import { parseAndClassifySvg } from '../svg-document.internal';
 import { addPAR, addRequiredNamespaces, modernizeSvgSyntax } from './attributes.internal';
 import { toMsg } from './message.internal';
-import { DEFAULT_OPTIONS, type SvgCompatibilityOptions, type SvgCompatibilityReport } from './options';
+import {
+  DEFAULT_OPTIONS,
+  SVG_RENDERING_OPTIONS,
+  type SvgCompatibilityOptions,
+  type SvgCompatibilityReport,
+} from './options';
 import { applyViewBoxPolicy } from './viewbox-policy.internal';
 
 /**
@@ -115,22 +120,6 @@ function finalize(svg: string, report: SvgCompatibilityReport, t1: number, t0: n
  * @returns Canvas 렌더링 직전에 사용할 보강된 SVG 문자열
  */
 export function enhanceSvgForBrowser(svgString: string): string {
-  const { enhancedSvg } = enhanceBrowserCompatibility(svgString, {
-    // === 핵심 호환성 보강 ===
-    addNamespaces: true, // 브라우저 파서를 위한 필수 네임스페이스
-    fixDimensions: true, // Canvas drawImage가 요구하는 명시 크기 확보
-    modernizeSyntax: true, // xlink → href 현대화
-    addPreserveAspectRatio: true, // 종횡비 유지 명시
-
-    // === 크기 산정 전략 ===
-    mode: 'fit-content', // 콘텐츠에 정확히 맞춘 viewBox(리사이저에 적합)
-    ensureNonZeroViewport: true, // 0×0 렌더링 방지
-    paddingPercent: 0, // 추가 여백 없이 정확한 크기 사용
-
-    // === 성능/안정성 옵션 ===
-    preferResponsive: false, // Canvas는 고정 크기가 더 예측 가능하다
-    enableLiveBBox: false, // 테스트 환경에서 getBBox() 타임아웃 방지
-    enableHeuristicBBox: true, // Node 환경에서도 동작하는 폴백 활성화
-  });
+  const { enhancedSvg } = enhanceBrowserCompatibility(svgString, SVG_RENDERING_OPTIONS);
   return enhancedSvg;
 }
