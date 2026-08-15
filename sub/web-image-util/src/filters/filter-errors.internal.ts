@@ -11,3 +11,8 @@ export function createFilterNotFoundError(filterName: string): Error {
 export function createInvalidFilterParamsError(errors: string[] | undefined): Error {
   return new Error(`Filter parameters are invalid: ${errors?.join(', ')}`);
 }
+
+/** 처리되지 않은 블렌드 모드 에러를 생성한다. */
+export function createUnsupportedBlendModeError(blendMode: string): Error {
+  return new Error(`Blend mode '${blendMode}' is not supported.`);
+}

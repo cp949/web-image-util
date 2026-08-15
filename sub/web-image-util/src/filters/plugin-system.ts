@@ -89,6 +89,7 @@ export interface FilterChain {
  * 싱글턴 인스턴스를 별도로 캡처하는 경로가 없어 참조가 갈라질 수 없다.
  */
 const registeredPlugins = new Map<string, FilterPlugin>();
+const supportedBlendModes = new Set<string>(Object.values(BlendMode));
 
 /**
  * 필터 플러그인을 등록한다.
@@ -165,7 +166,7 @@ export function applyFilter(imageData: ImageData, filterOptions: FilterOptions):
   let result = plugin.apply(imageData, filterOptions.params);
 
   // 블렌딩과 불투명도를 순서대로 합성한다.
-  if (filterOptions.blend && filterOptions.blend !== BlendMode.NORMAL) {
+  if (filterOptions.blend !== undefined && filterOptions.blend !== BlendMode.NORMAL) {
     result = applyBlendMode(imageData, result, filterOptions.blend);
   }
 
@@ -218,6 +219,10 @@ export function validateFilterChain(filterChain: FilterChain): FilterValidationR
     const validation = plugin.validate(filter.params);
     if (!validation.valid) {
       errors.push(`Filter '${filter.name}' parameter error (index: ${i}): ${validation.errors?.join(', ')}`);
+    }
+
+    if (filter.blend !== undefined && !supportedBlendModes.has(filter.blend)) {
+      errors.push(`Filter '${filter.name}' blend mode error (index: ${i}): '${filter.blend}' is not supported`);
     }
 
     if (validation.warnings) {

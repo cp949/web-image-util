@@ -79,6 +79,123 @@ describe('필터 적용', () => {
       expect(result.data[0]).toBe(Math.round(2 * r * r * 255));
     });
 
+    it('BlendMode.DARKEN으로 블렌딩한다', () => {
+      registerFilter(createDummyPlugin('adder'));
+      const input = createImageData(1, 1, [100, 100, 100, 255]);
+      const result = applyFilter(input, {
+        name: 'adder',
+        params: { value: 80 },
+        blend: BlendMode.DARKEN,
+      });
+      const cb = 100 / 255;
+      const cs = 180 / 255;
+      expect(result.data[0]).toBe(Math.round(Math.min(cb, cs) * 255));
+    });
+
+    it('BlendMode.LIGHTEN으로 블렌딩한다', () => {
+      registerFilter(createDummyPlugin('adder'));
+      const input = createImageData(1, 1, [200, 200, 200, 255]);
+      const result = applyFilter(input, {
+        name: 'adder',
+        params: { value: -80 },
+        blend: BlendMode.LIGHTEN,
+      });
+      const cb = 200 / 255;
+      const cs = 120 / 255;
+      expect(result.data[0]).toBe(Math.round(Math.max(cb, cs) * 255));
+    });
+
+    it('BlendMode.COLOR_DODGE로 블렌딩한다', () => {
+      registerFilter(createDummyPlugin('adder'));
+      const input = createImageData(1, 1, [120, 120, 120, 255]);
+      const result = applyFilter(input, {
+        name: 'adder',
+        params: { value: -40 },
+        blend: BlendMode.COLOR_DODGE,
+      });
+      const cb = 120 / 255;
+      const cs = 80 / 255;
+      expect(result.data[0]).toBe(Math.round(Math.min(1, cb / (1 - cs)) * 255));
+    });
+
+    it('BlendMode.COLOR_BURN으로 블렌딩한다', () => {
+      registerFilter(createDummyPlugin('adder'));
+      const input = createImageData(1, 1, [180, 180, 180, 255]);
+      const result = applyFilter(input, {
+        name: 'adder',
+        params: { value: 40 },
+        blend: BlendMode.COLOR_BURN,
+      });
+      const cb = 180 / 255;
+      const cs = 220 / 255;
+      expect(result.data[0]).toBe(Math.round((1 - Math.min(1, (1 - cb) / cs)) * 255));
+    });
+
+    it('BlendMode.HARD_LIGHT로 블렌딩한다 (cs < 0.5 케이스)', () => {
+      registerFilter(createDummyPlugin('adder'));
+      const input = createImageData(1, 1, [200, 200, 200, 255]);
+      const result = applyFilter(input, {
+        name: 'adder',
+        params: { value: -100 },
+        blend: BlendMode.HARD_LIGHT,
+      });
+      const cb = 200 / 255;
+      const cs = 100 / 255;
+      expect(result.data[0]).toBe(Math.round(2 * cb * cs * 255));
+    });
+
+    it('BlendMode.SOFT_LIGHT로 블렌딩한다 (cs <= 0.5 케이스)', () => {
+      registerFilter(createDummyPlugin('adder'));
+      const input = createImageData(1, 1, [200, 200, 200, 255]);
+      const result = applyFilter(input, {
+        name: 'adder',
+        params: { value: -100 },
+        blend: BlendMode.SOFT_LIGHT,
+      });
+      const cb = 200 / 255;
+      const cs = 100 / 255;
+      expect(result.data[0]).toBe(Math.round((cb - (1 - 2 * cs) * cb * (1 - cb)) * 255));
+    });
+
+    it('BlendMode.DIFFERENCE로 블렌딩한다', () => {
+      registerFilter(createDummyPlugin('adder'));
+      const input = createImageData(1, 1, [200, 200, 200, 255]);
+      const result = applyFilter(input, {
+        name: 'adder',
+        params: { value: -60 },
+        blend: BlendMode.DIFFERENCE,
+      });
+      const cb = 200 / 255;
+      const cs = 140 / 255;
+      expect(result.data[0]).toBe(Math.round(Math.abs(cb - cs) * 255));
+    });
+
+    it('BlendMode.EXCLUSION으로 블렌딩한다', () => {
+      registerFilter(createDummyPlugin('adder'));
+      const input = createImageData(1, 1, [200, 200, 200, 255]);
+      const result = applyFilter(input, {
+        name: 'adder',
+        params: { value: -100 },
+        blend: BlendMode.EXCLUSION,
+      });
+      const cb = 200 / 255;
+      const cs = 100 / 255;
+      expect(result.data[0]).toBe(Math.round((cb + cs - 2 * cb * cs) * 255));
+    });
+
+    it('BlendMode에 없는 빈 문자열을 넘기면 예외를 던진다', () => {
+      registerFilter(createDummyPlugin('adder'));
+      const input = createImageData(1, 1, [100, 100, 100, 255]);
+
+      expect(() =>
+        applyFilter(input, {
+          name: 'adder',
+          params: { value: 10 },
+          blend: '' as BlendMode,
+        })
+      ).toThrow("Blend mode '' is not supported.");
+    });
+
     it('opacity를 적용하면 원본과 필터 결과를 혼합한다', () => {
       registerFilter(createDummyPlugin('adder'));
       const input = createImageData(1, 1, [0, 0, 0, 255]);
@@ -147,6 +264,18 @@ describe('필터 적용', () => {
         filters: [{ name: 'v-filter', params: { value: 999 } }],
       });
       expect(result.valid).toBe(false);
+    });
+
+    it('BlendMode에 없는 값이 있으면 valid:false와 errors를 반환한다', () => {
+      registerFilter(createDummyPlugin('v-filter'));
+      const result = validateFilterChain({
+        filters: [{ name: 'v-filter', params: { value: 10 }, blend: 'not-a-real-mode' as BlendMode }],
+      });
+
+      expect(result).toEqual({
+        valid: false,
+        errors: ["Filter 'v-filter' blend mode error (index: 0): 'not-a-real-mode' is not supported"],
+      });
     });
 
     it('경고가 있으면 warnings 필드를 포함한다', () => {
