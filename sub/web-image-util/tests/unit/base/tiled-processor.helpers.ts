@@ -41,21 +41,6 @@ export function coveredPixels(tiles: TileInfo[]): Set<string> {
 }
 
 /** 내부 private 메서드에 접근하는 테스트 헬퍼 */
-export function generateSimpleTilePlan(
-  width: number,
-  height: number,
-  tileSize: number,
-  overlapSize: number
-): TileInfo[] {
-  return (TiledProcessor as unknown as TiledProcessorPrivate).generateSimpleTilePlan(
-    width,
-    height,
-    tileSize,
-    overlapSize
-  ) as TileInfo[];
-}
-
-/** 내부 private 메서드에 접근하는 테스트 헬퍼 */
 export function generateTilePlan(
   sourceWidth: number,
   sourceHeight: number,

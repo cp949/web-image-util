@@ -234,32 +234,6 @@ describe('HighResolutionDetector', () => {
     });
   });
 
-  describe('getStrategyDescription()', () => {
-    it('tiled 설명은 medium·ultra-large preset의 장단점을 모두 보존한다', () => {
-      const description = HighResolutionDetector.getStrategyDescription('tiled');
-
-      expect(description.advantages).toEqual(
-        expect.arrayContaining([
-          'Memory efficient',
-          'Stable processing',
-          'Suitable for medium-sized images',
-          'Can process ultra-large images',
-          'Limited memory usage',
-          'Scalability',
-        ])
-      );
-      expect(description.disadvantages).toEqual(
-        expect.arrayContaining([
-          'Increased processing time',
-          'Boundary processing required',
-          'Longest processing time',
-          'Complex tile boundary processing',
-          'High implementation complexity',
-        ])
-      );
-    });
-  });
-
   describe('estimateProcessingTime()', () => {
     it('tiled light preset은 옛 chunked 시간 계수와 factor를 보존한다', () => {
       const analysis = HighResolutionDetector.analyzeImage(createMockImage(2049, 2049));
