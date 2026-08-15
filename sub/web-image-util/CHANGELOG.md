@@ -84,6 +84,7 @@
 
 - Fixed: `extractSvgDimensions()`(및 이를 쓰는 `getImageDimensions()`/`getImageInfo()`)가 실제 렌더 경로(`enhanceSvgForBrowser()`)와 다른 크기를 보고하던 문제를 수정합니다. `viewBox`가 없는 SVG는 이제 렌더 경로와 동일하게 콘텐츠 BBox 우선(fit-content) 정책으로 유효 크기를 산출합니다.
   - 크기 정보가 전혀 없는 SVG의 폴백이 `100×100`에서 `512×512`(렌더 경로의 `defaultSize`)로 바뀝니다.
+- Fixed: 입력 단계 진단 경고(`collectInputPolicyWarnings`)가 이벤트 핸들러 속성 판정을 위협 정책 leaf(`isEventHandlerAttributeName`)와 다른 기준(`startsWith('on')`)으로 인라인 복제해, 속성명 `"on"` 단독처럼 실제로는 이벤트 핸들러가 아닌 값에도 경고를 잘못 보고하던 문제를 수정합니다. strict 집행 엔진(`enforceStrictDomPolicy`)의 속성 제거 동작은 바뀌지 않습니다.
   - `width`/`height`가 명시돼 있어도 `viewBox`가 없고 콘텐츠 BBox가 명시값과 다르면, 이제 명시값 대신 콘텐츠 BBox를 반환합니다 — 렌더 결과와 일치시키기 위함입니다. `viewBox`가 있는 SVG는 영향받지 않습니다.
 - Fixed: `prefixSvgIds()`와 `SvgOptimizer`가 비표준 prefix로 선언된 `xlink:href`(예: `xmlns:foo` + `foo:href`) 참조를 인식하지 못해 id rewrite를 건너뛰거나 참조 중인 `<defs>` 정의를 미참조로 오판해 삭제하던 문제를 수정합니다. 표준 `xmlns:xlink` prefix를 쓰는 입력의 동작은 바뀌지 않습니다.
 - Fixed: 같은 이미지가 진입점(`AutoHighResProcessor.smartResize()`/`smartResizeWithProgress()` vs `fastResize()`/`qualityResize()`/`autoResize()`/`ResizePerformance.*Batch`가 내부적으로 쓰는 `SmartProcessor`)에 따라 고해상도 처리 경로 진입 여부가 다르게 판정되던 문제를 수정합니다. 두 진입점이 이제 픽셀 수(8,000,000 초과)와 스케일 비율(다운스케일 4배 초과) 기준을 공유합니다.

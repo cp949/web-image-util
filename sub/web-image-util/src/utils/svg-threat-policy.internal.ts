@@ -373,8 +373,13 @@ const EVENT_HANDLER_ATTRIBUTE_PATTERN = /^on[a-z0-9:-]+$/i;
 /**
  * `on*` 이벤트 핸들러 속성 이름인지 판정한다.
  *
- * strict 엔진의 재강제 단계는 방어적으로 이보다 넓은 `on` 접두 검사를 쓴다 —
- * 정책 판정(진단·카운트)은 이 술어를 기준으로 한다.
+ * 정책 판정(진단·카운트)은 이 술어를 기준으로 한다 — `dom-signals.internal.ts`,
+ * `svg-sanitizer/warnings.internal.ts`가 이 함수를 직접 호출한다.
+ *
+ * `svg-sanitizer/enforce-dom-policy.internal.ts`(strict 엔진의 재강제 단계)만
+ * 의도된 예외다. 방어적으로 이보다 넓은 `on` 접두 검사(`startsWith('on')`)를
+ * 인라인으로 쓴다 — 속성명 `"on"` 단독처럼 이 술어가 이벤트 핸들러로 보지 않는
+ * 값까지 보수적으로 제거하기 위해서다. 이 함수를 호출하도록 통합하지 않는다.
  *
  * @param name 속성 이름
  * @returns 이벤트 핸들러 속성이면 true

@@ -9,7 +9,7 @@
 
 import { parseAndClassifySvg } from '../utils/svg-document.internal';
 import { isReferenceAttribute } from '../utils/svg-reference-attribute.internal';
-import { classifyUriRef, type UriRefReason } from '../utils/svg-threat-policy.internal';
+import { classifyUriRef, isEventHandlerAttributeName, type UriRefReason } from '../utils/svg-threat-policy.internal';
 import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
 
 /**
@@ -61,10 +61,7 @@ export function collectInputPolicyWarnings(svg: string, warnings: string[]): voi
   const elements = [root, ...Array.from(root.querySelectorAll('*'))];
   for (const element of elements) {
     for (const attribute of Array.from(element.attributes)) {
-      const name = attribute.name.toLowerCase();
-      const localName = attribute.localName.toLowerCase();
-
-      if (name.startsWith('on') || localName.startsWith('on')) {
+      if (isEventHandlerAttributeName(attribute.name)) {
         pushUniqueWarning(warnings, '이벤트 핸들러 속성이 제거되었습니다.');
         continue;
       }
