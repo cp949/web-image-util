@@ -433,46 +433,40 @@ describe('HighResolutionManager.smartResize — enableProgressTracking 진행률
     expect(progressCalls.some((p) => p.stage === 'processing')).toBe(true);
   });
 
-  it('onProgress의 currentStrategy는 실제 선택된 전략(STEPPED)을 보고한다 — 하드코딩된 DIRECT가 아니다', async () => {
+  it.each([
+    {
+      strategy: ProcessingStrategy.STEPPED,
+      mockProcessor: (canvas: HTMLCanvasElement) =>
+        vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(canvas),
+    },
+    {
+      strategy: ProcessingStrategy.TILED,
+      mockProcessor: (canvas: HTMLCanvasElement) => vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(canvas),
+    },
+  ])('$strategy 전략 확정 후 onProgress의 currentStrategy는 실제 선택된 전략을 보고한다', async ({
+    strategy,
+    mockProcessor,
+  }) => {
     const stubCanvas = document.createElement('canvas');
-    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+    mockProcessor(stubCanvas);
 
     const progressCalls: HighResolutionProgress[] = [];
     const img = createMockImage(300, 300);
 
     const result = await HighResolutionManager.smartResize(img, 50, 50, {
       enableProgressTracking: true,
-      forceStrategy: ProcessingStrategy.STEPPED,
+      forceStrategy: strategy,
       onProgress: (p) => progressCalls.push(p),
     });
 
-    expect(result.strategy).toBe(ProcessingStrategy.STEPPED);
-    // 전략이 확정되는 시점(progress=20, "Strategy selected: ...") 이후의 콜은 전부 실제 전략을 보고해야 한다
-    const afterSelection = progressCalls.filter((p) => p.progress >= 20);
-    expect(afterSelection.length).toBeGreaterThan(0);
+    expect(result.strategy).toBe(strategy);
+    const selectionIndex = progressCalls.findIndex((p) => p.details === `Strategy selected: ${strategy}`);
+    expect(selectionIndex).toBeGreaterThanOrEqual(0);
+
+    // 전략 확정 콜백부터 완료 콜백까지 같은 실제 전략을 유지해야 한다.
+    const afterSelection = progressCalls.slice(selectionIndex);
     for (const p of afterSelection) {
-      expect(p.currentStrategy).toBe(ProcessingStrategy.STEPPED);
-    }
-  });
-
-  it('onProgress의 currentStrategy는 실제 선택된 전략(TILED)을 보고한다 — 하드코딩된 DIRECT가 아니다', async () => {
-    const stubCanvas = document.createElement('canvas');
-    vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
-
-    const progressCalls: HighResolutionProgress[] = [];
-    const img = createMockImage(9000, 9000); // heavy preset → TILED
-
-    const result = await HighResolutionManager.smartResize(img, 50, 50, {
-      enableProgressTracking: true,
-      forceStrategy: ProcessingStrategy.TILED,
-      onProgress: (p) => progressCalls.push(p),
-    });
-
-    expect(result.strategy).toBe(ProcessingStrategy.TILED);
-    const afterSelection = progressCalls.filter((p) => p.progress >= 20);
-    expect(afterSelection.length).toBeGreaterThan(0);
-    for (const p of afterSelection) {
-      expect(p.currentStrategy).toBe(ProcessingStrategy.TILED);
+      expect(p.currentStrategy).toBe(strategy);
     }
   });
 });

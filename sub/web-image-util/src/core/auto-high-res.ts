@@ -118,7 +118,7 @@ export class AutoHighResProcessor {
     onProgress?.(10, 'Analyzing image...');
 
     // Determine automatic optimization strategy
-    const strategy = AutoHighResProcessor.determineOptimalStrategy(analysis, priority, thresholds);
+    const strategy = AutoHighResProcessor.determineOptimalStrategy(priority, thresholds);
 
     onProgress?.(20, `Optimization strategy: ${strategy.name}`);
 
@@ -223,7 +223,7 @@ export class AutoHighResProcessor {
     // Basic validation
     const validation = HighResolutionManager.validateProcessingCapability(img, targetWidth, targetHeight);
     const analysis = HighResolutionDetector.analyzeImage(img);
-    const strategy = AutoHighResProcessor.determineOptimalStrategy(analysis, 'balanced', thresholds);
+    const strategy = AutoHighResProcessor.determineOptimalStrategy('balanced', thresholds);
 
     const warnings: string[] = [...validation.warnings];
     const recommendations: string[] = [];
@@ -314,7 +314,6 @@ export class AutoHighResProcessor {
    * Determine optimal strategy (internal method)
    */
   private static determineOptimalStrategy(
-    analysis: any,
     priority: 'speed' | 'balanced' | 'quality',
     thresholds: AutoProcessingThresholds
   ) {
