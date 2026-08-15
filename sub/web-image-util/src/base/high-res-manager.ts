@@ -85,7 +85,7 @@ export class HighResolutionManager {
 
       // 2. Determine processing strategy
       const strategy = HighResolutionManager.selectOptimalStrategy(analysis, opts, img, targetWidth, targetHeight);
-      progressTracker?.update('analyzing', 20, `Strategy selected: ${strategy}`);
+      progressTracker?.update('analyzing', 20, `Strategy selected: ${strategy}`, strategy);
 
       // 3. Check and manage memory situation
       await HighResolutionManager.checkAndManageMemory(opts, analysis);
@@ -230,7 +230,7 @@ export class HighResolutionManager {
     const progressCallback = progressTracker
       ? (current: number, total: number) => {
           const progress = 40 + (current / total) * 40; // 40-80% range
-          progressTracker.update('processing', progress, `Processing ${current}/${total}...`);
+          progressTracker.update('processing', progress, `Processing ${current}/${total}...`, strategy);
         }
       : undefined;
 
@@ -280,9 +280,20 @@ export class HighResolutionManager {
    */
   private static createProgressTracker(onProgress?: (progress: HighResolutionProgress) => void) {
     const startTime = Date.now();
+    // 전략이 선택되기 전(analyzing 초기 단계)의 기본값. selectOptimalStrategy() 결과가 나오는 즉시 update()의
+    // strategy 인자로 갱신된다 — 이후 모든 콜백은 실제 선택된 전략을 보고한다.
+    let currentStrategy: ProcessingStrategy = ProcessingStrategy.DIRECT;
 
     return {
-      update: (stage: HighResolutionProgress['stage'], progress: number, details?: string) => {
+      update: (
+        stage: HighResolutionProgress['stage'],
+        progress: number,
+        details?: string,
+        strategy?: ProcessingStrategy
+      ) => {
+        if (strategy !== undefined) {
+          currentStrategy = strategy;
+        }
         if (!onProgress) return;
 
         const timeElapsed = (Date.now() - startTime) / 1000;
@@ -292,7 +303,7 @@ export class HighResolutionManager {
         onProgress({
           stage,
           progress: Math.min(100, Math.max(0, progress)),
-          currentStrategy: ProcessingStrategy.DIRECT, // Needs to be updated with actual strategy
+          currentStrategy,
           timeElapsed: Math.round(timeElapsed * 10) / 10,
           estimatedTimeRemaining: Math.round(estimatedRemaining * 10) / 10,
           memoryUsageMB: HighResolutionManager.getCurrentMemoryUsage(),

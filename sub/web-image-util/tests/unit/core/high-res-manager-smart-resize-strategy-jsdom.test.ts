@@ -432,6 +432,49 @@ describe('HighResolutionManager.smartResize — enableProgressTracking 진행률
     // 시퀀스에 processing 단계가 최소 1회 포함되어야 한다
     expect(progressCalls.some((p) => p.stage === 'processing')).toBe(true);
   });
+
+  it('onProgress의 currentStrategy는 실제 선택된 전략(STEPPED)을 보고한다 — 하드코딩된 DIRECT가 아니다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+    const progressCalls: HighResolutionProgress[] = [];
+    const img = createMockImage(300, 300);
+
+    const result = await HighResolutionManager.smartResize(img, 50, 50, {
+      enableProgressTracking: true,
+      forceStrategy: ProcessingStrategy.STEPPED,
+      onProgress: (p) => progressCalls.push(p),
+    });
+
+    expect(result.strategy).toBe(ProcessingStrategy.STEPPED);
+    // 전략이 확정되는 시점(progress=20, "Strategy selected: ...") 이후의 콜은 전부 실제 전략을 보고해야 한다
+    const afterSelection = progressCalls.filter((p) => p.progress >= 20);
+    expect(afterSelection.length).toBeGreaterThan(0);
+    for (const p of afterSelection) {
+      expect(p.currentStrategy).toBe(ProcessingStrategy.STEPPED);
+    }
+  });
+
+  it('onProgress의 currentStrategy는 실제 선택된 전략(TILED)을 보고한다 — 하드코딩된 DIRECT가 아니다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
+
+    const progressCalls: HighResolutionProgress[] = [];
+    const img = createMockImage(9000, 9000); // heavy preset → TILED
+
+    const result = await HighResolutionManager.smartResize(img, 50, 50, {
+      enableProgressTracking: true,
+      forceStrategy: ProcessingStrategy.TILED,
+      onProgress: (p) => progressCalls.push(p),
+    });
+
+    expect(result.strategy).toBe(ProcessingStrategy.TILED);
+    const afterSelection = progressCalls.filter((p) => p.progress >= 20);
+    expect(afterSelection.length).toBeGreaterThan(0);
+    for (const p of afterSelection) {
+      expect(p.currentStrategy).toBe(ProcessingStrategy.TILED);
+    }
+  });
 });
 
 describe('HighResolutionManager.batchSmartResize — 결과 순서/실패 전파/진행률', () => {

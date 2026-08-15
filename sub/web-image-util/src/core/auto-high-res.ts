@@ -318,16 +318,12 @@ export class AutoHighResProcessor {
     priority: 'speed' | 'balanced' | 'quality',
     thresholds: AutoProcessingThresholds
   ) {
-    const isHighMem = analysis.estimatedMemoryMB > thresholds.autoTileThreshold;
-
     // Determine strategy by priority
     switch (priority) {
       case 'speed':
         return {
           name: 'High-speed Processing',
           quality: 'fast' as const,
-          memoryOptimized: isHighMem,
-          tileProcessing: isHighMem,
           maxMemory: thresholds.autoTileThreshold,
         };
 
@@ -335,8 +331,6 @@ export class AutoHighResProcessor {
         return {
           name: 'High-quality Processing',
           quality: 'high' as const,
-          memoryOptimized: true,
-          tileProcessing: isHighMem,
           maxMemory: thresholds.autoTileThreshold * 1.5,
         };
 
@@ -344,8 +338,6 @@ export class AutoHighResProcessor {
         return {
           name: 'Balanced Optimization',
           quality: 'balanced' as const,
-          memoryOptimized: isHighMem,
-          tileProcessing: isHighMem,
           maxMemory: thresholds.autoTileThreshold,
         };
     }
