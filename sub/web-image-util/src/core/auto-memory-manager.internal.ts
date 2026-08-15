@@ -90,58 +90,6 @@ export class AutoMemoryManager {
   }
 
   /**
-   * Check if memory state is suitable for image processing
-   */
-  canProcessLargeImage(estimatedUsageMB: number): boolean {
-    const memoryInfo = this.getMemoryInfo();
-
-    // Ensure current pressure + estimated usage doesn't exceed 90%
-    const projectedPressure = (memoryInfo.usedMB + estimatedUsageMB) / memoryInfo.limitMB;
-
-    return projectedPressure < 0.9;
-  }
-
-  /**
-   * Calculate estimated memory usage based on image size
-   */
-  estimateImageMemoryUsage(width: number, height: number): number {
-    // 4 channels (RGBA) * 4 bytes + some overhead
-    const baseUsage = (width * height * 4) / (1024 * 1024);
-
-    // Canvas processing overhead (approximately 2x)
-    return Math.round(baseUsage * 2);
-  }
-
-  /**
-   * Recommend appropriate processing strategy
-   */
-  recommendProcessingStrategy(
-    originalWidth: number,
-    originalHeight: number,
-    targetWidth: number,
-    targetHeight: number
-  ): 'direct' | 'chunked' | 'tiled' | 'memory-efficient' {
-    const memoryInfo = this.getMemoryInfo();
-    const estimatedUsage = this.estimateImageMemoryUsage(originalWidth, originalHeight);
-
-    // Memory pressure situation
-    if (memoryInfo.pressure > 0.7 || !this.canProcessLargeImage(estimatedUsage)) {
-      return 'memory-efficient';
-    }
-
-    // Image size-based strategy
-    const pixelCount = originalWidth * originalHeight;
-
-    if (pixelCount > 16_000_000) {
-      return 'tiled';
-    } else if (pixelCount > 4_000_000) {
-      return 'chunked';
-    } else {
-      return 'direct';
-    }
-  }
-
-  /**
    * Query optimization statistics (for debugging)
    */
   getOptimizationStats() {
