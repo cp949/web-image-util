@@ -9,8 +9,7 @@ import {
   collectSvgCssReferenceSignals,
   collectSvgDomSecuritySignals,
   isReferenceAttribute,
-  MAX_SAMPLE_LENGTH,
-  MAX_SAMPLES_PER_STAGE,
+  pushCappedSample,
   readReferenceAttribute,
 } from '../../utils/svg-inspection/sanitizer-exports.internal';
 import type { InspectSvgSanitizationStage, InspectSvgSanitizationStageCode } from './types.internal';
@@ -21,25 +20,19 @@ const DOCTYPE_PATTERN = /<!DOCTYPE\b/gi;
 const ENTITY_PATTERN = /<!ENTITY\b/gi;
 
 /**
- * stage 단위 누적 상태. count는 발생 수, samples는 발생 순서 중복 제거(Set) 후 최대 3개.
+ * stage 단위 누적 상태. count는 발생 수, samples는 pushCappedSample이 관리하는 문자열 배열
+ * (32자 초과 절단, 중복 없음, 최대 3개).
  */
 interface StageAccumulator {
   count: number;
-  samples: Set<string>;
+  samples: string[];
 }
 
 function createAccumulator(): StageAccumulator {
-  return { count: 0, samples: new Set<string>() };
+  return { count: 0, samples: [] };
 }
 
-/** samples Set에 토큰을 추가한다. 32자 초과는 잘라낸다. */
-function addSample(acc: StageAccumulator, sample: string): void {
-  if (acc.samples.size >= MAX_SAMPLES_PER_STAGE) return;
-  const normalized = sample.length > MAX_SAMPLE_LENGTH ? sample.slice(0, MAX_SAMPLE_LENGTH) : sample;
-  acc.samples.add(normalized);
-}
-
-/** count > 0 이면 stage를 결과 배열에 추가한다. samples 길이 상한은 addSample이 보장한다. */
+/** count > 0 이면 stage를 결과 배열에 추가한다. samples 길이 상한은 pushCappedSample이 보장한다. */
 function pushStage(
   stages: InspectSvgSanitizationStage[],
   code: InspectSvgSanitizationStageCode,
@@ -108,7 +101,7 @@ function collectDoctypeAndEntityStages(svgString: string, stages: InspectSvgSani
   if (doctypeMatches && doctypeMatches.length > 0) {
     const acc = createAccumulator();
     acc.count = doctypeMatches.length;
-    addSample(acc, 'doctype');
+    pushCappedSample(acc.samples, 'doctype');
     pushStage(stages, 'doctype-removed', acc);
   }
 
@@ -116,7 +109,7 @@ function collectDoctypeAndEntityStages(svgString: string, stages: InspectSvgSani
   if (entityMatches && entityMatches.length > 0) {
     const acc = createAccumulator();
     acc.count = entityMatches.length;
-    addSample(acc, 'entity');
+    pushCappedSample(acc.samples, 'entity');
     pushStage(stages, 'entity-removed', acc);
   }
 }
@@ -165,17 +158,20 @@ export function collectEmbeddedImageStages(doc: Document): InspectSvgSanitizatio
       const info = parseSvgDataUrlRef(value);
       if (info?.mimeType === 'image/svg+xml' && decodeSvgDataImageRef(value) !== null) {
         nested.count += 1;
-        addSample(nested, 'image/svg+xml');
+        pushCappedSample(nested.samples, 'image/svg+xml');
       } else if (isSafeRasterDataImageRef(value)) {
         // info는 isSafeRasterDataImageRef 내부에서 다시 파싱되지만, 본 분기에 진입했다는 것은
         // 해당 호출이 non-null info를 얻었다는 뜻이므로 외부 info도 mimeType을 보장한다.
         preserved.count += 1;
-        addSample(preserved, info?.mimeType ?? 'unknown');
+        pushCappedSample(preserved.samples, info?.mimeType ?? 'unknown');
       } else {
         // info.mimeType은 data: metadata 위치의 무검증 값이므로, 인식된 MIME일 때만 sample로
         // echo하고 그 외(공격자가 심은 임의 텍스트 포함)는 'unknown'으로 치환해 누출을 막는다.
         blocked.count += 1;
-        addSample(blocked, info && isRecognizedDataUrlMimeType(info.mimeType) ? info.mimeType : 'unknown');
+        pushCappedSample(
+          blocked.samples,
+          info && isRecognizedDataUrlMimeType(info.mimeType) ? info.mimeType : 'unknown'
+        );
       }
     }
   }
