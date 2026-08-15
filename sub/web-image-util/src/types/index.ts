@@ -304,8 +304,6 @@ export const OPTIMAL_QUALITY_BY_FORMAT = OutputOptimalQuality;
 // ============================================================================
 
 export type { IImageProcessor } from './processor-interface';
-export type { DirectResizeConfig, ResizeOperation, ScaleOperation } from './shortcut-types';
-export { isScaleX, isScaleXY, isScaleY, isUniformScale } from './shortcut-types';
 
 // ============================================================================
 // SVG QUALITY ENHANCEMENT TYPES - SVG quality enhancement related types

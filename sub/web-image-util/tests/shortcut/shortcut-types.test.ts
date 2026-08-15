@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { processImage } from '../../src/index';
 import { ImageProcessError } from '../../src/types';
-import type { ScaleOperation } from '../../src/types/shortcut-types';
+import type { ScaleValue } from '../../src/types/resize-config';
 
 describe('Shortcut API Type Safety', () => {
   const testImageUrl = 'test.jpg';
@@ -62,34 +62,34 @@ describe('Shortcut API Type Safety', () => {
     });
   });
 
-  describe('ScaleOperation Type System', () => {
+  describe('ScaleValue Type System', () => {
     // Vitest best practice: clearly test Discriminated Union type validation for each case
     describe.each([
       {
         type: 'uniform number scale',
-        value: 2 as ScaleOperation,
+        value: 2 as ScaleValue,
         description: 'should accept number for uniform scaling',
       },
       {
         type: 'horizontal scale only',
-        value: { sx: 2 } as ScaleOperation,
+        value: { sx: 2 } as ScaleValue,
         description: 'should accept { sx } for horizontal scaling',
       },
       {
         type: 'vertical scale only',
-        value: { sy: 1.5 } as ScaleOperation,
+        value: { sy: 1.5 } as ScaleValue,
         description: 'should accept { sy } for vertical scaling',
       },
       {
         type: 'both scales',
-        value: { sx: 2, sy: 1.5 } as ScaleOperation,
+        value: { sx: 2, sy: 1.5 } as ScaleValue,
         description: 'should accept { sx, sy } for independent scaling',
       },
     ])('$type: $description', ({ value, type }) => {
       it('should be valid at compile time', () => {
         // Type validation: TypeScript compiler should accept this code
-        const scaleValue: ScaleOperation = value;
-        expect(scaleValue, `${type} should be a valid ScaleOperation`).toBeDefined();
+        const scaleValue: ScaleValue = value;
+        expect(scaleValue, `${type} should be a valid ScaleValue`).toBeDefined();
       });
 
       it('should not throw at runtime when used', () => {
@@ -140,26 +140,26 @@ describe('Shortcut API Type Safety', () => {
     expect(processor).toBeDefined();
   });
 
-  describe('Type Guards for ScaleOperation', () => {
+  describe('Type Guards for ScaleValue', () => {
     it('should recognize uniform scale (number)', () => {
-      const scale: ScaleOperation = 2;
+      const scale: ScaleValue = 2;
       expect(typeof scale).toBe('number');
     });
 
     it('should recognize scale with sx only', () => {
-      const scale: ScaleOperation = { sx: 2 };
+      const scale: ScaleValue = { sx: 2 };
       expect(scale).toHaveProperty('sx');
       expect(scale).not.toHaveProperty('sy');
     });
 
     it('should recognize scale with sy only', () => {
-      const scale: ScaleOperation = { sy: 1.5 };
+      const scale: ScaleValue = { sy: 1.5 };
       expect(scale).toHaveProperty('sy');
       expect(scale).not.toHaveProperty('sx');
     });
 
     it('should recognize scale with both sx and sy', () => {
-      const scale: ScaleOperation = { sx: 2, sy: 1.5 };
+      const scale: ScaleValue = { sx: 2, sy: 1.5 };
       expect(scale).toHaveProperty('sx');
       expect(scale).toHaveProperty('sy');
     });
