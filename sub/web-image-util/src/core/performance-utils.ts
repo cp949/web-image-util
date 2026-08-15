@@ -122,8 +122,6 @@ export class ResizePerformance {
   ): Promise<HTMLCanvasElement[]> {
     const batcher = new BatchResizer({
       concurrency: 1, // Process one at a time
-      useCanvasPool: false, // Disable pooling
-      memoryLimitMB: 64, // Low memory limit
       timeout: 120, // Long timeout
     });
 

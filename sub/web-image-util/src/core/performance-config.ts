@@ -1,63 +1,51 @@
 /**
- * Simplified performance settings - resizer only
+ * 단순화된 성능 설정 - 리사이저 전용
  *
- * @description Provides only minimal performance options
- * Complex monitoring and event handling removed
+ * @description 최소한의 성능 옵션만 제공한다
+ * 복잡한 모니터링과 이벤트 처리는 제거했다
  */
 
 /**
- * Resizer performance options - minimally simplified
+ * 리사이저 성능 옵션 - 최소한으로 단순화
  */
 export interface ResizePerformanceOptions {
-  /** Number of images that can be processed simultaneously (default: 2) */
+  /** 동시에 처리 가능한 이미지 개수 (기본값: 2) */
   concurrency?: number;
 
-  /** Processing timeout (seconds, default: 30) */
+  /** 처리 타임아웃 (초, 기본값: 30) */
   timeout?: number;
-
-  /** Whether to use Canvas pool (default: true) */
-  useCanvasPool?: boolean;
-
-  /** Memory limit (MB, default: 256) */
-  memoryLimitMB?: number;
 }
 
 /**
- * 3 simple performance profiles
+ * 3가지 단순 성능 프로파일
  */
 export type ResizeProfile = 'fast' | 'balanced' | 'quality';
 
 /**
- * Profile-specific settings - simplified
+ * 프로파일별 설정 - 단순화
  */
 export const RESIZE_PROFILES: Record<ResizeProfile, ResizePerformanceOptions> = {
-  /** Speed priority - 4 simultaneous processing, low memory */
+  /** 속도 우선 - 4개 동시 처리 */
   fast: {
     concurrency: 4,
     timeout: 15,
-    useCanvasPool: true,
-    memoryLimitMB: 128,
   },
 
-  /** Balanced - default settings */
+  /** 균형 - 기본 설정 */
   balanced: {
     concurrency: 2,
     timeout: 30,
-    useCanvasPool: true,
-    memoryLimitMB: 256,
   },
 
-  /** Quality priority - process one by one, sufficient memory */
+  /** 품질 우선 - 하나씩 처리 */
   quality: {
     concurrency: 1,
     timeout: 60,
-    useCanvasPool: true,
-    memoryLimitMB: 512,
   },
 };
 
 /**
- * Profile application function
+ * 프로파일 적용 함수
  */
 export function getPerformanceConfig(
   profile: ResizeProfile = 'balanced',

@@ -21,21 +21,15 @@ describe('BatchResizer 동작', () => {
       const batcher = new BatchResizer({
         concurrency: 1,
         timeout: 10,
-        useCanvasPool: false,
-        memoryLimitMB: 64,
       });
 
       const config = batcher.getConfig();
       config.concurrency = 99;
       config.timeout = 99;
-      config.useCanvasPool = true;
-      config.memoryLimitMB = 999;
 
       expect(batcher.getConfig()).toEqual({
         concurrency: 1,
         timeout: 10,
-        useCanvasPool: false,
-        memoryLimitMB: 64,
       });
     });
 
@@ -45,8 +39,6 @@ describe('BatchResizer 동작', () => {
       expect(batcher.getConfig()).toEqual({
         concurrency: 4,
         timeout: 15,
-        useCanvasPool: true,
-        memoryLimitMB: 128,
       });
     });
 
@@ -65,8 +57,6 @@ describe('BatchResizer 동작', () => {
       expect(batcher.getConfig()).toEqual({
         concurrency: 1,
         timeout: 60,
-        useCanvasPool: true,
-        memoryLimitMB: 512,
       });
     });
   });
@@ -79,8 +69,7 @@ describe('BatchResizer 동작', () => {
     });
 
     it('concurrency/timeout을 생략한 config로 생성해도 모든 job을 처리한다', async () => {
-      // concurrency, timeout 없이 생성하면 기존 코드에서는 빈 배열이 반환된다.
-      const batcher = new BatchResizer({ useCanvasPool: false });
+      const batcher = new BatchResizer({});
 
       const jobs = [
         { id: 'a', operation: async () => 'result-a' },

@@ -63,13 +63,11 @@ describe('ResizePerformance', () => {
       ResizePerformance.setProfile('fast');
       const config = ResizePerformance.getConfig();
       expect(config.concurrency).toBe(4);
-      expect(config.memoryLimitMB).toBe(128);
     });
 
     it('profile 인자를 넘기면 해당 프로파일 config를 반환한다', () => {
       const config = ResizePerformance.getConfig('quality');
       expect(config.concurrency).toBe(1);
-      expect(config.memoryLimitMB).toBe(512);
     });
   });
 
@@ -219,7 +217,7 @@ describe('ResizePerformance', () => {
       expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'quality' });
     });
 
-    it('memoryEfficientBatch는 concurrency 1, canvas pool 비활성, 64MB 정책으로 BatchResizer를 구성한다', async () => {
+    it('memoryEfficientBatch는 concurrency 1, timeout 120으로 BatchResizer를 구성한다', async () => {
       // processAll spy 안에서 공개 getConfig()로 생성자에 전달된 정책을 검증한다(private 필드 비의존)
       let capturedConfig: Record<string, unknown> | undefined;
       const processAllSpy = vi.spyOn(BatchResizer.prototype, 'processAll').mockImplementation(async function (
@@ -237,8 +235,6 @@ describe('ResizePerformance', () => {
 
       expect(capturedConfig).toMatchObject({
         concurrency: 1,
-        useCanvasPool: false,
-        memoryLimitMB: 64,
         timeout: 120,
       });
       // 이미지 수만큼 작업이 구성된다

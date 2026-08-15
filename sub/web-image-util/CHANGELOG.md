@@ -75,6 +75,7 @@
   - `detector.detectCapabilities()` → `detectBrowserCapabilities()`, `detector.analyzePerformance()` → `analyzePerformanceFeatures()`, `detector.detectSyncFeatures()` → `detectSyncCapabilities()`, `detector.detectFormatSupport()` → `detectFormatSupport()`로 대체하세요. 시그니처는 동일합니다.
   - `BrowserCapabilityDetector.getInstance().clearCache()`는 대체 없이 제거됩니다. `useCache: false` 옵션으로 종합 감지 캐시를 우회할 수 있지만, 포맷 감지 캐시(`webp`·`avif`)는 우회하지 않습니다. 포맷 감지 캐시를 비우는 공개 수단은 없습니다.
   - `.isServerSide` 게터는 대체 없이 제거됩니다.
+- Changed (**Breaking**): `ResizePerformanceOptions.useCanvasPool`·`memoryLimitMB` 필드를 제거했습니다. 타입과 `RESIZE_PROFILES`(`fast`/`balanced`/`quality`) 프리셋에만 존재했고 `BatchResizer.processAll()`의 어떤 로직도 읽지 않는 유령 필드였습니다. `ResizePerformance.memoryEfficientBatch()`도 이 두 필드를 더 이상 넘기지 않습니다(실제 메모리 절약은 `forceStrategy: 'tiled'`가 담당). 이 필드를 명시한 객체 리터럴은 초과 속성 검사에 걸립니다 — 해당 줄을 지우세요. `RESIZE_PROFILES.<profile>.memoryLimitMB`·`getPerformanceConfig().useCanvasPool`·`BatchResizer.getConfig().memoryLimitMB`를 읽던 코드도 컴파일되지 않습니다 — 해당 참조를 지우세요.
 
 ### 수정
 
