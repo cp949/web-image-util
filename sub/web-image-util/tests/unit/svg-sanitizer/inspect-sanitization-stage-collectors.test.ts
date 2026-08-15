@@ -100,4 +100,58 @@ describe('정화 stage collector helper stage 수집', () => {
       samples: ['image/svg+xml'],
     });
   });
+
+  it('nested-svg-resanitized는 반복되는 동일 sample을 중복 없이 유지한다', () => {
+    const input =
+      '<svg xmlns="http://www.w3.org/2000/svg">' +
+      '<image href="data:image/svg+xml;base64,PHN2Zy8+"/>' +
+      '<image href="data:image/svg+xml;base64,PHN2Zy8+"/>' +
+      '</svg>';
+
+    const stages = collectEmbeddedImageStages(parseSvgDocument(input));
+
+    expect(findStage(stages, 'nested-svg-resanitized')).toEqual({
+      code: 'nested-svg-resanitized',
+      count: 2,
+      samples: ['image/svg+xml'],
+    });
+  });
+
+  it('data-image-preserved는 중복 mime을 건너뛰고 최대 3개까지만 sample을 유지한다', () => {
+    const input =
+      '<svg xmlns="http://www.w3.org/2000/svg">' +
+      '<image href="data:image/png;base64,AAAA"/>' +
+      '<image href="data:image/png;base64,AAAA"/>' +
+      '<image href="data:image/jpeg;base64,AAAA"/>' +
+      '<image href="data:image/gif;base64,AAAA"/>' +
+      '<image href="data:image/webp;base64,AAAA"/>' +
+      '</svg>';
+
+    const stages = collectEmbeddedImageStages(parseSvgDocument(input));
+
+    expect(findStage(stages, 'data-image-preserved')).toEqual({
+      code: 'data-image-preserved',
+      count: 5,
+      samples: ['image/png', 'image/jpeg', 'image/gif'],
+    });
+  });
+
+  it('data-image-blocked는 미인식 mime을 unknown으로 접고, 중복 없이 최대 3개까지만 sample을 유지한다', () => {
+    const input =
+      '<svg xmlns="http://www.w3.org/2000/svg">' +
+      '<image href="data:application/pdf;base64,AAAA"/>' +
+      '<image href="data:text/html;base64,AAAA"/>' +
+      '<image href="data:application/x-made-up;base64,AAAA"/>' +
+      '<image href="data:application/also-made-up;base64,AAAA"/>' +
+      '<image href="data:application/octet-stream;base64,AAAA"/>' +
+      '</svg>';
+
+    const stages = collectEmbeddedImageStages(parseSvgDocument(input));
+
+    expect(findStage(stages, 'data-image-blocked')).toEqual({
+      code: 'data-image-blocked',
+      count: 5,
+      samples: ['application/pdf', 'text/html', 'unknown'],
+    });
+  });
 });
