@@ -70,15 +70,33 @@ describe('extractSvgDimensions()', () => {
   });
 
   describe('크기 정보가 없는 경우', () => {
-    it('기본값 100×100을 반환한다', () => {
+    it('렌더 경로(enhanceSvgForBrowser)와 동일하게 defaultSize(512×512)로 폴백한다', () => {
       const result = extractSvgDimensions(SVG_NO_SIZE);
-      expect(result.width).toBe(100);
-      expect(result.height).toBe(100);
+      expect(result.width).toBe(512);
+      expect(result.height).toBe(512);
     });
 
     it('hasExplicitSize가 false이다', () => {
       const result = extractSvgDimensions(SVG_NO_SIZE);
       expect(result.hasExplicitSize).toBe(false);
+    });
+  });
+
+  describe('width/height는 있지만 viewBox가 없고 콘텐츠 BBox가 다른 경우', () => {
+    // 렌더 경로(enhanceSvgForBrowser)는 fit-content 모드에서 콘텐츠 BBox를 우선하므로
+    // 크기 조회 결과도 명시된 width/height가 아니라 실제 렌더되는 BBox와 일치해야 한다.
+    const SVG_SIZE_MISMATCHES_CONTENT =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="200"><rect x="0" y="0" width="50" height="50" /></svg>';
+
+    it('명시된 width/height 대신 콘텐츠 BBox를 유효 크기로 사용한다', () => {
+      const result = extractSvgDimensions(SVG_SIZE_MISMATCHES_CONTENT);
+      expect(result.width).toBe(50);
+      expect(result.height).toBe(50);
+    });
+
+    it('hasExplicitSize는 속성 존재 여부 그대로 true다', () => {
+      const result = extractSvgDimensions(SVG_SIZE_MISMATCHES_CONTENT);
+      expect(result.hasExplicitSize).toBe(true);
     });
   });
 

@@ -92,7 +92,10 @@ describe('getImageDimensions', () => {
     // 본문 안의 `sprite.svg#icon`은 경로 확장자 힌트와 겹친다. 판정이 svg-inline이므로
     // 이미지 로드 없이 파서만으로 끝나야 한다 — 50KB를 넘겨 로드 경로가 반드시
     // createObjectURL을 거치게 만든 뒤, 그것이 호출되지 않는 것으로 확인한다.
-    const padding = '<rect width="1" height="1"/>'.repeat(2000);
+    // padding rect는 선언된 width/height(120×60)와 동일한 BBox를 갖도록 맞춘다 —
+    // extractSvgDimensions()가 콘텐츠 BBox를 유효 크기로 쓰므로(SVG 유효 크기 parity),
+    // 이 테스트가 검증하려는 "로드 경로 라우팅" 관심사와 크기 산출 알고리즘 관심사를 분리한다.
+    const padding = '<rect width="120" height="60"/>'.repeat(2000);
     const svg = `<svg width="120" height="60"><use href="sprite.svg#icon"/>${padding}</svg>`;
     expect(new Blob([svg]).size).toBeGreaterThan(50 * 1024);
 
