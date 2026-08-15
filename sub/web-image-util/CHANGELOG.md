@@ -61,7 +61,6 @@
   - 본문 스트림이 없는 응답에서 본문 전체를 메모리에 올린 뒤 자르던 동작이 제거되었습니다. 이제 스니핑을 건너뛰고 Content-Type만 사용합니다.
   - 명시적 스킴 또는 protocol-relative 입력은 `DEFAULT_ALLOWED_PROTOCOLS` 검사를 받습니다. 상대 경로는 종전대로 검사 없이 브라우저 자산 로딩 경로를 유지합니다. 판정 실패는 예외 없이 `'unknown'`으로 수렴하는 기존 계약 그대로입니다.
 - Added: `fetchImageFormat()`에 `timeoutMs`·`abortSignal` 옵션이 추가되었습니다.
-- Deprecated: `ResizeOperation`·`DirectResizeConfig` 타입과 `ScaleOperation` 별칭. shortcut 내부 통로가 공개 `resize()` 설정으로 합류하면서 처리 경로에서 사용되지 않습니다. `ScaleOperation` 대신 `ScaleValue`를 사용하세요.
 - Changed (**Breaking**): `ProcessingStrategy`(`/advanced`의 `HighResolutionOptions.forceStrategy`·`ProcessingResult.strategy`)에서 `'chunked'`가 제거되었습니다. `chunkedAdapter`와 `tiledAdapter`가 둘 다 `TiledProcessor`를 호출하는 같은 실행기였고 차이는 옵션 프리셋뿐이었습니다 — 이제 `tiled` adapter가 `analysis.estimatedMemoryMB`(64MB 경계)로 그 프리셋을 내부에서 고릅니다. `forceStrategy: 'chunked'`를 쓰던 코드는 `'tiled'`로 바꾸세요.
   - 이 동치는 64MB 이하 이미지에서만 성립합니다. 64MB를 넘는 이미지는 동치가 아닙니다 — 이전에 `'chunked'`가 항상 주던 `tileSize: 2048`·`maxConcurrency: 2`·`timeMultiplier 1.0` 대신, 이제 heavy 프리셋(`tileSize` 미지정 → `TiledProcessor` 기본값 1024, `maxConcurrency: quality === 'fast' ? 4 : 2`, `timeMultiplier 2.0`)이 적용됩니다.
   - 이미 `forceStrategy: 'tiled'`를 쓰던 코드도 확인이 필요합니다. `'tiled'`는 여전히 유효한 값이라 컴파일은 그대로 통과하지만, 64MB 이하 이미지에서는 이전까지 항상 적용되던 heavy 프리셋 대신 light 프리셋이 조용히 선택됩니다 — `maxConcurrency`가 줄어들 수 있고(`quality: 'fast'` 기준 4→2), `tileSize`가 바뀌며(1024→2048), `estimatedTime` 배수도 낮아집니다(2.0→1.0).
@@ -76,6 +75,7 @@
   - `BrowserCapabilityDetector.getInstance().clearCache()`는 대체 없이 제거됩니다. `useCache: false` 옵션으로 종합 감지 캐시를 우회할 수 있지만, 포맷 감지 캐시(`webp`·`avif`)는 우회하지 않습니다. 포맷 감지 캐시를 비우는 공개 수단은 없습니다.
   - `.isServerSide` 게터는 대체 없이 제거됩니다.
 - Changed (**Breaking**): `ResizePerformanceOptions.useCanvasPool`·`memoryLimitMB` 필드를 제거했습니다. 타입과 `RESIZE_PROFILES`(`fast`/`balanced`/`quality`) 프리셋에만 존재했고 `BatchResizer.processAll()`의 어떤 로직도 읽지 않는 유령 필드였습니다. `ResizePerformance.memoryEfficientBatch()`도 이 두 필드를 더 이상 넘기지 않습니다(실제 메모리 절약은 `forceStrategy: 'tiled'`가 담당). 이 필드를 명시한 객체 리터럴은 초과 속성 검사에 걸립니다 — 해당 줄을 지우세요. `RESIZE_PROFILES.<profile>.memoryLimitMB`·`getPerformanceConfig().useCanvasPool`·`BatchResizer.getConfig().memoryLimitMB`를 읽던 코드도 컴파일되지 않습니다 — 해당 참조를 지우세요.
+- Changed (**Breaking**): `ResizePerformance.setProfile()`·`getProfile()`과 무인자 `getConfig()`를 제거했습니다. 셋 다 module-scope 변수 하나(`globalPerformanceProfile`)만 읽고 쓰는 닫힌 루프였고, `fastResize`/`qualityResize`/`autoResize`/`ResizePerformance.*Batch`는 전부 `priority` 리터럴을 직접 넘겨 이 값을 참조하지 않았습니다 — `setProfile()`을 불러도 이후 처리 결과는 달라지지 않았습니다. `getConfig(profile)`은 유지되며 `profile` 인자가 필수로 바뀝니다. 전역 기본 프로파일이 실제로 필요해지면 `resizeBatch`류 호출부와 명시적으로 연결하는 별도 변경으로 다룹니다.
 
 ### 수정
 
@@ -130,6 +130,10 @@
 - Fixed: `BlendMode.DARKEN`/`LIGHTEN`/`COLOR_DODGE`/`COLOR_BURN`/`HARD_LIGHT`/`SOFT_LIGHT`/`DIFFERENCE`/`EXCLUSION` 8종이 `MULTIPLY`/`SCREEN`/`OVERLAY`와 달리 아무 효과 없이 필터 결과를 그대로 통과시키던(=`NORMAL`과 픽셀 동일) 문제를 수정했습니다. 이제 8종 모두 CSS Compositing 표준 공식으로 실제 블렌딩합니다. `BlendMode`에 없는 값을 타입 우회로 넘기면(TypeScript 사용자에게는 도달 불가능) 조용히 통과하는 대신 예외를 던집니다.
   - `applyFilter()`에 빈 문자열(`''`) 같은 falsy `blend` 값을 넘기면 이제 이 예외 경로를 탑니다. 이전에는 조용히 블렌딩을 건너뛰었습니다.
   - `validateFilterChain()`이 이제 `blend` 값의 `BlendMode` 멤버십을 검증해 `valid:false`와 에러를 반환합니다. 이전에는 사전 검증을 통과한 뒤 실제 적용(`applyFilterChain()`) 단계에서만 예외가 났습니다.
+
+### 제거
+
+- Removed: `ResizeOperation`·`DirectResizeConfig` 타입과 `ScaleOperation` 별칭, type guard 4개(`isUniformScale`/`isScaleX`/`isScaleY`/`isScaleXY`)를 제거했습니다. 공개 진입점 6개(`.`/`/advanced`/`/presets`/`/utils`/`/filters`/`/svg-sanitizer`) 중 어디도 재export하지 않아 `exports` 필드를 쓰는 실제 소비자는 이 경로에 도달할 수 없었습니다 — 공개 API가 아니었습니다. `ScaleOperation`을 쓰던 내부 전용 코드는 동일한 union인 `ScaleValue`로 교체하세요.
 
 ## [3.1.0] - 2026-08-12
 

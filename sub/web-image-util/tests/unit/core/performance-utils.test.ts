@@ -28,46 +28,16 @@ function withPerformanceMemory(usedJSHeapSize: number, jsHeapSizeLimit: number):
 }
 
 describe('ResizePerformance', () => {
-  describe('setProfile / getProfile', () => {
-    afterEach(() => {
-      // 전역 상태 초기화
-      ResizePerformance.setProfile('balanced');
-      vi.restoreAllMocks();
-    });
-
-    it('기본 프로파일은 balanced이다', () => {
-      // 모듈 임포트 직후 상태
-      expect(ResizePerformance.getProfile()).toBe('balanced');
-    });
-
-    it('setProfile로 프로파일을 변경할 수 있다', () => {
-      ResizePerformance.setProfile('fast');
-      expect(ResizePerformance.getProfile()).toBe('fast');
-    });
-
-    it('setProfile 이후 getConfig는 변경된 프로파일 기준 config를 반환한다', () => {
-      ResizePerformance.setProfile('quality');
-      const config = ResizePerformance.getConfig();
-      expect(config.concurrency).toBe(1);
-      expect(config.timeout).toBe(60);
-    });
-  });
-
   describe('getConfig', () => {
-    afterEach(() => {
-      // 전역 상태 초기화
-      ResizePerformance.setProfile('balanced');
-    });
-
-    it('profile 인자 없이 호출하면 현재 전역 프로파일 config를 반환한다', () => {
-      ResizePerformance.setProfile('fast');
-      const config = ResizePerformance.getConfig();
-      expect(config.concurrency).toBe(4);
-    });
-
     it('profile 인자를 넘기면 해당 프로파일 config를 반환한다', () => {
       const config = ResizePerformance.getConfig('quality');
       expect(config.concurrency).toBe(1);
+      expect(config.timeout).toBe(60);
+    });
+
+    it('profile을 바꾸면 다른 config를 반환한다 — 전역 상태 없는 순수 조회', () => {
+      const config = ResizePerformance.getConfig('fast');
+      expect(config.concurrency).toBe(4);
     });
   });
 
