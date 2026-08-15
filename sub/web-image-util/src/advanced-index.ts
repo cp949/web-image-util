@@ -32,10 +32,8 @@ import type { FilterCategory, FilterOptions, FilterPlugin, FilterValidationResul
 import { getMissingFilterNames } from './filters/plugin-system';
 import { ImageProcessError } from './types';
 
-export type { ErrorStats } from './base/error-handler';
-export { globalErrorHandler, ImageErrorHandler } from './base/error-handler';
-// ===== 고급 오류 처리 =====
-export { createAndHandleError, createQuickError, getErrorStats, withErrorHandling } from './base/error-helpers';
+// ===== 에러 헬퍼 =====
+export { createQuickError } from './base/error-helpers';
 export type {
   PresetTextStyle,
   SimpleImageWatermarkOptions,

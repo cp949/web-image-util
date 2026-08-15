@@ -9,7 +9,6 @@ import type { OutputFormat } from '../types/base';
 import { detectCanvasFormatSupport } from '../utils/browser-capabilities/index';
 import { isSupportedOutputFormat } from '../utils/format-utils';
 import type { ErrorContext } from './error-context.internal';
-import { globalErrorHandler } from './error-handler';
 
 /**
  * User-friendly error message mapping
@@ -127,68 +126,8 @@ export async function isFormatSupported(format: string): Promise<boolean> {
 }
 
 /**
- * Enhanced error creation and handling
- *
- * @description Error creation integrated with centralized handler
- */
-export async function createAndHandleError(
-  code: ImageErrorCodeType,
-  cause?: unknown,
-  operation?: string,
-  context?: ErrorContext
-): Promise<ImageProcessError> {
-  // Collect enhanced context
-  const enhancedContext = globalErrorHandler.collectEnhancedContext(operation || 'unknown', context);
-
-  // Use existing createImageError
-  const error = createImageError(code, { cause, context: enhancedContext });
-
-  // Handle with centralized handler
-  await globalErrorHandler.handleError(error, enhancedContext);
-
-  return error;
-}
-
-/**
- * Node.js best practice - async error handling wrapper
- *
- * @description Utility to simplify try-catch handling
- */
-export async function withErrorHandling<T>(
-  operation: () => Promise<T>,
-  operationName: string,
-  context?: Partial<ErrorContext>
-): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    // Wrap if not ImageProcessError
-    if (!(error instanceof ImageProcessError)) {
-      const wrappedError = await createAndHandleError(
-        'PROCESSING_FAILED',
-        error instanceof Error ? error : new Error(String(error)),
-        operationName,
-        context
-      );
-      throw wrappedError;
-    }
-
-    // Additional handling for existing ImageProcessError
-    await globalErrorHandler.handleError(error, context);
-    throw error;
-  }
-}
-
-/**
  * Simple error creation (without handler)
  */
 export function createQuickError(code: ImageErrorCodeType, cause?: unknown): ImageProcessError {
   return createImageError(code, { cause });
-}
-
-/**
- * Error statistics query function
- */
-export function getErrorStats() {
-  return globalErrorHandler.getStats();
 }

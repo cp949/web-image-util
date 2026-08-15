@@ -1,8 +1,8 @@
 /**
  * 에러 문맥 타입 leaf.
  *
- * base/error-helpers(문맥 소비)와 base/error-handler(문맥 수집)가 공유하는
- * 타입의 정의 지점이다 — 배럴로 공개되지 않는 내부 전용 타입이다.
+ * base/error-helpers의 createImageError()가 개발 모드 메시지에 붙이는
+ * 문맥 정보 타입이다 — 배럴로 공개되지 않는 내부 전용 타입이다.
  */
 
 /**

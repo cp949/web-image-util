@@ -133,10 +133,7 @@ export const FILTERS_VALUE_EXPORTS = [
 
 export const ADVANCED_VALUE_EXPORTS = [
   // 에러 헬퍼
-  'createAndHandleError',
   'createQuickError',
-  'getErrorStats',
-  'withErrorHandling',
   // 단순 워터마크
   'addCopyright',
   'addImageWatermark',
@@ -153,9 +150,6 @@ export const ADVANCED_VALUE_EXPORTS = [
   'smartResizeWithProgress',
   // 일괄 리사이저
   'BatchResizer',
-  // 에러 핸들러
-  'globalErrorHandler',
-  'ImageErrorHandler',
   // 성능 설정
   'getPerformanceConfig',
   'RESIZE_PROFILES',

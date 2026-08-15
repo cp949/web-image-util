@@ -76,6 +76,9 @@
   - `.isServerSide` 게터는 대체 없이 제거됩니다.
 - Changed (**Breaking**): `ResizePerformanceOptions.useCanvasPool`·`memoryLimitMB` 필드를 제거했습니다. 타입과 `RESIZE_PROFILES`(`fast`/`balanced`/`quality`) 프리셋에만 존재했고 `BatchResizer.processAll()`의 어떤 로직도 읽지 않는 유령 필드였습니다. `ResizePerformance.memoryEfficientBatch()`도 이 두 필드를 더 이상 넘기지 않습니다(실제 메모리 절약은 `forceStrategy: 'tiled'`가 담당). 이 필드를 명시한 객체 리터럴은 초과 속성 검사에 걸립니다 — 해당 줄을 지우세요. `RESIZE_PROFILES.<profile>.memoryLimitMB`·`getPerformanceConfig().useCanvasPool`·`BatchResizer.getConfig().memoryLimitMB`를 읽던 코드도 컴파일되지 않습니다 — 해당 참조를 지우세요.
 - Changed (**Breaking**): `ResizePerformance.setProfile()`·`getProfile()`과 무인자 `getConfig()`를 제거했습니다. 셋 다 module-scope 변수 하나(`globalPerformanceProfile`)만 읽고 쓰는 닫힌 루프였고, `fastResize`/`qualityResize`/`autoResize`/`ResizePerformance.*Batch`는 전부 `priority` 리터럴을 직접 넘겨 이 값을 참조하지 않았습니다 — `setProfile()`을 불러도 이후 처리 결과는 달라지지 않았습니다. `getConfig(profile)`은 유지되며 `profile` 인자가 필수로 바뀝니다. 전역 기본 프로파일이 실제로 필요해지면 `resizeBatch`류 호출부와 명시적으로 연결하는 별도 변경으로 다룹니다.
+- Changed (**Breaking**): `@cp949/web-image-util/advanced`에서 `ImageErrorHandler`·`globalErrorHandler`·`ErrorStats` 타입과 `createAndHandleError()`·`withErrorHandling()`·`getErrorStats()`를 제거했습니다. 실제로 던지는 모든 오류가 거치는 `createImageError()`(내부 17곳)는 이 handler를 전혀 부르지 않았고, `critical-error cleanup`(`CANVAS_CREATION_FAILED` 등에서 `CanvasPool.clear()` + GC 요청)은 프로덕션에서 한 번도 실행되지 않았습니다 — 트리거 지점이 배선되지 않은 채 공개 표면에만 노출돼 있었습니다. 호출하면 동작할 거라 기대한 호출자를 조용히 배신하던 표면입니다.
+  - `createImageError()`·`createQuickError()`·`isFormatSupported()`는 영향받지 않습니다 — 실제 오류 생성 경로는 그대로입니다.
+  - 오류 발생 시 캔버스 풀 정리·GC 요청이 실제로 필요하면, `createImageError()` 호출부에서 직접 `CanvasPool`을 다루거나 별도 변경으로 명시적으로 배선하세요.
 
 ### 수정
 
