@@ -79,6 +79,7 @@
 
 ### 수정
 
+- Fixed: `prefixSvgIds()`와 `SvgOptimizer`가 비표준 prefix로 선언된 `xlink:href`(예: `xmlns:foo` + `foo:href`) 참조를 인식하지 못해 id rewrite를 건너뛰거나 참조 중인 `<defs>` 정의를 미참조로 오판해 삭제하던 문제를 수정합니다. 표준 `xmlns:xlink` prefix를 쓰는 입력의 동작은 바뀌지 않습니다.
 - Fixed: 같은 이미지가 진입점(`AutoHighResProcessor.smartResize()`/`smartResizeWithProgress()` vs `fastResize()`/`qualityResize()`/`autoResize()`/`ResizePerformance.*Batch`가 내부적으로 쓰는 `SmartProcessor`)에 따라 고해상도 처리 경로 진입 여부가 다르게 판정되던 문제를 수정합니다. 두 진입점이 이제 픽셀 수(8,000,000 초과)와 스케일 비율(다운스케일 4배 초과) 기준을 공유합니다.
   - `SmartProcessor`(`fastResize`/`qualityResize`/`autoResize`/배치 API) 쪽 픽셀 임계값이 4,000,000에서 8,000,000으로 상향됩니다. 4MP 초과 8MP 이하 이미지는 이제 표준 경로를 사용합니다.
   - `AutoHighResProcessor.smartResize()`(및 advanced `smartResize`/`smartResizeWithProgress` export) 쪽에 스케일 비율 조건이 새로 적용됩니다. 픽셀 수가 8MP 미만이어도 요청한 축소 비율이 4배를 초과하면 고해상도 경로를 사용합니다.

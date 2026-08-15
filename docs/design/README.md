@@ -20,3 +20,4 @@
 - `2026-08-15-resize-performance-options-ghost-fields-design.md`: ResizePerformanceOptions의 구현이 읽지 않는 유령 필드(useCanvasPool/memoryLimitMB)를 제거한 결정 근거
 - `2026-08-15-blur-naming-disambiguation-design.md`: blur() 체이닝 API와 BlurFilterPlugin이 이름만 같고 무관하다는 사실을 문서로 드러낸 결정 근거
 - `2026-08-15-high-res-threshold-dedup-design.md`: high-res-manager의 selectFastStrategy/selectHighQualityStrategy가 들고 있던 64MB/256MB 리터럴을 high-res-detector의 단일 소유 상수로 교체하고, 무호출 죽은 코드(AutoMemoryManager.recommendProcessingStrategy 등)를 함께 제거한 결정 근거
+- `2026-08-16-svg-reference-attribute-consolidation-design.md`: SVG 참조 속성 판정(href/xlink:href/src)을 단일 leaf로 모으고 prefix-svg-ids/svg-optimizer의 비표준 prefix xlink 인식 결함을 해소한 결정 근거
