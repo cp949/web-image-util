@@ -9,6 +9,7 @@
  *   `expression()`, `-moz-binding`
  */
 
+import { isReferenceAttribute } from '../utils/svg-reference-attribute.internal';
 import { FORBIDDEN_SVG_ELEMENT_NAMES } from '../utils/svg-threat-policy.internal';
 import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
 import { sanitizeStrictUriValue } from './reference-policy.internal';
@@ -50,7 +51,7 @@ export function enforceStrictDomPolicy(
         continue;
       }
 
-      if (name === 'href' || name === 'xlink:href' || name === 'src' || localName === 'href' || localName === 'src') {
+      if (isReferenceAttribute(element, attribute.name)) {
         const sanitizedValue = sanitizeStrictUriValue(attribute.value, options, depth, nestedSanitize);
         if (sanitizedValue === null) {
           element.removeAttribute(attribute.name);

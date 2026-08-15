@@ -100,6 +100,19 @@ describe('strict SVG sanitizer', () => {
     expect(result).not.toContain('onload');
   });
 
+  it('비표준 prefix로 선언된 xlink 참조도 실제 출력에서 제거한다', () => {
+    const result = sanitizeSvgStrict(`
+      <svg xmlns:foo="http://example.test/foo">
+        <defs><linearGradient id="safe"/></defs>
+        <image foo:href="https://example.test/tracker.png"/>
+      </svg>
+    `);
+
+    expect(result).toContain('id="safe"');
+    expect(result).not.toContain('foo:href');
+    expect(result).not.toContain('example.test/tracker.png');
+  });
+
   it('비이미지 data: 참조는 strict sanitizer에서도 제거한다', () => {
     const result = sanitizeSvgStrict('<svg><image href="data:text/html,%3Cscript%3Ealert(1)%3C/script%3E"/></svg>');
 

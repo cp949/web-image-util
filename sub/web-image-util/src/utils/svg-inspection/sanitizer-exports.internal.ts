@@ -6,10 +6,5 @@
  */
 export { collectSvgCssReferenceSignals, type SvgCssReferenceSignals } from './css-signals.internal';
 export { collectSvgDomSecuritySignals, type SvgDomSecuritySignals } from './dom-signals.internal';
-export {
-  isReferenceAttribute,
-  readReferenceAttribute,
-  type SvgInspectionPolicy,
-  XLINK_NAMESPACE,
-} from './reference-attribute.internal';
+export { isReferenceAttribute, readReferenceAttribute } from '../svg-reference-attribute.internal';
 export { pushCappedSample } from './sample-utils.internal';

@@ -8,6 +8,7 @@
  */
 
 import { parseAndClassifySvg } from '../utils/svg-document.internal';
+import { isReferenceAttribute } from '../utils/svg-reference-attribute.internal';
 import { classifyUriRef, type UriRefReason } from '../utils/svg-threat-policy.internal';
 import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
 
@@ -68,7 +69,7 @@ export function collectInputPolicyWarnings(svg: string, warnings: string[]): voi
         continue;
       }
 
-      if (name === 'href' || name === 'xlink:href' || name === 'src' || localName === 'href' || localName === 'src') {
+      if (isReferenceAttribute(element, attribute.name)) {
         const { reason } = classifyUriRef(attribute.value, 'strict');
         if (!NON_WARNING_REFERENCE_REASONS.has(reason)) {
           pushUniqueWarning(warnings, '외부 URI 참조 속성이 제거되었습니다.');

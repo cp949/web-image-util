@@ -13,7 +13,7 @@ import { parseSvgLength, parseViewBoxValues } from '../svg-length.internal';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../svg-policy-utils.internal';
 import { classifyUriRef } from '../svg-threat-policy.internal';
 import { collectSvgDomSecuritySignals } from './dom-signals.internal';
-import { isReferenceAttribute, readReferenceAttribute } from './reference-attribute.internal';
+import { isReferenceAttribute, readReferenceAttribute } from '../svg-reference-attribute.internal';
 import { pushCappedSample } from './sample-utils.internal';
 import type { InspectSvgDimensions, InspectSvgFinding } from './types.internal';
 
