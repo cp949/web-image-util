@@ -308,4 +308,15 @@ describe('HighResolutionDetector', () => {
       expect(largeChunk).toBeLessThanOrEqual(smallChunk);
     });
   });
+
+  // ============================================================================
+  // MEDIUM_MEMORY_THRESHOLD_MB / LARGE_MEMORY_THRESHOLD_MB
+  // ============================================================================
+
+  describe('MEDIUM_MEMORY_THRESHOLD_MB / LARGE_MEMORY_THRESHOLD_MB', () => {
+    it('selectFastStrategy/selectHighQualityStrategy가 참조하는 경계값을 고정한다', () => {
+      expect(HighResolutionDetector.MEDIUM_MEMORY_THRESHOLD_MB).toBe(64);
+      expect(HighResolutionDetector.LARGE_MEMORY_THRESHOLD_MB).toBe(256);
+    });
+  });
 });

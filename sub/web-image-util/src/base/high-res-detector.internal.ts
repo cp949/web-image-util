@@ -32,11 +32,20 @@ export interface ImageAnalysis {
  * Analyzes image size and browser environment to determine optimal processing strategy.
  */
 export class HighResolutionDetector {
+  /**
+   * Single source for the boundaries selectFastStrategy()/selectHighQualityStrategy()
+   * (high-res-manager.ts) compare against. These used to carry their own 64/256
+   * literals that happened to match MEDIUM/LARGE below — same numbers, different
+   * source, no compiler-enforced link between them.
+   */
+  static readonly MEDIUM_MEMORY_THRESHOLD_MB = 64;
+  static readonly LARGE_MEMORY_THRESHOLD_MB = 256;
+
   // Memory thresholds (bytes)
   private static readonly MEMORY_THRESHOLDS = {
     SMALL: 16 * 1024 * 1024, // 16MB - direct processing
-    MEDIUM: 64 * 1024 * 1024, // 64MB - chunk processing
-    LARGE: 256 * 1024 * 1024, // 256MB - stepped processing
+    MEDIUM: HighResolutionDetector.MEDIUM_MEMORY_THRESHOLD_MB * 1024 * 1024, // chunk processing
+    LARGE: HighResolutionDetector.LARGE_MEMORY_THRESHOLD_MB * 1024 * 1024, // stepped processing
   };
 
   // Maximum Canvas size (by browser)

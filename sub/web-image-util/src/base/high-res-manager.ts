@@ -183,7 +183,7 @@ export class HighResolutionManager {
    */
   private static selectFastStrategy(analysis: ImageAnalysis): ProcessingStrategy {
     // Select simplest strategy first for fast processing
-    if (analysis.estimatedMemoryMB <= 64) {
+    if (analysis.estimatedMemoryMB <= HighResolutionDetector.MEDIUM_MEMORY_THRESHOLD_MB) {
       return ProcessingStrategy.DIRECT;
     }
     return ProcessingStrategy.TILED;
@@ -202,12 +202,12 @@ export class HighResolutionManager {
     // Stepped reduction is advantageous for quality when large reduction is needed
     const scaleRatio = Math.min(targetWidth / img.width, targetHeight / img.height);
 
-    if (scaleRatio < 0.3 && analysis.estimatedMemoryMB <= 256) {
+    if (scaleRatio < 0.3 && analysis.estimatedMemoryMB <= HighResolutionDetector.LARGE_MEMORY_THRESHOLD_MB) {
       return ProcessingStrategy.STEPPED;
     }
 
     // Very large images use tile processing
-    if (analysis.estimatedMemoryMB > 256) {
+    if (analysis.estimatedMemoryMB > HighResolutionDetector.LARGE_MEMORY_THRESHOLD_MB) {
       return ProcessingStrategy.TILED;
     }
 
