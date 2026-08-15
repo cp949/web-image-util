@@ -27,6 +27,7 @@
 아래 규칙은 기능 추가나 리팩터링 때 우선 확인합니다.
 
 - `resize()`, `blur()` 같은 체이닝 메서드는 Canvas에 즉시 그리지 않고 연산만 누적합니다.
+- 체이닝 API의 `blur()`(CSS `ctx.filter`, `single-renderer.internal.ts`)와 `/filters`·`/advanced`의 `BlurFilterPlugin`(픽셀 컨볼루션, `src/filters/plugins/blur-plugins.ts`)은 이름만 같고 무관한 별도 구현입니다 — 병합 대상이 아닙니다.
 - 한 체인에서 `resize()`는 한 번만 허용합니다. 타입 상태와 런타임 가드를 함께 유지하며, 런타임 가드·설정 검증·오류 메시지는 `LazyRenderPipeline.addResize` 한 곳이 소유합니다.
 - 실제 Canvas 렌더링은 출력 메서드 호출 시점에 한 번만 수행합니다.
 - 내부 렌더링 Canvas는 `CanvasPool`에서 획득하고, 소유권은 `CanvasLease` handle(`src/base/canvas-lease.internal.ts`)로 관리합니다. 파생물 출력(`toBlob()` 등)은 `consume()`으로 사용 후 pool에 반환하고, `toCanvas()`/`toCanvasDetailed()`는 `detach()`로 소유권을 사용자에게 이전합니다(pool 미반환).
@@ -73,6 +74,8 @@
 | `src/svg-sanitizer/index.ts` | `@cp949/web-image-util/svg-sanitizer` 서브패스 배럴 — `sanitizeSvgStrict`, `sanitizeSvgStrictDetailed`, `inspectSvgSanitization` export |
 | `src/core/lazy-render-pipeline.internal.ts` | 연산 누적과 최종 렌더링 트리거 |
 | `src/core/single-renderer.internal.ts` | 누적 연산 분석(`analyzeAllOperations`)과 최종 Canvas drawImage 렌더링(`renderLayout` → `CanvasLease`) |
+| `src/filters/plugin-system.ts` | 필터 플러그인 레지스트리·실행 — `registerFilter`/`applyFilter`/`applyFilterChain`/`validateFilterChain`. `/advanced`·`/filters`(재노출) 전용, 메인 체이닝 파이프라인과는 별개 시스템 |
+| `src/filters/plugins/blur-plugins.ts` | `BlurFilterPlugin`(`name: 'blur'`)·`SharpenFilterPlugin`·`EmbossFilterPlugin`·`EdgeDetectionFilterPlugin` — 2-pass Gaussian 컨볼루션 등 픽셀 단위 구현. 체이닝 API의 `blur()`(CSS `ctx.filter`, 위 `single-renderer.internal.ts` 행)와 이름만 같고 서로 무관하다 |
 | `src/base/high-res-detector.internal.ts` | 이미지 크기 분석(`analyzeImage`)과 고해상도 처리 진입 게이트(`shouldUseHighResolutionPath`) 단일 소유 — `AutoHighResProcessor`가 이 게이트를 쓴다(유일한 진입점). `AutoHighResProcessor` 커스텀 픽셀 임계값은 유지한다 |
 | `src/base/high-res-manager.ts` | advanced 고해상도 경로의 매니저 — 이미지 분석·전략 선택·메모리 점검(압박 시 `CanvasPool.clear()` + GC 요청)만 담당하고 실행은 전략 adapter에 위임 |
 | `src/base/resize-strategy.internal.ts` | 고해상도 전략 seam — `RESIZE_STRATEGY_ADAPTERS` 레지스트리(direct/stepped/tiled)와 전략별 튜닝 지식(품질 매핑·단계 수·동시성·타일 크기·예상 시간 배수). tiled는 `analysis.estimatedMemoryMB`(64MB 경계)로 light(옛 chunked)/heavy 두 preset을 내부에서 고른다. 전략 추가 = adapter 1개 + 맵 1행 |

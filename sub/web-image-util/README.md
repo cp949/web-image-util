@@ -172,6 +172,8 @@ const board = await composeImages({
 
 서브패스 책임 경계와 책임 분리는 [Architecture 문서의 공개 API 표면](https://github.com/cp949/web-image-util/blob/main/docs/architecture.md#공개-api-표면) 표를, sanitizer 관련 옵션의 사용 가능/금지 시나리오는 [SVG sanitizer 보안 정책의 "금지 사용처"](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md#금지-사용처) 표를 참고하세요.
 
+`.blur()`(메인 체이닝 API)와 `/filters`의 `BlurFilterPlugin`은 이름만 같고 무관한 별도 구현입니다 — 전자는 CSS `ctx.filter` 기반 네이티브 블러(단일 `drawImage()`에 녹아듦), 후자는 `/advanced`·`/filters` 전용 2-pass Gaussian 픽셀 컨볼루션입니다. 내부 구조는 [Architecture 문서의 핵심 모듈](https://github.com/cp949/web-image-util/blob/main/docs/architecture.md#핵심-모듈)을 참고하세요.
+
 ## 입력과 출력
 
 `processImage()` 입력은 `HTMLImageElement`, `Blob`, `File`, `ArrayBuffer`, `Uint8Array`, `string`을 지원합니다. 문자열은 HTTP(S) URL, Blob URL, Data URL, SVG XML, 브라우저 경로를 자동 판별합니다.
