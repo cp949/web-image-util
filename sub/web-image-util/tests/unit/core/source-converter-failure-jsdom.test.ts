@@ -2,7 +2,7 @@
  * source-converter 분기 커버리지 보강 테스트.
  *
  * 대상 소스 파일의 미커버 분기를 결정적으로 실행한다.
- * - src/core/source-converter/index.ts (convertToImageElement / getImageDimensions)
+ * - src/core/source-converter/index.ts (convertToImageElement)
  * - src/core/source-converter/svg/loader.internal.ts (convertSvgToElement)
  * - src/core/source-converter/loaders/string.internal.ts (convertStringToElement)
  *
@@ -297,40 +297,6 @@ describe('convertToImageElement — index.ts 분기', () => {
     await expect(convertToImageElement('./assets/icon.svg')).resolves.toBe(image);
     expect(detectSourceTypeAsync).toHaveBeenCalledOnce();
     expect(convertStringToElement).toHaveBeenCalledWith('./assets/icon.svg', detectedType, undefined);
-  });
-});
-
-describe('getImageDimensions — index.ts 폴백 분기', () => {
-  it('naturalWidth/Height가 0이면 width/height 속성으로 폴백한다', async () => {
-    vi.doMock('../../../src/core/source-converter/loaders/string.internal', () => {
-      const el = originalDocumentCreateElement.call(document, 'img') as HTMLImageElement;
-      Object.defineProperty(el, 'naturalWidth', { configurable: true, value: 0 });
-      Object.defineProperty(el, 'naturalHeight', { configurable: true, value: 0 });
-      Object.defineProperty(el, 'width', { configurable: true, value: 40 });
-      Object.defineProperty(el, 'height', { configurable: true, value: 30 });
-      return {
-        convertStringToElement: vi.fn(() => Promise.resolve(el)),
-      };
-    });
-    const { getImageDimensions } = await import('../../../src/core/source-converter/index');
-
-    await expect(getImageDimensions('relative/path.png')).resolves.toEqual({ width: 40, height: 30 });
-  });
-
-  it('naturalWidth/Height가 양수면 그 값을 사용한다', async () => {
-    vi.doMock('../../../src/core/source-converter/loaders/string.internal', () => {
-      const el = originalDocumentCreateElement.call(document, 'img') as HTMLImageElement;
-      Object.defineProperty(el, 'naturalWidth', { configurable: true, value: 12 });
-      Object.defineProperty(el, 'naturalHeight', { configurable: true, value: 8 });
-      Object.defineProperty(el, 'width', { configurable: true, value: 99 });
-      Object.defineProperty(el, 'height', { configurable: true, value: 99 });
-      return {
-        convertStringToElement: vi.fn(() => Promise.resolve(el)),
-      };
-    });
-    const { getImageDimensions } = await import('../../../src/core/source-converter/index');
-
-    await expect(getImageDimensions('relative/path.png')).resolves.toEqual({ width: 12, height: 8 });
   });
 });
 

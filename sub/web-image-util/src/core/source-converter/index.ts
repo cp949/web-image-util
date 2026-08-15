@@ -93,21 +93,3 @@ async function convertDetectedBlobToElement(
   const sourceType = await detectSourceTypeAsync(blob, maxSourceBytes);
   return convertBlobToElement(blob, sourceType as Extract<SourceType, 'blob' | 'svg-blob'>, options);
 }
-
-/**
- * Get size information of image source
- *
- * @description Extract actual size information from various image sources.
- * @param source Image source to get size information from
- * @returns Width and height information of the image
- */
-export async function getImageDimensions(source: ImageSource): Promise<{
-  width: number;
-  height: number;
-}> {
-  const element = await convertToImageElement(source);
-  return {
-    width: element.naturalWidth || element.width,
-    height: element.naturalHeight || element.height,
-  };
-}
