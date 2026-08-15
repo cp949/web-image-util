@@ -50,7 +50,7 @@
 | --- | --- |
 | `src/processor.ts` | `processImage()` 팩토리와 `ImageProcessor` 체이닝 API — 연산 축적과 타입 상태 전이만 담당하는 얇은 축적기 |
 | `src/core/output-pipeline.internal.ts` | 출력 경로 deep module — 소스 정규화, 파이프라인 구성·누적 연산 재생, resize 1회 런타임 가드, 포맷/품질 기본값, 인코딩, `CanvasLease` consume/detach, Result 래핑 |
-| `src/core/source-converter/index.ts` | `convertToImageElement` / `getImageDimensions` 오케스트레이션 |
+| `src/core/source-converter/index.ts` | `convertToImageElement` 오케스트레이션 |
 | `src/core/source-converter/detect.internal.ts` | 공유 소스 facts를 내부 로더 verdict(`SourceType`)로 투영. **내부 라우팅 정책**(`hasInternalSvgMetadataHint` — MIME·파일명 중 하나라도 SVG면 보수적으로 SVG 경로)을 소유하며 Blob URL 로더도 이 술어를 쓴다 |
 | `src/utils/source-utils/source-facts.internal.ts` | 문자열 transport·포맷 힌트와 Blob MIME·파일명 facts의 단일 판정점. 소비자 정책은 담지 않는다 |
 | `src/utils/source-utils/byte-signature.internal.ts` | 매직바이트 → 이미지 포맷 판정의 단일 facts(`detectFormatFromBytes`). bmp/tiff/ico처럼 공개 `ImageFormat`이 표현 못 하는 값도 낸다 — 접는 판단은 소비자(`image-info`의 `formatFromBytes`, blob loader의 `detectMimeTypeFromBuffer`) 몫이다 |
