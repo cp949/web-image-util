@@ -8,6 +8,7 @@
  */
 
 import type { Config } from 'dompurify';
+import { MAX_SVG_BYTES } from '../svg-contract.internal';
 
 /**
  * strict SVG sanitizer 옵션
@@ -41,8 +42,12 @@ export interface SanitizeSvgStrictDetailedResult {
   warnings: string[];
 }
 
-/** 기본 최대 입력 바이트 크기 (10MiB) */
-export const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
+/**
+ * 기본 최대 입력 바이트 크기 (10MiB).
+ * `svg-contract.internal.ts`의 `MAX_SVG_BYTES`(진단 API가 쓰는 같은 상한)를
+ * 그대로 재노출한다 — 두 리터럴이 값만 우연히 같은 채 따로 존재하는 걸 막는다.
+ */
+export const DEFAULT_MAX_BYTES = MAX_SVG_BYTES;
 
 /** 기본 최대 노드 개수 */
 export const DEFAULT_MAX_NODE_COUNT = 10_000;
