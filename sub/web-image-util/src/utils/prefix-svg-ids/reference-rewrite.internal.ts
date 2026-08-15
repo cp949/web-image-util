@@ -2,9 +2,15 @@ import { isReferenceAttribute, readReferenceAttribute, XLINK_NAMESPACE } from '.
 
 /**
  * element의 reference attribute를 새 값으로 쓴다.
- * xlink:href는 setAttributeNS를 사용해 namespace를 보존한다.
+ * 기존 속성은 qualified name으로 찾아 namespace·prefix를 보존하고, 없는 xlink:href는 XLink namespace로 만든다.
  */
 export function writeReferenceAttribute(element: Element, attrName: string, lowered: string, newValue: string): void {
+  const attribute = element.getAttributeNode(attrName);
+  if (attribute !== null) {
+    attribute.value = newValue;
+    return;
+  }
+
   if (lowered === 'xlink:href') {
     element.setAttributeNS(XLINK_NAMESPACE, attrName, newValue);
   } else {

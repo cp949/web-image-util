@@ -1,5 +1,5 @@
-import { classifyUriRef, isEventHandlerAttributeName, type UriRefReason } from '../svg-threat-policy.internal';
 import { isReferenceAttribute, readReferenceAttribute } from '../svg-reference-attribute.internal';
+import { classifyUriRef, isEventHandlerAttributeName, type UriRefReason } from '../svg-threat-policy.internal';
 import { pushCappedSample } from './sample-utils.internal';
 
 export interface SvgDomSecuritySignals {

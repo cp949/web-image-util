@@ -11,9 +11,9 @@ import type { ComplexityAnalysisResult } from '../../core/svg-complexity-analyze
 import { analyzeSvgComplexity } from '../../core/svg-complexity-analyzer';
 import { parseSvgLength, parseViewBoxValues } from '../svg-length.internal';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../svg-policy-utils.internal';
+import { isReferenceAttribute, readReferenceAttribute } from '../svg-reference-attribute.internal';
 import { classifyUriRef } from '../svg-threat-policy.internal';
 import { collectSvgDomSecuritySignals } from './dom-signals.internal';
-import { isReferenceAttribute, readReferenceAttribute } from '../svg-reference-attribute.internal';
 import { pushCappedSample } from './sample-utils.internal';
 import type { InspectSvgDimensions, InspectSvgFinding } from './types.internal';
 

@@ -44,7 +44,7 @@ export function isReferenceAttribute(element: Element, attrName: string): boolea
 export function readReferenceAttribute(element: Element, attrName: string): string | null;
 ```
 
-두 함수는 인자로 받은 `attrName`을 내부에서 직접 `.toLowerCase()`하고 `element.getAttributeNode(attrName)?.localName`으로 namespace 분리 후 `localName`도 함께 검사한다(오늘 `svg-inspection` 벌의 permissive한 판정과 동일). 호출자가 `lowered`를 미리 계산해 넘기는 3-arg 오버로드는 두지 않는다.
+두 함수는 인자로 받은 `attrName`을 내부에서 직접 `.toLowerCase()`한다. `isReferenceAttribute()`는 일반 이름을 먼저 판정하고 prefixed `*:href`/`*:src` 후보에만 `getAttributeNode()`를 호출해 namespace 분리 후 `localName`을 검사한다. XML namespace 선언(`xmlns:*`)은 참조 속성이 아니므로 제외한다. `readReferenceAttribute()`는 같은 `localName`을 가진 다른 namespace 속성과 혼동하지 않도록 전달된 qualified name의 값을 정확히 읽는다. 호출자가 `lowered`를 미리 계산해 넘기는 3-arg 오버로드는 두지 않는다.
 
 **범위에 포함하는 것:**
 
@@ -52,7 +52,7 @@ export function readReferenceAttribute(element: Element, attrName: string): stri
 
 **범위에서 제외하는 것:**
 
-- `prefix-svg-ids`의 `writeReferenceAttribute()`(실제로 속성값을 다시 쓰는 mutate 로직) — "참조인가"와 "참조를 어떻게 다시 쓰는가"는 다른 책임이고, write는 지금 한 곳만 갖고 있어 중복(real seam)이 아니다. 이 함수는 `prefix-svg-ids/reference-rewrite.internal.ts`에 그대로 남고, 자기 호출부에서 `attrName.toLowerCase()`로 `lowered`를 직접 계산해 넘긴다(3-arg 시그니처 유지).
+- `prefix-svg-ids`의 `writeReferenceAttribute()` 통합 — 대상에서 제외한다. "참조인가"와 "참조를 어떻게 다시 쓰는가"는 다른 책임이고, write는 지금 한 곳만 갖고 있어 중복(real seam)이 아니다. 이 함수는 `prefix-svg-ids/reference-rewrite.internal.ts`에 남고, 자기 호출부에서 `attrName.toLowerCase()`로 `lowered`를 직접 계산해 넘긴다(4-arg 시그니처 유지). 다만 기존 attribute를 쓸 때는 qualified name으로 찾은 `Attr.value`를 변경해 같은 localName의 다른 namespace 속성을 건드리지 않는다.
 - `src/utils/svg-compatibility/attributes.internal.ts`의 독립 `XLINK_NAMESPACE` — 값은 같지만(W3C 스펙 고정 URI) 하는 일이 다르다(`xmlns:xlink` 선언 자동 삽입, 구식 `xlink:href` → `href` 마이그레이션이지 참조 판정이 아니다). 나머지 4곳과 import 관계도 전혀 없다. 무관한 파일에 판정 leaf를 억지로 의존시키지 않는다.
 
 **소비자 배선(6곳, 전부 `.internal.ts` — 공개 표면 변화 없음):**
@@ -92,6 +92,8 @@ export function readReferenceAttribute(element: Element, attrName: string): stri
 /** xlink namespace URI. happy-dom과 브라우저 모두에서 동일하다. */
 export const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink';
 
+const XMLNS_NAMESPACE = 'http://www.w3.org/2000/xmlns/';
+
 /**
  * `href` / `xlink:href` / `src` 참조 속성 여부를 판정한다.
  *
@@ -100,28 +102,25 @@ export const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink';
  */
 export function isReferenceAttribute(element: Element, attrName: string): boolean {
   const lowered = attrName.toLowerCase();
-  const localName = element.getAttributeNode(attrName)?.localName.toLowerCase() ?? lowered;
-  return (
-    lowered === 'href' || lowered === 'xlink:href' || lowered === 'src' || localName === 'href' || localName === 'src'
-  );
+  if (lowered === 'href' || lowered === 'xlink:href' || lowered === 'src') return true;
+  if (!lowered.endsWith(':href') && !lowered.endsWith(':src')) return false;
+
+  const attribute = element.getAttributeNode(attrName);
+  if (attribute === null || attribute.namespaceURI === XMLNS_NAMESPACE) return false;
+
+  const localName = attribute.localName.toLowerCase();
+  return localName === 'href' || localName === 'src';
 }
 
 /**
- * `href` / `xlink:href` / `src` 속성값을 namespace 우선으로 읽는다.
- *
- * `xlink:href`는 `getAttributeNS`로 먼저 조회하고, namespace 조회가 비면 일반 `getAttribute`로
- * 폴백한다.
+ * `href` / `xlink:href` / `src` 속성값을 전달된 qualified name 그대로 읽는다.
  */
 export function readReferenceAttribute(element: Element, attrName: string): string | null {
-  if (attrName.toLowerCase() === 'xlink:href') {
-    const ns = element.getAttributeNS(XLINK_NAMESPACE, 'href');
-    if (ns !== null) return ns;
-  }
   return element.getAttribute(attrName);
 }
 ```
 
-기존 `svg-inspection/reference-attribute.internal.ts`와 함수 바디는 동일하다(그 파일에서 `SvgInspectionPolicy` 관련 import만 제거).
+기존 `svg-inspection/reference-attribute.internal.ts`의 판정 범위를 유지하되, 통합으로 소비자가 늘어나는 경계에서 XML namespace 선언 오탐과 같은 localName을 가진 속성 간 값 혼동을 제거한다. 일반 속성 fast-path로 무관한 attribute마다 DOM 조회가 발생하지 않게 한다.
 
 **`src/utils/svg-inspection/reference-attribute.internal.ts`(삭제)**
 
@@ -215,9 +214,15 @@ export function readReferenceAttribute(element: Element, attrName: string): stri
 ```diff
  /**
   * element의 reference attribute를 새 값으로 쓴다.
-  * xlink:href는 setAttributeNS를 사용해 namespace를 보존한다.
+  * 기존 속성은 qualified name으로 찾아 namespace·prefix를 보존하고, 없는 xlink:href는 XLink namespace로 만든다.
   */
  export function writeReferenceAttribute(element: Element, attrName: string, lowered: string, newValue: string): void {
+   const attribute = element.getAttributeNode(attrName);
+   if (attribute !== null) {
+     attribute.value = newValue;
+     return;
+   }
+
    if (lowered === 'xlink:href') {
      element.setAttributeNS(XLINK_NAMESPACE, attrName, newValue);
    } else {
@@ -226,7 +231,7 @@ export function readReferenceAttribute(element: Element, attrName: string): stri
  }
 ```
 
-(`writeReferenceAttribute`는 시그니처·바디 무변경 — import한 `XLINK_NAMESPACE`만 참조한다.)
+`writeReferenceAttribute`의 소유 위치와 4-arg 시그니처는 유지한다. 기존 속성은 정확한 qualified name의 `Attr.value`를 갱신하고, 속성이 없는 직접 helper 호출만 기존 namespace-aware 생성 경로를 사용한다.
 
 ```diff
    const all = doc.getElementsByTagName('*');
@@ -303,8 +308,11 @@ export function readReferenceAttribute(element: Element, attrName: string): stri
 
 - `isReferenceAttribute`: `href`/`xlink:href`(표준 prefix)/`src`가 true, 무관한 속성(`fill`, `id`)이 false임을 검증.
 - `isReferenceAttribute`: `xmlns:foo` + `foo:href`처럼 비표준 prefix로 선언된 xlink 참조도 true임을 검증(namespace 분리 후 localName 판정).
-- `readReferenceAttribute`: `xlink:href`(표준 prefix)를 `getAttributeNS` 경로로 읽음을 검증.
+- `readReferenceAttribute`: `xlink:href`(표준 prefix)를 전달된 qualified name으로 읽음을 검증.
 - `readReferenceAttribute`: 존재하지 않는 attribute에 `null`을 반환함을 검증.
+- `isReferenceAttribute`: `xmlns:href` namespace 선언을 참조 속성으로 오탐하지 않음을 검증.
+- `readReferenceAttribute`: `xlink` prefix가 재바인딩된 입력에서도 전달된 qualified name의 값을 읽음을 검증.
+- `writeReferenceAttribute`: 같은 localName의 다른 namespace 속성을 보존하고 전달된 qualified name만 갱신함을 검증.
 
 **신규 — `tests/security/strict-svg-sanitizer.test.ts`에 추가:**
 
@@ -338,7 +346,7 @@ export function readReferenceAttribute(element: Element, attrName: string): stri
   > **참조 속성 (reference attribute)**:
   > SVG attribute 하나가 다른 요소·외부 자원에 대한 참조를 담는지 여부 — lowered 이름과 namespace 분리 후의 localName 양쪽으로 판정해 임의 prefix로 선언된 `xlink:href`(예: `xl:href`)도 잡는다. "그 참조가 위협인가"를 다루는 참조 판정보다 한 단계 앞선 구조적 사실이고, 판정 자체와는 무관하다. `svg-reference-attribute.internal.ts` 하나가 소유하며 두 집행 엔진, `svg-inspection` 신호 수집기, `prefix-svg-ids`, `svg-optimizer`가 공유한다.
   > _Avoid_: href 체크, xlink 속성 검사
-- `docs/architecture.md` — 이 파일의 모듈 표는 이 세밀도(개별 판정 함수 파일)를 나열하지 않으므로 갱신하지 않는다(선례: `2026-08-15-svg-id-reference-integrity-design.md`).
+- `docs/architecture.md` — 핵심 모듈 표가 다른 내부 leaf도 나열하므로 신규 단일 소유 leaf를 추가한다.
 - `docs/maintenance-risks.md` — 이 결함은 추적 목록에 없었고 이번 카드로 완전히 해소되므로 갱신하지 않는다.
 
 ## 비범위

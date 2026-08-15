@@ -1,3 +1,7 @@
+/**
+ * SVG fragment 참조의 분류·읽기·쓰기·일괄 재작성 helper 계약을 검증한다.
+ */
+
 import { describe, expect, it } from 'vitest';
 import {
   classifyFragmentReference,
@@ -59,6 +63,18 @@ describe('reference-rewrite helper', () => {
       ).getElementsByTagName('use')[0];
       writeReferenceAttribute(el, 'xlink:href', 'xlink:href', '#p-a');
       expect(el.getAttributeNS(XLINK_NAMESPACE, 'href')).toBe('#p-a');
+    });
+
+    it('같은 localName의 다른 namespace 속성을 변경하지 않고 지정한 속성만 쓴다', () => {
+      const el = parse(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:foo="http://www.w3.org/1999/xlink" ' +
+          'xmlns:xlink="http://example.test/other"><use foo:href="#safe" xlink:href="#target"/></svg>'
+      ).getElementsByTagName('use')[0];
+
+      writeReferenceAttribute(el, 'xlink:href', 'xlink:href', '#p-target');
+
+      expect(el.getAttribute('foo:href')).toBe('#safe');
+      expect(el.getAttribute('xlink:href')).toBe('#p-target');
     });
   });
 

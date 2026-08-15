@@ -14,6 +14,9 @@
 /** xlink namespace URI. happy-dom과 브라우저 모두에서 동일하다. */
 export const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink';
 
+/** XML namespace declaration URI. `xmlns:*`를 참조 속성에서 제외하는 데 사용한다. */
+const XMLNS_NAMESPACE = 'http://www.w3.org/2000/xmlns/';
+
 /**
  * `href` / `xlink:href` / `src` 참조 속성 여부를 판정한다.
  *
@@ -22,22 +25,20 @@ export const XLINK_NAMESPACE = 'http://www.w3.org/1999/xlink';
  */
 export function isReferenceAttribute(element: Element, attrName: string): boolean {
   const lowered = attrName.toLowerCase();
-  const localName = element.getAttributeNode(attrName)?.localName.toLowerCase() ?? lowered;
-  return (
-    lowered === 'href' || lowered === 'xlink:href' || lowered === 'src' || localName === 'href' || localName === 'src'
-  );
+  if (lowered === 'href' || lowered === 'xlink:href' || lowered === 'src') return true;
+  if (!lowered.endsWith(':href') && !lowered.endsWith(':src')) return false;
+
+  const attribute = element.getAttributeNode(attrName);
+  if (attribute === null || attribute.namespaceURI === XMLNS_NAMESPACE) return false;
+
+  const localName = attribute.localName.toLowerCase();
+  return localName === 'href' || localName === 'src';
 }
 
 /**
- * `href` / `xlink:href` / `src` 속성값을 namespace 우선으로 읽는다.
- *
- * `xlink:href`는 `getAttributeNS`로 먼저 조회하고, namespace 조회가 비면 일반 `getAttribute`로
- * 폴백한다.
+ * `href` / `xlink:href` / `src` 속성값을 전달된 qualified name 그대로 읽는다.
+ * 같은 localName을 가진 다른 namespace 속성의 값을 대신 반환하지 않는다.
  */
 export function readReferenceAttribute(element: Element, attrName: string): string | null {
-  if (attrName.toLowerCase() === 'xlink:href') {
-    const ns = element.getAttributeNS(XLINK_NAMESPACE, 'href');
-    if (ns !== null) return ns;
-  }
   return element.getAttribute(attrName);
 }

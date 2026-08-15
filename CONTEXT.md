@@ -33,7 +33,7 @@ _Avoid_: sanitizer 규칙, 보안 필터
 _Avoid_: sanitizer 본체, 정화 로직
 
 **참조 속성 (reference attribute)**:
-SVG attribute 하나가 다른 요소·외부 자원에 대한 참조를 담는지 여부 — lowered 이름과 namespace 분리 후의 localName 양쪽으로 판정해 임의 prefix로 선언된 `xlink:href`(예: `xl:href`)도 잡는다. "그 참조가 위협인가"를 다루는 참조 판정보다 한 단계 앞선 구조적 사실이고, 판정 자체와는 무관하다. `svg-reference-attribute.internal.ts` 하나가 소유하며 두 집행 엔진, `svg-inspection` 신호 수집기, `prefix-svg-ids`, `svg-optimizer`가 공유한다.
+SVG attribute 하나가 다른 요소·외부 자원에 대한 참조를 담는지 여부 — lowered 이름과 namespace 분리 후의 localName 양쪽으로 판정해 임의 prefix로 선언된 `xlink:href`(예: `xl:href`)도 잡는다. "그 참조가 위협인가"를 다루는 참조 판정보다 한 단계 앞선 구조적 사실이고, 판정 자체와는 무관하다. `svg-reference-attribute.internal.ts` 하나가 소유하며 strict 집행 엔진과 그 입력 진단, `svg-inspection` 신호 수집기, `prefix-svg-ids`, `svg-optimizer`가 공유한다.
 _Avoid_: href 체크, xlink 속성 검사
 
 **참조 판정 (uri ref verdict)**:

@@ -58,7 +58,7 @@ export function collectReferencedIds(doc: Document): Set<string> {
       if (id) referenced.add(id);
     }
 
-    // href/xlink:href/src 형태(fragment 속성) — prefix-svg-ids 판정을 재사용한다.
+    // href/xlink:href/src 형태(fragment 속성) — 공유 leaf의 판정을 재사용한다.
     for (const attrName of el.getAttributeNames()) {
       if (!isReferenceAttribute(el, attrName)) continue;
       const value = readReferenceAttribute(el, attrName);
