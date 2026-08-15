@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   classifyFragmentReference,
-  readReferenceAttribute,
   rewriteFragmentReferences,
   writeReferenceAttribute,
-  XLINK_NAMESPACE,
 } from '../../../src/utils/prefix-svg-ids/reference-rewrite.internal';
+import { readReferenceAttribute, XLINK_NAMESPACE } from '../../../src/utils/svg-reference-attribute.internal';
 
 /** 테스트용 SVG 문서를 파싱한다. */
 function parse(svg: string): Document {
@@ -42,7 +41,7 @@ describe('reference-rewrite helper', () => {
   describe('readReferenceAttribute / writeReferenceAttribute', () => {
     it('일반 href 값을 읽는다', () => {
       const el = parse('<svg xmlns="http://www.w3.org/2000/svg"><use href="#a"/></svg>').getElementsByTagName('use')[0];
-      expect(readReferenceAttribute(el, 'href', 'href')).toBe('#a');
+      expect(readReferenceAttribute(el, 'href')).toBe('#a');
     });
 
     it('xlink:href namespace 값을 읽는다', () => {
@@ -50,7 +49,7 @@ describe('reference-rewrite helper', () => {
         '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
           '<use xlink:href="#a"/></svg>'
       ).getElementsByTagName('use')[0];
-      expect(readReferenceAttribute(el, 'xlink:href', 'xlink:href')).toBe('#a');
+      expect(readReferenceAttribute(el, 'xlink:href')).toBe('#a');
     });
 
     it('xlink:href namespace를 보존하며 쓴다', () => {

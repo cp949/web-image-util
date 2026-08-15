@@ -37,6 +37,17 @@ describe('prefixSvgIds() — fragment reference rewrite', () => {
     });
   });
 
+  describe('fragment reference rewrite — 비표준 prefix xlink', () => {
+    it('xmlns:foo로 선언된 foo:href="#a"를 "#p-a"로 rewrite한다', () => {
+      const input =
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:foo="http://example.test/foo">' +
+        '<rect id="a"/><use foo:href="#a"/></svg>';
+      const result = prefixSvgIds(input, 'p');
+      const doc = new DOMParser().parseFromString(result.svg, 'image/svg+xml');
+      expect(doc.getElementsByTagName('use')[0].getAttribute('foo:href')).toBe('#p-a');
+    });
+  });
+
   describe('fragment reference rewrite — dangling', () => {
     it('dangling href="#missing"는 rewrite 없이 원본 유지', () => {
       const input = '<svg xmlns="http://www.w3.org/2000/svg"><rect id="a"/><use href="#missing"/></svg>';

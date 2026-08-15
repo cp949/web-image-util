@@ -48,6 +48,13 @@ describe('collectReferencedIds 내부 판정', () => {
     expect(collectReferencedIds(doc)).toEqual(new Set(['sym2']));
   });
 
+  it('비표준 prefix로 선언된 foo:href="#id" 참조도 판정한다(네임스페이스 인지)', () => {
+    const doc = parse(
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:foo="http://example.test/foo">' + '<use foo:href="#sym3"/></svg>'
+    );
+    expect(collectReferencedIds(doc)).toEqual(new Set(['sym3']));
+  });
+
   it('참조가 없으면 빈 집합을 반환한다', () => {
     const doc = parse('<svg xmlns="http://www.w3.org/2000/svg"><rect id="box" width="10" height="10"/></svg>');
     expect(collectReferencedIds(doc)).toEqual(new Set());
@@ -625,5 +632,16 @@ describe('SvgOptimizer 공개 표면 — 개별 패스 옵션 분기', () => {
     });
     expect(optimizedSvg).toContain('id="pa"');
     expect(optimizedSvg).toContain('id="pb"');
+  });
+});
+
+describe('collectReferencedIds — 비표준 prefix xlink 참조 보존 회귀', () => {
+  it('기본 옵션에서 foo:href가 가리키는 defs 정의를 보존한다', () => {
+    const input =
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:foo="http://example.test/foo">' +
+      '<defs><symbol id="sym3"><rect width="1" height="1"/></symbol></defs>' +
+      '<use foo:href="#sym3"/></svg>';
+    const { optimizedSvg } = SvgOptimizer.optimize(input);
+    expect(optimizedSvg).toContain('id="sym3"');
   });
 });

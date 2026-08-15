@@ -5,17 +5,13 @@
  * - CSS `url(#id)` 스타일: `fill`/`stroke`/`filter`/`clip-path`/`mask`/`marker-start`/
  *   `marker-mid`/`marker-end` 같은 presentation 속성 값이 `url(#id)`인 경우.
  * - fragment 속성 스타일: `href`/`xlink:href`/`src` 값이 `#id`(내부 참조)인 경우 —
- *   `prefix-svg-ids`의 판정 로직을 그대로 재사용해 네임스페이스(`xlink:href`)까지 인지한다.
+ *   공유 leaf(`svg-reference-attribute.internal.ts`)의 판정을 재사용해 네임스페이스까지 인지한다.
  *
  * `<style>` 태그·`style` 속성 내부 CSS의 `url(#id)`는 비범위다(`prefix-svg-ids`와 동일 정책).
  */
 
-import {
-  classifyFragmentReference,
-  REF_ATTR_NAMES,
-  readReferenceAttribute,
-  rewriteFragmentReferences,
-} from '../prefix-svg-ids/reference-rewrite.internal';
+import { classifyFragmentReference, rewriteFragmentReferences } from '../prefix-svg-ids/reference-rewrite.internal';
+import { isReferenceAttribute, readReferenceAttribute } from '../svg-reference-attribute.internal';
 
 /** url(#id) 형태로 참조될 수 있는 presentation 속성 목록. */
 const URL_REFERENCE_ATTRIBUTES = [
@@ -64,9 +60,8 @@ export function collectReferencedIds(doc: Document): Set<string> {
 
     // href/xlink:href/src 형태(fragment 속성) — prefix-svg-ids 판정을 재사용한다.
     for (const attrName of el.getAttributeNames()) {
-      const lowered = attrName.toLowerCase();
-      if (!REF_ATTR_NAMES.has(lowered)) continue;
-      const value = readReferenceAttribute(el, attrName, lowered);
+      if (!isReferenceAttribute(el, attrName)) continue;
+      const value = readReferenceAttribute(el, attrName);
       if (value === null) continue;
       const classification = classifyFragmentReference(value);
       if (classification.kind === 'internal') {
