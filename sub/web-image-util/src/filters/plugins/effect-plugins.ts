@@ -3,6 +3,7 @@
  * Collection of image effect filter plugins (grayscale, sepia, invert)
  */
 
+import { validateNumberInRange } from '../filter-param-validation.internal';
 import type { FilterPlugin, FilterValidationResult } from '../plugin-system';
 import { FilterCategory } from '../plugin-system';
 
@@ -76,18 +77,7 @@ export const SepiaFilterPlugin: FilterPlugin<{ intensity: number }> = {
   },
 
   validate(params: { intensity: number }): FilterValidationResult {
-    const errors: string[] = [];
-
-    if (typeof params.intensity !== 'number') {
-      errors.push('intensity must be a number');
-    } else if (params.intensity < 0 || params.intensity > 100) {
-      errors.push('intensity must be between 0 and 100');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-    };
+    return validateNumberInRange(params.intensity, 'intensity', { min: 0, max: 100 });
   },
 };
 
@@ -151,22 +141,12 @@ export const NoiseFilterPlugin: FilterPlugin<{ intensity: number }> = {
   },
 
   validate(params: { intensity: number }): FilterValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    if (typeof params.intensity !== 'number') {
-      errors.push('intensity must be a number');
-    } else if (params.intensity < 0 || params.intensity > 100) {
-      errors.push('intensity must be between 0 and 100');
-    } else if (params.intensity > 50) {
-      warnings.push('High noise intensity can significantly degrade image quality');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-      warnings: warnings.length > 0 ? warnings : undefined,
-    };
+    return validateNumberInRange(params.intensity, 'intensity', {
+      min: 0,
+      max: 100,
+      warnAbove: 50,
+      warnMessage: 'High noise intensity can significantly degrade image quality',
+    });
   },
 };
 
@@ -214,19 +194,11 @@ export const VignetteFilterPlugin: FilterPlugin<{ intensity: number; size: numbe
   },
 
   validate(params: { intensity: number; size: number; blur: number }): FilterValidationResult {
-    const errors: string[] = [];
-
-    if (typeof params.intensity !== 'number' || params.intensity < 0 || params.intensity > 1) {
-      errors.push('intensity must be a number between 0 and 1');
-    }
-
-    if (typeof params.size !== 'number' || params.size < 0 || params.size > 1) {
-      errors.push('size must be a number between 0 and 1');
-    }
-
-    if (typeof params.blur !== 'number' || params.blur < 0 || params.blur > 1) {
-      errors.push('blur must be a number between 0 and 1');
-    }
+    const errors = [
+      validateNumberInRange(params.intensity, 'intensity', { min: 0, max: 1, combinedMessage: true }),
+      validateNumberInRange(params.size, 'size', { min: 0, max: 1, combinedMessage: true }),
+      validateNumberInRange(params.blur, 'blur', { min: 0, max: 1, combinedMessage: true }),
+    ].flatMap((result) => result.errors ?? []);
 
     return {
       valid: errors.length === 0,
@@ -298,22 +270,11 @@ export const PixelateFilterPlugin: FilterPlugin<{ pixelSize: number }> = {
   },
 
   validate(params: { pixelSize: number }): FilterValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    if (typeof params.pixelSize !== 'number') {
-      errors.push('pixelSize must be a number');
-    } else if (params.pixelSize < 1) {
-      errors.push('pixelSize must be 1 or greater');
-    } else if (params.pixelSize > 50) {
-      warnings.push('Large pixel sizes can significantly degrade image detail');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-      warnings: warnings.length > 0 ? warnings : undefined,
-    };
+    return validateNumberInRange(params.pixelSize, 'pixelSize', {
+      min: 1,
+      warnAbove: 50,
+      warnMessage: 'Large pixel sizes can significantly degrade image detail',
+    });
   },
 };
 
@@ -345,18 +306,7 @@ export const PosterizeFilterPlugin: FilterPlugin<{ levels: number }> = {
   },
 
   validate(params: { levels: number }): FilterValidationResult {
-    const errors: string[] = [];
-
-    if (typeof params.levels !== 'number') {
-      errors.push('levels must be a number');
-    } else if (params.levels < 2 || params.levels > 256) {
-      errors.push('levels must be between 2 and 256');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-    };
+    return validateNumberInRange(params.levels, 'levels', { min: 2, max: 256 });
   },
 };
 

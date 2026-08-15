@@ -75,6 +75,7 @@
 | `src/core/lazy-render-pipeline.internal.ts` | 연산 누적과 최종 렌더링 트리거 |
 | `src/core/single-renderer.internal.ts` | 누적 연산 분석(`analyzeAllOperations`)과 최종 Canvas drawImage 렌더링(`renderLayout` → `CanvasLease`) |
 | `src/filters/plugin-system.ts` | 필터 플러그인 레지스트리·실행 — `registerFilter`/`applyFilter`/`applyFilterChain`/`validateFilterChain`. `/advanced`·`/filters`(재노출) 전용, 메인 체이닝 파이프라인과는 별개 시스템 |
+| `src/filters/filter-param-validation.internal.ts` | `validateNumberInRange()` — blur/color/effect 12개 plugin의 validate() 숫자 범위 검증 단일 소유. `GrayscaleFilterPlugin`/`InvertFilterPlugin`(파라미터 없음)과 `advanced-index.ts`의 `createFilterPlugin()`(임의 TParams를 받는 범용 factory)은 대상 밖 |
 | `src/filters/plugins/blur-plugins.ts` | `BlurFilterPlugin`(`name: 'blur'`)·`SharpenFilterPlugin`·`EmbossFilterPlugin`·`EdgeDetectionFilterPlugin` — 2-pass Gaussian 컨볼루션 등 픽셀 단위 구현. 체이닝 API의 `blur()`(CSS `ctx.filter`, 위 `single-renderer.internal.ts` 행)와 이름만 같고 서로 무관하다 |
 | `src/base/high-res-detector.internal.ts` | 이미지 크기 분석(`analyzeImage`)과 고해상도 처리 진입 게이트(`shouldUseHighResolutionPath`) 단일 소유 — `AutoHighResProcessor`가 이 게이트를 쓴다(유일한 진입점). `AutoHighResProcessor` 커스텀 픽셀 임계값은 유지한다. `high-res-manager.ts`의 direct/tiled(64MB)·stepped/tiled(256MB) 선택 경계도 `MEDIUM_MEMORY_THRESHOLD_MB`/`LARGE_MEMORY_THRESHOLD_MB`로 단일 소유한다 |
 | `src/base/high-res-manager.ts` | advanced 고해상도 경로의 매니저 — 이미지 분석·전략 선택·메모리 점검(압박 시 `CanvasPool.clear()` + GC 요청)만 담당하고 실행은 전략 adapter에 위임 |

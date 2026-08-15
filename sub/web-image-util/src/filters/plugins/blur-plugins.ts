@@ -3,6 +3,7 @@
  * Collection of blur and sharpness filter plugins (blur, sharpening, emboss, edge detection)
  */
 
+import { validateNumberInRange } from '../filter-param-validation.internal';
 import type { FilterPlugin, FilterValidationResult } from '../plugin-system';
 import { FilterCategory } from '../plugin-system';
 
@@ -158,22 +159,12 @@ export const BlurFilterPlugin: FilterPlugin<{ radius: number }> = {
   },
 
   validate(params: { radius: number }): FilterValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    if (typeof params.radius !== 'number') {
-      errors.push('radius must be a number');
-    } else if (params.radius < 0 || params.radius > 20) {
-      errors.push('radius must be between 0 and 20');
-    } else if (params.radius > 10) {
-      warnings.push('High blur values can significantly increase processing time');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-      warnings: warnings.length > 0 ? warnings : undefined,
-    };
+    return validateNumberInRange(params.radius, 'radius', {
+      min: 0,
+      max: 20,
+      warnAbove: 10,
+      warnMessage: 'High blur values can significantly increase processing time',
+    });
   },
 };
 
@@ -214,22 +205,12 @@ export const SharpenFilterPlugin: FilterPlugin<{ amount: number }> = {
   },
 
   validate(params: { amount: number }): FilterValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    if (typeof params.amount !== 'number') {
-      errors.push('amount must be a number');
-    } else if (params.amount < 0 || params.amount > 100) {
-      errors.push('amount must be between 0 and 100');
-    } else if (params.amount > 80) {
-      warnings.push('Excessive sharpening may amplify noise');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-      warnings: warnings.length > 0 ? warnings : undefined,
-    };
+    return validateNumberInRange(params.amount, 'amount', {
+      min: 0,
+      max: 100,
+      warnAbove: 80,
+      warnMessage: 'Excessive sharpening may amplify noise',
+    });
   },
 };
 
@@ -252,18 +233,7 @@ export const EmbossFilterPlugin: FilterPlugin<{ strength: number }> = {
   },
 
   validate(params: { strength: number }): FilterValidationResult {
-    const errors: string[] = [];
-
-    if (typeof params.strength !== 'number') {
-      errors.push('strength must be a number');
-    } else if (params.strength < 0 || params.strength > 3) {
-      errors.push('strength must be between 0 and 3');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-    };
+    return validateNumberInRange(params.strength, 'strength', { min: 0, max: 3 });
   },
 };
 
@@ -286,18 +256,7 @@ export const EdgeDetectionFilterPlugin: FilterPlugin<{ sensitivity: number }> = 
   },
 
   validate(params: { sensitivity: number }): FilterValidationResult {
-    const errors: string[] = [];
-
-    if (typeof params.sensitivity !== 'number') {
-      errors.push('sensitivity must be a number');
-    } else if (params.sensitivity < 0 || params.sensitivity > 2) {
-      errors.push('sensitivity must be between 0 and 2');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-    };
+    return validateNumberInRange(params.sensitivity, 'sensitivity', { min: 0, max: 2 });
   },
 };
 

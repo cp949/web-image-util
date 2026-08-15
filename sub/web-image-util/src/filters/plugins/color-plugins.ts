@@ -3,6 +3,7 @@
  * Collection of color adjustment filter plugins (brightness, contrast, saturation, hue)
  */
 
+import { validateNumberInRange } from '../filter-param-validation.internal';
 import type { FilterPlugin, FilterValidationResult } from '../plugin-system';
 import { FilterCategory } from '../plugin-system';
 
@@ -34,22 +35,12 @@ export const BrightnessFilterPlugin: FilterPlugin<{ value: number }> = {
   },
 
   validate(params: { value: number }): FilterValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    if (typeof params.value !== 'number') {
-      errors.push('value must be a number');
-    } else if (params.value < -100 || params.value > 100) {
-      errors.push('value must be between -100 and 100');
-    } else if (Math.abs(params.value) > 50) {
-      warnings.push('Extreme brightness adjustments may degrade image quality');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-      warnings: warnings.length > 0 ? warnings : undefined,
-    };
+    return validateNumberInRange(params.value, 'value', {
+      min: -100,
+      max: 100,
+      warnAboveAbs: 50,
+      warnMessage: 'Extreme brightness adjustments may degrade image quality',
+    });
   },
 };
 
@@ -80,22 +71,12 @@ export const ContrastFilterPlugin: FilterPlugin<{ value: number }> = {
   },
 
   validate(params: { value: number }): FilterValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    if (typeof params.value !== 'number') {
-      errors.push('value must be a number');
-    } else if (params.value < -100 || params.value > 100) {
-      errors.push('value must be between -100 and 100');
-    } else if (Math.abs(params.value) > 50) {
-      warnings.push('Extreme contrast adjustments may cause detail loss');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-      warnings: warnings.length > 0 ? warnings : undefined,
-    };
+    return validateNumberInRange(params.value, 'value', {
+      min: -100,
+      max: 100,
+      warnAboveAbs: 50,
+      warnMessage: 'Extreme contrast adjustments may cause detail loss',
+    });
   },
 };
 
@@ -129,22 +110,12 @@ export const SaturationFilterPlugin: FilterPlugin<{ value: number }> = {
   },
 
   validate(params: { value: number }): FilterValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    if (typeof params.value !== 'number') {
-      errors.push('value must be a number');
-    } else if (params.value < -100 || params.value > 100) {
-      errors.push('value must be between -100 and 100');
-    } else if (params.value > 50) {
-      warnings.push('High saturation may create unnatural colors');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-      warnings: warnings.length > 0 ? warnings : undefined,
-    };
+    return validateNumberInRange(params.value, 'value', {
+      min: -100,
+      max: 100,
+      warnAbove: 50,
+      warnMessage: 'High saturation may create unnatural colors',
+    });
   },
 };
 
