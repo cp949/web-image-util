@@ -1,10 +1,14 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 // 루트 릴리스 검증 스크립트의 단계 정의를 직접 검증한다.
 // @ts-expect-error 테스트에서 루트 .mjs 스크립트를 직접 import한다.
 import { getReleaseVerificationSteps, runReleaseVerification } from '../../../scripts/verify-release.mjs';
+
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const packageRoot = join(repositoryRoot, 'sub/web-image-util');
 
 type ReleaseVerificationStep = {
   label: string;
@@ -20,7 +24,7 @@ describe('릴리스 검증 스크립트', () => {
   });
 
   test('verify:release는 전용 스크립트를 실행한다', () => {
-    const rootPackageJson = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
+    const rootPackageJson = JSON.parse(readFileSync(join(repositoryRoot, 'package.json'), 'utf8'));
 
     expect(rootPackageJson.scripts['verify:release']).toBe('node ./scripts/verify-release.mjs');
   });
@@ -33,25 +37,25 @@ describe('릴리스 검증 스크립트', () => {
         label: '기본 CI 검증',
         command: 'pnpm',
         args: ['verify:ci'],
-        cwd: expect.stringMatching(/web-image-util$/),
+        cwd: repositoryRoot,
       },
       {
         label: '패키지 빌드',
         command: 'pnpm',
         args: ['--filter', '@cp949/web-image-util', 'build'],
-        cwd: expect.stringMatching(/web-image-util$/),
+        cwd: repositoryRoot,
       },
       {
         label: '브라우저 smoke test',
         command: 'pnpm',
         args: ['--filter', '@cp949/web-image-util', 'test:browser'],
-        cwd: expect.stringMatching(/web-image-util$/),
+        cwd: repositoryRoot,
       },
       {
         label: 'npm pack dry-run',
         command: 'npm',
         args: ['pack', '--dry-run'],
-        cwd: expect.stringMatching(/web-image-util\/sub\/web-image-util$/),
+        cwd: packageRoot,
         env: expect.objectContaining({
           npm_config_user_agent: expect.any(String),
         }),
