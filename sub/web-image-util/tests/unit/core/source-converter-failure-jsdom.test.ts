@@ -102,7 +102,8 @@ afterEach(async () => {
   vi.doUnmock('../../../src/core/source-converter/loaders/blob.internal');
   vi.doUnmock('../../../src/core/source-converter/loaders/string.internal');
   vi.doUnmock('../../../src/core/source-converter/detect.internal');
-  vi.doUnmock('../../../src/utils/svg-compatibility/index');
+  vi.doUnmock('../../../src/utils/svg-compatibility/enhance');
+  vi.doUnmock('../../../src/utils/svg-compatibility/bbox/heuristic.internal');
   vi.doUnmock('../../../src/svg-sanitizer');
   vi.doUnmock('../../../src/core/svg-complexity-analyzer');
   vi.doUnmock('../../../src/utils/debug.internal');
@@ -459,10 +460,38 @@ describe('convertSvgToElement — svg/loader.ts 분기', () => {
     });
   });
 
+  it('viewBox 없는 SVG를 로드할 때 BBox 휴리스틱 스캔을 한 번만 수행한다', async () => {
+    const heuristicSpy = vi.fn();
+    vi.doMock('../../../src/utils/svg-compatibility/bbox/heuristic.internal', async (importOriginal) => {
+      const actual =
+        await importOriginal<typeof import('../../../src/utils/svg-compatibility/bbox/heuristic.internal')>();
+      return {
+        ...actual,
+        heuristicBBox: (root: Element) => {
+          heuristicSpy();
+          return actual.heuristicBBox(root);
+        },
+      };
+    });
+
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50"/></svg>';
+    const { convertSvgToElement } = await import('../../../src/core/source-converter/svg/loader.internal');
+    stubImgCreation('load');
+
+    await convertSvgToElement(svg, undefined, undefined, { quality: 'high' });
+
+    // 리팩터 이전엔 enhanceSvgForBrowser()와 extractSvgDimensions()가 같은 문자열에 각자
+    // heuristicBBox를 호출해 이 값이 2였다. 파싱 결과 공유로 1회로 줄어야 한다.
+    expect(heuristicSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('sanitizerMode 미지정 + unsafe-pass-through는 skip으로 해석되고 호환성 보정을 건너뛴다', async () => {
-    const enhanceSpy = vi.fn((s: string) => s);
-    vi.doMock('../../../src/utils/svg-compatibility/index', () => ({
-      enhanceSvgForBrowser: enhanceSpy,
+    const enhanceSpy = vi.fn((s: string) => ({
+      enhancedSvg: s,
+      dimensions: { width: 1, height: 1, hasExplicitSize: false },
+    }));
+    vi.doMock('../../../src/utils/svg-compatibility/enhance', () => ({
+      enhanceSvgForBrowserWithDimensions: enhanceSpy,
     }));
     const { convertSvgToElement } = await import('../../../src/core/source-converter/svg/loader.internal');
     const img = stubImgCreation('load');
@@ -472,7 +501,7 @@ describe('convertSvgToElement — svg/loader.ts 분기', () => {
     });
 
     expect(result).toBe(img);
-    // unsafe-pass-through는 enhanceSvgForBrowser를 호출하지 않는다(L118-119).
+    // unsafe-pass-through는 enhanceSvgForBrowserWithDimensions를 호출하지 않는다.
     expect(enhanceSpy).not.toHaveBeenCalled();
   });
 
@@ -609,9 +638,9 @@ describe('convertSvgToElement — svg/loader.ts 분기', () => {
   });
 
   it('try 내부에서 일반 Error가 발생하면 SOURCE_LOAD_FAILED로 감싼다', async () => {
-    // extractSvgDimensions가 일반 Error를 던지게 해 catch(L214-220) 래핑 경로를 실행한다.
-    vi.doMock('../../../src/utils/svg-dimensions', () => ({
-      extractSvgDimensions: vi.fn(() => {
+    // enhanceSvgForBrowserWithDimensions가 일반 Error를 던지게 해 catch 래핑 경로를 실행한다.
+    vi.doMock('../../../src/utils/svg-compatibility/enhance', () => ({
+      enhanceSvgForBrowserWithDimensions: vi.fn(() => {
         throw new Error('dimension parse boom');
       }),
     }));
@@ -624,10 +653,10 @@ describe('convertSvgToElement — svg/loader.ts 분기', () => {
 
   it('try 내부에서 ImageProcessError가 발생하면 동일 오류를 그대로 전파한다', async () => {
     // resetModules 이후 동적 import한 loader는 새 모듈 그래프의 ImageProcessError를 본다.
-    // instanceof 분기(L213-215)를 정확히 타려면 같은 그래프의 클래스로 오류를 만들어야 한다.
+    // instanceof 분기를 정확히 타려면 같은 그래프의 클래스로 오류를 만들어야 한다.
     let ipe: Error;
-    vi.doMock('../../../src/utils/svg-dimensions', () => ({
-      extractSvgDimensions: vi.fn(() => {
+    vi.doMock('../../../src/utils/svg-compatibility/enhance', () => ({
+      enhanceSvgForBrowserWithDimensions: vi.fn(() => {
         throw ipe;
       }),
     }));

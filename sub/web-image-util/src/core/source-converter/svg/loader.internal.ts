@@ -9,7 +9,7 @@ import type { SvgSanitizerMode } from '../../../svg-contract.internal';
 import { ImageProcessError } from '../../../types';
 import { debugLog, productionLog } from '../../../utils/debug.internal';
 import { decodeImageFromBlob, decodeImageFromUrl, type ImageDecodeOptions } from '../../../utils/image-decode.internal';
-import { enhanceSvgForBrowser } from '../../../utils/svg-compatibility/index';
+import { enhanceSvgForBrowserWithDimensions } from '../../../utils/svg-compatibility/enhance';
 import { extractSvgDimensions } from '../../../utils/svg-dimensions';
 import { sanitizeSvgForRendering } from '../../../utils/svg-sanitizer';
 import type { QualityLevel } from '../../svg-complexity-analyzer';
@@ -105,11 +105,14 @@ export async function convertSvgToElement(
   try {
     // unsafe 경로는 호환성 보정을 건너뛰고, 그 외 경로는 브라우저 호환성 보정을 수행한다.
     const shouldSkipCompatibilityEnhancement = options?.passthroughMode === 'unsafe-pass-through';
-    const svgForLoad = shouldSkipCompatibilityEnhancement ? svgForSafety : enhanceSvgForBrowser(svgForSafety);
 
-    // 2. sanitizer 적용 후, 호환성 보강 전 SVG에서 유효 크기를 추출한다.
-    // 보강 후에는 새 viewBox 때문에 extractSvgDimensions()가 기존 width/height를 다시 우선한다.
-    const dimensions = extractSvgDimensions(svgForSafety);
+    // 2. 호환성 보강과 유효 크기 계산을 같은 파싱 결과에서 함께 얻는다.
+    // 예전에는 enhanceSvgForBrowser()와 extractSvgDimensions()를 svgForSafety에 나란히 호출해
+    // parse와(viewBox 없는 SVG의 경우) BBox 스캔이 두 번씩 일어났다.
+    // unsafe 경로는 보강 자체를 건너뛰므로 extractSvgDimensions()를 독립 호출한다.
+    const { enhancedSvg: svgForLoad, dimensions } = shouldSkipCompatibilityEnhancement
+      ? { enhancedSvg: svgForSafety, dimensions: extractSvgDimensions(svgForSafety) }
+      : enhanceSvgForBrowserWithDimensions(svgForSafety);
 
     // 3. 목표 렌더링 크기를 결정한다.
     const finalWidth = targetWidth || dimensions.width;
