@@ -8,8 +8,8 @@
 
 import { applySmoothing, createOwnedCanvas, type SmoothingQuality } from './canvas-utils.internal';
 import type { ImageAnalysis } from './high-res-detector.internal';
-import { ProcessingStrategy } from './high-res-detector.internal';
 import { SteppedProcessor } from './stepped-processor.internal';
+import { ProcessingStrategy } from './strategy-policy.internal';
 import { TiledProcessor } from './tiled-processor.internal';
 
 /** 전략 실행 입력 — 매니저가 조립해서 adapter에 넘긴다 */
@@ -23,8 +23,8 @@ export interface ResizeStrategyInput {
   onProgress?: (current: number, total: number) => void;
 }
 
-/** tiled 실행의 타일 크기·동시성 프리셋을 가르는 경계 — high-res-detector.internal.ts의
- * MEDIUM 임계값(64MB)과 같은 값이다(새 숫자를 만들지 않는다). */
+/** tiled 실행의 타일 크기·동시성 프리셋을 가르는 경계.
+ * 전략 선택 정책의 64MB 임계값과 값만 같고 의미는 독립적이다. */
 const TILED_LIGHT_THRESHOLD_MB = 64;
 
 /** 전략 adapter — 전략별 튜닝 지식은 전부 여기 산다 */

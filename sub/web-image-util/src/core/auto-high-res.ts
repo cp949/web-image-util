@@ -3,10 +3,11 @@
  * Transparent system that automatically processes high-resolution images
  */
 
-import { HighResolutionDetector, type ImageAnalysis, ProcessingStrategy } from '../base/high-res-detector.internal';
+import { HighResolutionDetector, type ImageAnalysis } from '../base/high-res-detector.internal';
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
 import { getResizeStrategyAdapter } from '../base/resize-strategy.internal';
+import { ProcessingStrategy } from '../base/strategy-policy.internal';
 import { processInChunks } from '../utils/chunked-batch-runner.internal';
 import { productionLog } from '../utils/debug.internal';
 

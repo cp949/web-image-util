@@ -4,7 +4,7 @@
  * @description Provides simple performance control functions
  */
 
-import type { ProcessingStrategy } from '../base/high-res-detector.internal';
+import type { ProcessingStrategy } from '../base/strategy-policy.internal';
 import { readMemoryBudget } from '../utils/browser-capabilities/index';
 import { AutoHighResProcessor } from './auto-high-res';
 import { type BatchResizeJob, BatchResizer } from './batch-resizer';
