@@ -189,6 +189,14 @@ describe('removeUnusedDefs 내부 패스', () => {
     expect(removeUnusedDefs(svg)).toBe(svg);
   });
 
+  it('<defs> 안 id가 전부 참조 중이면 원본 문자열과 값이 동일하다(직렬화를 건너뛴다)', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg">' +
+      '<defs><linearGradient id="g1"><stop offset="0" stop-color="red"/></linearGradient></defs>' +
+      '<rect fill="url(#g1)" width="10" height="10"/></svg>';
+    expect(removeUnusedDefs(svg)).toBe(svg);
+  });
+
   it('미사용 id는 <defs>에서 제거된다', () => {
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="unused"/></defs>' +
@@ -307,6 +315,13 @@ describe('removeUnusedDefs 내부 패스', () => {
       '<defs><symbol id="sym3" viewBox="0 0 10 10"><circle r="5" cx="5" cy="5"/></symbol></defs>' +
       '<image src="#sym3"/></svg>';
     expect(removeUnusedDefs(svg)).toContain('id="sym3"');
+  });
+
+  it('입력에 이미 비어있는 <defs>가 있으면 제거 대상이 없어도 함께 제거된다', () => {
+    // definedIds가 애초에 비어 unusedIds.length === 0으로 조기 반환되면
+    // 아래 "비워진 defs 제거" 경로에 도달하지 못하는 회귀를 검증한다.
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><defs></defs><rect width="10" height="10"/></svg>';
+    expect(removeUnusedDefs(svg)).not.toContain('<defs');
   });
 });
 

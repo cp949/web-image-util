@@ -47,10 +47,16 @@ export function removeUnusedDefs(svgString: string): string {
 
     const definedIds = collectDefinedIds(defs);
     const usedIds = collectReferencedIds(doc);
+    const unusedIds = Array.from(definedIds).filter((id) => !usedIds.has(id));
+
+    // 제거 대상이 없고 defs에 자식이 남아있다면(=애초에 빈 defs가 아니었다면) 변경 없음.
+    // defs가 이미 비어 있던 입력은 아래 "비워진 defs 제거" 경로로 계속 진행해야 한다.
+    if (unusedIds.length === 0 && defs.children.length > 0) {
+      return svgString;
+    }
 
     // 사용되지 않는 정의만 제거.
-    for (const id of definedIds) {
-      if (usedIds.has(id)) continue;
+    for (const id of unusedIds) {
       const unusedElement = defs.querySelector(`[id="${id}"]`);
       if (unusedElement) {
         unusedElement.remove();
