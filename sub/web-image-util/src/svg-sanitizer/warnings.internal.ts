@@ -8,9 +8,20 @@
  */
 
 import { parseAndClassifySvg } from '../utils/svg-document.internal';
-import { isReferenceAttribute } from '../utils/svg-reference-attribute.internal';
-import { classifyUriRef, isEventHandlerAttributeName, type UriRefReason } from '../utils/svg-threat-policy.internal';
-import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
+import { isEventHandlerAttributeName, type UriRefReason } from '../utils/svg-threat-policy.internal';
+import { classifyAttributeThreat } from './classify-attribute-threat.internal';
+import { sanitizeCssValue } from './css-policy.internal';
+
+/**
+ * 입력 진단 단계의 event-handler 판정.
+ *
+ * 위협 정책 leaf(`isEventHandlerAttributeName`)를 그대로 위임한다 —
+ * `enforce-dom-policy.internal.ts`의 방어적 광의 판정과 다르게, 이 진단 경로는
+ * leaf를 단일 기준으로 삼는다(B1, 947c9ef).
+ */
+function isNarrowEventHandlerAttribute(attribute: Attr): boolean {
+  return isEventHandlerAttributeName(attribute.name);
+}
 
 /**
  * 입력 단계에서 외부 URI 제거 경고를 만들지 않는 reason 집합.
@@ -61,24 +72,21 @@ export function collectInputPolicyWarnings(svg: string, warnings: string[]): voi
   const elements = [root, ...Array.from(root.querySelectorAll('*'))];
   for (const element of elements) {
     for (const attribute of Array.from(element.attributes)) {
-      if (isEventHandlerAttributeName(attribute.name)) {
+      const category = classifyAttributeThreat(element, attribute, isNarrowEventHandlerAttribute);
+
+      if (category.kind === 'event-handler') {
         pushUniqueWarning(warnings, '이벤트 핸들러 속성이 제거되었습니다.');
         continue;
       }
 
-      if (isReferenceAttribute(element, attribute.name)) {
-        const { reason } = classifyUriRef(attribute.value, 'strict');
-        if (!NON_WARNING_REFERENCE_REASONS.has(reason)) {
+      if (category.kind === 'reference') {
+        if (!NON_WARNING_REFERENCE_REASONS.has(category.reason)) {
           pushUniqueWarning(warnings, '외부 URI 참조 속성이 제거되었습니다.');
         }
         continue;
       }
 
-      if (
-        attribute.value &&
-        shouldSanitizeCssAttribute(attribute) &&
-        sanitizeCssValue(attribute.value).trim() !== attribute.value.trim()
-      ) {
+      if (category.kind === 'css' && sanitizeCssValue(attribute.value).trim() !== attribute.value.trim()) {
         pushUniqueWarning(warnings, '위험 CSS 구문 또는 외부 CSS URL 참조가 제거되었습니다.');
       }
     }

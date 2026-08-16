@@ -7,14 +7,32 @@
  * - 외부 `href`, `xlink:href`, `src` 참조 (nested SVG는 재귀 정제 후 보존)
  * - CSS 속성값과 `<style>` 본문의 외부 `url()`, `image-set()`, `@import`,
  *   `expression()`, `-moz-binding`
+ *
+ * attribute 하나가 이 세 카테고리 중 어디에 속하는지(분기 순서·배타성)는
+ * `classifyAttributeThreat()`가 소유한다 — `warnings.internal.ts`의 입력 진단과
+ * 공유한다. 카테고리가 정해진 뒤의 실제 제거/치환(메커니즘)만 이 파일이 맡는다.
  */
 
-import { isReferenceAttribute } from '../utils/svg-reference-attribute.internal';
 import { FORBIDDEN_SVG_ELEMENT_NAMES } from '../utils/svg-threat-policy.internal';
-import { sanitizeCssValue, shouldSanitizeCssAttribute } from './css-policy.internal';
+import { classifyAttributeThreat } from './classify-attribute-threat.internal';
+import { sanitizeCssValue } from './css-policy.internal';
 import { sanitizeStrictUriValue } from './reference-policy.internal';
 import type { NestedSanitize, StrictSvgSanitizerOptions } from './types';
 import { pushUniqueWarning } from './warnings.internal';
+
+/**
+ * strict 재강제 단계의 방어적 광의 event-handler 판정.
+ *
+ * 위협 정책 leaf(`isEventHandlerAttributeName`)보다 넓게 "on" 접두 전체를 잡는다
+ * — 속성명 `"on"` 단독처럼 leaf가 이벤트 핸들러로 보지 않는 값까지 보수적으로
+ * 제거하기 위한 의도된 예외다(`svg-threat-policy.internal.ts` 참고). 이 leaf를
+ * 호출하도록 통합하지 않는다.
+ */
+function isBroadEventHandlerAttribute(attribute: Attr): boolean {
+  const name = attribute.name.toLowerCase();
+  const localName = attribute.localName.toLowerCase();
+  return name.startsWith('on') || localName.startsWith('on');
+}
 
 /**
  * DOMPurify 결과에 라이브러리 강제 strict 정책을 한 번 더 적용한다.
@@ -42,16 +60,15 @@ export function enforceStrictDomPolicy(
     }
 
     for (const attribute of Array.from(element.attributes)) {
-      const name = attribute.name.toLowerCase();
-      const localName = attribute.localName.toLowerCase();
+      const category = classifyAttributeThreat(element, attribute, isBroadEventHandlerAttribute);
 
-      if (name.startsWith('on') || localName.startsWith('on')) {
+      if (category.kind === 'event-handler') {
         element.removeAttribute(attribute.name);
         pushUniqueWarning(warnings, '이벤트 핸들러 속성이 제거되었습니다.');
         continue;
       }
 
-      if (isReferenceAttribute(element, attribute.name)) {
+      if (category.kind === 'reference') {
         const sanitizedValue = sanitizeStrictUriValue(attribute.value, options, depth, nestedSanitize);
         if (sanitizedValue === null) {
           element.removeAttribute(attribute.name);
@@ -63,7 +80,7 @@ export function enforceStrictDomPolicy(
         continue;
       }
 
-      if (attribute.value && shouldSanitizeCssAttribute(attribute)) {
+      if (category.kind === 'css') {
         const sanitizedAttributeValue = sanitizeCssValue(attribute.value).trim();
         const wasChanged = sanitizedAttributeValue !== attribute.value.trim();
         if (sanitizedAttributeValue) {
