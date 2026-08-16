@@ -104,13 +104,21 @@ describe('SVG 최적화', () => {
     });
   });
 
-  it('기본 최적화는 메타데이터와 불필요한 공백을 제거하고 결과 metadata를 반환한다', () => {
+  it('기본 최적화는 5단계 전부가 실제로 바뀔 때만 해당 라벨을 보고한다', () => {
+    const sameStop = '<stop offset="0" stop-color="red"/>';
     const svg = `<?xml version="1.0"?>
       <!-- editor comment -->
-      <svg width="10" height="10" xmlns:dc="http://purl.org/dc/elements/1.1/" data-name="sample">
-        <title>sample title</title>
+      <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg" xmlns:dc="http://purl.org/dc/elements/1.1/" data-name="sample">
+        <title fill="url(#orphan)">sample title</title>
         <desc>sample description</desc>
+        <defs>
+          <linearGradient id="ga">${sameStop}</linearGradient>
+          <linearGradient id="gb">${sameStop}</linearGradient>
+          <linearGradient id="orphan"/>
+        </defs>
         <rect id="box" x="0" y="0" width="10" height="10" style="" />
+        <path d="M1.23456 2,3" fill="url(#ga)"/>
+        <path d="M4,5 L6,7" fill="url(#gb)"/>
       </svg>
     `;
 
@@ -123,6 +131,8 @@ describe('SVG 최적화', () => {
     expect(optimizedSvg).not.toContain('<title>');
     expect(optimizedSvg).not.toContain('data-name');
     expect(optimizedSvg).not.toContain('id="box"');
+    expect(optimizedSvg).not.toContain('1.23456');
+    expect(optimizedSvg).not.toContain('id="orphan"');
     expect(result.originalSize).toBe(svg.length);
     expect(result.optimizedSize).toBe(optimizedSvg.length);
     expect(result.compressionRatio).toBeGreaterThan(0);
@@ -148,7 +158,9 @@ describe('SVG 최적화', () => {
     });
 
     expect(optimizedSvg).toBe('<svg><title>keep</title><rect id="box" width="10" height="10" /></svg>');
-    expect(result.optimizations).toEqual(['whitespace cleanup']);
+    // whitespace cleanup은 옵션과 무관하게 항상 실행되지만, 이 입력엔 정리할 공백이
+    // 이미 없어 실제로는 아무것도 바뀌지 않는다 — 정직한 신호는 빈 배열이어야 한다.
+    expect(result.optimizations).toEqual([]);
     expect(result.compressionRatio).toBe(0);
   });
 
@@ -180,6 +192,23 @@ describe('SVG 최적화', () => {
     const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect id="box" width="1" height="1">';
     const { optimizedSvg } = SvgOptimizer.optimize(svg);
     expect(optimizedSvg).toContain('id="box"');
+  });
+
+  it('파싱에 실패하는 SVG는 optimizations에 어떤 라벨도 보고하지 않는다(정직성 회귀)', () => {
+    // 정리할 주석·공백·path·그라디언트·defs가 전혀 없는 malformed SVG로,
+    // 5단계 전부가 "손대지 않았다"를 정확히 보고하는지 검증한다.
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect id="box" width="1" height="1">';
+    const { optimizedSvg, result } = SvgOptimizer.optimize(svg);
+    expect(optimizedSvg).toBe(svg);
+    expect(result.optimizations).toEqual([]);
+  });
+
+  it('그라디언트·미사용 정의가 없는 SVG는 해당 라벨을 보고하지 않는다', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><title>keep</title><rect width="10" height="10"/></svg>';
+    const { result } = SvgOptimizer.optimize(svg);
+    expect(result.optimizations).not.toContain('gradient optimization');
+    expect(result.optimizations).not.toContain('unused definitions removal');
+    expect(result.optimizations).toContain('metadata removal');
   });
 });
 

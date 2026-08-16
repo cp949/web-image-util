@@ -57,33 +57,38 @@ export class SvgOptimizer {
     try {
       // 1. 메타데이터 제거(참조되는 id는 보존).
       if (options.removeMetadata) {
+        const before = optimizedSvg;
         const parsed = parseAndClassifySvg(optimizedSvg);
         const referencedIds = parsed.ok ? collectReferencedIds(parsed.doc) : null;
         optimizedSvg = removeMetadata(optimizedSvg, referencedIds);
-        optimizations.push('metadata removal');
+        if (optimizedSvg !== before) optimizations.push('metadata removal');
       }
 
       // 2. path 단순화.
       if (options.simplifyPaths) {
+        const before = optimizedSvg;
         optimizedSvg = simplifyPaths(optimizedSvg, options.precision);
-        optimizations.push('path simplification');
+        if (optimizedSvg !== before) optimizations.push('path simplification');
       }
 
       // 3. 그라디언트 최적화.
       if (options.optimizeGradients) {
+        const before = optimizedSvg;
         optimizedSvg = optimizeGradients(optimizedSvg);
-        optimizations.push('gradient optimization');
+        if (optimizedSvg !== before) optimizations.push('gradient optimization');
       }
 
       // 4. 사용되지 않는 정의 제거.
       if (options.removeUnusedDefs) {
+        const before = optimizedSvg;
         optimizedSvg = removeUnusedDefs(optimizedSvg);
-        optimizations.push('unused definitions removal');
+        if (optimizedSvg !== before) optimizations.push('unused definitions removal');
       }
 
       // 5. 공백 정리.
+      const beforeWhitespace = optimizedSvg;
       optimizedSvg = cleanupWhitespace(optimizedSvg);
-      optimizations.push('whitespace cleanup');
+      if (optimizedSvg !== beforeWhitespace) optimizations.push('whitespace cleanup');
 
       const optimizedSize = optimizedSvg.length;
       const processingTimeMs = performance.now() - startTime;
