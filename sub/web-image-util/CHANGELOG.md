@@ -85,7 +85,7 @@
 
 ### 수정
 
-- Fixed: `composeImages()`의 canvas 크기 상한 검증(`DIMENSION_TOO_LARGE`)과 core 출력 경로(`processImage()`)의 대형 canvas 경고가 브라우저와 무관하게 16384px(safari 기준) 하드코딩 값을 썼던 문제를 수정합니다. 이제 두 검사 모두 브라우저별 실제 Canvas 최대 안전 치수(`readMaxSafeCanvasDimension()`)를 참조합니다 — chrome/firefox/edge는 32767px, safari와 미상 브라우저는 기존과 동일한 16384px입니다. 이전에 `DIMENSION_TOO_LARGE`로 거부되거나 경고가 뜨던 16384~32767px 사이의 입력이 chrome/firefox/edge에서는 더 이상 거부·경고되지 않습니다(반대 방향 변화 없음).
+- Fixed: `composeImages()`의 canvas 크기 상한 검증(`DIMENSION_TOO_LARGE`)과 core 출력 경로(`processImage()`)의 대형 canvas 경고가 브라우저와 무관하게 safari 기준 하드코딩 값을 썼던 문제를 수정합니다. 이제 두 검사 모두 브라우저별 실제 Canvas 최대 안전 치수(`readMaxSafeCanvasDimension()`)를 참조합니다. `composeImages()`의 한 변 거부 기준은 chrome/firefox/edge에서 16384px에서 32767px로 늘어납니다. core 출력 경로의 경고 면적 임계값은 같은 브라우저에서 (16384px)²에서 (32767px)²로 늘어납니다. safari와 미상 브라우저는 기존 16384px·(16384px)² 기준을 유지합니다(반대 방향 변화 없음).
 - Fixed: `extractSvgDimensions()`(및 이를 쓰는 `getImageDimensions()`/`getImageInfo()`)가 실제 렌더 경로(`enhanceSvgForBrowser()`)와 다른 크기를 보고하던 문제를 수정합니다. `viewBox`가 없는 SVG는 이제 렌더 경로와 동일하게 콘텐츠 BBox 우선(fit-content) 정책으로 유효 크기를 산출합니다.
   - 크기 정보가 전혀 없는 SVG의 폴백이 `100×100`에서 `512×512`(렌더 경로의 `defaultSize`)로 바뀝니다.
 - Fixed: 입력 단계 진단 경고(`collectInputPolicyWarnings`)가 이벤트 핸들러 속성 판정을 위협 정책 leaf(`isEventHandlerAttributeName`)와 다른 기준(`startsWith('on')`)으로 인라인 복제해, 속성명 `"on"` 단독처럼 실제로는 이벤트 핸들러가 아닌 값에도 경고를 잘못 보고하던 문제를 수정합니다. strict 집행 엔진(`enforceStrictDomPolicy`)의 속성 제거 동작은 바뀌지 않습니다.

@@ -53,7 +53,7 @@ export interface ComposeLayer {
 /** 좌표 지정 레이어 합성 */
 export interface ComposeLayersSpec {
   type: 'layers';
-  /** 출력 canvas 크기(px). 반올림되어 적용된다. 반올림 후 0 이하·비유한수·한 변 16384 초과는 오류 */
+  /** 출력 canvas 크기(px). 반올림되어 적용된다. 반올림 후 0 이하·비유한수·브라우저별 한 변 상한 초과는 오류 */
   width: number;
   height: number;
   /** CSS 색상. 생략 시 투명 배경 */
@@ -68,7 +68,8 @@ export interface ComposeLayersSpec {
  * 행 수는 항상 `ceil(images.length / columns)`로 파생되므로 이미지가
  * 잘리는 조합이 없다. 셀·canvas 크기는 입력에서 파생된다:
  * `cellW = max(이미지 너비)`, `canvasW = columns*cellW + (columns+1)*spacing`
- * (높이 동형). 파생 크기의 한 변이 16384를 넘으면 DIMENSION_TOO_LARGE 오류다.
+ * (높이 동형). 파생 크기의 한 변이 브라우저별 Canvas 최대 안전 치수를 넘으면
+ * DIMENSION_TOO_LARGE 오류다.
  */
 export interface ComposeGridSpec {
   type: 'grid';
@@ -92,7 +93,7 @@ export interface ComposeCollageSpec {
   type: 'collage';
   /** 빈 배열 허용 — 배경만 그린 canvas */
   images: readonly HTMLImageElement[];
-  /** 출력 canvas 크기(px). 반올림되어 적용된다. 반올림 후 0 이하·비유한수·한 변 16384 초과는 오류 */
+  /** 출력 canvas 크기(px). 반올림되어 적용된다. 반올림 후 0 이하·비유한수·브라우저별 한 변 상한 초과는 오류 */
   width: number;
   height: number;
   /** 기본 '#ffffff' */

@@ -15,11 +15,6 @@ import {
   type LazyOperation,
   renderLayout,
 } from '../../../src/core/single-renderer.internal';
-import {
-  resetCanvasLimitProbe,
-  setCanvasLimitProbe,
-} from '../../../src/utils/browser-capabilities/canvas-limits.internal';
-import { productionLog } from '../../../src/utils/debug.internal';
 
 // naturalWidth / naturalHeight 를 제어하는 헬퍼
 function createMockImage(naturalWidth: number, naturalHeight: number): HTMLImageElement {
@@ -58,7 +53,7 @@ function makeLayout(overrides: Partial<FinalLayout> = {}): FinalLayout {
 // analyzeAllOperations
 // ============================================================================
 
-describe('analyzeAllOperations', () => {
+describe('analyzeAllOperations — 레이아웃 계산', () => {
   describe('연산 없음 — 기본 레이아웃', () => {
     it('연산이 없으면 canvas 크기가 소스 이미지 크기와 같다', () => {
       const img = createMockImage(800, 600);
@@ -196,7 +191,7 @@ describe('analyzeAllOperations', () => {
 // renderLayout
 // ============================================================================
 
-describe('renderLayout', () => {
+describe('renderLayout — canvas 렌더링', () => {
   // jsdom 은 ctx 메서드를 생성 시점에 인스턴스 own property 로 바인딩하므로,
   // pool 이 재활용한 canvas 의 ctx 는 이전 테스트의 spy 를 물고 있을 수 있다.
   // 테스트 간 pool 을 비워 항상 새 ctx 가 만들어지게 한다.
@@ -466,66 +461,6 @@ describe('renderLayout', () => {
         lease?.release();
         fillRectSpy.mockRestore();
       }
-    });
-  });
-
-  describe('대형 canvas 경고', () => {
-    afterEach(() => {
-      resetCanvasLimitProbe();
-    });
-
-    it('면적이 16384^2 를 넘으면 오류 없이 경고만 남긴다', () => {
-      // 실제 초대형 canvas 할당을 피하기 위해 acquire 를 작은 canvas 로 대체한다
-      const small = document.createElement('canvas');
-      small.width = 10;
-      small.height = 10;
-      vi.spyOn(CanvasPool.getInstance(), 'acquire').mockReturnValue(small);
-      const warnSpy = vi.spyOn(productionLog, 'warn').mockImplementation(() => {});
-      const source = createDrawableSource(100, 100);
-
-      const lease = renderLayout(source, makeLayout({ width: 20000, height: 20000 }));
-
-      expect(warnSpy).toHaveBeenCalledTimes(1);
-      // 가짜 canvas 를 pool 에 넣지 않도록 소유권을 회수한다
-      lease.detach();
-    });
-
-    it('일반 크기에서는 경고하지 않는다', () => {
-      const warnSpy = vi.spyOn(productionLog, 'warn').mockImplementation(() => {});
-      const source = createDrawableSource(100, 100);
-
-      const lease = renderLayout(source, makeLayout());
-
-      expect(warnSpy).not.toHaveBeenCalled();
-      lease.release();
-    });
-
-    it('probe가 더 큰 상한을 돌려주면 이전에 경고하던 크기가 더 이상 경고하지 않는다', () => {
-      setCanvasLimitProbe({ read: () => 40000 }); // maxCanvasArea = 1.6e9
-      const small = document.createElement('canvas');
-      small.width = 10;
-      small.height = 10;
-      vi.spyOn(CanvasPool.getInstance(), 'acquire').mockReturnValue(small);
-      const warnSpy = vi.spyOn(productionLog, 'warn').mockImplementation(() => {});
-      const source = createDrawableSource(100, 100);
-
-      // 20000x20000 = 4e8 — 옛 기본 상한(16384^2 ≈ 2.68e8)은 넘지만 새 상한은 안 넘는다
-      const lease = renderLayout(source, makeLayout({ width: 20000, height: 20000 }));
-
-      expect(warnSpy).not.toHaveBeenCalled();
-      lease.detach();
-    });
-
-    it('probe가 더 작은 상한을 돌려주면 이전에 경고하지 않던 크기도 경고한다', () => {
-      setCanvasLimitProbe({ read: () => 1000 }); // maxCanvasArea = 1e6
-      const warnSpy = vi.spyOn(productionLog, 'warn').mockImplementation(() => {});
-      const source = createDrawableSource(100, 100);
-
-      // 2000x2000 = 4e6 — 옛 기본 상한으로는 경고 안 뜨던 크기
-      const lease = renderLayout(source, makeLayout({ width: 2000, height: 2000 }));
-
-      expect(warnSpy).toHaveBeenCalledTimes(1);
-      lease.release();
     });
   });
 

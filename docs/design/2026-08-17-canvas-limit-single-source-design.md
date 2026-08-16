@@ -99,9 +99,9 @@ if (width * height > maxCanvasArea) {
 
 ## 테스트 계약
 
-**무변경** — 기존 `compose.test.ts`("canvas 크기가 16384px를 넘으면 DIMENSION_TOO_LARGE를 던진다")·`single-renderer.test.ts`("대형 canvas 경고" 2개)는 jsdom 기본 `navigator.userAgent`가 어떤 known 브라우저에도 안 걸려 probe가 `undefined`를 돌려주고 fallback(16384)으로 떨어진다 — 이전 하드코딩 값과 동일해 그대로 통과한다.
+**fallback 회귀 계약** — jsdom 기본 `navigator.userAgent`가 어떤 known 브라우저에도 안 걸려 probe가 `undefined`를 돌려주고 fallback(16384)으로 떨어진다. 기존 하드코딩 값과 동일한 `composeImages()` 거부·single-renderer 경고 계약을 그대로 검증한다. 후속 리뷰에서 파일 크기 기준을 따라 공통 canvas 검증은 `compose-common.test.ts`, 대형 canvas 경고는 `single-renderer-canvas-warning.test.ts`로 분리했다.
 
-**신규 — `tests/unit/composition/compose.test.ts`**: `setCanvasLimitProbe`/`resetCanvasLimitProbe`를 `../../../src/utils/browser-capabilities/canvas-limits.internal`에서 import, `afterEach`에서 `resetCanvasLimitProbe()`.
+**신규 — `tests/unit/composition/compose-common.test.ts`**: `setCanvasLimitProbe`/`resetCanvasLimitProbe`를 `../../../src/utils/browser-capabilities/canvas-limits.internal`에서 import, `afterEach`에서 `resetCanvasLimitProbe()`.
 
 ```ts
 it('probe가 chrome급 상한(32767)을 돌려주면 그 값을 실제 거부 기준으로 쓴다', async () => {
@@ -118,7 +118,7 @@ it('probe가 chrome급 상한(32767)을 돌려주면 그 값을 실제 거부 �
 });
 ```
 
-**신규 — `tests/unit/core/single-renderer.test.ts`**: 같은 probe import, `afterEach`에서 `resetCanvasLimitProbe()`.
+**신규 — `tests/unit/core/single-renderer-canvas-warning.test.ts`**: 같은 probe import, `afterEach`에서 `resetCanvasLimitProbe()`.
 
 ```ts
 describe('대형 canvas 경고', () => {
@@ -153,7 +153,7 @@ describe('대형 canvas 경고', () => {
 ## 문서 계약
 
 - `docs/architecture.md:61` — `canvas-limits.internal.ts` 행 설명에 "`composition/compose.ts`의 canvas 크기 상한 검증(`DIMENSION_TOO_LARGE`)과 `core/single-renderer.internal.ts`의 대형 canvas 경고도 이 값을 직접 참조한다" 추가.
-- `CHANGELOG.md` `[Unreleased]` → `### 수정`: chrome/firefox/edge에서 `composeImages()`의 `DIMENSION_TOO_LARGE` 거부 기준과 core 출력 경로의 대형 canvas 경고 임계값이 16384px(safari 기준)에서 브라우저 실제 상한(32767px)으로 넓어짐을 기재. safari/미상 브라우저는 무변화. Breaking 아님 — 이전에 거부/경고되던 입력이 더 이상 거부/경고되지 않는 방향으로만 바뀐다(반대 방향 없음).
+- `CHANGELOG.md` `[Unreleased]` → `### 수정`: chrome/firefox/edge에서 `composeImages()`의 `DIMENSION_TOO_LARGE` 한 변 거부 기준이 16384px에서 32767px로, core 출력 경로의 대형 canvas 경고 면적 임계값이 (16384px)²에서 (32767px)²로 넓어짐을 기재. safari/미상 브라우저는 무변화. Breaking 아님 — 이전에 거부되거나 경고되던 입력의 일부가 더 이상 거부·경고되지 않는 방향으로만 바뀐다(반대 방향 없음).
 
 ## 비범위
 
