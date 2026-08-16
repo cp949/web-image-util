@@ -375,9 +375,9 @@ export class OutputPipeline {
  * 입력의 투명도 유무를 알 수 없다. 그래서 폴백은 알파를 보존하는 png다.
  * 썸네일 프리셋(presets/index.ts의 createThumbnail)은 사진 입력을 전제로 하므로
  * 같은 상황에서 jpeg로 떨어진다 — 의도된 차이다.
- * `/advanced` 서브엔트리의 `SmartFormatSelector.selectOptimalFormat()`(픽셀 샘플링 분석)·
- * `FormatDetector.getBestFormat()`(avif 우선 참고용 정책)도 이 함수와 서로 무관하게 "최적
- * 포맷"을 정의한다 — 이 세 곳(프리셋 폴백 제외) 다 의도적으로 다른 무게의 판정이라 병합 대상은 아니다.
+ * `/advanced` 서브엔트리의 `SmartFormatSelector.selectOptimalFormat()`(픽셀 샘플링 분석)도
+ * 이 함수와 서로 무관하게 "최적 포맷"을 정의한다 — 이 두 곳(프리셋 폴백 제외) 다 의도적으로
+ * 다른 무게의 판정이라 병합 대상은 아니다.
  */
 function getBestFormat(): OutputFormat {
   if (detectCanvasFormatSupport('webp')) {
