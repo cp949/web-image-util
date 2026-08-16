@@ -1,4 +1,5 @@
 import { readMemoryBudget, requestMemoryRelief } from '../utils/browser-capabilities/index';
+import { processInChunks } from '../utils/chunked-batch-runner.internal';
 import { productionLog } from '../utils/debug.internal';
 import { CanvasPool } from './canvas-pool.internal';
 import { createImageError } from './error-helpers';
@@ -409,39 +410,28 @@ export class HighResolutionManager {
     } = {}
   ): Promise<ProcessingResult[]> {
     const { concurrency = 2, onBatchProgress, ...processingOptions } = options;
-    const results: ProcessingResult[] = new Array(images.length);
     let completed = 0;
 
-    // Divide images into chunks for parallel processing
-    const chunks: HTMLImageElement[][] = [];
-    for (let i = 0; i < images.length; i += concurrency) {
-      chunks.push(images.slice(i, i + concurrency));
-    }
-
-    for (const chunk of chunks) {
-      const chunkPromises = chunk.map(async (img, chunkIndex) => {
-        const globalIndex = chunks.indexOf(chunk) * concurrency + chunkIndex;
-
+    return processInChunks(
+      images,
+      concurrency,
+      async (img, index) => {
         try {
-          const result = await HighResolutionManager.smartResize(img, targetWidth, targetHeight, processingOptions);
-
-          results[globalIndex] = result;
-          completed++;
-          onBatchProgress?.(completed, images.length);
-
-          return result;
+          return await HighResolutionManager.smartResize(img, targetWidth, targetHeight, processingOptions);
         } catch (error) {
           throw createImageError('RESIZE_FAILED', {
             cause: error,
-            context: { debug: { stage: 'Batch processing', index: globalIndex } },
+            context: { debug: { stage: 'Batch processing', index } },
           });
         }
-      });
-
-      await Promise.all(chunkPromises);
-    }
-
-    return results;
+      },
+      {
+        onItemComplete: () => {
+          completed++;
+          onBatchProgress?.(completed, images.length);
+        },
+      }
+    );
   }
 
   /**

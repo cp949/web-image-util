@@ -4,6 +4,7 @@
  * @description Efficiently processes multiple images without complex monitoring
  */
 
+import { processInChunks } from '../utils/chunked-batch-runner.internal';
 import { AutoMemoryManager } from './auto-memory-manager.internal';
 import type { ResizePerformanceOptions } from './performance-config';
 import { getPerformanceConfig, type ResizeProfile } from './performance-config';
@@ -21,9 +22,10 @@ export interface BatchResizeJob<T = any> {
 /**
  * Simplified batch resizer
  *
- * `/advanced` 서브엔트리의 `AdvancedImageProcessor.batchProcess()`도 concurrency 기반
- * 청크 실행을 별도로 구현한다 — 런타임 구현끼리 호출하거나 로직을 공유하지 않는다. 이쪽은 timeout과
- * `AutoMemoryManager.checkAndOptimize()` 메모리 점검을 갖고 progress 콜백은 없다;
+ * `/advanced` 서브엔트리의 `AdvancedImageProcessor.batchProcess()`도 청크 실행에 같은
+ * seam(`processInChunks()`, `utils/chunked-batch-runner.internal.ts`)을 쓴다 — 다만 실행기
+ * 자체를 합치지는 않았다(docs/maintenance-risks.md Low 항목, 별도 카드로 보류). 이쪽은
+ * timeout과 `AutoMemoryManager.checkAndOptimize()` 메모리 점검을 갖고 progress 콜백은 없다;
  * `batchProcess()`는 반대로 `onProgress`/`onImageComplete` 콜백을 갖고 timeout·메모리
  * 점검은 없다. 필요에 따라 골라 쓰되, 기능 추가 시 다른 쪽도 같이 볼 것.
  *
@@ -50,22 +52,10 @@ export class BatchResizer {
   async processAll<T>(jobs: BatchResizeJob<T>[]): Promise<T[]> {
     const concurrency = this.config.concurrency ?? 2;
     const timeout = this.config.timeout ?? 30;
-    const results: T[] = [];
 
-    // Process in chunks
-    for (let i = 0; i < jobs.length; i += concurrency) {
-      const chunk = jobs.slice(i, i + concurrency);
-
-      // Memory check
-      await this.memoryManager.checkAndOptimize();
-
-      // Concurrent processing (with timeout)
-      const chunkResults = await Promise.all(chunk.map((job) => this.runWithTimeout(job.operation, timeout * 1000)));
-
-      results.push(...chunkResults);
-    }
-
-    return results;
+    return processInChunks(jobs, concurrency, (job) => this.runWithTimeout(job.operation, timeout * 1000), {
+      beforeChunk: () => this.memoryManager.checkAndOptimize(),
+    });
   }
 
   /**

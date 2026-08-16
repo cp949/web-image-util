@@ -10,6 +10,7 @@ import type { FilterChain } from '../filters/plugin-system';
 import { applyFilterChain, getMissingFilterNames, validateFilterChain } from '../filters/plugin-system';
 import type { ImageFormat } from '../types';
 import { ImageProcessError } from '../types';
+import { processInChunks } from '../utils/chunked-batch-runner.internal';
 import { productionLog } from '../utils/debug.internal';
 import { formatToMimeType } from '../utils/format-utils';
 import type { AutoProcessingResult } from './auto-high-res';
@@ -297,8 +298,9 @@ export class AdvancedImageProcessor {
   /**
    * Batch processing - efficiently process multiple images
    *
-   * 같은 `/advanced` 배럴로 재노출되는 `BatchResizer.processAll()`(`core/batch-resizer.ts`)도 concurrency 기반
-   * 청크 실행을 별도로 구현한다 — 런타임 구현끼리 호출하거나 로직을 공유하지 않는다. 이쪽은 `onProgress`/
+   * 같은 `/advanced` 배럴로 재노출되는 `BatchResizer.processAll()`(`core/batch-resizer.ts`)도 청크 실행에
+   * 같은 seam(`processInChunks()`, `utils/chunked-batch-runner.internal.ts`)을 쓴다 — 다만 실행기 자체를
+   * 합치지는 않았다(docs/maintenance-risks.md Low 항목, 별도 카드로 보류). 이쪽은 `onProgress`/
    * `onImageComplete` 콜백을 갖고 timeout·`AutoMemoryManager` 메모리 점검은 없다;
    * `BatchResizer`는 반대로 timeout·메모리 점검을 갖고 progress 콜백은 없다.
    */
@@ -315,40 +317,27 @@ export class AdvancedImageProcessor {
     } = {}
   ): Promise<AdvancedProcessingResult[]> {
     const { concurrency = 2, onProgress, onImageComplete } = globalOptions;
-
-    const results: AdvancedProcessingResult[] = new Array(sources.length);
     let completed = 0;
 
-    // Divide into chunks for parallel processing
-    const chunks: (typeof sources)[] = [];
-    for (let i = 0; i < sources.length; i += concurrency) {
-      chunks.push(sources.slice(i, i + concurrency));
-    }
-
-    for (const chunk of chunks) {
-      const chunkPromises = chunk.map(async (item, chunkIndex) => {
-        const globalIndex = chunks.indexOf(chunk) * concurrency + chunkIndex;
-
+    return processInChunks(
+      sources,
+      concurrency,
+      async (item, index) => {
         try {
-          const result = await AdvancedImageProcessor.processImage(item.image, item.options);
-
-          results[globalIndex] = result;
-          completed++;
-
-          onProgress?.(completed, sources.length, item.name);
-          onImageComplete?.(globalIndex, result);
-
-          return result;
+          return await AdvancedImageProcessor.processImage(item.image, item.options);
         } catch (error) {
-          productionLog.error(`Image processing failed (${item.name || globalIndex}):`, error);
+          productionLog.error(`Image processing failed (${item.name || index}):`, error);
           throw error;
         }
-      });
-
-      await Promise.all(chunkPromises);
-    }
-
-    return results;
+      },
+      {
+        onItemComplete: (index, result) => {
+          completed++;
+          onProgress?.(completed, sources.length, sources[index].name);
+          onImageComplete?.(index, result);
+        },
+      }
+    );
   }
 
   /**

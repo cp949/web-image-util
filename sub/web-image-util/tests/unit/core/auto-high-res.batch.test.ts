@@ -48,7 +48,7 @@ describe('AutoHighResProcessor.batchSmartResize', () => {
     expect(onProgress).toHaveBeenCalledWith(2, 2, 'beta');
   });
 
-  it('onImageComplete 에 글로벌 인덱스와 결과를 전달한다', async () => {
+  it('onImageComplete에 원본 배열 index와 결과를 전달한다', async () => {
     vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
 
     const onImageComplete = vi.fn();
@@ -90,7 +90,7 @@ describe('AutoHighResProcessor.batchSmartResize', () => {
     expect(results[1].canvas.width).toBe(222);
   });
 
-  it('concurrency=2 환경에서 onImageComplete 는 완료 순서와 무관하게 globalIndex 를 올바르게 전달한다', async () => {
+  it('concurrency=2 환경에서 onImageComplete는 완료 순서와 무관하게 원본 배열 index를 전달한다', async () => {
     const imgAlpha = createMockImage(100, 100);
     const imgBeta = createMockImage(100, 100);
     const alphaCanvas = document.createElement('canvas');
@@ -126,7 +126,7 @@ describe('AutoHighResProcessor.batchSmartResize', () => {
     await expect(AutoHighResProcessor.batchSmartResize(images, { concurrency: 1 })).rejects.toThrow('처리 실패');
   });
 
-  it('concurrency=2 + 3장: 두 번째 chunk 의 globalIndex 가 concurrency(=2) 여야 한다', async () => {
+  it('concurrency=2 + 3장에서 두 번째 청크의 첫 항목 index는 2다', async () => {
     const imgs = [0, 1, 2].map(() => createMockImage(100, 100));
     const resultCanvases = [0, 1, 2].map((i) => {
       const c = document.createElement('canvas');
@@ -152,7 +152,7 @@ describe('AutoHighResProcessor.batchSmartResize', () => {
     expect(onImageComplete).toHaveBeenCalledWith(2, expect.objectContaining({ canvas: resultCanvases[2] }));
   });
 
-  it('concurrency=2 + 4장: 두 번째 chunk 가 꽉 찬 경우 globalIndex 3까지 정확히 매핑된다', async () => {
+  it('concurrency=2 + 4장에서 두 번째 청크의 항목은 index 2와 3에 매핑된다', async () => {
     const imgs = [0, 1, 2, 3].map(() => createMockImage(100, 100));
     const resultCanvases = [0, 1, 2, 3].map((i) => {
       const c = document.createElement('canvas');

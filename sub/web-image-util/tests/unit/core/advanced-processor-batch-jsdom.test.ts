@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdvancedProcessingResult } from '../../../src/core/advanced-processor';
 import { AdvancedImageProcessor } from '../../../src/core/advanced-processor';
 
-// 더미 AdvancedProcessingResult 생성
+/** 실제 이미지 처리 없이 batch 반환 계약을 검증할 더미 결과를 만든다. */
 function makeDummyResult(): AdvancedProcessingResult {
   const canvas = document.createElement('canvas');
   canvas.width = 100;
@@ -28,9 +28,7 @@ function makeDummyResult(): AdvancedProcessingResult {
   };
 }
 
-// 서로 다른 객체로 구성된 source 픽스처 배열 생성
-// chunks 는 sources.slice() 로 만들어지므로 각 청크 배열은 항상 서로 다른 객체다.
-// 단, globalIndex 계산 시 sources 원소를 직접 사용하지 않으므로 객체 동일성은 무관하다.
+/** 원본 배열 index와 image/options 전달 관계를 검증할 독립 source 픽스처를 만든다. */
 function createSources(count: number) {
   return Array.from({ length: count }, (_, i) => {
     const img = document.createElement('img');
@@ -44,7 +42,7 @@ function createSources(count: number) {
   });
 }
 
-// microtask 큐를 모두 소진한 뒤 매크로태스크 큐로 넘어가도록 대기
+/** 청크 완료 뒤 다음 청크가 시작될 때까지 비동기 큐를 진행한다. */
 function flushAsync() {
   return new Promise<void>((r) => setTimeout(r, 0));
 }
@@ -256,7 +254,7 @@ describe('AdvancedImageProcessor.batchProcess concurrency / 콜백 시퀀스', (
   // onImageComplete 콜백
   // --------------------------------------------------------------------------
   describe('onImageComplete 콜백', () => {
-    it('globalIndex 0~4 에서 각 1회씩 호출된다', async () => {
+    it('원본 배열 index 0~4에서 각 1회씩 호출된다', async () => {
       const completedIndices: number[] = [];
       const onImageComplete = (index: number) => completedIndices.push(index);
 

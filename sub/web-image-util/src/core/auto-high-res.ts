@@ -7,6 +7,7 @@ import { HighResolutionDetector, type ImageAnalysis, ProcessingStrategy } from '
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
 import { getResizeStrategyAdapter } from '../base/resize-strategy.internal';
+import { processInChunks } from '../utils/chunked-batch-runner.internal';
 import { productionLog } from '../utils/debug.internal';
 
 /**
@@ -269,45 +270,34 @@ export class AutoHighResProcessor {
   ): Promise<AutoProcessingResult[]> {
     const { priority = 'balanced', concurrency = 2, onProgress, onImageComplete } = options;
 
-    const results: AutoProcessingResult[] = new Array(images.length);
     let completed = 0;
 
-    // Divide into chunks for parallel processing
-    const chunks: (typeof images)[] = [];
-    for (let i = 0; i < images.length; i += concurrency) {
-      chunks.push(images.slice(i, i + concurrency));
-    }
-
-    for (const chunk of chunks) {
-      const chunkPromises = chunk.map(async (imageItem, chunkIndex) => {
-        const globalIndex = chunks.indexOf(chunk) * concurrency + chunkIndex;
+    return processInChunks(
+      images,
+      concurrency,
+      async (imageItem, index) => {
         const { img, targetWidth, targetHeight, name } = imageItem;
 
         try {
-          const result = await AutoHighResProcessor.smartResize(img, targetWidth, targetHeight, {
+          return await AutoHighResProcessor.smartResize(img, targetWidth, targetHeight, {
             priority,
             onProgress: (progress, message) => {
               // Individual image progress is not reflected in overall (too complex)
             },
           });
-
-          results[globalIndex] = result;
-          completed++;
-
-          onProgress?.(completed, images.length, name);
-          onImageComplete?.(globalIndex, result);
-
-          return result;
         } catch (error) {
-          productionLog.error(`Image processing failed (${name || globalIndex}):`, error);
+          productionLog.error(`Image processing failed (${name || index}):`, error);
           throw error;
         }
-      });
-
-      await Promise.all(chunkPromises);
-    }
-
-    return results;
+      },
+      {
+        onItemComplete: (index, result) => {
+          completed++;
+          onProgress?.(completed, images.length, images[index].name);
+          onImageComplete?.(index, result);
+        },
+      }
+    );
   }
 
   /**

@@ -2,7 +2,7 @@
  * HighResolutionManager.batchSmartResize 행동 테스트
  *
  * 일괄 처리 함수는 내부적으로 smartResize 를 위임하므로 vi.spyOn 으로 격리하고
- * - 반환 배열 길이 / globalIndex 매핑
+ * - 반환 배열 길이 / 원본 배열 index 매핑
  * - onBatchProgress 콜백 계약
  * - smartResize 전달 인자(targetWidth/Height/processingOptions)
  * - 한 이미지 실패 시 ImageProcessError(RESIZE_FAILED) 래핑과 컨텍스트 보존
@@ -19,7 +19,7 @@ describe('HighResolutionManager.batchSmartResize', () => {
   beforeEach(() => {
     // batchSmartResize 는 내부적으로 smartResize 를 위임하므로 spy 로 격리
     // mockImplementation 으로 호출마다 고유한 canvas 를 반환해
-    // 결과 배열의 구멍(undefined)과 globalIndex 매핑 오류를 검출 가능하게 한다
+    // 결과 배열의 구멍(undefined)과 원본 배열 index 매핑 오류를 검출 가능하게 한다
     smartResizeSpy = vi.spyOn(HighResolutionManager, 'smartResize').mockImplementation(async (img) => {
       const canvas = document.createElement('canvas');
       (canvas as any).__imageRef = img;
@@ -99,7 +99,7 @@ describe('HighResolutionManager.batchSmartResize', () => {
 
   it('결과 배열에 undefined 구멍이 없다(3개 입력, 청크 2개)', async () => {
     // concurrency=2 기본값 → chunk[0]=[img0,img1], chunk[1]=[img2]
-    // globalIndex 오류 시 results[2] 가 sparse hole 로 남을 수 있다
+    // 원본 배열 index 오류 시 results[2] 가 sparse hole 로 남을 수 있다
     // Array.from 으로 sparse hole 을 실제 undefined 로 구체화한 뒤 단정
     const images = [createMockImage(100, 100), createMockImage(200, 200), createMockImage(150, 150)];
     const results = await HighResolutionManager.batchSmartResize(images, 50, 50);
@@ -107,8 +107,8 @@ describe('HighResolutionManager.batchSmartResize', () => {
     expect(Array.from(results)).not.toContain(undefined);
   });
 
-  it('3개 이미지(청크 2개) — results[i]는 images[i]에 대응한다(globalIndex 매핑 검증)', async () => {
-    // globalIndex = chunks.indexOf(chunk) * concurrency + chunkIndex
+  it('3개 이미지(청크 2개)에서 results[i]는 images[i]에 대응한다', async () => {
+    // processInChunks() 내부의 index = start + chunkIndex 매핑 검증
     // 오류 시 results[i].canvas.__imageRef 가 images[i] 와 불일치
     const images = [createMockImage(100, 100), createMockImage(200, 200), createMockImage(150, 150)];
     const results = await HighResolutionManager.batchSmartResize(images, 50, 50);
@@ -182,7 +182,7 @@ describe('HighResolutionManager.batchSmartResize', () => {
 
     it('래핑된 에러는 context.debug.stage="Batch processing" 과 실패 index 를 보존한다', async () => {
       const innerError = new Error('boom');
-      // 첫 호출만 실패 → globalIndex=0 (concurrency=2 기본, chunk[0]=[img0,img1])
+      // 첫 호출만 실패 → 원본 배열 index=0 (concurrency=2 기본, 첫 청크=[img0,img1])
       smartResizeSpy.mockRejectedValueOnce(innerError);
       const images = [createMockImage(100, 100), createMockImage(100, 100)];
 
@@ -198,8 +198,8 @@ describe('HighResolutionManager.batchSmartResize', () => {
 
     it('두 번째 이미지(index=1)가 실패하면 context.debug.index 가 1 이다', async () => {
       const innerError = new Error('second boom');
-      // concurrency=1 → chunk[0]=[img0], chunk[1]=[img1]
-      // 첫 호출(img0) 성공, 두 번째 호출(img1) 실패 → globalIndex = 1*1+0 = 1
+      // concurrency=1 → 첫 청크=[img0], 두 번째 청크=[img1]
+      // 첫 호출(img0) 성공, 두 번째 호출(img1) 실패 → 원본 배열 index=1
       smartResizeSpy
         .mockImplementationOnce(async (img: HTMLImageElement) => {
           const canvas = document.createElement('canvas');
