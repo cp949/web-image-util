@@ -52,6 +52,10 @@ export function optimizeGradients(svgString: string): string {
     const doc = parsed.doc;
 
     const gradients = doc.querySelectorAll('linearGradient, radialGradient');
+    if (gradients.length === 0) {
+      return svgString;
+    }
+
     const gradientMap = new Map<string, Element>();
     const replacementMap = new Map<string, string>();
 
@@ -74,6 +78,12 @@ export function optimizeGradients(svgString: string): string {
         replacementMap.set(currentId, originalId);
         gradient.remove();
       }
+    }
+
+    // 병합된 그라디언트가 없으면 참조를 재작성할 것도 없다. 직렬화를 건너뛰어
+    // 마크업 정규화(자기닫힘 태그 등)로 인한 허위 diff를 방지한다.
+    if (replacementMap.size === 0) {
+      return svgString;
     }
 
     rewriteReferencedIds(doc, replacementMap);

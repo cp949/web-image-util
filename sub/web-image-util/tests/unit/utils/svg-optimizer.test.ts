@@ -318,6 +318,30 @@ describe('optimizeGradients 내부 패스', () => {
     expect(result).not.toContain('Gradient');
   });
 
+  it('그라디언트가 없으면 원본 문자열과 값이 동일하다(직렬화를 건너뛴다)', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>';
+    expect(optimizeGradients(svg)).toBe(svg);
+  });
+
+  it('그라디언트가 있어도 병합 대상이 없으면 원본 문자열과 값이 동일하다(직렬화를 건너뛴다)', () => {
+    // 단일 그라디언트: replacementMap이 비어 있어도(중복 없음) 재직렬화가 발생하면 안 됨.
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><defs>' +
+      '<linearGradient id="only"><stop offset="0" stop-color="red"/></linearGradient>' +
+      '</defs><rect fill="url(#only)" width="10" height="10"/></svg>';
+    expect(optimizeGradients(svg)).toBe(svg);
+  });
+
+  it('서로 다른 두 그라디언트만 있으면(병합 없음) 원본 문자열과 값이 동일하다(직렬화를 건너뛴다)', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><defs>' +
+      '<linearGradient id="gx"><stop offset="0" stop-color="red"/></linearGradient>' +
+      '<linearGradient id="gy"><stop offset="0" stop-color="blue"/></linearGradient>' +
+      '</defs><rect fill="url(#gx)" width="5" height="5"/>' +
+      '<rect fill="url(#gy)" width="5" height="5"/></svg>';
+    expect(optimizeGradients(svg)).toBe(svg);
+  });
+
   it('동일한 두 그라디언트 중 하나는 제거된다', () => {
     const sameDef = '<stop offset="0" stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/>';
     const svg =
