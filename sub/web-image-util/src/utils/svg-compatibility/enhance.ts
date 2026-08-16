@@ -7,10 +7,10 @@
  * (`enhanceSvgForBrowserWithDimensions`)도 함께 둔다.
  */
 
+import type { SvgDimensions } from '../svg-dimensions';
+import { extractSvgDimensions, readPositiveLength } from '../svg-dimensions';
 import { parseAndClassifySvg } from '../svg-document.internal';
 import { parseViewBoxValues } from '../svg-length.internal';
-import { extractSvgDimensions, readPositiveLength } from '../svg-dimensions';
-import type { SvgDimensions } from '../svg-dimensions';
 import { addPAR, addRequiredNamespaces, modernizeSvgSyntax } from './attributes.internal';
 import { toMsg } from './message.internal';
 import {
@@ -26,7 +26,7 @@ interface EnhanceCoreResult {
   enhancedSvg: string;
   report: SvgCompatibilityReport;
   /**
-   * fixDimensions가 켜져 있고 파싱이 성공했을 때만 채워진다.
+   * fixDimensions가 켜져 있고 파싱·viewBox 계산이 모두 성공했을 때만 채워진다.
    * 공개 API(enhanceBrowserCompatibility)는 이 필드를 감추고,
    * 파이프라인 전용 facade(enhanceSvgForBrowserWithDimensions)는 그대로 소비한다.
    */
@@ -89,8 +89,15 @@ function enhanceBrowserCompatibilityCore(svgString: string, options: SvgCompatib
   }
 
   // 호환성 보강이 width/height/viewBox를 바꾸기 전에 원본 크기 단서를 스냅샷으로 남긴다.
-  // addRequiredNamespaces/modernizeSvgSyntax/addPAR는 이 속성들을 건드리지 않으므로
-  // 이 시점의 값이 extractSvgDimensions()가 원본 문자열을 독립적으로 파싱했을 때 읽는 값과 같다.
+  // 이 스냅샷과 4)에서 재사용하는 dimensions가 extractSvgDimensions()와 계속 같으려면,
+  // 1~3단계(addRequiredNamespaces/modernizeSvgSyntax/addPAR)가 resolveEffectiveViewBox()
+  // (와 그 안에서 호출되는 heuristicBBox())가 읽는 어떤 속성도 건드리지 않아야 한다 —
+  // width/height/viewBox뿐 아니라 도형 geometry(rect의 x/y/width/height, circle의 cx/cy/r,
+  // polyline/polygon의 points 등)까지 포함하는 더 넓은 불변식이다. 지금은 1~3단계가 이
+  // 속성들을 실제로 건드리지 않고, SVG_RENDERING_OPTIONS.enableLiveBBox가 false라 <use href>
+  // 해석 결과까지 보는 liveGetBBox 경로가 호출 그래프에서 아예 빠져 있어 성립한다.
+  // 이 중 하나라도 깨지면(예: modernizeSvgSyntax가 <use>를 실제로 해석하게 되거나
+  // heuristicBBox가 <image href>를 읽게 되면) 이 동치성은 enableLiveBBox 값과 무관하게 깨진다.
   const originalWidth = readPositiveLength(root.getAttribute('width'));
   const originalHeight = readPositiveLength(root.getAttribute('height'));
   const originalViewBox = parseViewBoxValues(root.getAttribute('viewBox')) ?? undefined;
@@ -108,6 +115,9 @@ function enhanceBrowserCompatibilityCore(svgString: string, options: SvgCompatib
     // 4) viewBox / width / height 정책 적용. 반환값(새로 계산된 viewBox)을 dimensions
     // 산출에 재사용해, extractSvgDimensions()가 같은 문자열에 별도로 수행할
     // parse + BBox 스캔을 없앤다.
+    // 이 호출은 1~3단계가 이미 적용된 DOM 위에서 동작한다 — 그 결과가 원본 문자열을
+    // 그대로 파싱하는 extractSvgDimensions()와 계속 같으려면 위 스냅샷 주석의 불변식이
+    // 유지돼야 한다. 단계 순서를 바꾸거나 1~3단계에 새 변환을 추가할 때 다시 확인한다.
     let dimensions: SvgDimensions | null = null;
     if (opts.fixDimensions) {
       const resolvedBox = applyViewBoxPolicy(root, opts, report, svgString);

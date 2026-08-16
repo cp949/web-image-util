@@ -8,11 +8,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { enhanceBrowserCompatibility } from '../../../src/utils/svg-compatibility';
 import {
-  enhanceSvgForBrowser,
-  enhanceSvgForBrowserWithDimensions,
-} from '../../../src/utils/svg-compatibility/enhance';
-import { extractSvgDimensions } from '../../../src/utils/svg-dimensions';
-import {
   heuristicBBox,
   heuristicBBoxFromString,
   padBBox,
@@ -23,9 +18,15 @@ import {
   getStyleLength,
   sanitizeNum,
 } from '../../../src/utils/svg-compatibility/dimensions.internal';
+import { enhanceSvgForBrowser, enhanceSvgForBrowserWithDimensions } from '../../../src/utils/svg-compatibility/enhance';
 import { toMsg } from '../../../src/utils/svg-compatibility/message.internal';
-import { DEFAULT_OPTIONS, SVG_RENDERING_OPTIONS, type SvgCompatibilityReport } from '../../../src/utils/svg-compatibility/options';
+import {
+  DEFAULT_OPTIONS,
+  SVG_RENDERING_OPTIONS,
+  type SvgCompatibilityReport,
+} from '../../../src/utils/svg-compatibility/options';
 import { applyViewBoxPolicy } from '../../../src/utils/svg-compatibility/viewbox-policy.internal';
+import { extractSvgDimensions } from '../../../src/utils/svg-dimensions';
 
 describe('SVG 호환성 보정', () => {
   it('xlink:href만 있는 참조를 href로 현대화하고 legacy 속성을 제거한다', () => {
@@ -127,6 +128,21 @@ describe('enhanceSvgForBrowserWithDimensions()', () => {
     expect(dimensions).toEqual(extractSvgDimensions(svg));
     expect(dimensions.width).toBe(512);
     expect(dimensions.height).toBe(512);
+  });
+
+  it('파싱된 루트가 <svg>가 아니면(중첩 svg 포함) extractSvgDimensions()로 폴백해 동일한 결과를 낸다', () => {
+    // parseAndClassifySvg()는 documentElement 태그만 보고 root를 판정하므로 루트가 div면
+    // 'other'로 분류되어 core가 dimensions를 null로 남긴다. 반면 extractSvgDimensions()는
+    // querySelector('svg')로 문서 전체에서 중첩된 <svg>를 찾아낸다 — 두 함수가 측정 대상
+    // 요소 자체가 달라지는 유일한 분기이며, dimensions: null 폴백이 이 차이를 흡수한다.
+    const svg =
+      '<div xmlns="http://www.w3.org/1999/xhtml"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20"></svg></div>';
+
+    const { dimensions } = enhanceSvgForBrowserWithDimensions(svg);
+
+    expect(dimensions).toEqual(extractSvgDimensions(svg));
+    expect(dimensions.width).toBe(40);
+    expect(dimensions.height).toBe(20);
   });
 
   it('파싱 실패 입력은 extractSvgDimensions()와 동일하게 에러를 던진다', () => {
@@ -595,6 +611,11 @@ describe('내부 헬퍼 — applyViewBoxPolicy 반환값', () => {
 
     const result = applyViewBoxPolicy(root, SVG_RENDERING_OPTIONS, makeReport(), svg);
 
-    expect(result).toEqual({ minX: 0, minY: 0, width: DEFAULT_OPTIONS.defaultSize.width, height: DEFAULT_OPTIONS.defaultSize.height });
+    expect(result).toEqual({
+      minX: 0,
+      minY: 0,
+      width: DEFAULT_OPTIONS.defaultSize.width,
+      height: DEFAULT_OPTIONS.defaultSize.height,
+    });
   });
 });
