@@ -1,6 +1,5 @@
 import {
-  LARGE_MEMORY_THRESHOLD_MB as POLICY_LARGE_MEMORY_THRESHOLD_MB,
-  MEDIUM_MEMORY_THRESHOLD_MB as POLICY_MEDIUM_MEMORY_THRESHOLD_MB,
+  SMALL_MEMORY_THRESHOLD_MB as POLICY_SMALL_MEMORY_THRESHOLD_MB,
   ProcessingStrategy,
   selectBalancedStrategy,
 } from './strategy-policy.internal';
@@ -8,9 +7,8 @@ import {
 /**
  * High-resolution image processing strategy enum.
  * 정본은 strategy-policy.internal.ts에 있다(전략 어휘 + 4개 티어 함수 단일 소유).
- * 여기서는 그대로 재노출만 해서 기존 `from './high-res-detector.internal'` import
- * 전부(resize-strategy.internal.ts, high-res-manager.ts, auto-high-res.ts,
- * performance-utils.ts, advanced-index.ts의 공개 타입 재노출, 테스트들)가 무변경으로 계속 동작한다.
+ * 여기서는 advanced-index.ts의 공개 타입 export 경로를 유지하기 위해 재노출한다.
+ * 내부 소비자는 정본인 strategy-policy.internal.ts에서 직접 import한다.
  */
 export { ProcessingStrategy };
 
@@ -34,18 +32,9 @@ export interface ImageAnalysis {
  * Analyzes image size and browser environment to determine optimal processing strategy.
  */
 export class HighResolutionDetector {
-  /**
-   * strategy-policy.internal.ts가 소유한 값의 재노출 — 기존 외부 참조
-   * (HighResolutionDetector.MEDIUM_MEMORY_THRESHOLD_MB, 그리고
-   * tests/unit/base/high-res-detector.test.ts의 상수 고정 테스트)가 그대로 동작하도록 남긴다.
-   */
-  static readonly MEDIUM_MEMORY_THRESHOLD_MB = POLICY_MEDIUM_MEMORY_THRESHOLD_MB;
-  static readonly LARGE_MEMORY_THRESHOLD_MB = POLICY_LARGE_MEMORY_THRESHOLD_MB;
-
   // Memory threshold (bytes) — getOptimalChunkSize()만 SMALL을 참조한다.
-  // MEDIUM/LARGE는 strategy-policy.internal.ts의 selectBalancedStrategy()로 옮겨갔다.
   private static readonly MEMORY_THRESHOLDS = {
-    SMALL: 16 * 1024 * 1024, // 16MB
+    SMALL: POLICY_SMALL_MEMORY_THRESHOLD_MB * 1024 * 1024,
   };
 
   // Maximum Canvas size (by browser)

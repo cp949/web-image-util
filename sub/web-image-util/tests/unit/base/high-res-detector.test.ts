@@ -8,6 +8,7 @@ import { HighResolutionDetector } from '../../../src/base/high-res-detector.inte
 // 헬퍼
 // ============================================================================
 
+/** 지정한 표시 치수를 가진 이미지 fixture를 만든다. */
 function createMockImage(width: number, height: number): HTMLImageElement {
   const img = document.createElement('img');
   Object.defineProperty(img, 'width', { value: width, configurable: true });
@@ -17,6 +18,7 @@ function createMockImage(width: number, height: number): HTMLImageElement {
 
 const originalUA = navigator.userAgent;
 
+/** 브라우저별 Canvas 한계 테스트를 위해 userAgent를 교체한다. */
 function setUserAgent(ua: string) {
   Object.defineProperty(navigator, 'userAgent', {
     value: ua,
@@ -280,17 +282,6 @@ describe('HighResolutionDetector', () => {
       expect(smallChunk).toBe(2048);
       expect(largeChunk).toBe(2048);
       expect(largeChunk).toBeLessThanOrEqual(smallChunk);
-    });
-  });
-
-  // ============================================================================
-  // MEDIUM_MEMORY_THRESHOLD_MB / LARGE_MEMORY_THRESHOLD_MB
-  // ============================================================================
-
-  describe('MEDIUM_MEMORY_THRESHOLD_MB / LARGE_MEMORY_THRESHOLD_MB', () => {
-    it('selectFastStrategy/selectHighQualityStrategy가 참조하는 경계값을 고정한다', () => {
-      expect(HighResolutionDetector.MEDIUM_MEMORY_THRESHOLD_MB).toBe(64);
-      expect(HighResolutionDetector.LARGE_MEMORY_THRESHOLD_MB).toBe(256);
     });
   });
 });

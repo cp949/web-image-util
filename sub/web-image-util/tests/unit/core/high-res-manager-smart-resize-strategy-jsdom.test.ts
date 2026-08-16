@@ -8,7 +8,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
-import { ProcessingStrategy } from '../../../src/base/high-res-detector.internal';
+import { HighResolutionDetector, ProcessingStrategy } from '../../../src/base/high-res-detector.internal';
 import { HighResolutionManager, type HighResolutionProgress } from '../../../src/base/high-res-manager';
 import { SteppedProcessor } from '../../../src/base/stepped-processor.internal';
 import { TiledProcessor } from '../../../src/base/tiled-processor.internal';
@@ -274,7 +274,7 @@ describe('HighResolutionManager.smartResize — quality 기반 자동 전략 선
     const stubCanvas = document.createElement('canvas');
     const steppedSpy = vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
 
-    // 5000×5000×4 ≈ 95.4MB — determineStrategy()의 64~256MB 구간 → analysis.strategy = 'stepped'
+    // 5000×5000×4 ≈ 95.4MB — selectBalancedStrategy()의 64~256MB 구간 → analysis.strategy = 'stepped'
     const img = createMockImage(5000, 5000);
     const result = await HighResolutionManager.smartResize(img, 800, 600);
 
@@ -303,6 +303,45 @@ describe('HighResolutionManager.smartResize — quality 기반 자동 전략 선
     const result = await HighResolutionManager.smartResize(img, 200, 200, { quality: 'high' });
 
     expect(result.strategy).toBe(ProcessingStrategy.DIRECT);
+  });
+
+  it('quality="fast" + canvas 안전 치수 초과 + 메모리는 작음 → 캔버스 가드가 우선해 tiled를 고른다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
+
+    const maxDim = HighResolutionDetector.getMaxSafeDimension();
+    // 가로만 한계를 넘고 세로는 1 → 메모리는 미미(≤64MB)하지만 캔버스 한계 초과
+    const img = createMockImage(maxDim + 1, 1);
+    const result = await HighResolutionManager.smartResize(img, 50, 50, { quality: 'fast' });
+
+    expect(tiledSpy).toHaveBeenCalledOnce();
+    expect(result.strategy).toBe(ProcessingStrategy.TILED);
+  });
+
+  it('quality="high" + canvas 안전 치수 초과 + scaleRatio<0.3 이어도 캔버스 가드가 우선해 tiled를 고른다', async () => {
+    const stubCanvas = document.createElement('canvas');
+    const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
+
+    const maxDim = HighResolutionDetector.getMaxSafeDimension();
+    const img = createMockImage(maxDim + 1, 1000);
+    // target을 작게 잡아 scaleRatio < 0.3을 만족시켜도 캔버스 가드가 먼저 걸린다
+    const result = await HighResolutionManager.smartResize(img, 100, 100, { quality: 'high' });
+
+    expect(tiledSpy).toHaveBeenCalledOnce();
+    expect(result.strategy).toBe(ProcessingStrategy.TILED);
+  });
+
+  it('isMemoryLow()=true + canvas 안전 치수 초과 + 메모리는 32MB 이하 → 캔버스 가드가 우선해 tiled를 고른다', async () => {
+    vi.spyOn(HighResolutionManager as any, 'isMemoryLow').mockReturnValue(true);
+    const stubCanvas = document.createElement('canvas');
+    const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
+
+    const maxDim = HighResolutionDetector.getMaxSafeDimension();
+    const img = createMockImage(maxDim + 1, 1);
+    const result = await HighResolutionManager.smartResize(img, 50, 50, { quality: 'high' });
+
+    expect(tiledSpy).toHaveBeenCalledOnce();
+    expect(result.strategy).toBe(ProcessingStrategy.TILED);
   });
 });
 

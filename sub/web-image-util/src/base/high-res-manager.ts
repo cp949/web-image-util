@@ -4,8 +4,14 @@ import { productionLog } from '../utils/debug.internal';
 import { CanvasPool } from './canvas-pool.internal';
 import { createImageError } from './error-helpers';
 import type { ImageAnalysis } from './high-res-detector.internal';
-import { HighResolutionDetector, ProcessingStrategy } from './high-res-detector.internal';
+import { HighResolutionDetector } from './high-res-detector.internal';
 import { getResizeStrategyAdapter } from './resize-strategy.internal';
+import {
+  ProcessingStrategy,
+  selectFastStrategy,
+  selectHighQualityStrategy,
+  selectMemoryEfficientStrategy,
+} from './strategy-policy.internal';
 
 /**
  * High-resolution processing options
@@ -148,70 +154,30 @@ export class HighResolutionManager {
     const memoryCheck = HighResolutionManager.isMemoryLow();
     if (memoryCheck) {
       productionLog.warn('Low memory detected, selecting memory-efficient strategy');
-      return HighResolutionManager.selectMemoryEfficientStrategy(analysis);
+      return selectMemoryEfficientStrategy(
+        analysis.estimatedMemoryMB,
+        analysis.width,
+        analysis.height,
+        analysis.maxSafeDimension
+      );
     }
 
     // Strategy adjustment based on quality settings
     if (opts.quality === 'fast') {
-      return HighResolutionManager.selectFastStrategy(analysis);
+      return selectFastStrategy(analysis.estimatedMemoryMB, analysis.width, analysis.height, analysis.maxSafeDimension);
     } else if (opts.quality === 'high') {
-      return HighResolutionManager.selectHighQualityStrategy(analysis, img, targetWidth, targetHeight);
+      const scaleRatio = Math.min(targetWidth / img.width, targetHeight / img.height);
+      return selectHighQualityStrategy(
+        analysis.estimatedMemoryMB,
+        analysis.width,
+        analysis.height,
+        analysis.maxSafeDimension,
+        scaleRatio,
+        analysis.strategy
+      );
     }
 
-    // Select balanced strategy (default)
-    return analysis.strategy;
-  }
-
-  /**
-   * Select memory efficient strategy
-   * @private
-   *
-   * chunked is now a tiled preset (resize-strategy.internal.ts). The former 128MB and
-   * 32MB branches converge on TILED, leaving 32MB as the direct/tiled boundary.
-   */
-  private static selectMemoryEfficientStrategy(analysis: ImageAnalysis): ProcessingStrategy {
-    if (analysis.estimatedMemoryMB > 32) {
-      return ProcessingStrategy.TILED;
-    }
-    return ProcessingStrategy.DIRECT;
-  }
-
-  /**
-   * Select fast processing strategy
-   * @private
-   *
-   * chunked is now a tiled preset (resize-strategy.internal.ts), so values above 64MB use TILED.
-   */
-  private static selectFastStrategy(analysis: ImageAnalysis): ProcessingStrategy {
-    // Select simplest strategy first for fast processing
-    if (analysis.estimatedMemoryMB <= HighResolutionDetector.MEDIUM_MEMORY_THRESHOLD_MB) {
-      return ProcessingStrategy.DIRECT;
-    }
-    return ProcessingStrategy.TILED;
-  }
-
-  /**
-   * Select high-quality processing strategy
-   * @private
-   */
-  private static selectHighQualityStrategy(
-    analysis: ImageAnalysis,
-    img: HTMLImageElement,
-    targetWidth: number,
-    targetHeight: number
-  ): ProcessingStrategy {
-    // Stepped reduction is advantageous for quality when large reduction is needed
-    const scaleRatio = Math.min(targetWidth / img.width, targetHeight / img.height);
-
-    if (scaleRatio < 0.3 && analysis.estimatedMemoryMB <= HighResolutionDetector.LARGE_MEMORY_THRESHOLD_MB) {
-      return ProcessingStrategy.STEPPED;
-    }
-
-    // Very large images use tile processing
-    if (analysis.estimatedMemoryMB > HighResolutionDetector.LARGE_MEMORY_THRESHOLD_MB) {
-      return ProcessingStrategy.TILED;
-    }
-
+    // Select balanced strategy (default) — HighResolutionDetector.analyzeImage()가 이미 계산해 둔 값
     return analysis.strategy;
   }
 
