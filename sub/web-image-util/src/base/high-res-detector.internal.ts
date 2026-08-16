@@ -1,16 +1,18 @@
-/**
- * High-resolution image processing strategy enum
- */
-export type ProcessingStrategy =
-  | 'direct' // Direct processing (small size)
-  | 'stepped' // Stepped reduction (large size)
-  | 'tiled'; // Tile-based processing (medium to ultra-large sizes, with memory-based presets)
+import {
+  LARGE_MEMORY_THRESHOLD_MB as POLICY_LARGE_MEMORY_THRESHOLD_MB,
+  MEDIUM_MEMORY_THRESHOLD_MB as POLICY_MEDIUM_MEMORY_THRESHOLD_MB,
+  ProcessingStrategy,
+  selectBalancedStrategy,
+} from './strategy-policy.internal';
 
-export const ProcessingStrategy = {
-  DIRECT: 'direct' as const,
-  STEPPED: 'stepped' as const,
-  TILED: 'tiled' as const,
-} as const;
+/**
+ * High-resolution image processing strategy enum.
+ * 정본은 strategy-policy.internal.ts에 있다(전략 어휘 + 4개 티어 함수 단일 소유).
+ * 여기서는 그대로 재노출만 해서 기존 `from './high-res-detector.internal'` import
+ * 전부(resize-strategy.internal.ts, high-res-manager.ts, auto-high-res.ts,
+ * performance-utils.ts, advanced-index.ts의 공개 타입 재노출, 테스트들)가 무변경으로 계속 동작한다.
+ */
+export { ProcessingStrategy };
 
 /**
  * Image analysis result interface
@@ -33,19 +35,17 @@ export interface ImageAnalysis {
  */
 export class HighResolutionDetector {
   /**
-   * Single source for the boundaries selectFastStrategy()/selectHighQualityStrategy()
-   * (high-res-manager.ts) compare against. These used to carry their own 64/256
-   * literals that happened to match MEDIUM/LARGE below — same numbers, different
-   * source, no compiler-enforced link between them.
+   * strategy-policy.internal.ts가 소유한 값의 재노출 — 기존 외부 참조
+   * (HighResolutionDetector.MEDIUM_MEMORY_THRESHOLD_MB, 그리고
+   * tests/unit/base/high-res-detector.test.ts의 상수 고정 테스트)가 그대로 동작하도록 남긴다.
    */
-  static readonly MEDIUM_MEMORY_THRESHOLD_MB = 64;
-  static readonly LARGE_MEMORY_THRESHOLD_MB = 256;
+  static readonly MEDIUM_MEMORY_THRESHOLD_MB = POLICY_MEDIUM_MEMORY_THRESHOLD_MB;
+  static readonly LARGE_MEMORY_THRESHOLD_MB = POLICY_LARGE_MEMORY_THRESHOLD_MB;
 
-  // Memory thresholds (bytes)
+  // Memory threshold (bytes) — getOptimalChunkSize()만 SMALL을 참조한다.
+  // MEDIUM/LARGE는 strategy-policy.internal.ts의 selectBalancedStrategy()로 옮겨갔다.
   private static readonly MEMORY_THRESHOLDS = {
-    SMALL: 16 * 1024 * 1024, // 16MB - direct processing
-    MEDIUM: HighResolutionDetector.MEDIUM_MEMORY_THRESHOLD_MB * 1024 * 1024, // chunk processing
-    LARGE: HighResolutionDetector.LARGE_MEMORY_THRESHOLD_MB * 1024 * 1024, // stepped processing
+    SMALL: 16 * 1024 * 1024, // 16MB
   };
 
   // Maximum Canvas size (by browser)
@@ -86,9 +86,10 @@ export class HighResolutionDetector {
     const pixelCount = width * height;
     const estimatedMemory = pixelCount * HighResolutionDetector.BYTES_PER_PIXEL;
     const estimatedMemoryMB = estimatedMemory / (1024 * 1024);
+    const maxSafeDimension = HighResolutionDetector.getMaxSafeDimension();
 
-    // Determine processing strategy
-    const strategy = HighResolutionDetector.determineStrategy(estimatedMemory, width, height);
+    // Determine processing strategy (balanced tier — strategy-policy.internal.ts)
+    const strategy = selectBalancedStrategy(estimatedMemoryMB, width, height, maxSafeDimension);
 
     // Calculate processing complexity
     const processingComplexity = HighResolutionDetector.calculateComplexity(pixelCount, strategy, estimatedMemoryMB);
@@ -100,7 +101,7 @@ export class HighResolutionDetector {
       totalPixels: pixelCount,
       estimatedMemoryMB: Math.round(estimatedMemoryMB * 100) / 100,
       strategy,
-      maxSafeDimension: HighResolutionDetector.getMaxSafeDimension(),
+      maxSafeDimension,
       recommendedChunkSize: HighResolutionDetector.getOptimalChunkSize(pixelCount),
       processingComplexity,
     };
@@ -130,32 +131,6 @@ export class HighResolutionDetector {
     scaleRatioThreshold: number = HighResolutionDetector.DEFAULT_HIGH_RES_SCALE_RATIO_THRESHOLD
   ): boolean {
     return totalPixels > pixelThreshold || scaleRatio > scaleRatioThreshold;
-  }
-
-  /**
-   * Determine processing strategy
-   * @private
-   */
-  private static determineStrategy(estimatedMemory: number, width: number, height: number): ProcessingStrategy {
-    const maxDimension = HighResolutionDetector.getMaxSafeDimension();
-
-    // Force tile processing when Canvas size limit is exceeded
-    if (width > maxDimension || height > maxDimension) {
-      return ProcessingStrategy.TILED;
-    }
-
-    // Determine strategy based on memory usage
-    // The former CHUNKED range is now TILED. resize-strategy.internal.ts selects
-    // the light preset from analysis.estimatedMemoryMB.
-    if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.SMALL) {
-      return ProcessingStrategy.DIRECT;
-    } else if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.MEDIUM) {
-      return ProcessingStrategy.TILED;
-    } else if (estimatedMemory <= HighResolutionDetector.MEMORY_THRESHOLDS.LARGE) {
-      return ProcessingStrategy.STEPPED;
-    } else {
-      return ProcessingStrategy.TILED;
-    }
   }
 
   /**
