@@ -79,6 +79,9 @@
 - Changed (**Breaking**): `@cp949/web-image-util/advanced`에서 `ImageErrorHandler`·`globalErrorHandler`·`ErrorStats` 타입과 `createAndHandleError()`·`withErrorHandling()`·`getErrorStats()`를 제거했습니다. 실제로 던지는 모든 오류가 거치는 `createImageError()`(내부 17곳)는 이 handler를 전혀 부르지 않았고, `critical-error cleanup`(`CANVAS_CREATION_FAILED` 등에서 `CanvasPool.clear()` + GC 요청)은 프로덕션에서 한 번도 실행되지 않았습니다 — 트리거 지점이 배선되지 않은 채 공개 표면에만 노출돼 있었습니다. 호출하면 동작할 거라 기대한 호출자를 조용히 배신하던 표면입니다.
   - `createImageError()`·`createQuickError()`·`isFormatSupported()`는 영향받지 않습니다 — 실제 오류 생성 경로는 그대로입니다.
   - 오류 발생 시 캔버스 풀 정리·GC 요청이 실제로 필요하면, `createImageError()` 호출부에서 직접 `CanvasPool`을 다루거나 별도 변경으로 명시적으로 배선하세요.
+- Changed (**Breaking**): `@cp949/web-image-util/advanced`에서 `FormatDetector.getBestFormat()`을 제거했습니다. 라이브러리 내부 어디서도 호출하지 않는 유령 표면이었고, core 출력 경로의 실제 기본 포맷 판정(`OutputPipeline`의 내부 `getBestFormat()`, webp>png)이나 `SmartFormatSelector.selectOptimalFormat()`(픽셀 샘플링)과도 무관하게 독자적으로 avif>webp>png/jpeg를 고르는 참고용 정책이었습니다.
+  - `FormatDetector.isSupported()`·`FormatDetector.getSupportedFormats()`는 영향받지 않습니다 — `SmartFormatSelector`가 여전히 `getSupportedFormats()`를 씁니다.
+  - 같은 우선순위 정책이 필요하면 `FormatDetector.isSupported()`로 AVIF→WebP→폴백 순서를 직접 구현하세요.
 
 ### 수정
 
