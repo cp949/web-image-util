@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-08-17
+
 ### 추가
 
 - Added: `resize()`가 `{ fit: 'scale', scale }` 설정을 받습니다. 원본 크기 기준 배율 리사이즈이며 균일 배율(`scale: 1.5`)과 축별 배율(`scale: { sx: 2 }`, `{ sy: 0.5 }`, `{ sx: 2, sy: 0.75 }`)을 지원합니다. shortcut `scale()`/`scaleX()`/`scaleY()`/`scaleXY()`와 동일한 동작입니다.
