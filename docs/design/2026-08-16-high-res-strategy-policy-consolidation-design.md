@@ -108,11 +108,13 @@ detector의 vestigial static 고정 테스트만 제거했다. 나머지 테스�
 "결정"에서 다룬 4개 티어 함수와 별개로, `strategy-policy.internal.ts`가 존재하기 전부터도
 캔버스 한계를 전혀 체크하지 않고 `ProcessingStrategy.DIRECT`를 무조건 선택했다. 저픽셀이면서
 가로/세로 한 축만 극단적으로 큰 이미지(예: 20000×10 파노라마)가 `fastResize()`로 들어오면
-총 픽셀 수(20만)와 스케일 비율(target=source면 1) 둘 다 게이트 미만이라 이 경로를 타고,
-CHANGELOG가 고쳤다고 주장한 바로 그 실패 모드(Safari 16384 한계 초과)가 그대로 재현됐다.
+총 픽셀 수(20만)는 게이트 미만이다. 목표 크기를 5000×10으로 두면 스케일 비율도 경계값 4라
+고해상도 경로를 안 타지만, 소스 너비는 Safari 16384 한계를 초과한다. 단일 Canvas를
+반환하는 API 계약상 최종 목표 치수는 Canvas 한계 이내여야 한다.
 `standardResize()`도 `exceedsMaxSafeDimension(analysis.width, analysis.height,
 analysis.maxSafeDimension)`을 거쳐 초과 시 TILED를 고르도록 고쳤다(`auto-high-res.ts`).
-신규 회귀 테스트 2건을 `tests/unit/core/auto-high-res.smart-resize.test.ts`에 추가했다.
+신규 회귀 테스트 2건은 파일 분리 기준에 맞춰
+`tests/unit/core/auto-high-res.standard-path.test.ts`에 두었다.
 
 **수정 2 — `validateProcessingCapability()`의 캔버스 한계 체크 중복(Minor).**
 `high-res-detector.internal.ts`가 이 diff에서 `exceedsMaxSafeDimension()`을 도입해놓고
@@ -132,3 +134,13 @@ analysis.maxSafeDimension)`을 거쳐 초과 시 TILED를 고르도록 고쳤다
 불일치 — 이 diff 이전부터 있던 동작이고 "결정"에서 명시한 대로 값/동작을 안 바꾸기로 했다.
 (4) 4개 임계값을 선언형 `Record` 테이블로 재설계 — `high` 티어는 scaleRatio+fallback이 섞여
 있어 억지로 테이블화하면 오히려 복잡해진다.
+
+## 2차 코드 리뷰 수정
+
+`24d8713..2529e26` 후속 수정만 다시 검토해 2건을 고쳤다.
+
+- 명세와 테스트의 `target=source` 예시는 최종 반환 Canvas 자체도 안전 치수를 초과하므로
+  TILED로 해결할 수 없었다. 소스만 안전 치수를 초과하고 최종 목표 Canvas는 한계 이내인
+  20000×10 → 5000×10 사례로 계약을 바로잡았다.
+- 신규 테스트를 기존 257줄 파일에 추가한 것은 `tests/TESTING-GUIDE.md`의 파일 분리 기준을
+  위반했다. 표준 경로 가드 2건을 별도 기능 파일로 옮겼다.

@@ -5,7 +5,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HighResolutionDetector, ProcessingStrategy } from '../../../src/base/high-res-detector.internal';
 import { HighResolutionManager } from '../../../src/base/high-res-manager';
-import { TiledProcessor } from '../../../src/base/tiled-processor.internal';
 import { AutoHighResProcessor } from '../../../src/core/auto-high-res';
 import { createDrawableImage, createMockImage, makeProcessingResult } from './auto-high-res.helpers';
 
@@ -225,33 +224,6 @@ describe('AutoHighResProcessor.smartResize', () => {
       await AutoHighResProcessor.smartResize(img, 800, 600);
 
       expect(highResSpy).toHaveBeenCalledOnce();
-    });
-  });
-
-  describe('표준 경로(게이트 미해당)의 캔버스 안전 치수 가드', () => {
-    it('저픽셀 + 캔버스 안전 치수 초과 이미지는 표준 경로를 타면서도 tiled로 처리한다', async () => {
-      // 8MP 게이트, scaleRatio 4배 게이트 둘 다 안 걸리도록 target = source 크기로 둔다
-      // (총 픽셀 수가 작고 scaleRatio=1이라 HighResolutionManager로 안 빠진다).
-      const highResSpy = vi.spyOn(HighResolutionManager, 'smartResize');
-      const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(document.createElement('canvas'));
-
-      const maxDim = HighResolutionDetector.getMaxSafeDimension();
-      const img = createMockImage(maxDim + 1, 1);
-      const result = await AutoHighResProcessor.smartResize(img, maxDim + 1, 1);
-
-      expect(highResSpy).not.toHaveBeenCalled();
-      expect(tiledSpy).toHaveBeenCalledOnce();
-      expect(result.optimizations.tileProcessing).toBe(true);
-    });
-
-    it('가로/세로 모두 안전 치수 이내면 표준 경로는 그대로 direct를 쓴다(회귀)', async () => {
-      const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles');
-      const img = createDrawableImage(1000, 1000);
-      const result = await AutoHighResProcessor.smartResize(img, 400, 300);
-
-      expect(tiledSpy).not.toHaveBeenCalled();
-      expect(result.canvas.width).toBe(400);
-      expect(result.canvas.height).toBe(300);
     });
   });
 
