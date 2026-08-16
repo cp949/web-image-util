@@ -1,4 +1,5 @@
 import {
+  exceedsMaxSafeDimension,
   SMALL_MEMORY_THRESHOLD_MB as POLICY_SMALL_MEMORY_THRESHOLD_MB,
   ProcessingStrategy,
   selectBalancedStrategy,
@@ -213,7 +214,7 @@ export class HighResolutionDetector {
     let canProcess = true;
 
     // Check Canvas size limitation
-    if (img.width > analysis.maxSafeDimension || img.height > analysis.maxSafeDimension) {
+    if (exceedsMaxSafeDimension(img.width, img.height, analysis.maxSafeDimension)) {
       limitations.push(`Image size exceeds browser Canvas limit. Maximum: ${analysis.maxSafeDimension}px`);
       recommendations.push('Recommend using tile-based processing for segmented processing.');
     }

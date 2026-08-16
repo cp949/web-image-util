@@ -95,3 +95,40 @@ detector의 vestigial static 고정 테스트만 제거했다. 나머지 테스�
 
 - balanced/fast/pressure의 정책 방향 불일치가 실제 버그로 보고되면 별도 카드로 정책 자체를
   재설계한다(기존 조건 유지).
+
+## 후속 수정 (완료 후 코드 리뷰 패스)
+
+카드 완료 후 `326a9d1..HEAD` diff를 대상으로 별도 코드 리뷰(10개 finder angle)를 돌려 7건을
+찾았다. 4건은 기각(의도된 트레이드오프이거나 diff 이전부터 있던 동작), 3건은 실제 결함으로
+확인해 같은 세션에서 수정했다.
+
+**수정 1 — `AutoHighResProcessor.standardResize()`가 캔버스 가드를 전혀 안 탐(Important).**
+`shouldUseHighResolutionPath()`(총 픽셀 8MP 초과 OR 스케일 비율 4배 초과)가 `false`면
+`HighResolutionManager`를 아예 거치지 않고 `standardResize()`로 빠진다 — 이 함수는 위
+"결정"에서 다룬 4개 티어 함수와 별개로, `strategy-policy.internal.ts`가 존재하기 전부터도
+캔버스 한계를 전혀 체크하지 않고 `ProcessingStrategy.DIRECT`를 무조건 선택했다. 저픽셀이면서
+가로/세로 한 축만 극단적으로 큰 이미지(예: 20000×10 파노라마)가 `fastResize()`로 들어오면
+총 픽셀 수(20만)와 스케일 비율(target=source면 1) 둘 다 게이트 미만이라 이 경로를 타고,
+CHANGELOG가 고쳤다고 주장한 바로 그 실패 모드(Safari 16384 한계 초과)가 그대로 재현됐다.
+`standardResize()`도 `exceedsMaxSafeDimension(analysis.width, analysis.height,
+analysis.maxSafeDimension)`을 거쳐 초과 시 TILED를 고르도록 고쳤다(`auto-high-res.ts`).
+신규 회귀 테스트 2건을 `tests/unit/core/auto-high-res.smart-resize.test.ts`에 추가했다.
+
+**수정 2 — `validateProcessingCapability()`의 캔버스 한계 체크 중복(Minor).**
+`high-res-detector.internal.ts`가 이 diff에서 `exceedsMaxSafeDimension()`을 도입해놓고
+같은 파일의 `validateProcessingCapability()`는 여전히 `img.width > analysis.maxSafeDimension
+|| img.height > analysis.maxSafeDimension`을 인라인으로 중복했다. 헬퍼 호출로 교체했다 —
+동작 변화 없음(동일 boolean 로직).
+
+**수정 3 — 추출 과정에서 사라진 이력 주석(Minor).** `MEMORY_EFFICIENT_THRESHOLD_MB`(32MB)가
+과거 128MB 분기와 함께 존재하다가 chunked→tiled 흡수로 32MB만 남았다는 배경 설명이
+`high-res-manager.ts`에서 leaf로 옮기며 빠졌다. 주석에 복원했다.
+
+**기각한 4건**: (1) 4개 티어 함수가 `exceedsMaxSafeDimension()`을 한 곳이 아니라 각자 호출하는
+구조 — 직접 호출자가 가드를 빠뜨릴 수 없게 하려는 의도된 defense-in-depth. (2) 티어 함수
+호출부에서 width/height를 매번 positional로 풀어 넘기는 것 — 현재 가드가 대칭이라 transpose가
+무해, 가정 기반 우려. (3) `analyzeImage()`가 raw `estimatedMemoryMB`를 `selectBalancedStrategy`에
+넘기고 manager.ts는 반올림된 `analysis.estimatedMemoryMB`를 다른 3개 티어에 넘기는 반올림
+불일치 — 이 diff 이전부터 있던 동작이고 "결정"에서 명시한 대로 값/동작을 안 바꾸기로 했다.
+(4) 4개 임계값을 선언형 `Record` 테이블로 재설계 — `high` 티어는 scaleRatio+fallback이 섞여
+있어 억지로 테이블화하면 오히려 복잡해진다.

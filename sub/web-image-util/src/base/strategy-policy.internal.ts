@@ -28,7 +28,9 @@ export const MEDIUM_MEMORY_THRESHOLD_MB = 64;
 /** balanced의 stepped/tiled 경계이자 high의 stepped/tiled 경계 */
 export const LARGE_MEMORY_THRESHOLD_MB = 256;
 /** memory-pressure(저메모리 강제 경로) 전용 direct/tiled 경계 — 다른 3개 임계값과 값이
- * 우연히도 겹치지 않는 독립 정책값이다(재조사 결과, 2026-08-15 design doc 결론 유지) */
+ * 우연히도 겹치지 않는 독립 정책값이다(재조사 결과, 2026-08-15 design doc 결론 유지).
+ * chunked가 tiled 프리셋으로 흡수되기 전엔 128MB 분기도 따로 있었다 — 그 분기가 tiled로
+ * 수렴하면서 32MB만 direct/tiled를 가르는 경계로 남았다. */
 export const MEMORY_EFFICIENT_THRESHOLD_MB = 32;
 /** high 티어에서 stepped를 선택하는 축소 비율 상한 */
 export const HIGH_QUALITY_STEPPED_SCALE_RATIO = 0.3;

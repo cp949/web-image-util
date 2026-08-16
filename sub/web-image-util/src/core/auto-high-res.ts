@@ -7,7 +7,7 @@ import { HighResolutionDetector, type ImageAnalysis } from '../base/high-res-det
 import type { HighResolutionOptions, ProcessingResult } from '../base/high-res-manager';
 import { HighResolutionManager } from '../base/high-res-manager';
 import { getResizeStrategyAdapter } from '../base/resize-strategy.internal';
-import { ProcessingStrategy } from '../base/strategy-policy.internal';
+import { exceedsMaxSafeDimension, ProcessingStrategy } from '../base/strategy-policy.internal';
 import { processInChunks } from '../utils/chunked-batch-runner.internal';
 import { productionLog } from '../utils/debug.internal';
 
@@ -335,6 +335,11 @@ export class AutoHighResProcessor {
 
   /**
    * Standard resizing (for non-high-resolution cases)
+   *
+   * shouldUseHighResolutionPath()가 false를 반환한 이미지, 즉 HighResolutionManager를
+   * 아예 거치지 않는 경로다 — 그 안의 strategy-policy 가드는 여기까지 안 닿는다. 저픽셀이면서
+   * 가로/세로 한 축만 매우 큰 이미지(파노라마 등)가 이 경로로 들어올 수 있으므로, DIRECT로
+   * 넘기기 전에 같은 exceedsMaxSafeDimension() 가드를 여기서도 직접 통과시킨다.
    */
   private static async standardResize(
     img: HTMLImageElement,
@@ -345,7 +350,11 @@ export class AutoHighResProcessor {
   ): Promise<ProcessingResult> {
     const startTime = Date.now();
 
-    const canvas = await getResizeStrategyAdapter(ProcessingStrategy.DIRECT)!.execute({
+    const strategy = exceedsMaxSafeDimension(analysis.width, analysis.height, analysis.maxSafeDimension)
+      ? ProcessingStrategy.TILED
+      : ProcessingStrategy.DIRECT;
+
+    const canvas = await getResizeStrategyAdapter(strategy)!.execute({
       img,
       targetWidth,
       targetHeight,
@@ -358,7 +367,7 @@ export class AutoHighResProcessor {
     return {
       canvas,
       analysis,
-      strategy: ProcessingStrategy.DIRECT,
+      strategy,
       processingTime,
       memoryPeakUsageMB: 0,
       quality,
