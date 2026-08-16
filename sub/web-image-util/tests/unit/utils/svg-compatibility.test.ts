@@ -1,11 +1,17 @@
 /**
  * SVG 호환성 보정 유틸리티의 회귀 동작을 검증한다.
- * 공개 API(enhanceBrowserCompatibility)와 내부 헬퍼(toMsg, isValidBBox, isBrowser,
- * heuristicBBoxFromString, heuristicBBox, padBBox)를 직접 검증한다.
+ * 공개 API(enhanceBrowserCompatibility)와 파이프라인 전용 facade
+ * (enhanceSvgForBrowserWithDimensions), 내부 헬퍼(toMsg, isValidBBox, isBrowser,
+ * heuristicBBoxFromString, heuristicBBox, padBBox, applyViewBoxPolicy)를 직접 검증한다.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { enhanceBrowserCompatibility } from '../../../src/utils/svg-compatibility';
+import {
+  enhanceSvgForBrowser,
+  enhanceSvgForBrowserWithDimensions,
+} from '../../../src/utils/svg-compatibility/enhance';
+import { extractSvgDimensions } from '../../../src/utils/svg-dimensions';
 import {
   heuristicBBox,
   heuristicBBoxFromString,
@@ -18,6 +24,8 @@ import {
   sanitizeNum,
 } from '../../../src/utils/svg-compatibility/dimensions.internal';
 import { toMsg } from '../../../src/utils/svg-compatibility/message.internal';
+import { DEFAULT_OPTIONS, SVG_RENDERING_OPTIONS, type SvgCompatibilityReport } from '../../../src/utils/svg-compatibility/options';
+import { applyViewBoxPolicy } from '../../../src/utils/svg-compatibility/viewbox-policy.internal';
 
 describe('SVG 호환성 보정', () => {
   it('xlink:href만 있는 참조를 href로 현대화하고 legacy 속성을 제거한다', () => {
@@ -69,6 +77,63 @@ describe('SVG 호환성 보정', () => {
     const result = enhanceBrowserCompatibility(svg, { mode: 'fit-content' });
 
     expect(result.enhancedSvg).toContain('viewBox="10 10 80 80"');
+  });
+});
+
+describe('enhanceSvgForBrowserWithDimensions()', () => {
+  it('viewBox가 이미 있으면 dimensions가 extractSvgDimensions()와 같다', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150"><rect width="10" height="10"/></svg>';
+
+    const { dimensions } = enhanceSvgForBrowserWithDimensions(svg);
+
+    expect(dimensions).toEqual(extractSvgDimensions(svg));
+  });
+
+  it('viewBox가 없고 콘텐츠 BBox로 계산되면 dimensions가 extractSvgDimensions()와 같다', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect x="10" y="10" width="80" height="80"/></svg>';
+
+    const { dimensions } = enhanceSvgForBrowserWithDimensions(svg);
+
+    expect(dimensions).toEqual(extractSvgDimensions(svg));
+    expect(dimensions.width).toBe(80);
+    expect(dimensions.height).toBe(80);
+  });
+
+  it('viewBox와 콘텐츠 단서가 모두 없으면 dimensions가 defaultSize로 폴백하고 extractSvgDimensions()와 같다', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
+
+    const { dimensions } = enhanceSvgForBrowserWithDimensions(svg);
+
+    expect(dimensions).toEqual(extractSvgDimensions(svg));
+    expect(dimensions.width).toBe(512);
+    expect(dimensions.height).toBe(512);
+  });
+
+  it('enhancedSvg는 enhanceSvgForBrowser()를 따로 호출했을 때와 같은 문자열을 반환한다', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect x="10" y="10" width="80" height="80"/></svg>';
+
+    const { enhancedSvg } = enhanceSvgForBrowserWithDimensions(svg);
+
+    expect(enhancedSvg).toBe(enhanceSvgForBrowser(svg));
+  });
+
+  it('viewBox 속성은 있지만 값이 깨진 경우 extractSvgDimensions()로 폴백해 같은 결과를 낸다', () => {
+    // hasAttribute('viewBox')는 true지만 parseViewBoxValues는 실패하는 경계 —
+    // applyViewBoxPolicy()가 null을 반환해 extractSvgDimensions() 폴백을 강제로 태운다.
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300"></svg>';
+
+    const { dimensions } = enhanceSvgForBrowserWithDimensions(svg);
+
+    expect(dimensions).toEqual(extractSvgDimensions(svg));
+    expect(dimensions.width).toBe(512);
+    expect(dimensions.height).toBe(512);
+  });
+
+  it('파싱 실패 입력은 extractSvgDimensions()와 동일하게 에러를 던진다', () => {
+    const notSvg = '<html><body></body></html>';
+
+    expect(() => enhanceSvgForBrowserWithDimensions(notSvg)).toThrow('Invalid SVG');
+    expect(() => extractSvgDimensions(notSvg)).toThrow('Invalid SVG');
   });
 });
 
@@ -483,5 +548,53 @@ describe('width/height 단서로 viewBox 생성 — 공백 포함 값의 px 판�
     const { enhancedSvg, report } = enhanceBrowserCompatibility('<svg width="100px" height="100px"></svg>');
     expect(enhancedSvg).toContain('viewBox="0 0 100 100"');
     expect(report.warnings).not.toContain('Non-px or partial size detected. Falling back to defaultSize for viewBox.');
+  });
+});
+
+describe('내부 헬퍼 — applyViewBoxPolicy 반환값', () => {
+  /** DOMParser로 SVG 루트 요소를 파싱한다. */
+  function parseSvgRoot(svgString: string): Element {
+    const doc = new DOMParser().parseFromString(svgString, 'image/svg+xml');
+    return doc.documentElement;
+  }
+
+  /** 테스트용 빈 리포트를 만든다. */
+  function makeReport(): SvgCompatibilityReport {
+    return {
+      addedNamespaces: [],
+      fixedDimensions: false,
+      modernizedSyntax: 0,
+      warnings: [],
+      infos: [],
+      processingTimeMs: 0,
+    };
+  }
+
+  it('기존 viewBox를 보존하는 경우 null을 반환한다', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150"></svg>';
+    const root = parseSvgRoot(svg);
+
+    const result = applyViewBoxPolicy(root, SVG_RENDERING_OPTIONS, makeReport(), svg);
+
+    expect(result).toBeNull();
+  });
+
+  it('viewBox가 없어 새로 계산하는 경우 DOM에 실제로 쓴 값을 그대로 반환한다', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect x="10" y="10" width="80" height="80"/></svg>';
+    const root = parseSvgRoot(svg);
+
+    const result = applyViewBoxPolicy(root, SVG_RENDERING_OPTIONS, makeReport(), svg);
+
+    expect(result).toEqual({ minX: 10, minY: 10, width: 80, height: 80 });
+    expect(root.getAttribute('viewBox')).toBe('10 10 80 80');
+  });
+
+  it('콘텐츠 단서가 전혀 없으면 defaultSize로 보정된 값을 반환한다', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
+    const root = parseSvgRoot(svg);
+
+    const result = applyViewBoxPolicy(root, SVG_RENDERING_OPTIONS, makeReport(), svg);
+
+    expect(result).toEqual({ minX: 0, minY: 0, width: DEFAULT_OPTIONS.defaultSize.width, height: DEFAULT_OPTIONS.defaultSize.height });
   });
 });

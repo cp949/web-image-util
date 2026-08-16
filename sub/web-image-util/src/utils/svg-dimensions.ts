@@ -80,7 +80,7 @@ export function extractSvgDimensions(svgString: string): SvgDimensions {
  * @param value 파싱할 속성 문자열
  * @returns 양수 크기 값, 없으면 undefined
  */
-function readPositiveLength(value: string | null): number | undefined {
+export function readPositiveLength(value: string | null): number | undefined {
   const { value: parsed } = parseSvgLength(value);
   return parsed !== null && parsed > 0 ? parsed : undefined;
 }

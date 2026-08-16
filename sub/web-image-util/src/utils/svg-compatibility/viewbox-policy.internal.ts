@@ -22,13 +22,16 @@ import type { SvgCompatibilityOptions, SvgCompatibilityReport } from './options'
  * @param opts 모든 필드가 채워진 호환성 옵션
  * @param report 처리 메시지를 누적할 리포트
  * @param svgString 원본 SVG 문자열(문자열 휴리스틱 폴백에 필요)
+ * @returns 기존 viewBox를 보존한 경우 null(호출부가 원본 문자열에서 직접 읽어야 한다는 신호).
+ * 새로 계산한 경우 DOM에 실제로 적용한(0/음수 보정까지 끝난) viewBox 값 — 렌더 결과와
+ * 같은 계산을 다시 하지 않고 재사용하려는 호출부(enhance.ts의 dimensions 산출)를 위한 것이다.
  */
 export function applyViewBoxPolicy(
   root: Element,
   opts: Required<SvgCompatibilityOptions>,
   report: SvgCompatibilityReport,
   svgString: string
-) {
+): { minX: number; minY: number; width: number; height: number } | null {
   const hasVB = root.hasAttribute('viewBox');
   const hasW = root.hasAttribute('width') || !!getStyleLength(root, 'width');
   const hasH = root.hasAttribute('height') || !!getStyleLength(root, 'height');
@@ -47,18 +50,21 @@ export function applyViewBoxPolicy(
     }
     report.infos?.push('viewBox exists; preserved.');
     report.fixedDimensions = true;
-    return;
+    // 기존 viewBox를 그대로 보존한 경우 새로 계산한 값이 없다 — 호출부가 원본 문자열의
+    // viewBox를 직접 읽어 쓰게 null을 돌려준다.
+    return null;
   }
 
   const box = resolveEffectiveViewBox(root, opts, report, svgString);
 
-  // viewBox와 보조 width/height를 함께 안전하게 주입하는 헬퍼다.
-  const setVB = (minX: number, minY: number, rawW: number, rawH: number) => {
-    // 0 또는 음수는 defaultSize로 보정한다.
-    const W = rawW > 0 ? rawW : opts.defaultSize.width;
-    const H = rawH > 0 ? rawH : opts.defaultSize.height;
+  // 0 또는 음수는 defaultSize로 보정한다. 이 값이 실제로 DOM에 쓰이는 최종 viewBox 크기이며,
+  // 이 함수의 반환값이기도 하다.
+  const width = box.width > 0 ? box.width : opts.defaultSize.width;
+  const height = box.height > 0 ? box.height : opts.defaultSize.height;
 
-    root.setAttribute('viewBox', `${sanitizeNum(minX)} ${sanitizeNum(minY)} ${sanitizeNum(W)} ${sanitizeNum(H)}`);
+  // viewBox와 보조 width/height를 함께 안전하게 주입하는 헬퍼다.
+  const setVB = (minX: number, minY: number, w: number, h: number) => {
+    root.setAttribute('viewBox', `${sanitizeNum(minX)} ${sanitizeNum(minY)} ${sanitizeNum(w)} ${sanitizeNum(h)}`);
 
     const hasAttrW = root.hasAttribute('width');
     const hasAttrH = root.hasAttribute('height');
@@ -67,18 +73,19 @@ export function applyViewBoxPolicy(
     const noAnySize = !hasAttrW && !hasAttrH && !styleW && !styleH;
 
     if (!opts.preferResponsive) {
-      if (!hasAttrW) root.setAttribute('width', String(W));
-      if (!hasAttrH) root.setAttribute('height', String(H));
+      if (!hasAttrW) root.setAttribute('width', String(w));
+      if (!hasAttrH) root.setAttribute('height', String(h));
     } else if (opts.ensureNonZeroViewport && noAnySize) {
       // 반응형을 선호하더라도 0×0 렌더를 막기 위해 최소 크기를 주입한다.
-      root.setAttribute('width', String(W));
-      root.setAttribute('height', String(H));
+      root.setAttribute('width', String(w));
+      root.setAttribute('height', String(h));
       report.infos?.push('Injected width/height from viewBox (coerced to non-zero).');
     }
     report.fixedDimensions = true;
   };
 
-  setVB(box.minX, box.minY, box.width, box.height);
+  setVB(box.minX, box.minY, width, height);
+  return { minX: box.minX, minY: box.minY, width, height };
 }
 
 /**
