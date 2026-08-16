@@ -22,3 +22,4 @@
 - `2026-08-15-high-res-threshold-dedup-design.md`: high-res-manager의 selectFastStrategy/selectHighQualityStrategy가 들고 있던 64MB/256MB 리터럴을 high-res-detector의 단일 소유 상수로 교체하고, 무호출 죽은 코드(AutoMemoryManager.recommendProcessingStrategy 등)를 함께 제거한 결정 근거
 - `2026-08-16-svg-reference-attribute-consolidation-design.md`: SVG 참조 속성 판정(href/xlink:href/src)을 단일 leaf로 모으고 prefix-svg-ids/svg-optimizer의 비표준 prefix xlink 인식 결함을 해소한 결정 근거
 - `2026-08-16-svg-effective-size-parity-design.md`: viewBox 없는 SVG의 크기 조회와 렌더 경로가 동일한 fit-content 유효 크기를 사용하게 한 결정 근거
+- `2026-08-17-canvas-limit-single-source-design.md`: compose.ts의 canvas 크기 상한 검증과 single-renderer.internal.ts의 대형 canvas 경고가 각자 하드코딩하던 리터럴을 canvas-limits.internal.ts leaf 참조로 정합한 결정 근거

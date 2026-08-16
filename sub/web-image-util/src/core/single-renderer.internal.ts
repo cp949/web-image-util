@@ -10,6 +10,7 @@
 import { type CanvasLease, leaseCanvas } from '../base/canvas-lease.internal';
 import { type BlurOptions, ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
+import { readMaxSafeCanvasDimension } from '../utils/browser-capabilities/index';
 import { debugLog, productionLog } from '../utils/debug.internal';
 import { calculateFinalLayout } from './resize-calculator.internal';
 
@@ -200,8 +201,11 @@ function validateLayout(layout: FinalLayout): void {
     );
   }
 
-  // 16384^2 = 약 2.7억 픽셀, RGBA 기준 약 1GB — 일부 기기에서 메모리 부족 가능
-  const maxCanvasArea = 16384 * 16384;
+  // 상한 값은 browser-capabilities/canvas-limits.internal.ts가 단일 소유한다(compose.ts의
+  // DIMENSION_TOO_LARGE 게이트, high-res-detector.internal.ts의 getMaxSafeDimension()과 같은 값).
+  // 면적 = 한 변 상한의 제곱을 메모리 위험 heads-up 임계값으로 쓴다(RGBA 기준, 일부 기기에서 메모리 부족 가능).
+  const maxSafeDimension = readMaxSafeCanvasDimension();
+  const maxCanvasArea = maxSafeDimension * maxSafeDimension;
   if (width * height > maxCanvasArea) {
     productionLog.warn(
       `Warning: Large canvas size (${width}x${height}). This may cause memory issues on some devices.`

@@ -17,6 +17,7 @@
 
 import { createOwnedCanvas } from '../base/canvas-utils.internal';
 import { ImageProcessError } from '../errors.internal';
+import { readMaxSafeCanvasDimension } from '../utils/browser-capabilities/index';
 import {
   drawImageLayer,
   drawPlacedImage,
@@ -165,9 +166,9 @@ function sourceSize(image: HTMLImageElement): { width: number; height: number } 
   };
 }
 
-// 대부분의 브라우저가 지원하는 보수적 한 변 상한 — high-res-detector의 default와 동일 값.
 // 초과 시 브라우저는 오류 없이 빈 canvas를 만들 수 있어(특히 파생 크기의 grid) 생성 전에 거부한다.
-const MAX_CANVAS_DIMENSION = 16384;
+// 상한 값 자체는 browser-capabilities/canvas-limits.internal.ts가 단일 소유한다
+// (high-res-detector.internal.ts의 getMaxSafeDimension()과 같은 값).
 
 /**
  * canvas 크기를 검증하고 반올림한다 — 실제 canvas에는 반올림 값이 쓰인다.
@@ -182,9 +183,10 @@ function resolveCanvasSize(width: number, height: number): { width: number; heig
     );
   }
   const rounded = { width: Math.round(width), height: Math.round(height) };
-  if (rounded.width > MAX_CANVAS_DIMENSION || rounded.height > MAX_CANVAS_DIMENSION) {
+  const maxSafeDimension = readMaxSafeCanvasDimension();
+  if (rounded.width > maxSafeDimension || rounded.height > maxSafeDimension) {
     throw new ImageProcessError(
-      `Canvas size ${rounded.width}x${rounded.height} exceeds the ${MAX_CANVAS_DIMENSION}px per-side browser limit.`,
+      `Canvas size ${rounded.width}x${rounded.height} exceeds the ${maxSafeDimension}px per-side browser limit.`,
       'DIMENSION_TOO_LARGE'
     );
   }

@@ -8,9 +8,13 @@
  * 시드 결정성·기하 결과만 단언하고 소비 횟수는 단언하지 않는다).
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ImageProcessError } from '../../../src';
 import { type ComposeSpec, composeImages } from '../../../src/composition/compose';
+import {
+  resetCanvasLimitProbe,
+  setCanvasLimitProbe,
+} from '../../../src/utils/browser-capabilities/canvas-limits.internal';
 import { createTestCanvas, getCanvasPixelData } from '../../utils/canvas-helper';
 
 /** node-canvas가 drawImage 소스로 수락하는 색 지정 Canvas를 만든다. */
@@ -592,6 +596,10 @@ describe('composeImages — collage', () => {
 // ============================================================================
 
 describe('composeImages — 공통', () => {
+  afterEach(() => {
+    resetCanvasLimitProbe();
+  });
+
   it('알 수 없는 spec type은 PROCESSING_FAILED를 던진다', async () => {
     // JS 호출자의 잘못된 입력을 재현
     const spec = { type: 'mosaic' } as unknown as ComposeSpec;
@@ -630,6 +638,19 @@ describe('composeImages — 공통', () => {
     Object.defineProperty(huge, 'naturalWidth', { value: 9000, configurable: true });
     Object.defineProperty(huge, 'naturalHeight', { value: 9000, configurable: true });
     await expect(composeImages({ type: 'grid', images: [huge, huge], columns: 2 })).rejects.toMatchObject({
+      code: 'DIMENSION_TOO_LARGE',
+    });
+  });
+
+  it('probe가 chrome급 상한(32767)을 돌려주면 그 값을 실제 거부 기준으로 쓴다', async () => {
+    setCanvasLimitProbe({ read: () => 32767 });
+
+    // 이전 하드코딩 상한(16384)은 넘지만 새 상한(32767)은 안 넘는다 — 더 이상 거부되지 않는다
+    const canvas = await composeImages({ type: 'layers', width: 20000, height: 100, layers: [] });
+    expect(canvas.width).toBe(20000);
+
+    // 새 상한(32767)도 넘으면 여전히 거부한다
+    await expect(composeImages({ type: 'layers', width: 40000, height: 100, layers: [] })).rejects.toMatchObject({
       code: 'DIMENSION_TOO_LARGE',
     });
   });
