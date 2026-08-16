@@ -13,7 +13,7 @@ import { ImageProcessError } from '../../../src';
 import { type ComposeSpec, composeImages } from '../../../src/composition/compose';
 import { createTestCanvas, getCanvasPixelData } from '../../utils/canvas-helper';
 
-// node-canvas 는 drawImage 소스로 Canvas 를 수락한다 — 색 지정 가능한 소스 헬퍼
+/** node-canvas가 drawImage 소스로 수락하는 색 지정 Canvas를 만든다. */
 function createColorSource(width: number, height: number, color: string): HTMLImageElement {
   const canvas = createTestCanvas(width, height, color);
   Object.defineProperty(canvas, 'naturalWidth', { value: width, configurable: true });
@@ -21,7 +21,7 @@ function createColorSource(width: number, height: number, color: string): HTMLIm
   return canvas as unknown as HTMLImageElement;
 }
 
-// 시드 고정 PRNG — 동일 시드 = 동일 시퀀스
+/** collage 결과를 결정적으로 재현할 수 있는 시드 고정 PRNG를 만든다. */
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -33,8 +33,10 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-// drawImage 인자 수집 spy — mockImplementation 이라 실제 그리기는 일어나지 않는다.
-// 픽셀 단언 테스트와 같은 테스트에서 병용하지 말 것.
+/**
+ * 실제 그리기 없이 drawImage 인자를 수집한다.
+ * 픽셀 단언 테스트와 같은 테스트에서는 사용하지 않는다.
+ */
 function collectDrawImageArgs(): { observed: unknown[][]; restore: () => void } {
   const tempCtx = document.createElement('canvas').getContext('2d')!;
   const observed: unknown[][] = [];
@@ -44,6 +46,7 @@ function collectDrawImageArgs(): { observed: unknown[][]; restore: () => void } 
   return { observed, restore: () => spy.mockRestore() };
 }
 
+/** 결정성 비교를 위해 Canvas 전체 픽셀을 바이트 배열로 읽는다. */
 function getImageBytes(canvas: HTMLCanvasElement): Uint8ClampedArray {
   return canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
 }
@@ -170,6 +173,19 @@ describe('composeImages — layers', () => {
     ).rejects.toMatchObject({ code: 'OPTION_INVALID' });
   });
 
+  it('layers opacity 무효값의 details에는 minimum이 없다', async () => {
+    const img = createColorSource(20, 20, 'red');
+    const error = await composeImages({
+      type: 'layers',
+      width: 50,
+      height: 50,
+      layers: [{ image: img, x: 0, y: 0, opacity: 1.5 }],
+    }).catch((e) => e);
+
+    expect(error).toBeInstanceOf(ImageProcessError);
+    expect((error as ImageProcessError).details).toEqual({ option: 'layers[0].opacity' });
+  });
+
   it('레이어 height에 0 이하를 지정하면 OPTION_INVALID를 던진다', async () => {
     const img = createColorSource(20, 20, 'red');
     await expect(
@@ -291,6 +307,32 @@ describe('composeImages — grid', () => {
     await expect(composeImages({ type: 'grid', images, spacing: -1 })).rejects.toMatchObject({
       code: 'OPTION_INVALID',
     });
+  });
+
+  it('columns 무효값의 details에 option과 minimum이 실린다', async () => {
+    const images = [createColorSource(10, 10, 'red')];
+    await expect(composeImages({ type: 'grid', images, columns: 0 })).rejects.toMatchObject({
+      code: 'OPTION_INVALID',
+      details: { option: 'columns', minimum: 1 },
+    });
+  });
+
+  it('숫자가 아닌 런타임 spacing 값도 OPTION_INVALID로 거부한다', async () => {
+    const images = [createColorSource(10, 10, 'red')];
+    await expect(
+      composeImages({ type: 'grid', images, spacing: Symbol('spacing') as unknown as number })
+    ).rejects.toMatchObject({
+      code: 'OPTION_INVALID',
+      details: { option: 'spacing', minimum: 0 },
+    });
+  });
+
+  it('columns=1, spacing=0은 하한 경계값이라도 통과한다', async () => {
+    const images = [createColorSource(50, 50, '#ff0000'), createColorSource(50, 50, '#00ff00')];
+    const canvas = await composeImages({ type: 'grid', images, columns: 1, spacing: 0 });
+    // columns=1 → 두 이미지가 한 열로 쌓인다, spacing=0 → 여백 없이 붙는다
+    expect(canvas.width).toBe(50);
+    expect(canvas.height).toBe(100);
   });
 
   it('fit 무효값은 canvas를 만들기 전에 OPTION_INVALID를 던진다', async () => {
@@ -495,6 +537,21 @@ describe('composeImages — collage', () => {
     await expect(composeImages({ ...base, maxRotation: -1 })).rejects.toMatchObject({
       code: 'OPTION_INVALID',
     });
+  });
+
+  it('maxRotation=0, maxPlacementAttempts=1은 하한 경계값이라도 통과한다', async () => {
+    const images = [createColorSource(20, 20, '#0000ff')];
+    const canvas = await composeImages({
+      type: 'collage',
+      images,
+      width: 100,
+      height: 100,
+      maxRotation: 0,
+      maxPlacementAttempts: 1,
+      random: () => 0.5,
+    });
+    expect(canvas.width).toBe(100);
+    expect(canvas.height).toBe(100);
   });
 
   it('random 옵션이 함수가 아니면 canvas를 만들기 전에 OPTION_INVALID를 던진다', async () => {

@@ -219,6 +219,52 @@ function requireOption(condition: boolean, option: string, message: string, mini
   }
 }
 
+/**
+ * 선택적 숫자 옵션 하나에 적용할 검증 규칙.
+ * rotation/width/height/opacity(layers) · columns/spacing(grid) ·
+ * maxRotation/maxPlacementAttempts(collage) — 이름·경계값·정수 여부만 다르고
+ * "정의됐으면 → 범위 확인 → throw" 구조는 동일한 8곳을 이 규칙 하나로 선언한다.
+ */
+interface NumberFieldRule {
+  /** 포함(inclusive) 하한. 생략하면 하한을 검사하지 않는다. */
+  min?: number;
+  /** true면 하한을 초과(strict greater-than)로 검사한다. min이 없으면 의미가 없다. */
+  exclusiveMin?: boolean;
+  /** 포함(inclusive) 상한. 생략하면 상한을 검사하지 않는다. */
+  max?: number;
+  /** true면 정수 여부도 함께 검사한다. */
+  integer?: boolean;
+  /** 검증 실패 시 ImageProcessError에 실리는 메시지. */
+  message: string;
+  /**
+   * 지정하면 requireOption의 minimum으로 그대로 전달되어 details.minimum에 실린다.
+   * layers 계열 4개 필드(rotation/width/height/opacity)는 리팩터 이전에도
+   * details.minimum을 싣지 않았다 — 여기서 생략은 의도적이며, 실수로 빠진 것이 아니다.
+   */
+  detailsMinimum?: number;
+}
+
+/**
+ * value가 undefined면 통과시킨다(선택적 필드 공통 관례).
+ * 값이 있으면 항상 유한수(Number.isFinite) 여부를 먼저 검사하고, 그 위에
+ * rule의 나머지 조건(min/max/integer)을 적용한다.
+ * 실패하면 requireOption과 동일하게 OPTION_INVALID를 던진다.
+ */
+function requireOptionalNumber(value: number | undefined, option: string, rule: NumberFieldRule): void {
+  if (value === undefined) {
+    return;
+  }
+  requireOption(
+    Number.isFinite(value) &&
+      (rule.min === undefined || (rule.exclusiveMin ? value > rule.min : value >= rule.min)) &&
+      (rule.max === undefined || value <= rule.max) &&
+      (!rule.integer || Number.isInteger(value)),
+    option,
+    rule.message,
+    rule.detailsMinimum
+  );
+}
+
 function readRandom(random: RandomSource, context: string): number {
   let value: number;
   try {
@@ -250,34 +296,24 @@ function composeLayers(spec: ComposeLayersSpec): HTMLCanvasElement {
     requireDrawableImage(layer.image, `layers[${index}]`);
     requireOption(Number.isFinite(layer.x), `layers[${index}].x`, `layers[${index}].x must be a finite number`);
     requireOption(Number.isFinite(layer.y), `layers[${index}].y`, `layers[${index}].y must be a finite number`);
-    if (layer.rotation !== undefined) {
-      requireOption(
-        Number.isFinite(layer.rotation),
-        `layers[${index}].rotation`,
-        `layers[${index}].rotation must be a finite number`
-      );
-    }
-    if (layer.width !== undefined) {
-      requireOption(
-        Number.isFinite(layer.width) && layer.width > 0,
-        `layers[${index}].width`,
-        `layers[${index}].width must be > 0 when specified`
-      );
-    }
-    if (layer.height !== undefined) {
-      requireOption(
-        Number.isFinite(layer.height) && layer.height > 0,
-        `layers[${index}].height`,
-        `layers[${index}].height must be > 0 when specified`
-      );
-    }
-    if (layer.opacity !== undefined) {
-      requireOption(
-        Number.isFinite(layer.opacity) && layer.opacity >= 0 && layer.opacity <= 1,
-        `layers[${index}].opacity`,
-        `layers[${index}].opacity must be in [0, 1]`
-      );
-    }
+    requireOptionalNumber(layer.rotation, `layers[${index}].rotation`, {
+      message: `layers[${index}].rotation must be a finite number`,
+    });
+    requireOptionalNumber(layer.width, `layers[${index}].width`, {
+      min: 0,
+      exclusiveMin: true,
+      message: `layers[${index}].width must be > 0 when specified`,
+    });
+    requireOptionalNumber(layer.height, `layers[${index}].height`, {
+      min: 0,
+      exclusiveMin: true,
+      message: `layers[${index}].height must be > 0 when specified`,
+    });
+    requireOptionalNumber(layer.opacity, `layers[${index}].opacity`, {
+      min: 0,
+      max: 1,
+      message: `layers[${index}].opacity must be in [0, 1]`,
+    });
   });
 
   const { canvas, ctx } = createOwnedCanvas(canvasSize.width, canvasSize.height);
@@ -316,12 +352,17 @@ function composeGrid(spec: ComposeGridSpec): HTMLCanvasElement {
       details: { label: 'empty-image-list' },
     });
   }
-  if (spec.columns !== undefined) {
-    requireOption(Number.isInteger(spec.columns) && spec.columns >= 1, 'columns', 'columns must be an integer >= 1', 1);
-  }
-  if (spec.spacing !== undefined) {
-    requireOption(Number.isFinite(spec.spacing) && spec.spacing >= 0, 'spacing', 'spacing must be >= 0', 0);
-  }
+  requireOptionalNumber(spec.columns, 'columns', {
+    min: 1,
+    integer: true,
+    message: 'columns must be an integer >= 1',
+    detailsMinimum: 1,
+  });
+  requireOptionalNumber(spec.spacing, 'spacing', {
+    min: 0,
+    message: 'spacing must be >= 0',
+    detailsMinimum: 0,
+  });
   if (spec.fit !== undefined) {
     requireOption(
       spec.fit === 'contain' || spec.fit === 'cover' || spec.fit === 'fill',
@@ -425,22 +466,17 @@ function composeCollage(spec: ComposeCollageSpec): HTMLCanvasElement {
       'scaleRange must satisfy 0 < min <= max'
     );
   }
-  if (spec.maxRotation !== undefined) {
-    requireOption(
-      Number.isFinite(spec.maxRotation) && spec.maxRotation >= 0,
-      'maxRotation',
-      'maxRotation must be >= 0',
-      0
-    );
-  }
-  if (spec.maxPlacementAttempts !== undefined) {
-    requireOption(
-      Number.isInteger(spec.maxPlacementAttempts) && spec.maxPlacementAttempts >= 1,
-      'maxPlacementAttempts',
-      'maxPlacementAttempts must be an integer >= 1',
-      1
-    );
-  }
+  requireOptionalNumber(spec.maxRotation, 'maxRotation', {
+    min: 0,
+    message: 'maxRotation must be >= 0',
+    detailsMinimum: 0,
+  });
+  requireOptionalNumber(spec.maxPlacementAttempts, 'maxPlacementAttempts', {
+    min: 1,
+    integer: true,
+    message: 'maxPlacementAttempts must be an integer >= 1',
+    detailsMinimum: 1,
+  });
   if (spec.random !== undefined) {
     requireOption(
       typeof spec.random === 'function',
