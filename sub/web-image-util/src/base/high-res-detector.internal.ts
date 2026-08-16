@@ -1,3 +1,4 @@
+import { readMaxSafeCanvasDimension } from '../utils/browser-capabilities/index';
 import {
   exceedsMaxSafeDimension,
   SMALL_MEMORY_THRESHOLD_MB as POLICY_SMALL_MEMORY_THRESHOLD_MB,
@@ -36,15 +37,6 @@ export class HighResolutionDetector {
   // Memory threshold (bytes) — getOptimalChunkSize()만 SMALL을 참조한다.
   private static readonly MEMORY_THRESHOLDS = {
     SMALL: POLICY_SMALL_MEMORY_THRESHOLD_MB * 1024 * 1024,
-  };
-
-  // Maximum Canvas size (by browser)
-  private static readonly MAX_CANVAS_SIZE = {
-    chrome: 32767,
-    firefox: 32767,
-    safari: 16384,
-    edge: 32767,
-    default: 16384, // Most conservative value as default
   };
 
   // Memory usage per pixel (RGBA 4 bytes)
@@ -153,22 +145,14 @@ export class HighResolutionDetector {
   /**
    * Return maximum safe Canvas size by browser
    *
+   * 브라우저 사실 자체(UA 판정, fallback)는 browser-capabilities/canvas-limits.internal.ts가
+   * 단일 소유한다 — memory.internal.ts와 같은 probe 관례를 따르는 leaf다. 여기서는 그 값을
+   * 그대로 재노출한다.
+   *
    * @returns Maximum safe Canvas size (pixels)
    */
   static getMaxSafeDimension(): number {
-    const userAgent = navigator.userAgent.toLowerCase();
-
-    if (userAgent.includes('chrome') || userAgent.includes('chromium')) {
-      return HighResolutionDetector.MAX_CANVAS_SIZE.chrome;
-    } else if (userAgent.includes('firefox')) {
-      return HighResolutionDetector.MAX_CANVAS_SIZE.firefox;
-    } else if (userAgent.includes('safari')) {
-      return HighResolutionDetector.MAX_CANVAS_SIZE.safari;
-    } else if (userAgent.includes('edge') || userAgent.includes('edg/')) {
-      return HighResolutionDetector.MAX_CANVAS_SIZE.edge;
-    }
-
-    return HighResolutionDetector.MAX_CANVAS_SIZE.default;
+    return readMaxSafeCanvasDimension();
   }
 
   /**

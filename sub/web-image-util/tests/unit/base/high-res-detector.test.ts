@@ -3,6 +3,10 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { HighResolutionDetector } from '../../../src/base/high-res-detector.internal';
+import {
+  resetCanvasLimitProbe,
+  setCanvasLimitProbe,
+} from '../../../src/utils/browser-capabilities/canvas-limits.internal';
 
 // ============================================================================
 // 헬퍼
@@ -16,17 +20,6 @@ function createMockImage(width: number, height: number): HTMLImageElement {
   return img;
 }
 
-const originalUA = navigator.userAgent;
-
-/** 브라우저별 Canvas 한계 테스트를 위해 userAgent를 교체한다. */
-function setUserAgent(ua: string) {
-  Object.defineProperty(navigator, 'userAgent', {
-    value: ua,
-    configurable: true,
-    writable: true,
-  });
-}
-
 // ============================================================================
 // analyzeImage()
 // ============================================================================
@@ -35,11 +28,7 @@ describe('HighResolutionDetector', () => {
   describe('analyzeImage()', () => {
     describe('전략 결정', () => {
       afterEach(() => {
-        Object.defineProperty(navigator, 'userAgent', {
-          value: originalUA,
-          configurable: true,
-          writable: true,
-        });
+        resetCanvasLimitProbe();
       });
 
       it('16MB 이하 이미지는 direct 전략을 사용한다', () => {
@@ -73,10 +62,8 @@ describe('HighResolutionDetector', () => {
       });
 
       it('Canvas 한도를 초과하는 너비는 tiled 전략을 사용한다', () => {
-        // Chrome UA로 설정해 maxSafeDimension = 32767
-        setUserAgent(
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        );
+        // probe를 주입해 maxSafeDimension = 32767로 고정
+        setCanvasLimitProbe({ read: () => 32767 });
         // 32768 > 32767 → tiled
         const img = createMockImage(32768, 100);
         const result = HighResolutionDetector.analyzeImage(img);
@@ -84,10 +71,8 @@ describe('HighResolutionDetector', () => {
       });
 
       it('Canvas 한도를 초과하는 높이는 tiled 전략을 사용한다', () => {
-        // Chrome UA로 설정해 maxSafeDimension = 32767
-        setUserAgent(
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        );
+        // probe를 주입해 maxSafeDimension = 32767로 고정
+        setCanvasLimitProbe({ read: () => 32767 });
         // 높이 32768 > 32767 → tiled
         const img = createMockImage(100, 32768);
         const result = HighResolutionDetector.analyzeImage(img);
@@ -195,43 +180,21 @@ describe('HighResolutionDetector', () => {
   // getMaxSafeDimension()
   // ============================================================================
 
+  // 브라우저별 UA → 치수 매핑 자체는 browser-capabilities/canvas-limits.internal.ts가
+  // 단일 소유하며 canvas-limits.test.ts가 검증한다. 여기서는 getMaxSafeDimension()이
+  // 그 leaf에 정확히 위임하는지만 probe 주입으로 확인한다.
   describe('getMaxSafeDimension()', () => {
     afterEach(() => {
-      Object.defineProperty(navigator, 'userAgent', {
-        value: originalUA,
-        configurable: true,
-        writable: true,
-      });
+      resetCanvasLimitProbe();
     });
 
-    it('Chrome UA에서 32767을 반환한다', () => {
-      setUserAgent(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      );
+    it('활성 probe가 반환한 값을 그대로 돌려준다', () => {
+      setCanvasLimitProbe({ read: () => 32767 });
       expect(HighResolutionDetector.getMaxSafeDimension()).toBe(32767);
     });
 
-    it('Firefox UA에서 32767을 반환한다', () => {
-      setUserAgent('Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0');
-      expect(HighResolutionDetector.getMaxSafeDimension()).toBe(32767);
-    });
-
-    it('Safari UA에서 16384를 반환한다', () => {
-      // chrome/chromium이 없고 safari만 있는 순수 Safari UA
-      setUserAgent(
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
-      );
-      expect(HighResolutionDetector.getMaxSafeDimension()).toBe(16384);
-    });
-
-    it('Edge UA에서 32767을 반환한다', () => {
-      // chrome 없이 edg/만 있는 Edge UA
-      setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edg/120.0.0.0');
-      expect(HighResolutionDetector.getMaxSafeDimension()).toBe(32767);
-    });
-
-    it('알 수 없는 UA에서 기본값 16384를 반환한다', () => {
-      setUserAgent('UnknownBrowser/1.0');
+    it('probe가 undefined면 browser-capabilities의 fallback(16384)을 따른다', () => {
+      setCanvasLimitProbe({ read: () => undefined });
       expect(HighResolutionDetector.getMaxSafeDimension()).toBe(16384);
     });
   });

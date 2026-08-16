@@ -5,6 +5,8 @@
  * 내부 구현은 책임별로 분리되어 있으며 직접 참조하지 않는다.
  */
 
+export { readMaxSafeCanvasDimension } from './canvas-limits.internal';
+
 export {
   analyzePerformanceFeatures,
   DEFAULT_DETECTION_OPTIONS,
