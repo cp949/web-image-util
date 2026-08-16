@@ -142,6 +142,7 @@
   - `validateFilterChain()`이 이제 `blend` 값의 `BlendMode` 멤버십을 검증해 `valid:false`와 에러를 반환합니다. 이전에는 사전 검증을 통과한 뒤 실제 적용(`applyFilterChain()`) 단계에서만 예외가 났습니다.
 - Fixed: `HighResolutionManager.smartResize()`의 `onProgress` 콜백이 실제 선택된 전략과 무관하게 `currentStrategy`를 항상 `'direct'`로 보고하던 문제를 수정했습니다. 전략이 확정되는 시점부터 `currentStrategy`가 실제 값(`'stepped'`/`'tiled'`/`'direct'`)을 반영합니다.
 - Fixed: `SvgOptimizer.optimize()`의 `optimizations` 필드가 각 단계 옵션이 켜져 있다는 사실만으로 라벨을 보고해, DOMParser 미가용·malformed SVG 입력에서 실제로는 원본을 그대로 반환했는데도 `'gradient optimization'`/`'unused definitions removal'` 등이 적용된 것처럼 보고하던 문제를 수정합니다. 이제 각 단계가 실제로 SVG 문자열을 바꿨을 때만 해당 라벨을 보고합니다. 그라디언트·미사용 정의가 없는 SVG나, 정의는 있어도 제거·병합 대상이 없는 SVG에서도 더 이상 헛되이 보고하지 않습니다. no-op 단계가 더 이상 불필요하게 재직렬화하지 않아, 이전에 직렬화 부수효과로 정규화되던 마크업(자기닫힘 태그 등)은 이제 원본 표기가 그대로 보존됩니다 — `optimizedSvg`의 바이트 단위 출력이 이 변경 이전과 달라질 수 있습니다.
+- Fixed: advanced 서브패스의 고해상도 처리(`smartResize`, `autoSmartResize`, `fastResize`)에서 `quality:'fast'`/`quality:'high'`와 메모리 압박(저메모리) 경로가 브라우저 Canvas 크기 한계 체크를 건너뛰던 결함을 수정했습니다. 극단적 종횡비(가로/세로 한 축만 매우 크고 전체 메모리 사용량은 작은) 이미지에서 이 세 경로가 타일링 대신 direct/stepped 전략을 골라 Canvas 디코드 한계를 넘을 수 있었습니다. 이제 balanced 전략과 동일하게 캔버스 크기 한계를 공통으로 체크합니다.
 
 ### 제거
 
