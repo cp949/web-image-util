@@ -1,8 +1,9 @@
 /**
  * Canvas 최대 안전 치수 모듈의 characterization 테스트다.
  *
- * probe 주입/해제, fallback 적용을 다룬다. 기본(userAgent) probe는 navigator.userAgent를
- * 손쉽게 stub할 수 있어 memory.internal.ts와 달리 이 파일에서 직접 분기까지 검증한다.
+ * probe 주입/해제, fallback 적용, navigator 부재 시 기존 예외 계약을 다룬다.
+ * 기본(userAgent) probe는 navigator.userAgent를 손쉽게 stub할 수 있어
+ * memory.internal.ts와 달리 이 파일에서 직접 분기까지 검증한다.
  */
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -13,6 +14,7 @@ import {
 } from '../../../../src/utils/browser-capabilities/canvas-limits.internal';
 
 const originalUA = navigator.userAgent;
+const originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
 
 /** 기본 probe의 브라우저 분기 테스트를 위해 navigator.userAgent를 교체한다. */
 function setUserAgent(ua: string) {
@@ -23,11 +25,19 @@ function setUserAgent(ua: string) {
   });
 }
 
-describe('readMaxSafeCanvasDimension', () => {
-  afterEach(() => {
-    resetCanvasLimitProbe();
+afterEach(() => {
+  resetCanvasLimitProbe();
+  if (originalNavigatorDescriptor) {
+    Object.defineProperty(globalThis, 'navigator', originalNavigatorDescriptor);
+  }
+  Object.defineProperty(navigator, 'userAgent', {
+    value: originalUA,
+    configurable: true,
+    writable: true,
   });
+});
 
+describe('readMaxSafeCanvasDimension', () => {
   it('probe가 값을 반환하면 그 값을 그대로 돌려준다', () => {
     setCanvasLimitProbe({ read: () => 32767 });
 
@@ -47,18 +57,15 @@ describe('readMaxSafeCanvasDimension', () => {
 
     expect(readMaxSafeCanvasDimension()).toBe(16384);
   });
+
+  it('navigator가 없으면 기존 getMaxSafeDimension 계약대로 ReferenceError를 던진다', () => {
+    delete (globalThis as { navigator?: Navigator }).navigator;
+
+    expect(() => readMaxSafeCanvasDimension()).toThrow(ReferenceError);
+  });
 });
 
 describe('기본 userAgent probe', () => {
-  afterEach(() => {
-    resetCanvasLimitProbe();
-    Object.defineProperty(navigator, 'userAgent', {
-      value: originalUA,
-      configurable: true,
-      writable: true,
-    });
-  });
-
   it('Chrome UA에서 32767을 반환한다', () => {
     setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'

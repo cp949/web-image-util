@@ -58,7 +58,7 @@
 | `src/utils/source-utils/blob-projection.internal.ts` | Blob facts → **공개 진단 정책**(`resolveMimeFirstBlobFormat` — MIME 우선, 모호할 때만 파일명). 내부 라우팅 정책과 의도적으로 다르며 공개 판정과 `image-info`가 공유 |
 | `src/svg-contract.internal.ts` | SVG 처리 계약 leaf — `MAX_SVG_BYTES`, `SvgSanitizerMode`. core와 진단 API가 같은 방향으로 공유 |
 | `src/utils/browser-capabilities/memory.internal.ts` | 메모리 예산 단일 facts(`readMemoryBudget`) + GC 요청 메커니즘(`requestMemoryRelief`). probe는 `setMemoryProbe`로 주입 가능한 어댑터이고 fallback은 단일 값 하나다. 소비자 5곳(canvas-pool, performance-utils, auto-memory-manager, high-res-manager, tiled-processor)이 각자의 임계값 정책만 로컬로 남긴다 |
-| `src/utils/browser-capabilities/canvas-limits.internal.ts` | 브라우저별 Canvas 최대 안전 치수 단일 facts(`readMaxSafeCanvasDimension`). memory.internal.ts와 같은 probe 관례 — 기본 probe는 UA 문자열을 sniff하고, 알 수 없는 UA/navigator 부재는 단일 fallback(16384)으로 떨어진다. `high-res-detector.internal.ts`의 `getMaxSafeDimension()`이 이 값을 그대로 재노출한다 |
+| `src/utils/browser-capabilities/canvas-limits.internal.ts` | 브라우저별 Canvas 최대 안전 치수 단일 facts(`readMaxSafeCanvasDimension`). memory.internal.ts와 같은 probe 관례 — 기본 probe는 UA 문자열을 sniff하고, 알 수 없는 UA는 단일 fallback(16384)으로 떨어진다. navigator 부재 시에는 기존 `getMaxSafeDimension()`과 동일하게 `ReferenceError`를 던진다. `high-res-detector.internal.ts`의 `getMaxSafeDimension()`이 이 값을 그대로 재노출한다 |
 | `src/core/source-converter/options.internal.ts` | 내부 옵션 타입과 fetch 기본값 상수 |
 | `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.internal.ts`, `loader.internal.ts`, `safety.internal.ts` |
 | `src/core/source-converter/url/` | HTTP/Blob URL 로더 — `policy.internal.ts`, `fetch-guards.internal.ts`, `loader.internal.ts` |
