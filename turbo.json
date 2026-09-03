@@ -53,6 +53,10 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "llm.txt"]
     },
+    "check:browser-compat": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
     "test:ui": {
       "cache": false,
       "persistent": true

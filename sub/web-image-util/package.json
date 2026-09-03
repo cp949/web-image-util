@@ -35,7 +35,8 @@
     "test:coverage": "vitest run --coverage --config vitest.jsdom.config.ts --maxWorkers=1",
     "test:coverage:contract": "pnpm build && vitest --coverage --config vitest.contract.config.ts",
     "test:types": "vitest run --config vitest.jsdom.config.ts tests/unit/types",
-    "check:browser-target": "pnpm build && es-check es2020 \"dist/**/*.js\" --module"
+    "check:browser-target": "pnpm build && es-check es2020 \"dist/**/*.js\" --module",
+    "check:browser-compat": "node scripts/check-browser-compat.mjs"
   },
   "dependencies": {
     "dompurify": "^3.4.14"

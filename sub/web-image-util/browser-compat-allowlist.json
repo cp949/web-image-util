@@ -1,0 +1,12 @@
+[
+  {
+    "file": "src/core/source-converter/url/fetch-guards.internal.ts",
+    "api": "AbortSignal.timeout",
+    "reason": "typeof 가드 + 수동 setTimeout 폴백 구현됨"
+  },
+  {
+    "file": "src/core/source-converter/url/fetch-guards.internal.ts",
+    "api": "AbortSignal.any",
+    "reason": "typeof 가드 + 수동 리스너 결합 폴백 구현됨"
+  }
+]
