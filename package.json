@@ -8,9 +8,9 @@
   "author": "cp949 <cp949@naver.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.13.0"
   },
-  "packageManager": "pnpm@10.17.1",
+  "packageManager": "pnpm@11.25.0",
   "scripts": {
     "build": "turbo run build --filter=@cp949/web-image-util",
     "build:watch": "turbo run build:watch",
@@ -50,12 +50,5 @@
     "typescript": "^6.0.3",
     "vite": "8.2.1",
     "vitest": "^4.1.10"
-  },
-  "pnpm": {
-    "overrides": {
-      "esbuild": ">=0.28.1",
-      "postcss": ">=8.5.23",
-      "undici": "7.29.0"
-    }
   }
 }
