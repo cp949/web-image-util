@@ -3,8 +3,7 @@
  *
  * 입력 SVG 문자열 한 개와 정책 한 개를 받아 부수효과 없이 진단해
  * `InspectSvgSanitizationReport`를 반환한다. 네트워크 fetch, Canvas 렌더링,
- * DOMPurify의 top-level import를 수행하지 않는다. strict 경로만 `await import('./core.internal')`로
- * DOMPurify에 동적 접근한다.
+ * DOMPurify의 초기화는 strict sanitizer core에 위임한다.
  *
  * 공개 표면은 `svg-sanitizer/index.ts`의 재export를 경유하며, 구현은 이 파일의
  * 부수효과 없는 진단 함수에 둔다.
@@ -15,6 +14,7 @@ import { buildSvgBytesExceededFinding, MAX_SVG_BYTES } from '../svg-contract.int
 import { detectRuntimeEnvironment } from '../utils/environment.internal';
 import { parseAndClassifySvg } from '../utils/svg-document.internal';
 import { sanitizeSvgForRendering } from '../utils/svg-sanitizer';
+import { sanitizeSvgStrictCore } from './core.internal';
 import { collectEmbeddedImageStages, collectGeneralStages } from './inspect-sanitization/stage-collectors.internal';
 import type {
   InspectSvgSanitizationFailure,
@@ -91,30 +91,15 @@ type StrictSanitizationOutcome =
   | { status: 'failed'; failure: InspectSvgSanitizationFailure };
 
 /**
- * strict sanitizer를 동적 import로 실행한다.
+ * strict sanitizer를 실행한다.
  *
- * lazy 경계 유지를 위해 본 함수만 `await import('./core.internal')`를 수행한다(D4 / D1).
- * strict 내부에서 던진 `ImageProcessError`는 catch해 failure code로 매핑하며,
- * 동적 import 자체가 실패하면 `svg-dompurify-init-failed`로 변환한다(D6).
+ * strict 내부에서 던진 `ImageProcessError`를 failure code로 매핑한다.
  *
  * 옵션은 `undefined`로 전달해 `removeMetadata=false`, `domPurifyConfig` 없음,
  * 기본 한도(`DEFAULT_MAX_BYTES`, `DEFAULT_MAX_NODE_COUNT`)를 그대로 사용한다.
  * 외부 호출이므로 recursionDepth는 0으로 둔다.
  */
 async function runStrictSanitization(svgString: string): Promise<StrictSanitizationOutcome> {
-  let sanitizeSvgStrictCore: typeof import('./core.internal').sanitizeSvgStrictCore;
-  try {
-    ({ sanitizeSvgStrictCore } = await import('./core.internal'));
-  } catch {
-    return {
-      status: 'failed',
-      failure: {
-        code: 'svg-dompurify-init-failed',
-        message: 'Strict sanitizer could not initialize DOMPurify in this environment.',
-      },
-    };
-  }
-
   try {
     const result = sanitizeSvgStrictCore(svgString, undefined, 0);
     return { status: 'ok', sanitizedSvg: result.svg, warnings: result.warnings };
@@ -178,7 +163,7 @@ function countElementsInSanitizedSvg(sanitizedSvg: string): number {
 }
 
 /**
- * strict 정책 경로. 동적 import로 strict sanitizer를 실행하고 결과를 측정한다.
+ * strict 정책 경로. strict sanitizer를 실행하고 결과를 측정한다.
  *
  * stage 수집은 **원본 svgString**의 DOM 순회로 수행한다(sanitize 결과를 diff하지 않는다).
  * strict 정책 컨텍스트에서는 `doctype-removed`/`entity-removed`도 결과에 포함된다.
@@ -259,8 +244,7 @@ function runSkipImpact(svgString: string): InspectSvgSanitizationImpact {
 /**
  * SVG 문자열에 sanitizer 정책을 적용했을 때 어떤 stage가 발동(또는 발동할)했는지 진단한다.
  *
- * 네트워크, Canvas 렌더링, DOMPurify top-level import를 수행하지 않는다.
- * strict 정책은 동적 import로만 DOMPurify에 접근한다.
+ * 네트워크와 Canvas 렌더링을 수행하지 않는다.
  * 비문자열 입력과 잘못된 policy 값에만 throw하며, 그 외 모든 케이스(byte 초과, 파싱 실패,
  * strict 내부 실패)는 보고서로 답한다.
  *
@@ -314,7 +298,7 @@ export async function inspectSvgSanitization(
   // 정상 경로 — 정책별 분기.
   // - lightweight: sanitizer 동기 실행 + outputBytes 측정 + 일반 stage 수집
   // - skip: sanitizer 미실행, 일반 stage를 potentialStages로 수집
-  // - strict: 동적 import로 sanitizer 실행 + outputBytes/outputNodeCount 측정 +
+  // - strict: sanitizer 실행 + outputBytes/outputNodeCount 측정 +
   //   원본 DOM 순회 기반 stage 수집(strict 컨텍스트에서는 doctype/entity 포함)
   let impact: InspectSvgSanitizationImpact;
   if (policy === 'lightweight') {

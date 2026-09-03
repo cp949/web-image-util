@@ -28,6 +28,7 @@
  */
 
 import { canvasToBlob } from './base/canvas-utils.internal';
+import { AdvancedImageProcessor } from './core/advanced-processor';
 import type { FilterCategory, FilterOptions, FilterPlugin, FilterValidationResult } from './filters/plugin-system';
 import { getMissingFilterNames } from './filters/plugin-system';
 import { ImageProcessError } from './types';
@@ -137,8 +138,6 @@ export async function createAdvancedThumbnail(
 ): Promise<{ canvas: HTMLCanvasElement; blob: Blob; stats: any }> {
   assertAdvancedFiltersInitialized(options.filters);
 
-  const { AdvancedImageProcessor } = await import('./core/advanced-processor');
-
   const result = await AdvancedImageProcessor.processImage(image, {
     resize: {
       width: size,
@@ -192,8 +191,6 @@ export async function optimizeForSocial(
   } = {}
 ): Promise<{ canvas: HTMLCanvasElement; blob: Blob }> {
   assertAdvancedFiltersInitialized(options.filters);
-
-  const { AdvancedImageProcessor } = await import('./core/advanced-processor');
 
   const dimensions = {
     instagram: { width: 1080, height: 1080 },
@@ -276,8 +273,6 @@ export async function batchOptimize(
     onProgress?: (completed: number, total: number, currentImage?: string) => void;
   } = {}
 ): Promise<Array<{ name?: string; result: any }>> {
-  const { AdvancedImageProcessor } = await import('./core/advanced-processor');
-
   const results = await AdvancedImageProcessor.batchProcess(
     images.map((item) => ({
       image: item.image,
