@@ -10,7 +10,7 @@ export default defineConfig({
     'src/svg-sanitizer/index.ts',
   ],
   format: ['esm'],
-  target: 'es2020',
+  target: 'chrome75',
   platform: 'browser', // 브라우저 전용
   dts: true,
   sourcemap: true,
