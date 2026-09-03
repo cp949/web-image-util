@@ -43,7 +43,7 @@
     "test:contract": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "llm.txt", "coverage/contract/**", "test-results/**"],
-      "inputs": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.mjs", "package.json", "tsup.config.ts", "vitest.contract.config.*"]
+      "inputs": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.mjs", "package.json", "tsdown.config.ts", "vitest.contract.config.*"]
     },
     "test:package-subpath": {
       "dependsOn": ["build"],
