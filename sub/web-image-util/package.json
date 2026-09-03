@@ -34,7 +34,8 @@
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "test:coverage": "vitest run --coverage --config vitest.jsdom.config.ts --maxWorkers=1",
     "test:coverage:contract": "pnpm build && vitest --coverage --config vitest.contract.config.ts",
-    "test:types": "vitest run --config vitest.jsdom.config.ts tests/unit/types"
+    "test:types": "vitest run --config vitest.jsdom.config.ts tests/unit/types",
+    "check:browser-target": "pnpm build && es-check es2020 \"dist/**/*.js\" --module"
   },
   "dependencies": {
     "dompurify": "^3.4.14"
@@ -46,6 +47,7 @@
     "@vitest/browser-playwright": "^4.1.10",
     "@vitest/coverage-v8": "^4.1.10",
     "canvas": "^3.2.3",
+    "es-check": "^9.6.4",
     "jest-image-snapshot": "^6.5.2",
     "jsdom": "^29.1.1",
     "playwright": "^1.62.1",

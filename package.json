@@ -29,7 +29,7 @@
     "test:ui": "turbo run test:ui",
     "test:browser": "turbo run test:browser",
     "test:coverage": "turbo run test:coverage",
-    "verify:ci": "pnpm test:scripts && turbo run typecheck lint format:check test:node test:contract && pnpm build:demo",
+    "verify:ci": "pnpm test:scripts && turbo run typecheck lint format:check test:node test:contract check:browser-target && pnpm build:demo",
     "verify:release": "node ./scripts/verify-release.mjs",
     "dev": "turbo run build:watch",
     "dev:demo": "pnpm --filter @cp949/demo dev",

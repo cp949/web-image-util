@@ -49,6 +49,10 @@
       "dependsOn": ["build"],
       "outputs": []
     },
+    "check:browser-target": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "llm.txt"]
+    },
     "test:ui": {
       "cache": false,
       "persistent": true
