@@ -390,7 +390,7 @@ try {
 
 ## 브라우저 지원
 
-빌드 타깃은 Chrome 75 이상입니다(best-effort). 매 커밋마다 최신 Chromium에서 핵심 동작을 자동 검증합니다. Chrome 75~82는 Playwright 자동화 한계로 자동 실행 검증 수단이 없고, Chrome 83은 필요할 때 수동으로 추가 검증할 수 있습니다(기본 실행 안 됨). 자세한 내용은 [ADR-0001](../../docs/decisions/ADR-0001-browser-floor-chrome75.md)을 참고하세요.
+빌드 타깃은 Chrome 75 이상입니다(best-effort). jsdom 기반 단위 테스트를 매 CI에서 실행하고, 최신 Chromium 브라우저 스모크(`test:browser`)는 로컬/수동으로 실행합니다. Chrome 75~82는 Playwright 자동화 한계로 자동 실행 검증 수단이 없고, Chrome 83은 필요할 때 수동으로 추가 검증할 수 있습니다(기본 실행 안 됨). 자세한 내용은 [ADR-0001](https://github.com/cp949/web-image-util/blob/main/docs/decisions/ADR-0001-browser-floor-chrome75.md)을 참고하세요.
 
 ```typescript
 import { detectBrowserCapabilities } from '@cp949/web-image-util';
@@ -413,6 +413,7 @@ const format = caps.webp ? 'webp' : 'jpeg';
 - [SVG sanitizer 보안 정책](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md)
 - [Release checklist](https://github.com/cp949/web-image-util/blob/main/docs/release-checklist.md)
 - [CHANGELOG](https://github.com/cp949/web-image-util/blob/main/sub/web-image-util/CHANGELOG.md)
+- [ADR-0001: Chrome 75 브라우저 하한선](https://github.com/cp949/web-image-util/blob/main/docs/decisions/ADR-0001-browser-floor-chrome75.md)
 
 ## 라이선스
 
