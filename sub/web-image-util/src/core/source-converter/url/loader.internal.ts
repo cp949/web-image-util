@@ -8,6 +8,7 @@
 import { ImageProcessError } from '../../../types';
 import { productionLog } from '../../../utils/debug.internal';
 import { decodeImageFromBlob, decodeImageFromUrl } from '../../../utils/image-decode.internal';
+import { readBlobAsText } from '../../../utils/source-utils/blob-io.internal';
 import { isXmlMimeType, normalizeMimeType } from '../../../utils/source-utils/mime.internal';
 import { inspectBlobMetadata, sniffBlobSvgIfCandidate } from '../../../utils/source-utils/source-facts.internal';
 import { isInlineSvg } from '../../../utils/svg-detection';
@@ -69,7 +70,7 @@ export async function loadBlobUrl(
     const facts = inspectBlobMetadata(blob);
     const isSvg = hasInternalSvgMetadataHint(facts) || (await sniffBlobSvgIfCandidate(blob, facts));
     if (isSvg) {
-      const svgContent = await blob.text();
+      const svgContent = await readBlobAsText(blob);
       return convertSvgToElement(svgContent, undefined, undefined, buildSvgRenderOptions(options));
     }
 

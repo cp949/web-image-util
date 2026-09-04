@@ -4,6 +4,7 @@
  */
 
 import { parseSvgFromDataUrl } from '../../core/source-converter/svg/data-url.internal';
+import { readBlobAsText } from '../source-utils/blob-io.internal';
 // 스택 타입 leaf(types.internal)만 의존한다 — 부모 파일 되임포트 금지.
 import type { InspectSvgSourceMeta } from './types.internal';
 
@@ -49,7 +50,7 @@ export async function extractSvgBody(
     if (blob.size > byteLimit) {
       return { failure: 'byte-limit-exceeded', actualBytes: blob.size };
     }
-    const text = await blob.text();
+    const text = await readBlobAsText(blob);
     const byteCount = textEncoder.encode(text).byteLength;
     if (byteCount > byteLimit) {
       // .text()는 이미 호출됐으므로 consumed 정보를 fail 분기에도 함께 보존한다(D11).

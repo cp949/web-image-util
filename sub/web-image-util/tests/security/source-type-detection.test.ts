@@ -136,5 +136,19 @@ describe('보안: SVG 입력 검증', () => {
 
       await expect(detectSourceTypeAsync(svgBlob)).resolves.toBe('svg-blob');
     });
+
+    it('네이티브 Blob.text()가 없어도 FileReader 폴백으로 SVG를 감지한다', async () => {
+      const svgBlob = new Blob(['<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>'], { type: '' });
+      const nativeText = Object.getOwnPropertyDescriptor(Blob.prototype, 'text');
+      Object.defineProperty(Blob.prototype, 'text', { configurable: true, value: undefined });
+
+      try {
+        await expect(detectSourceTypeAsync(svgBlob)).resolves.toBe('svg-blob');
+      } finally {
+        if (nativeText) {
+          Object.defineProperty(Blob.prototype, 'text', nativeText);
+        }
+      }
+    });
   });
 });

@@ -9,6 +9,7 @@
 import { detectSourceTypeAsync, detectStringSourceType } from '../../core/source-converter/detect.internal';
 import { convertToImageElement } from '../../core/source-converter/index';
 import type { ImageSource } from '../../types';
+import { readBlobAsText } from '../source-utils/blob-io.internal';
 import { extractSvgDimensions } from '../svg-dimensions';
 import type { ImageDimensions, ImageOrientation } from './types';
 
@@ -51,7 +52,7 @@ async function tryGetSvgBlobDimensions(source: ImageSource): Promise<ImageDimens
     return undefined;
   }
 
-  const dimensions = extractSvgDimensions(await source.text());
+  const dimensions = extractSvgDimensions(await readBlobAsText(source));
   return {
     width: dimensions.width,
     height: dimensions.height,

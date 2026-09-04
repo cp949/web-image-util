@@ -42,6 +42,7 @@ import {
   outputFormatFromFilename,
 } from '../utils/format-utils';
 import { decodeImageFromBlob } from '../utils/image-decode.internal';
+import { readBlobAsArrayBuffer } from '../utils/source-utils/blob-io.internal';
 import { LazyRenderPipeline } from './lazy-render-pipeline.internal';
 import { convertToImageElement } from './source-converter/index';
 import type { SvgPassthroughMode } from './source-converter/options.internal';
@@ -265,7 +266,7 @@ export class OutputPipeline {
       const blobResult = await this.toBlob('png');
 
       try {
-        return await blobResult.blob.arrayBuffer();
+        return await readBlobAsArrayBuffer(blobResult.blob);
       } catch (error) {
         throw new ImageProcessError('ArrayBuffer conversion failed', 'BLOB_TO_ARRAYBUFFER_FAILED', { cause: error });
       }

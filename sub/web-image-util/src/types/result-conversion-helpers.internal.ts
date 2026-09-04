@@ -1,5 +1,6 @@
 import { createOwnedCanvas, canvasToBlob as encodeCanvasToBlob } from '../base/canvas-utils.internal';
 import { decodeImageFromUrl } from '../utils/image-decode.internal';
+import { readBlobAsArrayBuffer } from '../utils/source-utils/blob-io.internal';
 import type { OutputOptions } from './index';
 
 /** format 미지정 시 기본 MIME으로 떨어지는 출력 MIME 결정. 이 모듈 안에서만 쓴다. */
@@ -41,7 +42,7 @@ export function createFileFromBlob(blob: globalThis.Blob, filename: string): glo
 }
 
 export async function blobToArrayBuffer(blob: globalThis.Blob): Promise<ArrayBuffer> {
-  return await blob.arrayBuffer();
+  return readBlobAsArrayBuffer(blob);
 }
 
 export async function blobToUint8Array(blob: globalThis.Blob): Promise<Uint8Array> {

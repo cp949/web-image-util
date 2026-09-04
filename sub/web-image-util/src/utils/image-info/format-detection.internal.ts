@@ -13,6 +13,7 @@ import type { ImageSource } from '../../types';
 import { ImageFormats } from '../../types';
 import { parseDataURLMimeType } from '../data-url';
 import { mimeTypeToImageFormat } from '../format-utils';
+import { readBlobAsArrayBuffer } from '../source-utils/blob-io.internal';
 import { resolveMimeFirstBlobFormat } from '../source-utils/blob-projection.internal';
 import { detectFormatFromBytes } from '../source-utils/byte-signature.internal';
 import { getFormatFromPath } from '../source-utils/path.internal';
@@ -68,7 +69,7 @@ async function detectImageFormat(source: ImageSource): Promise<ImageInfo['format
       return metadataFormat;
     }
 
-    const buffer = await source.slice(0, 32).arrayBuffer();
+    const buffer = await readBlobAsArrayBuffer(source.slice(0, 32));
     return formatFromBytes(new Uint8Array(buffer));
   }
 

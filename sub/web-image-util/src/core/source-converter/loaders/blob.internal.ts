@@ -6,6 +6,7 @@
 
 import { formatToMimeType } from '../../../utils/format-utils';
 import { decodeImageFromBlob } from '../../../utils/image-decode.internal';
+import { readBlobAsText } from '../../../utils/source-utils/blob-io.internal';
 import { detectFormatFromBytes } from '../../../utils/source-utils/byte-signature.internal';
 import { DEFAULT_SVG_SNIFF_BYTES, isInlineSvg } from '../../../utils/svg-detection';
 import { assertBlobSizeWithinLimit } from '../detect.internal';
@@ -64,7 +65,7 @@ export async function convertBlobToElement(
 
   // 판정 모듈이 확정한 SVG Blob만 보안 처리 경로로 보낸다.
   if (sourceType === 'svg-blob') {
-    const svgText = await blob.text();
+    const svgText = await readBlobAsText(blob);
     return convertSvgToElement(svgText, undefined, undefined, buildSvgRenderOptions(options));
   }
 

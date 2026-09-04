@@ -2,6 +2,8 @@
  * SVG 문자열 감지 유틸리티다.
  */
 
+import { readBlobAsText } from './source-utils/blob-io.internal';
+
 /**
  * 문자열 앞의 UTF-8 BOM을 제거한다.
  *
@@ -125,7 +127,7 @@ export const DEFAULT_SVG_SNIFF_BYTES = 4096;
  */
 export async function sniffSvgFromBlob(blob: Blob, bytes = DEFAULT_SVG_SNIFF_BYTES): Promise<boolean> {
   try {
-    return isInlineSvg(await blob.slice(0, Math.max(0, bytes)).text());
+    return isInlineSvg(await readBlobAsText(blob.slice(0, Math.max(0, bytes))));
   } catch {
     return false;
   }

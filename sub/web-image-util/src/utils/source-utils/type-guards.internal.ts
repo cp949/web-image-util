@@ -42,13 +42,8 @@ export function isBlobSource(source: unknown): source is Blob {
     typeof source.type === 'string' &&
     'size' in source &&
     typeof source.size === 'number' &&
-    ('slice' in source || 'arrayBuffer' in source)
+    'slice' in source
   );
-}
-
-/** Blob 슬라이스가 `text()`를 노출해 안전하게 본문을 읽을 수 있는지 확인한다. */
-export function canReadBlobText(blob: Blob): boolean {
-  return typeof blob.slice === 'function' && typeof blob.slice(0, 0).text === 'function';
 }
 
 /** 객체에서 `tagName`을 안전하게 대문자로 추출한다. */

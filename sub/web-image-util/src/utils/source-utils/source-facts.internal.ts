@@ -10,7 +10,6 @@ import { mimeTypeToImageFormat } from '../format-utils';
 import { DEFAULT_SVG_SNIFF_BYTES, isInlineSvg, sniffSvgFromBlob } from '../svg-detection';
 import { isXmlMimeType, normalizeMimeType } from './mime.internal';
 import { getFormatFromFileName, getFormatFromPath } from './path.internal';
-import { canReadBlobText } from './type-guards.internal';
 
 // 정본은 svg-detection.ts가 소유한다 — 실제로 스니핑을 수행하는 sniffSvgFromBlob이
 // 자기 기본 파라미터로 이 값을 쓰므로, 상수도 같은 곳에 있어야 리터럴이 다시 갈리지 않는다.
@@ -85,10 +84,6 @@ export async function sniffBlobSvgIfCandidate(
   facts: BlobSourceFacts,
   sniffBytes = DEFAULT_SVG_SNIFF_BYTES
 ): Promise<boolean> {
-  if (!canReadBlobText(blob)) {
-    return false;
-  }
-
   const mimeType = facts.normalizedMimeType;
   const shouldSniff =
     mimeType === '' || mimeType === 'application/octet-stream' || mimeType === 'text/plain' || isXmlMimeType(mimeType);
