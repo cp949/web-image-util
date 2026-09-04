@@ -87,7 +87,7 @@ describe('batchOptimize 위임 + name 필드 전파', () => {
     });
 
     it('options 명시 항목은 그 options 가 그대로 위임된다', async () => {
-      const customOptions = { format: 'webp', quality: 0.9 };
+      const customOptions = { format: 'webp' as const };
       const images = [{ image: createMockImage(), options: customOptions }];
       batchProcessSpy.mockResolvedValue([makeDummyBatchResultItem()] as any);
 

@@ -28,6 +28,7 @@
  */
 
 import { canvasToBlob } from './base/canvas-utils.internal';
+import type { AdvancedProcessingOptions, AdvancedProcessingResult } from './core/advanced-processor';
 import { AdvancedImageProcessor } from './core/advanced-processor';
 import type { FilterCategory, FilterOptions, FilterPlugin, FilterValidationResult } from './filters/plugin-system';
 import { getMissingFilterNames } from './filters/plugin-system';
@@ -266,13 +267,13 @@ export async function batchOptimize(
   images: Array<{
     image: HTMLImageElement;
     name?: string;
-    options?: any;
+    options?: AdvancedProcessingOptions;
   }>,
   options: {
     concurrency?: number;
     onProgress?: (completed: number, total: number, currentImage?: string) => void;
   } = {}
-): Promise<Array<{ name?: string; result: any }>> {
+): Promise<Array<{ name?: string; result: AdvancedProcessingResult }>> {
   const results = await AdvancedImageProcessor.batchProcess(
     images.map((item) => ({
       image: item.image,
