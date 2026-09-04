@@ -2,7 +2,15 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-
+// @ts-expect-error 테스트에서 루트 .mjs 스크립트를 직접 import한다.
+import {
+  getMenuItems,
+  getReleaseItArguments,
+  parsePublishArguments,
+  planPublish,
+  publishPackage,
+  validatePublishLifecycle,
+} from '../../../scripts/publish-npm.mjs';
 // 루트 릴리스 검증 스크립트의 단계 정의를 직접 검증한다.
 // @ts-expect-error 테스트에서 루트 .mjs 스크립트를 직접 import한다.
 import { getReleaseVerificationSteps, runReleaseVerification } from '../../../scripts/verify-release.mjs';
@@ -27,6 +35,19 @@ describe('릴리스 검증 스크립트', () => {
     const rootPackageJson = JSON.parse(readFileSync(join(repositoryRoot, 'package.json'), 'utf8'));
 
     expect(rootPackageJson.scripts['verify:release']).toBe('node ./scripts/verify-release.mjs');
+  });
+
+  test('publish:npm은 메뉴 wrapper를 실행하고 release-it을 개발 의존성으로 고정한다', () => {
+    const rootPackageJson = JSON.parse(readFileSync(join(repositoryRoot, 'package.json'), 'utf8'));
+
+    expect(rootPackageJson.scripts['publish:npm']).toBe('node ./scripts/publish-npm.mjs');
+    expect(rootPackageJson.devDependencies['release-it']).toBe('21.0.2');
+  });
+
+  test('공개 package는 wrapper marker가 없는 직접 publish를 lifecycle에서 차단한다', () => {
+    const packageJson = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
+
+    expect(packageJson.scripts.prepublishOnly).toBe('node ../../scripts/publish-npm.mjs --lifecycle-guard');
   });
 
   test('릴리스 검증 단계를 순서대로 정의한다', () => {
@@ -138,5 +159,75 @@ describe('릴리스 검증 스크립트', () => {
 
     expect(exitCode).toBe(27);
     expect(errorSpy).toHaveBeenCalledWith('\n[verify:release] 단계 실패: 실패 로그 단계 (exit code 27)');
+  });
+});
+
+describe('npm 배포 스크립트', () => {
+  test('인자가 없으면 대화형 메뉴를 선택한다', () => {
+    expect(parsePublishArguments([])).toEqual({ menu: true });
+  });
+
+  test('명시적 실행은 dry-run을 기본값으로 사용한다', () => {
+    expect(parsePublishArguments(['--dry-run'])).toEqual({
+      dryRun: true,
+      confirmed: false,
+    });
+  });
+
+  test('실제 publish는 명시적 confirmation을 요구한다', () => {
+    expect(() => parsePublishArguments(['--publish'])).toThrow('--confirm-publish');
+    expect(parsePublishArguments(['--publish', '--confirm-publish'])).toEqual({
+      dryRun: false,
+      confirmed: true,
+    });
+  });
+
+  test('메뉴는 web-image-util의 release 단계를 표시한다', () => {
+    expect(getMenuItems()).toEqual([
+      ['1', '패키지 빌드'],
+      ['2', 'release 전체 검증'],
+      ['3', 'dry-run 배포'],
+      ['4', '실제 publish'],
+      ['5', 'registry 상태 새로고침'],
+      ['6', '배포 결과 확인'],
+      ['q', '종료'],
+    ]);
+  });
+
+  test('release-it은 package cwd에서 version bump와 Git 작업 없이 실행한다', () => {
+    expect(getReleaseItArguments(true)).toEqual([
+      '--dry-run',
+      '--ci',
+      '--no-increment',
+      '--no-git',
+      '--npm.skipChecks',
+    ]);
+    expect(getReleaseItArguments(false)).toEqual(['--no-git']);
+  });
+
+  test('실제 publish는 현재 버전의 registry 상태와 무관하게 release-it에 다음 버전 선택을 맡긴다', () => {
+    expect(planPublish(false, { status: 'published', version: '4.0.0' })).toEqual({ action: 'proceed' });
+    expect(planPublish(false, { status: 'missing' })).toEqual({ action: 'proceed' });
+    expect(planPublish(false, { status: 'error', reason: 'EAI_AGAIN' })).toEqual({
+      action: 'abort',
+      reason: 'registry 조회 실패',
+    });
+  });
+
+  test('검증이 실패하면 release-it을 실행하지 않는다', () => {
+    const commands: string[][] = [];
+    const succeeded = publishPackage('4.0.0', true, { status: 'missing' }, (command: string, args: string[]) => {
+      commands.push([command, ...args]);
+      return { status: 1 };
+    });
+
+    expect(succeeded).toBe(false);
+    expect(commands).toEqual([['pnpm', 'verify:release']]);
+  });
+
+  test('lifecycle direct actual은 차단하고 wrapper marker와 dry-run은 허용한다', () => {
+    expect(() => validatePublishLifecycle({})).toThrow('WEB_IMAGE_UTIL_PUBLISH_DIRECT_DENIED');
+    expect(() => validatePublishLifecycle({ npm_config_dry_run: 'true' })).not.toThrow();
+    expect(() => validatePublishLifecycle({ WEB_IMAGE_UTIL_PUBLISH_CONFIRMED: '1' })).not.toThrow();
   });
 });

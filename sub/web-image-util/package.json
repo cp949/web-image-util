@@ -17,6 +17,7 @@
     "build": "tsdown && node ./scripts/generate-llm-txt.mjs",
     "build:watch": "tsdown --watch",
     "package": "pnpm build",
+    "prepublishOnly": "node ../../scripts/publish-npm.mjs --lifecycle-guard",
     "clean": "rm -rf dist llm.txt",
     "lint": "biome check src tests scripts browser-test-floor",
     "lint:fix": "biome check --write src tests scripts browser-test-floor",
