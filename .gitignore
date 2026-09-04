@@ -6,6 +6,7 @@ _works/
 .worktrees/
 build/
 dist/
+sub/web-image-util/browser-test-floor/chrome83-dist/
 sub/web-image-util/llm.txt
 .claude/
 test-results/

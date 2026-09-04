@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
 // 런타임 감사 스크립트를 직접 검증하기 위해 선언 파일 없이 .mjs 모듈을 불러온다.
-// @ts-expect-error 테스트에서 런타임 스크립트를 직접 import한다.
 import {
   filterAllowedViolations,
   findAllowedViolations,
   findViolationsInSource,
+  // @ts-expect-error 테스트에서 런타임 스크립트를 직접 import한다.
 } from '../../../scripts/browser-compat-checker.mjs';
 
 describe('브라우저 호환성 정적 감사', () => {
