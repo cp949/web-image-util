@@ -1,6 +1,6 @@
-import { requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
-import { placeOnce, placeTiled } from './placement.internal';
 import type { Point, Position, Size } from './position-types';
+import type { WatermarkContentAdapter } from './watermark-content.internal';
+import { renderWatermarkContentOnce, renderWatermarkContentTiled } from './watermark-content.internal';
 
 /**
  * Text style options
@@ -51,46 +51,38 @@ export class TextWatermark {
    * Add text watermark to canvas
    */
   static addToCanvas(canvas: HTMLCanvasElement, options: TextWatermarkOptions): HTMLCanvasElement {
-    const ctx = requireCanvasContext(canvas, 'TextWatermark.addToCanvas');
-
     const { text, position, customPosition, style, rotation = 0, margin = { x: 10, y: 10 } } = options;
+    const containerSize: Size = { width: canvas.width, height: canvas.height };
 
-    // 스타일 적용부터 그리기까지를 하나의 save/restore 안에 둔다.
-    // applyTextStyle은 ctx의 font·globalAlpha·fillStyle·textBaseline 등을 바꾸므로,
-    // 밖에서 호출하면 호출자 소유 Canvas에 그 상태가 남는다.
-    withCanvasState(ctx, () => {
-      // 텍스트 스타일 적용
-      TextWatermark.applyTextStyle(ctx, style);
-
-      // 텍스트 크기 측정
-      const textMetrics = ctx.measureText(text);
-      const textSize: Size = {
-        width: textMetrics.width,
-        height: style.fontSize || 16,
-      };
-
-      const containerSize: Size = { width: canvas.width, height: canvas.height };
-      placeOnce(
-        ctx,
-        { containerSize, objectSize: textSize, position, customPosition, margin, rotation },
-        (textPosition) => {
-          if (style.shadow) {
-            ctx.shadowColor = style.shadow.color;
-            ctx.shadowOffsetX = style.shadow.offsetX;
-            ctx.shadowOffsetY = style.shadow.offsetY;
-            ctx.shadowBlur = style.shadow.blur;
-          }
-
-          if (style.strokeWidth && style.strokeColor) {
-            ctx.strokeText(text, textPosition.x, textPosition.y);
-          }
-
-          ctx.fillText(text, textPosition.x, textPosition.y);
+    const adapter: WatermarkContentAdapter = {
+      prepare(ctx): Size {
+        TextWatermark.applyTextStyle(ctx, style);
+        const textMetrics = ctx.measureText(text);
+        return { width: textMetrics.width, height: style.fontSize || 16 };
+      },
+      draw(ctx, origin) {
+        if (style.shadow) {
+          ctx.shadowColor = style.shadow.color;
+          ctx.shadowOffsetX = style.shadow.offsetX;
+          ctx.shadowOffsetY = style.shadow.offsetY;
+          ctx.shadowBlur = style.shadow.blur;
         }
-      );
-    });
 
-    return canvas;
+        if (style.strokeWidth && style.strokeColor) {
+          ctx.strokeText(text, origin.x, origin.y);
+        }
+
+        ctx.fillText(text, origin.x, origin.y);
+      },
+    };
+
+    return renderWatermarkContentOnce(canvas, 'TextWatermark.addToCanvas', adapter, {
+      containerSize,
+      position,
+      customPosition,
+      margin,
+      rotation,
+    });
   }
 
   /**
@@ -145,37 +137,29 @@ export class TextWatermark {
       stagger?: boolean;
     }
   ): HTMLCanvasElement {
-    const ctx = requireCanvasContext(canvas, 'TextWatermark.addRepeatingPattern');
-
     const { text, style, rotation = 0, spacing, stagger = false } = options;
 
-    // addToCanvas와 같은 이유로 스타일 적용을 save/restore 안으로 넣는다
-    withCanvasState(ctx, () => {
-      TextWatermark.applyTextStyle(ctx, style);
-      const textMetrics = ctx.measureText(text);
-      const textWidth = textMetrics.width;
-      const textHeight = style.fontSize || 16;
-
-      placeTiled(
-        ctx,
-        {
-          containerSize: { width: canvas.width, height: canvas.height },
-          tileSize: { width: textWidth, height: textHeight },
-          spacing,
-          stagger,
-          rotation,
-          rotationMode: 'frame',
-          context: 'TextWatermark.addRepeatingPattern',
-        },
-        ({ x, y }) => {
-          if (style.strokeWidth && style.strokeColor) {
-            ctx.strokeText(text, x, y);
-          }
-          ctx.fillText(text, x, y);
+    const adapter: WatermarkContentAdapter = {
+      prepare(ctx): Size {
+        TextWatermark.applyTextStyle(ctx, style);
+        const textMetrics = ctx.measureText(text);
+        return { width: textMetrics.width, height: style.fontSize || 16 };
+      },
+      draw(ctx, { x, y }) {
+        if (style.strokeWidth && style.strokeColor) {
+          ctx.strokeText(text, x, y);
         }
-      );
-    });
+        ctx.fillText(text, x, y);
+      },
+    };
 
-    return canvas;
+    return renderWatermarkContentTiled(canvas, adapter, {
+      containerSize: { width: canvas.width, height: canvas.height },
+      spacing,
+      stagger,
+      rotation,
+      rotationMode: 'frame',
+      context: 'TextWatermark.addRepeatingPattern',
+    });
   }
 }

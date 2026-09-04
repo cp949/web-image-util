@@ -82,6 +82,10 @@ Position/margin 기반 단일 배치와 spacing/stagger 기반 반복 배치는 
 반복 배치의 frame 회전과 per-tile 회전은 서로 다른 표현이며, 호출자가 모드를 명시한다.
 _Avoid_: 워터마크 좌표 루프, 타일 위치 계산
 
+**워터마크 콘텐츠 렌더 (watermark content render)**:
+스타일 적용 → 크기 측정 → 배치 호출 → draw를 하나의 canvas 상태 범위 안에서 실행하는 골격. 배치(위치·회전)는 다루지 않고, 그 앞단 — 스타일이 측정보다 먼저 실행돼야 한다는 순서 제약 — 만 소유한다. `watermark-content.internal.ts`의 `WatermarkContentAdapter`(`prepare`/`draw` 2훅)가 단일 소유하며, `TextWatermark`·`ImageWatermark`는 콘텐츠별 준비·그리기만 채워 넣는 adapter다.
+_Avoid_: 워터마크 렌더러, 그리기 헬퍼
+
 **일괄 (batch)**:
 여러 입력이나 누적된 연산을 한 묶음으로 모아 한 번에 실행하는 동작. 체이닝으로 쌓인 연산을 최종
 출력 시점에 단일 `drawImage()`로 실행하는 것과 `BatchResizer`·`batchSmartResize` 계열의 다중 이미지

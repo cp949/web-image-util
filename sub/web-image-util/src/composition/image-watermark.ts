@@ -1,6 +1,6 @@
-import { requireCanvasContext, withCanvasState } from './canvas-drawing.internal';
-import { placeOnce, placeTiled } from './placement.internal';
 import type { Point, Position, Size } from './position-types';
+import type { WatermarkContentAdapter } from './watermark-content.internal';
+import { renderWatermarkContentOnce, renderWatermarkContentTiled } from './watermark-content.internal';
 
 /**
  * Image watermark options
@@ -30,8 +30,6 @@ export class ImageWatermark {
    * Add image watermark to canvas
    */
   static addToCanvas(canvas: HTMLCanvasElement, options: ImageWatermarkOptions): HTMLCanvasElement {
-    const ctx = requireCanvasContext(canvas, 'ImageWatermark.addToCanvas');
-
     const {
       watermarkImage,
       position,
@@ -43,35 +41,30 @@ export class ImageWatermark {
       blendMode = 'source-over',
     } = options;
 
-    // Calculate watermark size
     const watermarkSize: Size = {
       width: watermarkImage.width * scale,
       height: watermarkImage.height * scale,
     };
-
     const containerSize: Size = { width: canvas.width, height: canvas.height };
 
-    withCanvasState(ctx, () => {
-      // Set blending mode and opacity
-      ctx.globalCompositeOperation = blendMode;
-      ctx.globalAlpha = opacity;
+    const adapter: WatermarkContentAdapter = {
+      prepare(ctx): Size {
+        ctx.globalCompositeOperation = blendMode;
+        ctx.globalAlpha = opacity;
+        return watermarkSize;
+      },
+      draw(ctx, origin) {
+        ctx.drawImage(watermarkImage, origin.x, origin.y, watermarkSize.width, watermarkSize.height);
+      },
+    };
 
-      placeOnce(
-        ctx,
-        { containerSize, objectSize: watermarkSize, position, customPosition, margin, rotation },
-        (watermarkPosition) => {
-          ctx.drawImage(
-            watermarkImage,
-            watermarkPosition.x,
-            watermarkPosition.y,
-            watermarkSize.width,
-            watermarkSize.height
-          );
-        }
-      );
+    return renderWatermarkContentOnce(canvas, 'ImageWatermark.addToCanvas', adapter, {
+      containerSize,
+      position,
+      customPosition,
+      margin,
+      rotation,
     });
-
-    return canvas;
   }
 
   /**
@@ -114,8 +107,6 @@ export class ImageWatermark {
       stagger?: boolean;
     }
   ): HTMLCanvasElement {
-    const ctx = requireCanvasContext(canvas, 'ImageWatermark.addRepeatingPattern');
-
     const {
       watermarkImage,
       scale = 1,
@@ -126,30 +117,29 @@ export class ImageWatermark {
       stagger = false,
     } = options;
 
-    const watermarkWidth = watermarkImage.width * scale;
-    const watermarkHeight = watermarkImage.height * scale;
+    const watermarkSize: Size = {
+      width: watermarkImage.width * scale,
+      height: watermarkImage.height * scale,
+    };
 
-    withCanvasState(ctx, () => {
-      ctx.globalCompositeOperation = blendMode;
-      ctx.globalAlpha = opacity;
+    const adapter: WatermarkContentAdapter = {
+      prepare(ctx): Size {
+        ctx.globalCompositeOperation = blendMode;
+        ctx.globalAlpha = opacity;
+        return watermarkSize;
+      },
+      draw(ctx, { x, y }) {
+        ctx.drawImage(watermarkImage, x, y, watermarkSize.width, watermarkSize.height);
+      },
+    };
 
-      placeTiled(
-        ctx,
-        {
-          containerSize: { width: canvas.width, height: canvas.height },
-          tileSize: { width: watermarkWidth, height: watermarkHeight },
-          spacing,
-          stagger,
-          rotation,
-          rotationMode: 'per-tile',
-          context: 'ImageWatermark.addRepeatingPattern',
-        },
-        ({ x, y }) => {
-          ctx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
-        }
-      );
+    return renderWatermarkContentTiled(canvas, adapter, {
+      containerSize: { width: canvas.width, height: canvas.height },
+      spacing,
+      stagger,
+      rotation,
+      rotationMode: 'per-tile',
+      context: 'ImageWatermark.addRepeatingPattern',
     });
-
-    return canvas;
   }
 }
