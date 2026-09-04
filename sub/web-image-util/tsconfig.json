@@ -4,6 +4,9 @@
     "outDir": "dist",
     "types": ["vitest/globals", "node"]
   },
+  // browser-test-floor/는 의도적으로 제외한다. Chrome83(Podman) floor validation은
+  // opt-in이라(Global Constraint) 이 include에 넣어 verify:ci의 typecheck 태스크에
+  // 편입시키지 않는다. 별도 타입체크는 browser-test-floor/tsconfig.json으로 수동 실행한다.
   "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist", "build"]
 }

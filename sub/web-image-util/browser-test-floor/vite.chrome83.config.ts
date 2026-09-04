@@ -1,5 +1,6 @@
-import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { defineConfig } from 'vite';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixturesRoot = resolve(here, 'fixtures');
@@ -10,7 +11,7 @@ const fixturesRoot = resolve(here, 'fixtures');
 // (dist/index.js를 직접 import)만 production build로 한 번 더 내려받아
 // preview로 정적 서빙한다. build.target을 tsdown과 동일한 'chrome75'로 맞춰
 // fixture 번들 코드도 dist와 같은 하한을 보장한다.
-export default {
+export default defineConfig({
   root: fixturesRoot,
   build: {
     target: 'chrome75',
@@ -22,4 +23,4 @@ export default {
       },
     },
   },
-};
+});

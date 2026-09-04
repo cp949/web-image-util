@@ -6,15 +6,14 @@ declare global {
       resizeWidth: number;
       resizeHeight: number;
       resizeBlobSize: number;
-      svgFormat: string;
+      svgFormat: string | undefined;
       svgBlobSize: number;
     };
     __CHROME83_FLOOR_ERROR__?: string;
   }
 }
 
-const PNG_1X1_BASE64 =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+const PNG_1X1_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
 const SVG_SOURCE =
   '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>';

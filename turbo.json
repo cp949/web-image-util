@@ -41,7 +41,7 @@
       "inputs": ["src/**/*.ts", "tests/**/*.ts", "vitest.node.config.*"]
     },
     "test:contract": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build"],
       "outputs": ["dist/**", "llm.txt", "coverage/contract/**", "test-results/**"],
       "inputs": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.mjs", "package.json", "tsdown.config.ts", "vitest.contract.config.*"]
     },
@@ -50,7 +50,7 @@
       "outputs": []
     },
     "check:browser-target": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build"],
       "outputs": ["dist/**", "llm.txt"]
     },
     "check:browser-compat": {

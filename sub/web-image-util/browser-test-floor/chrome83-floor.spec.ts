@@ -13,7 +13,7 @@ declare global {
       resizeWidth: number;
       resizeHeight: number;
       resizeBlobSize: number;
-      svgFormat: string;
+      svgFormat: string | undefined;
       svgBlobSize: number;
     };
     __CHROME83_FLOOR_ERROR__?: string;
