@@ -80,6 +80,8 @@ pnpm --filter @cp949/web-image-util test:coverage
 pnpm --filter @cp949/web-image-util test:security
 ```
 
+메이저·마이너 릴리스 전에는 Chrome 83(Podman) floor validation 실행을 권장합니다(선택, opt-in). 절차는 [docs/testing/browser-floor-validation.md](testing/browser-floor-validation.md)를 참고합니다.
+
 `test:coverage`가 실패하는 상태에서 배포해야 한다면, 실패 이유와 배포 판단을 릴리스 메모에 명시한다.
 
 ## 최종 검색

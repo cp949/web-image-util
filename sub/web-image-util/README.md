@@ -390,7 +390,7 @@ try {
 
 ## 브라우저 지원
 
-권장 버전은 Chrome 88+, Firefox 90+, Safari 14+, Edge 88+입니다.
+빌드 타깃은 Chrome 75 이상입니다(best-effort). 매 커밋마다 최신 Chromium에서 핵심 동작을 자동 검증합니다. Chrome 75~82는 Playwright 자동화 한계로 자동 실행 검증 수단이 없고, Chrome 83은 필요할 때 수동으로 추가 검증할 수 있습니다(기본 실행 안 됨). 자세한 내용은 [ADR-0001](../../docs/decisions/ADR-0001-browser-floor-chrome75.md)을 참고하세요.
 
 ```typescript
 import { detectBrowserCapabilities } from '@cp949/web-image-util';
