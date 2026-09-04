@@ -113,9 +113,9 @@ pnpm publish:npm --dry-run
 pnpm publish:npm --publish --confirm-publish
 ```
 
-`release-it`은 `sub/web-image-util`을 working directory로 사용합니다. dry-run에서는 version bump 없이 npm 흐름만 확인하고, 실제 publish에서는 release-it이 patch/minor/major 버전 선택, version bump, npm publish를 수행합니다. Git commit/tag/push와 GitHub release는 자동화하지 않습니다.
+`release-it`은 `sub/web-image-util`을 working directory로 사용합니다. dry-run에서는 version bump와 Git 변경 없이 npm 흐름만 확인하고, 실제 publish에서는 release-it이 patch/minor/major 버전 선택, version bump, npm publish, Git commit/tag/push를 수행합니다. GitHub release는 자동화하지 않습니다.
 
-실제 publish는 `--publish --confirm-publish`가 필요하며, `verify:release`, npm 인증, registry 상태 확인을 모두 통과해야 합니다. 이후 release-it이 다음 버전 종류를 묻고 version bump와 publish를 진행합니다. `--dry-run`은 실제 배포 없이 현재 버전의 npm tarball 흐름을 확인합니다.
+실제 publish는 `--publish --confirm-publish`가 필요하며, `verify:release`, npm 인증, registry 상태 확인을 모두 통과해야 합니다. 이후 release-it이 다음 버전 종류를 묻고 version bump, npm publish, Git commit/tag/push를 진행합니다. `--dry-run`은 실제 배포 없이 현재 버전의 npm tarball 흐름을 확인합니다.
 
 배포 전에는 `pnpm verify:release`를 실행하고, [Release Checklist](docs/release-checklist.md)를 따라 문서, 스크립트, 배포 산출물이 실제 코드와 같은지 확인합니다.
 

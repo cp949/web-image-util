@@ -37,7 +37,7 @@ node -p "Object.keys(require('./sub/web-image-util/package.json').scripts).sort(
 rg -n "pnpm (build|build:watch|dev|dev:demo|build:demo|typecheck|lint|lint:fix|format|format:check|verify:ci|verify:release|publish:npm|test|test:scripts|test:coverage|test:browser|test:contract|test:package-subpath)" README.md sub/web-image-util/README.md docs
 ```
 
-현재 루트 CI 성격의 기본 검증 명령은 `pnpm verify:ci`다. `verify:ci`는 루트 운영 스크립트 테스트인 `pnpm test:scripts`를 먼저 실행한 뒤 Turbo 기반 타입체크, lint, format 검사, Node 테스트, 계약 테스트를 실행한다. 릴리스 전 필수 검증 명령은 `pnpm verify:release`이며, `verify:ci`, browser smoke test, npm pack dry-run을 함께 실행한다. `publish:npm`은 이 검증을 통과한 뒤 release-it을 호출한다. dry-run은 version bump 없이 실행하고, 실제 publish는 release-it이 patch/minor/major 선택·version bump·npm publish를 수행한다. Git commit/tag/push·GitHub release는 자동화하지 않는다. `test:coverage`는 별도 점검 경로이며, `verify:ci`에 포함하기로 결정한 경우에만 문서의 coverage 설명을 바꾼다.
+현재 루트 CI 성격의 기본 검증 명령은 `pnpm verify:ci`다. `verify:ci`는 루트 운영 스크립트 테스트인 `pnpm test:scripts`를 먼저 실행한 뒤 Turbo 기반 타입체크, lint, format 검사, Node 테스트, 계약 테스트를 실행한다. 릴리스 전 필수 검증 명령은 `pnpm verify:release`이며, `verify:ci`, browser smoke test, npm pack dry-run을 함께 실행한다. `publish:npm`은 이 검증을 통과한 뒤 release-it을 호출한다. dry-run은 version bump와 Git 변경 없이 실행하고, 실제 publish는 release-it이 patch/minor/major 선택·version bump·npm publish·Git commit/tag/push를 수행한다. GitHub release는 자동화하지 않는다. `test:coverage`는 별도 점검 경로이며, `verify:ci`에 포함하기로 결정한 경우에만 문서의 coverage 설명을 바꾼다.
 
 루트 운영 스크립트 테스트는 `tests/unit/scripts/**`에 둔다. `sub/web-image-util/tests/**`는 패키지 라이브러리 테스트를 담당하므로, 루트 `scripts/**`의 테스트를 패키지 내부로 되돌리지 않는다.
 

@@ -54,7 +54,7 @@ export function parsePublishArguments(argv) {
 export function getReleaseItArguments(dryRun) {
   return [
     ...(dryRun ? ['--dry-run', '--ci', '--no-increment'] : []),
-    '--no-git',
+    ...(dryRun ? ['--no-git'] : []),
     ...(dryRun ? ['--npm.skipChecks'] : []),
   ];
 }

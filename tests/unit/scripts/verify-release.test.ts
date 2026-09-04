@@ -194,7 +194,7 @@ describe('npm 배포 스크립트', () => {
     ]);
   });
 
-  test('release-it은 package cwd에서 version bump와 Git 작업 없이 실행한다', () => {
+  test('dry-run은 version bump와 Git 작업 없이 실행하고 실제 경로는 Git 작업을 사용한다', () => {
     expect(getReleaseItArguments(true)).toEqual([
       '--dry-run',
       '--ci',
@@ -202,7 +202,21 @@ describe('npm 배포 스크립트', () => {
       '--no-git',
       '--npm.skipChecks',
     ]);
-    expect(getReleaseItArguments(false)).toEqual(['--no-git']);
+    expect(getReleaseItArguments(false)).toEqual([]);
+  });
+
+  test('실제 release-it은 version bump 후 Git commit, tag, push를 담당한다', () => {
+    const releaseItConfig = JSON.parse(readFileSync(join(packageRoot, '.release-it.json'), 'utf8'));
+
+    expect(releaseItConfig.git).toEqual({
+      commit: true,
+      tag: true,
+      push: true,
+      commitMessage: 'chore: release $' + '{version}',
+      tagName: 'v$' + '{version}',
+      requireCleanWorkingDir: true,
+    });
+    expect(releaseItConfig.github).toBe(false);
   });
 
   test('실제 publish는 현재 버전의 registry 상태와 무관하게 release-it에 다음 버전 선택을 맡긴다', () => {
