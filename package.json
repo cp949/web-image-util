@@ -8,7 +8,7 @@
   "author": "cp949 <cp949@naver.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=24.15.0"
   },
   "packageManager": "pnpm@11.25.0",
   "scripts": {
@@ -28,6 +28,7 @@
     "test:package-subpath": "turbo run test:package-subpath --filter=@cp949/web-image-util",
     "test:ui": "turbo run test:ui",
     "test:browser": "turbo run test:browser",
+    "test:browser:chrome83-floor": "podman build -t web-image-util-chrome83 -f sub/web-image-util/docker/chrome83/Dockerfile sub/web-image-util && podman run --rm -it -v \"$(pwd)\":/repo:Z --mount type=tmpfs,destination=/repo/node_modules,notmpcopyup --mount type=tmpfs,destination=/repo/apps/demo/node_modules,notmpcopyup --mount type=tmpfs,destination=/repo/sub/web-image-util/node_modules,notmpcopyup -w /repo web-image-util-chrome83 bash -c \"CI=1 pnpm install --frozen-lockfile --ignore-scripts --store-dir /tmp/pnpm-store && pnpm --filter @cp949/web-image-util test:browser:chrome83-floor\"",
     "test:coverage": "turbo run test:coverage",
     "verify:ci": "pnpm test:scripts && turbo run typecheck lint format:check test:node test:contract check:browser-target check:browser-compat && pnpm build:demo",
     "verify:release": "node ./scripts/verify-release.mjs",
@@ -38,10 +39,10 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.11",
     "@types/node": "^25.6.0",
-    "@vitest/browser": "^4.1.10",
+    "@vitest/browser": "^5.0.0",
     "cross-env": "^10.1.0",
     "jest-image-snapshot": "^6.5.2",
-    "playwright": "^1.59.1",
+    "playwright": "^1.62.1",
     "shelljs": "^0.10.0",
     "ts-node": "^10.9.2",
     "tsdown": "^0.23.0",
@@ -49,6 +50,6 @@
     "turbo": "^2.10.12",
     "typescript": "^6.0.3",
     "vite": "8.2.1",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.0"
   }
 }

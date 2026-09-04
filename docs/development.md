@@ -55,14 +55,11 @@ plugin/adapter가 아닙니다.
 - strict sanitizer는 DOMPurify 결과 위에 라이브러리 강제 정책을 후처리로 적용합니다. DOMPurify 버전 변화는 정제 결과에 영향을 줄 수 있으므로 이 패키지의 검증 범위에 포함합니다.
 - 기본 SVG 처리 경로는 lightweight이며, strict 경로에서만 DOMPurify 기반 서브패스를 동적으로 로드합니다. 번들 크기 최적화와 dependency 소유권은 별개입니다.
 
-### jsdom 30 업그레이드 보류
+### Node 24.15 이상 및 jsdom 30
 
-`jsdom@30.0.1`은 현재 바로 올리지 않습니다.
-
-- `jsdom@30`의 Node engine은 `^22.22.2 || ^24.15.0 || >=26.0.0`입니다. 이 저장소의 현재 package engine은 `>=20.19.0`이므로 런타임 계약이 맞지 않습니다.
-- 별도 worktree 실험에서 `jsdom@30.0.1`로 `build`와 `typecheck`는 통과했지만, `pnpm --filter @cp949/web-image-util test:node`에서 jsdom+canvas 이미지 처리 경로가 timeout으로 회귀했습니다.
-- 대표 회귀: `detectFormatSupport` 캐시 값이 `undefined`로 남는 케이스, SVG URL 성공 로더 timeout, `processImage(...).resize(...).toBlob()/toCanvas()` 계열 timeout.
-- 업그레이드하려면 먼저 Node engine 정책을 jsdom 30 요구 범위로 올릴지 결정하고, 그 다음 jsdom+canvas 이미지 로딩/format detection 회귀를 별도 작업으로 수정합니다.
+- 저장소의 Node 최소 버전은 `24.15.0`입니다. 개발자 환경에서는 Node `24.20.x` 이상을 사용할 수 있습니다.
+- `jsdom@30.0.1`을 사용하므로 Node 24.15 이상 환경에서 jsdom+canvas 이미지 처리와 format detection 회귀를 검증합니다.
+- Node 24.15 기준 CI 검증은 `pnpm verify:ci`로 수행합니다.
 
 ## 테스트 기준
 

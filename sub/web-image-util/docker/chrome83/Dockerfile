@@ -12,7 +12,7 @@
 # 재사용한다 — 새 조합을 골라 새로운 미검증 설치 실패를 만들 이유가 없다.
 FROM debian:buster-slim
 
-ARG NODE_VERSION=24.12.0
+ARG NODE_VERSION=24.15.0
 ARG PNPM_VERSION=11.25.0
 
 RUN set -eux; \

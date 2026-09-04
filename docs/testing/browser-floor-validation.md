@@ -18,12 +18,17 @@ podman build -t web-image-util-chrome83 -f sub/web-image-util/docker/chrome83/Do
 ```bash
 podman run --rm -it \
   -v "$(pwd)":/repo:Z \
+  --mount type=tmpfs,destination=/repo/node_modules,notmpcopyup \
+  --mount type=tmpfs,destination=/repo/apps/demo/node_modules,notmpcopyup \
+  --mount type=tmpfs,destination=/repo/sub/web-image-util/node_modules,notmpcopyup \
   -w /repo \
   web-image-util-chrome83 \
-  bash -c "pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter @cp949/web-image-util test:browser:chrome83-floor"
+  bash -c "CI=1 pnpm install --force --frozen-lockfile --ignore-scripts --store-dir /tmp/pnpm-store && pnpm --filter @cp949/web-image-util test:browser:chrome83-floor"
 ```
 
 `bash -lc`(로그인 셸)가 아니라 `bash -c`를 쓴다 — Debian buster-slim에서 root로 로그인 셸을 실행하면 `/etc/profile`이 Dockerfile의 `ENV PATH`(Node/pnpm 경로 포함)를 초기화해 `pnpm: command not found`가 발생한다.
+
+세 workspace의 `node_modules`에는 `--mount type=tmpfs,...,notmpcopyup`을 지정한다 — 호스트의 의존성 디렉터리를 복사하지 않고 컨테이너 전용 임시 디렉터리로 격리한다. `CI=1`은 modules 디렉터리 재생성 확인 프롬프트를 차단한다.
 
 `pnpm install`에 `--ignore-scripts`를 붙인다 — 컨테이너는 항상 fresh 환경이라 `canvas`/`esbuild`의 빌드 스크립트 승인 이력이 없고, 이 상태에서 `pnpm install`은 `pnpm-workspace.yaml`에 `allowBuilds` 플레이스홀더 블록을 자동으로 append한다(성공/실패 여부와 무관). 저장소가 bind mount이므로 이 변경은 그대로 호스트의 추적 파일을 오염시킨다. `--ignore-scripts`는 이 승인 게이트 자체를 건너뛰어 파일 변경을 원천 차단한다 — 이 floor-validation 파이프라인(`tsdown`은 rolldown 기반, `vite build`/`vite preview`도 esbuild 네이티브 바이너리 불필요)에서는 안전함을 실제 실행으로 확인했다. 다른 목적의 `pnpm install`(예: 일반 개발 환경 설치)에는 이 플래그를 일반화해서 쓰지 않는다.
 
