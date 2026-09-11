@@ -48,14 +48,14 @@ const avatar = await createAvatar(profilePhoto, { size: 128 });
 
 `resize()`는 한 체인에서 한 번만 호출할 수 있습니다. 최종 크기를 한 번에 지정하면 SVG를 포함한 입력을 목표 크기로 직접 렌더링합니다.
 
-| fit 모드  | 비율 유지 | 전체 표시 | 여백   | 크롭   | 확대/축소 | 사용 예시           |
-| --------- | --------- | --------- | ------ | ------ | --------- | ------------------- |
-| `cover`   | 예        | 아니오    | 아니오 | 예     | 둘 다     | 썸네일, 배경 이미지 |
-| `contain` | 예        | 예        | 예     | 아니오 | 둘 다     | 갤러리, 미리보기    |
-| `fill`    | 아니오    | 예        | 아니오 | 아니오 | 둘 다     | 정확한 크기         |
-| `maxFit`  | 예        | 예        | 아니오 | 아니오 | 축소만    | 최대 크기 제한      |
-| `minFit`  | 예        | 예        | 아니오 | 아니오 | 확대만    | 최소 크기 보장      |
-| `scale`   | 선택      | 예        | 아니오 | 아니오 | 둘 다     | 원본 크기 기준 배율 |
+| fit 모드  | 비율 유지 | 전체 표시 | fit 내부 여백 | 크롭   | 확대/축소 | 사용 예시           |
+| --------- | --------- | --------- | ------------- | ------ | --------- | ------------------- |
+| `cover`   | 예        | 아니오    | 아니오        | 예     | 둘 다     | 썸네일, 배경 이미지 |
+| `contain` | 예        | 예        | 예            | 아니오 | 둘 다     | 갤러리, 미리보기    |
+| `fill`    | 아니오    | 예        | 아니오        | 아니오 | 둘 다     | 정확한 크기         |
+| `maxFit`  | 예        | 예        | 아니오        | 아니오 | 축소만    | 최대 크기 제한      |
+| `minFit`  | 예        | 예        | 아니오        | 아니오 | 확대만    | 최소 크기 보장      |
+| `scale`   | 선택      | 예        | 아니오        | 아니오 | 둘 다     | 원본 크기 기준 배율 |
 
 ```typescript
 // cover: 비율 유지, 전체 영역 채움
@@ -77,6 +77,25 @@ await processImage(source).resize({ fit: 'fill', width: 800 }).toBlob();
 // scale: 원본 크기 기준 배율 (균일 또는 축별)
 await processImage(source).resize({ fit: 'scale', scale: 0.5 }).toBlob();
 await processImage(source).resize({ fit: 'scale', scale: { sx: 2, sy: 1.5 } }).toBlob();
+```
+
+`padding`과 `background`는 여섯 fit 모드에서 모두 사용할 수 있는 공통 옵션입니다. `padding`은 리사이즈 결과 바깥에 여백을 추가하고, `background`는 padding 영역을 포함한 출력 캔버스 전체를 지정한 색으로 채웁니다.
+
+```typescript
+// 300×200 리사이즈 결과 바깥에 20px 흰색 여백 추가 → 출력 340×240
+await processImage(source)
+  .resize({ fit: 'cover', width: 300, height: 200, padding: 20, background: '#fff' })
+  .toBlob('jpeg');
+
+// 방향별 padding 지정. 생략한 방향은 0
+await processImage(source)
+  .resize({ fit: 'maxFit', width: 800, padding: { top: 10, bottom: 30 }, background: '#fff' })
+  .toBlob();
+
+// 크기를 바꾸지 않고 padding만 추가
+await processImage(source)
+  .resize({ fit: 'scale', scale: 1, padding: 16, background: '#fff' })
+  .toBlob();
 ```
 
 `contain`은 지정한 `width`/`height`의 출력 캔버스를 유지합니다. 출력 캔버스도 실제 이미지 크기로 받고 싶다면 `maxFit`을 사용하세요.
