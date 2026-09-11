@@ -60,7 +60,7 @@ export interface ImageErrorDetailsByCode {
   SVG_SOURCE_INVALID: { actualType: string };
   OPTION_INVALID: { option: string; minimum?: number };
   INVALID_DIMENSIONS: {
-    kind?: 'invalid-canvas-size' | 'invalid-image-size' | 'invalid-position';
+    kind?: 'invalid-canvas-size' | 'invalid-image-size' | 'invalid-position' | 'invalid-crop' | 'crop-outside-source';
     width?: number;
     height?: number;
     x?: number;

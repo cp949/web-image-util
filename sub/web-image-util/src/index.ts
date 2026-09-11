@@ -147,6 +147,11 @@ export type {
   // SVG utility types
   SvgDimensions,
   SvgSanitizerMode,
+  // transform() 옵션 타입
+  TransformCrop,
+  TransformFlip,
+  TransformOptions,
+  TransformRotate,
 } from './types';
 // Error classes
 export { ImageErrorCode, ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from './types';

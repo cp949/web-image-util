@@ -130,6 +130,15 @@ export {
   validateResizeConfig,
 } from './resize-config';
 
+// transform() 설정 타입 (crop / flip / rotate)
+export type {
+  NormalizedTransform,
+  TransformCrop,
+  TransformFlip,
+  TransformOptions,
+  TransformRotate,
+} from './transform-config';
+
 /**
  * Smart resize options for advanced processing scenarios
  *
