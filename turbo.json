@@ -36,7 +36,7 @@
       "inputs": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.*"]
     },
     "test:node": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build"],
       "outputs": ["coverage/**"],
       "inputs": ["src/**/*.ts", "tests/**/*.ts", "vitest.node.config.*"]
     },
