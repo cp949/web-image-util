@@ -32,8 +32,10 @@ import type { ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig, ScaleValue
 /**
  * ShortcutBuilder class
  *
- * @description 각 메서드의 `this: ShortcutBuilder<BeforeResize>` 제약이
- * resize 이후 상태에서의 호출을 컴파일 타임에 차단한다.
+ * @description 각 메서드는 `this: ShortcutBuilder<BeforeResize>` 제약으로 의도를 표시하지만,
+ * `IImageProcessor`와의 재귀적 제네릭 관계 때문에 컴파일 타임에는 실효가 없다(`resize()` 자신의
+ * 1회 제약과 같은 수준). 실제로는 각 메서드가 내부적으로 호출하는 `IImageProcessor.resize()`의
+ * 런타임 가드(`LazyRenderPipeline.addResize`)가 resize 이후 호출을 막는다.
  * (별도 인터페이스 미러 없이 클래스가 공개 타입 표면을 겸한다)
  *
  * @template TState Current processor state (BeforeResize | AfterResize)
