@@ -2,17 +2,20 @@
  * 단일 렌더러 — 분석기 하나(analyzeAllOperations), 렌더러 하나(renderLayout)
  *
  * 핵심 개념: "계산 먼저, 렌더링 한 번"
- * - analyzeAllOperations: 모든 연산(resize, blur)을 분석해 최종 레이아웃 계산
+ * - analyzeAllOperations: 모든 연산(transform, resize, blur)을 분석해 최종 레이아웃 계산
  * - renderLayout: 계산된 레이아웃을 검증하고 단 한 번의 drawImage 로 렌더링
  * - 중간 Canvas 를 만들지 않고 최종 결과만 생성한다
  */
 
 import { type CanvasLease, leaseCanvas } from '../base/canvas-lease.internal';
+import { withCanvasState } from '../composition/canvas-drawing.internal';
 import { type BlurOptions, ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
+import type { NormalizedTransform } from '../types/transform-config';
 import { readMaxSafeCanvasDimension } from '../utils/browser-capabilities/index';
 import { debugLog, productionLog } from '../utils/debug.internal';
 import { calculateFinalLayout } from './resize-calculator.internal';
+import { computeTransformGeometry, type TransformGeometry } from './transform-calculator.internal';
 
 /**
  * Operation definition for lazy execution
@@ -20,10 +23,18 @@ import { calculateFinalLayout } from './resize-calculator.internal';
  * 지연 렌더링 스택의 공유 타입 정의 지점 — 부모(LazyRenderPipeline)가 연산을
  * 누적할 때, 이 파일의 분석기·렌더러가 소비할 때 함께 사용한다.
  */
-export type LazyOperation = { type: 'resize'; config: ResizeConfig } | { type: 'blur'; options: BlurOptions };
+export type LazyOperation =
+  | { type: 'resize'; config: ResizeConfig }
+  | { type: 'blur'; options: BlurOptions }
+  | { type: 'transform'; transform: NormalizedTransform };
+
+type TransformOperation = Extract<LazyOperation, { type: 'transform' }>;
 
 /**
  * Final layout information - Result of analyzing all operations
+ *
+ * transform이 있으면 position/imageSize는 "transform 프레임"이 캔버스에서 차지하는 사각형이다.
+ * 없으면 종전과 같이 원본 이미지가 차지하는 사각형이다.
  */
 export interface FinalLayout {
   width: number;
@@ -32,36 +43,49 @@ export interface FinalLayout {
   imageSize: { width: number; height: number };
   background: string;
   filters: string[];
+  /** transform() 결과. 없으면 원본을 그대로 그린다 */
+  transform?: TransformGeometry;
 }
 
 /**
  * 모든 연산을 분석해 최종 레이아웃을 계산한다.
  *
- * 복잡한 수학 계산은 전부 이 함수가 담당하고,
- * renderLayout() 은 계산된 레이아웃을 그리는 일만 한다.
+ * transform은 배열 위치와 무관하게 가장 먼저 해석한다(crop → flip → rotate → resize 고정 순서).
+ * resize가 보는 "원본 크기"는 transform 프레임 크기다. transform은 최대 1개이며 addTransform이 보장한다.
  */
 export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: LazyOperation[]): FinalLayout {
   const sourceWidth = sourceImage.naturalWidth;
   const sourceHeight = sourceImage.naturalHeight;
 
-  // Default layout (original size)
+  const transformOperation = operations.find((op): op is TransformOperation => op.type === 'transform');
+  const transform: TransformGeometry | undefined = transformOperation
+    ? computeTransformGeometry(sourceWidth, sourceHeight, transformOperation.transform)
+    : undefined;
+
+  // resize·기본 레이아웃의 기준 크기 — transform이 있으면 프레임, 없으면 원본
+  const baseWidth = transform ? transform.frameSize.width : sourceWidth;
+  const baseHeight = transform ? transform.frameSize.height : sourceHeight;
+
   let layout: FinalLayout = {
-    width: sourceWidth,
-    height: sourceHeight,
+    width: baseWidth,
+    height: baseHeight,
     position: { x: 0, y: 0 },
-    imageSize: { width: sourceWidth, height: sourceHeight },
+    imageSize: { width: baseWidth, height: baseHeight },
     background: 'transparent',
     filters: [],
+    transform,
   };
 
-  // Analyze each operation sequentially
   for (const operation of operations) {
     switch (operation.type) {
       case 'resize':
-        layout = analyzeResizeOperation(sourceImage, layout, operation.config);
+        layout = analyzeResizeOperation(baseWidth, baseHeight, layout, operation.config);
         break;
       case 'blur':
         analyzeBlurOperation(layout, operation.options);
+        break;
+      case 'transform':
+        // 위에서 이미 해석했다
         break;
     }
   }
@@ -71,24 +95,26 @@ export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: 
 
 /**
  * calculateFinalLayout으로 resize 연산의 레이아웃을 분석한다.
+ *
+ * @param baseWidth resize가 원본으로 보는 너비(transform 프레임 또는 naturalWidth)
+ * @param baseHeight resize가 원본으로 보는 높이
  */
-function analyzeResizeOperation(sourceImage: HTMLImageElement, layout: FinalLayout, config: ResizeConfig): FinalLayout {
-  // 원본 크기와 설정으로 최종 레이아웃을 계산한다.
-  const result = calculateFinalLayout(sourceImage.naturalWidth, sourceImage.naturalHeight, config);
+function analyzeResizeOperation(
+  baseWidth: number,
+  baseHeight: number,
+  layout: FinalLayout,
+  config: ResizeConfig
+): FinalLayout {
+  const result = calculateFinalLayout(baseWidth, baseHeight, config);
 
   return {
     width: result.canvasSize.width,
     height: result.canvasSize.height,
-    position: {
-      x: result.position.x,
-      y: result.position.y,
-    },
-    imageSize: {
-      width: result.imageSize.width,
-      height: result.imageSize.height,
-    },
+    position: { x: result.position.x, y: result.position.y },
+    imageSize: { width: result.imageSize.width, height: result.imageSize.height },
     background: config.background || 'transparent',
-    filters: layout.filters, // Maintain existing filters
+    filters: layout.filters,
+    transform: layout.transform,
   };
 }
 
@@ -147,7 +173,18 @@ export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout)
         ctx.filter = layout.filters.join(' ');
       }
 
-      ctx.drawImage(sourceImage, Math.round(layout.position.x), Math.round(layout.position.y), drawWidth, drawHeight);
+      const drawX = Math.round(layout.position.x);
+      const drawY = Math.round(layout.position.y);
+      if (layout.transform) {
+        drawTransformedImage(ctx, sourceImage, layout.transform, {
+          x: drawX,
+          y: drawY,
+          width: drawWidth,
+          height: drawHeight,
+        });
+      } else {
+        ctx.drawImage(sourceImage, drawX, drawY, drawWidth, drawHeight);
+      }
 
       // 필터 초기화 (pool 재사용 대비)
       ctx.filter = 'none';
@@ -158,6 +195,58 @@ export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout)
     lease.release();
     throw error;
   }
+}
+
+/**
+ * transform 프레임을 캔버스의 frame 사각형에 맞춰 drawImage 1회로 그린다.
+ *
+ * 행렬은 코드 순서의 역순으로 소스 픽셀에 적용된다:
+ *   crop 원점 이동 → flip → rotate → resize 배율 → 프레임 중심 이동
+ * 즉 crop 결과의 중심이 프레임 중심에 놓이고, 그 중심을 기준으로 회전·반전된 뒤 resize 배율이 곱해진다.
+ * 상태 변경(clip·변환)은 withCanvasState가 되돌리므로 pool 재사용에 영향이 없다.
+ *
+ * @param frame transform 프레임이 캔버스에서 차지하는 사각형(= resize 레이아웃의 position/imageSize)
+ */
+function drawTransformedImage(
+  ctx: CanvasRenderingContext2D,
+  sourceImage: HTMLImageElement,
+  transform: TransformGeometry,
+  frame: { x: number; y: number; width: number; height: number }
+): void {
+  // resize 배율 — fill 모드는 축별로 다를 수 있다
+  const scaleX = frame.width / transform.frameSize.width;
+  const scaleY = frame.height / transform.frameSize.height;
+
+  withCanvasState(ctx, () => {
+    if (transform.needsFrameClip) {
+      ctx.beginPath();
+      ctx.rect(frame.x, frame.y, frame.width, frame.height);
+      ctx.clip();
+    }
+
+    ctx.translate(frame.x + frame.width / 2, frame.y + frame.height / 2);
+    ctx.scale(scaleX, scaleY);
+    if (transform.radians !== 0) {
+      ctx.rotate(transform.radians);
+    }
+    if (transform.flipX || transform.flipY) {
+      ctx.scale(transform.flipX ? -1 : 1, transform.flipY ? -1 : 1);
+    }
+    ctx.translate(-transform.cropSize.width / 2, -transform.cropSize.height / 2);
+
+    const { sourceRect, destRect } = transform;
+    ctx.drawImage(
+      sourceImage,
+      sourceRect.x,
+      sourceRect.y,
+      sourceRect.width,
+      sourceRect.height,
+      destRect.x,
+      destRect.y,
+      destRect.width,
+      destRect.height
+    );
+  });
 }
 
 /**
@@ -223,6 +312,14 @@ export function debugLayout(layout: FinalLayout, operationCount: number): void {
     imageSize: `${layout.imageSize.width}x${layout.imageSize.height}`,
     background: layout.background,
     filters: layout.filters,
+    transform: layout.transform
+      ? {
+          frameSize: `${layout.transform.frameSize.width}x${layout.transform.frameSize.height}`,
+          degrees: (layout.transform.radians * 180) / Math.PI,
+          flip: `${layout.transform.flipX ? 'x' : ''}${layout.transform.flipY ? 'y' : ''}` || 'none',
+          clip: layout.transform.needsFrameClip,
+        }
+      : undefined,
     operationCount,
     renderingApproach: 'single-pass',
     timestamp: Date.now(),
