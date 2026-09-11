@@ -281,4 +281,29 @@ describe('renderLayout — transform', () => {
 
     expect(observedFilters).toEqual(['blur(3px)']);
   });
+
+  it('비균일 배율(fit: fill)에서도 ctx.filter 문자열은 원래 반경 그대로다 — 축별로 다르게 렌더링될 수 있음(user space 기준)', () => {
+    // drawTransformedImage는 ctx.filter를 ctx.scale(scaleX, scaleY) 안에서 적용한다.
+    // filter의 px 값은 적용 시점의 user space 기준이라, scaleX(2) != scaleY(1)이면
+    // 실제 렌더링되는 blur 강도는 가로·세로가 다르게(비등방적으로) 나타난다.
+    // 이 테스트는 그 버그를 고치는 게 아니라 "ctx.filter 문자열 자체는 축별로 보정되지
+    // 않고 원래 반경 그대로 설정된다"는 현재 동작을 고정(pin)한다.
+    const source = createDrawableSource(400, 300);
+    const tempCtx = document.createElement('canvas').getContext('2d')!;
+    const observedFilters: string[] = [];
+    vi.spyOn(Object.getPrototypeOf(tempCtx), 'drawImage').mockImplementation(function (this: CanvasRenderingContext2D) {
+      observedFilters.push(this.filter);
+    });
+
+    lease = renderLayout(
+      source,
+      analyzeAllOperations(source, [
+        { type: 'blur', options: { radius: 3 } },
+        transformOp({}),
+        { type: 'resize', config: { fit: 'fill', width: 800, height: 300 } }, // scaleX=2, scaleY=1
+      ])
+    );
+
+    expect(observedFilters).toEqual(['blur(3px)']);
+  });
 });

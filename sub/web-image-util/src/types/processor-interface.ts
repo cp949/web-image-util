@@ -40,6 +40,8 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * 최종 출력 시점에 drawImage 한 번으로 렌더된다. crop 좌표는 원본 픽셀 기준이다.
    * resize() 뒤에는 호출할 수 없다. ImageProcessor가 런타임에 거부한다(현재 상태 타입은
    * 이 제약을 컴파일 타임에 강제하지 않는다 — resize()와 같다). 두 번째 호출도 런타임 오류다.
+   * crop이 원본과 겹치지 않으면 출력 시점에 `INVALID_DIMENSIONS`다. 단, `toCanvas()`/`toCanvasDetailed()`는
+   * 이 오류를 `OUTPUT_FAILED`로 감싸 던진다(원인은 `cause`에 보존).
    *
    * @param options 변환 옵션. 빈 객체는 no-op
    * @returns 같은 상태(BeforeResize)의 프로세서 — resize()를 이어서 부를 수 있다

@@ -77,7 +77,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    * @returns 같은 상태의 Processor (resize() 호출 가능)
    *
    * @throws {ImageProcessError} OPTION_INVALID — 두 번째 호출, resize() 뒤 호출, 옵션 값 오류
-   * @throws {ImageProcessError} INVALID_DIMENSIONS — crop 값 오류(즉시), 원본과 교집합 없음(출력 시점)
+   * @throws {ImageProcessError} INVALID_DIMENSIONS — crop 값 오류(즉시), 원본과 교집합 없음(출력 시점).
+   *   단, `toCanvas()`/`toCanvasDetailed()`는 이 오류를 `OUTPUT_FAILED`로 감싸 던진다(원인은 `cause`에 보존).
    *
    * @example
    * ```typescript
@@ -102,8 +103,9 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    */
   transform(this: ImageProcessor<BeforeResize>, options: TransformOptions): ImageProcessor<BeforeResize> {
     // 1회 제약·resize 앞 제약·검증은 LazyRenderPipeline이 단일 소유한다.
-    // `this` 제약은 인터페이스와 같은 규칙을 클래스 타입 사용자에게도 적용하고(ShortcutBuilder 선례),
-    // implements 검사에서 반환 타입이 IImageProcessor<BeforeResize>에 그대로 대응되게 한다.
+    // `this` 제약은 인터페이스와 같은 규칙을 클래스 타입 사용자에게도 선언해 두고(ShortcutBuilder 선례,
+    // 실제 집행력은 없다 — 컴파일 타임에는 실효가 없다), implements 검사에서 반환 타입이
+    // IImageProcessor<BeforeResize>에 그대로 대응되게 한다.
     this.output.addTransform(options);
 
     return this;
@@ -116,7 +118,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    * **Important: Can only be called once**
    * - Prevents quality degradation: Multiple resizing causes vector (SVG) → raster conversion quality loss
    * - Performance optimization: Prevents unnecessary intermediate Canvas creation
-   * - TypeScript prevents duplicate calls at compile time
+   * - ImageProcessor rejects a second call at runtime; the current state types do not enforce this at compile time
    *
    * @param config Resize configuration (ResizeConfig)
    * @returns Processor in AfterResize state (blur, toBlob etc. available)
@@ -131,10 +133,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    *   .blur(2)
    *   .toBlob();
    *
-   * // ❌ Compilation error: duplicate resize() calls
+   * // ❌ Runtime error: duplicate resize() calls
    * processImage(source)
    *   .resize({ fit: 'cover', width: 300, height: 200 })
-   *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 Type error!
+   *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 Throws ImageProcessError at runtime
    *
    * // ✅ For multiple sizes: create separate instances
    * const small = await processImage(source).resize({ fit: 'cover', width: 150, height: 150 }).toBlob();
@@ -159,6 +161,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    * - 권장 범위: 0.5-10px (높은 값은 성능 문제를 일으킬 수 있음)
    * - 큰 이미지에서는 성능을 위해 resize 전에 blur 적용 권장
    * - blur를 여러 번 호출하면 각 호출이 CSS blur 패스 하나로 순차 합성됨
+   *
+   * **transform() + 비균일 resize와 함께 쓸 때**: blur 반경은 캔버스 좌표계(user space)
+   * 기준이다. `transform()` 뒤에 비균일 배율의 `resize()`(예: `fit: 'fill'`로 가로세로
+   * 배율이 다른 경우)를 적용하면 실제 렌더링되는 blur 강도가 축별로 달라질 수 있다.
    *
    * @param radius 픽셀 단위 블러 반경 (기본값: 2, 0 = 블러 없음, 권장 범위: 0.5-10)
    * @param options 블러 옵션 (`options.radius`를 명시하면 radius 인자를 덮어씀)
@@ -404,7 +410,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
  *
  * @description
  * Creates ImageProcessor instance from various types of image sources.
- * Utilizes TypeScript type system to prevent duplicate resize() calls at compile time.
+ * Uses TypeScript state types to express the resize()-once intent; actual enforcement happens at runtime.
  *
  * @param source Image source (HTMLImageElement, Blob, URL, Data URL, SVG, ArrayBuffer, etc.)
  * @param options Processor options (crossOrigin, defaultQuality, etc.)

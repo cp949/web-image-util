@@ -2,7 +2,7 @@
 
 > 웹 브라우저를 위한 이미지 처리 라이브러리
 
-Canvas 2D API 위에서 리사이즈, SVG 렌더링, 포맷 변환을 체이닝 API로 제공합니다. 서버 사이드 이미지 처리 라이브러리의 사용성을 참고하되, 브라우저 런타임에 맞춰 지연 렌더링과 Canvas Pool을 적용했습니다.
+Canvas 2D API 위에서 리사이즈, crop/회전/반전, SVG 렌더링, 포맷 변환을 체이닝 API로 제공합니다. 서버 사이드 이미지 처리 라이브러리의 사용성을 참고하되, 브라우저 런타임에 맞춰 지연 렌더링과 Canvas Pool을 적용했습니다.
 
 [![npm version](https://img.shields.io/npm/v/@cp949/web-image-util)](https://www.npmjs.com/package/@cp949/web-image-util)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -124,6 +124,40 @@ await processImage(source).shortcut.scale(0.5).toDataURL();
 ```
 
 `coverBox`/`containBox` 옵션은 `padding`, `background`, `withoutEnlargement`를 지원합니다.
+
+## 변환 (crop / flip / rotate)
+
+`transform()`은 crop, 반전, 회전을 한 번에 지정합니다. 한 체인에서 한 번만, `resize()` 앞에서만 호출할 수 있고 `resize()`는 생략해도 됩니다. 최종 출력은 여전히 한 번의 Canvas 렌더링입니다.
+
+```typescript
+// crop만
+await processImage(source).transform({ crop: { x: 10, y: 20, width: 640, height: 480 } }).toBlob();
+
+// 시계 방향 90° 회전 + 좌우 반전 + 리사이즈
+await processImage(source)
+  .transform({ rotate: 90, flip: { horizontal: true } })
+  .resize({ fit: 'cover', width: 320, height: 240 })
+  .toBlob();
+
+// 임의각 회전. expand: true(기본)는 회전 결과를 모두 담고, false는 입력 프레임을 유지합니다.
+// 빈 모서리는 투명이므로 JPEG면 resize.background로 색을 줍니다 (scale 1이면 크기 그대로)
+await processImage(source)
+  .transform({ rotate: { degrees: 15, expand: true } })
+  .resize({ fit: 'scale', scale: 1, background: '#fff' })
+  .toBlob('jpeg');
+```
+
+| 옵션 | 설명 |
+| --- | --- |
+| `crop: { x, y, width, height }` | 원본 픽셀 좌표 기준. SVG는 `getImageDimensions()`가 보고하는 크기 기준입니다. 원본을 벗어나면 요청 크기를 유지하고 밖은 투명입니다. 원본과 겹치지 않으면 출력 시점에 `INVALID_DIMENSIONS`입니다(`toBlob()`/`toDataURL()`/`toFile()` 기준. `toCanvas()`/`toCanvasDetailed()`는 현재 `OUTPUT_FAILED`로 감싸 던집니다 — 원인은 `cause`에 보존됩니다) |
+| `flip: { horizontal?, vertical? }` | 좌우 / 상하 반전 |
+| `rotate: number \| { degrees, expand? }` | 도 단위, 양수 = 시계 방향. `expand`는 `true`(기본, 회전 결과를 모두 담음) 또는 `false`(입력 프레임 유지) |
+
+적용 순서는 호출 순서와 무관하게 crop → flip → rotate → resize로 고정됩니다. crop 좌표는 항상 원본 기준이며, 리사이즈 결과 좌표로는 지정할 수 없습니다.
+
+JPEG는 투명을 지원하지 않아 빈 영역(crop 이탈, 회전 모서리, letterbox)이 검정이 됩니다. JPEG로 출력할 때는 `resize()`의 `background`를 지정하세요. 캔버스 전체 아래에 칠해지므로 모든 빈 영역이 같은 색이 됩니다.
+
+`blur()`와 함께 쓸 때: blur 반경은 캔버스 좌표계 기준입니다. `transform()` 뒤에 비균일 배율의 `resize()`(예: `fit: 'fill'`로 가로세로 배율이 다른 경우)를 적용하면 실제 렌더링되는 blur 강도가 축별로 달라질 수 있습니다.
 
 ## 프리셋
 

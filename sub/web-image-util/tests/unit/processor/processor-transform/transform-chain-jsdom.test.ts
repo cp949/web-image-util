@@ -134,6 +134,21 @@ describe('transform 체인 — 픽셀', () => {
     expect(pixelAt(canvas, 25, 90)).toEqual([0, 0, 255, 255]);
   });
 
+  it('flip과 rotate를 함께 쓰면 반전 후 회전 순서로 적용된다', async () => {
+    const { canvas } = await processImage(createHalfCanvas(100, 50))
+      .transform({ rotate: 90, flip: { horizontal: true } })
+      .toCanvas();
+
+    // createHalfCanvas: 좌반(0~49) 빨강, 우반(50~99) 파랑, 100x50
+    // flip(horizontal)이 먼저 적용되어 좌반 파랑·우반 빨강이 된 상태에서 시계 방향 90도 회전한다.
+    // flip 없이 rotate 90만 하면 좌측(빨강)이 상단으로 가지만(위 "시계 방향 90° 회전은
+    // 좌반(빨강)을 상단으로 보낸다" 테스트), flip이 먼저 적용되면 반대로 파랑이 상단, 빨강이
+    // 하단으로 간다 — flip → rotate 순서(decisions.md 연산 순서 고정 계약)의 실측 결과다.
+    expect([canvas.width, canvas.height]).toEqual([50, 100]);
+    expect(pixelAt(canvas, 25, 10)).toEqual([0, 0, 255, 255]);
+    expect(pixelAt(canvas, 25, 90)).toEqual([255, 0, 0, 255]);
+  });
+
   it('원본 밖 crop 영역은 투명이다', async () => {
     const { canvas } = await processImage(createHalfCanvas(100, 50))
       .transform({ crop: { x: -50, y: 0, width: 100, height: 50 } })
