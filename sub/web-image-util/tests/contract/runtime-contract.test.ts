@@ -43,6 +43,7 @@ describe('processImage 진입점 계약', () => {
     const processor = processImage(SAMPLE_SVG);
     expect(processor).toBeDefined();
     expect(processor.resize).toBeTypeOf('function');
+    expect(processor.transform).toBeTypeOf('function');
     expect(processor.blur).toBeTypeOf('function');
     expect(processor.toBlob).toBeTypeOf('function');
     expect(processor.toDataURL).toBeTypeOf('function');
@@ -56,6 +57,7 @@ describe('processImage 진입점 계약', () => {
 
     const processor = unsafe_processImage(SAMPLE_SVG);
     expect(processor.resize).toBeTypeOf('function');
+    expect(processor.transform).toBeTypeOf('function');
     expect(processor.toBlob).toBeTypeOf('function');
   });
 
@@ -63,6 +65,7 @@ describe('processImage 진입점 계약', () => {
     expect(ImageProcessor).toBeTypeOf('function');
     expect(ImageProcessor.prototype).toBeDefined();
     expect(ImageProcessor.prototype.resize).toBeTypeOf('function');
+    expect(ImageProcessor.prototype.transform).toBeTypeOf('function');
     expect(ImageProcessor.prototype.toBlob).toBeTypeOf('function');
   });
 

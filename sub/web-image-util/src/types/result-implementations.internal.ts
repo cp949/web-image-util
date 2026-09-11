@@ -31,9 +31,10 @@ export class DataURLResultImpl extends ResultBase implements ResultDataURL {
     height: number,
     processingTime: number,
     originalSize?: GeometrySize,
-    format?: OutputFormat
+    format?: OutputFormat,
+    operations?: number
   ) {
-    super(width, height, processingTime, originalSize, format);
+    super(width, height, processingTime, originalSize, format, operations);
   }
 
   /** 크기 정보를 재사용해 Canvas로 변환한다. */
@@ -67,9 +68,10 @@ export class BlobResultImpl extends BlobBackedResult implements ResultBlob {
     height: number,
     processingTime: number,
     originalSize?: GeometrySize,
-    format?: OutputFormat
+    format?: OutputFormat,
+    operations?: number
   ) {
-    super(width, height, processingTime, originalSize, format);
+    super(width, height, processingTime, originalSize, format, operations);
   }
 
   /** 보유 Blob이 곧 원본 바이트다. */
@@ -91,9 +93,10 @@ export class FileResultImpl extends BlobBackedResult implements ResultFile {
     height: number,
     processingTime: number,
     originalSize?: GeometrySize,
-    format?: OutputFormat
+    format?: OutputFormat,
+    operations?: number
   ) {
-    super(width, height, processingTime, originalSize, format);
+    super(width, height, processingTime, originalSize, format, operations);
   }
 
   /** `File`은 `Blob`의 서브클래스이므로 보유 File이 그대로 원본 바이트다. */
@@ -116,9 +119,10 @@ export class CanvasResultImpl extends ResultBase implements ResultCanvas {
     height: number,
     processingTime: number,
     originalSize?: GeometrySize,
-    format?: OutputFormat
+    format?: OutputFormat,
+    operations?: number
   ) {
-    super(width, height, processingTime, originalSize, format);
+    super(width, height, processingTime, originalSize, format, operations);
   }
 
   /** HTMLImageElement로 변환한다. */
@@ -145,9 +149,10 @@ export class ElementResultImpl extends ResultBase implements ResultElement {
     height: number,
     processingTime: number,
     originalSize?: GeometrySize,
-    format?: OutputFormat
+    format?: OutputFormat,
+    operations?: number
   ) {
-    super(width, height, processingTime, originalSize, format);
+    super(width, height, processingTime, originalSize, format, operations);
   }
 
   /** Canvas로 변환한다. 이미 알고 있는 크기를 그대로 사용한다. */

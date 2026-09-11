@@ -55,6 +55,7 @@ import type {
   ResizeConfig,
   ScaleConfig,
   ScaleValue,
+  TransformOptions,
 } from '../../src';
 import type { ProcessingStrategy } from '../../src/advanced-index';
 import type {
@@ -64,7 +65,9 @@ import type {
   ResizeConfig as ResizeConfigFromTypes,
   ScaleConfig as ScaleConfigFromTypes,
   ScaleValue as ScaleValueFromTypes,
+  TransformOptions as TransformOptionsFromTypes,
 } from '../../src/types';
+import type { InitialProcessor } from '../../src/types/typed-processor.internal';
 
 // @ts-expect-error ImageFormat은 루트 엔트리만 소유하며 /advanced에서는 노출하지 않는다.
 type ImageFormatFromAdvanced = import('@cp949/web-image-util/advanced').ImageFormat;
@@ -231,3 +234,21 @@ const composeSpec: ComposeSpec = composeLayersSpec;
 void composeGridSpec;
 void composeCollageSpec;
 void composeSpec;
+
+// transform(): 루트와 /types가 같은 타입을 노출하고, resize() 앞에서만 호출된다.
+// transform()의 "resize() 앞에서만" 규칙은 런타임 가드다(resize()의 1회 제약과 같은 수준 —
+// this 제약은 ShortcutBuilder의 재귀적 제네릭 때문에 컴파일 타임에 강제되지 않는다).
+// 런타임 검증은 tests/unit/processor/processor-transform/transform-chain-jsdom.test.ts가 담당한다.
+const transformOptions: TransformOptions = {
+  crop: { x: 10, y: 20, width: 640, height: 480 },
+  flip: { horizontal: true },
+  rotate: { degrees: 90, expand: true },
+};
+const transformOptionsFromTypes: TransformOptionsFromTypes = transformOptions;
+const transformShorthand: TransformOptions = { rotate: 90 };
+void transformOptionsFromTypes;
+void transformShorthand;
+
+declare const initialProcessor: InitialProcessor;
+void initialProcessor.transform(transformOptions).resize({ fit: 'cover', width: 1, height: 1 });
+void initialProcessor.transform(transformOptions).blur(1).toBlob();

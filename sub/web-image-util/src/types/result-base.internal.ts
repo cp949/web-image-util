@@ -33,7 +33,8 @@ export abstract class ResultBase implements ResultMetadata {
     public height: number,
     public processingTime: number,
     public originalSize?: GeometrySize,
-    public format?: OutputFormat
+    public format?: OutputFormat,
+    public operations?: number
   ) {}
 
   /**

@@ -62,6 +62,7 @@ interface ProcessingOutcome {
     height: number;
     processingTime: number;
     originalSize: { width: number; height: number };
+    operations: number;
   };
 }
 
@@ -158,6 +159,7 @@ export class OutputPipeline {
             width: sourceImage.naturalWidth || 0,
             height: sourceImage.naturalHeight || 0,
           },
+          operations: metadata.operations ?? 0,
         },
       };
     } catch (error) {
@@ -183,7 +185,15 @@ export class OutputPipeline {
       // consume이 blob 변환 후 canvas를 pool로 반환한다 (실패 시에도 반환)
       const { blob, format } = await lease.consume((canvas) => encodeCanvasToBlob(canvas, outputOptions));
 
-      return new BlobResultImpl(blob, result.width, result.height, result.processingTime, result.originalSize, format);
+      return new BlobResultImpl(
+        blob,
+        result.width,
+        result.height,
+        result.processingTime,
+        result.originalSize,
+        format,
+        result.operations
+      );
     } catch (error) {
       throw new ImageProcessError('Error occurred during Blob conversion', 'OUTPUT_FAILED', { cause: error });
     }
@@ -201,7 +211,8 @@ export class OutputPipeline {
         blobResult.height,
         blobResult.processingTime,
         blobResult.originalSize,
-        blobResult.format
+        blobResult.format,
+        blobResult.operations
       );
     } catch (error) {
       throw new ImageProcessError('Error occurred during Data URL conversion', 'OUTPUT_FAILED', { cause: error });
@@ -224,7 +235,8 @@ export class OutputPipeline {
         blobResult.height,
         blobResult.processingTime,
         blobResult.originalSize,
-        blobResult.format
+        blobResult.format,
+        blobResult.operations
       );
     } catch (error) {
       throw new ImageProcessError('Error occurred while creating File object', 'OUTPUT_FAILED', { cause: error });
@@ -250,7 +262,8 @@ export class OutputPipeline {
         result.height,
         result.processingTime,
         result.originalSize,
-        undefined // Canvas에는 포맷 정보가 없다.
+        undefined, // Canvas에는 포맷 정보가 없다.
+        result.operations
       );
     } catch (error) {
       throw new ImageProcessError(errorMessage, 'OUTPUT_FAILED', { cause: error });

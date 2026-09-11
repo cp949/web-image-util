@@ -13,6 +13,7 @@ import type { OutputFormat } from './base';
 import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './output-types';
 import type { AfterResize, BeforeResize, ProcessorState } from './processor-state.internal';
 import type { ResizeConfig } from './resize-config';
+import type { TransformOptions } from './transform-config';
 
 /**
  * Image processor interface
@@ -30,6 +31,28 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * Supports auto-completion and type checking through type-safe interface.
    */
   shortcut: ShortcutBuilder<TState>;
+
+  /**
+   * crop / flip / rotate 변환 (한 번만, resize() 앞에서만)
+   *
+   * @description
+   * 호출 순서와 무관하게 crop → flip → rotate → resize 순서로 계산되고,
+   * 최종 출력 시점에 drawImage 한 번으로 렌더된다. crop 좌표는 원본 픽셀 기준이다.
+   * resize() 뒤에는 호출할 수 없다. ImageProcessor가 런타임에 거부한다(현재 상태 타입은
+   * 이 제약을 컴파일 타임에 강제하지 않는다 — resize()와 같다). 두 번째 호출도 런타임 오류다.
+   *
+   * @param options 변환 옵션. 빈 객체는 no-op
+   * @returns 같은 상태(BeforeResize)의 프로세서 — resize()를 이어서 부를 수 있다
+   *
+   * @example
+   * ```typescript
+   * await processImage(source)
+   *   .transform({ crop: { x: 10, y: 20, width: 640, height: 480 }, rotate: 90 })
+   *   .resize({ fit: 'cover', width: 320, height: 240 })
+   *   .toBlob();
+   * ```
+   */
+  transform(this: IImageProcessor<BeforeResize>, options: TransformOptions): IImageProcessor<BeforeResize>;
 
   /**
    * Image resizing (can only be called once)
