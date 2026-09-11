@@ -34,6 +34,7 @@ import {
   DataURLResultImpl,
   FileResultImpl,
 } from '../types/result-implementations.internal';
+import type { TransformOptions } from '../types/transform-config';
 import { detectCanvasFormatSupport } from '../utils/browser-capabilities/index';
 import {
   formatToMimeType,
@@ -110,6 +111,14 @@ export class OutputPipeline {
    */
   addBlur(radius: number, options: Partial<BlurOptions> = {}): void {
     this.pipeline.addBlur({ radius, ...options });
+  }
+
+  /**
+   * transform 옵션을 파이프라인에 위임한다.
+   * 1회 제약·resize 앞 제약·검증은 LazyRenderPipeline.addTransform이 수행한다.
+   */
+  addTransform(options: TransformOptions): void {
+    this.pipeline.addTransform(options);
   }
 
   // ==============================================

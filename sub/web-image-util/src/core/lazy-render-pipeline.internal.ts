@@ -8,13 +8,16 @@
  *
  * resize 1회 불변식의 런타임 소유자다 — 가드와 설정 검증은 addResize 한 곳에만 있다.
  * (컴파일 타임 전이는 AfterResizeCall 타입이 보조한다)
+ * transform 1회·resize 앞 불변식도 같은 이유로 addTransform 한 곳에만 있다.
  */
 
 import type { CanvasLease } from '../base/canvas-lease.internal';
 import { createQuickError } from '../base/error-helpers';
 import type { BlurOptions, ResultMetadata } from '../types';
+import { ImageProcessError } from '../types';
 import type { ResizeConfig } from '../types/resize-config';
 import { validateResizeConfig } from '../types/resize-config';
+import { normalizeTransformOptions, type TransformOptions, validateTransformOptions } from '../types/transform-config';
 import { analyzeAllOperations, debugLayout, type LazyOperation, renderLayout } from './single-renderer.internal';
 
 /**
@@ -30,6 +33,7 @@ import { analyzeAllOperations, debugLayout, type LazyOperation, renderLayout } f
 export class LazyRenderPipeline {
   private operations: LazyOperation[] = [];
   private resizeCalled = false;
+  private transformCalled = false;
 
   /**
    * Add resize operation (calculation only, no rendering)
@@ -44,6 +48,33 @@ export class LazyRenderPipeline {
     validateResizeConfig(config);
     this.resizeCalled = true;
     this.operations.push({ type: 'resize', config });
+    return this;
+  }
+
+  /**
+   * transform 연산 추가 (계산만, 렌더 없음)
+   *
+   * 1회 제약과 "resize() 앞" 제약의 단일 지점이다. 검증 실패 시 어떤 상태도 남기지 않는다.
+   * 컴파일 타임 제약(`this: IImageProcessor<BeforeResize>`)은 인터페이스가 보조한다.
+   * 원본 크기가 필요한 crop 교집합 판정은 렌더 시점(analyzeAllOperations)에 한다.
+   */
+  addTransform(options: TransformOptions): this {
+    if (this.transformCalled) {
+      throw new ImageProcessError(
+        'transform() can only be called once. Create a new processImage() instance.',
+        'OPTION_INVALID',
+        { details: { option: 'transform' } }
+      );
+    }
+    if (this.resizeCalled) {
+      throw new ImageProcessError('transform() must be called before resize().', 'OPTION_INVALID', {
+        details: { option: 'transform' },
+      });
+    }
+    validateTransformOptions(options);
+    const transform = normalizeTransformOptions(options);
+    this.transformCalled = true;
+    this.operations.push({ type: 'transform', transform });
     return this;
   }
 
