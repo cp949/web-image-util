@@ -2,7 +2,7 @@
 
 ## 상태
 
-Accepted (구현 완료, `dev` 병합 대기)
+Accepted (구현·`dev` 병합 완료)
 
 ## 배경
 
