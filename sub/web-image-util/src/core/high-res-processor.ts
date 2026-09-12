@@ -183,6 +183,37 @@ export class HighResolutionProcessor {
     return result;
   }
 
+  static async batchResize(
+    items: HighResolutionBatchItem[],
+    targetWidth: number,
+    targetHeight: number,
+    options: HighResolutionBatchOptions = {}
+  ): Promise<HighResolutionProcessResult[]> {
+    const { concurrency = 2, onProgress, onItemComplete, ...resizeOptions } = options;
+    const normalized = items.map((item) => HighResolutionProcessor.normalizeBatchItem(item, targetWidth, targetHeight));
+    let completed = 0;
+
+    return processInChunks(
+      normalized,
+      concurrency,
+      async ({ img, width, height, name }, index) => {
+        try {
+          return await HighResolutionProcessor.resize(img, width, height, resizeOptions);
+        } catch (error) {
+          productionLog.error(`Image processing failed (${name || index}):`, error);
+          throw error;
+        }
+      },
+      {
+        onItemComplete: (index, result) => {
+          completed++;
+          onProgress?.(completed, items.length, normalized[index].name);
+          onItemComplete?.(index, result);
+        },
+      }
+    );
+  }
+
   static validate(
     img: HTMLImageElement,
     targetWidth: number,
@@ -441,5 +472,21 @@ export class HighResolutionProcessor {
     if (priority === 'fast') return 'fast';
     if (priority === 'quality') return 'high';
     return 'balanced';
+  }
+
+  private static normalizeBatchItem(
+    item: HighResolutionBatchItem,
+    targetWidth: number,
+    targetHeight: number
+  ): { img: HTMLImageElement; width: number; height: number; name?: string } {
+    if (item && typeof item === 'object' && 'img' in item) {
+      return {
+        img: item.img,
+        width: item.width ?? targetWidth,
+        height: item.height ?? targetHeight,
+        name: item.name,
+      };
+    }
+    return { img: item as HTMLImageElement, width: targetWidth, height: targetHeight };
   }
 }
