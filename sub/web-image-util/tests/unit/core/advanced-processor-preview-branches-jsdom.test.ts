@@ -4,7 +4,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AdvancedImageProcessor, AutoHighResProcessor, ImagePurpose } from '../../../src/advanced-index';
+import { AdvancedImageProcessor, HighResolutionProcessor, ImagePurpose } from '../../../src/advanced-index';
 import * as pluginSystem from '../../../src/filters/plugin-system';
 import { createMockImage, makeValidationResult } from './advanced-processor-branches.helpers';
 
@@ -20,8 +20,8 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
   // resize 없음 — 기본값 경로
   // -----------------------------------------------------------------------
   describe('resize 옵션 없음', () => {
-    it('AutoHighResProcessor.validateProcessing을 호출하지 않는다', async () => {
-      const validateSpy = vi.spyOn(AutoHighResProcessor, 'validateProcessing');
+    it('HighResolutionProcessor.validate를 호출하지 않는다', async () => {
+      const validateSpy = vi.spyOn(HighResolutionProcessor, 'validate');
 
       const img = createMockImage();
       await AdvancedImageProcessor.previewProcessing(img, {});
@@ -54,11 +54,11 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
 
     beforeEach(() => {
       validateSpy = vi
-        .spyOn(AutoHighResProcessor, 'validateProcessing')
-        .mockReturnValue(makeValidationResult({ estimatedTime: 3, estimatedMemory: 120 }));
+        .spyOn(HighResolutionProcessor, 'validate')
+        .mockReturnValue(makeValidationResult({ estimatedTime: 3, analysis: { estimatedMemoryMB: 120 } as any }));
     });
 
-    it('AutoHighResProcessor.validateProcessing이 source · width · height를 인자로 받는다', async () => {
+    it('HighResolutionProcessor.validate가 source · width · height를 인자로 받는다', async () => {
       const img = createMockImage(800, 600);
       await AdvancedImageProcessor.previewProcessing(img, { resize: { width: 400, height: 300 } });
 
@@ -73,7 +73,7 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
       expect(result.estimatedTime).toBe(4);
     });
 
-    it('estimatedMemory는 기본 50과 validation.estimatedMemory 중 큰 값을 사용한다', async () => {
+    it('estimatedMemory는 기본 50과 validation.analysis.estimatedMemoryMB 중 큰 값을 사용한다', async () => {
       const img = createMockImage();
       const result = await AdvancedImageProcessor.previewProcessing(img, { resize: { width: 200, height: 200 } });
 
@@ -81,9 +81,11 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
       expect(result.estimatedMemory).toBe(120);
     });
 
-    it('validation.estimatedMemory가 50 미만이면 하한 50을 유지한다', async () => {
+    it('validation.analysis.estimatedMemoryMB가 50 미만이면 하한 50을 유지한다', async () => {
       // Math.max(50, 30) = 50 — 이 분기가 없으면 30이 그대로 노출되는 회귀를 잡는다
-      validateSpy.mockReturnValue(makeValidationResult({ estimatedTime: 1, estimatedMemory: 30 }));
+      validateSpy.mockReturnValue(
+        makeValidationResult({ estimatedTime: 1, analysis: { estimatedMemoryMB: 30 } as any })
+      );
 
       const img = createMockImage();
       const result = await AdvancedImageProcessor.previewProcessing(img, { resize: { width: 200, height: 200 } });
@@ -93,7 +95,11 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
 
     it('validation이 반환한 warnings가 결과에 포함된다', async () => {
       validateSpy.mockReturnValue(
-        makeValidationResult({ warnings: ['큰 이미지입니다'], estimatedTime: 2, estimatedMemory: 80 })
+        makeValidationResult({
+          warnings: ['큰 이미지입니다'],
+          estimatedTime: 2,
+          analysis: { estimatedMemoryMB: 80 } as any,
+        })
       );
 
       const img = createMockImage();
@@ -104,7 +110,11 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
 
     it('warnings가 있으면 canProcess가 false이다', async () => {
       validateSpy.mockReturnValue(
-        makeValidationResult({ warnings: ['처리 불가 경고'], estimatedTime: 2, estimatedMemory: 80 })
+        makeValidationResult({
+          warnings: ['처리 불가 경고'],
+          estimatedTime: 2,
+          analysis: { estimatedMemoryMB: 80 } as any,
+        })
       );
 
       const img = createMockImage();
@@ -118,7 +128,7 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
         makeValidationResult({
           recommendations: ['더 작은 크기로 줄이세요'],
           estimatedTime: 2,
-          estimatedMemory: 80,
+          analysis: { estimatedMemoryMB: 80 } as any,
         })
       );
 
@@ -216,8 +226,8 @@ describe('AdvancedImageProcessor.previewProcessing 분기', () => {
   // -----------------------------------------------------------------------
   describe('estimatedFileSize 계산 분기', () => {
     beforeEach(() => {
-      // resize가 있는 테스트에서 validateProcessing을 격리
-      vi.spyOn(AutoHighResProcessor, 'validateProcessing').mockReturnValue(makeValidationResult());
+      // resize가 있는 테스트에서 validate를 격리
+      vi.spyOn(HighResolutionProcessor, 'validate').mockReturnValue(makeValidationResult());
     });
 
     it('format 또는 resize가 없으면 estimatedFileSize가 undefined이다', async () => {

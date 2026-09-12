@@ -2,6 +2,8 @@
  * AdvancedImageProcessor 분기 테스트에서 공유하는 DOM fixture와 스텁 결과를 제공한다.
  */
 
+import type { HighResolutionValidation } from '../../../src/core/high-res-processor';
+
 /** width · height를 제어하는 이미지 픽스처 */
 export function createMockImage(width = 100, height = 100): HTMLImageElement {
   const img = document.createElement('img');
@@ -34,24 +36,15 @@ export function makeProcessResult(opts: { withBlob?: boolean } = {}) {
   };
 }
 
-/** validateProcessing 스텁 반환값 */
-export function makeValidationResult(
-  overrides: {
-    canProcess?: boolean;
-    warnings?: string[];
-    recommendations?: string[];
-    estimatedTime?: number;
-    estimatedMemory?: number;
-    suggestedStrategy?: string;
-  } = {}
-) {
+/** HighResolutionProcessor.validate 스텁 반환값 */
+export function makeValidationResult(overrides: Partial<HighResolutionValidation> = {}): HighResolutionValidation {
   return {
     canProcess: true,
     warnings: [],
     recommendations: [],
     estimatedTime: 2,
-    estimatedMemory: 100,
-    suggestedStrategy: 'direct',
+    recommendedStrategy: 'direct' as any,
+    analysis: { estimatedMemoryMB: 100 } as any,
     ...overrides,
   };
 }

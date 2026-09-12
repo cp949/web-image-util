@@ -2,10 +2,10 @@
  * ResizePerformance 단위 테스트 (버그 수정용 회귀 테스트 포함)
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AutoHighResProcessor } from '../../../src/core/auto-high-res';
 import { BatchResizer } from '../../../src/core/batch-resizer';
+import { HighResolutionProcessor } from '../../../src/core/high-res-processor';
 import { autoResize, fastResize, qualityResize, ResizePerformance } from '../../../src/core/performance-utils';
-import { makeAutoProcessingResult } from './auto-high-res.helpers';
+import { makeResizeResult } from './advanced-processor-process.helpers';
 
 /**
  * performance.memory를 복구 가능한 방식으로 주입한다.
@@ -169,17 +169,17 @@ describe('ResizePerformance', () => {
       vi.restoreAllMocks();
     });
 
-    it('fastBatch는 이미지마다 AutoHighResProcessor.smartResize를 priority="speed"로 호출한다', async () => {
-      const spy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
+    it('fastBatch는 이미지마다 HighResolutionProcessor.resize를 priority="fast"로 호출한다', async () => {
+      const spy = vi.spyOn(HighResolutionProcessor, 'resize').mockResolvedValue(makeResizeResult());
       const img = {} as HTMLImageElement;
 
       await ResizePerformance.fastBatch([img], 300, 200);
 
-      expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'speed' });
+      expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'fast' });
     });
 
-    it('qualityBatch는 이미지마다 AutoHighResProcessor.smartResize를 priority="quality"로 호출한다', async () => {
-      const spy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
+    it('qualityBatch는 이미지마다 HighResolutionProcessor.resize를 priority="quality"로 호출한다', async () => {
+      const spy = vi.spyOn(HighResolutionProcessor, 'resize').mockResolvedValue(makeResizeResult());
       const img = {} as HTMLImageElement;
 
       await ResizePerformance.qualityBatch([img], 300, 200);
@@ -196,9 +196,7 @@ describe('ResizePerformance', () => {
         capturedConfig = this.getConfig() as unknown as Record<string, unknown>;
         return [] as unknown[];
       });
-      const smartResizeSpy = vi
-        .spyOn(AutoHighResProcessor, 'smartResize')
-        .mockResolvedValue(makeAutoProcessingResult());
+      const smartResizeSpy = vi.spyOn(HighResolutionProcessor, 'resize').mockResolvedValue(makeResizeResult());
 
       const images = [{}, {}] as HTMLImageElement[];
       await ResizePerformance.memoryEfficientBatch(images, 300, 200);
@@ -210,11 +208,11 @@ describe('ResizePerformance', () => {
       // 이미지 수만큼 작업이 구성된다
       expect(processAllSpy.mock.calls[0]![0]).toHaveLength(2);
 
-      // 각 작업은 AutoHighResProcessor.smartResize를 priority="speed" + forceStrategy="tiled"로 호출한다
+      // 각 작업은 HighResolutionProcessor.resize를 priority="fast" + forceStrategy="tiled"로 호출한다
       const jobs = processAllSpy.mock.calls[0]![0] as Array<{ operation: () => Promise<unknown> }>;
       await jobs[0]!.operation();
       expect(smartResizeSpy).toHaveBeenCalledWith(images[0], 300, 200, {
-        priority: 'speed',
+        priority: 'fast',
         forceStrategy: 'tiled',
       });
     });
@@ -225,17 +223,17 @@ describe('ResizePerformance', () => {
       vi.restoreAllMocks();
     });
 
-    it('fastResize는 AutoHighResProcessor.smartResize를 priority="speed"로 호출한다', async () => {
-      const spy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
+    it('fastResize는 HighResolutionProcessor.resize를 priority="fast"로 호출한다', async () => {
+      const spy = vi.spyOn(HighResolutionProcessor, 'resize').mockResolvedValue(makeResizeResult());
       const img = {} as HTMLImageElement;
 
       await fastResize(img, 300, 200);
 
-      expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'speed' });
+      expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'fast' });
     });
 
-    it('qualityResize는 AutoHighResProcessor.smartResize를 priority="quality"로 호출한다', async () => {
-      const spy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
+    it('qualityResize는 HighResolutionProcessor.resize를 priority="quality"로 호출한다', async () => {
+      const spy = vi.spyOn(HighResolutionProcessor, 'resize').mockResolvedValue(makeResizeResult());
       const img = {} as HTMLImageElement;
 
       await qualityResize(img, 300, 200);
@@ -243,8 +241,8 @@ describe('ResizePerformance', () => {
       expect(spy).toHaveBeenCalledWith(img, 300, 200, { priority: 'quality' });
     });
 
-    it('autoResize는 AutoHighResProcessor.smartResize를 priority="balanced"로 호출한다', async () => {
-      const spy = vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(makeAutoProcessingResult());
+    it('autoResize는 HighResolutionProcessor.resize를 priority="balanced"로 호출한다', async () => {
+      const spy = vi.spyOn(HighResolutionProcessor, 'resize').mockResolvedValue(makeResizeResult());
       const img = { width: 1000, height: 1000 } as HTMLImageElement;
 
       await autoResize(img, 300, 200);

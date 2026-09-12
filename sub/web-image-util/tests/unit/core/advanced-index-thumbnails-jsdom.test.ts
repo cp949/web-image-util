@@ -74,12 +74,12 @@ describe('createAdvancedThumbnail 옵션-결과 매핑', () => {
       expect(passedOptions.resize.priority).toBe('quality');
     });
 
-    it('quality: "fast" → resize.priority 가 "speed" 이다', async () => {
+    it('quality: "fast" → resize.priority 가 "fast" 이다', async () => {
       const img = createMockImage();
       await createAdvancedThumbnail(img, 64, { quality: 'fast' });
 
       const passedOptions = (processImageSpy.mock.calls[0] as any)[1];
-      expect(passedOptions.resize.priority).toBe('speed');
+      expect(passedOptions.resize.priority).toBe('fast');
     });
 
     it('quality: "balanced" → resize.priority 가 "balanced" 이다', async () => {

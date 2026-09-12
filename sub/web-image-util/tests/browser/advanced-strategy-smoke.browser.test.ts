@@ -4,7 +4,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AutoHighResProcessor } from '../../src/advanced-index';
+import { HighResolutionProcessor } from '../../src/advanced-index';
 import { ProcessingStrategy } from '../../src/base/high-res-detector.internal';
 import { SteppedProcessor } from '../../src/base/stepped-processor.internal';
 import { TiledProcessor } from '../../src/base/tiled-processor.internal';
@@ -33,7 +33,7 @@ describe('advanced 공개 API 브라우저 렌더링 스모크 테스트', () =>
     const leafSpy = spyOnLeaf();
     const img = createTestCanvas(32, 32, '#3399ff') as unknown as HTMLImageElement;
 
-    const result = await AutoHighResProcessor.smartResize(img, 4, 4, {
+    const result = await HighResolutionProcessor.resize(img, 4, 4, {
       forceStrategy: strategy,
     });
 

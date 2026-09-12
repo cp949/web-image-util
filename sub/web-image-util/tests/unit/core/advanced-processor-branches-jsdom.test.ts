@@ -70,12 +70,12 @@ describe('AdvancedImageProcessor.createThumbnail 분기', () => {
   // quality → priority 매핑 분기
   // -----------------------------------------------------------------------
   describe('quality → priority 매핑 분기', () => {
-    it("quality: 'fast' 는 priority: 'speed' 로 매핑된다", async () => {
+    it("quality: 'fast' 는 priority: 'fast' 로 매핑된다", async () => {
       const img = createMockImage();
       await AdvancedImageProcessor.createThumbnail(img, 100, { quality: 'fast' });
 
       const opts = processImageSpy.mock.calls[0]?.[1];
-      expect(opts?.resize?.priority).toBe('speed');
+      expect(opts?.resize?.priority).toBe('fast');
     });
 
     it("quality: 'high' 는 priority: 'quality' 로 매핑된다", async () => {

@@ -3,29 +3,31 @@
  */
 
 import { vi } from 'vitest';
-import { AutoHighResProcessor } from '../../../src/core/auto-high-res';
+import type { HighResolutionProcessResult } from '../../../src/core/high-res-processor';
+import { HighResolutionProcessor } from '../../../src/core/high-res-processor';
 
-/** AutoHighResProcessor.smartResize 스텁 반환값 */
-export function makeResizeResult(canvasW = 200, canvasH = 150, userMessage?: string) {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvasW;
-  canvas.height = canvasH;
+/** HighResolutionProcessor.resize 스텁 반환값 */
+export function makeResizeResult(overrides: Partial<HighResolutionProcessResult> = {}): HighResolutionProcessResult {
   return {
-    canvas,
-    optimizations: {
+    canvas: document.createElement('canvas'),
+    analysis: {
+      width: 100,
+      height: 100,
+      pixelCount: 10000,
+      totalPixels: 10000,
+      estimatedMemoryMB: 0.04,
       strategy: 'direct',
-      memoryOptimized: false,
-      tileProcessing: false,
-      estimatedTimeSaved: 0,
-    },
-    stats: {
-      originalSize: { width: 800, height: 600 },
-      finalSize: { width: canvasW, height: canvasH },
-      processingTime: 0.01,
-      memoryPeakUsage: 5,
-      qualityLevel: 'balanced' as const,
-    },
-    ...(userMessage !== undefined ? { userMessage } : {}),
+      maxSafeDimension: 16384,
+      recommendedChunkSize: 1024,
+      processingComplexity: 'low',
+    } as any,
+    priority: 'balanced',
+    strategy: 'direct' as any,
+    processingTime: 0,
+    memoryPeakUsageMB: 0,
+    memoryOptimized: false,
+    estimatedTimeSaved: 0,
+    ...overrides,
   };
 }
 
@@ -59,7 +61,7 @@ export function installImageDataMock() {
   } as typeof ImageData;
 }
 
-/** resize 경로 테스트용 smartResize 기본 스텁을 설치한다. */
-export function mockSmartResize(result = makeResizeResult()) {
-  return vi.spyOn(AutoHighResProcessor, 'smartResize').mockResolvedValue(result as any);
+/** resize 경로 테스트용 resize 기본 스텁을 설치한다. */
+export function mockSmartResize(result: HighResolutionProcessResult = makeResizeResult()) {
+  return vi.spyOn(HighResolutionProcessor, 'resize').mockResolvedValue(result);
 }

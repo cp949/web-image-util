@@ -79,13 +79,13 @@ describe('convenience 함수 옵션 매핑 및 반환 형태', () => {
       expect(opts?.format).toBeUndefined();
     });
 
-    it('quality: fast 는 priority speed 로 매핑된다', async () => {
+    it('quality: fast 는 priority fast 로 매핑된다', async () => {
       const img = createMockImage();
       await smartResize(img, 800, 600, { quality: 'fast' });
 
       expect(processImageSpy).toHaveBeenCalledOnce();
       const opts = processImageSpy.mock.calls[0]?.[1];
-      expect(opts?.resize?.priority).toBe('speed');
+      expect(opts?.resize?.priority).toBe('fast');
     });
 
     it('quality: high 는 priority quality 로 매핑되고 format: auto 가 전달된다', async () => {

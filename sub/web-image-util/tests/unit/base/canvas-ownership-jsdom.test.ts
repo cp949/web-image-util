@@ -4,12 +4,12 @@
  * 임대(lease) canvas를 consume 콜백 밖으로 내보내면 release의 clearRect가
  * 실행되어 호출자는 빈 canvas를 받는다.
  * 이 파일은 "반환된 canvas는 호출자 소유이며 픽셀이 보존된다"는 계약을
- * 공개 seam(smartResize)과 합성 경로(composeImages grid)에서 고정한다.
+ * 공개 seam(HighResolutionProcessor.resize)과 합성 경로(composeImages grid)에서 고정한다.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
-import { HighResolutionManager } from '../../../src/base/high-res-manager';
 import { composeImages } from '../../../src/composition/compose';
+import { HighResolutionProcessor } from '../../../src/core/high-res-processor';
 import { getCanvasPixelData } from '../../utils/canvas-helper';
 import { createTestImageDataUrl } from '../../utils/image-helper';
 
@@ -30,10 +30,10 @@ describe('Canvas 소유권 (pool use-after-release 회귀)', () => {
     CanvasPool.getInstance().clear();
   });
 
-  it('smartResize 결과 canvas는 그려진 픽셀을 보존한다', async () => {
+  it('resize 결과 canvas는 그려진 픽셀을 보존한다', async () => {
     const source = await createLoadedImage(64, 64, 'red');
 
-    const result = await HighResolutionManager.smartResize(source, 32, 32);
+    const result = await HighResolutionProcessor.resize(source, 32, 32);
 
     expect(result.canvas.width).toBe(32);
     expect(result.canvas.height).toBe(32);
@@ -42,12 +42,12 @@ describe('Canvas 소유권 (pool use-after-release 회귀)', () => {
     expect(pixel.r).toBeGreaterThan(200);
   });
 
-  it('smartResize를 연속 호출해도 이전 결과 canvas를 재사용하지 않는다', async () => {
+  it('resize를 연속 호출해도 이전 결과 canvas를 재사용하지 않는다', async () => {
     const redSource = await createLoadedImage(64, 64, 'red');
     const blueSource = await createLoadedImage(64, 64, 'blue');
 
-    const first = await HighResolutionManager.smartResize(redSource, 32, 32);
-    const second = await HighResolutionManager.smartResize(blueSource, 32, 32);
+    const first = await HighResolutionProcessor.resize(redSource, 32, 32);
+    const second = await HighResolutionProcessor.resize(blueSource, 32, 32);
 
     expect(second.canvas).not.toBe(first.canvas);
     // 두 번째 호출 이후에도 첫 결과의 픽셀이 유지되어야 한다
