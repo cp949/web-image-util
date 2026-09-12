@@ -23,6 +23,7 @@
 ### 변경
 
 - Changed (**Breaking**): 미사용·미문서화 공개 타입 `ResizePosition`을 제거했습니다. `ResizeConfig`/`resize()` 어디에서도 쓰이지 않던 죽은 export였습니다. 이 타입을 직접 import하던 코드가 있었다면 제거하세요 — 대체 타입은 없습니다(대신 `resize()`의 새 `position` 필드가 쓰는 `ResizeGravity`/`ResizeFocalPoint`를 참고하세요).
+- Changed (**Breaking**): `/advanced`의 `AutoHighResProcessor`/`HighResolutionManager`/`autoSmartResize`/`smartResizeWithProgress`를 `HighResolutionProcessor`(`resize()`/`validate()`/`batchResize()`) 하나로 통합했습니다. `priority` 값 집합이 `'speed' | 'balanced' | 'quality'`에서 `'fast' | 'balanced' | 'quality'`로 바뀌었습니다(`HighResolutionManager.quality`의 `'high'` 값도 `'quality'`로 통일). 일괄 처리는 `batchResize(items, width, height, options)` 하나로 합쳐졌고, 항목은 `HTMLImageElement` 또는 `{ img, width?, height?, name? }`를 받습니다.
 
 ## [4.0.0] - 2026-08-17
 
