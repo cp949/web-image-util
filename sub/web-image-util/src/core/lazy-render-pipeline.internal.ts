@@ -57,7 +57,11 @@ export class LazyRenderPipeline {
     }
     validateResizeConfig(config);
     this.resizeCalled = true;
-    this.operations.push({ type: 'resize', config });
+    // config를 복사해 저장한다 — addTransform/addBox와 달리 그동안 원본 참조를 그대로 들고 있었다.
+    // resize는 지연 렌더링이라 렌더 시점(toBlob() 등)까지 시간차가 있는데, 원본 참조를 그대로
+    // 쓰면 호출자가 검증 통과 후 같은 객체를 변형했을 때 그 변형이 렌더 시점까지 반영돼
+    // 검증되지 않은 값이 계산 로직에 도달할 수 있었다.
+    this.operations.push({ type: 'resize', config: { ...config } });
     return this;
   }
 

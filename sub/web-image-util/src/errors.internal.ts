@@ -96,3 +96,11 @@ export class ImageProcessError extends globalThis.Error {
     }
   }
 }
+
+/**
+ * 옵션 오류를 OPTION_INVALID로 만든다. option은 점 표기 경로.
+ * `types/resize-config.ts`, `types/box-config.ts`, `types/transform-config.ts`가 공유한다.
+ */
+export function optionInvalid(option: string, message: string): ImageProcessError {
+  return new ImageProcessError(message, 'OPTION_INVALID', { details: { option } });
+}

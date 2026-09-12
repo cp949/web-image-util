@@ -8,8 +8,15 @@
  * - 레이아웃만 계산하며 실제 렌더링은 single-renderer의 renderLayout이 담당한다.
  */
 
+import { ImageProcessError } from '../errors.internal';
 import type { GeometryPoint, GeometrySize } from '../types/base';
-import type { Padding, ResizeConfig, ScaleValue } from '../types/resize-config';
+import {
+  isPositionableConfig,
+  type Padding,
+  type ResizeConfig,
+  type ResizeGravity,
+  type ScaleValue,
+} from '../types/resize-config';
 
 // ============================================================================
 // 인터페이스
@@ -246,6 +253,83 @@ function calculateCanvasSize(imageSize: GeometrySize, config: ResizeConfig): Geo
   };
 }
 
+/** gravity 9방향 → (alignX, alignY) 정렬 비율. 0=시작(위/왼쪽), 1=끝(아래/오른쪽), 0.5=중앙 */
+const GRAVITY_ALIGNMENT: Record<ResizeGravity, { alignX: number; alignY: number }> = {
+  'top-left': { alignX: 0, alignY: 0 },
+  'top-center': { alignX: 0.5, alignY: 0 },
+  'top-right': { alignX: 1, alignY: 0 },
+  'center-left': { alignX: 0, alignY: 0.5 },
+  center: { alignX: 0.5, alignY: 0.5 },
+  'center-right': { alignX: 1, alignY: 0.5 },
+  'bottom-left': { alignX: 0, alignY: 1 },
+  'bottom-center': { alignX: 0.5, alignY: 1 },
+  'bottom-right': { alignX: 1, alignY: 1 },
+};
+
+/** 0~1로 자른다. epsilon 허용 오차를 통과한 focal-point 경계값(-1e-6~0, 1~1+1e-6)을 흡수한다 */
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value));
+}
+
+/**
+ * focal-point 한 축을 정렬 비율(alignX 또는 alignY)로 변환한다.
+ *
+ * source의 focal 지점(0~1)이 배치 영역 중앙에 오도록 하는 이상적인 오프셋을 구하고,
+ * 이미지가 배치 영역을 완전히 덮어야 하는 제약(오프셋 범위 [available-imageLength, 0]) 안으로
+ * 자른다. available === imageLength(그 축은 자를 필요가 없음)면 어느 정렬이든 결과가
+ * 같으므로 0.5를 반환한다.
+ */
+function resolveFocalAlign(available: number, imageLength: number, focal: number): number {
+  const delta = available - imageLength;
+  if (delta === 0) {
+    return 0.5;
+  }
+  const clampedFocal = clamp01(focal);
+  const idealOffset = available / 2 - clampedFocal * imageLength;
+  return clamp01(idealOffset / delta);
+}
+
+/**
+ * config.position으로부터 (alignX, alignY) 정렬 비율을 구한다.
+ *
+ * - position 생략: 중앙 정렬(0.5, 0.5) — 기존 동작과 동일
+ * - gravity 문자열: GRAVITY_ALIGNMENT 조회
+ * - focal-point 객체({x, y}, cover 전용. contain 조합은 validateResizeConfig가 이미 막는다):
+ *   resolveFocalAlign으로 축별 계산
+ * - fill/maxFit/minFit/scale: 타입에 position 필드가 없다. 이 fit들은 canvas 크기가
+ *   imageSize와 같아(calculateCanvasSize 참고) delta가 항상 0이므로 정렬 비율이 결과에
+ *   영향을 주지 않는다 — 중앙(0.5, 0.5)을 그대로 반환해도 안전하다.
+ */
+function resolveAlignment(
+  imageSize: GeometrySize,
+  availableWidth: number,
+  availableHeight: number,
+  config: ResizeConfig
+): { alignX: number; alignY: number } {
+  const position = isPositionableConfig(config) ? config.position : undefined;
+
+  if (position === undefined) {
+    return { alignX: 0.5, alignY: 0.5 };
+  }
+
+  if (typeof position === 'string') {
+    const alignment = GRAVITY_ALIGNMENT[position];
+    if (!alignment) {
+      // validateResizeConfig가 이미 gravity 값을 검증했으므로 정상 경로에서는 도달하지 않는다.
+      // 검증을 통과한 뒤 config가 외부에서 변형되는 경우까지 대비한 방어선이다.
+      throw new ImageProcessError(`Invalid resize position gravity: ${String(position)}`, 'OPTION_INVALID', {
+        details: { option: 'position' },
+      });
+    }
+    return alignment;
+  }
+
+  return {
+    alignX: resolveFocalAlign(availableWidth, imageSize.width, position.x),
+    alignY: resolveFocalAlign(availableHeight, imageSize.height, position.y),
+  };
+}
+
 /**
  * canvas 안에서 이미지를 그릴 시작 좌표를 계산한다.
  *
@@ -255,24 +339,21 @@ function calculateCanvasSize(imageSize: GeometrySize, config: ResizeConfig): Geo
  * @returns canvas 안에서 이미지를 그릴 시작 좌표
  *
  * @description
- * - cover: 중앙 정렬하며 잘리는 영역 때문에 음수 좌표 가능
- * - contain: 중앙 정렬하며 여백 생성
- * - fill: (0, 0)에서 시작
+ * - cover: position(gravity 9방향 또는 focal-point)에 따라 정렬하며 잘리는 영역 때문에 음수 좌표 가능
+ * - contain: position(gravity)에 따라 정렬하며 margin을 분배
+ * - fill: (0, 0)에서 시작(position 필드 자체가 없음)
+ * - position 생략 시 중앙 정렬(기존 동작과 동일)
  * - padding 반영
  *
  * @example
  * ```typescript
- * // padding 없이 중앙 정렬
+ * // padding 없이 중앙 정렬(position 생략)
  * calculatePosition({ width: 100, height: 100 }, { width: 200, height: 200 }, config);
  * // → { x: 50, y: 50 }
  *
- * // 숫자 padding
- * calculatePosition({ width: 100, height: 100 }, { width: 140, height: 140 }, { ...config, padding: 20 });
- * // → { x: 20, y: 20 } (padding만큼 이동)
- *
- * // 객체 padding
- * calculatePosition({ width: 100, height: 100 }, { width: 120, height: 110 }, { ...config, padding: { top: 10, left: 20 } });
- * // → { x: 20, y: 10 } (방향별 padding만큼 이동)
+ * // gravity: top-left
+ * calculatePosition({ width: 200, height: 100 }, { width: 100, height: 100 }, { ...config, position: 'top-left' });
+ * // → { x: 0, y: 0 }
  * ```
  */
 function calculatePosition(imageSize: GeometrySize, canvasSize: GeometrySize, config: ResizeConfig): GeometryPoint {
@@ -283,11 +364,14 @@ function calculatePosition(imageSize: GeometrySize, canvasSize: GeometrySize, co
   const availableWidth = canvasSize.width - padding.left - padding.right;
   const availableHeight = canvasSize.height - padding.top - padding.bottom;
 
-  // 여백을 절반으로 나눠 중앙에 배치한다.
+  // position(gravity 또는 focal-point)에 따른 정렬 비율. 생략 시 중앙(0.5, 0.5) — 기존 동작과 동일하다.
+  const { alignX, alignY } = resolveAlignment(imageSize, availableWidth, availableHeight, config);
+
+  // 여백(또는 초과분)에 정렬 비율을 곱해 위치를 정한다.
   // - cover: 이미지가 더 크면 잘리는 영역 때문에 음수 좌표
   // - contain: 이미지가 더 작으면 여백 때문에 양수 좌표
-  const x = padding.left + Math.round((availableWidth - imageSize.width) / 2);
-  const y = padding.top + Math.round((availableHeight - imageSize.height) / 2);
+  const x = padding.left + Math.round((availableWidth - imageSize.width) * alignX);
+  const y = padding.top + Math.round((availableHeight - imageSize.height) * alignY);
 
   return { x, y };
 }

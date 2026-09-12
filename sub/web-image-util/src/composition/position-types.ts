@@ -3,6 +3,11 @@
  *
  * @description Defines 9 basic positions and custom position for placing images or text.
  * Similar to CSS position system and used for watermarks or text overlays.
+ *
+ * resize()의 배치 필드 `ResizeGravity`(`types/resize-config.ts`)와는 별개의 9방향 좌표계다.
+ * 여기는 워터마크/오버레이용으로 절대 픽셀 margin과 `custom` 좌표를 지원하고, `ResizeGravity`는
+ * 배치 영역 대비 정렬 비율(0~1)만 다룬다. 이름도 다르다(`middle-*` vs `center-*`).
+ * 의도적으로 독립된 타입이다(ADR-0004 결정 2) — 서로 변환하지 않는다.
  */
 export type Position =
   | 'top-left'

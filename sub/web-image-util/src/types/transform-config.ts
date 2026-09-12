@@ -9,7 +9,7 @@
  * - 연산 순서는 crop → flip → rotate → resize로 고정이며 호출 순서와 무관하다.
  */
 
-import { ImageProcessError } from '../errors.internal';
+import { ImageProcessError, optionInvalid } from '../errors.internal';
 
 /** 원본 픽셀 좌표 기준 crop 사각형. 원본을 벗어나도 되며 밖은 투명이다 */
 export interface TransformCrop {
@@ -61,11 +61,6 @@ export interface NormalizedTransform {
   degrees: number;
   /** 기본 true */
   expand: boolean;
-}
-
-/** 옵션 오류를 OPTION_INVALID로 만든다. option은 점 표기 경로 */
-function optionInvalid(option: string, message: string): ImageProcessError {
-  return new ImageProcessError(message, 'OPTION_INVALID', { details: { option } });
 }
 
 /** crop 검증 — 유한수, 반올림 후 양수 크기 */

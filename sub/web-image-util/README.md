@@ -100,6 +100,31 @@ await processImage(source)
 
 `contain`은 지정한 `width`/`height`의 출력 캔버스를 유지합니다. 출력 캔버스도 실제 이미지 크기로 받고 싶다면 `maxFit`을 사용하세요.
 
+### 배치 (position)
+
+`cover`/`contain`은 기본적으로 중앙 정렬입니다. `position`으로 9방향 gravity 또는(`cover`만) 0~1 정규화 focal-point를 지정해 바꿀 수 있습니다.
+
+```typescript
+// gravity: 9방향 문자열 (top-left, top-center, top-right, center-left, center,
+// center-right, bottom-left, bottom-center, bottom-right)
+await processImage(source)
+  .resize({ fit: 'cover', width: 300, height: 300, position: 'top-center' })
+  .toBlob();
+
+// focal-point: 소스 이미지 기준 0~1 정규화 좌표. cover 전용(contain은 gravity만 허용)
+await processImage(source)
+  .resize({ fit: 'cover', width: 300, height: 300, position: { x: 0.3, y: 0.7 } })
+  .toBlob();
+
+// contain은 gravity만 허용 — 전체를 자르지 않는 fit이라 focal-point의 존재 이유가 없다
+await processImage(source)
+  .resize({ fit: 'contain', width: 300, height: 300, position: 'bottom-right' })
+  .box({ background: '#fff' })
+  .toBlob();
+```
+
+`position`을 생략하면 기존과 동일하게 중앙 정렬입니다. 잘못된 gravity 문자열, `[0, 1]` 범위를 벗어난 focal-point(부동소수점 오차 `1e-6` 이내는 0/1로 보정), `contain`에 focal-point 객체를 지정하는 조합은 모두 `OPTION_INVALID`입니다.
+
 ## Shortcut API
 
 자주 쓰이는 리사이즈 패턴은 `.shortcut`으로 짧게 표현할 수 있습니다.
@@ -123,7 +148,7 @@ await processImage(source)
 await processImage(source).shortcut.scale(0.5).toDataURL();
 ```
 
-`coverBox`/`containBox` 옵션은 `padding`, `background`, `withoutEnlargement`를 지원합니다.
+`coverBox`/`containBox` 옵션은 `padding`, `background`, `withoutEnlargement`, `position`을 지원합니다.
 
 ## 변환 (crop / flip / rotate)
 

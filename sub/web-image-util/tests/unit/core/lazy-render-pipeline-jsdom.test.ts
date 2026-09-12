@@ -70,6 +70,20 @@ describe('LazyRenderPipeline (jsdom-safe)', () => {
       expect(operations[0].type).toBe('resize');
       expect(operations[1].type).toBe('blur');
     });
+
+    it('addResize 뒤 원본 config 객체를 변형해도 누적된 연산에 반영되지 않는다', () => {
+      // addResize는 원본 참조가 아니라 복사본을 저장한다. 그렇지 않으면 검증(validateResizeConfig)
+      // 통과 후 호출자가 같은 객체를 변형했을 때, 검증되지 않은 값이 렌더 시점까지 그대로
+      // 흘러들어갈 수 있다(예: position을 유효한 gravity에서 무효한 문자열로 바꾸는 경우).
+      const config = { fit: 'cover', width: 300, height: 200, position: 'top-left' } as const;
+      pipeline.addResize(config);
+
+      (config as { position: string }).position = 'bottom-right';
+
+      const operations = pipeline.getOperations();
+      expect(operations[0].type).toBe('resize');
+      expect((operations[0] as { config: { position?: unknown } }).config.position).toBe('top-left');
+    });
   });
 
   describe('Single resize() Call Constraint', () => {

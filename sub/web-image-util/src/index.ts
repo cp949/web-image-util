@@ -136,7 +136,8 @@ export type {
   // Option types
   ResizeConfig,
   ResizeFit,
-  ResizePosition,
+  ResizeFocalPoint,
+  ResizeGravity,
   // Result types
   ResultBlob,
   ResultCanvas,

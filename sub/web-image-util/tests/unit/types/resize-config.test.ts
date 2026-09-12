@@ -222,6 +222,106 @@ describe('ResizeConfig Types', () => {
       });
     });
 
+    describe('position 검증 (gravity/focal-point)', () => {
+      it.each([
+        'top-left',
+        'top-center',
+        'top-right',
+        'center-left',
+        'center',
+        'center-right',
+        'bottom-left',
+        'bottom-center',
+        'bottom-right',
+      ] as const)('cover + gravity %s를 허용한다', (position) => {
+        const config: ResizeConfig = { fit: 'cover', width: 100, height: 100, position };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it('cover + focal-point 객체(중간값)를 허용한다', () => {
+        const config: ResizeConfig = { fit: 'cover', width: 100, height: 100, position: { x: 0.3, y: 0.7 } };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it.each([0, 1])('cover + focal-point 경계값 %d를 허용한다', (value) => {
+        const config: ResizeConfig = { fit: 'cover', width: 100, height: 100, position: { x: value, y: value } };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it.each([-1e-7, 1 + 1e-7])('focal-point가 epsilon(1e-6) 안쪽으로 벗어난 %s는 허용한다', (value) => {
+        const config: ResizeConfig = { fit: 'cover', width: 100, height: 100, position: { x: value, y: 0.5 } };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it.each([-1e-5, 1.01])('focal-point가 epsilon 밖으로 벗어난 %s는 거부한다', (value) => {
+        const config = { fit: 'cover', width: 100, height: 100, position: { x: value, y: 0.5 } } as ResizeConfig;
+        expect(() => validateResizeConfig(config)).toThrow(
+          expect.objectContaining({
+            code: 'OPTION_INVALID',
+            details: expect.objectContaining({ option: 'position.x' }),
+          })
+        );
+      });
+
+      it('focal-point y축 범위 밖도 같은 방식으로 거부한다', () => {
+        const config = { fit: 'cover', width: 100, height: 100, position: { x: 0.5, y: 2 } } as ResizeConfig;
+        expect(() => validateResizeConfig(config)).toThrow(
+          expect.objectContaining({
+            code: 'OPTION_INVALID',
+            details: expect.objectContaining({ option: 'position.y' }),
+          })
+        );
+      });
+
+      it('잘못된 gravity 문자열은 거부한다', () => {
+        const config = { fit: 'cover', width: 100, height: 100, position: 'middle' } as unknown as ResizeConfig;
+        expect(() => validateResizeConfig(config)).toThrow(
+          expect.objectContaining({ code: 'OPTION_INVALID', details: expect.objectContaining({ option: 'position' }) })
+        );
+      });
+
+      it('contain + gravity를 허용한다', () => {
+        const config: ResizeConfig = { fit: 'contain', width: 100, height: 100, position: 'top-center' };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it('contain + focal-point 객체(타입 우회)는 거부하며 cover 전용임을 안내한다', () => {
+        const config = {
+          fit: 'contain',
+          width: 100,
+          height: 100,
+          position: { x: 0.5, y: 0.5 },
+        } as unknown as ResizeConfig;
+        expect(() => validateResizeConfig(config)).toThrow(
+          expect.objectContaining({
+            code: 'OPTION_INVALID',
+            details: expect.objectContaining({ option: 'position' }),
+            message: expect.stringContaining('focal-point'),
+          })
+        );
+      });
+
+      it('contain + focal-point가 아닌 값(타입 우회)은 거부하되 focal-point를 언급하지 않는다', () => {
+        // 42는 focal-point 객체가 아니므로 "focal-point 객체는 cover 전용"이라는 메시지는
+        // 원인을 오도한다 — gravity 문자열 목록을 안내하는 일반 메시지로 통일한다.
+        const config = { fit: 'contain', width: 100, height: 100, position: 42 } as unknown as ResizeConfig;
+        expect(() => validateResizeConfig(config)).toThrow(
+          expect.objectContaining({
+            code: 'OPTION_INVALID',
+            details: expect.objectContaining({ option: 'position' }),
+            message: expect.not.stringContaining('focal-point'),
+          })
+        );
+      });
+
+      it('position을 생략하면 문제 없다', () => {
+        const cover: ResizeConfig = { fit: 'cover', width: 100, height: 100 };
+        const contain: ResizeConfig = { fit: 'contain', width: 100, height: 100 };
+        expect(() => validateResizeConfig(cover)).not.toThrow();
+        expect(() => validateResizeConfig(contain)).not.toThrow();
+      });
+    });
+
     describe('all fit modes with proper parameters', () => {
       it('should validate all fit modes', () => {
         const configs: ResizeConfig[] = [

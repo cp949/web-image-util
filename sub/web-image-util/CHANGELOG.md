@@ -11,6 +11,12 @@
 - Added: `box()` 체이닝 메서드를 추가했습니다. `padding`, `background`, `radius`(CSS `border-radius` 의미, 축별 % 지원), `border`(`{ width, color, inset? }`)를 CSS box model로 한 번에 지정합니다. 한 체인에서 한 번만 호출할 수 있으며 체인 위치는 무관합니다(항상 transform → resize → box 순서로 가장 바깥에 적용). 최종 렌더는 여전히 `drawImage()` 1회입니다. `resize()`의 `padding`/`background`와 동시에 쓰면 `OPTION_INVALID`입니다.
 - Added: `BoxOptions`, `BoxBorder`, `BoxRadius` 타입을 루트 진입점에서 export합니다.
 - Deprecated: `resize()`의 `padding`/`background` 옵션, shortcut `coverBox`/`containBox` 등의 `padding`/`background` 옵션, `ProcessorOptions.defaultBackground`. 전부 `box()`로 통일하세요. 다음 메이저에서 제거됩니다.
+- Added: `resize()`의 `cover`/`contain`에 `position` 필드를 추가했습니다. 9방향 gravity 문자열(`top-left` 등)은 둘 다, 0~1 정규화 focal-point 객체(`{ x, y }`)는 `cover`에서만 받습니다. 생략 시 기존과 동일한 중앙 정렬입니다. 잘못된 gravity, 범위를 벗어난 focal-point(`1e-6` 이내는 0/1로 보정), `contain`에 focal-point를 지정하는 조합은 `OPTION_INVALID`입니다.
+- Added: `ResizeGravity`, `ResizeFocalPoint` 타입을 루트 진입점에서 export합니다.
+
+### 변경
+
+- Changed (**Breaking**): 미사용·미문서화 공개 타입 `ResizePosition`을 제거했습니다. `ResizeConfig`/`resize()` 어디에서도 쓰이지 않던 죽은 export였습니다. 이 타입을 직접 import하던 코드가 있었다면 제거하세요 — 대체 타입은 없습니다(대신 `resize()`의 새 `position` 필드가 쓰는 `ResizeGravity`/`ResizeFocalPoint`를 참고하세요).
 
 ## [4.0.0] - 2026-08-17
 

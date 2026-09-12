@@ -58,7 +58,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    *
    * @param width Output width (pixels)
    * @param height Output height (pixels)
-   * @param options Additional options (padding, background)
+   * @param options Additional options (padding, background, position)
    * @deprecated options의 padding/background는 `box()`로 옮기세요. 다음 메이저에서 제거됩니다.
    * @returns IImageProcessor in AfterResize state (chainable)
    *
@@ -98,7 +98,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    *
    * @param width Output width (pixels)
    * @param height Output height (pixels)
-   * @param options Additional options (withoutEnlargement, padding, background)
+   * @param options Additional options (withoutEnlargement, padding, background, position)
    * @deprecated options의 padding/background는 `box()`로 옮기세요. 다음 메이저에서 제거됩니다.
    * @returns IImageProcessor in AfterResize state (chainable)
    *

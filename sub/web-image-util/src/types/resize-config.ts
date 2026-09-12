@@ -8,7 +8,7 @@
  * - Enforces required/optional options for each fit mode
  */
 
-import { ImageProcessError } from '../errors.internal';
+import { ImageProcessError, optionInvalid } from '../errors.internal';
 
 // ============================================================================
 // BASE TYPES - Base types
@@ -27,6 +27,42 @@ export type Padding =
       bottom?: number;
       left?: number;
     };
+
+/**
+ * cover/contain에서 이미지를 배치할 9방향 gravity 값 목록.
+ * `ResizeGravity` 타입과 런타임 검증 Set(`RESIZE_GRAVITY_VALUES`)이 모두 이 배열에서 파생된다 —
+ * 값 목록을 여러 곳에 따로 유지하면 한쪽만 갱신했을 때 컴파일 에러 없이 어긋날 수 있다.
+ */
+const RESIZE_GRAVITIES = [
+  'top-left',
+  'top-center',
+  'top-right',
+  'center-left',
+  'center',
+  'center-right',
+  'bottom-left',
+  'bottom-center',
+  'bottom-right',
+] as const;
+
+/**
+ * cover/contain에서 이미지를 배치할 9방향 gravity.
+ * `top-*`/`bottom-*`는 세로, `*-left`/`*-right`는 가로, `center`는 완전 중앙이다.
+ *
+ * 워터마크/오버레이 배치용 `Position`(`composition/position-types.ts`)과는 별개의 타입이다 —
+ * 이름 형태(`middle-*` vs `center-*`)와 좌표 의미(절대 margin+`custom` vs 배치 영역 대비 정렬 비율)가 다르다.
+ */
+export type ResizeGravity = (typeof RESIZE_GRAVITIES)[number];
+
+/**
+ * cover 전용 focal-point. 소스 이미지 기준 0~1 정규화 좌표(가로/세로 비율)로 강조할 지점을 지정한다.
+ * transform() crop의 원본 픽셀 좌표계와 의도적으로 다르다 — crop은 절대 좌표, focal-point는
+ * 소스 크기와 무관하게 재사용 가능한 상대 지점이 목적이다.
+ */
+export interface ResizeFocalPoint {
+  x: number;
+  y: number;
+}
 
 /**
  * Base configuration applied to all ResizeConfig
@@ -56,6 +92,8 @@ export interface CoverConfig extends BaseResizeConfig {
   fit: 'cover';
   width: number;
   height: number;
+  /** 배치 기준. gravity 9방향 문자열 또는 focal-point({x, y}, 0~1 정규화). 생략 시 중앙 정렬(기존 동작과 동일) */
+  position?: ResizeGravity | ResizeFocalPoint;
 }
 
 /**
@@ -68,6 +106,8 @@ export interface ContainConfig extends BaseResizeConfig {
   height: number;
   /** 원본보다 크게 확대하지 않을지 여부. 출력 캔버스 크기는 유지한다 */
   withoutEnlargement?: boolean;
+  /** 배치 기준. gravity 9방향 문자열만 허용(전체를 자르지 않는 fit이라 focal-point는 의미가 없다). 생략 시 중앙 정렬 */
+  position?: ResizeGravity;
 }
 
 /**
@@ -194,6 +234,15 @@ export function isContainConfig(config: ResizeConfig): config is ContainConfig {
 }
 
 /**
+ * position 필드를 갖는 fit(cover/contain)인지 판별한다.
+ * `validateResizePosition`(이 파일)과 `resolveAlignment`(core/resize-calculator.internal.ts)가
+ * 같은 판별 기준을 공유한다 — fit 목록을 두 곳에 따로 하드코딩하지 않기 위함이다.
+ */
+export function isPositionableConfig(config: ResizeConfig): config is CoverConfig | ContainConfig {
+  return config.fit === 'cover' || config.fit === 'contain';
+}
+
+/**
  * FillConfig type guard
  */
 export function isFillConfig(config: ResizeConfig): config is FillConfig {
@@ -228,6 +277,84 @@ export function isScaleConfig(config: ResizeConfig): config is ScaleConfig {
 /** resize 축 값 하나가 유한 양수인지 검사한다 */
 function isValidDimension(value: number): boolean {
   return Number.isFinite(value) && value > 0;
+}
+
+/** gravity로 허용하는 9방향 값 집합. RESIZE_GRAVITIES에서 파생한다 */
+const RESIZE_GRAVITY_VALUES: ReadonlySet<string> = new Set(RESIZE_GRAVITIES);
+
+/** focal-point 좌표가 [0, 1] 경계에서 부동소수점 오차로 살짝 벗어난 값을 봐주는 허용치 */
+const FOCAL_POINT_EPSILON = 1e-6;
+
+/** gravity 문자열 검증 — 9방향 값 밖이면 거부 */
+function validateGravityValue(value: unknown, option: string): void {
+  if (typeof value !== 'string' || !RESIZE_GRAVITY_VALUES.has(value)) {
+    throw optionInvalid(
+      option,
+      `${option} must be one of ${[...RESIZE_GRAVITY_VALUES].join(', ')} (got ${String(value)})`
+    );
+  }
+}
+
+/**
+ * focal-point 한 축 검증 — 유한수이고 [0-epsilon, 1+epsilon] 안이어야 한다.
+ * epsilon 안쪽으로 벗어난 값은 여기서는 통과시킨다 — 실제 0/1로 자르는 clamp는
+ * 계산 시점(resize-calculator.internal.ts)에서 한다. 검증은 "받아들일지"만 결정한다.
+ */
+function validateFocalPointAxis(value: unknown, option: string): void {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw optionInvalid(option, `${option} must be a finite number (got ${String(value)})`);
+  }
+  if (value < -FOCAL_POINT_EPSILON || value > 1 + FOCAL_POINT_EPSILON) {
+    throw optionInvalid(option, `${option} must be within [0, 1] (got ${value})`);
+  }
+}
+
+/** 값이 focal-point 형태({x, y} 객체)로 보이는지 판별한다. 에러 메시지 선택에만 쓰인다 */
+function looksLikeFocalPoint(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) && ('x' in value || 'y' in value);
+}
+
+/**
+ * resize()의 position 필드를 검증한다.
+ * - cover: gravity 문자열 또는 focal-point 객체({x, y}) 허용
+ * - contain: gravity 문자열만 허용. focal-point 객체가 타입을 우회해 들어오면 거부한다
+ * - fill/maxFit/minFit/scale: position 필드 자체가 타입에 없다. 검증 대상이 아니다
+ */
+function validateResizePosition(config: ResizeConfig): void {
+  if (!isPositionableConfig(config)) {
+    return;
+  }
+
+  const position = config.position;
+  if (position === undefined) {
+    return;
+  }
+
+  if (typeof position === 'string') {
+    validateGravityValue(position, 'position');
+    return;
+  }
+
+  if (config.fit === 'contain') {
+    // contain은 gravity 문자열만 허용한다. focal-point 형태({x, y} 객체)로 온 값은
+    // "cover 전용" 오해임을 짚어주고, 그 외 형태(숫자·배열 등)는 실제로 focal-point가
+    // 아니었으므로 validateGravityValue의 일반 메시지로 원인을 정확히 전달한다.
+    if (looksLikeFocalPoint(position)) {
+      throw optionInvalid(
+        'position',
+        'contain의 position은 gravity 문자열만 허용합니다. focal-point 객체는 cover 전용입니다.'
+      );
+    }
+    validateGravityValue(position, 'position');
+    return;
+  }
+
+  if (typeof position !== 'object' || position === null || Array.isArray(position)) {
+    throw optionInvalid('position', 'position은 gravity 문자열 또는 { x, y } 객체여야 합니다.');
+  }
+
+  validateFocalPointAxis((position as { x: unknown }).x, 'position.x');
+  validateFocalPointAxis((position as { y: unknown }).y, 'position.y');
 }
 
 /**
@@ -299,4 +426,7 @@ export function validateResizeConfig(config: ResizeConfig): void {
       }
     }
   }
+
+  // position(gravity/focal-point) 검증
+  validateResizePosition(config);
 }

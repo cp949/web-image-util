@@ -81,7 +81,6 @@ export type {
   OutputFormat,
   ResizeBackground,
   ResizeFit,
-  ResizePosition,
 } from './base';
 
 // ============================================================================
@@ -124,6 +123,8 @@ export type {
   MinFitConfig,
   Padding,
   ResizeConfig,
+  ResizeFocalPoint,
+  ResizeGravity,
   ScaleConfig,
   ScaleValue,
 } from './resize-config';

@@ -2,12 +2,12 @@
 
 ## 상태
 
-Accepted (설계만 확정, 구현 미착수)
+Accepted (구현·`dev` 병합 완료)
 
 ## 배경
 
 - 로드맵 Track 1B. `cover`/`contain`의 배치가 지금은 무조건 중앙 정렬로 하드코딩돼 있다(`resize-calculator.internal.ts`의 `calculatePosition`이 `fit`이나 위치 옵션과 무관하게 항상 중앙 좌표를 계산). 특정 피사체를 강조하려면 별도 crop 계산이 필요했다.
-- 설계 인터뷰(2026-09-12)로 어휘·좌표계·API 위치를 확정했다. 구현 전이라 저장소 안에 코드·테스트가 없으므로 값·오류 계약과 검증 기준을 이 ADR에 직접 둔다.
+- 설계 인터뷰(2026-09-12)로 어휘·좌표계·API 위치를 확정했다. 이 ADR은 결정의 요약이며, 실행 가능한 계약은 저장소 안의 코드·테스트·문서가 소유한다(영향 절의 출처 목록 참조).
 
 ## 결정
 
@@ -25,28 +25,10 @@ Accepted (설계만 확정, 구현 미착수)
 
 ## 영향
 
-- 구현 미착수. 구현 계획서는 별도 세션에서 작성한다.
 - ADR-0002(transform)와는 좌표계 논의에서 서로 참조된다. ADR-0003(box)과는 직교한다 — box는 resize 결과 바깥에만 적용된다.
-- 구현이 끝나면 이 ADR의 계약 절을 코드·테스트·README 출처 목록으로 바꾼다(ADR-0002/0003과 같은 형식).
-
-## 값·오류 계약
-
-| 조건 | 처리 |
-| --- | --- |
-| gravity 문자열이 9개 값 밖 | 오류. 코드는 구현 시 기존 `ImageProcessError` 코드 목록과 대조해 확정(가칭 `INVALID_GRAVITY`) |
-| focal-point `x`/`y`가 `[0, 1]` 밖이고 `[-1e-6, 1+1e-6]`도 벗어남 | 오류(가칭 `INVALID_FOCAL_POINT`) |
-| focal-point `x`/`y`가 `[-1e-6, 0)` 또는 `(1, 1+1e-6]` | 오류 아님. `0` 또는 `1`로 clamp 후 진행. epsilon `1e-6`은 내부 상수이며 옵션으로 노출하지 않는다 |
-| `contain`의 `position`에 focal-point 객체가 런타임으로 들어옴(타입 우회) | 오류(가칭 `FOCAL_POINT_NOT_SUPPORTED`) |
-| `position` 생략 | 오류 아님. 기존 중앙 배치와 동일 |
-
-- 검증 시점은 `resize()` 호출 시점(기존 `validateResizeConfig`와 같은 지점).
-- gravity 문자열도 focal-point 객체와 같은 엄격도로 검증한다.
-
-## 검증 기준
-
-- gravity 9방향 각각의 offset 계산값(경계 접촉, 중앙 정렬)
-- focal-point 경계값(0, 1), 중간값, 한 축만 overflow, 양 축 overflow
-- epsilon 경계: `-1e-7`/`1+1e-7`은 clamp 후 통과, `-1e-5`/`1.01`은 오류
-- `contain` + focal-point 객체 오류, 잘못된 gravity 문자열 오류
-- `position` 생략 시 기존 결과와 동일(회귀 없음)
-- 렌더 1회 유지(`drawImage` spy), deprecated `resize.padding`과 동시 사용 시 available space 안에서 정상 동작
+- 상세 계약의 저장소 내 출처:
+  - 공개 타입·호출 시점 검증·오류 코드: `sub/web-image-util/src/types/resize-config.ts`
+  - 배치 계산(gravity 정렬 테이블, focal-point clamp 수식): `sub/web-image-util/src/core/resize-calculator.internal.ts`
+  - 사용자 문서: `sub/web-image-util/README.md`의 "배치 (position)" 절, `sub/web-image-util/CHANGELOG.md`
+  - 검증 기준: `sub/web-image-util/tests/unit/types/resize-config.test.ts`, `sub/web-image-util/tests/unit/core/resize-calculator.position.test.ts`, `sub/web-image-util/tests/unit/core/single-renderer.position.test.ts`, `sub/web-image-util/tests/unit/processor/processor-resize/resize-position-jsdom.test.ts`
+  - 제거된 죽은 타입 `ResizePosition`의 재노출 금지 가드: `sub/web-image-util/tests/contract/type-exports.contract.ts`

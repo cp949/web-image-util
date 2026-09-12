@@ -11,7 +11,7 @@
  *   의존하므로 여기서 검사하지 않는다 — LazyRenderPipeline.addBox/addResize가 담당한다.
  */
 
-import { ImageProcessError } from '../errors.internal';
+import { optionInvalid } from '../errors.internal';
 import type { Padding } from './resize-config';
 
 /** 모서리 반지름. px 숫자 또는 상자 크기 기준 %. 배열은 CSS 순서(TL, TR, BR, BL) */
@@ -100,11 +100,6 @@ export function isValidCssColor(value: string): boolean {
   const afterWhite = ctx.fillStyle;
 
   return afterBlack === afterWhite;
-}
-
-/** 옵션 오류를 OPTION_INVALID로 만든다. option은 점 표기 경로 */
-function optionInvalid(option: string, message: string): ImageProcessError {
-  return new ImageProcessError(message, 'OPTION_INVALID', { details: { option } });
 }
 
 /** padding 검증 — 숫자 또는 객체, 모든 방향이 유한수이고 음수가 아니어야 한다 */

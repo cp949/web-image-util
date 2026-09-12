@@ -103,20 +103,6 @@ export const ResizeFitConstants = {
 } as const;
 
 /**
- * Position/anchor point options (Canvas API limitations)
- *
- * @description Only basic positions that are meaningful in Canvas drawImage():
- */
-export type ResizePosition =
-  | 'center'
-  | 'centre' // British spelling compatibility
-  | 'top'
-  | 'right'
-  | 'bottom'
-  | 'left'
-  | { x: number; y: number }; // Exact pixel position
-
-/**
  * Background color type (Canvas fillStyle compatible)
  *
  * @description Only CSS color strings supported by Canvas fillStyle:

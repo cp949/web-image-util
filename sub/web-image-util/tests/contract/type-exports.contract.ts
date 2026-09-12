@@ -54,6 +54,8 @@ import type {
   ImageErrorDetails,
   ImageProcessErrorOptions,
   ResizeConfig,
+  ResizeFocalPoint,
+  ResizeGravity,
   ScaleConfig,
   ScaleValue,
   TransformOptions,
@@ -264,3 +266,33 @@ const boxOptions: BoxOptions = {
 void initialProcessor.box(boxOptions).resize({ fit: 'cover', width: 1, height: 1 });
 void initialProcessor.resize({ fit: 'cover', width: 1, height: 1 }).box(boxOptions);
 void initialProcessor.box(boxOptions).blur(1).toBlob();
+
+// position: gravity 문자열은 cover/contain 둘 다, focal-point 객체는 cover 전용이다.
+const coverWithGravity: ResizeConfig = { fit: 'cover', width: 100, height: 100, position: 'top-left' };
+const coverWithFocalPoint: ResizeConfig = {
+  fit: 'cover',
+  width: 100,
+  height: 100,
+  position: { x: 0.3, y: 0.7 } satisfies ResizeFocalPoint,
+};
+const containWithGravity: ResizeConfig = { fit: 'contain', width: 100, height: 100, position: 'bottom-right' };
+const gravityValue: ResizeGravity = 'center';
+void coverWithGravity;
+void coverWithFocalPoint;
+void containWithGravity;
+void gravityValue;
+
+// contain은 focal-point 객체를 받지 않는다 — 타입 레벨에서부터 막힌다.
+const containRejectsFocalPoint: ResizeConfig = {
+  fit: 'contain',
+  width: 100,
+  height: 100,
+  // @ts-expect-error contain의 position은 ResizeGravity만 허용한다. focal-point 객체는 cover 전용이다.
+  position: { x: 0.5, y: 0.5 },
+};
+void containRejectsFocalPoint;
+
+// ResizePosition: 미사용·미문서화 죽은 export였다. Track 1B에서 제거했고 다시 노출되면 안 된다.
+// @ts-expect-error ResizePosition은 제거된 타입이다. 재도입되면 이 줄이 컴파일 에러 없이 통과해 실패로 드러난다.
+type RemovedResizePosition = import('../../src').ResizePosition;
+void (null as unknown as RemovedResizePosition);
