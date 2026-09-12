@@ -9,12 +9,14 @@
  * resize 1회 불변식의 런타임 소유자다 — 가드와 설정 검증은 addResize 한 곳에만 있다.
  * (컴파일 타임 전이는 AfterResizeCall 타입이 보조한다)
  * transform 1회·resize 앞 불변식도 같은 이유로 addTransform 한 곳에만 있다.
+ * box 1회 불변식과 resize.padding/background 동시 지정 금지(양방향)도 addBox·addResize 두 곳이 소유한다.
  */
 
 import type { CanvasLease } from '../base/canvas-lease.internal';
 import { createQuickError } from '../base/error-helpers';
 import type { BlurOptions, ResultMetadata } from '../types';
 import { ImageProcessError } from '../types';
+import { type BoxOptions, normalizeBoxOptions, validateBoxOptions } from '../types/box-config';
 import type { ResizeConfig } from '../types/resize-config';
 import { validateResizeConfig } from '../types/resize-config';
 import { normalizeTransformOptions, type TransformOptions, validateTransformOptions } from '../types/transform-config';
@@ -34,6 +36,7 @@ export class LazyRenderPipeline {
   private operations: LazyOperation[] = [];
   private resizeCalled = false;
   private transformCalled = false;
+  private boxCalled = false;
 
   /**
    * Add resize operation (calculation only, no rendering)
@@ -44,6 +47,13 @@ export class LazyRenderPipeline {
   addResize(config: ResizeConfig): this {
     if (this.resizeCalled) {
       throw createQuickError('MULTIPLE_RESIZE_NOT_ALLOWED');
+    }
+    if (this.boxCalled && (config.padding !== undefined || config.background !== undefined)) {
+      throw new ImageProcessError(
+        'resize()의 padding/background는 box()와 함께 쓸 수 없다. box()로 통일하라.',
+        'OPTION_INVALID',
+        { details: { option: 'resize.padding/background' } }
+      );
     }
     validateResizeConfig(config);
     this.resizeCalled = true;
@@ -85,6 +95,45 @@ export class LazyRenderPipeline {
    */
   addBlur(options: BlurOptions): this {
     this.operations.push({ type: 'blur', options });
+    return this;
+  }
+
+  /**
+   * box 연산 추가(계산만, 렌더 없음)
+   *
+   * 1회 제약의 단일 지점이다. resize()와 달리 체인 위치 제약은 없다(앞뒤 모두 가능) —
+   * "가장 바깥에 적용"이라는 순서는 analyzeAllOperations가 배열 위치와 무관하게 보장한다.
+   * resize.padding/background(deprecated)와의 동시 지정 금지는 이미 누적된 resize 연산을
+   * 스캔해서 확인한다 — resize()가 box() 뒤에 padding/background로 호출되는 경우는
+   * addResize가 대칭적으로 막는다. 검증 실패 시 어떤 상태도 남기지 않는다.
+   */
+  addBox(options: BoxOptions): this {
+    if (this.boxCalled) {
+      throw new ImageProcessError(
+        'box() can only be called once. Create a new processImage() instance.',
+        'OPTION_INVALID',
+        {
+          details: { option: 'box' },
+        }
+      );
+    }
+    const resizeOperation = this.operations.find(
+      (op): op is Extract<LazyOperation, { type: 'resize' }> => op.type === 'resize'
+    );
+    if (
+      resizeOperation &&
+      (resizeOperation.config.padding !== undefined || resizeOperation.config.background !== undefined)
+    ) {
+      throw new ImageProcessError(
+        'box()는 resize()의 padding/background와 함께 쓸 수 없다. resize()에서 그 옵션을 빼거나 box()를 쓰지 마라.',
+        'OPTION_INVALID',
+        { details: { option: 'box' } }
+      );
+    }
+    validateBoxOptions(options);
+    const box = normalizeBoxOptions(options);
+    this.boxCalled = true;
+    this.operations.push({ type: 'box', box });
     return this;
   }
 

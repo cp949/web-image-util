@@ -106,6 +106,14 @@ import type { GeometrySize, OutputFormat, ResizeBackground } from './base';
 // RESIZE TYPES - Resize-related types
 // ============================================================================
 
+// box() 설정 타입 (padding / background / radius / border)
+export type {
+  BoxBorder,
+  BoxOptions,
+  BoxRadius,
+  NormalizedBox,
+  NormalizedBoxBorder,
+} from './box-config';
 // New ResizeConfig type system (Discriminated Union)
 export type {
   BaseResizeConfig,
@@ -119,7 +127,6 @@ export type {
   ScaleConfig,
   ScaleValue,
 } from './resize-config';
-
 export {
   isContainConfig,
   isCoverConfig,
@@ -129,7 +136,6 @@ export {
   isScaleConfig,
   validateResizeConfig,
 } from './resize-config';
-
 // transform() 설정 타입 (crop / flip / rotate)
 export type {
   NormalizedTransform,
@@ -271,7 +277,10 @@ export interface ProcessorOptions {
   crossOrigin?: string;
   /** 기본 품질 설정 (기본값: 0.8) */
   defaultQuality?: number;
-  /** 기본 배경색 (기본값: 투명 검정) */
+  /**
+   * 기본 배경색 (기본값: 투명 검정)
+   * @deprecated 어디서도 읽히지 않는 죽은 옵션이었다. `box({ background })`를 쓰세요. 다음 메이저에서 제거됩니다.
+   */
   defaultBackground?: ResizeBackground;
   /** 타임아웃 (밀리초, 기본값: 30초) — 하위 호환용으로 유지 */
   timeout?: number;

@@ -32,9 +32,15 @@ export type Padding =
  * Base configuration applied to all ResizeConfig
  */
 export interface BaseResizeConfig {
-  /** Padding around resize result (pixels) */
+  /**
+   * Padding around resize result (pixels)
+   * @deprecated `box({ padding })`를 쓰세요. `box()`와 동시 지정은 `OPTION_INVALID`입니다. 다음 메이저에서 제거됩니다.
+   */
   padding?: Padding;
-  /** Background color (CSS color string, default: transparent black) */
+  /**
+   * Background color (CSS color string, default: transparent black)
+   * @deprecated `box({ background })`를 쓰세요. `box()`와 동시 지정은 `OPTION_INVALID`입니다. 다음 메이저에서 제거됩니다.
+   */
   background?: string;
 }
 

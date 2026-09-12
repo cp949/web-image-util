@@ -159,6 +159,42 @@ JPEG는 투명을 지원하지 않아 빈 영역(crop 이탈, 회전 모서리, 
 
 `blur()`와 함께 쓸 때: blur 반경은 캔버스 좌표계 기준입니다. `transform()` 뒤에 비균일 배율의 `resize()`(예: `fit: 'fill'`로 가로세로 배율이 다른 경우)를 적용하면 실제 렌더링되는 blur 강도가 축별로 달라질 수 있습니다.
 
+## 박스 (padding / background / radius / border)
+
+`box()`는 CSS box model 의미로 여백·배경·모서리 둥글림·테두리를 한 번에 지정합니다. 한 체인에서 한 번만 호출할 수 있고, `resize()`와 달리 체인 위치와 무관합니다(앞뒤 어디서 불러도 항상 transform → resize → box 순서로 가장 바깥에 적용됩니다). 최종 출력은 여전히 한 번의 Canvas 렌더링입니다.
+
+```typescript
+// 둥근 avatar (PNG로 출력 — JPEG는 모서리 바깥이 검정이 됩니다)
+await processImage(source)
+  .resize({ fit: 'cover', width: 128, height: 128 })
+  .box({ radius: '50%' })
+  .toBlob('png');
+
+// padding + 배경 + 테두리
+await processImage(source)
+  .box({ padding: 16, background: '#ffffff', border: { width: 2, color: '#e5e5e5' } })
+  .toBlob();
+
+// 안쪽 테두리(크기 변화 없음)
+await processImage(source)
+  .resize({ fit: 'cover', width: 200, height: 200 })
+  .box({ border: { width: 3, color: 'rgba(0,0,0,0.4)', inset: true } })
+  .toBlob();
+```
+
+| 옵션 | 설명 |
+| --- | --- |
+| `padding` | content(transform·resize 결과) 바깥 간격. 숫자 또는 `{ top, right, bottom, left }` |
+| `background` | border 안쪽 전체(content + padding) 아래에 칠하는 CSS 색. 기본 투명 |
+| `radius` | CSS `border-radius`와 동일 의미. px 또는 `%`(가로는 상자 너비, 세로는 상자 높이 기준 — 비정사각형에 `50%`를 쓰면 타원 모서리가 됩니다). 배열은 `[TL, TR, BR, BL]` 순서 |
+| `border` | `{ width, color, inset? }`. `color`는 반투명 허용. `inset: true`면 크기를 늘리지 않고 안쪽에 그립니다(기본 false) |
+
+바깥 상자 크기 = content + padding 네 방향 + (`border.inset`이면 0, 아니면 `border.width * 2`)입니다. `resize()`의 (deprecated) `padding`/`background`와 `box()`를 함께 쓰면 순서와 무관하게 `OPTION_INVALID`입니다 — 새 코드는 `box()`만 씁니다.
+
+JPEG는 투명을 지원하지 않아 radius 바깥과 배경 미지정 영역이 검정이 됩니다. 둥근 모서리가 필요하면 PNG나 WebP로 출력하세요.
+
+`resize({ fit: 'cover' })`를 원본과 목표 비율이 다른 이미지에 쓰면 이미지가 padding/border 영역까지 확장될 수 있습니다. `radius`를 지정해도 이 현상은 막히지 않습니다(모서리만 둥글게 잘릴 뿐 padding 영역 침범은 그대로입니다) — 현재 이를 완화할 방법은 없으니, 비율이 다른 입력에서는 이 동작을 감안하세요.
+
 ## 프리셋
 
 ```typescript

@@ -107,6 +107,10 @@ export { ShortcutBuilder } from './shortcut/shortcut-builder';
 // Type definitions
 export type {
   BlurOptions,
+  // box() 옵션 타입
+  BoxBorder,
+  BoxOptions,
+  BoxRadius,
   ComplexityAnalysisResult,
   ContainConfig,
   // ResizeConfig sub-types (for explicit type specification)

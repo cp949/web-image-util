@@ -27,6 +27,7 @@ import type {
   ResultFile,
 } from '../types';
 import { ImageProcessError, OPTIMAL_QUALITY_BY_FORMAT } from '../types';
+import type { BoxOptions } from '../types/box-config';
 import type { ResizeConfig } from '../types/resize-config';
 import {
   BlobResultImpl,
@@ -120,6 +121,14 @@ export class OutputPipeline {
    */
   addTransform(options: TransformOptions): void {
     this.pipeline.addTransform(options);
+  }
+
+  /**
+   * box 옵션을 파이프라인에 위임한다.
+   * 1회 제약·resize.padding/background 동시 지정 금지·검증은 LazyRenderPipeline.addBox가 수행한다.
+   */
+  addBox(options: BoxOptions): void {
+    this.pipeline.addBox(options);
   }
 
   // ==============================================

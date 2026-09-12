@@ -11,7 +11,7 @@
 ## 핵심 흐름
 
 1. **입력 처리**: 파일, URL, SVG 등 여러 소스를 `HTMLImageElement`로 변환
-2. **연산 누적**: `.transform()`, `.resize()`, `.blur()` 같은 체이닝 메서드를 `LazyRenderPipeline`에 저장
+2. **연산 누적**: `.transform()`, `.resize()`, `.blur()`, `.box()` 같은 체이닝 메서드를 `LazyRenderPipeline`에 저장
 3. **일괄 렌더링**: 최종 출력 시점에 단 한 번의 Canvas 처리로 전체 연산 실행
 4. **포맷 변환**: Canvas 결과를 Blob, DataURL, File 등으로 변환
 
@@ -31,6 +31,8 @@
 - 한 체인에서 `resize()`는 한 번만 허용합니다. 타입 상태와 런타임 가드를 함께 유지하며, 런타임 가드·설정 검증·오류 메시지는 `LazyRenderPipeline.addResize` 한 곳이 소유합니다.
 - 한 체인에서 `transform()`은 한 번만, `resize()` 앞에서만 허용합니다. `this: IImageProcessor<BeforeResize>` 제약을 `resize()`와 같은 방식으로 선언해 두지만, 실제 집행은 런타임 가드(`LazyRenderPipeline.addTransform`)뿐입니다(`resize()`의 1회 제약도 같은 수준입니다 — `ShortcutBuilder`와의 재귀적 제네릭 관계 때문에 `this` 제약이 컴파일 타임에는 실효가 없습니다). 새 상태 브랜드 타입은 두지 않습니다.
 - transform 연산 순서는 호출 순서와 무관하게 crop → flip → rotate(`expand`) → resize로 고정입니다. crop 좌표는 원본 픽셀 기준이며, 렌더는 `save()`/`restore()` 안에서 변환 행렬 + 9인자 `drawImage()` 1회입니다. `expand: false`에서 회전 이미지가 프레임을 넘칠 때만 사각형 `clip()` 경로를 추가합니다.
+- 한 체인에서 `box()`는 한 번만 허용합니다. `resize()`와 달리 체인 위치 제약은 없습니다(앞뒤 모두 호출 가능) — `analyzeAllOperations`가 배열 위치와 무관하게 항상 가장 나중(resize/blur 해석 뒤, content 크기가 확정된 뒤)에 해석해 "가장 바깥에 적용"을 보장합니다. 가드는 `LazyRenderPipeline.addBox`가 소유하며, `resize()`의 (deprecated) `padding`/`background`와 동시 지정은 호출 순서와 무관하게 `OPTION_INVALID`입니다(`addBox`·`addResize` 양쪽이 서로 확인합니다).
+- box 렌더는 `ctx.ellipse()`(Chrome 48+, `ctx.roundRect()` 미사용)로 둥근 사각형 경로를 구성해 배경을 채우고(`ctx.fill()`), content를 패딩 박스 반지름으로 clip한 뒤 기존 drawImage 분기를 실행하고, border를 clip 밖에서 stroke합니다. content clip 반지름은 바깥 반지름 − `border.width`(0 이하면 각짐), stroke 반지름은 바깥 반지름 − `border.width / 2`(경로가 선 중심에 그려지므로)입니다.
 - 실제 Canvas 렌더링은 출력 메서드 호출 시점에 한 번만 수행합니다.
 - 내부 렌더링 Canvas는 `CanvasPool`에서 획득하고, 소유권은 `CanvasLease` handle(`src/base/canvas-lease.internal.ts`)로 관리합니다. 파생물 출력(`toBlob()` 등)은 `consume()`으로 사용 후 pool에 반환하고, `toCanvas()`/`toCanvasDetailed()`는 `detach()`로 소유권을 사용자에게 이전합니다(pool 미반환).
 - pool에서 빌린 canvas는 module 밖으로 내보내지 않습니다. 결과 canvas를 호출자에게 직접 반환하는 경로(composition, 고해상도 처리)는 pool을 거치지 않는 사용자 소유 canvas(`createOwnedCanvas`)를 사용합니다. pool이 release 시점에 픽셀을 지우므로, 빌린 canvas를 그대로 반환하면 호출자는 빈 canvas를 받게 됩니다.
@@ -79,6 +81,8 @@
 | `src/core/lazy-render-pipeline.internal.ts` | 연산 누적과 최종 렌더링 트리거 |
 | `src/core/single-renderer.internal.ts` | 누적 연산 분석(`analyzeAllOperations`)과 최종 Canvas drawImage 렌더링(`renderLayout` → `CanvasLease`) |
 | `src/core/transform-calculator.internal.ts` | transform 기하 계산 — crop ∩ 원본 source/dest rect, 회전 프레임 크기(90° 배수는 정확 교환), clip 필요 여부. 순수 함수 |
+| `src/core/box-calculator.internal.ts` | box 기하 계산 — 바깥 상자 크기, radius CSS 겹침 축소 알고리즘, content clip/border stroke 사각형·반지름. 순수 함수 |
+| `src/types/box-config.ts` | `BoxOptions` 공개 타입, 호출 시점 검증(`validateBoxOptions`, 스크래치 canvas 기반 색 유효성 검사 포함), 기본값 정규화(`normalizeBoxOptions`) |
 | `src/types/transform-config.ts` | `TransformOptions` 공개 타입, 호출 시점 검증(`validateTransformOptions`), 축약형·기본값 정규화(`normalizeTransformOptions`) |
 | `src/filters/plugin-system.ts` | 필터 플러그인 레지스트리·실행 — `registerFilter`/`applyFilter`/`applyFilterChain`/`validateFilterChain`. `/advanced`·`/filters`(재노출) 전용, 메인 체이닝 파이프라인과는 별개 시스템 |
 | `src/filters/filter-param-validation.internal.ts` | `validateNumberInRange()` — blur/color/effect 12개 plugin의 validate() 숫자 범위 검증 단일 소유. `GrayscaleFilterPlugin`/`InvertFilterPlugin`(파라미터 없음)과 `advanced-index.ts`의 `createFilterPlugin()`(임의 TParams를 받는 범용 factory)은 대상 밖 |

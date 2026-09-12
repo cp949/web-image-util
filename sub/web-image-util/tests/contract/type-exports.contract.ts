@@ -49,6 +49,7 @@ import type {
   SvgIdPrefixWarningCode,
 } from '@cp949/web-image-util/utils';
 import type {
+  BoxOptions,
   ImageErrorCodeType,
   ImageErrorDetails,
   ImageProcessErrorOptions,
@@ -252,3 +253,14 @@ void transformShorthand;
 declare const initialProcessor: InitialProcessor;
 void initialProcessor.transform(transformOptions).resize({ fit: 'cover', width: 1, height: 1 });
 void initialProcessor.transform(transformOptions).blur(1).toBlob();
+
+// box(): resize 앞뒤 어디서나 호출 가능하고(체인 위치 무관), 상태를 바꾸지 않는다.
+const boxOptions: BoxOptions = {
+  padding: 4,
+  background: '#ffffff',
+  radius: '50%',
+  border: { width: 2, color: '#333333', inset: true },
+};
+void initialProcessor.box(boxOptions).resize({ fit: 'cover', width: 1, height: 1 });
+void initialProcessor.resize({ fit: 'cover', width: 1, height: 1 }).box(boxOptions);
+void initialProcessor.box(boxOptions).blur(1).toBlob();

@@ -10,6 +10,7 @@
 
 import type { ShortcutBuilder } from '../shortcut/shortcut-builder';
 import type { OutputFormat } from './base';
+import type { BoxOptions } from './box-config';
 import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './output-types';
 import type { AfterResize, BeforeResize, ProcessorState } from './processor-state.internal';
 import type { ResizeConfig } from './resize-config';
@@ -83,6 +84,29 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * @returns Processor instance with same state
    */
   blur(radius?: number, options?: Partial<BlurOptions>): IImageProcessor<TState>;
+
+  /**
+   * padding / background / radius / border를 CSS box model 의미로 지정한다
+   *
+   * @description
+   * 한 체인에서 한 번만 호출할 수 있다. `resize()`와 달리 체인 위치 제약이 없다 —
+   * `resize()` 앞뒤 어디서 불러도 항상 transform → resize → box 순서(가장 바깥)로 적용된다.
+   * `resize()`의 (deprecated) `padding`/`background`와 동시에 쓰면 `OPTION_INVALID`다.
+   * 원본과 목표 비율이 다른 `resize({ fit: 'cover' })`와 함께 쓰면 이미지가 padding 영역까지
+   * 번질 수 있다 — `radius`를 지정해도 막히지 않는다(현재 완화 방법 없음).
+   *
+   * @param options box 옵션. 빈 객체는 no-op
+   * @returns 같은 상태의 프로세서 — 상태를 바꾸지 않는다(`blur()`와 같은 방식)
+   *
+   * @example
+   * ```typescript
+   * await processImage(source)
+   *   .resize({ fit: 'cover', width: 128, height: 128 })
+   *   .box({ padding: 4, background: '#fff', radius: '50%', border: { width: 2, color: '#333' } })
+   *   .toBlob('png');
+   * ```
+   */
+  box(options: BoxOptions): IImageProcessor<TState>;
 
   /**
    * Convert to Blob

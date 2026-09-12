@@ -2,7 +2,7 @@
  * 단일 렌더러 — 분석기 하나(analyzeAllOperations), 렌더러 하나(renderLayout)
  *
  * 핵심 개념: "계산 먼저, 렌더링 한 번"
- * - analyzeAllOperations: 모든 연산(transform, resize, blur)을 분석해 최종 레이아웃 계산
+ * - analyzeAllOperations: 모든 연산(transform, resize, blur, box)을 분석해 최종 레이아웃 계산
  * - renderLayout: 계산된 레이아웃을 검증하고 단 한 번의 drawImage 로 렌더링
  * - 중간 Canvas 를 만들지 않고 최종 결과만 생성한다
  */
@@ -10,10 +10,12 @@
 import { type CanvasLease, leaseCanvas } from '../base/canvas-lease.internal';
 import { withCanvasState } from '../composition/canvas-drawing.internal';
 import { type BlurOptions, ImageProcessError } from '../types';
+import type { NormalizedBox } from '../types/box-config';
 import type { ResizeConfig } from '../types/resize-config';
 import type { NormalizedTransform } from '../types/transform-config';
 import { readMaxSafeCanvasDimension } from '../utils/browser-capabilities/index';
 import { debugLog, productionLog } from '../utils/debug.internal';
+import { type BoxGeometry, computeBoxGeometry } from './box-calculator.internal';
 import { calculateFinalLayout } from './resize-calculator.internal';
 import { computeTransformGeometry, type TransformGeometry } from './transform-calculator.internal';
 
@@ -26,9 +28,11 @@ import { computeTransformGeometry, type TransformGeometry } from './transform-ca
 export type LazyOperation =
   | { type: 'resize'; config: ResizeConfig }
   | { type: 'blur'; options: BlurOptions }
-  | { type: 'transform'; transform: NormalizedTransform };
+  | { type: 'transform'; transform: NormalizedTransform }
+  | { type: 'box'; box: NormalizedBox };
 
 type TransformOperation = Extract<LazyOperation, { type: 'transform' }>;
+type BoxOperation = Extract<LazyOperation, { type: 'box' }>;
 
 /**
  * Final layout information - Result of analyzing all operations
@@ -45,13 +49,18 @@ export interface FinalLayout {
   filters: string[];
   /** transform() 결과. 없으면 원본을 그대로 그린다 */
   transform?: TransformGeometry;
+  /** box() 결과. 없으면 이 단계에서 크기·위치를 바꾸지 않는다 */
+  box?: BoxGeometry;
 }
 
 /**
  * 모든 연산을 분석해 최종 레이아웃을 계산한다.
  *
  * transform은 배열 위치와 무관하게 가장 먼저 해석한다(crop → flip → rotate → resize 고정 순서).
- * resize가 보는 "원본 크기"는 transform 프레임 크기다. transform은 최대 1개이며 addTransform이 보장한다.
+ * resize가 보는 "원본 크기"는 transform 프레임 크기다. box는 배열 위치와 무관하게 가장 나중에
+ * 해석한다 — resize/blur 루프가 끝나 "content 크기"(transform·resize 결과, 둘 다 없으면 원본)가
+ * 확정된 뒤에야 바깥 상자 크기를 계산할 수 있기 때문이다. transform·box는 각각 최대 1개이며
+ * addTransform·addBox가 보장한다.
  */
 export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: LazyOperation[]): FinalLayout {
   const sourceWidth = sourceImage.naturalWidth;
@@ -87,10 +96,42 @@ export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: 
       case 'transform':
         // 위에서 이미 해석했다
         break;
+      case 'box':
+        // content 크기가 필요하므로 루프 뒤에서 해석한다
+        break;
     }
   }
 
+  const boxOperation = operations.find((op): op is BoxOperation => op.type === 'box');
+  if (boxOperation) {
+    layout = applyBoxOperation(layout, boxOperation.box);
+  }
+
   return layout;
+}
+
+/**
+ * content(현재까지 계산된 layout) 크기를 기준으로 box 기하를 계산하고, 캔버스 크기·위치를
+ * 바깥 상자 기준으로 다시 쓴다. background는 box가 소유하며(resize.background와는 addBox의
+ * 런타임 가드가 동시 지정을 막는다), imageSize는 그대로 둔다 — 이미지 자체 크기는 바뀌지 않고
+ * 위치만 밀린다.
+ */
+function applyBoxOperation(layout: FinalLayout, box: NormalizedBox): FinalLayout {
+  const geometry = computeBoxGeometry(layout.width, layout.height, box);
+
+  return {
+    width: geometry.outerSize.width,
+    height: geometry.outerSize.height,
+    position: {
+      x: layout.position.x + geometry.contentOrigin.x,
+      y: layout.position.y + geometry.contentOrigin.y,
+    },
+    imageSize: layout.imageSize,
+    background: geometry.background,
+    filters: layout.filters,
+    transform: layout.transform,
+    box: geometry,
+  };
 }
 
 /**
@@ -157,10 +198,16 @@ export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout)
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    // 4. 배경 채우기 — transparent 면 아무것도 하지 않는다
+    // 4. 배경 채우기 — box가 있으면 바깥 상자 반지름을 따라 둥근 경로로 채운다.
+    //    box가 없으면 기존 5인자 fillRect 경로를 그대로 쓴다(회귀 없음).
     if (layout.background && layout.background !== 'transparent') {
       ctx.fillStyle = layout.background;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (layout.box) {
+        traceRoundedRectPath(ctx, { x: 0, y: 0, width: canvas.width, height: canvas.height }, layout.box.outerRadii);
+        ctx.fill();
+      } else {
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
     }
 
     // 5. 🎯 drawImage 한 번으로 모든 처리 완료 (필터도 이 시점에 함께 적용)
@@ -169,25 +216,52 @@ export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout)
     const drawWidth = Math.round(layout.imageSize.width);
     const drawHeight = Math.round(layout.imageSize.height);
     if (drawWidth > 0 && drawHeight > 0) {
-      if (layout.filters.length > 0) {
-        ctx.filter = layout.filters.join(' ');
-      }
-
       const drawX = Math.round(layout.position.x);
       const drawY = Math.round(layout.position.y);
-      if (layout.transform) {
-        drawTransformedImage(ctx, sourceImage, layout.transform, {
-          x: drawX,
-          y: drawY,
-          width: drawWidth,
-          height: drawHeight,
+
+      const drawContent = (): void => {
+        if (layout.filters.length > 0) {
+          ctx.filter = layout.filters.join(' ');
+        }
+        if (layout.transform) {
+          drawTransformedImage(ctx, sourceImage, layout.transform, {
+            x: drawX,
+            y: drawY,
+            width: drawWidth,
+            height: drawHeight,
+          });
+        } else {
+          ctx.drawImage(sourceImage, drawX, drawY, drawWidth, drawHeight);
+        }
+        ctx.filter = 'none';
+      };
+
+      const box = layout.box;
+      if (box?.needsPaddingBoxClip) {
+        withCanvasState(ctx, () => {
+          traceRoundedRectPath(ctx, box.paddingBoxRect, box.paddingBoxRadii);
+          ctx.clip();
+          drawContent();
         });
       } else {
-        ctx.drawImage(sourceImage, drawX, drawY, drawWidth, drawHeight);
+        drawContent();
       }
+    }
 
-      // 필터 초기화 (pool 재사용 대비)
-      ctx.filter = 'none';
+    // 6. border — content 위, clip 밖에서 그린다(clip 안에서 그리면 border 자체가 잘린다).
+    //    strokeRect가 퇴화(폭·높이 <= 0)하면 자기 반전된 경로가 되므로 아예 그리지 않는다
+    //    (예: inset border의 width가 바깥 상자 절반보다 큰 경우).
+    if (
+      layout.box?.border &&
+      layout.box.border.width > 0 &&
+      layout.box.border.strokeRect.width > 0 &&
+      layout.box.border.strokeRect.height > 0
+    ) {
+      const { border } = layout.box;
+      ctx.lineWidth = border.width;
+      ctx.strokeStyle = border.color;
+      traceRoundedRectPath(ctx, border.strokeRect, border.strokeRadii);
+      ctx.stroke();
     }
 
     return lease;
@@ -247,6 +321,46 @@ function drawTransformedImage(
       destRect.height
     );
   });
+}
+
+/**
+ * 사각형(rect, radii)으로 둥근 모서리 경로를 ctx에 구성한다.
+ *
+ * TL 모서리 뒤 지점에서 시작해 시계 방향(TR → BR → BL → TL)으로 돈다.
+ * radii의 각 모서리가 (0, 0)이면 그 모서리에서는 ellipse 호출을 건너뛰어
+ * lineTo만으로 각진 모서리가 자연스럽게 만들어진다 — radius 전부 0이면
+ * 결과는 평범한 사각형 경로와 같다(배경·clip·border 전부 이 하나의 함수로 처리 가능한 이유).
+ *
+ * Chrome 75 하한: ctx.roundRect()(Chrome 99+)는 쓰지 않는다. ctx.ellipse()(Chrome 48+)로
+ * 모서리마다 90도 호를 직접 구성한다.
+ */
+function traceRoundedRectPath(
+  ctx: CanvasRenderingContext2D,
+  rect: { x: number; y: number; width: number; height: number },
+  radii: BoxGeometry['outerRadii']
+): void {
+  const [tl, tr, br, bl] = radii;
+  const { x, y, width, height } = rect;
+
+  ctx.beginPath();
+  ctx.moveTo(x + tl.rx, y);
+  ctx.lineTo(x + width - tr.rx, y);
+  if (tr.rx > 0 && tr.ry > 0) {
+    ctx.ellipse(x + width - tr.rx, y + tr.ry, tr.rx, tr.ry, 0, -Math.PI / 2, 0);
+  }
+  ctx.lineTo(x + width, y + height - br.ry);
+  if (br.rx > 0 && br.ry > 0) {
+    ctx.ellipse(x + width - br.rx, y + height - br.ry, br.rx, br.ry, 0, 0, Math.PI / 2);
+  }
+  ctx.lineTo(x + bl.rx, y + height);
+  if (bl.rx > 0 && bl.ry > 0) {
+    ctx.ellipse(x + bl.rx, y + height - bl.ry, bl.rx, bl.ry, 0, Math.PI / 2, Math.PI);
+  }
+  ctx.lineTo(x, y + tl.ry);
+  if (tl.rx > 0 && tl.ry > 0) {
+    ctx.ellipse(x + tl.rx, y + tl.ry, tl.rx, tl.ry, 0, Math.PI, Math.PI * 1.5);
+  }
+  ctx.closePath();
 }
 
 /**
@@ -318,6 +432,20 @@ export function debugLayout(layout: FinalLayout, operationCount: number): void {
           degrees: (layout.transform.radians * 180) / Math.PI,
           flip: `${layout.transform.flipX ? 'x' : ''}${layout.transform.flipY ? 'y' : ''}` || 'none',
           clip: layout.transform.needsFrameClip,
+        }
+      : undefined,
+    box: layout.box
+      ? {
+          outerSize: `${layout.box.outerSize.width}x${layout.box.outerSize.height}`,
+          hasBackground: layout.box.background !== 'transparent',
+          // renderLayout이 실제로 stroke를 그리는 조건(strokeRect가 퇴화하지 않음)과 맞춘다 —
+          // inset border의 width가 바깥 상자 절반보다 크면 border.width > 0이어도 그려지지 않는다.
+          hasBorder:
+            layout.box.border !== null &&
+            layout.box.border.width > 0 &&
+            layout.box.border.strokeRect.width > 0 &&
+            layout.box.border.strokeRect.height > 0,
+          needsPaddingBoxClip: layout.box.needsPaddingBoxClip,
         }
       : undefined,
     operationCount,

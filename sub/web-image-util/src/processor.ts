@@ -20,6 +20,7 @@ import type {
   ResultDataURL,
   ResultFile,
 } from './types';
+import type { BoxOptions } from './types/box-config';
 import type { IImageProcessor } from './types/processor-interface';
 import type { AfterResizeCall, ProcessorState } from './types/processor-state.internal';
 import type { ResizeConfig } from './types/resize-config';
@@ -199,6 +200,64 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    */
   blur(radius: number = 2, options: Partial<BlurOptions> = {}): ImageProcessor<TState> {
     this.output.addBlur(radius, options);
+
+    return this as ImageProcessor<TState>;
+  }
+
+  /**
+   * padding / background / radius / border — CSS box model
+   *
+   * @description
+   * **한 번만 호출할 수 있다. 체인 위치는 무관하다(resize 앞뒤 모두 가능).**
+   * - 항상 가장 바깥에 적용된다: transform → resize → box. 호출 순서와 무관하다.
+   * - `padding`은 content(transform·resize 결과) 바깥 간격이다.
+   * - `background`는 border 안쪽 전체(content + padding) 아래에 칠한다. 소스 투명 픽셀도
+   *   이 색과 합성된다. 기본 투명 — JPEG로 출력하면 투명 영역이 검정이 된다.
+   * - `radius`는 CSS `border-radius`와 같은 의미다. px 또는 `%`(가로는 상자 너비, 세로는
+   *   상자 높이 기준 — 비정사각형에 `50%`를 쓰면 원이 아니라 타원 모서리가 된다). 배열은
+   *   `[TL, TR, BR, BL]` 순서. 인접 반지름 합이 변 길이를 넘으면 CSS 규칙대로 전체를 같은
+   *   비율로 축소한다. **radius로 둥근 모서리를 만들 때는 PNG나 WebP로 출력한다** — JPEG는
+   *   모서리 바깥이 검정으로 채워진다.
+   * - `border`는 `{ width, color, inset? }`다. `color`는 반투명 허용. `inset: true`면 바깥
+   *   상자 크기를 늘리지 않고 안쪽에 그린다(기본 false — 크기가 `width * 2`만큼 늘어난다).
+   * - `resize()`의 (deprecated) `padding`/`background`와 동시에 쓸 수 없다 — 어느 순서로
+   *   호출해도 `OPTION_INVALID`다. 새 코드는 `box()`만 쓴다.
+   * - 최종 출력은 여전히 drawImage 한 번이다. 중간 Canvas를 만들지 않는다.
+   * - 원본과 목표 비율이 다른 `resize({ fit: 'cover' })`와 함께 쓰면 이미지가 padding 영역까지
+   *   번질 수 있다 — `radius`를 지정해도 막히지 않는다(현재 완화 방법 없음).
+   *
+   * @param options box 옵션(BoxOptions). 빈 객체는 no-op
+   * @returns 같은 상태의 Processor(체이닝 가능) — 상태를 바꾸지 않는다
+   *
+   * @throws {ImageProcessError} OPTION_INVALID — 두 번째 호출, `resize()`의 padding/background와
+   *   동시 지정, 옵션 값 형식 오류(padding 음수, radius 형식 오류, border 값 오류, 유효하지 않은 CSS 색)
+   *
+   * @example
+   * ```typescript
+   * // 둥근 avatar (PNG로 출력)
+   * await processImage(source)
+   *   .resize({ fit: 'cover', width: 128, height: 128 })
+   *   .box({ radius: '50%' })
+   *   .toBlob('png');
+   *
+   * // padding + 배경 + 테두리
+   * await processImage(source)
+   *   .box({ padding: 16, background: '#ffffff', border: { width: 2, color: '#e5e5e5' } })
+   *   .toBlob();
+   *
+   * // 안쪽 테두리(크기 변화 없음)
+   * await processImage(source)
+   *   .resize({ fit: 'cover', width: 200, height: 200 })
+   *   .box({ border: { width: 3, color: 'rgba(0,0,0,0.4)', inset: true } })
+   *   .toBlob();
+   *
+   * // ❌ 런타임 오류: box()와 resize()의 padding/background를 함께 쓸 수 없다
+   * processImage(source).resize({ fit: 'cover', width: 100, height: 100, padding: 10 }).box({});
+   * ```
+   */
+  box(options: BoxOptions): ImageProcessor<TState> {
+    // 1회 제약·resize.padding/background 동시 지정 금지·검증은 LazyRenderPipeline이 단일 소유한다.
+    this.output.addBox(options);
 
     return this as ImageProcessor<TState>;
   }
