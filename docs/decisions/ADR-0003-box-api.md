@@ -8,7 +8,7 @@ Accepted (구현·`dev` 병합 완료)
 
 - 배경색 지정 개념이 `resize.background`, 죽은 `ProcessorOptions.defaultBackground`, 검토 중이던 `transform.background`·`flatten.background`까지 넷으로 흩어져 있었다.
 - Sharp 검토의 `flatten()`과 Jimp 검토의 shape mask 제안을 대체할 단일 기능이 필요했다.
-- 상세 설계는 grilling 인터뷰로 확정했다. 전체 계약·오류 코드·렌더 골격·park 처리 이력은 `_works/box/decisions.md`(로컬 전용, git 미추적)에 있다 — 이 ADR은 요약이다.
+- 상세 설계는 설계 인터뷰로 확정했다. 이 ADR은 결정의 요약이며, 실행 가능한 계약은 저장소 안의 코드·테스트·문서가 소유한다(영향 절의 출처 목록 참조).
 
 ## 결정
 
@@ -29,4 +29,10 @@ Accepted (구현·`dev` 병합 완료)
 - Chrome 75 하한선(ADR-0001) 준수: `ctx.roundRect()`(Chrome 99+) 대신 `ctx.ellipse()`(Chrome 48+)로 모서리 경로를 직접 구성한다.
 - 알려진 미해결 이슈(의도적 보류): `radius` 없이 padding/border만 쓰고 소스 비율이 `resize({ fit: 'cover' })`와 다르면 리사이즈된 이미지가 padding/border 영역을 침범할 수 있다. 기존 `resize({ fit: 'cover', padding })` 경로도 같은 특성이라 회귀는 아니다. 픽셀 테스트 인프라가 갖춰지기 전까지는 손대지 않기로 확정했다.
 - Track 1B(resize placement, ADR-0004)와는 직교한다 — box()는 resize 결과(content) 바깥에만 적용되므로 resize의 배치 옵션과 충돌하지 않는다.
-- 상세 계약(오류 코드, 렌더 골격, 검증 기준, park 처리 이력)은 `_works/box/decisions.md`에 있다. 이 파일은 gitignore 대상이라 로컬 작업 환경에서만 확인 가능하다.
+- 상세 계약의 저장소 내 출처:
+  - 공개 타입·호출 시점 검증·오류 코드: `sub/web-image-util/src/types/box-config.ts`
+  - 바깥 상자 크기·radius 축소·border 경로 기하: `sub/web-image-util/src/core/box-calculator.internal.ts`
+  - 렌더 골격(fill → clip → `drawImage()` 1회 → stroke): `sub/web-image-util/src/core/single-renderer.internal.ts`
+  - 1회 가드와 deprecated 옵션 동시 지정 거부: `sub/web-image-util/src/core/lazy-render-pipeline.internal.ts`
+  - 사용자 문서: `sub/web-image-util/README.md`의 "박스 (padding / background / radius / border)" 절, `sub/web-image-util/CHANGELOG.md`
+  - 검증 기준: `sub/web-image-util/tests/unit/types/box-config.test.ts`, `tests/unit/core/box-calculator.test.ts`, `tests/unit/core/single-renderer.box.test.ts`, `tests/unit/core/lazy-render-pipeline-box-jsdom.test.ts`, `tests/unit/processor/processor-box/`, `tests/browser/box-smoke.browser.test.ts`

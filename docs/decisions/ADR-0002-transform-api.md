@@ -7,7 +7,7 @@ Accepted (구현·`dev` 병합 완료)
 ## 배경
 
 - 로드맵 Track 1. crop/flip/rotate를 Sharp처럼 개별 메서드(`rotate()`, `flip()`, `flop()`, `extract()`, `affine()`)로 흩어놓지 않고 단일 렌더 파이프라인에 결합해야 했다.
-- 상세 설계는 grilling 인터뷰로 확정했다. 전체 계약·오류 코드·렌더 골격은 `_works/jimp/01-transform/decisions.md`(로컬 전용, git 미추적)에 있다 — 이 ADR은 요약이다.
+- 상세 설계는 설계 인터뷰로 확정했다. 이 ADR은 결정의 요약이며, 실행 가능한 계약은 저장소 안의 코드·테스트·문서가 소유한다(영향 절의 출처 목록 참조).
 
 ## 결정
 
@@ -28,4 +28,10 @@ Accepted (구현·`dev` 병합 완료)
 
 - Track 3(box, ADR-0003)의 배경 개념은 transform에 `background`가 없다는 전제 위에서 설계됐다.
 - Track 1B(resize placement, ADR-0004)의 focal-point 좌표계 논의에서 crop의 원본 픽셀 좌표계가 비교 대상(반례)으로 쓰였다.
-- 상세 계약(오류 코드, 렌더 골격, 검증 기준)은 `_works/jimp/01-transform/decisions.md`에 있다. 이 파일은 gitignore 대상이라 로컬 작업 환경에서만 확인 가능하다.
+- 상세 계약의 저장소 내 출처:
+  - 공개 타입·호출 시점 검증·오류 코드: `sub/web-image-util/src/types/transform-config.ts`
+  - crop 교집합·회전 프레임 기하: `sub/web-image-util/src/core/transform-calculator.internal.ts`
+  - 렌더 골격(변환 행렬 + 9인자 `drawImage()` 1회): `sub/web-image-util/src/core/single-renderer.internal.ts`
+  - 1회·resize 앞 가드: `sub/web-image-util/src/core/lazy-render-pipeline.internal.ts`
+  - 사용자 문서: `sub/web-image-util/README.md`의 "변환 (crop / flip / rotate)" 절, `sub/web-image-util/CHANGELOG.md`
+  - 검증 기준: `sub/web-image-util/tests/unit/types/transform-config.test.ts`, `tests/unit/core/transform-calculator.test.ts`, `tests/unit/core/single-renderer.transform.test.ts`, `tests/unit/core/lazy-render-pipeline-transform-jsdom.test.ts`, `tests/unit/processor/processor-transform/`, `tests/browser/transform-smoke.browser.test.ts`
