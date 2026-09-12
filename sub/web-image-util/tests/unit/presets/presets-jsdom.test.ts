@@ -10,7 +10,21 @@
 import { createCanvas as createNodeCanvas, loadImage } from 'canvas';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAvatar, createSocialImage, createThumbnail } from '../../../src/presets';
+import type { ImageProcessError } from '../../../src/types';
 import { createTestCanvas } from '../../utils/canvas-helper';
+
+/** 왼쪽 절반은 빨강, 오른쪽 절반은 파랑인 캔버스 — 가로 방향 gravity/focal-point 확인용 */
+function createHorizontalSplitCanvas(width: number, height: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#ff0000';
+  ctx.fillRect(0, 0, width / 2, height);
+  ctx.fillStyle = '#0000ff';
+  ctx.fillRect(width / 2, 0, width / 2, height);
+  return canvas;
+}
 
 /**
  * 결과 Blob을 node-canvas로 직접 디코드해 픽셀을 검사한다.
@@ -124,5 +138,71 @@ describe('프리셋 이미지 생성 (Canvas 입력, jsdom-safe)', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+});
+
+describe('프리셋 position(gravity/focal-point) 연동', () => {
+  it('createThumbnail은 gravity 문자열을 cover crop에 반영한다', async () => {
+    const source = createHorizontalSplitCanvas(200, 100);
+
+    const topLeft = await createThumbnail(source, { size: 100, fit: 'cover', position: 'top-left', format: 'png' });
+    const topLeftCtx = await decodeBlobPixels(topLeft.blob, 100, 100);
+    expect([...topLeftCtx.getImageData(90, 50, 1, 1).data]).toEqual([255, 0, 0, 255]);
+
+    const topRight = await createThumbnail(source, {
+      size: 100,
+      fit: 'cover',
+      position: 'top-right',
+      format: 'png',
+    });
+    const topRightCtx = await decodeBlobPixels(topRight.blob, 100, 100);
+    expect([...topRightCtx.getImageData(10, 50, 1, 1).data]).toEqual([0, 0, 255, 255]);
+  });
+
+  it('createThumbnail은 focal-point 객체를 cover crop에 반영한다', async () => {
+    const source = createHorizontalSplitCanvas(200, 100);
+
+    const result = await createThumbnail(source, {
+      size: 100,
+      fit: 'cover',
+      position: { x: 0.9, y: 0.5 },
+      format: 'png',
+    });
+
+    const ctx = await decodeBlobPixels(result.blob, 100, 100);
+    // focal-point x=0.9는 크롭 창을 오른쪽 끝(파랑)으로 완전히 밀어붙인다.
+    // position 생략 시(중앙 정렬) x=10은 원본 왼쪽(빨강)이 보이므로, 이 지점이 반영 여부를 가른다.
+    expect([...ctx.getImageData(10, 50, 1, 1).data]).toEqual([0, 0, 255, 255]);
+    expect([...ctx.getImageData(90, 50, 1, 1).data]).toEqual([0, 0, 255, 255]);
+  });
+
+  it('createThumbnail은 contain + focal-point 객체를 OPTION_INVALID로 거부한다', async () => {
+    const source = createHorizontalSplitCanvas(200, 100);
+
+    await expect(
+      createThumbnail(source, { size: 50, fit: 'contain', position: { x: 0.5, y: 0.5 } })
+    ).rejects.toMatchObject({ code: 'OPTION_INVALID' } satisfies Partial<ImageProcessError>);
+  });
+
+  it('createAvatar는 gravity 문자열을 cover crop에 반영한다', async () => {
+    const source = createHorizontalSplitCanvas(200, 100);
+
+    const topLeft = await createAvatar(source, {
+      size: 100,
+      fit: 'cover',
+      position: 'top-left',
+      background: 'transparent',
+      format: 'png',
+    });
+    const ctx = await decodeBlobPixels(topLeft.blob, 100, 100);
+    expect([...ctx.getImageData(90, 50, 1, 1).data]).toEqual([255, 0, 0, 255]);
+  });
+
+  it("createAvatar는 fit:'fill'과 position을 함께 쓰면 OPTION_INVALID다", async () => {
+    const source = createHorizontalSplitCanvas(200, 100);
+
+    await expect(createAvatar(source, { size: 100, fit: 'fill', position: 'top-left' })).rejects.toMatchObject({
+      code: 'OPTION_INVALID',
+    } satisfies Partial<ImageProcessError>);
   });
 });

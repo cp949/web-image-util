@@ -6,8 +6,9 @@
  */
 
 import { isFormatSupported } from '../base/error-helpers';
+import { optionInvalid } from '../errors.internal';
 import { processImage } from '../processor';
-import type { ImageSource, ResultBlob } from '../types';
+import type { ImageSource, ResizeFocalPoint, ResizeGravity, ResultBlob } from '../types';
 
 /**
  * Thumbnail generation options
@@ -23,6 +24,33 @@ export interface ThumbnailOptions {
   fit?: 'cover' | 'contain';
   /** Background color (for fit mode, default: white) */
   background?: string;
+  /**
+   * crop/letterbox 정렬. gravity 9칸 문자열 또는 focal-point `{ x, y }`(0~1, cover 전용).
+   * 생략 시 중앙 정렬(기존 동작과 동일). 유효성 검증은 내부 `resize()`에 위임한다.
+   */
+  position?: ResizeGravity | ResizeFocalPoint;
+}
+
+/**
+ * 프리셋의 flat `{ fit, position }`을 `resize()`의 fit별 discriminated union으로 변환한다.
+ *
+ * `fill`은 잘리는 영역이 없어 core `ResizeConfig`에 `position` 필드 자체가 없다. `contain`은
+ * gravity만 받는다(focal-point 객체를 넘겨도 타입은 통과시키고 `resize()`의 런타임 검증이
+ * `OPTION_INVALID`로 거부한다 — 이 함수는 그 검증을 앞당기지 않는다).
+ */
+function buildPositionedResize(
+  fit: 'cover' | 'contain' | 'fill',
+  width: number,
+  height: number,
+  position: ResizeGravity | ResizeFocalPoint | undefined
+) {
+  if (fit === 'fill') {
+    return { fit, width, height };
+  }
+  if (fit === 'contain') {
+    return { fit, width, height, position: position as ResizeGravity | undefined };
+  }
+  return { fit, width, height, position };
 }
 
 /**
@@ -119,11 +147,7 @@ export async function createThumbnail(source: ImageSource, options: ThumbnailOpt
 
   // Image processing
   return await processImage(source)
-    .resize({
-      fit: finalOptions.fit,
-      width,
-      height,
-    })
+    .resize(buildPositionedResize(finalOptions.fit, width, height, finalOptions.position))
     .box({ background: finalOptions.background })
     .toBlob({
       format: finalOptions.format,
@@ -145,6 +169,12 @@ export interface AvatarOptions {
   quality?: number;
   /** Resizing fit mode (default: cover) */
   fit?: 'cover' | 'contain' | 'fill';
+  /**
+   * crop/letterbox 정렬. gravity 9칸 문자열 또는 focal-point `{ x, y }`(0~1, cover 전용).
+   * 생략 시 중앙 정렬(기존 동작과 동일). `fit: 'fill'`과는 함께 쓸 수 없다(fill은 잘리는 영역이
+   * 없어 정렬이 의미 없음). 그 외 유효성 검증은 내부 `resize()`에 위임한다.
+   */
+  position?: ResizeGravity | ResizeFocalPoint;
 }
 
 /**
@@ -227,13 +257,13 @@ export async function createAvatar(source: ImageSource, options: AvatarOptions =
 
   const finalOptions = { ...defaultOptions, ...options };
 
+  if (finalOptions.fit === 'fill' && finalOptions.position !== undefined) {
+    throw optionInvalid('position', "avatar fit이 'fill'이면 position을 지정할 수 없습니다.");
+  }
+
   // Basic resizing (square, default cover fit)
   const processor = processImage(source)
-    .resize({
-      fit: finalOptions.fit,
-      width: finalOptions.size,
-      height: finalOptions.size,
-    })
+    .resize(buildPositionedResize(finalOptions.fit, finalOptions.size, finalOptions.size, finalOptions.position))
     .box({ background: finalOptions.background });
 
   return await processor.toBlob({
