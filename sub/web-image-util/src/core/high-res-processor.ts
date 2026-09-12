@@ -183,6 +183,72 @@ export class HighResolutionProcessor {
     return result;
   }
 
+  static validate(
+    img: HTMLImageElement,
+    targetWidth: number,
+    targetHeight: number,
+    options: { thresholds?: Partial<HighResolutionThresholds> } = {}
+  ): HighResolutionValidation {
+    const thresholds = { ...DEFAULT_THRESHOLDS, ...options.thresholds };
+    const analysis = HighResolutionDetector.analyzeImage(img);
+
+    const warnings: string[] = [];
+    const recommendations: string[] = [];
+    let canProcess = true;
+
+    if (exceedsMaxSafeDimension(img.width, img.height, analysis.maxSafeDimension)) {
+      warnings.push(`Image size exceeds browser Canvas limit. Maximum: ${analysis.maxSafeDimension}px`);
+      recommendations.push('Recommend using tile-based processing for segmented processing.');
+    }
+
+    if (analysis.estimatedMemoryMB > 512) {
+      warnings.push(`High memory usage: ${analysis.estimatedMemoryMB}MB`);
+      recommendations.push('Recommend using memory-efficient processing or reducing image size.');
+    }
+    if (analysis.estimatedMemoryMB > thresholds.memoryWarningThreshold) {
+      warnings.push(
+        `Expected memory usage exceeds limit: ${analysis.estimatedMemoryMB}MB > ${thresholds.memoryWarningThreshold}MB`
+      );
+      recommendations.push('To reduce memory usage, resize to a smaller size.');
+    }
+
+    if (analysis.processingComplexity === 'extreme') {
+      warnings.push('Very complex processing is expected and may take a long time.');
+      recommendations.push('Monitor processing progress and be prepared to cancel if necessary.');
+    }
+
+    const targetPixels = targetWidth * targetHeight;
+    const maxSafePixels = analysis.maxSafeDimension * analysis.maxSafeDimension;
+    if (targetPixels > maxSafePixels) {
+      warnings.push('Target image size may exceed browser limits.');
+    }
+
+    const hasBlockingLimitations =
+      analysis.estimatedMemoryMB > 1024 || Math.max(img.width, img.height) > analysis.maxSafeDimension * 2;
+    if (hasBlockingLimitations) {
+      canProcess = false;
+      recommendations.push(
+        'Recommend pre-processing the image to a smaller size or using professional image processing tools.'
+      );
+    }
+
+    const recommendedStrategy = analysis.strategy;
+
+    const timeEstimate = HighResolutionDetector.estimateProcessingTime(analysis);
+    const timeMultiplier = getResizeStrategyAdapter(recommendedStrategy)?.getTimeMultiplier(analysis) ?? 1;
+    const estimatedTime = Math.round(timeEstimate.estimatedSeconds * timeMultiplier * 10) / 10;
+
+    if (estimatedTime > thresholds.timeWarningThreshold) {
+      warnings.push(`Long processing time expected: ${Math.round(estimatedTime)} seconds`);
+      recommendations.push('For faster processing, set priority to "fast".');
+    }
+    if (analysis.totalPixels > thresholds.highResPixelThreshold) {
+      recommendations.push('This is a high-resolution image. Automatic optimization will be applied.');
+    }
+
+    return { canProcess, warnings, recommendations, estimatedTime, recommendedStrategy, analysis };
+  }
+
   private static async runHighResPath(
     img: HTMLImageElement,
     targetWidth: number,
