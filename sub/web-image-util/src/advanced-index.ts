@@ -148,7 +148,7 @@ export async function createAdvancedThumbnail(
     resize: {
       width: size,
       height: size,
-      priority: options.quality === 'high' ? 'quality' : options.quality === 'fast' ? 'speed' : 'balanced',
+      priority: options.quality === 'high' ? 'quality' : options.quality === 'fast' ? 'fast' : 'balanced',
     },
     filters: options.filters
       ? {

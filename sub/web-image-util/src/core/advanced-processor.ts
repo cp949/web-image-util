@@ -13,8 +13,8 @@ import { ImageProcessError } from '../types';
 import { processInChunks } from '../utils/chunked-batch-runner.internal';
 import { productionLog } from '../utils/debug.internal';
 import { formatToMimeType } from '../utils/format-utils';
-import type { AutoProcessingResult } from './auto-high-res';
-import { AutoHighResProcessor } from './auto-high-res';
+import type { HighResolutionProcessResult, ProcessingStrategy } from './high-res-processor';
+import { HighResolutionProcessor } from './high-res-processor';
 import { SmartFormatSelector } from './smart-format';
 import { ImagePurpose, type SmartFormatOptions } from './smart-format-helpers.internal';
 
@@ -26,7 +26,7 @@ export interface AdvancedProcessingOptions {
   resize?: {
     width: number;
     height: number;
-    priority?: 'speed' | 'balanced' | 'quality';
+    priority?: 'fast' | 'balanced' | 'quality';
   };
 
   /** Filter chain */
@@ -60,7 +60,7 @@ export interface AdvancedProcessingResult {
 
   /** Applied processing information */
   processing: {
-    resizing?: AutoProcessingResult['optimizations'];
+    resizing?: { strategy: ProcessingStrategy; memoryOptimized: boolean; estimatedTimeSaved: number };
     filtersApplied: number;
     watermarkApplied: boolean;
     formatOptimization?: {
@@ -102,7 +102,7 @@ export class AdvancedImageProcessor {
     const messages: string[] = [];
 
     let canvas: HTMLCanvasElement;
-    let resizingResult: AutoProcessingResult | undefined;
+    let resizingResult: HighResolutionProcessResult | undefined;
     let filtersApplied = 0;
     let watermarkApplied = false;
 
@@ -110,7 +110,7 @@ export class AdvancedImageProcessor {
     if (options.resize) {
       onProgress?.('resizing', 10, 'Resizing image...');
 
-      resizingResult = await AutoHighResProcessor.smartResize(source, options.resize.width, options.resize.height, {
+      resizingResult = await HighResolutionProcessor.resize(source, options.resize.width, options.resize.height, {
         priority: options.resize.priority,
         onProgress: (progress, message) => {
           onProgress?.('resizing', 10 + progress * 0.4, message);
@@ -235,14 +235,18 @@ export class AdvancedImageProcessor {
       canvas,
       blob,
       processing: {
-        resizing: resizingResult?.optimizations,
+        resizing: resizingResult && {
+          strategy: resizingResult.strategy,
+          memoryOptimized: resizingResult.memoryOptimized,
+          estimatedTimeSaved: resizingResult.estimatedTimeSaved,
+        },
         filtersApplied,
         watermarkApplied,
         formatOptimization,
       },
       stats: {
         totalProcessingTime: totalTime,
-        memoryPeakUsage: resizingResult?.stats.memoryPeakUsage || 0,
+        memoryPeakUsage: resizingResult?.memoryPeakUsageMB || 0,
         finalFileSize: blob?.size,
       },
       messages,
@@ -266,7 +270,7 @@ export class AdvancedImageProcessor {
     const result = await AdvancedImageProcessor.processImage(source, {
       resize: {
         ...dimensions,
-        priority: options.quality === 'fast' ? 'speed' : options.quality === 'high' ? 'quality' : 'balanced',
+        priority: options.quality === 'fast' ? 'fast' : options.quality === 'high' ? 'quality' : 'balanced',
       },
       watermark: options.watermark
         ? {
@@ -362,12 +366,12 @@ export class AdvancedImageProcessor {
 
     // Resizing validation
     if (options.resize) {
-      const validation = AutoHighResProcessor.validateProcessing(source, options.resize.width, options.resize.height);
+      const validation = HighResolutionProcessor.validate(source, options.resize.width, options.resize.height);
 
       warnings.push(...validation.warnings);
       recommendations.push(...validation.recommendations);
       estimatedTime += validation.estimatedTime;
-      estimatedMemory = Math.max(estimatedMemory, validation.estimatedMemory);
+      estimatedMemory = Math.max(estimatedMemory, validation.analysis.estimatedMemoryMB);
     }
 
     // Filter validation
@@ -430,7 +434,7 @@ export async function smartResize(
     resize: {
       width,
       height,
-      priority: options.quality === 'fast' ? 'speed' : options.quality === 'high' ? 'quality' : 'balanced',
+      priority: options.quality === 'fast' ? 'fast' : options.quality === 'high' ? 'quality' : 'balanced',
     },
     format: options.format,
   });
