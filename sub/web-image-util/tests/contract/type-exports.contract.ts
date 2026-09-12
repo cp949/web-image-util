@@ -60,7 +60,7 @@ import type {
   ScaleValue,
   TransformOptions,
 } from '../../src';
-import type { ProcessingStrategy } from '../../src/advanced-index';
+import type { HighResolutionPriority, ProcessingStrategy } from '../../src/advanced-index';
 import type {
   ImageErrorCodeType as ImageErrorCodeTypeFromTypes,
   ImageErrorDetails as ImageErrorDetailsFromTypes,
@@ -96,6 +96,8 @@ const scaleConfigFromTypes: ScaleConfigFromTypes = scaleConfig;
 const resizeConfig: ResizeConfig = scaleConfig;
 const resizeConfigFromTypes: ResizeConfigFromTypes = resizeConfig;
 const processingStrategy: ProcessingStrategy = 'tiled';
+const highResPriority: HighResolutionPriority = 'quality';
+void highResPriority;
 void scaleValueFromTypes;
 void scaleConfigFromTypes;
 void resizeConfigFromTypes;

@@ -144,10 +144,6 @@ export const ADVANCED_VALUE_EXPORTS = [
   'addWatermarkAndOptimize',
   'processWithFilters',
   'smartResize',
-  // 자동 고해상도 처리
-  'AutoHighResProcessor',
-  'autoSmartResize',
-  'smartResizeWithProgress',
   // 일괄 리사이저
   'BatchResizer',
   // 성능 설정
@@ -174,8 +170,8 @@ export const ADVANCED_VALUE_EXPORTS = [
   // 포맷 감지기
   'FORMAT_MIME_MAP',
   'FormatDetector',
-  // 고해상도 관리자
-  'HighResolutionManager',
+  // 고해상도 처리
+  'HighResolutionProcessor',
   // 합성
   'composeImages',
   'ImageWatermark',

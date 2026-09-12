@@ -52,9 +52,6 @@ export {
   processWithFilters,
   smartResize,
 } from './core/advanced-processor';
-export type { AutoProcessingResult } from './core/auto-high-res';
-// ===== 자동 고해상도 처리 =====
-export { AutoHighResProcessor, smartResize as autoSmartResize, smartResizeWithProgress } from './core/auto-high-res';
 export { BatchResizer } from './core/batch-resizer';
 export type { ResizePerformanceOptions, ResizeProfile } from './core/performance-config';
 export { getPerformanceConfig, RESIZE_PROFILES } from './core/performance-config';
@@ -97,11 +94,6 @@ export type AdvancedFilterOption<TParams = unknown> = Pick<FilterOptions<TParams
 
 // 포맷 관련 기능
 export { FORMAT_MIME_MAP, FormatDetector } from './base/format-detector';
-export type { ProcessingStrategy } from './base/high-res-detector.internal';
-export type { HighResolutionOptions, ProcessingResult } from './base/high-res-manager';
-
-// 고해상도 처리 수동 제어
-export { HighResolutionManager } from './base/high-res-manager';
 // 세밀한 워터마크 제어
 export type { ImageWatermarkOptions, TextWatermarkOptions } from './composition';
 // 이미지 합성 — 레이어/그리드/콜라주를 spec 데이터 하나로 표현한다
@@ -116,6 +108,19 @@ export {
 } from './composition/compose';
 export { ImageWatermark } from './composition/image-watermark';
 export { TextWatermark } from './composition/text-watermark';
+export type {
+  HighResolutionBatchItem,
+  HighResolutionBatchOptions,
+  HighResolutionPriority,
+  HighResolutionProcessOptions,
+  HighResolutionProcessResult,
+  HighResolutionThresholds,
+  HighResolutionValidation,
+  ImageAnalysis,
+  ProcessingStrategy,
+} from './core/high-res-processor';
+// ===== 고해상도 처리 =====
+export { HighResolutionProcessor } from './core/high-res-processor';
 
 // ===== 편의 함수 =====
 
