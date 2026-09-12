@@ -47,6 +47,7 @@ const USER_FRIENDLY_MESSAGES: Record<ImageErrorCodeType, string> = {
   // Size/dimension-related errors
   INVALID_DIMENSIONS: 'Invalid image dimensions. Width and height must be positive numbers.',
   DIMENSION_TOO_LARGE: 'Image dimensions are too large. Please try with a smaller size.',
+  PIXEL_BUDGET_EXCEEDED: 'Image pixel count exceeds the allowed limit. Please try with a smaller size.',
 
   // System resource-related errors
   MEMORY_ERROR: 'Insufficient memory to complete image processing.',

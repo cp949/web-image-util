@@ -5,6 +5,7 @@
  * 실제 변환 로직은 형태별 로더 모듈에 위임한다.
  */
 
+import { assertInputPixelBudget, precheckInputPixelBudget } from '../../base/size-budget.internal';
 import type { ImageSource, ProcessorOptions } from '../../types';
 import { ImageProcessError } from '../../types';
 import { decodeExistingImage } from '../../utils/image-decode.internal';
@@ -18,16 +19,34 @@ import { DEFAULT_MAX_SOURCE_BYTES, type InternalSourceConverterOptions } from '.
  * 모든 ImageSource 입력을 HTMLImageElement로 정규화한다.
  *
  * 비동기 판정 모듈이 확정한 소스 타입에 따라 형태별 로더로 위임한다.
+ * `maxInputPixels`(opt-in) 검사의 단일 지점이다 — 디코드 전 헤더 사전 검사(PNG/GIF/BMP만)와
+ * 디코드 후 사후 검사를 소스 타입 무관하게 여기서 수행한다.
  *
  * @param source 변환할 이미지 입력
  * @param options CORS와 SVG 처리 정책을 포함한 변환 옵션
  * @returns 로드가 끝난 HTMLImageElement
- * @throws {ImageProcessError} 지원하지 않는 입력이거나 변환에 실패한 경우
+ * @throws {ImageProcessError} 지원하지 않는 입력이거나 변환에 실패한 경우, `maxInputPixels` 초과
  */
 export async function convertToImageElement(
   source: ImageSource,
   options?: ProcessorOptions
 ): Promise<HTMLImageElement> {
+  const maxInputPixels = (options as InternalSourceConverterOptions | undefined)?.maxInputPixels;
+
+  // maxInputPixels 미지정 시 await 자체를 건너뛴다. precheckInputPixelBudget은 미지정이면
+  // 즉시 return하는 논리적 no-op이지만, async 함수라 await하면 마이크로태스크 tick을 하나
+  // 소비한다 — 옵션 미지정 시 디스패치 도달까지의 tick 수를 기존과 완전히 동일하게 유지해야
+  // 하므로(옵션 미지정 시 기존 동작 완전 보존 원칙) 호출 자체를 조건부로 둔다.
+  if (maxInputPixels !== undefined) {
+    await precheckInputPixelBudget(source, maxInputPixels);
+  }
+  const element = await resolveImageElement(source, options);
+  assertInputPixelBudget(element, maxInputPixels);
+  return element;
+}
+
+/** 소스 타입별 변환 디스패치. 픽셀 예산 검사는 공개 진입점 `convertToImageElement`가 담당한다 */
+async function resolveImageElement(source: ImageSource, options?: ProcessorOptions): Promise<HTMLImageElement> {
   // 공개 시그니처는 ProcessorOptions를 유지하고, 내부 전달 시 한 번만 좁혀 사용한다.
   const internalOptions = options as InternalSourceConverterOptions | undefined;
   try {

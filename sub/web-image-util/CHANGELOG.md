@@ -13,6 +13,7 @@
 - Deprecated: `resize()`의 `padding`/`background` 옵션, shortcut `coverBox`/`containBox` 등의 `padding`/`background` 옵션, `ProcessorOptions.defaultBackground`. 전부 `box()`로 통일하세요. 다음 메이저에서 제거됩니다.
 - Added: `resize()`의 `cover`/`contain`에 `position` 필드를 추가했습니다. 9방향 gravity 문자열(`top-left` 등)은 둘 다, 0~1 정규화 focal-point 객체(`{ x, y }`)는 `cover`에서만 받습니다. 생략 시 기존과 동일한 중앙 정렬입니다. 잘못된 gravity, 범위를 벗어난 focal-point(`1e-6` 이내는 0/1로 보정), `contain`에 focal-point를 지정하는 조합은 `OPTION_INVALID`입니다.
 - Added: `ResizeGravity`, `ResizeFocalPoint` 타입을 루트 진입점에서 export합니다.
+- Added: `ProcessorOptions`에 `maxInputPixels`/`maxOutputPixels`를 추가했습니다. opt-in(기본값 없음, 무제한)이며 초과 시 `PIXEL_BUDGET_EXCEEDED`로 거부합니다. PNG/GIF/BMP는 디코드 전 헤더로도 먼저 거부될 수 있습니다.
 
 ### 변경
 

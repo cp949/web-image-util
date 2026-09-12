@@ -12,6 +12,7 @@ export const ImageErrorCode = {
   SMART_RESIZE_FAILED: 'SMART_RESIZE_FAILED',
   INVALID_DIMENSIONS: 'INVALID_DIMENSIONS',
   DIMENSION_TOO_LARGE: 'DIMENSION_TOO_LARGE',
+  PIXEL_BUDGET_EXCEEDED: 'PIXEL_BUDGET_EXCEEDED',
   MEMORY_ERROR: 'MEMORY_ERROR',
   TIMEOUT_ERROR: 'TIMEOUT_ERROR',
   SVG_LOAD_FAILED: 'SVG_LOAD_FAILED',
@@ -59,6 +60,12 @@ export interface ImageErrorDetailsByCode {
   SVG_INPUT_INVALID: { actualType: string };
   SVG_SOURCE_INVALID: { actualType: string };
   OPTION_INVALID: { option: string; minimum?: number };
+  PIXEL_BUDGET_EXCEEDED: {
+    direction: 'input' | 'output';
+    stage?: 'header' | 'decoded';
+    actualPixels: number;
+    maxPixels: number;
+  };
   INVALID_DIMENSIONS: {
     kind?: 'invalid-canvas-size' | 'invalid-image-size' | 'invalid-position' | 'invalid-crop' | 'crop-outside-source';
     width?: number;

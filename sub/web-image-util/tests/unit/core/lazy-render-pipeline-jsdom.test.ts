@@ -86,6 +86,42 @@ describe('LazyRenderPipeline (jsdom-safe)', () => {
     });
   });
 
+  describe('생성자 옵션 — maxOutputPixels', () => {
+    it('생성자에 전달한 maxOutputPixels를 render() 호출 시 renderLayout에 그대로 전달한다', () => {
+      const renderLayoutMock = vi.mocked(singleRenderer.renderLayout);
+      renderLayoutMock.mockReturnValue({
+        canvas: createTestCanvas(),
+        release: vi.fn(),
+        detach: vi.fn(),
+        consume: vi.fn(),
+      } as unknown as ReturnType<typeof singleRenderer.renderLayout>);
+      vi.mocked(singleRenderer.analyzeAllOperations).mockReturnValue(fixedLayout);
+
+      const p = new LazyRenderPipeline({ maxOutputPixels: 5000 });
+      p.addResize({ fit: 'cover', width: 100, height: 100 });
+      p.render(createMockImage());
+
+      expect(renderLayoutMock).toHaveBeenCalledWith(expect.anything(), fixedLayout, 5000);
+    });
+
+    it('옵션 없이 생성하면 renderLayout에 undefined를 전달한다(기존 동작)', () => {
+      const renderLayoutMock = vi.mocked(singleRenderer.renderLayout);
+      renderLayoutMock.mockReturnValue({
+        canvas: createTestCanvas(),
+        release: vi.fn(),
+        detach: vi.fn(),
+        consume: vi.fn(),
+      } as unknown as ReturnType<typeof singleRenderer.renderLayout>);
+      vi.mocked(singleRenderer.analyzeAllOperations).mockReturnValue(fixedLayout);
+
+      const p = new LazyRenderPipeline();
+      p.addResize({ fit: 'cover', width: 100, height: 100 });
+      p.render(createMockImage());
+
+      expect(renderLayoutMock).toHaveBeenCalledWith(expect.anything(), fixedLayout, undefined);
+    });
+  });
+
   describe('Single resize() Call Constraint', () => {
     it('should succeed when calling resize() once', () => {
       expect(() => {
@@ -177,7 +213,7 @@ describe('LazyRenderPipeline — 원본 크기 의존 설정(scale·단일 축 f
       img,
       expect.arrayContaining([expect.objectContaining({ type: 'resize', config: { fit: 'scale', scale: 0.5 } })])
     );
-    expect(vi.mocked(singleRenderer.renderLayout)).toHaveBeenCalledWith(img, fixedLayout);
+    expect(vi.mocked(singleRenderer.renderLayout)).toHaveBeenCalledWith(img, fixedLayout, undefined);
     expect(metadata.operations).toBe(1);
   });
 

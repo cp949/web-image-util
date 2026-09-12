@@ -80,7 +80,8 @@ export class OutputPipeline {
 
   // 생성 직후부터 존재하는 연산 축적기다. resize 1회 불변식(가드·검증·메시지)은
   // 이 파이프라인이 단일 소유한다 — 여기서는 위임만 한다.
-  private readonly pipeline = new LazyRenderPipeline();
+  // maxOutputPixels(opt-in)를 전달해야 하므로 옵션 병합 뒤(생성자 본문에서) 만든다.
+  private readonly pipeline: LazyRenderPipeline;
 
   // 소스 변환 promise 메모이즈 — 동시 첫 출력에서도 소스 로딩은 1회만 일어난다(single-flight).
   private prepared: Promise<HTMLImageElement> | null = null;
@@ -94,6 +95,7 @@ export class OutputPipeline {
       __svgPassthroughMode: 'safe',
       ...options,
     };
+    this.pipeline = new LazyRenderPipeline({ maxOutputPixels: this.options.maxOutputPixels });
   }
 
   // ==============================================

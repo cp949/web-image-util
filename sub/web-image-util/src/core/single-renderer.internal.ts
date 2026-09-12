@@ -8,13 +8,13 @@
  */
 
 import { type CanvasLease, leaseCanvas } from '../base/canvas-lease.internal';
+import { assertOutputPixelBudget, warnIfCanvasAreaExceedsSafeLimit } from '../base/size-budget.internal';
 import { withCanvasState } from '../composition/canvas-drawing.internal';
 import { type BlurOptions, ImageProcessError } from '../types';
 import type { NormalizedBox } from '../types/box-config';
 import type { ResizeConfig } from '../types/resize-config';
 import type { NormalizedTransform } from '../types/transform-config';
-import { readMaxSafeCanvasDimension } from '../utils/browser-capabilities/index';
-import { debugLog, productionLog } from '../utils/debug.internal';
+import { debugLog } from '../utils/debug.internal';
 import { type BoxGeometry, computeBoxGeometry } from './box-calculator.internal';
 import { calculateFinalLayout } from './resize-calculator.internal';
 import { computeTransformGeometry, type TransformGeometry } from './transform-calculator.internal';
@@ -179,10 +179,15 @@ function analyzeBlurOperation(layout: FinalLayout, options: BlurOptions): void {
  * - 렌더링 중 오류가 나면 lease가 canvas를 pool로 반환한다.
  *
  * @param layout {@link analyzeAllOperations}가 계산한 최종 레이아웃
+ * @param maxOutputPixels 출력 Canvas의 최대 허용 픽셀 수(opt-in). 지정 시 초과하면 PIXEL_BUDGET_EXCEEDED로 거부한다.
  */
-export function renderLayout(sourceImage: HTMLImageElement, layout: FinalLayout): CanvasLease {
+export function renderLayout(
+  sourceImage: HTMLImageElement,
+  layout: FinalLayout,
+  maxOutputPixels?: number
+): CanvasLease {
   // 1. 레이아웃 검증 — pool 획득 전에 잘못된 값을 걸러낸다
-  validateLayout(layout);
+  validateLayout(layout, maxOutputPixels);
 
   // 2. 최종 Canvas 생성 — pool에서 임대
   const lease = leaseCanvas(Math.round(layout.width), Math.round(layout.height));
@@ -370,9 +375,10 @@ function traceRoundedRectPath(
  * - imageSize 는 음수·비유한수만 오류다. 반올림 0 은 극단 종횡비 입력에서
  *   calculator 가 산출할 수 있는 유효한 축퇴 케이스로, renderLayout 이 drawImage 를 건너뛴다.
  * - 좌표는 유한수여야 한다
- * - 초대형 canvas 는 오류 대신 경고만 남긴다 (기기별 메모리 부족 가능성 안내)
+ * - maxOutputPixels가 지정되면(opt-in) 면적 초과 시 PIXEL_BUDGET_EXCEEDED로 거부한다
+ * - maxOutputPixels 미지정 시, 초대형 canvas 는 오류 대신 경고만 남긴다 (기기별 메모리 부족 가능성 안내)
  */
-function validateLayout(layout: FinalLayout): void {
+function validateLayout(layout: FinalLayout, maxOutputPixels?: number): void {
   const { width, height, imageSize, position } = layout;
 
   if (!Number.isFinite(width) || !Number.isFinite(height) || Math.round(width) <= 0 || Math.round(height) <= 0) {
@@ -404,16 +410,13 @@ function validateLayout(layout: FinalLayout): void {
     );
   }
 
+  // opt-in 상한 — 지정한 호출자에게만 하드 거부를 적용한다.
+  assertOutputPixelBudget(width, height, maxOutputPixels);
+
   // 상한 값은 browser-capabilities/canvas-limits.internal.ts가 단일 소유한다(compose.ts의
   // DIMENSION_TOO_LARGE 게이트, high-res-detector.internal.ts의 getMaxSafeDimension()과 같은 값).
   // 면적 = 한 변 상한의 제곱을 메모리 위험 사전 경고 임계값으로 쓴다(RGBA 기준, 일부 기기에서 메모리 부족 가능).
-  const maxSafeDimension = readMaxSafeCanvasDimension();
-  const maxCanvasArea = maxSafeDimension * maxSafeDimension;
-  if (width * height > maxCanvasArea) {
-    productionLog.warn(
-      `Warning: Large canvas size (${width}x${height}). This may cause memory issues on some devices.`
-    );
-  }
+  warnIfCanvasAreaExceedsSafeLimit(width, height);
 }
 
 /**

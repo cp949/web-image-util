@@ -319,6 +319,27 @@ await fetch('/upload', { method: 'POST', body: formData });
 
 출력 옵션은 `{ format?: 'jpeg' | 'png' | 'webp' | 'avif', quality?: number }`입니다. `.toCanvas()` 결과는 호출자 소유이며 Canvas Pool에 자동 반환되지 않습니다.
 
+### 픽셀 예산 (maxInputPixels / maxOutputPixels)
+
+압축 바이트 크기만으로는 디코드된 이미지의 실제 픽셀 수나 최종 출력 Canvas
+크기를 막을 수 없습니다. `maxInputPixels`/`maxOutputPixels`를 지정하면 각각
+초과 시 `PIXEL_BUDGET_EXCEEDED`로 거부합니다. 두 옵션 모두 기본값이 없어
+(opt-in), 지정하지 않으면 기존 동작과 완전히 같습니다.
+
+```typescript
+await processImage(source, {
+  maxInputPixels: 40_000_000, // 디코드된 입력이 4천만 픽셀을 넘으면 거부
+  maxOutputPixels: 16_000_000, // 최종 출력 Canvas가 1천6백만 픽셀을 넘으면 거부
+})
+  .resize({ fit: 'cover', width: 800, height: 600 })
+  .toBlob('webp');
+```
+
+PNG/GIF/BMP는 `maxInputPixels` 지정 시 디코드 전 헤더만으로 먼저 거부될 수
+있습니다(`details.stage === 'header'`). 그 외 포맷은 디코드 후 검사됩니다
+(`details.stage === 'decoded'`). 두 옵션 모두 `0` 이하 값은 `OPTION_INVALID`로
+거부됩니다 — "무제한"은 옵션을 생략하는 것으로만 표현합니다.
+
 ## SVG 처리
 
 SVG XML 문자열, SVG Data URL, 원격 SVG URL, `image/svg+xml` Blob/File을 자동 감지해 목표 크기로 렌더링합니다.

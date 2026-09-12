@@ -25,6 +25,16 @@ describe('ImageProcessError 기본 생성', () => {
   });
 });
 
+describe('PIXEL_BUDGET_EXCEEDED 코드', () => {
+  it('code와 details가 그대로 보존된다', () => {
+    const err = new ImageProcessError('input pixel budget exceeded: 100 > 50', ImageErrorCode.PIXEL_BUDGET_EXCEEDED, {
+      details: { direction: 'input', stage: 'decoded', actualPixels: 100, maxPixels: 50 },
+    });
+    expect(err.code).toBe('PIXEL_BUDGET_EXCEEDED');
+    expect(err.details).toEqual({ direction: 'input', stage: 'decoded', actualPixels: 100, maxPixels: 50 });
+  });
+});
+
 describe('ImageProcessError instanceof 체계', () => {
   it('instanceof Error가 true이다', () => {
     const err = new ImageProcessError('msg', ImageErrorCode.OUTPUT_FAILED);

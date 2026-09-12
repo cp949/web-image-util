@@ -37,6 +37,12 @@ export class LazyRenderPipeline {
   private resizeCalled = false;
   private transformCalled = false;
   private boxCalled = false;
+  // opt-in 출력 픽셀 수 상한. undefined면 렌더 시점 검사를 하지 않는다(기존 동작).
+  private readonly maxOutputPixels?: number;
+
+  constructor(options?: { maxOutputPixels?: number }) {
+    this.maxOutputPixels = options?.maxOutputPixels;
+  }
 
   /**
    * Add resize operation (calculation only, no rendering)
@@ -156,7 +162,7 @@ export class LazyRenderPipeline {
 
     // layout은 한 번만 계산해 렌더링과 디버그 출력에 재사용한다
     const layout = analyzeAllOperations(sourceImage, this.operations);
-    const lease = renderLayout(sourceImage, layout);
+    const lease = renderLayout(sourceImage, layout, this.maxOutputPixels);
 
     try {
       const canvas = lease.canvas;

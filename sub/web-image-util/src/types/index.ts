@@ -289,6 +289,10 @@ export interface ProcessorOptions {
   fetchTimeoutMs?: number;
   /** fetch 응답 최대 허용 바이트 (기본값: 100 * 1024 * 1024 = 100MiB). 0이면 무제한. */
   maxSourceBytes?: number;
+  /** 디코드된 입력의 최대 허용 픽셀 수(width × height). 기본값 없음 — 지정하지 않으면 무제한(opt-in) */
+  maxInputPixels?: number;
+  /** 최종 출력 Canvas의 최대 허용 픽셀 수(width × height). 기본값 없음 — 지정하지 않으면 무제한(opt-in) */
+  maxOutputPixels?: number;
   /** 허용할 URL 프로토콜 목록 (기본값: ['http:', 'https:', 'blob:', 'data:']). */
   allowedProtocols?: string[];
   /** 외부 fetch 취소용 AbortSignal. */

@@ -16,8 +16,8 @@
  */
 
 import { createOwnedCanvas } from '../base/canvas-utils.internal';
+import { assertAxisWithinSafeLimit } from '../base/size-budget.internal';
 import { ImageProcessError } from '../errors.internal';
-import { readMaxSafeCanvasDimension } from '../utils/browser-capabilities/index';
 import {
   drawImageLayer,
   drawPlacedImage,
@@ -184,13 +184,7 @@ function resolveCanvasSize(width: number, height: number): { width: number; heig
     );
   }
   const rounded = { width: Math.round(width), height: Math.round(height) };
-  const maxSafeDimension = readMaxSafeCanvasDimension();
-  if (rounded.width > maxSafeDimension || rounded.height > maxSafeDimension) {
-    throw new ImageProcessError(
-      `Canvas size ${rounded.width}x${rounded.height} exceeds the ${maxSafeDimension}px per-side browser limit.`,
-      'DIMENSION_TOO_LARGE'
-    );
-  }
+  assertAxisWithinSafeLimit(rounded.width, rounded.height);
   return rounded;
 }
 
