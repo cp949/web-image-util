@@ -115,5 +115,12 @@ describe('HighResolutionProcessor.resize', () => {
       expect(values.lastIndexOf(100)).toBeGreaterThan(values.indexOf(50));
       executeSpy.mockRestore();
     });
+
+    it('지원하지 않는 forceStrategy 값은 폴백 없이 FEATURE_NOT_SUPPORTED로 reject된다', async () => {
+      const img = createDrawableImage(800, 600);
+      await expect(
+        HighResolutionProcessor.resize(img, 400, 300, { forceStrategy: 'unknown-strategy' as any })
+      ).rejects.toMatchObject({ code: 'FEATURE_NOT_SUPPORTED' });
+    });
   });
 });

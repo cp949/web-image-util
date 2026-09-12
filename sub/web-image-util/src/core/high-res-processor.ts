@@ -4,7 +4,7 @@
  * 이전에는 HighResolutionDetector(분석) + HighResolutionManager(전략 선택·실행) +
  * AutoHighResProcessor(라우팅·표준 경로) 3개 클래스가 "이미지 하나에 어떤 전략을 쓸지
  * 정하고 실행한다"는 같은 개념을 각자 다른 어휘(quality/priority)로 반복 정의했다.
- * 정합성 버그가 반복 수정됐던 이력은 _works/high-res-processor/decisions.md 참고.
+ * 자세한 배경은 CHANGELOG.md의 이 변경 항목 참고.
  */
 
 import { CanvasPool } from '../base/canvas-pool.internal';
@@ -35,7 +35,7 @@ export interface HighResolutionThresholds {
   highResPixelThreshold: number;
   /** 이 이상 예상 메모리 사용 시 onMemoryWarning + validate() 경고(기본 200MB) */
   memoryWarningThreshold: number;
-  /** 이 이상이면 TILED로 자동 전환(기본 300MB) */
+  /** 고해상도 경로 실행 중 가용 메모리 부족 경고 기준(기본 300MB, priority:'quality'는 ×1.5) — TILED 전환 여부와는 무관하다 */
   autoTileThreshold: number;
   /** validate()의 처리시간 경고 기준(기본 10초) */
   timeWarningThreshold: number;
@@ -141,6 +141,9 @@ export class HighResolutionProcessor {
           onMemoryWarning,
         });
       } catch (error) {
+        if (error instanceof ImageProcessError && error.code === 'FEATURE_NOT_SUPPORTED') {
+          throw error;
+        }
         productionLog.warn('High-resolution processing failed, switching to standard processing:', error);
         onProgress?.(50, 'Changing processing method...');
         processingResult = await HighResolutionProcessor.runStandardPath(
