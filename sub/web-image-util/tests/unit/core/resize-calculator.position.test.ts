@@ -134,21 +134,7 @@ describe('calculateFinalLayout - position', () => {
     });
   });
 
-  describe('position과 (deprecated) resize.padding을 함께 쓴다', () => {
-    it('cover + gravity + padding: padding을 제외한 available space 안에서 정렬한다', () => {
-      // 200x100 → cover 100x100 + padding 20: canvas 140x140, available은 padding 없을 때와 동일한 100x100
-      const result = calculateFinalLayout(200, 100, {
-        fit: 'cover',
-        width: 100,
-        height: 100,
-        padding: 20,
-        position: 'bottom-right',
-      });
-
-      expect(result.canvasSize).toEqual({ width: 140, height: 140 });
-      expect(result.position).toEqual({ x: -80, y: 20 });
-    });
-
+  describe('position과 다른 옵션을 함께 쓴다', () => {
     it('contain + withoutEnlargement + gravity: 확대 제한과 정렬이 함께 동작한다', () => {
       // 50x50 → contain 200x100, withoutEnlargement: true → 확대 제한으로 scale=1, imageSize 50x50
       const result = calculateFinalLayout(50, 50, {

@@ -1,7 +1,7 @@
 /**
  * LazyRenderPipeline.addBox 가드 검증 (jsdom-safe)
  *
- * 렌더까지 가지 않고 누적·검증·1회 가드·resize.padding/background 동시 지정 금지(양방향)만 본다.
+ * 렌더까지 가지 않고 누적·검증·1회 가드만 본다.
  * 실제 렌더 결과는 single-renderer.box 테스트와 processor 체인 테스트가 담당한다.
  */
 
@@ -62,39 +62,14 @@ describe('LazyRenderPipeline.addBox', () => {
     expect(pipeline.getOperationCount()).toBe(1);
   });
 
-  it('box() 뒤 resize()는 padding/background가 없으면 정상 누적된다', () => {
+  it('box() 뒤 resize()는 정상 누적된다', () => {
     pipeline.addBox({ radius: 10 });
     pipeline.addResize({ fit: 'cover', width: 100, height: 100 });
 
     expect(pipeline.getOperations().map((op) => op.type)).toEqual(['box', 'resize']);
   });
 
-  it('box() 뒤 resize()에 padding이 있으면 OPTION_INVALID로 거부한다', () => {
-    pipeline.addBox({});
-    expectCode(() => pipeline.addResize({ fit: 'cover', width: 100, height: 100, padding: 10 }), 'OPTION_INVALID');
-    expect(pipeline.getOperationCount()).toBe(1); // resize는 누적되지 않았다
-  });
-
-  it('box() 뒤 resize()에 background가 있으면 OPTION_INVALID로 거부한다', () => {
-    pipeline.addBox({});
-    expectCode(
-      () => pipeline.addResize({ fit: 'cover', width: 100, height: 100, background: '#fff' }),
-      'OPTION_INVALID'
-    );
-  });
-
-  it('resize()에 padding이 이미 있으면 그 뒤 box()는 OPTION_INVALID로 거부한다', () => {
-    pipeline.addResize({ fit: 'cover', width: 100, height: 100, padding: 10 });
-    expectCode(() => pipeline.addBox({}), 'OPTION_INVALID');
-    expect(pipeline.getOperations().map((op) => op.type)).toEqual(['resize']); // box는 누적되지 않았다
-  });
-
-  it('resize()에 background가 이미 있으면 그 뒤 box()는 OPTION_INVALID로 거부한다', () => {
-    pipeline.addResize({ fit: 'cover', width: 100, height: 100, background: '#fff' });
-    expectCode(() => pipeline.addBox({}), 'OPTION_INVALID');
-  });
-
-  it('resize()에 padding/background가 없으면 그 뒤 box()는 정상 누적된다', () => {
+  it('resize() 뒤 box()는 정상 누적된다', () => {
     pipeline.addResize({ fit: 'cover', width: 100, height: 100 });
     pipeline.addBox({ radius: 10 });
 

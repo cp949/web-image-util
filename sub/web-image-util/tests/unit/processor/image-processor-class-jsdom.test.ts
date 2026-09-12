@@ -135,22 +135,6 @@ describe('ImageProcessor 클래스 직접 인스턴스화 행동', () => {
       expect(qualityArg).toBe(0.8);
     });
 
-    it('defaultBackground 옵션이 convertToImageElement 호출에 전달된다', async () => {
-      // defaultBackground는 this.options에 저장되며 convertToImageElement 호출 시 options로 전달된다.
-      // 현재 렌더링 파이프라인이 이 값을 소비하지 않으므로 forwarding 경계까지만 검증한다.
-      const canvas = createTestCanvas(400, 300, 'green');
-      const bg = { r: 255, g: 255, b: 255, alpha: 1 };
-
-      await new ImageProcessor(canvas, { defaultBackground: bg })
-        .resize({ fit: 'contain', width: 200, height: 200 })
-        .toBlob();
-
-      expect(vi.mocked(converter.convertToImageElement)).toHaveBeenCalledWith(
-        canvas,
-        expect.objectContaining({ defaultBackground: bg })
-      );
-    });
-
     it('crossOrigin 옵션이 convertToImageElement 호출에 전달된다', async () => {
       // canvas 소스는 CORS 경로를 거치지 않지만, 옵션 객체가 올바르게 forward되는지 검증한다.
       const canvas = createTestCanvas(400, 300, 'green');

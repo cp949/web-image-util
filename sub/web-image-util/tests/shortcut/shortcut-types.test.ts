@@ -110,9 +110,8 @@ describe('Shortcut API Type Safety', () => {
   it('should support options for containBox method', () => {
     // Verify that all options can be passed to containBox
     const processor = processImage(testImageUrl).shortcut.containBox(300, 200, {
-      padding: { top: 10, bottom: 10, left: 10, right: 10 },
-      background: '#ffffff',
       withoutEnlargement: true,
+      position: 'top-left',
     });
 
     expect(processor).toBeDefined();
@@ -127,8 +126,7 @@ describe('Shortcut API Type Safety', () => {
 
   it('should support options for coverBox method', () => {
     const processor = processImage(testImageUrl).shortcut.coverBox(300, 200, {
-      padding: { top: 5, bottom: 5, left: 5, right: 5 },
-      background: '#000000',
+      position: { x: 0.5, y: 0.5 },
     });
 
     expect(processor).toBeDefined();

@@ -3,13 +3,12 @@
  *
  * 분리 기준:
  * - Blob 입력 흐름은 jsdom의 Blob URL 이미지 로딩 제약 때문에 이 파일에서 다루지 않는다.
- * - Canvas 입력은 source-converter가 그대로 통과시켜 fit 모드 / padding / 런타임 검증 / 엣지 케이스가
+ * - Canvas 입력은 source-converter가 그대로 통과시켜 fit 모드 / 런타임 검증 / 엣지 케이스가
  *   모두 jsdom에서 동작한다.
  */
 
 import { describe, expect, it } from 'vitest';
 import { processImage } from '../../../../src/processor';
-import type { ResizeConfig } from '../../../../src/types/resize-config';
 import { createTestCanvas } from '../../../utils/canvas-helper';
 
 describe('fit 모드별 resize (Canvas 입력, jsdom-safe)', () => {
@@ -94,37 +93,6 @@ describe('fit 모드별 resize (Canvas 입력, jsdom-safe)', () => {
     });
   });
 
-  describe('padding · background 옵션', () => {
-    it('모든 fit 모드에 padding을 적용한다', async () => {
-      const canvas = createTestCanvas(100, 100, 'red');
-
-      const configs: ResizeConfig[] = [
-        { fit: 'cover', width: 100, height: 100, padding: 10 },
-        { fit: 'contain', width: 100, height: 100, padding: 10 },
-        { fit: 'fill', width: 100, height: 100, padding: 10 },
-        { fit: 'maxFit', width: 100, padding: 10 },
-        { fit: 'minFit', width: 200, padding: 10 },
-      ];
-
-      for (const config of configs) {
-        const result = await processImage(canvas).resize(config).toCanvas();
-        expect(result.width).toBeGreaterThan(100);
-        expect(result.height).toBeGreaterThan(100);
-      }
-    });
-
-    it('padding과 함께 background 색상을 적용한다', async () => {
-      const canvas = createTestCanvas(100, 100, 'yellow');
-
-      const result = await processImage(canvas)
-        .resize({ fit: 'cover', width: 100, height: 100, padding: 20, background: 'blue' })
-        .toCanvas();
-
-      expect(result.width).toBe(140); // 100 + 20*2
-      expect(result.height).toBe(140);
-    });
-  });
-
   describe('런타임 설정 검증', () => {
     it('maxFit에 width/height 없으면 INVALID_DIMENSIONS 에러를 던진다', async () => {
       const canvas = createTestCanvas(400, 300, 'red');
@@ -152,16 +120,6 @@ describe('fit 모드별 resize (Canvas 입력, jsdom-safe)', () => {
       await expect(async () => {
         await processImage(canvas)
           .resize({ fit: 'cover', height: 200 } as any)
-          .toBlob();
-      }).rejects.toMatchObject({ code: 'INVALID_DIMENSIONS' });
-    });
-
-    it('음수 padding이면 INVALID_DIMENSIONS 에러를 던진다', async () => {
-      const canvas = createTestCanvas(400, 300, 'yellow');
-
-      await expect(async () => {
-        await processImage(canvas)
-          .resize({ fit: 'cover', width: 200, height: 200, padding: -10 } as any)
           .toBlob();
       }).rejects.toMatchObject({ code: 'INVALID_DIMENSIONS' });
     });

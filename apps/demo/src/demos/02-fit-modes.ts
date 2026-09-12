@@ -18,7 +18,8 @@ export async function run(target: HTMLElement): Promise<void> {
 
   for (const fit of FITS) {
     const result = await processImage(sample)
-      .resize({ fit, ...TARGET, background: '#f0f0f0' })
+      .resize({ fit, ...TARGET })
+      .box({ background: '#f0f0f0' })
       .toBlob();
     grid.append(makeCard(fit, result.blob));
   }

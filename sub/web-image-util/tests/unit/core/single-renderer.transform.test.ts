@@ -11,6 +11,7 @@ import type { CanvasLease } from '../../../src/base/canvas-lease.internal';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { analyzeAllOperations, type LazyOperation, renderLayout } from '../../../src/core/single-renderer.internal';
 import { ImageProcessError } from '../../../src/errors.internal';
+import type { NormalizedBox } from '../../../src/types/box-config';
 import type { NormalizedTransform } from '../../../src/types/transform-config';
 
 function createMockImage(naturalWidth: number, naturalHeight: number): HTMLImageElement {
@@ -39,7 +40,9 @@ function transformOp(overrides: Partial<NormalizedTransform> = {}): LazyOperatio
 }
 
 /** ctx 프로토타입 메서드를 spy로 바꾸고 호출 인자를 모은다 */
-function spyCtx(method: 'drawImage' | 'rotate' | 'scale' | 'translate' | 'clip' | 'fillRect' | 'save' | 'restore') {
+function spyCtx(
+  method: 'drawImage' | 'rotate' | 'scale' | 'translate' | 'clip' | 'fillRect' | 'fill' | 'save' | 'restore'
+) {
   const tempCtx = document.createElement('canvas').getContext('2d')!;
   const calls: unknown[][] = [];
   const spy = vi.spyOn(Object.getPrototypeOf(tempCtx), method).mockImplementation((...args: unknown[]) => {
@@ -244,20 +247,30 @@ describe('renderLayout — transform', () => {
     ]);
   });
 
-  it('resize.background는 캔버스 전체를 한 번만 채우고 transform은 별도 fillRect를 하지 않는다', () => {
+  it('box background는 캔버스를 한 번만 채우고(fill 경로) transform은 별도 fillRect를 하지 않는다', () => {
     const source = createDrawableSource(400, 300);
-    const { calls } = spyCtx('fillRect');
+    const fillRect = spyCtx('fillRect');
+    const fill = spyCtx('fill');
+    const box: NormalizedBox = {
+      padding: { top: 0, right: 0, bottom: 0, left: 0 },
+      background: '#00ff00',
+      radius: 0,
+      border: null,
+    };
     const layout = analyzeAllOperations(source, [
       transformOp({ crop: { x: -100, y: 0, width: 400, height: 300 }, degrees: 45 }),
-      { type: 'resize', config: { fit: 'contain', width: 400, height: 400, background: '#00ff00' } },
+      { type: 'resize', config: { fit: 'contain', width: 400, height: 400 } },
+      { type: 'box', box },
     ]);
 
     lease = renderLayout(source, layout);
 
-    expect(calls).toEqual([[0, 0, 400, 400]]);
+    // box.background가 있으면 fillRect 대신 둥근 경로 fill()을 쓴다(single-renderer.box.test.ts와 동일 계약).
+    expect(fillRect.calls).toHaveLength(0);
+    expect(fill.calls).toHaveLength(1);
   });
 
-  it('resize.background가 없으면 transform 경로도 fillRect를 호출하지 않는다', () => {
+  it('background가 없으면 transform 경로도 fillRect를 호출하지 않는다', () => {
     const source = createDrawableSource(400, 300);
     const { calls } = spyCtx('fillRect');
 

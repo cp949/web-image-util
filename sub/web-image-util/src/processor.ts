@@ -67,12 +67,12 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    * **한 번만, resize() 앞에서만 호출할 수 있다.**
    * - 연산 순서는 호출 순서와 무관하게 crop → flip → rotate → resize로 고정된다.
    * - crop 좌표는 원본 픽셀 기준이다. SVG는 `getImageDimensions()`가 보고하는 유효 크기 기준이다.
-   * - crop이 원본을 벗어나면 요청 크기를 유지하고 밖은 투명이다. 색이 필요하면 `resize.background`를 쓴다(캔버스 전체 아래).
+   * - crop이 원본을 벗어나면 요청 크기를 유지하고 밖은 투명이다. 색이 필요하면 `box({ background })`를 쓴다(캔버스 전체 아래).
    *   원본과 교집합이 없으면 출력 시점에 INVALID_DIMENSIONS를 던진다.
    * - `rotate`는 도 단위이며 양수가 시계 방향이다. `rotate: 90`은 `{ degrees: 90 }`과 같다.
    *   `expand: true`(기본)는 회전 결과를 모두 담고, `false`는 입력 프레임을 유지한다.
    * - 최종 출력은 여전히 drawImage 한 번이다. 중간 Canvas를 만들지 않는다.
-   * - JPEG 출력은 투명 영역이 검정이 되므로 `resize.background`를 지정한다. 크기를 바꾸지 않으려면 `{ fit: 'scale', scale: 1, background }`를 쓴다.
+   * - JPEG 출력은 투명 영역이 검정이 되므로 `box({ background })`를 지정한다. 크기를 바꾸지 않으려면 `{ fit: 'scale', scale: 1 }`을 쓴다.
    *
    * @param options 변환 옵션 (TransformOptions). 빈 객체는 no-op
    * @returns 같은 상태의 Processor (resize() 호출 가능)
@@ -92,10 +92,11 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    *   .resize({ fit: 'cover', width: 320, height: 240 })
    *   .toBlob();
    *
-   * // 임의각 회전. 빈 모서리는 투명이므로 JPEG면 resize.background로 색을 준다 (scale 1이면 크기 그대로)
+   * // 임의각 회전. 빈 모서리는 투명이므로 JPEG면 box()로 색을 준다 (scale 1이면 크기 그대로)
    * await processImage(source)
    *   .transform({ rotate: { degrees: 15, expand: true } })
-   *   .resize({ fit: 'scale', scale: 1, background: '#fff' })
+   *   .resize({ fit: 'scale', scale: 1 })
+   *   .box({ background: '#fff' })
    *   .toBlob('jpeg');
    *
    * // ❌ 런타임 오류: resize() 뒤에는 transform()을 부를 수 없다
@@ -220,8 +221,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    *   모서리 바깥이 검정으로 채워진다.
    * - `border`는 `{ width, color, inset? }`다. `color`는 반투명 허용. `inset: true`면 바깥
    *   상자 크기를 늘리지 않고 안쪽에 그린다(기본 false — 크기가 `width * 2`만큼 늘어난다).
-   * - `resize()`의 (deprecated) `padding`/`background`와 동시에 쓸 수 없다 — 어느 순서로
-   *   호출해도 `OPTION_INVALID`다. 새 코드는 `box()`만 쓴다.
    * - 최종 출력은 여전히 drawImage 한 번이다. 중간 Canvas를 만들지 않는다.
    * - 원본과 목표 비율이 다른 `resize({ fit: 'cover' })`와 함께 쓰면 이미지가 padding 영역까지
    *   번질 수 있다 — `radius`를 지정해도 막히지 않는다(현재 완화 방법 없음).
@@ -229,8 +228,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    * @param options box 옵션(BoxOptions). 빈 객체는 no-op
    * @returns 같은 상태의 Processor(체이닝 가능) — 상태를 바꾸지 않는다
    *
-   * @throws {ImageProcessError} OPTION_INVALID — 두 번째 호출, `resize()`의 padding/background와
-   *   동시 지정, 옵션 값 형식 오류(padding 음수, radius 형식 오류, border 값 오류, 유효하지 않은 CSS 색)
+   * @throws {ImageProcessError} OPTION_INVALID — 두 번째 호출, 옵션 값 형식 오류(padding 음수,
+   *   radius 형식 오류, border 값 오류, 유효하지 않은 CSS 색)
    *
    * @example
    * ```typescript
@@ -250,13 +249,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    *   .resize({ fit: 'cover', width: 200, height: 200 })
    *   .box({ border: { width: 3, color: 'rgba(0,0,0,0.4)', inset: true } })
    *   .toBlob();
-   *
-   * // ❌ 런타임 오류: box()와 resize()의 padding/background를 함께 쓸 수 없다
-   * processImage(source).resize({ fit: 'cover', width: 100, height: 100, padding: 10 }).box({});
    * ```
    */
   box(options: BoxOptions): ImageProcessor<TState> {
-    // 1회 제약·resize.padding/background 동시 지정 금지·검증은 LazyRenderPipeline이 단일 소유한다.
+    // 1회 제약·검증은 LazyRenderPipeline이 단일 소유한다.
     this.output.addBox(options);
 
     return this as ImageProcessor<TState>;
@@ -494,7 +490,6 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
  * const processor = processImage(source, {
  *   crossOrigin: 'use-credentials',
  *   defaultQuality: 0.9,
- *   defaultBackground: { r: 255, g: 255, b: 255, alpha: 1 }
  * });
  *
  * // When multiple sizes needed: create separate instances

@@ -79,16 +79,14 @@ describe('OutputPipeline', () => {
     it('생성자 옵션이 기본값과 병합되어 소스 변환에 전달된다', async () => {
       // mutation: 옵션 병합(기본값 주입)을 제거하면 실패한다 — 표면 테스트와 동일 관찰 경계
       const canvas = createTestCanvas(400, 300, 'green');
-      const bg = { r: 255, g: 255, b: 255, alpha: 1 };
-      const pipeline = new OutputPipeline(canvas, { defaultBackground: bg });
+      const pipeline = new OutputPipeline(canvas, { crossOrigin: 'use-credentials' });
 
       await pipeline.toBlob();
 
       expect(vi.mocked(converter.convertToImageElement)).toHaveBeenCalledWith(
         canvas,
         expect.objectContaining({
-          defaultBackground: bg,
-          crossOrigin: 'anonymous', // 기본값 병합 확인
+          crossOrigin: 'use-credentials', // 기본값 병합 확인
         })
       );
     });

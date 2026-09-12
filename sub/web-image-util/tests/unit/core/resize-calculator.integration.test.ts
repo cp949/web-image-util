@@ -19,7 +19,6 @@ describe('calculateFinalLayout - 성능', () => {
         fit: 'cover',
         width: 800,
         height: 600,
-        padding: 10,
       });
     }
 
@@ -27,24 +26,6 @@ describe('calculateFinalLayout - 성능', () => {
     const duration = end - start;
 
     // 1000회 계산이 100ms 이내여야 한다.
-    expect(duration).toBeLessThan(100);
-  });
-
-  it('복잡한 객체 패딩 계산도 효율적으로 처리한다', () => {
-    const start = performance.now();
-
-    for (let i = 0; i < 1000; i++) {
-      calculateFinalLayout(1920, 1080, {
-        fit: 'contain',
-        width: 800,
-        height: 600,
-        padding: { top: 10, right: 20, bottom: 15, left: 25 },
-      });
-    }
-
-    const end = performance.now();
-    const duration = end - start;
-
     expect(duration).toBeLessThan(100);
   });
 
@@ -119,24 +100,21 @@ describe('calculateFinalLayout - 회귀 테스트', () => {
 });
 
 describe('calculateFinalLayout - 통합 테스트', () => {
-  it('cover + 대형 패딩 + 극단 종횡비 복합 시나리오를 처리한다', () => {
+  it('cover + 극단 종횡비 복합 시나리오를 처리한다', () => {
     const result = calculateFinalLayout(3000, 1000, {
       fit: 'cover',
       width: 800,
       height: 800,
-      padding: { top: 50, right: 30, bottom: 50, left: 30 },
     });
 
     // 이미지: 3:1 비율 → 정사각형 캔버스를 cover하려면 높이 기준으로 맞춤
     expect(result.imageSize.width).toBe(2400);
     expect(result.imageSize.height).toBe(800);
+    expect(result.canvasSize).toEqual({ width: 800, height: 800 });
 
-    // Canvas: 800 + 60 (패딩) = 860
-    expect(result.canvasSize).toEqual({ width: 860, height: 900 });
-
-    // 가운데 정렬 + 패딩
-    expect(result.position.x).toBeLessThan(0); // 가로 잘림
-    expect(result.position.y).toBe(50); // 상단 패딩
+    // 가운데 정렬 + 가로 잘림
+    expect(result.position.x).toBeLessThan(0);
+    expect(result.position.y).toBe(0);
   });
 
   it('동일 입력에 대해 모든 fit 모드의 결과가 일관된다', () => {

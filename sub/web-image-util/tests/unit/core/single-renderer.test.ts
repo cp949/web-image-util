@@ -113,14 +113,12 @@ describe('analyzeAllOperations — 레이아웃 계산', () => {
       expect(layout.height).toBe(100);
     });
 
-    it('background 옵션이 레이아웃 background 에 반영된다', () => {
+    it('resize만 있으면 레이아웃 background는 transparent로 유지된다', () => {
       const img = createMockImage(800, 600);
-      const ops: LazyOperation[] = [
-        { type: 'resize', config: { fit: 'contain', width: 400, height: 300, background: '#ffffff' } },
-      ];
+      const ops: LazyOperation[] = [{ type: 'resize', config: { fit: 'contain', width: 400, height: 300 } }];
       const layout = analyzeAllOperations(img, ops);
 
-      expect(layout.background).toBe('#ffffff');
+      expect(layout.background).toBe('transparent');
     });
   });
 

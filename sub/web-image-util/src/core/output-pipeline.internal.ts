@@ -91,7 +91,6 @@ export class OutputPipeline {
     this.options = {
       crossOrigin: 'anonymous',
       defaultQuality: 0.8,
-      defaultBackground: { r: 0, g: 0, b: 0, alpha: 0 },
       __svgPassthroughMode: 'safe',
       ...options,
     };
@@ -127,7 +126,7 @@ export class OutputPipeline {
 
   /**
    * box 옵션을 파이프라인에 위임한다.
-   * 1회 제약·resize.padding/background 동시 지정 금지·검증은 LazyRenderPipeline.addBox가 수행한다.
+   * 1회 제약·검증은 LazyRenderPipeline.addBox가 수행한다.
    */
   addBox(options: BoxOptions): void {
     this.pipeline.addBox(options);

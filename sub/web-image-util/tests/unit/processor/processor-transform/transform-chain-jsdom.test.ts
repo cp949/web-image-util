@@ -158,10 +158,11 @@ describe('transform 체인 — 픽셀', () => {
     expect(pixelAt(canvas, 75, 25)).toEqual([255, 0, 0, 255]);
   });
 
-  it('resize.background는 letterbox와 crop 이탈 영역을 같은 색으로 채운다', async () => {
+  it('box background는 letterbox와 crop 이탈 영역을 같은 색으로 채운다', async () => {
     const { canvas } = await processImage(createHalfCanvas(100, 50))
       .transform({ crop: { x: -50, y: 0, width: 100, height: 50 } })
-      .resize({ fit: 'contain', width: 100, height: 100, background: '#ffff00' })
+      .resize({ fit: 'contain', width: 100, height: 100 })
+      .box({ background: '#ffff00' })
       .toCanvas();
 
     // 프레임(100x50)은 y 25~74에 놓인다. letterbox와 이탈 영역 모두 노랑

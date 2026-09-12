@@ -16,7 +16,8 @@ const inlineSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"
 export async function run(target: HTMLElement): Promise<void> {
   // 1) 91x114 작은 SVG 파일을 1200x1200 PNG로 확대 — 픽셀 깨짐 없음.
   const upscaled = await processImage('/samples/svg-icon-small.svg')
-    .resize({ fit: 'contain', width: 1200, height: 1200, background: '#ffffff' })
+    .resize({ fit: 'contain', width: 1200, height: 1200 })
+    .box({ background: '#ffffff' })
     .toBlob({ format: 'png' });
 
   // 2) 인라인 SVG 문자열을 그대로 입력.

@@ -123,8 +123,8 @@ export async function createThumbnail(source: ImageSource, options: ThumbnailOpt
       fit: finalOptions.fit,
       width,
       height,
-      background: finalOptions.background,
     })
+    .box({ background: finalOptions.background })
     .toBlob({
       format: finalOptions.format,
       quality: finalOptions.quality,
@@ -228,12 +228,13 @@ export async function createAvatar(source: ImageSource, options: AvatarOptions =
   const finalOptions = { ...defaultOptions, ...options };
 
   // Basic resizing (square, default cover fit)
-  const processor = processImage(source).resize({
-    fit: finalOptions.fit,
-    width: finalOptions.size,
-    height: finalOptions.size,
-    background: finalOptions.background,
-  });
+  const processor = processImage(source)
+    .resize({
+      fit: finalOptions.fit,
+      width: finalOptions.size,
+      height: finalOptions.size,
+    })
+    .box({ background: finalOptions.background });
 
   return await processor.toBlob({
     format: finalOptions.format,
@@ -376,8 +377,8 @@ export async function createSocialImage(source: ImageSource, options: SocialImag
       fit: 'contain', // Social images usually show the entire image
       width: targetSize.width,
       height: targetSize.height,
-      background: finalOptions.background,
     })
+    .box({ background: finalOptions.background })
     .toBlob({
       format: finalOptions.format,
       quality: finalOptions.quality,

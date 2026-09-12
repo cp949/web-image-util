@@ -8,12 +8,15 @@
 
 - Added: `transform()` 체이닝 메서드를 추가했습니다. `crop`(원본 픽셀 좌표), `flip`(좌우/상하), `rotate`(도 단위, 시계 방향, `expand: boolean`)를 한 번에 지정합니다. 한 체인에서 한 번만, `resize()` 앞에서만 호출할 수 있으며 `resize()`는 생략 가능합니다. 적용 순서는 crop → flip → rotate → resize로 고정이고 최종 렌더는 여전히 `drawImage()` 1회입니다. 원본을 벗어난 crop은 요청 크기를 유지하고 밖을 투명으로 두며, 원본과 겹치지 않으면 출력 시점에 `INVALID_DIMENSIONS`를 던집니다.
 - Added: `TransformOptions`, `TransformCrop`, `TransformFlip`, `TransformRotate` 타입을 루트 진입점에서 export합니다.
-- Added: `box()` 체이닝 메서드를 추가했습니다. `padding`, `background`, `radius`(CSS `border-radius` 의미, 축별 % 지원), `border`(`{ width, color, inset? }`)를 CSS box model로 한 번에 지정합니다. 한 체인에서 한 번만 호출할 수 있으며 체인 위치는 무관합니다(항상 transform → resize → box 순서로 가장 바깥에 적용). 최종 렌더는 여전히 `drawImage()` 1회입니다. `resize()`의 `padding`/`background`와 동시에 쓰면 `OPTION_INVALID`입니다.
+- Added: `box()` 체이닝 메서드를 추가했습니다. `padding`, `background`, `radius`(CSS `border-radius` 의미, 축별 % 지원), `border`(`{ width, color, inset? }`)를 CSS box model로 한 번에 지정합니다. 한 체인에서 한 번만 호출할 수 있으며 체인 위치는 무관합니다(항상 transform → resize → box 순서로 가장 바깥에 적용). 최종 렌더는 여전히 `drawImage()` 1회입니다.
 - Added: `BoxOptions`, `BoxBorder`, `BoxRadius` 타입을 루트 진입점에서 export합니다.
-- Deprecated: `resize()`의 `padding`/`background` 옵션, shortcut `coverBox`/`containBox` 등의 `padding`/`background` 옵션, `ProcessorOptions.defaultBackground`. 전부 `box()`로 통일하세요. 다음 메이저에서 제거됩니다.
 - Added: `resize()`의 `cover`/`contain`에 `position` 필드를 추가했습니다. 9방향 gravity 문자열(`top-left` 등)은 둘 다, 0~1 정규화 focal-point 객체(`{ x, y }`)는 `cover`에서만 받습니다. 생략 시 기존과 동일한 중앙 정렬입니다. 잘못된 gravity, 범위를 벗어난 focal-point(`1e-6` 이내는 0/1로 보정), `contain`에 focal-point를 지정하는 조합은 `OPTION_INVALID`입니다.
 - Added: `ResizeGravity`, `ResizeFocalPoint` 타입을 루트 진입점에서 export합니다.
 - Added: `ProcessorOptions`에 `maxInputPixels`/`maxOutputPixels`를 추가했습니다. opt-in(기본값 없음, 무제한)이며 초과 시 `PIXEL_BUDGET_EXCEEDED`로 거부합니다. PNG/GIF/BMP는 디코드 전 헤더로도 먼저 거부될 수 있습니다.
+
+### 삭제
+
+- Removed (**Breaking**): `resize()`의 `padding`/`background` 옵션, shortcut `coverBox`/`containBox`/`maxWidth`/`maxHeight`/`maxSize`/`minWidth`/`minHeight`/`minSize`의 `padding`/`background` 옵션, `ProcessorOptions.defaultBackground`(어디서도 읽히지 않던 죽은 옵션)를 제거했습니다. 전부 `box()`로 대체하세요 — 예: `resize({ fit: 'cover', width, height, padding: 10, background: '#fff' })` → `resize({ fit: 'cover', width, height }).box({ padding: 10, background: '#fff' })`. `box()`와 동시 지정 시 발생하던 `OPTION_INVALID` 검증도 옵션 자체가 사라지며 함께 제거됐습니다.
 
 ### 변경
 

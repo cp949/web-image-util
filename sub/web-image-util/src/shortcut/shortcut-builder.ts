@@ -58,8 +58,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    *
    * @param width Output width (pixels)
    * @param height Output height (pixels)
-   * @param options Additional options (padding, background, position)
-   * @deprecated options의 padding/background는 `box()`로 옮기세요. 다음 메이저에서 제거됩니다.
+   * @param options Additional options (position)
    * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
@@ -69,8 +68,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    *
    * // With options
    * await processImage(src).shortcut.coverBox(300, 200, {
-   *   padding: 10,
-   *   background: '#ffffff'
+   *   position: 'top-left'
    * }).toBlob();
    * ```
    */
@@ -98,8 +96,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    *
    * @param width Output width (pixels)
    * @param height Output height (pixels)
-   * @param options Additional options (withoutEnlargement, padding, background, position)
-   * @deprecated options의 padding/background는 `box()`로 옮기세요. 다음 메이저에서 제거됩니다.
+   * @param options Additional options (withoutEnlargement, position)
    * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
@@ -163,8 +160,6 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Aspect ratio is always preserved.
    *
    * @param width Maximum width (pixels)
-   * @param options Additional options (padding, background)
-   * @deprecated options의 padding/background는 `box()`로 옮기세요. 다음 메이저에서 제거됩니다.
    * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
@@ -194,8 +189,6 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Aspect ratio is always preserved.
    *
    * @param height Maximum height (pixels)
-   * @param options Additional options (padding, background)
-   * @deprecated options의 padding/background는 `box()`로 옮기세요. 다음 메이저에서 제거됩니다.
    * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
@@ -226,8 +219,6 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Reduction is based on the larger scaling ratio between width and height.
    *
    * @param size Maximum size ({ width, height })
-   * @param options Additional options (padding, background)
-   * @deprecated options의 padding/background는 `box()`로 옮기세요. 다음 메이저에서 제거됩니다.
    * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
@@ -257,8 +248,6 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Aspect ratio is always preserved.
    *
    * @param width Minimum width (pixels)
-   * @param options Additional options (padding, background)
-   * @deprecated options의 padding/background는 `box()`로 옮기세요. 다음 메이저에서 제거됩니다.
    * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
@@ -288,8 +277,6 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Aspect ratio is always preserved.
    *
    * @param height Minimum height (pixels)
-   * @param options Additional options (padding, background)
-   * @deprecated options의 padding/background는 `box()`로 옮기세요. 다음 메이저에서 제거됩니다.
    * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example
@@ -320,8 +307,6 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Enlargement is based on the smaller scaling ratio between width and height.
    *
    * @param size Minimum size ({ width, height })
-   * @param options Additional options (padding, background)
-   * @deprecated options의 padding/background는 `box()`로 옮기세요. 다음 메이저에서 제거됩니다.
    * @returns IImageProcessor in AfterResize state (chainable)
    *
    * @example

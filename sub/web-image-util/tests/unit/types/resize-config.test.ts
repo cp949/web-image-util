@@ -180,48 +180,6 @@ describe('ResizeConfig Types', () => {
       });
     });
 
-    describe('padding validation', () => {
-      it('should validate config with number padding', () => {
-        const config: ResizeConfig = {
-          fit: 'cover',
-          width: 300,
-          height: 200,
-          padding: 10,
-        };
-        expect(() => validateResizeConfig(config)).not.toThrow();
-      });
-
-      it('should validate config with object padding', () => {
-        const config: ResizeConfig = {
-          fit: 'cover',
-          width: 300,
-          height: 200,
-          padding: { top: 10, right: 20, bottom: 10, left: 20 },
-        };
-        expect(() => validateResizeConfig(config)).not.toThrow();
-      });
-
-      it('should throw error for negative number padding', () => {
-        const config = {
-          fit: 'cover',
-          width: 300,
-          height: 200,
-          padding: -10,
-        } as any;
-        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
-      });
-
-      it('should throw error for negative object padding values', () => {
-        const config = {
-          fit: 'cover',
-          width: 300,
-          height: 200,
-          padding: { top: -10, right: 20 },
-        } as any;
-        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
-      });
-    });
-
     describe('position 검증 (gravity/focal-point)', () => {
       it.each([
         'top-left',

@@ -11,8 +11,8 @@ export async function run(target: HTMLElement): Promise<void> {
   // coverBox: 비율 유지하면서 박스를 가득 채움(잘림 허용).
   const cover = await processImage(sample).shortcut.coverBox(400, 400).toBlob();
 
-  // containBox: 비율 유지하면서 박스 안에 전부 들어옴(여백 허용).
-  const contain = await processImage(sample).shortcut.containBox(400, 400, { background: '#f0f0f0' }).toBlob();
+  // containBox: 비율 유지하면서 박스 안에 전부 들어옴(여백 허용). 배경은 box()로 지정한다.
+  const contain = await processImage(sample).shortcut.containBox(400, 400).box({ background: '#f0f0f0' }).toBlob();
 
   // maxWidth: 지정한 너비보다 클 때만 축소.
   const maxW = await processImage(sample).shortcut.maxWidth(200).toBlob();
@@ -22,7 +22,7 @@ export async function run(target: HTMLElement): Promise<void> {
 
   target.append(
     card('.shortcut.coverBox(400, 400)', cover.blob),
-    card('.shortcut.containBox(400, 400, { background })', contain.blob),
+    card('.shortcut.containBox(400, 400).box({ background })', contain.blob),
     card('.shortcut.maxWidth(200)', maxW.blob),
     card('.shortcut.scale(0.5)', scaled.blob)
   );

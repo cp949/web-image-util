@@ -7,8 +7,6 @@
  * - normalizeBoxOptions: 생략 필드를 기본값으로 채운 내부 형태로 편다. radius는 원본 형태를
  *   그대로 보존한다 — %를 px로 바꾸려면 바깥 상자 크기가 필요하고, 그건 content 크기가
  *   확정된 뒤(analyzeAllOperations)에야 알 수 있다. box-calculator.internal.ts가 담당한다.
- * - resize.padding/background와의 동시 지정 금지는 파이프라인 상태(다른 연산이 이미 있는지)에
- *   의존하므로 여기서 검사하지 않는다 — LazyRenderPipeline.addBox/addResize가 담당한다.
  */
 
 import { optionInvalid } from '../errors.internal';
@@ -197,9 +195,9 @@ export function validateBoxOptions(options: BoxOptions): void {
 }
 
 /**
- * padding을 네 방향 값으로 편다. `core/resize-calculator.internal.ts`의 비공개 `normalizePadding`과
- * 같은 규칙(숫자 → 네 방향 동일값, 생략 방향 → 0)이지만 재사용하지 않고 여기서 자체 구현한다 —
- * `src/types/`는 `src/core/`에 런타임 의존성을 두지 않는 방향이 이 코드베이스의 결이다.
+ * padding을 네 방향 값으로 편다. 숫자는 네 방향에 같은 값, 생략된 방향은 0으로 채운다.
+ * `src/types/`는 `src/core/`에 런타임 의존성을 두지 않는 방향이 이 코드베이스의 결이라
+ * `core/` 쪽 계산 로직과 공유하지 않고 여기서 자체 구현한다.
  */
 function normalizeBoxPadding(padding: Padding | undefined): NormalizedBox['padding'] {
   if (typeof padding === 'number') {

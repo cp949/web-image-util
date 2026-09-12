@@ -167,18 +167,6 @@ describe('calculateFinalLayout - fit 모드', () => {
       expect(result.imageSize).toEqual({ width: 400, height: 300 });
       expect(result.canvasSize).toEqual({ width: 400, height: 300 });
     });
-
-    it('단일 축 지정에서도 padding이 캔버스에 더해진다', () => {
-      const result = calculateFinalLayout(400, 300, {
-        fit: 'fill',
-        width: 200,
-        padding: 10,
-      });
-
-      expect(result.imageSize).toEqual({ width: 200, height: 150 });
-      expect(result.canvasSize).toEqual({ width: 220, height: 170 });
-      expect(result.position).toEqual({ x: 10, y: 10 });
-    });
   });
 
   describe('scale 모드', () => {
@@ -242,18 +230,6 @@ describe('calculateFinalLayout - fit 모드', () => {
 
       expect(result.imageSize).toEqual({ width: 1, height: 1 });
       expect(result.canvasSize).toEqual({ width: 1, height: 1 });
-    });
-
-    it('scale 모드에서도 padding이 캔버스에 더해진다', () => {
-      const result = calculateFinalLayout(400, 300, {
-        fit: 'scale',
-        scale: 0.5,
-        padding: 20,
-      });
-
-      expect(result.imageSize).toEqual({ width: 200, height: 150 });
-      expect(result.canvasSize).toEqual({ width: 240, height: 190 });
-      expect(result.position).toEqual({ x: 20, y: 20 });
     });
   });
 

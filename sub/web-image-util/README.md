@@ -63,9 +63,10 @@ await processImage(source)
   .resize({ fit: 'cover', width: 300, height: 200 })
   .toBlob();
 
-// contain: 비율 유지, 전체 표시, 여백
+// contain: 비율 유지, 전체 표시, 여백. 여백 색은 box()로 지정합니다
 await processImage(source)
-  .resize({ fit: 'contain', width: 300, height: 200, background: '#ffffff' })
+  .resize({ fit: 'contain', width: 300, height: 200 })
+  .box({ background: '#ffffff' })
   .toBlob();
 
 // maxFit: 지정 크기보다 클 때만 축소
@@ -79,23 +80,14 @@ await processImage(source).resize({ fit: 'scale', scale: 0.5 }).toBlob();
 await processImage(source).resize({ fit: 'scale', scale: { sx: 2, sy: 1.5 } }).toBlob();
 ```
 
-`padding`과 `background`는 여섯 fit 모드에서 모두 사용할 수 있는 공통 옵션입니다. `padding`은 리사이즈 결과 바깥에 여백을 추가하고, `background`는 padding 영역을 포함한 출력 캔버스 전체를 지정한 색으로 채웁니다.
+리사이즈 결과에 여백·배경을 추가하려면 `box()`를 이어서 호출하세요(아래 "박스" 절 참고).
 
 ```typescript
 // 300×200 리사이즈 결과 바깥에 20px 흰색 여백 추가 → 출력 340×240
 await processImage(source)
-  .resize({ fit: 'cover', width: 300, height: 200, padding: 20, background: '#fff' })
+  .resize({ fit: 'cover', width: 300, height: 200 })
+  .box({ padding: 20, background: '#fff' })
   .toBlob('jpeg');
-
-// 방향별 padding 지정. 생략한 방향은 0
-await processImage(source)
-  .resize({ fit: 'maxFit', width: 800, padding: { top: 10, bottom: 30 }, background: '#fff' })
-  .toBlob();
-
-// 크기를 바꾸지 않고 padding만 추가
-await processImage(source)
-  .resize({ fit: 'scale', scale: 1, padding: 16, background: '#fff' })
-  .toBlob();
 ```
 
 `contain`은 지정한 `width`/`height`의 출력 캔버스를 유지합니다. 출력 캔버스도 실제 이미지 크기로 받고 싶다면 `maxFit`을 사용하세요.
@@ -141,14 +133,15 @@ await processImage(source)
 
 ```typescript
 await processImage(source)
-  .shortcut.coverBox(300, 200, { background: '#000' })
+  .shortcut.coverBox(300, 200)
+  .box({ background: '#000' })
   .blur(3)
   .toBlob({ format: 'webp', quality: 0.8 });
 
 await processImage(source).shortcut.scale(0.5).toDataURL();
 ```
 
-`coverBox`/`containBox` 옵션은 `padding`, `background`, `withoutEnlargement`, `position`을 지원합니다.
+`coverBox`/`containBox` 옵션은 `withoutEnlargement`, `position`을 지원합니다. 여백·배경은 `box()`로 추가하세요.
 
 ## 변환 (crop / flip / rotate)
 
@@ -165,10 +158,11 @@ await processImage(source)
   .toBlob();
 
 // 임의각 회전. expand: true(기본)는 회전 결과를 모두 담고, false는 입력 프레임을 유지합니다.
-// 빈 모서리는 투명이므로 JPEG면 resize.background로 색을 줍니다 (scale 1이면 크기 그대로)
+// 빈 모서리는 투명이므로 JPEG면 box()로 색을 줍니다 (scale 1이면 크기 그대로)
 await processImage(source)
   .transform({ rotate: { degrees: 15, expand: true } })
-  .resize({ fit: 'scale', scale: 1, background: '#fff' })
+  .resize({ fit: 'scale', scale: 1 })
+  .box({ background: '#fff' })
   .toBlob('jpeg');
 ```
 
@@ -180,7 +174,7 @@ await processImage(source)
 
 적용 순서는 호출 순서와 무관하게 crop → flip → rotate → resize로 고정됩니다. crop 좌표는 항상 원본 기준이며, 리사이즈 결과 좌표로는 지정할 수 없습니다.
 
-JPEG는 투명을 지원하지 않아 빈 영역(crop 이탈, 회전 모서리, letterbox)이 검정이 됩니다. JPEG로 출력할 때는 `resize()`의 `background`를 지정하세요. 캔버스 전체 아래에 칠해지므로 모든 빈 영역이 같은 색이 됩니다.
+JPEG는 투명을 지원하지 않아 빈 영역(crop 이탈, 회전 모서리, letterbox)이 검정이 됩니다. JPEG로 출력할 때는 `box()`의 `background`를 지정하세요. 캔버스 전체 아래에 칠해지므로 모든 빈 영역이 같은 색이 됩니다.
 
 `blur()`와 함께 쓸 때: blur 반경은 캔버스 좌표계 기준입니다. `transform()` 뒤에 비균일 배율의 `resize()`(예: `fit: 'fill'`로 가로세로 배율이 다른 경우)를 적용하면 실제 렌더링되는 blur 강도가 축별로 달라질 수 있습니다.
 
@@ -214,7 +208,7 @@ await processImage(source)
 | `radius` | CSS `border-radius`와 동일 의미. px 또는 `%`(가로는 상자 너비, 세로는 상자 높이 기준 — 비정사각형에 `50%`를 쓰면 타원 모서리가 됩니다). 배열은 `[TL, TR, BR, BL]` 순서 |
 | `border` | `{ width, color, inset? }`. `color`는 반투명 허용. `inset: true`면 크기를 늘리지 않고 안쪽에 그립니다(기본 false) |
 
-바깥 상자 크기 = content + padding 네 방향 + (`border.inset`이면 0, 아니면 `border.width * 2`)입니다. `resize()`의 (deprecated) `padding`/`background`와 `box()`를 함께 쓰면 순서와 무관하게 `OPTION_INVALID`입니다 — 새 코드는 `box()`만 씁니다.
+바깥 상자 크기 = content + padding 네 방향 + (`border.inset`이면 0, 아니면 `border.width * 2`)입니다.
 
 JPEG는 투명을 지원하지 않아 radius 바깥과 배경 미지정 영역이 검정이 됩니다. 둥근 모서리가 필요하면 PNG나 WebP로 출력하세요.
 

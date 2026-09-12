@@ -80,8 +80,8 @@ async function buildSampleCard(fileName: string, url: string): Promise<HTMLEleme
         fit: 'contain',
         width: PREVIEW_W,
         height: PREVIEW_H,
-        background: '#fff',
       })
+      .box({ background: '#fff' })
       .toBlob({ format: 'png' });
 
     const img = new Image();

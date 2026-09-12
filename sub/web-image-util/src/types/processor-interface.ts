@@ -91,7 +91,6 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * @description
    * 한 체인에서 한 번만 호출할 수 있다. `resize()`와 달리 체인 위치 제약이 없다 —
    * `resize()` 앞뒤 어디서 불러도 항상 transform → resize → box 순서(가장 바깥)로 적용된다.
-   * `resize()`의 (deprecated) `padding`/`background`와 동시에 쓰면 `OPTION_INVALID`다.
    * 원본과 목표 비율이 다른 `resize({ fit: 'cover' })`와 함께 쓰면 이미지가 padding 영역까지
    * 번질 수 있다 — `radius`를 지정해도 막히지 않는다(현재 완화 방법 없음).
    *

@@ -112,9 +112,8 @@ export function analyzeAllOperations(sourceImage: HTMLImageElement, operations: 
 
 /**
  * content(현재까지 계산된 layout) 크기를 기준으로 box 기하를 계산하고, 캔버스 크기·위치를
- * 바깥 상자 기준으로 다시 쓴다. background는 box가 소유하며(resize.background와는 addBox의
- * 런타임 가드가 동시 지정을 막는다), imageSize는 그대로 둔다 — 이미지 자체 크기는 바뀌지 않고
- * 위치만 밀린다.
+ * 바깥 상자 기준으로 다시 쓴다. background는 box가 소유한다. imageSize는 그대로 둔다 —
+ * 이미지 자체 크기는 바뀌지 않고 위치만 밀린다.
  */
 function applyBoxOperation(layout: FinalLayout, box: NormalizedBox): FinalLayout {
   const geometry = computeBoxGeometry(layout.width, layout.height, box);
@@ -153,7 +152,7 @@ function analyzeResizeOperation(
     height: result.canvasSize.height,
     position: { x: result.position.x, y: result.position.y },
     imageSize: { width: result.imageSize.width, height: result.imageSize.height },
-    background: config.background || 'transparent',
+    background: layout.background,
     filters: layout.filters,
     transform: layout.transform,
   };

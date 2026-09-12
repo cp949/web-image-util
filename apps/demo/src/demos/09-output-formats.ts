@@ -113,7 +113,8 @@ export async function run(target: HTMLElement): Promise<void> {
 async function convertOne(sample: Blob, spec: CardSpec): Promise<CardOutcome> {
   try {
     const result = await processImage(sample)
-      .resize({ fit: 'contain', width: W, height: H, background: '#fff' })
+      .resize({ fit: 'contain', width: W, height: H })
+      .box({ background: '#fff' })
       .toBlob(spec.options);
     return {
       status: 'ok',

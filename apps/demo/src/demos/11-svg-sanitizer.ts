@@ -102,8 +102,8 @@ async function buildSanitizedCard(rawSvg: string): Promise<HTMLElement> {
         fit: 'contain',
         width: PREVIEW_W,
         height: PREVIEW_H,
-        background: '#fff',
       })
+      .box({ background: '#fff' })
       .toBlob({ format: 'png' });
 
     const img = new Image();

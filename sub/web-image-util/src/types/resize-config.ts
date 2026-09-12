@@ -64,22 +64,6 @@ export interface ResizeFocalPoint {
   y: number;
 }
 
-/**
- * Base configuration applied to all ResizeConfig
- */
-export interface BaseResizeConfig {
-  /**
-   * Padding around resize result (pixels)
-   * @deprecated `box({ padding })`를 쓰세요. `box()`와 동시 지정은 `OPTION_INVALID`입니다. 다음 메이저에서 제거됩니다.
-   */
-  padding?: Padding;
-  /**
-   * Background color (CSS color string, default: transparent black)
-   * @deprecated `box({ background })`를 쓰세요. `box()`와 동시 지정은 `OPTION_INVALID`입니다. 다음 메이저에서 제거됩니다.
-   */
-  background?: string;
-}
-
 // ============================================================================
 // FIT MODE CONFIGS - Individual configurations for each fit mode
 // ============================================================================
@@ -88,7 +72,7 @@ export interface BaseResizeConfig {
  * Cover mode: Fill image to specified size completely (may crop)
  * Same behavior as CSS object-fit: cover
  */
-export interface CoverConfig extends BaseResizeConfig {
+export interface CoverConfig {
   fit: 'cover';
   width: number;
   height: number;
@@ -100,7 +84,7 @@ export interface CoverConfig extends BaseResizeConfig {
  * Contain mode: Fit entire image within specified size (may have empty space)
  * Same behavior as CSS object-fit: contain
  */
-export interface ContainConfig extends BaseResizeConfig {
+export interface ContainConfig {
   fit: 'contain';
   width: number;
   height: number;
@@ -117,21 +101,21 @@ export interface ContainConfig extends BaseResizeConfig {
  * - At least one of width or height is required
  */
 export type FillConfig =
-  | (BaseResizeConfig & {
+  | {
       fit: 'fill';
       width: number;
       height?: number;
-    })
-  | (BaseResizeConfig & {
+    }
+  | {
       fit: 'fill';
       width?: number;
       height: number;
-    })
-  | (BaseResizeConfig & {
+    }
+  | {
       fit: 'fill';
       width: number;
       height: number;
-    });
+    };
 
 /**
  * scale 배율 값 — 균일 배율(number) 또는 축별 배율({ sx }, { sy }, { sx, sy })
@@ -143,7 +127,7 @@ export type ScaleValue = number | { sx: number } | { sy: number } | { sx: number
  * - 원본 크기는 렌더 시점에 해석되므로 config는 배율만 담는다
  * - 생략한 축의 배율은 1로 처리한다
  */
-export interface ScaleConfig extends BaseResizeConfig {
+export interface ScaleConfig {
   fit: 'scale';
   scale: ScaleValue;
 }
@@ -155,21 +139,21 @@ export interface ScaleConfig extends BaseResizeConfig {
  * - At least one of width or height is required
  */
 export type MaxFitConfig =
-  | (BaseResizeConfig & {
+  | {
       fit: 'maxFit';
       width: number;
       height?: number;
-    })
-  | (BaseResizeConfig & {
+    }
+  | {
       fit: 'maxFit';
       width?: number;
       height: number;
-    })
-  | (BaseResizeConfig & {
+    }
+  | {
       fit: 'maxFit';
       width: number;
       height: number;
-    });
+    };
 
 /**
  * MinFit mode: Minimum size guarantee (enlarge only, no shrinking)
@@ -178,21 +162,21 @@ export type MaxFitConfig =
  * - At least one of width or height is required
  */
 export type MinFitConfig =
-  | (BaseResizeConfig & {
+  | {
       fit: 'minFit';
       width: number;
       height?: number;
-    })
-  | (BaseResizeConfig & {
+    }
+  | {
       fit: 'minFit';
       width?: number;
       height: number;
-    })
-  | (BaseResizeConfig & {
+    }
+  | {
       fit: 'minFit';
       width: number;
       height: number;
-    });
+    };
 
 // ============================================================================
 // DISCRIMINATED UNION - Main type definition
@@ -408,21 +392,6 @@ export function validateResizeConfig(config: ResizeConfig): void {
         (hasSy && !isValidDimension((scale as { sy: number }).sy))
       ) {
         throw new ImageProcessError('scale factors must be finite positive numbers', 'INVALID_DIMENSIONS');
-      }
-    }
-  }
-
-  // Padding validation (optional)
-  if (config.padding !== undefined) {
-    if (typeof config.padding === 'number') {
-      if (config.padding < 0) {
-        throw new ImageProcessError('padding must be non-negative', 'INVALID_DIMENSIONS');
-      }
-    } else {
-      // Object form padding
-      const { top = 0, right = 0, bottom = 0, left = 0 } = config.padding;
-      if (top < 0 || right < 0 || bottom < 0 || left < 0) {
-        throw new ImageProcessError('padding values must be non-negative', 'INVALID_DIMENSIONS');
       }
     }
   }

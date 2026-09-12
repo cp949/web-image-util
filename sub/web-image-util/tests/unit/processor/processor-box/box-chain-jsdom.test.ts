@@ -143,36 +143,6 @@ describe('box 체인 — 오류와 순서', () => {
     }
   });
 
-  it('box()와 resize()의 padding/background 동시 지정은 순서와 무관하게 거부된다', () => {
-    // box() 먼저, 그 뒤 resize()에 padding — addResize가 동기적으로 던진다.
-    expect(() =>
-      processImage(createTestCanvas(100, 100, 'blue'))
-        .box({ padding: 4 })
-        .resize({ fit: 'cover', width: 10, height: 10, padding: 2 })
-    ).toThrow(ImageProcessError);
-    try {
-      processImage(createTestCanvas(100, 100, 'blue'))
-        .box({ padding: 4 })
-        .resize({ fit: 'cover', width: 10, height: 10, padding: 2 });
-    } catch (error) {
-      expect((error as ImageProcessError).code).toBe('OPTION_INVALID');
-    }
-
-    // resize()에 background 먼저, 그 뒤 box() — addBox가 동기적으로 던진다.
-    expect(() =>
-      processImage(createTestCanvas(100, 100, 'blue'))
-        .resize({ fit: 'cover', width: 10, height: 10, background: '#fff' })
-        .box({})
-    ).toThrow(ImageProcessError);
-    try {
-      processImage(createTestCanvas(100, 100, 'blue'))
-        .resize({ fit: 'cover', width: 10, height: 10, background: '#fff' })
-        .box({});
-    } catch (error) {
-      expect((error as ImageProcessError).code).toBe('OPTION_INVALID');
-    }
-  });
-
   it('잘못된 옵션은 호출 즉시 던지고 이후 호출은 정상이다', async () => {
     const processor = processImage(createTestCanvas(100, 100, 'blue'));
 
@@ -289,22 +259,5 @@ describe('box 체인 — border 매트릭스(decisions.md 보강)', () => {
     expect(b).toBeGreaterThan(100);
     expect(b).toBeLessThan(160);
     expect(a).toBe(255);
-  });
-});
-
-describe('box 체인 — deprecated 경로 파리티(decisions.md 보강)', () => {
-  it('resize({padding, background})와 box({padding, background})는 같은 픽셀 결과를 낸다', async () => {
-    const legacy = await processImage(createTestCanvas(100, 80, 'blue'))
-      .resize({ fit: 'cover', width: 50, height: 50, padding: 10, background: '#ffff00' })
-      .toCanvas();
-    const modern = await processImage(createTestCanvas(100, 80, 'blue'))
-      .resize({ fit: 'cover', width: 50, height: 50 })
-      .box({ padding: 10, background: '#ffff00' })
-      .toCanvas();
-
-    expect([legacy.width, legacy.height]).toEqual([70, 70]);
-    expect([modern.width, modern.height]).toEqual([70, 70]);
-    expect(pixelAt(legacy.canvas, 5, 5)).toEqual(pixelAt(modern.canvas, 5, 5)); // padding 영역 — 노랑
-    expect(pixelAt(legacy.canvas, 35, 35)).toEqual(pixelAt(modern.canvas, 35, 35)); // content 중앙 — 파랑
   });
 });
