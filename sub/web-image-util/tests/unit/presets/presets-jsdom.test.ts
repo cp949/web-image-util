@@ -206,3 +206,35 @@ describe('프리셋 position(gravity/focal-point) 연동', () => {
     } satisfies Partial<ImageProcessError>);
   });
 });
+
+describe('프리셋 radius(box 원형 마스크) 연동', () => {
+  it('createAvatar는 radius로 모서리를 투명하게 자른다', async () => {
+    const source = createTestCanvas(200, 200, 'green');
+
+    const result = await createAvatar(source, { size: 100, radius: '50%' });
+
+    const ctx = await decodeBlobPixels(result.blob, 100, 100);
+    // 원형 마스크 밖(모서리)은 투명
+    expect(ctx.getImageData(0, 0, 1, 1).data[3]).toBe(0);
+    // 원 안쪽(중앙)은 불투명 소스 색
+    expect(ctx.getImageData(50, 50, 1, 1).data[3]).toBe(255);
+  });
+
+  it('radius를 생략하면 사각형 모서리가 그대로 불투명하게 남는다', async () => {
+    const source = createTestCanvas(200, 200, 'green');
+
+    const result = await createAvatar(source, { size: 100 });
+
+    const ctx = await decodeBlobPixels(result.blob, 100, 100);
+    expect(ctx.getImageData(0, 0, 1, 1).data[3]).toBe(255);
+  });
+
+  it("createAvatar는 format:'webp' + radius 조합에서도 라운드 클리핑을 적용한다", async () => {
+    const source = createTestCanvas(200, 200, 'green');
+
+    const result = await createAvatar(source, { size: 100, radius: '50%', format: 'webp' });
+
+    const ctx = await decodeBlobPixels(result.blob, 100, 100);
+    expect(ctx.getImageData(0, 0, 1, 1).data[3]).toBe(0);
+  });
+});

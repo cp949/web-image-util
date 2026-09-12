@@ -12,6 +12,8 @@
 - Added: `BoxOptions`, `BoxBorder`, `BoxRadius` 타입을 루트 진입점에서 export합니다.
 - Added: `resize()`의 `cover`/`contain`에 `position` 필드를 추가했습니다. 9방향 gravity 문자열(`top-left` 등)은 둘 다, 0~1 정규화 focal-point 객체(`{ x, y }`)는 `cover`에서만 받습니다. 생략 시 기존과 동일한 중앙 정렬입니다. 잘못된 gravity, 범위를 벗어난 focal-point(`1e-6` 이내는 0/1로 보정), `contain`에 focal-point를 지정하는 조합은 `OPTION_INVALID`입니다.
 - Added: `ResizeGravity`, `ResizeFocalPoint` 타입을 루트 진입점에서 export합니다.
+- Added: `createThumbnail()`/`createAvatar()`가 `position`(gravity 문자열 또는 focal-point 객체) 옵션을 받습니다. `resize()`의 `position`과 동일한 타입이며 값 검증도 `resize()`에 위임합니다. `createAvatar()`에서 `fit: 'fill'`과 `position`을 함께 쓰면 `OPTION_INVALID`입니다.
+- Added: `createAvatar()`가 `radius`(`box()`의 `radius`와 동일 타입: px 숫자 | `${number}%` | CSS 순서 4배열) 옵션을 받습니다. avatar 크기는 항상 정사각형이라 `radius: '50%'`로 완전한 원을 PNG/WebP 파일 자체에 구울 수 있습니다. 생략 시 기존과 동일하게 사각형을 유지합니다(opt-in). 값 검증은 `box()`에 위임합니다.
 - Added: `ProcessorOptions`에 `maxInputPixels`/`maxOutputPixels`를 추가했습니다. opt-in(기본값 없음, 무제한)이며 초과 시 `PIXEL_BUDGET_EXCEEDED`로 거부합니다. PNG/GIF/BMP는 디코드 전 헤더로도 먼저 거부될 수 있습니다.
 
 ### 삭제

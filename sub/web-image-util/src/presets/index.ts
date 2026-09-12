@@ -8,7 +8,7 @@
 import { isFormatSupported } from '../base/error-helpers';
 import { optionInvalid } from '../errors.internal';
 import { processImage } from '../processor';
-import type { ImageSource, ResizeFocalPoint, ResizeGravity, ResultBlob } from '../types';
+import type { BoxRadius, ImageSource, ResizeFocalPoint, ResizeGravity, ResultBlob } from '../types';
 
 /**
  * Thumbnail generation options
@@ -175,6 +175,13 @@ export interface AvatarOptions {
    * 없어 정렬이 의미 없음). 그 외 유효성 검증은 내부 `resize()`에 위임한다.
    */
   position?: ResizeGravity | ResizeFocalPoint;
+  /**
+   * 바깥 모서리 둥글림. box()의 `radius`와 동일 타입(px 숫자 | `${number}%` | CSS 순서
+   * 4배열). `size`가 항상 정사각형이라 `'50%'`가 완전한 원이 된다. 생략 시 사각형 그대로
+   * 유지(opt-in) — 기존 "CSS `border-radius: 50%`로 원형 만들기" 방식과 병행 가능하다.
+   * 유효성 검증은 내부 `box()`에 위임한다.
+   */
+  radius?: BoxRadius;
 }
 
 /**
@@ -205,7 +212,8 @@ export interface AvatarOptions {
  * - **Professional Networks**: LinkedIn-style profile photos
  *
  * **🎨 Design Considerations:**
- * - Use transparent background for circular masks in CSS
+ * - Use transparent background for circular masks in CSS, or bake the circle into the
+ *   file itself with `radius` when CSS isn't available (email, PDF, downloaded files)
  * - Consider solid background colors for email/print compatibility
  * - Larger sizes (128px+) for high-DPI displays and zoom scenarios
  * - WebP format option for modern browsers when file size matters
@@ -223,6 +231,15 @@ export interface AvatarOptions {
  * // CSS: .avatar { border-radius: 50%; }
  * const avatarURL = await userAvatar.toDataURL();
  * avatarImg.src = avatarURL;
+ * ```
+ *
+ * @example Circular Avatar Baked Into the File
+ * ```typescript
+ * // Use radius when CSS can't apply the mask (email, PDF, downloaded files)
+ * const circularAvatar = await createAvatar(profilePhoto, {
+ *   size: 128,
+ *   radius: '50%',   // square size + 50% radius = a true circle
+ * });
  * ```
  *
  * @example High-Resolution Team Member Photos
@@ -264,7 +281,7 @@ export async function createAvatar(source: ImageSource, options: AvatarOptions =
   // Basic resizing (square, default cover fit)
   const processor = processImage(source)
     .resize(buildPositionedResize(finalOptions.fit, finalOptions.size, finalOptions.size, finalOptions.position))
-    .box({ background: finalOptions.background });
+    .box({ background: finalOptions.background, radius: finalOptions.radius });
 
   return await processor.toBlob({
     format: finalOptions.format,
