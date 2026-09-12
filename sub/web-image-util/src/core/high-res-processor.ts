@@ -114,20 +114,108 @@ export class HighResolutionProcessor {
     const analysis = HighResolutionDetector.analyzeImage(img);
     const smoothingQuality = HighResolutionProcessor.toSmoothingQuality(priority);
 
-    const canvas = document.createElement('canvas');
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
+    onProgress?.(10, 'Analyzing image...');
+
+    if (analysis.estimatedMemoryMB > thresholds.memoryWarningThreshold) {
+      onMemoryWarning?.(
+        `Memory usage may increase up to ${Math.round(analysis.estimatedMemoryMB)}MB due to large image processing.`
+      );
+    }
+
+    onProgress?.(20, `Optimization strategy: ${HighResolutionProcessor.describePriority(priority)}`);
+
+    const processingResult = await HighResolutionProcessor.runStandardPath(
+      img,
+      targetWidth,
+      targetHeight,
+      smoothingQuality,
+      analysis
+    );
+
+    onProgress?.(100, 'Processing complete');
+
+    const memoryOptimized = processingResult.strategy === ProcessingStrategy.TILED;
+
+    return {
+      canvas: processingResult.canvas,
+      analysis,
+      priority,
+      strategy: processingResult.strategy,
+      processingTime: processingResult.processingTime,
+      memoryPeakUsageMB: processingResult.memoryPeakUsageMB,
+      memoryOptimized,
+      estimatedTimeSaved: HighResolutionProcessor.calculateTimeSaved(analysis, memoryOptimized),
+    };
+  }
+
+  private static async runStandardPath(
+    img: HTMLImageElement,
+    targetWidth: number,
+    targetHeight: number,
+    smoothingQuality: SmoothingQuality,
+    analysis: ImageAnalysis
+  ): Promise<RunResult> {
+    const startTime = Date.now();
+    const strategy = exceedsMaxSafeDimension(analysis.width, analysis.height, analysis.maxSafeDimension)
+      ? ProcessingStrategy.TILED
+      : ProcessingStrategy.DIRECT;
+
+    const canvas = await HighResolutionProcessor.executeProcessing(
+      img,
+      targetWidth,
+      targetHeight,
+      strategy,
+      smoothingQuality,
+      analysis
+    );
 
     return {
       canvas,
-      analysis,
-      priority,
-      strategy: ProcessingStrategy.DIRECT,
-      processingTime: 0,
+      strategy,
+      processingTime: Math.round(((Date.now() - startTime) / 1000) * 100) / 100,
       memoryPeakUsageMB: 0,
-      memoryOptimized: false,
-      estimatedTimeSaved: 0,
     };
+  }
+
+  private static async executeProcessing(
+    img: HTMLImageElement,
+    targetWidth: number,
+    targetHeight: number,
+    strategy: ProcessingStrategy,
+    smoothingQuality: SmoothingQuality,
+    analysis: ImageAnalysis,
+    onProgress?: (current: number, total: number) => void
+  ): Promise<HTMLCanvasElement> {
+    const adapter = getResizeStrategyAdapter(strategy);
+    if (!adapter) {
+      throw createImageError('FEATURE_NOT_SUPPORTED', {
+        cause: new Error(`Unsupported processing strategy: ${strategy}`),
+      });
+    }
+
+    try {
+      return await adapter.execute({ img, targetWidth, targetHeight, quality: smoothingQuality, analysis, onProgress });
+    } catch (error) {
+      if (error instanceof ImageProcessError) throw error;
+      throw createImageError('RESIZE_FAILED', {
+        cause: error,
+        context: { debug: { stage: 'High-resolution processing' } },
+      });
+    }
+  }
+
+  private static calculateTimeSaved(analysis: ImageAnalysis, memoryOptimized: boolean): number {
+    // 옛 코드는 memoryOptimized/tileProcessing 두 플래그를 따로 뒀지만 값이 항상 같았다
+    // (tileProcessing = memoryOptimized = strategy === TILED) — 하나로 정리한다.
+    const baseTime = analysis.totalPixels / 1_000_000;
+    const timeSaved = memoryOptimized ? baseTime * 0.5 : 0;
+    return Math.round(timeSaved * 10) / 10;
+  }
+
+  private static describePriority(priority: HighResolutionPriority): string {
+    if (priority === 'fast') return 'High-speed Processing';
+    if (priority === 'quality') return 'High-quality Processing';
+    return 'Balanced Optimization';
   }
 
   private static toSmoothingQuality(priority: HighResolutionPriority): SmoothingQuality {

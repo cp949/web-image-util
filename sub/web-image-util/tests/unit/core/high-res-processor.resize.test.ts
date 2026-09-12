@@ -26,5 +26,20 @@ describe('HighResolutionProcessor.resize', () => {
       expect(result.analysis.width).toBe(1000);
       expect(result.analysis.height).toBe(1000);
     });
+
+    it('작은 이미지(8MP 미만)는 direct 전략으로 처리된다', async () => {
+      const img = createDrawableImage(800, 600);
+      const result = await HighResolutionProcessor.resize(img, 400, 300);
+
+      expect(result.strategy).toBe('direct');
+      expect(result.memoryOptimized).toBe(false);
+    });
+
+    it('processingTime 은 0 이상의 숫자다', async () => {
+      const img = createDrawableImage(800, 600);
+      const result = await HighResolutionProcessor.resize(img, 400, 300);
+
+      expect(result.processingTime).toBeGreaterThanOrEqual(0);
+    });
   });
 });
