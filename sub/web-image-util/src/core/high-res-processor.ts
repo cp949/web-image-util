@@ -8,6 +8,7 @@
  */
 
 import { CanvasPool } from '../base/canvas-pool.internal';
+import type { SmoothingQuality } from '../base/canvas-utils.internal';
 import { createImageError } from '../base/error-helpers';
 import type { ImageAnalysis } from '../base/high-res-detector.internal';
 import { HighResolutionDetector } from '../base/high-res-detector.internal';
@@ -19,14 +20,13 @@ import {
   selectHighQualityStrategy,
   selectMemoryEfficientStrategy,
 } from '../base/strategy-policy.internal';
-import type { SmoothingQuality } from '../base/canvas-utils.internal';
 import { ImageProcessError } from '../errors.internal';
 import { readMemoryBudget, requestMemoryRelief } from '../utils/browser-capabilities/index';
 import { processInChunks } from '../utils/chunked-batch-runner.internal';
 import { productionLog } from '../utils/debug.internal';
 
-export { ProcessingStrategy };
 export type { ImageAnalysis };
+export { ProcessingStrategy };
 
 export type HighResolutionPriority = 'fast' | 'balanced' | 'quality';
 
@@ -113,6 +113,12 @@ export class HighResolutionProcessor {
 
     const analysis = HighResolutionDetector.analyzeImage(img);
     const smoothingQuality = HighResolutionProcessor.toSmoothingQuality(priority);
+    const scaleRatio = Math.max(img.width / targetWidth, img.height / targetHeight);
+    const shouldUseHighResPath = HighResolutionDetector.shouldUseHighResolutionPath(
+      analysis.totalPixels,
+      scaleRatio,
+      thresholds.highResPixelThreshold
+    );
 
     onProgress?.(10, 'Analyzing image...');
 
@@ -124,19 +130,42 @@ export class HighResolutionProcessor {
 
     onProgress?.(20, `Optimization strategy: ${HighResolutionProcessor.describePriority(priority)}`);
 
-    const processingResult = await HighResolutionProcessor.runStandardPath(
-      img,
-      targetWidth,
-      targetHeight,
-      smoothingQuality,
-      analysis
-    );
+    let processingResult: RunResult;
+    if (shouldUseHighResPath || forceStrategy) {
+      try {
+        processingResult = await HighResolutionProcessor.runHighResPath(img, targetWidth, targetHeight, analysis, {
+          smoothingQuality,
+          forceStrategy,
+          maxMemoryUsageMB: HighResolutionProcessor.maxMemoryFor(priority, thresholds),
+          onProgress,
+          onMemoryWarning,
+        });
+      } catch (error) {
+        productionLog.warn('High-resolution processing failed, switching to standard processing:', error);
+        onProgress?.(50, 'Changing processing method...');
+        processingResult = await HighResolutionProcessor.runStandardPath(
+          img,
+          targetWidth,
+          targetHeight,
+          'balanced',
+          analysis
+        );
+      }
+    } else {
+      processingResult = await HighResolutionProcessor.runStandardPath(
+        img,
+        targetWidth,
+        targetHeight,
+        smoothingQuality,
+        analysis
+      );
+    }
 
     onProgress?.(100, 'Processing complete');
 
     const memoryOptimized = processingResult.strategy === ProcessingStrategy.TILED;
 
-    return {
+    const result: HighResolutionProcessResult = {
       canvas: processingResult.canvas,
       analysis,
       priority,
@@ -146,6 +175,130 @@ export class HighResolutionProcessor {
       memoryOptimized,
       estimatedTimeSaved: HighResolutionProcessor.calculateTimeSaved(analysis, memoryOptimized),
     };
+
+    if (shouldUseHighResPath && memoryOptimized) {
+      result.userMessage = `High-resolution image processed memory-efficiently. (${HighResolutionProcessor.describePriority(priority)} applied)`;
+    }
+
+    return result;
+  }
+
+  private static async runHighResPath(
+    img: HTMLImageElement,
+    targetWidth: number,
+    targetHeight: number,
+    analysis: ImageAnalysis,
+    opts: {
+      smoothingQuality: SmoothingQuality;
+      forceStrategy?: ProcessingStrategy;
+      maxMemoryUsageMB: number;
+      onProgress?: (progress: number, message: string) => void;
+      onMemoryWarning?: (message: string) => void;
+    }
+  ): Promise<RunResult> {
+    const startTime = Date.now();
+
+    const strategy = HighResolutionProcessor.selectOptimalStrategy(
+      analysis,
+      opts.smoothingQuality,
+      opts.forceStrategy,
+      img,
+      targetWidth,
+      targetHeight
+    );
+    opts.onProgress?.(30, `Strategy selected: ${strategy}`);
+
+    await HighResolutionProcessor.checkAndManageMemory(opts.maxMemoryUsageMB, opts.onMemoryWarning);
+
+    const progressCallback = opts.onProgress
+      ? (current: number, total: number) => {
+          opts.onProgress?.(30 + (current / total) * 60, `Processing ${current}/${total}...`);
+        }
+      : undefined;
+
+    const canvas = await HighResolutionProcessor.executeProcessing(
+      img,
+      targetWidth,
+      targetHeight,
+      strategy,
+      opts.smoothingQuality,
+      analysis,
+      progressCallback
+    );
+
+    return {
+      canvas,
+      strategy,
+      processingTime: Math.round(((Date.now() - startTime) / 1000) * 100) / 100,
+      memoryPeakUsageMB: Math.round(HighResolutionProcessor.getCurrentMemoryUsage() * 100) / 100,
+    };
+  }
+
+  private static selectOptimalStrategy(
+    analysis: ImageAnalysis,
+    smoothingQuality: SmoothingQuality,
+    forceStrategy: ProcessingStrategy | undefined,
+    img: HTMLImageElement,
+    targetWidth: number,
+    targetHeight: number
+  ): ProcessingStrategy {
+    if (forceStrategy) return forceStrategy;
+
+    if (HighResolutionProcessor.isMemoryLow()) {
+      productionLog.warn('Low memory detected, selecting memory-efficient strategy');
+      return selectMemoryEfficientStrategy(
+        analysis.estimatedMemoryMB,
+        analysis.width,
+        analysis.height,
+        analysis.maxSafeDimension
+      );
+    }
+
+    if (smoothingQuality === 'fast') {
+      return selectFastStrategy(analysis.estimatedMemoryMB, analysis.width, analysis.height, analysis.maxSafeDimension);
+    }
+    if (smoothingQuality === 'high') {
+      const scaleRatio = Math.min(targetWidth / img.width, targetHeight / img.height);
+      return selectHighQualityStrategy(
+        analysis.estimatedMemoryMB,
+        analysis.width,
+        analysis.height,
+        analysis.maxSafeDimension,
+        scaleRatio,
+        analysis.strategy
+      );
+    }
+    return analysis.strategy;
+  }
+
+  private static async checkAndManageMemory(
+    maxMemoryUsageMB: number,
+    onMemoryWarning?: (message: string) => void
+  ): Promise<void> {
+    const budget = readMemoryBudget();
+
+    if (onMemoryWarning && budget.availableMB < maxMemoryUsageMB) {
+      onMemoryWarning(
+        `Available memory is low: ${Math.round(budget.availableMB)}MB remaining (${Math.round(budget.pressure * 100)}% used).`
+      );
+    }
+
+    if (HighResolutionProcessor.isMemoryLow()) {
+      CanvasPool.getInstance().clear();
+      requestMemoryRelief();
+    }
+  }
+
+  private static isMemoryLow(): boolean {
+    return readMemoryBudget().pressure > 0.8;
+  }
+
+  private static getCurrentMemoryUsage(): number {
+    return readMemoryBudget().usedMB;
+  }
+
+  private static maxMemoryFor(priority: HighResolutionPriority, thresholds: HighResolutionThresholds): number {
+    return priority === 'quality' ? thresholds.autoTileThreshold * 1.5 : thresholds.autoTileThreshold;
   }
 
   private static async runStandardPath(
