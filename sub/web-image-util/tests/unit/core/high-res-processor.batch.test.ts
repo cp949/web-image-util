@@ -18,11 +18,7 @@ describe('HighResolutionProcessor.batchResize', () => {
     const img1 = createDrawableImage(800, 600);
     const img2 = createDrawableImage(800, 600);
 
-    const results = await HighResolutionProcessor.batchResize(
-      [img1, { img: img2, width: 100, height: 50 }],
-      400,
-      300
-    );
+    const results = await HighResolutionProcessor.batchResize([img1, { img: img2, width: 100, height: 50 }], 400, 300);
 
     expect(results[0].canvas.width).toBe(400);
     expect(results[1].canvas.width).toBe(100);
@@ -50,10 +46,18 @@ describe('HighResolutionProcessor.batchResize', () => {
     const img1 = createDrawableImage(800, 600);
     const img2 = createDrawableImage(800, 600);
 
-    await HighResolutionProcessor.batchResize([{ img: img1, name: 'a' }, { img: img2, name: 'b' }], 400, 300, {
-      onProgress,
-      concurrency: 1,
-    });
+    await HighResolutionProcessor.batchResize(
+      [
+        { img: img1, name: 'a' },
+        { img: img2, name: 'b' },
+      ],
+      400,
+      300,
+      {
+        onProgress,
+        concurrency: 1,
+      }
+    );
 
     expect(onProgress).toHaveBeenCalledWith(1, 2, 'a');
     expect(onProgress).toHaveBeenCalledWith(2, 2, 'b');
