@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-09-13
+
 ### 추가
 
 - Added: `transform()` 체이닝 메서드를 추가했습니다. `crop`(원본 픽셀 좌표), `flip`(좌우/상하), `rotate`(도 단위, 시계 방향, `expand: boolean`)를 한 번에 지정합니다. 한 체인에서 한 번만, `resize()` 앞에서만 호출할 수 있으며 `resize()`는 생략 가능합니다. 적용 순서는 crop → flip → rotate → resize로 고정이고 최종 렌더는 여전히 `drawImage()` 1회입니다. 원본을 벗어난 crop은 요청 크기를 유지하고 밖을 투명으로 두며, 원본과 겹치지 않으면 출력 시점에 `INVALID_DIMENSIONS`를 던집니다.
