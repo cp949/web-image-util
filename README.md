@@ -4,6 +4,7 @@
 
 Canvas 2D API를 기반으로 리사이즈, SVG 처리, 포맷 변환 기능을 제공합니다. 저장소는 메인 라이브러리와 예제 앱, 공용 설정 패키지로 구성되어 있습니다.
 
+[![npm](https://img.shields.io/badge/npm-%40cp949%2Fweb--image--util-cb3837.svg)](https://www.npmjs.com/package/@cp949/web-image-util)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## 소개
@@ -66,7 +67,7 @@ SVG sanitizer 옵션별 보안 범위는 [SVG-SECURITY.md](SVG-SECURITY.md)에 �
 
 ## 데모 앱
 
-`apps/demo/`에 라이브러리 사용법을 학습할 수 있는 큐레이션된 6개 데모가 들어 있습니다.
+`apps/demo/`에 라이브러리 사용법을 학습할 수 있는 데모들이 있습니다.
 
 ```bash
 pnpm install
