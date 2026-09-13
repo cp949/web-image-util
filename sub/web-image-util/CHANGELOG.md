@@ -28,13 +28,15 @@
 - Changed (**Breaking**): `/advanced`의 `AutoHighResProcessor`/`HighResolutionManager`/`autoSmartResize`/`smartResizeWithProgress`를 `HighResolutionProcessor`(`resize()`/`validate()`/`batchResize()`) 하나로 통합했습니다. `priority` 값 집합이 `'speed' | 'balanced' | 'quality'`에서 `'fast' | 'balanced' | 'quality'`로 바뀌었습니다(`HighResolutionManager.quality`의 `'high'` 값도 `'quality'`로 통일). 일괄 처리는 `batchResize(items, width, height, options)` 하나로 합쳐졌고, 항목은 `HTMLImageElement` 또는 `{ img, width?, height?, name? }`를 받습니다.
   - `/advanced`가 export하던 공개 타입 `AutoProcessingResult`, `HighResolutionOptions`, `ProcessingResult`가 제거됐습니다. 이 타입을 직접 import하던 코드는 깨집니다 — 대체 타입은 `HighResolutionProcessResult`/`HighResolutionProcessOptions`(둘 다 `/advanced`에서 export)입니다.
   - `AdvancedProcessingResult.processing.resizing`의 shape이 바뀌었습니다. `tileProcessing` 필드가 사라졌고(`strategy === 'tiled'`와 항상 같은 값이던 `memoryOptimized`로 통합), `strategy` 필드의 의미가 사람이 읽는 라벨 문자열(예: `'High-speed Processing'`)에서 `ProcessingStrategy` enum 값(`'direct'`/`'stepped'`/`'tiled'`)으로 바뀌었습니다.
-  - `batchResize()`에서 개별 항목이 실패하면 원본 오류가 그대로 올라오지 않고 `ImageProcessError('RESIZE_FAILED', { cause: 원본오류, context: { debug: { stage: 'Batch processing', index } } })`로 감싸 올라옵니다. 실패한 항목의 인덱스는 `error.context.debug.index`로, 원본 오류는 `error.cause`로 확인하세요.
+  - `batchResize()`에서 개별 항목이 실패하면, 그 실패가 이미 `ImageProcessError`(`FEATURE_NOT_SUPPORTED` 등)면 원래 코드 그대로 전파됩니다. `ImageProcessError`가 아닌 실패만 `ImageProcessError('RESIZE_FAILED', { cause: 원본오류, context: { debug: { stage: 'Batch processing', index } } })`로 감싸 올라옵니다. 감싸진 경우의 인덱스는 `error.context.debug.index`로, 원본 오류는 `error.cause`로 확인하세요.
   - `onMemoryWarning` 콜백의 인자가 `HighResolutionManager`의 `{ usageRatio, availableMB }` 객체에서 사람이 읽는 문자열 하나로 바뀌었습니다. 수치를 직접 읽던 코드(경고 UI의 퍼센트 표시 등)는 더 이상 동작하지 않습니다 — 대체 수치 인터페이스는 없습니다.
   - `onProgress` 콜백의 인자가 `HighResolutionManager`의 진행 상세 객체(`{ stage, currentStrategy, timeElapsed, estimatedTimeRemaining, memoryUsageMB, ... }`)에서 `(progress: number, message: string)`로 바뀌었습니다. `currentStrategy`/`estimatedTimeRemaining` 등 개별 필드를 읽던 코드는 깨집니다 — 대체 필드는 없습니다.
 
 ### 수정
 
 - Fixed: `HighResolutionProcessor.resize()`의 `forceStrategy`가 이제 이미지 크기와 무관하게 항상 적용됩니다. 이전에는 이미지가 고해상도 임계값 미만이면 `forceStrategy`가 조용히 무시되고 표준 경로로 처리됐습니다.
+- Fixed: `maxOutputPixels` 검사가 반올림 전 치수를 기준으로 계산되던 우회를 막았습니다. 소수점 치수(예: 150.6×150.6)는 실제 할당되는 canvas가 반올림 후 치수로 만들어져 원시값 기준 면적보다 커질 수 있었고, 이 차이만큼 한도를 우회할 수 있었습니다. 이제 실제 할당 치수와 같은 반올림 값으로 검사합니다.
+- Fixed: `HighResolutionProcessor.resize()`가 고해상도 경로 실행에 실패해 표준 경로로 폴백했는데도, 실행 전 판정 플래그를 기준으로 `userMessage`에 "고해상도 처리를 메모리 효율적으로 완료했습니다" 메시지가 잘못 붙던 문제를 수정했습니다. 이제 고해상도 경로를 실제로 실행했을 때만 이 메시지가 붙습니다.
 
 ## [4.0.0] - 2026-08-17
 

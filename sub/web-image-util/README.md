@@ -265,6 +265,24 @@ const board = await composeImages({
 - `collage`의 `allowOverlap: false`는 최선 노력입니다 — `maxPlacementAttempts`(기본 50)까지 겹치지 않는 위치를 재시도하고, 초과하면 겹침을 허용합니다.
 - 잘못된 spec(크기 0 이하, `columns` 0 등)은 canvas를 만들기 전에 `ImageProcessError`로 거부됩니다.
 
+## 고해상도 리사이즈 (advanced)
+
+메인 `processImage().resize()` 체인은 항상 단일 `drawImage()`로 렌더링합니다. 대용량 이미지에서 타일 분할·단계적 축소 같은 전략이 필요하면 `HighResolutionProcessor`를 명시적으로 쓰세요 — opt-in 표면이며 메인 체인은 이를 호출하지 않습니다.
+
+```typescript
+import { HighResolutionProcessor } from '@cp949/web-image-util/advanced';
+
+const result = await HighResolutionProcessor.resize(img, 1920, 1080, {
+  priority: 'quality', // 'fast' | 'balanced' | 'quality', 기본 'balanced'
+  onProgress: (progress, message) => console.log(progress, message),
+});
+// result: { canvas, analysis, priority, strategy, processingTime, memoryPeakUsageMB, memoryOptimized, estimatedTimeSaved, userMessage? }
+```
+
+- `validate(img, width, height, options?)`는 실제로 리사이즈하지 않고 `{ canProcess, warnings, recommendations, estimatedTime, recommendedStrategy, analysis }`를 반환합니다. 예외를 던지지 않습니다.
+- `batchResize(items, width, height, options?)`는 여러 이미지를 동시성 제어(`concurrency`, 기본 2)와 진행 콜백(`onProgress`/`onItemComplete`)으로 일괄 처리합니다. 항목은 `HTMLImageElement` 또는 `{ img, width?, height?, name? }`이며, 공용 목표 크기를 개별 항목이 오버라이드할 수 있습니다. 항목 하나가 실패하면 전체가 reject됩니다(부분 성공 없음).
+- `forceStrategy`(`'direct' | 'stepped' | 'tiled'`)로 `priority` 기반 자동 선택을 무시하고 특정 전략을 강제할 수 있습니다.
+
 ## 서브패스 import 경로
 
 라이브러리는 트리 셰이킹을 전제로 6개 서브패스 export를 노출합니다. 사용 목적에 맞는 서브패스에서 단일 함수만 가져오면 됩니다.
@@ -275,7 +293,7 @@ const board = await composeImages({
 | `@cp949/web-image-util/utils` | SVG 진단(`inspectSvg`, `inspectSvgSource`), SVG 정규화(`prefixSvgIds`), SVG 최적화(`SvgOptimizer`) | SVG 전용 진단·변형 도구 |
 | `@cp949/web-image-util/svg-sanitizer` | `sanitizeSvgStrict`, `sanitizeSvgStrictDetailed`, `inspectSvgSanitization` | DOMPurify 기반 strict sanitizer (동적 import) |
 | `@cp949/web-image-util/presets` | `createThumbnail`, `createAvatar`, `createSocialImage` | 편의 preset 함수 |
-| `@cp949/web-image-util/advanced` | `AdvancedImageProcessor`, `SmartFormatSelector`, `BatchResizer`, `composeImages`, 필터 plugins 재노출 | 사용자가 명시적으로 선택하는 고급 API |
+| `@cp949/web-image-util/advanced` | `AdvancedImageProcessor`, `HighResolutionProcessor`, `SmartFormatSelector`, `BatchResizer`, `composeImages`, 필터 plugins 재노출 | 사용자가 명시적으로 선택하는 고급 API |
 | `@cp949/web-image-util/filters` | `BlurFilterPlugin`, `BrightnessFilterPlugin`, `GrayscaleFilterPlugin` 등 필터 plugin 클래스 | 필터 시스템 (advanced에서 재노출) |
 
 서브패스 책임 경계와 책임 분리는 [Architecture 문서의 공개 API 표면](https://github.com/cp949/web-image-util/blob/main/docs/architecture.md#공개-api-표면) 표를, sanitizer 관련 옵션의 사용 가능/금지 시나리오는 [SVG sanitizer 보안 정책의 "금지 사용처"](https://github.com/cp949/web-image-util/blob/main/SVG-SECURITY.md#금지-사용처) 표를 참고하세요.
