@@ -46,7 +46,13 @@ export interface ImageErrorDetailsByCode {
     source?: string;
     contentType?: string | null;
     mode?: unknown;
-    reason?: 'script-tag' | 'event-handler' | 'external-ref' | 'style-attribute-url' | 'style-tag-url';
+    reason?:
+      | 'script-tag'
+      | 'event-handler'
+      | 'external-ref'
+      | 'style-attribute-url'
+      | 'style-tag-url'
+      | 'presentation-attribute-url';
     label?: string;
   };
   SOURCE_LOAD_FAILED: {

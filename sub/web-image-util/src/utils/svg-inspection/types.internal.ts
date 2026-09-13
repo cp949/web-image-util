@@ -18,6 +18,7 @@ export type InspectSvgFindingCode =
   | 'has-event-handler'
   | 'external-href'
   | 'style-attribute-external-url'
+  | 'presentation-attribute-external-url'
   | 'style-tag-external-url'
   | 'dimensions-fallback'
   | 'complexity-analysis-failed';

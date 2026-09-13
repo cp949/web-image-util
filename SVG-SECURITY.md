@@ -151,7 +151,7 @@ nested SVG 재정제에서 byte cap 초과 또는 parse 실패가 발생하면 n
 
 - **`data:` 참조**: `inspectSvg()`는 안전하지 않은 `data:`를 finding으로 보고하고, `inspectSvgSanitization()`은 embedded image stage(`data-image-blocked`/`data-image-preserved`/`nested-svg-resanitized`)로 분류합니다 — 같은 사실을 다른 축으로 보고하는 것입니다.
 - **CSS `url()` 안의 raster `data:` 이미지**: `inspectSvgSanitization()`은 stage로 보고합니다 — sanitizer가 CSS의 `data:` 참조를 치환하기 때문입니다. `inspectSvg()`는 안전한 raster `data:image/*`를 finding으로 보고하지 않습니다 — 변환 경로가 이를 거부하지 않기 때문입니다.
-- **presentation 속성과 구문형 CSS 위협**: `fill` 같은 presentation 속성의 `url()`, 문자열 인자 `@import "…"`/`image-set()`, `expression()`, `-moz-binding`은 두 정책의 sanitizer가 제거하고 `inspectSvgSanitization()`이 stage로 보고합니다. 변환 경로의 intake guard와 `inspectSvg()`는 `style` 속성/`<style>` 본문의 `url()`만 검사하므로 이들에 finding을 내지 않습니다 — sanitizer가 앞단에서 제거하므로 보안 공백은 아닙니다.
+- **presentation 속성 안의 구문형 CSS 위협**: 문자열 인자 `@import "…"`/`image-set()`, `expression()`, `-moz-binding`은 `style`/`<style>` 문법이며 presentation 속성 값(단일 `url(...)` 또는 키워드)에는 나타나지 않으므로, 두 정책의 sanitizer는 `style` 축에서만 이를 제거하고 `inspectSvgSanitization()`이 stage로 보고합니다. 변환 경로의 intake guard와 `inspectSvg()`는 `style` 속성/`<style>` 본문의 이 구문만 검사하므로 presentation 속성에는 이 종류의 finding을 내지 않습니다 — presentation 속성 문법 자체에 해당 구문이 없으므로 보안 공백은 아닙니다. (단, presentation 속성의 `url()` 참조 자체는 `style`과 같은 축으로 두 진단·intake guard 모두 다룹니다 — 위 문단 참조.)
 
 `inspectSvg()`의 finding 유무가 변환 경로의 거부 여부와, `lightweight` stage가 lightweight sanitizer의 실제 치환과 일치하는지는 회귀 테스트(`sub/web-image-util/tests/unit/utils/svg-inspection-axis-alignment.test.ts`)로 고정되어 있습니다. 두 검사는 판정 기준을 공유하지만 추출 방식이 다르므로(진단은 DOM 순회, 변환 경로와 lightweight sanitizer는 원문 정규식), 주석 안의 참조 같은 경계 입력에서는 변환 경로가 진단보다 보수적으로 거부하거나 lightweight sanitizer가 stage 보고 없이 치환할 수 있습니다.
 

@@ -12,7 +12,7 @@ import { analyzeSvgComplexity } from '../../core/svg-complexity-analyzer';
 import { parseSvgLength, parseViewBoxValues } from '../svg-length.internal';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../svg-policy-utils.internal';
 import { isReferenceAttribute, readReferenceAttribute } from '../svg-reference-attribute.internal';
-import { classifyUriRef } from '../svg-threat-policy.internal';
+import { CSS_URL_PRESENTATION_ATTRIBUTES, classifyUriRef } from '../svg-threat-policy.internal';
 import { collectSvgDomSecuritySignals } from './dom-signals.internal';
 import { pushCappedSample } from './sample-utils.internal';
 import type { InspectSvgDimensions, InspectSvgFinding } from './types.internal';
@@ -141,6 +141,7 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
   let externalHrefCount = 0;
   const externalHrefSamples: string[] = [];
   let styleAttrExternalUrlCount = 0;
+  let presentationAttrExternalUrlCount = 0;
   let styleTagExternalUrlCount = 0;
   for (let i = 0; i < allElements.length; i++) {
     const el = allElements[i];
@@ -162,6 +163,17 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
           visitCssUrlValues(styleAttr, (urlValue) => {
             if (hasThreatUriRefVariant(urlValue)) {
               styleAttrExternalUrlCount++;
+            }
+          });
+        }
+      } else if (CSS_URL_PRESENTATION_ATTRIBUTES.has(lowered) || CSS_URL_PRESENTATION_ATTRIBUTES.has(localName)) {
+        // presentation 속성(fill/filter/mask 등) 내부 url() 검사 — intake guard가
+        // 재검증하는 것과 같은 이름 집합이라 finding이 guard 거부와 계속 거울 관계를 유지한다.
+        const presentationAttr = el.getAttribute(attrName);
+        if (presentationAttr) {
+          visitCssUrlValues(presentationAttr, (urlValue) => {
+            if (hasThreatUriRefVariant(urlValue)) {
+              presentationAttrExternalUrlCount++;
             }
           });
         }
@@ -202,6 +214,15 @@ export function collectDomFindings(doc: Document): InspectSvgFinding[] {
       code: 'style-attribute-external-url',
       message: 'Input contains style attribute(s) with external url() references; strict sanitizer is recommended.',
       details: { count: styleAttrExternalUrlCount },
+    });
+  }
+
+  if (presentationAttrExternalUrlCount > 0) {
+    findings.push({
+      code: 'presentation-attribute-external-url',
+      message:
+        'Input contains presentation attribute(s) (fill/filter/mask/etc.) with external url() references; strict sanitizer is recommended.',
+      details: { count: presentationAttrExternalUrlCount },
     });
   }
 

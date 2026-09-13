@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### 수정
+
+- Fixed: SVG intake guard(sanitize 후 fail-closed 재검증)가 `fill`/`filter`/`mask` 등 presentation 속성 11종 안의 위험한 CSS `url()` 참조도 재검증하도록 확장했습니다. 이전에는 `href`/`xlink:href`/`src`와 `style` 속성/`<style>` 태그만 재검증 대상이었습니다. `lightweight`/`strict` sanitizer의 실제 정제 결과(정상 입력에서 최종 반환되는 SVG)는 바뀌지 않습니다 — sanitizer 정제 이후에도 남는 잔여 참조를 잡는 2차 방어선의 커버리지가 넓어진 것입니다.
+- Fixed: `inspectSvg()`가 presentation 속성 안의 외부 `url()` 참조도 새 finding 코드 `presentation-attribute-external-url`로 보고하도록 확장했습니다. 이 finding 코드에 의존하는 분기가 없다면 영향이 없습니다.
+
 ## [5.0.0] - 2026-09-13
 
 ### 추가

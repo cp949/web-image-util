@@ -12,7 +12,8 @@ import { MAX_SVG_BYTES } from '../../../svg-contract.internal';
 import { ImageProcessError } from '../../../types';
 import { isInlineSvg } from '../../../utils/svg-detection';
 import { getCssPolicyValueVariants, visitCssUrlValues } from '../../../utils/svg-policy-utils.internal';
-import { classifyUriRef } from '../../../utils/svg-threat-policy.internal';
+import { buildAttributeValuePatterns, SVG_START_TAG_PATTERN } from '../../../utils/svg-raw-tag-scan.internal';
+import { CSS_URL_PRESENTATION_ATTRIBUTES, classifyUriRef } from '../../../utils/svg-threat-policy.internal';
 import {
   assertDeclaredSizeWithinLimit,
   type ExceededErrorFactory,
@@ -22,9 +23,23 @@ import {
 } from '../url/fetch-guards.internal';
 
 /**
- * 따옴표 안의 `>` 문자를 태그 종료로 오인하지 않도록 SVG 시작 태그를 순회하는 패턴이다.
+ * href/xlink:href/src 참조 속성을 따옴표 방식과 무관하게 찾아내는 정규식 3종.
+ *
+ * 태그 순회와 속성값 추출 자체는 lightweight 엔진과 공유하는
+ * `svg-raw-tag-scan.internal`이 단일 소유한다.
  */
-const SVG_START_TAG_PATTERN = /<([a-z][a-z0-9:-]*)(\b(?:[^"'<>]|"[^"]*"|'[^']*')*)(\/?)>/gi;
+const REF_ATTRIBUTE_PATTERNS = buildAttributeValuePatterns(['(?:xlink:)?href', 'src']);
+
+/**
+ * presentation 속성(`fill`, `filter`, `mask` 등 11종)을 찾아내는 정규식 3종.
+ *
+ * lightweight 엔진이 실제로 정제하는 속성 이름 집합과 같은
+ * `CSS_URL_PRESENTATION_ATTRIBUTES`를 쓴다 — 엔진이 정제하는 범위와 이
+ * backstop이 재검증하는 범위가 다시 벌어지지 않도록 이름 집합 자체를 공유한다.
+ * `style` 속성은 별도의 이스케이프 인지 정규식으로 이미 검사하므로 여기 포함하지
+ * 않는다.
+ */
+const CSS_PRESENTATION_ATTRIBUTE_PATTERNS = buildAttributeValuePatterns([...CSS_URL_PRESENTATION_ATTRIBUTES]);
 
 /**
  * 문자열의 UTF-8 인코딩 바이트 수를 계산한다.
@@ -183,7 +198,13 @@ function hasDangerousUrlRef(cssText: string): boolean {
   return hasDangerousRef;
 }
 
-type SvgUnsafeReason = 'script-tag' | 'event-handler' | 'external-ref' | 'style-attribute-url' | 'style-tag-url';
+type SvgUnsafeReason =
+  | 'script-tag'
+  | 'event-handler'
+  | 'external-ref'
+  | 'style-attribute-url'
+  | 'style-tag-url'
+  | 'presentation-attribute-url';
 
 function throwUnsafeSvg(reason: SvgUnsafeReason): never {
   throw new ImageProcessError(`SVG content contains a forbidden construct: ${reason}`, 'INVALID_SOURCE', {
@@ -199,6 +220,9 @@ function throwUnsafeSvg(reason: SvgUnsafeReason): never {
  *  - `onload`, `onclick` 등 `on*` 이벤트 핸들러 속성
  *  - href, xlink:href, src 속성에 외부 URL(http://, https://), 상대 경로(./, ../, /), javascript: URI가 있는 경우
  *  - style 속성이나 `<style>` 태그 내부에 외부 URL 또는 상대 경로를 담은 url() 참조가 있는 경우
+ *  - `fill`, `filter`, `mask` 등 presentation 속성에 외부 URL 또는 상대 경로를 담은
+ *    url() 참조가 있는 경우 — lightweight/strict 엔진이 실제로 정제하는 속성
+ *    집합과 같은 이름 집합(`CSS_URL_PRESENTATION_ATTRIBUTES`)을 재검증한다
  *
  * @param svgString 검사할 SVG 문자열
  * @throws {ImageProcessError} 위험한 콘텐츠 발견 시
@@ -224,15 +248,59 @@ export function assertSafeSvgContent(svgString: string): void {
   while (tagMatch !== null) {
     const attrs = tagMatch[2];
 
-    const refAttrPattern = /\s+(?:href|xlink:href|src)\s*=\s*(?:"([^"]*)"|'([^']*)'|(?!["'])([^\s>]+))/gi;
+    REF_ATTRIBUTE_PATTERNS.doubleQuoted.lastIndex = 0;
+    REF_ATTRIBUTE_PATTERNS.singleQuoted.lastIndex = 0;
+    REF_ATTRIBUTE_PATTERNS.unquoted.lastIndex = 0;
     let refMatch: RegExpExecArray | null;
-    refMatch = refAttrPattern.exec(attrs);
+    refMatch = REF_ATTRIBUTE_PATTERNS.doubleQuoted.exec(attrs);
     while (refMatch !== null) {
-      const refValue = refMatch[1] ?? refMatch[2] ?? refMatch[3];
-      if (refValue && isBlockedRef(refValue)) {
+      if (refMatch[2] && isBlockedRef(refMatch[2])) {
         throwUnsafeSvg('external-ref');
       }
-      refMatch = refAttrPattern.exec(attrs);
+      refMatch = REF_ATTRIBUTE_PATTERNS.doubleQuoted.exec(attrs);
+    }
+    refMatch = REF_ATTRIBUTE_PATTERNS.singleQuoted.exec(attrs);
+    while (refMatch !== null) {
+      if (refMatch[2] && isBlockedRef(refMatch[2])) {
+        throwUnsafeSvg('external-ref');
+      }
+      refMatch = REF_ATTRIBUTE_PATTERNS.singleQuoted.exec(attrs);
+    }
+    refMatch = REF_ATTRIBUTE_PATTERNS.unquoted.exec(attrs);
+    while (refMatch !== null) {
+      if (refMatch[2] && isBlockedRef(refMatch[2])) {
+        throwUnsafeSvg('external-ref');
+      }
+      refMatch = REF_ATTRIBUTE_PATTERNS.unquoted.exec(attrs);
+    }
+
+    // presentation 속성(fill/filter/mask 등)의 CSS url() 참조를 재검증한다 —
+    // style 속성과 같은 위협 정책(hasDangerousUrlRef)을 쓰되, 이스케이프 인지는
+    // 하지 않는다(엔진 자신도 이 속성군에는 같은 단순 패턴을 쓴다).
+    CSS_PRESENTATION_ATTRIBUTE_PATTERNS.doubleQuoted.lastIndex = 0;
+    CSS_PRESENTATION_ATTRIBUTE_PATTERNS.singleQuoted.lastIndex = 0;
+    CSS_PRESENTATION_ATTRIBUTE_PATTERNS.unquoted.lastIndex = 0;
+    let presentationMatch: RegExpExecArray | null;
+    presentationMatch = CSS_PRESENTATION_ATTRIBUTE_PATTERNS.doubleQuoted.exec(attrs);
+    while (presentationMatch !== null) {
+      if (hasDangerousUrlRef(presentationMatch[2])) {
+        throwUnsafeSvg('presentation-attribute-url');
+      }
+      presentationMatch = CSS_PRESENTATION_ATTRIBUTE_PATTERNS.doubleQuoted.exec(attrs);
+    }
+    presentationMatch = CSS_PRESENTATION_ATTRIBUTE_PATTERNS.singleQuoted.exec(attrs);
+    while (presentationMatch !== null) {
+      if (hasDangerousUrlRef(presentationMatch[2])) {
+        throwUnsafeSvg('presentation-attribute-url');
+      }
+      presentationMatch = CSS_PRESENTATION_ATTRIBUTE_PATTERNS.singleQuoted.exec(attrs);
+    }
+    presentationMatch = CSS_PRESENTATION_ATTRIBUTE_PATTERNS.unquoted.exec(attrs);
+    while (presentationMatch !== null) {
+      if (hasDangerousUrlRef(presentationMatch[2])) {
+        throwUnsafeSvg('presentation-attribute-url');
+      }
+      presentationMatch = CSS_PRESENTATION_ATTRIBUTE_PATTERNS.unquoted.exec(attrs);
     }
 
     const styleDoubleQuote = /\s+style\s*=\s*"((?:[^"\\]|\\.)*)"/gi;

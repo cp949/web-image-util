@@ -72,6 +72,7 @@
 | `src/utils/svg-sanitizer.ts` | `sanitizeSvgForRendering()`, `sanitizeSvg()` (deprecated alias) — 경량 집행 엔진(정규식 메커니즘) |
 | `src/utils/svg-threat-policy.internal.ts` | SVG 위협 정책 단일 소유자 — URI 참조 판정, CSS 참조·위험 구문 정책, 금지 요소 목록, XXE 절단. 경량·strict 두 집행 엔진과 진단 수집기, intake guard가 공유 |
 | `src/utils/svg-reference-attribute.internal.ts` | SVG 참조 속성 구조 판정 leaf — `href`/`xlink:href`/`src`와 namespace 분리 후의 `href`/`src`를 인식하되 `xmlns:*` 선언은 제외. strict 집행·진단, `svg-inspection`, `prefix-svg-ids`, `svg-optimizer`가 공유 |
+| `src/utils/svg-raw-tag-scan.internal.ts` | 파싱 전 SVG 원문에서 시작 태그를 순회하고 속성 이름 집합의 값을 따옴표 방식과 무관하게 추출하는 leaf — "참조 속성" leaf의 raw-text 대응물. 경량 집행 엔진과 intake guard가 공유. on* 판정은 포함하지 않는다(소비자별로 의도적으로 다름) |
 | `src/utils/inspect-svg.ts` | SVG 문자열 진단 API — 부수효과 없이 findings·dimensions·sanitizer 추천을 반환하는 진단 레이어 |
 | `src/utils/inspect-svg-source.ts` | SVG 입력 source(`string`/`Blob`/`File`/`URL`) 진단. 기본 fetch 없음, `inspectSvg()` 위임으로 본문 분석 |
 | `src/utils/prefix-svg-ids.ts` | SVG `id`와 fragment reference를 prefix하는 standalone 정규화 유틸 — 파이프라인 외부, `@cp949/web-image-util/utils` 서브패스 |

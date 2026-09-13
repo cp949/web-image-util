@@ -18,7 +18,12 @@ import { sanitizeSvgForRendering } from '../../../src/utils/svg-sanitizer';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /** inspectSvg에서 판정 축 대상 finding 코드 */
-const AXIS_FINDING_CODES = new Set(['external-href', 'style-attribute-external-url', 'style-tag-external-url']);
+const AXIS_FINDING_CODES = new Set([
+  'external-href',
+  'style-attribute-external-url',
+  'presentation-attribute-external-url',
+  'style-tag-external-url',
+]);
 /** intake guard의 script/event-handler 채널과 호응하는 finding 코드 */
 const GUARD_CHANNEL_FINDING_CODES = new Set(['has-script-element', 'has-event-handler']);
 /** inspectSvgSanitization에서 판정 축 대상 stage 코드 (data-image-* / nested-svg-* 는 embedded 단계라 별개) */
@@ -81,8 +86,8 @@ describe('SVG 진단 판정 축 ↔ 실제 동작 층 정합', () => {
       ['style 태그 @import', styleTag('@import "http://example.com/x.css";'), false],
       ['style 속성 -moz-binding url(#내부)', styleAttr('-moz-binding:url(#internal)'), false],
       ['style 속성 image-set 문자열 인자', styleAttr("background:image-set('http://example.com/a.png' 1x)"), false],
-      ['presentation 속성 fill=url(http)', presAttr('fill', 'url(http://example.com/x.png)'), false],
-      ['presentation 속성 clip-path=url(./)', presAttr('clip-path', 'url(./c.svg#c)'), false],
+      ['presentation 속성 fill=url(http)', presAttr('fill', 'url(http://example.com/x.png)'), true],
+      ['presentation 속성 clip-path=url(./)', presAttr('clip-path', 'url(./c.svg#c)'), true],
     ];
 
     it.each(cases)('%s → 판정 축과 guard 거부 여부가 일치한다', (_label, svg, rejects) => {

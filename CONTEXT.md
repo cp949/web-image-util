@@ -36,6 +36,10 @@ _Avoid_: sanitizer 본체, 정화 로직
 SVG attribute 하나가 다른 요소·외부 자원에 대한 참조를 담는지 여부 — lowered 이름과 namespace 분리 후의 localName 양쪽으로 판정해 임의 prefix로 선언된 `xlink:href`(예: `xl:href`)도 잡는다. "그 참조가 위협인가"를 다루는 참조 판정보다 한 단계 앞선 구조적 사실이고, 판정 자체와는 무관하다. `svg-reference-attribute.internal.ts` 하나가 소유하며 strict 집행 엔진과 그 입력 진단, `svg-inspection` 신호 수집기, `prefix-svg-ids`, `svg-optimizer`가 공유한다.
 _Avoid_: href 체크, xlink 속성 검사
 
+**속성값 스캔 (raw attribute scan)**:
+SVG 원문(파싱 전 문자열)에서 태그를 순회하며 지정된 속성 이름 집합의 값을 따옴표 방식(큰따옴표·작은따옴표·무인용)과 무관하게 찾아내는 동작. "참조 속성"이 DOM(Element/Attr) 세계의 판정이라면, 이건 그 raw-text 세계의 대응물이다. `svg-raw-tag-scan.internal.ts` 하나가 태그 순회 패턴과 속성값 추출 정규식 생성을 소유하며, lightweight 엔진(`svg-sanitizer.ts`)과 intake guard(`safety.internal.ts`)가 공유한다. 어떤 속성이 위험한지(threat policy)나 찾은 값을 어떻게 판정할지는 다루지 않는다. on* 이벤트 핸들러 판정은 소비자별로 판정 폭이 의도적으로 다르므로(참조 판정 항목 참고) 이 스캔 대상에 포함하지 않는다.
+_Avoid_: 정규식 파서, 속성 추출 헬퍼
+
 **참조 판정 (uri ref verdict)**:
 SVG 참조 하나가 위협인지와 그 근거를 함께 돌려주는 단일 판정. 위협 여부이지 허용 여부가 아니다 — 빈 참조는 위협이 아니지만 집행 엔진은 제거한다. 집행 엔진·진단 수집기·intake guard는 같은 판정을 받고 자기 동작만 고른다.
 _Avoid_: URI 검사, 참조 필터

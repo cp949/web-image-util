@@ -24,6 +24,7 @@
  */
 
 import { decodeHtmlEntities } from './svg-policy-utils.internal';
+import { buildAttributeValuePatterns, SVG_START_TAG_PATTERN } from './svg-raw-tag-scan.internal';
 import {
   CSS_URL_PRESENTATION_ATTRIBUTES,
   HREF_TARGETING_ANIMATION_ELEMENT_NAMES,
@@ -48,18 +49,25 @@ function sanitizeHrefValue(value: string, depth: number): string | null {
 }
 
 /**
- * CSS 정책 대상 속성 이름 alternation.
+ * CSS 정책 대상 속성(`style` + presentation 11종)의 값을 따옴표 방식과 무관하게
+ * 찾아내는 정규식 3종.
  *
- * `style`과 위협 정책의 presentation 속성 목록을 합친다. 긴 이름을 앞에 두어
- * `marker-end` 같은 이름이 `marker`로 부분 매치되지 않게 한다.
+ * intake guard(`safety.internal.ts`)의 presentation 속성 재검증도 같은
+ * `CSS_URL_PRESENTATION_ATTRIBUTES` 이름 집합을 쓴다 — 이 엔진이 실제로
+ * 정제하는 속성 범위와 backstop이 재검증하는 범위가 벌어지지 않도록 한다.
  */
-const CSS_POLICY_ATTR_ALTERNATION = ['style', ...CSS_URL_PRESENTATION_ATTRIBUTES]
-  .sort((a, b) => b.length - a.length)
-  .join('|');
+const {
+  doubleQuoted: CSS_ATTR_DOUBLE_QUOTE_PATTERN,
+  singleQuoted: CSS_ATTR_SINGLE_QUOTE_PATTERN,
+  unquoted: CSS_ATTR_UNQUOTED_PATTERN,
+} = buildAttributeValuePatterns(['style', ...CSS_URL_PRESENTATION_ATTRIBUTES]);
 
-const CSS_ATTR_DOUBLE_QUOTE_PATTERN = new RegExp(`\\s+(${CSS_POLICY_ATTR_ALTERNATION})\\s*=\\s*"([^"]*)"`, 'gi');
-const CSS_ATTR_SINGLE_QUOTE_PATTERN = new RegExp(`\\s+(${CSS_POLICY_ATTR_ALTERNATION})\\s*=\\s*'([^']*)'`, 'gi');
-const CSS_ATTR_UNQUOTED_PATTERN = new RegExp(`\\s+(${CSS_POLICY_ATTR_ALTERNATION})\\s*=\\s*(?!["'])([^\\s>]+)`, 'gi');
+/** href/xlink:href/src 참조 속성을 따옴표 방식과 무관하게 찾아내는 정규식 3종. */
+const {
+  doubleQuoted: HREF_ATTR_DOUBLE_QUOTE_PATTERN,
+  singleQuoted: HREF_ATTR_SINGLE_QUOTE_PATTERN,
+  unquoted: HREF_ATTR_UNQUOTED_PATTERN,
+} = buildAttributeValuePatterns(['(?:xlink:)?href', 'src']);
 
 /**
  * raw 텍스트 매체용 CSS 정제 — HTML 엔티티 가드를 씌운 위협 정책 정제.
@@ -93,11 +101,6 @@ function sanitizeCssAttribute(attrName: string, cssValue: string, quote: '"' | "
   const sanitized = sanitizeRawCssText(cssValue).trim();
   return sanitized ? ` ${attrName}=${quote}${sanitized}${quote}` : '';
 }
-
-/**
- * 따옴표 안의 `>` 문자를 태그 종료로 오인하지 않도록 SVG 시작 태그를 순회하는 패턴이다.
- */
-const SVG_START_TAG_PATTERN = /<([a-z][a-z0-9:-]*)(\b(?:[^"'<>]|"[^"]*"|'[^']*')*)(\/?)>/gi;
 
 /**
  * href 타겟팅 가능 애니메이션 요소(animate/set)를 통째로 매치하는 패턴.
@@ -170,15 +173,15 @@ export function sanitizeSvgForRendering(svgString: string, depth = 0): string {
       .replace(/\s+on[a-z0-9:-]+\s*=\s*'[^']*'/gi, '')
       .replace(/\s+on[a-z0-9:-]+\s*=\s*[^\s>]+/gi, '')
       // 4. href, xlink:href, src 속성 중 외부 URL 값을 제거하고, 안전한 data:image/* 참조는 보존한다
-      .replace(/\s+((?:xlink:)?href|src)\s*=\s*"([^"]*)"/gi, (_attrMatch, attrName: string, value: string) => {
+      .replace(HREF_ATTR_DOUBLE_QUOTE_PATTERN, (_attrMatch, attrName: string, value: string) => {
         const sanitizedValue = sanitizeHrefValue(value, depth);
         return sanitizedValue === null ? '' : ` ${attrName}="${sanitizedValue}"`;
       })
-      .replace(/\s+((?:xlink:)?href|src)\s*=\s*'([^']*)'/gi, (_attrMatch, attrName: string, value: string) => {
+      .replace(HREF_ATTR_SINGLE_QUOTE_PATTERN, (_attrMatch, attrName: string, value: string) => {
         const sanitizedValue = sanitizeHrefValue(value, depth);
         return sanitizedValue === null ? '' : ` ${attrName}='${sanitizedValue}'`;
       })
-      .replace(/\s+((?:xlink:)?href|src)\s*=\s*(?!["'])([^\s>]+)/gi, (_attrMatch, attrName: string, value: string) => {
+      .replace(HREF_ATTR_UNQUOTED_PATTERN, (_attrMatch, attrName: string, value: string) => {
         const sanitizedValue = sanitizeHrefValue(value, depth);
         return sanitizedValue === null ? '' : ` ${attrName}="${sanitizedValue}"`;
       })
