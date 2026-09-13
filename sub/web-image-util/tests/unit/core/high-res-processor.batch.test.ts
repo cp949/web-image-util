@@ -80,4 +80,18 @@ describe('HighResolutionProcessor.batchResize', () => {
     await expect(HighResolutionProcessor.batchResize([img1, img2], 400, 300)).rejects.toThrow('실패');
     resizeSpy.mockRestore();
   });
+
+  it('실패한 항목의 오류는 RESIZE_FAILED로 래핑되고 원인과 인덱스를 보존한다', async () => {
+    const originalError = new Error('실패');
+    const resizeSpy = vi.spyOn(HighResolutionProcessor, 'resize').mockRejectedValueOnce(originalError);
+    const img1 = createDrawableImage(800, 600);
+    const img2 = createDrawableImage(800, 600);
+
+    await expect(HighResolutionProcessor.batchResize([img1, img2], 400, 300)).rejects.toMatchObject({
+      code: 'RESIZE_FAILED',
+      cause: originalError,
+      context: { debug: { stage: 'Batch processing', index: 0 } },
+    });
+    resizeSpy.mockRestore();
+  });
 });

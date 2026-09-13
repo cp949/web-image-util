@@ -124,10 +124,22 @@ export class HighResolutionProcessor {
       thresholds.highResPixelThreshold
     );
 
+    // 이 호출 동안 최대 한 번만 발화시킨다 — 아래 두 지점(정적 크기 추정치, 고해상도 경로
+    // 진입 후 실시간 가용 메모리)이 같은 이미지에 대해 동시에 조건을 만족할 수 있어,
+    // 감싸지 않으면 resize() 한 번에 onMemoryWarning이 두 번 호출될 수 있다.
+    let memoryWarningFired = false;
+    const fireMemoryWarningOnce = onMemoryWarning
+      ? (message: string) => {
+          if (memoryWarningFired) return;
+          memoryWarningFired = true;
+          onMemoryWarning(message);
+        }
+      : undefined;
+
     onProgress?.(10, 'Analyzing image...');
 
     if (analysis.estimatedMemoryMB > thresholds.memoryWarningThreshold) {
-      onMemoryWarning?.(
+      fireMemoryWarningOnce?.(
         `Memory usage may increase up to ${Math.round(analysis.estimatedMemoryMB)}MB due to large image processing.`
       );
     }
@@ -142,7 +154,7 @@ export class HighResolutionProcessor {
           forceStrategy,
           maxMemoryUsageMB: HighResolutionProcessor.maxMemoryFor(priority, thresholds),
           onProgress,
-          onMemoryWarning,
+          onMemoryWarning: fireMemoryWarningOnce,
         });
       } catch (error) {
         if (error instanceof ImageProcessError && error.code === 'FEATURE_NOT_SUPPORTED') {
@@ -208,7 +220,10 @@ export class HighResolutionProcessor {
           return await HighResolutionProcessor.resize(img, width, height, resizeOptions);
         } catch (error) {
           productionLog.error(`Image processing failed (${name || index}):`, error);
-          throw error;
+          throw createImageError('RESIZE_FAILED', {
+            cause: error,
+            context: { debug: { stage: 'Batch processing', index } },
+          });
         }
       },
       {

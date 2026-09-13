@@ -84,6 +84,22 @@ describe('HighResolutionProcessor.resize', () => {
       expect(onMemoryWarning.mock.calls[0][0]).toEqual(expect.any(String));
     });
 
+    it('정적 메모리 추정치 경고와 고해상도 경로 내부의 가용 메모리 경고가 동시에 성립해도 onMemoryWarning은 한 번만 호출된다', async () => {
+      const onMemoryWarning = vi.fn();
+      const img = createDrawableImage(4000, 4000);
+
+      // jsdom fallback(readMemoryBudget)의 availableMB=384 를 밑도는 autoTileThreshold(500)로
+      // checkAndManageMemory 쪽 조건도 성립시켜, 정적 추정치 경고(memoryWarningThreshold)와
+      // 두 조건이 같은 호출에서 동시에 만족되도록 만든다.
+      await HighResolutionProcessor.resize(img, 800, 600, {
+        forceStrategy: 'tiled',
+        onMemoryWarning,
+        thresholds: { memoryWarningThreshold: 1, autoTileThreshold: 500 },
+      });
+
+      expect(onMemoryWarning).toHaveBeenCalledOnce();
+    });
+
     it('고해상도 경로 실행이 실패하면 표준 경로로 폴백해 canvas 를 반환한다', async () => {
       const executeSpy = vi
         .spyOn(HighResolutionProcessor as any, 'executeProcessing')

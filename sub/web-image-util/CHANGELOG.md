@@ -26,6 +26,7 @@
 - Changed (**Breaking**): `/advanced`의 `AutoHighResProcessor`/`HighResolutionManager`/`autoSmartResize`/`smartResizeWithProgress`를 `HighResolutionProcessor`(`resize()`/`validate()`/`batchResize()`) 하나로 통합했습니다. `priority` 값 집합이 `'speed' | 'balanced' | 'quality'`에서 `'fast' | 'balanced' | 'quality'`로 바뀌었습니다(`HighResolutionManager.quality`의 `'high'` 값도 `'quality'`로 통일). 일괄 처리는 `batchResize(items, width, height, options)` 하나로 합쳐졌고, 항목은 `HTMLImageElement` 또는 `{ img, width?, height?, name? }`를 받습니다.
   - `/advanced`가 export하던 공개 타입 `AutoProcessingResult`, `HighResolutionOptions`, `ProcessingResult`가 제거됐습니다. 이 타입을 직접 import하던 코드는 깨집니다 — 대체 타입은 `HighResolutionProcessResult`/`HighResolutionProcessOptions`(둘 다 `/advanced`에서 export)입니다.
   - `AdvancedProcessingResult.processing.resizing`의 shape이 바뀌었습니다. `tileProcessing` 필드가 사라졌고(`strategy === 'tiled'`와 항상 같은 값이던 `memoryOptimized`로 통합), `strategy` 필드의 의미가 사람이 읽는 라벨 문자열(예: `'High-speed Processing'`)에서 `ProcessingStrategy` enum 값(`'direct'`/`'stepped'`/`'tiled'`)으로 바뀌었습니다.
+  - `batchResize()`에서 개별 항목이 실패하면 원본 오류가 그대로 올라오지 않고 `ImageProcessError('RESIZE_FAILED', { cause: 원본오류, context: { debug: { stage: 'Batch processing', index } } })`로 감싸 올라옵니다. 실패한 항목의 인덱스는 `error.context.debug.index`로, 원본 오류는 `error.cause`로 확인하세요.
 
 ### 수정
 
