@@ -8,7 +8,6 @@
 
 import type { InternalProcessorOptions } from './core/output-pipeline.internal';
 import { OutputPipeline } from './core/output-pipeline.internal';
-import { ShortcutBuilder } from './shortcut/shortcut-builder';
 import type {
   BlurOptions,
   ImageSource,
@@ -249,34 +248,6 @@ export class ImageProcessor implements IImageProcessor {
     this.output.addBox(options);
 
     return this;
-  }
-
-  /**
-   * Shortcut API accessor
-   *
-   * @description
-   * Returns ShortcutBuilder that provides convenient resizing methods.
-   * Allows resizing with intuitive method names instead of complex ResizeConfig.
-   *
-   * @returns ShortcutBuilder instance
-   *
-   * @example
-   * ```typescript
-   * // Standard approach
-   * await processImage(src).resize({ fit: 'cover', width: 300, height: 200 }).toBlob();
-   *
-   * // Shortcut API (more concise)
-   * await processImage(src).shortcut.coverBox(300, 200).toBlob();
-   *
-   * // Various shortcut method examples
-   * await processImage(src).shortcut.maxWidth(500).toBlob();                        // Maximum width constraint
-   * await processImage(src).shortcut.containBox(300, 200, { withoutEnlargement: true }).toBlob();  // Prevent enlargement
-   * await processImage(src).shortcut.exactSize(400, 300).toBlob();                  // Exact size
-   * await processImage(src).shortcut.scale(1.5).toBlob();                           // Scale adjustment
-   * ```
-   */
-  get shortcut(): ShortcutBuilder {
-    return new ShortcutBuilder(this);
   }
 
   /**

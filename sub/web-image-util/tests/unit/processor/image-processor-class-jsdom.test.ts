@@ -48,7 +48,6 @@ describe('ImageProcessor 클래스 직접 인스턴스화 행동', () => {
 
       expect(typeof processor.resize).toBe('function');
       expect(typeof processor.blur).toBe('function');
-      expect(processor.shortcut).toBeDefined();
     });
 
     it('new ImageProcessor(canvas)가 모든 출력 메서드를 노출한다', () => {

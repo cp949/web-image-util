@@ -2,13 +2,12 @@
  * Processor interface separation
  *
  * @description Defines the core interface for ImageProcessor.
- * ShortcutBuilder depends on this interface to prevent circular dependencies.
- * (shortcut 메서드 표면은 ShortcutBuilder 클래스가 직접 공개 타입을 겸한다 —
- * 별도 미러 인터페이스를 두지 않는다. 아래 ShortcutBuilder import는 type 전용이라
- * 런타임 순환이 없다.)
+ * ImageShortcutBuilder는 concrete ImageProcessor 클래스가 아니라 이 인터페이스에 의존한다 —
+ * `processor.ts`가 더 이상 shortcut 모듈을 import하지 않으므로 순환 참조는 없다.
+ * (shortcut 메서드 표면은 ImageShortcutBuilder 클래스가 직접 공개 타입을 겸한다 —
+ * 별도 미러 인터페이스를 두지 않는다.)
  */
 
-import type { ShortcutBuilder } from '../shortcut/shortcut-builder';
 import type { OutputFormat } from './base';
 import type { BoxOptions } from './box-config';
 import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './output-types';
@@ -19,17 +18,9 @@ import type { TransformOptions } from './transform-config';
  * Image processor interface
  *
  * @description Core interface implemented by the ImageProcessor class.
- * ShortcutBuilder depends on this interface to prevent circular dependencies.
+ * ImageShortcutBuilder는 concrete ImageProcessor 클래스 대신 이 인터페이스에 의존한다.
  */
 export interface IImageProcessor {
-  /**
-   * Shortcut API accessor
-   *
-   * @description Provides Sharp.js style convenient resizing methods.
-   * Supports auto-completion and type checking through type-safe interface.
-   */
-  shortcut: ShortcutBuilder;
-
   /**
    * crop / flip / rotate 변환 (한 번만, resize() 앞에서만)
    *

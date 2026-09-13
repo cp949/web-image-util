@@ -102,8 +102,9 @@ export type { AvatarOptions, SocialImageOptions, SocialPlatform, ThumbnailOption
 export { createAvatar, createSocialImage, createThumbnail } from './presets';
 // Core API
 export { ImageProcessor, processImage, unsafe_processImage } from './processor';
+export type { ImageShortcutBuilder } from './shortcut/shortcut-builder';
 // Shortcut API
-export { ShortcutBuilder } from './shortcut/shortcut-builder';
+export { imageShortcut } from './shortcut/shortcut-builder';
 // Type definitions
 export type {
   BlurOptions,

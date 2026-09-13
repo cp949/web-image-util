@@ -13,6 +13,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { processImage } from '../../../src/processor';
+import { imageShortcut } from '../../../src/shortcut/shortcut-builder';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 describe('LazyRenderPipeline 통합 분기 (processImage 공개 표면, jsdom-safe)', () => {
@@ -98,19 +99,19 @@ describe('LazyRenderPipeline 통합 분기 (processImage 공개 표면, jsdom-sa
   });
 
   describe('Shortcut scale → 공개 resize({ fit: "scale" }) 경로', () => {
-    it('shortcut.scale(0.5) 적용 시 원본의 절반 치수로 toCanvas가 정상 종료한다', async () => {
+    it('imageShortcut(...).scale(0.5) 적용 시 원본의 절반 치수로 toCanvas가 정상 종료한다', async () => {
       // 400x300 → scale(0.5) → Math.round(400*0.5)=200, Math.round(300*0.5)=150
       const canvas = createTestCanvas(400, 300, 'navy');
-      const result = await processImage(canvas).shortcut.scale(0.5).toCanvas();
+      const result = await imageShortcut(canvas).scale(0.5).toCanvas();
 
       expect(result.canvas).toBeInstanceOf(HTMLCanvasElement);
       expect(result.width).toBe(200);
       expect(result.height).toBe(150);
     });
 
-    it('shortcut.scale(0.5)로 toBlob이 정상 Blob을 반환한다', async () => {
+    it('imageShortcut(...).scale(0.5)로 toBlob이 정상 Blob을 반환한다', async () => {
       const canvas = createTestCanvas(400, 300, 'crimson');
-      const result = await processImage(canvas).shortcut.scale(0.5).toBlob();
+      const result = await imageShortcut(canvas).scale(0.5).toBlob();
 
       expect(result.blob).toBeInstanceOf(Blob);
       expect(result.width).toBe(200);
@@ -119,10 +120,10 @@ describe('LazyRenderPipeline 통합 분기 (processImage 공개 표면, jsdom-sa
   });
 
   describe('Shortcut exactWidth → 공개 resize({ fit: "fill", width }) 경로', () => {
-    it('shortcut.exactWidth(300) 적용 시 종횡비를 유지하며 width가 300으로 출력한다', async () => {
+    it('imageShortcut(...).exactWidth(300) 적용 시 종횡비를 유지하며 width가 300으로 출력한다', async () => {
       // 400x300 → toWidth(300): aspectRatio = 300/400 = 0.75, height = Math.round(300*0.75) = 225
       const canvas = createTestCanvas(400, 300, 'coral');
-      const result = await processImage(canvas).shortcut.exactWidth(300).toCanvas();
+      const result = await imageShortcut(canvas).exactWidth(300).toCanvas();
 
       expect(result.canvas).toBeInstanceOf(HTMLCanvasElement);
       expect(result.width).toBe(300);

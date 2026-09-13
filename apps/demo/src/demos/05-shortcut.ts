@@ -1,30 +1,30 @@
-import { processImage } from '@cp949/web-image-util';
+import { imageShortcut } from '@cp949/web-image-util';
 
 export const meta = {
   title: 'Shortcut API',
-  description: '자주 쓰는 리사이즈 패턴을 짧게 표현하는 .shortcut.* 메서드 모음.',
+  description: '자주 쓰는 리사이즈 패턴을 짧게 표현하는 imageShortcut(src).* 메서드 모음.',
 };
 
 export async function run(target: HTMLElement): Promise<void> {
   const sample = await (await fetch('/samples/photo.jpg')).blob();
 
   // coverBox: 비율 유지하면서 박스를 가득 채움(잘림 허용).
-  const cover = await processImage(sample).shortcut.coverBox(400, 400).toBlob();
+  const cover = await imageShortcut(sample).coverBox(400, 400).toBlob();
 
   // containBox: 비율 유지하면서 박스 안에 전부 들어옴(여백 허용). 배경은 box()로 지정한다.
-  const contain = await processImage(sample).shortcut.containBox(400, 400).box({ background: '#f0f0f0' }).toBlob();
+  const contain = await imageShortcut(sample).containBox(400, 400).box({ background: '#f0f0f0' }).toBlob();
 
   // maxWidth: 지정한 너비보다 클 때만 축소.
-  const maxW = await processImage(sample).shortcut.maxWidth(200).toBlob();
+  const maxW = await imageShortcut(sample).maxWidth(200).toBlob();
 
   // scale: 비율로 줄이기/늘리기.
-  const scaled = await processImage(sample).shortcut.scale(0.5).toBlob();
+  const scaled = await imageShortcut(sample).scale(0.5).toBlob();
 
   target.append(
-    card('.shortcut.coverBox(400, 400)', cover.blob),
-    card('.shortcut.containBox(400, 400).box({ background })', contain.blob),
-    card('.shortcut.maxWidth(200)', maxW.blob),
-    card('.shortcut.scale(0.5)', scaled.blob)
+    card('imageShortcut(sample).coverBox(400, 400)', cover.blob),
+    card('imageShortcut(sample).containBox(400, 400).box({ background })', contain.blob),
+    card('imageShortcut(sample).maxWidth(200)', maxW.blob),
+    card('imageShortcut(sample).scale(0.5)', scaled.blob)
   );
 }
 

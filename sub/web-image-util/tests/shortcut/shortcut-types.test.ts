@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { processImage } from '../../src/index';
+import { imageShortcut, processImage } from '../../src/index';
 import { ImageProcessError } from '../../src/types';
 import type { ScaleValue } from '../../src/types/resize-config';
 
@@ -11,19 +11,19 @@ describe('Shortcut API Type Safety', () => {
     describe.each([
       {
         operation: 'Direct Mapping (coverBox)',
-        factory: (url: string) => processImage(url).shortcut.coverBox(300, 200),
+        factory: (url: string) => imageShortcut(url).coverBox(300, 200),
       },
       {
         operation: 'Direct Mapping (containBox)',
-        factory: (url: string) => processImage(url).shortcut.containBox(300, 200),
+        factory: (url: string) => imageShortcut(url).containBox(300, 200),
       },
       {
         operation: 'Lazy Operation (scale)',
-        factory: (url: string) => processImage(url).shortcut.scale(1.5),
+        factory: (url: string) => imageShortcut(url).scale(1.5),
       },
       {
         operation: 'Lazy Operation (exactWidth)',
-        factory: (url: string) => processImage(url).shortcut.exactWidth(300),
+        factory: (url: string) => imageShortcut(url).exactWidth(300),
       },
     ])('$operation', ({ factory }) => {
       it('should have all output methods', () => {
@@ -95,12 +95,12 @@ describe('Shortcut API Type Safety', () => {
       it('should not throw at runtime when used', () => {
         // Runtime validation: should work without errors when actually used
         expect(() => {
-          processImage(testImageUrl).shortcut.scale(value);
+          imageShortcut(testImageUrl).scale(value);
         }, `${type} should work without throwing`).not.toThrow();
       });
 
       it('should return a valid processor', () => {
-        const processor = processImage(testImageUrl).shortcut.scale(value);
+        const processor = imageShortcut(testImageUrl).scale(value);
         expect(processor, `${type} should return a valid processor`).toBeDefined();
         expect(typeof processor.toBlob).toBe('function');
       });
@@ -109,7 +109,7 @@ describe('Shortcut API Type Safety', () => {
 
   it('should support options for containBox method', () => {
     // Verify that all options can be passed to containBox
-    const processor = processImage(testImageUrl).shortcut.containBox(300, 200, {
+    const processor = imageShortcut(testImageUrl).containBox(300, 200, {
       withoutEnlargement: true,
       position: 'top-left',
     });
@@ -119,13 +119,13 @@ describe('Shortcut API Type Safety', () => {
 
   it('should reject removed trimEmpty option for containBox at type level', () => {
     // @ts-expect-error trimEmpty는 containBox 옵션에서 제거됐다.
-    const processor = processImage(testImageUrl).shortcut.containBox(300, 200, { trimEmpty: true });
+    const processor = imageShortcut(testImageUrl).containBox(300, 200, { trimEmpty: true });
 
     expect(processor).toBeDefined();
   });
 
   it('should support options for coverBox method', () => {
-    const processor = processImage(testImageUrl).shortcut.coverBox(300, 200, {
+    const processor = imageShortcut(testImageUrl).coverBox(300, 200, {
       position: { x: 0.5, y: 0.5 },
     });
 
@@ -133,7 +133,7 @@ describe('Shortcut API Type Safety', () => {
   });
 
   it('should support exactSize method without options', () => {
-    const processor = processImage(testImageUrl).shortcut.exactSize(300, 200);
+    const processor = imageShortcut(testImageUrl).exactSize(300, 200);
 
     expect(processor).toBeDefined();
   });
@@ -165,7 +165,7 @@ describe('Shortcut API Type Safety', () => {
 
   describe('Method Chaining Type Safety', () => {
     it('should maintain type safety through chaining', () => {
-      const processor = processImage(testImageUrl).shortcut.coverBox(300, 200).blur(2);
+      const processor = imageShortcut(testImageUrl).coverBox(300, 200).blur(2);
 
       expect(typeof processor.toBlob).toBe('function');
       expect(typeof processor.toDataURL).toBe('function');
@@ -173,14 +173,14 @@ describe('Shortcut API Type Safety', () => {
     });
 
     it('should maintain type safety with lazy operations', () => {
-      const processor = processImage(testImageUrl).shortcut.scale(1.5).blur(3);
+      const processor = imageShortcut(testImageUrl).scale(1.5).blur(3);
 
       expect(typeof processor.toBlob).toBe('function');
       expect(typeof processor.toDataURL).toBe('function');
     });
 
     it('should keep output methods after shortcut resize', () => {
-      const processor = processImage(testImageUrl).shortcut.scale(1.5);
+      const processor = imageShortcut(testImageUrl).scale(1.5);
 
       expect(typeof processor.toBlob).toBe('function');
       expect(typeof processor.toDataURL).toBe('function');
@@ -198,50 +198,38 @@ describe('Shortcut API Type Safety', () => {
 
   describe('Duplicate Resize Runtime Safety', () => {
     it('should reject a direct resize after a lazy shortcut resize', () => {
-      const processor = processImage(testImageUrl).shortcut.scale(1.5);
+      const processor = imageShortcut(testImageUrl).scale(1.5);
 
       expect(() => {
         processor.resize({ fit: 'cover', width: 100, height: 100 });
       }).toThrow(ImageProcessError);
     });
 
-    it('should reject a lazy shortcut resize after a direct resize', () => {
-      const processor = processImage(testImageUrl).resize({ fit: 'cover', width: 100, height: 100 });
-
-      expect(() => {
-        processor.shortcut.exactWidth(50);
-      }).toThrow(ImageProcessError);
-    });
-
-    it('should reject multiple lazy shortcut resize calls', () => {
-      const processor = processImage(testImageUrl).shortcut.scale(1.5);
-
-      expect(() => {
-        processor.shortcut.exactWidth(50);
-      }).toThrow(ImageProcessError);
-    });
+    // "이미 만들어진 프로세서에 뒤늦게 shortcut을 붙이는" 시나리오는 imageShortcut()이 항상
+    // 새 processImage()에서 시작하는 새 설계에서는 성립하지 않아 제거했다(resize 1회 제약
+    // 자체는 위 테스트와 multiple-resize-guard-jsdom.test.ts가 계속 커버한다).
   });
 
   describe('Edge Cases', () => {
     it('should handle scale value of 1 (no scaling)', () => {
-      const processor = processImage(testImageUrl).shortcut.scale(1);
+      const processor = imageShortcut(testImageUrl).scale(1);
       expect(processor).toBeDefined();
     });
 
     it('should handle scale less than 1 (downscaling)', () => {
-      const processor = processImage(testImageUrl).shortcut.scale(0.5);
+      const processor = imageShortcut(testImageUrl).scale(0.5);
       expect(processor).toBeDefined();
     });
 
     it('should handle scale greater than 1 (upscaling)', () => {
-      const processor = processImage(testImageUrl).shortcut.scale(2);
+      const processor = imageShortcut(testImageUrl).scale(2);
       expect(processor).toBeDefined();
     });
 
     it('0 치수는 호출 시점에 INVALID_DIMENSIONS로 즉시 거부한다', () => {
       // shortcut이 공개 resize()로 합류하면서 설정 검증도 동일하게 적용된다
       expect(() => {
-        processImage(testImageUrl).shortcut.exactWidth(0);
+        imageShortcut(testImageUrl).exactWidth(0);
       }).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
     });
   });

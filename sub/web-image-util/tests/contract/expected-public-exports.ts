@@ -12,7 +12,7 @@ export const ROOT_VALUE_EXPORTS = [
   'processImage',
   'unsafe_processImage',
   // 단축 API
-  'ShortcutBuilder',
+  'imageShortcut',
   // 편의 preset
   'createAvatar',
   'createSocialImage',

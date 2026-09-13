@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { processImage } from '../../src/index';
+import { imageShortcut, processImage } from '../../src/index';
 
 describe('Shortcut API Performance', () => {
   // Base64로 인코딩한 100x100 파란 정사각형 SVG다.
@@ -92,22 +92,22 @@ describe('Shortcut API Performance', () => {
     describe.each([
       {
         name: 'Direct Mapping - coverBox',
-        factory: () => processImage(testImageUrl).shortcut.coverBox(300, 200),
+        factory: () => imageShortcut(testImageUrl).coverBox(300, 200),
         threshold: 100, // 1000회 생성 시 허용 시간 상한(ms)
       },
       {
         name: 'Direct Mapping - containBox',
-        factory: () => processImage(testImageUrl).shortcut.containBox(300, 200),
+        factory: () => imageShortcut(testImageUrl).containBox(300, 200),
         threshold: 100,
       },
       {
         name: 'Lazy Operation - scale',
-        factory: () => processImage(testImageUrl).shortcut.scale(1.5),
+        factory: () => imageShortcut(testImageUrl).scale(1.5),
         threshold: 100,
       },
       {
         name: 'Lazy Operation - exactWidth',
-        factory: () => processImage(testImageUrl).shortcut.exactWidth(300),
+        factory: () => imageShortcut(testImageUrl).exactWidth(300),
         threshold: 100,
       },
     ])('$name', ({ factory, threshold }) => {
@@ -149,7 +149,7 @@ describe('Shortcut API Performance', () => {
       const startTime = performance.now();
 
       for (let i = 0; i < 100; i++) {
-        processImage(testImageUrl).shortcut.scale(1.5).blur(2);
+        imageShortcut(testImageUrl).scale(1.5).blur(2);
       }
 
       const endTime = performance.now();
@@ -164,7 +164,7 @@ describe('Shortcut API Performance', () => {
       const startTime = performance.now();
 
       for (let i = 0; i < 100; i++) {
-        processImage(testImageUrl).shortcut.exactWidth(300).blur(2);
+        imageShortcut(testImageUrl).exactWidth(300).blur(2);
       }
 
       const endTime = performance.now();
@@ -180,11 +180,11 @@ describe('Shortcut API Performance', () => {
       const startTime = performance.now();
 
       for (let i = 0; i < 500; i++) {
-        processImage(testImageUrl).shortcut.coverBox(300, 200);
-        processImage(testImageUrl).shortcut.containBox(300, 200);
-        processImage(testImageUrl).shortcut.exactSize(300, 200);
-        processImage(testImageUrl).shortcut.maxWidth(500);
-        processImage(testImageUrl).shortcut.maxHeight(400);
+        imageShortcut(testImageUrl).coverBox(300, 200);
+        imageShortcut(testImageUrl).containBox(300, 200);
+        imageShortcut(testImageUrl).exactSize(300, 200);
+        imageShortcut(testImageUrl).maxWidth(500);
+        imageShortcut(testImageUrl).maxHeight(400);
       }
 
       const endTime = performance.now();
@@ -199,11 +199,11 @@ describe('Shortcut API Performance', () => {
       const startTime = performance.now();
 
       for (let i = 0; i < 500; i++) {
-        processImage(testImageUrl).shortcut.scale(1.5);
-        processImage(testImageUrl).shortcut.exactWidth(100);
-        processImage(testImageUrl).shortcut.exactHeight(200);
-        processImage(testImageUrl).shortcut.scaleX(2);
-        processImage(testImageUrl).shortcut.scaleY(0.5);
+        imageShortcut(testImageUrl).scale(1.5);
+        imageShortcut(testImageUrl).exactWidth(100);
+        imageShortcut(testImageUrl).exactHeight(200);
+        imageShortcut(testImageUrl).scaleX(2);
+        imageShortcut(testImageUrl).scaleY(0.5);
       }
 
       const endTime = performance.now();
@@ -224,7 +224,7 @@ describe('Shortcut API Performance', () => {
 
       for (let i = 0; i < iterations; i++) {
         // Create and immediately discard
-        processImage(testImageUrl).shortcut.coverBox(300, 200);
+        imageShortcut(testImageUrl).coverBox(300, 200);
       }
 
       const endTime = performance.now();
@@ -239,7 +239,7 @@ describe('Shortcut API Performance', () => {
       const startTime = performance.now();
 
       for (let i = 0; i < 100; i++) {
-        processImage(testImageUrl).shortcut.scale(1.5).blur(2).blur(1); // Additional chaining
+        imageShortcut(testImageUrl).scale(1.5).blur(2).blur(1); // Additional chaining
       }
 
       const endTime = performance.now();
@@ -264,7 +264,7 @@ describe('Shortcut API Performance', () => {
 
       const shortcutStats = measureBatchDuration(
         () => {
-          processImage(testImageUrl).shortcut.coverBox(300, 200);
+          imageShortcut(testImageUrl).coverBox(300, 200);
         },
         iterations,
         rounds

@@ -34,7 +34,7 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `index.ts` | `createThumbnail(src, options)` | src + 크기/포맷/품질 → cover/contain fit의 썸네일 Blob (포맷 미지정 시 WebP→JPEG fallback) | 있음 | `tests/unit/presets/presets-jsdom.test.ts` |
 | `index.ts` | `createAvatar(src, options?)` | src + size → 정사각형 PNG/WebP 아바타 Blob (기본 64px, 투명 배경) | 있음 | `tests/unit/presets/presets-jsdom.test.ts` |
 | `index.ts` | `createSocialImage(src, options)` | src + 플랫폼 또는 customSize → 플랫폼 권장 크기 Blob (contain fit, 기본 JPEG) | 있음 | `tests/unit/presets/presets-jsdom.test.ts` |
-| `index.ts` | `ShortcutBuilder` / `processImage().shortcut.*` | exactSize/maxWidth/maxHeight/minWidth/minHeight/exactWidth/exactHeight/scale/scaleX/scaleY/scaleXY → 해당 ResizeConfig 적용 후 체이닝 반환 | 있음 | `tests/shortcut/shortcut-integration.test.ts`, `shortcut-types.test.ts` |
+| `index.ts` | `imageShortcut(src, options?).*` | exactSize/maxWidth/maxHeight/minWidth/minHeight/exactWidth/exactHeight/scale/scaleX/scaleY/scaleXY → 해당 ResizeConfig 적용 후 체이닝 반환 | 있음 | `tests/shortcut/shortcut-integration.test.ts`, `shortcut-types.test.ts` |
 | `index.ts` | `analyzeSvgComplexity(svg)` | SVG 문자열 → 복잡도 메트릭 객체 (노드 수, 깊이, 그라디언트 등) | 있음 | `tests/unit/core/svg-complexity-analyzer.test.ts` |
 | `index.ts` | `enhanceSvgForBrowser(svg, options?)` / `enhanceBrowserCompatibility(svg)` | SVG 문자열 → 브라우저 호환성 보강된 SVG + 리포트 | 있음 | `tests/unit/utils/svg-compatibility.test.ts` |
 | `index.ts` | `extractSvgDimensions(svg)` | SVG 문자열 → `{ width, height }` 추론 결과 (viewBox/속성/스타일) | 있음 | `tests/unit/utils/svg-dimensions.test.ts` |

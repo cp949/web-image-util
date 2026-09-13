@@ -15,10 +15,12 @@
 - Added: `createThumbnail()`/`createAvatar()`가 `position`(gravity 문자열 또는 focal-point 객체) 옵션을 받습니다. `resize()`의 `position`과 동일한 타입이며 값 검증도 `resize()`에 위임합니다. `createAvatar()`에서 `fit: 'fill'`과 `position`을 함께 쓰면 `OPTION_INVALID`입니다.
 - Added: `createAvatar()`가 `radius`(`box()`의 `radius`와 동일 타입: px 숫자 | `${number}%` | CSS 순서 4배열) 옵션을 받습니다. avatar 크기는 항상 정사각형이라 `radius: '50%'`로 완전한 원을 PNG/WebP 파일 자체에 구울 수 있습니다. 생략 시 기존과 동일하게 사각형을 유지합니다(opt-in). 값 검증은 `box()`에 위임합니다.
 - Added: `ProcessorOptions`에 `maxInputPixels`/`maxOutputPixels`를 추가했습니다. opt-in(기본값 없음, 무제한)이며 초과 시 `PIXEL_BUDGET_EXCEEDED`로 거부합니다. PNG/GIF/BMP는 디코드 전 헤더로도 먼저 거부될 수 있습니다.
+- Added: `imageShortcut(source, options?)` 진입점을 추가했습니다. `processImage()`와 파라미터가 완전히 동일하며, 반환된 `ImageShortcutBuilder`의 `coverBox`/`containBox`/`exactSize`/`maxWidth`/`maxHeight`/`maxSize`/`minWidth`/`minHeight`/`minSize`/`exactWidth`/`exactHeight`/`scale`/`scaleX`/`scaleY`/`scaleXY` 메서드는 내부적으로 `resize()`를 호출한 뒤 체이닝 가능한 프로세서를 반환합니다.
 
 ### 삭제
 
 - Removed (**Breaking**): `resize()`의 `padding`/`background` 옵션, shortcut `coverBox`/`containBox`/`maxWidth`/`maxHeight`/`maxSize`/`minWidth`/`minHeight`/`minSize`의 `padding`/`background` 옵션, `ProcessorOptions.defaultBackground`(어디서도 읽히지 않던 죽은 옵션)를 제거했습니다. 전부 `box()`로 대체하세요 — 예: `resize({ fit: 'cover', width, height, padding: 10, background: '#fff' })` → `resize({ fit: 'cover', width, height }).box({ padding: 10, background: '#fff' })`. `box()`와 동시 지정 시 발생하던 `OPTION_INVALID` 검증도 옵션 자체가 사라지며 함께 제거됐습니다.
+- Removed (**Breaking**): `IImageProcessor.shortcut` 게터와 `ShortcutBuilder` export를 제거했습니다. `processImage(src).shortcut.exactWidth(300)` → `imageShortcut(src).exactWidth(300)`으로 대체하세요. `ShortcutBuilder` 클래스는 `ImageShortcutBuilder`로 이름이 바뀌었고 타입으로만 export됩니다.
 
 ### 변경
 

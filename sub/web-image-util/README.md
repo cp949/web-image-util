@@ -25,12 +25,12 @@ npm install @cp949/web-image-util
 ## 빠른 시작
 
 ```typescript
-import { processImage } from '@cp949/web-image-util';
+import { imageShortcut, processImage } from '@cp949/web-image-util';
 import { createAvatar, createThumbnail } from '@cp949/web-image-util/presets';
 
 // 박스 채우기 + WebP 변환
-const profile = await processImage(userPhoto)
-  .shortcut.coverBox(400, 400)
+const profile = await imageShortcut(userPhoto)
+  .coverBox(400, 400)
   .toBlob({ format: 'webp', quality: 0.9 });
 
 // 체이닝 + blur
@@ -119,7 +119,7 @@ await processImage(source)
 
 ## Shortcut API
 
-자주 쓰이는 리사이즈 패턴은 `.shortcut`으로 짧게 표현할 수 있습니다.
+자주 쓰이는 리사이즈 패턴은 `imageShortcut()`으로 짧게 표현할 수 있습니다. `processImage()`와 파라미터가 동일한 별도 진입점이며, 반환값은 그대로 체이닝할 수 있는 프로세서입니다.
 
 | 메서드                                          | 설명                       |
 | ----------------------------------------------- | -------------------------- |
@@ -132,13 +132,13 @@ await processImage(source)
 | `exactWidth(n)` / `exactHeight(n)`              | 한쪽 치수만 지정           |
 
 ```typescript
-await processImage(source)
-  .shortcut.coverBox(300, 200)
+await imageShortcut(source)
+  .coverBox(300, 200)
   .box({ background: '#000' })
   .blur(3)
   .toBlob({ format: 'webp', quality: 0.8 });
 
-await processImage(source).shortcut.scale(0.5).toDataURL();
+await imageShortcut(source).scale(0.5).toDataURL();
 ```
 
 `coverBox`/`containBox` 옵션은 `withoutEnlargement`, `position`을 지원합니다. 여백·배경은 `box()`로 추가하세요.
@@ -271,7 +271,7 @@ const board = await composeImages({
 
 | npm 서브패스 | 주요 API | 책임 |
 | --- | --- | --- |
-| `@cp949/web-image-util` | `processImage`, `unsafe_processImage`, `ImageProcessor`, `ShortcutBuilder`, `ImageProcessError`, `extractSvgDimensions`, `analyzeSvgComplexity`, 변환(`ensureBlob`/`ensureImageElement`/...), 포맷(`formatToMimeType`/...), 이미지 정보(`getImageInfo`/...), 소스 판정(`detectImageSourceType`/...), 브라우저 기능 감지 | 메인 진입점, 체이닝 API, 변환·포맷·정보 유틸 |
+| `@cp949/web-image-util` | `processImage`, `unsafe_processImage`, `imageShortcut`, `ImageProcessor`, `ImageProcessError`, `extractSvgDimensions`, `analyzeSvgComplexity`, 변환(`ensureBlob`/`ensureImageElement`/...), 포맷(`formatToMimeType`/...), 이미지 정보(`getImageInfo`/...), 소스 판정(`detectImageSourceType`/...), 브라우저 기능 감지 | 메인 진입점, 체이닝 API, 변환·포맷·정보 유틸 |
 | `@cp949/web-image-util/utils` | SVG 진단(`inspectSvg`, `inspectSvgSource`), SVG 정규화(`prefixSvgIds`), SVG 최적화(`SvgOptimizer`) | SVG 전용 진단·변형 도구 |
 | `@cp949/web-image-util/svg-sanitizer` | `sanitizeSvgStrict`, `sanitizeSvgStrictDetailed`, `inspectSvgSanitization` | DOMPurify 기반 strict sanitizer (동적 import) |
 | `@cp949/web-image-util/presets` | `createThumbnail`, `createAvatar`, `createSocialImage` | 편의 preset 함수 |

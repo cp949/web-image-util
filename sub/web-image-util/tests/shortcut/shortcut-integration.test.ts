@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { processImage } from '../../src/index';
+import { imageShortcut } from '../../src/index';
 
 describe('Shortcut API Integration Tests', () => {
   // Base64 encoded 100x100 blue square SVG
@@ -56,14 +56,14 @@ describe('Shortcut API Integration Tests', () => {
       },
     ])('$method - $description', ({ method, args }) => {
       it('should return a valid processor instance', () => {
-        const shortcutBuilder = processImage(testImageUrl).shortcut;
+        const shortcutBuilder = imageShortcut(testImageUrl);
         const processor = (shortcutBuilder as any)[method](...args);
 
         expect(processor, `${method} should return a defined processor`).toBeDefined();
       });
 
       it('should have required output methods', () => {
-        const shortcutBuilder = processImage(testImageUrl).shortcut;
+        const shortcutBuilder = imageShortcut(testImageUrl);
         const processor = (shortcutBuilder as any)[method](...args);
 
         expect(typeof processor.toBlob, `${method} processor should have toBlob method`).toBe('function');
@@ -72,7 +72,7 @@ describe('Shortcut API Integration Tests', () => {
       });
 
       it('should support method chaining', () => {
-        const shortcutBuilder = processImage(testImageUrl).shortcut;
+        const shortcutBuilder = imageShortcut(testImageUrl);
         const processor = (shortcutBuilder as any)[method](...args);
         const chained = processor.blur(2);
 
@@ -129,14 +129,14 @@ describe('Shortcut API Integration Tests', () => {
       },
     ])('$method - $description', ({ method, args }) => {
       it('should return a valid processor instance', () => {
-        const shortcutBuilder = processImage(testImageUrl).shortcut;
+        const shortcutBuilder = imageShortcut(testImageUrl);
         const processor = (shortcutBuilder as any)[method](...args);
 
         expect(processor, `${method} should return a defined processor`).toBeDefined();
       });
 
       it('should have required output methods', () => {
-        const shortcutBuilder = processImage(testImageUrl).shortcut;
+        const shortcutBuilder = imageShortcut(testImageUrl);
         const processor = (shortcutBuilder as any)[method](...args);
 
         expect(typeof processor.toBlob, `${method} processor should have toBlob method`).toBe('function');
@@ -145,7 +145,7 @@ describe('Shortcut API Integration Tests', () => {
       });
 
       it('should support lazy evaluation (no immediate processing)', () => {
-        const shortcutBuilder = processImage(testImageUrl).shortcut;
+        const shortcutBuilder = imageShortcut(testImageUrl);
         const startTime = performance.now();
         const processor = (shortcutBuilder as any)[method](...args);
         const creationTime = performance.now() - startTime;
@@ -159,19 +159,19 @@ describe('Shortcut API Integration Tests', () => {
 
   describe('Method Chaining', () => {
     it('should support chaining direct operations with blur', () => {
-      const processor = processImage(testImageUrl).shortcut.coverBox(300, 200).blur(2);
+      const processor = imageShortcut(testImageUrl).coverBox(300, 200).blur(2);
       expect(processor).toBeDefined();
       expect(typeof processor.toBlob).toBe('function');
     });
 
     it('should support chaining lazy operations with blur', () => {
-      const processor = processImage(testImageUrl).shortcut.scale(1.5).blur(3);
+      const processor = imageShortcut(testImageUrl).scale(1.5).blur(3);
       expect(processor).toBeDefined();
       expect(typeof processor.toBlob).toBe('function');
     });
 
     it('should support complex chaining', () => {
-      const processor = processImage(testImageUrl).shortcut.exactWidth(300).blur(2);
+      const processor = imageShortcut(testImageUrl).exactWidth(300).blur(2);
       expect(processor).toBeDefined();
       expect(typeof processor.toBlob).toBe('function');
     });
@@ -179,28 +179,28 @@ describe('Shortcut API Integration Tests', () => {
 
   describe('Actual Processing', () => {
     it('should actually process coverBox to canvas', async () => {
-      const result = await processImage(testImageUrl).shortcut.coverBox(300, 200).toCanvas();
+      const result = await imageShortcut(testImageUrl).coverBox(300, 200).toCanvas();
       expect(result.canvas).toBeDefined();
       expect(result.canvas.width).toBe(300);
       expect(result.canvas.height).toBe(200);
     });
 
     it('should actually process toScale to canvas', async () => {
-      const result = await processImage(testImageUrl).shortcut.scale(2).toCanvas();
+      const result = await imageShortcut(testImageUrl).scale(2).toCanvas();
       expect(result.canvas).toBeDefined();
       expect(result.canvas.width).toBe(200);
       expect(result.canvas.height).toBe(200);
     });
 
     it('should actually process toWidth to canvas', async () => {
-      const result = await processImage(testImageUrl).shortcut.exactWidth(50).toCanvas();
+      const result = await imageShortcut(testImageUrl).exactWidth(50).toCanvas();
       expect(result.canvas).toBeDefined();
       expect(result.canvas.width).toBe(50);
       expect(result.canvas.height).toBe(50);
     });
 
     it('should actually process exactSize to canvas', async () => {
-      const result = await processImage(testImageUrl).shortcut.exactSize(400, 300).toCanvas();
+      const result = await imageShortcut(testImageUrl).exactSize(400, 300).toCanvas();
       expect(result.canvas).toBeDefined();
       expect(result.canvas.width).toBe(400);
       expect(result.canvas.height).toBe(300);

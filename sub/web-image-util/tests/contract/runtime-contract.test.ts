@@ -19,6 +19,7 @@ import {
   formatToMimeType,
   ImageProcessError,
   ImageProcessor,
+  imageShortcut,
   isDataURLString,
   isInlineSvg,
   isSupportedOutputFormat,
@@ -26,7 +27,6 @@ import {
   OPTIMAL_QUALITY_BY_FORMAT,
   processImage,
   resolveOutputFormat,
-  ShortcutBuilder,
   sanitizeSvg,
   sanitizeSvgForRendering,
   unsafe_processImage,
@@ -72,9 +72,15 @@ describe('processImage 진입점 계약', () => {
     expect(ImageProcessor.prototype.toBlob).toBeTypeOf('function');
   });
 
-  test('ShortcutBuilder는 클래스 생성자로 노출된다', () => {
-    expect(ShortcutBuilder).toBeTypeOf('function');
-    expect(ShortcutBuilder.prototype).toBeDefined();
+  test('imageShortcut은 processImage와 동일 시그니처의 별도 진입점이며 체이닝 가능한 프로세서를 반환한다', () => {
+    expect(imageShortcut).toBeTypeOf('function');
+    expect(imageShortcut).not.toBe(processImage);
+
+    const processor = imageShortcut(SAMPLE_SVG).exactWidth(20);
+    expect(processor.resize).toBeTypeOf('function');
+    expect(processor.blur).toBeTypeOf('function');
+    expect(processor.box).toBeTypeOf('function');
+    expect(processor.toBlob).toBeTypeOf('function');
   });
 });
 
