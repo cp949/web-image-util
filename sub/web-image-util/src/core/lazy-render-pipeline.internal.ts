@@ -7,7 +7,6 @@
  * - Generate final result only without creating intermediate Canvas
  *
  * resize 1회 불변식의 런타임 소유자다 — 가드와 설정 검증은 addResize 한 곳에만 있다.
- * (컴파일 타임 전이는 AfterResizeCall 타입이 보조한다)
  * transform 1회·resize 앞 불변식도 같은 이유로 addTransform 한 곳에만 있다.
  * box 1회 불변식은 addBox가 소유한다.
  */
@@ -68,8 +67,7 @@ export class LazyRenderPipeline {
    * transform 연산 추가 (계산만, 렌더 없음)
    *
    * 1회 제약과 "resize() 앞" 제약의 단일 지점이다. 검증 실패 시 어떤 상태도 남기지 않는다.
-   * 인터페이스의 `this: IImageProcessor<BeforeResize>` 제약은 의도 표시일 뿐 컴파일 타임
-   * 집행력이 없다(구조적 타이핑으로 무력화됨). 실제 집행은 이 메서드의 런타임 가드뿐이다.
+   * 이 제약은 컴파일 타임 타입으로 표현하지 않는다 — 실제 집행은 이 메서드의 런타임 가드뿐이다.
    * 원본 크기가 필요한 crop 교집합 판정은 렌더 시점(analyzeAllOperations)에 한다.
    */
   addTransform(options: TransformOptions): this {

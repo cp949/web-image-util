@@ -26,22 +26,17 @@
  */
 
 import type { IImageProcessor } from '../types/processor-interface';
-import type { AfterResize, BeforeResize, ProcessorState } from '../types/processor-state.internal';
 import type { ContainConfig, CoverConfig, MaxFitConfig, MinFitConfig, ScaleValue } from '../types/resize-config';
 
 /**
  * ShortcutBuilder class
  *
- * @description 각 메서드는 `this: ShortcutBuilder<BeforeResize>` 제약으로 의도를 표시하지만,
- * `IImageProcessor`와의 재귀적 제네릭 관계 때문에 컴파일 타임에는 실효가 없다(`resize()` 자신의
- * 1회 제약과 같은 수준). 실제로는 각 메서드가 내부적으로 호출하는 `IImageProcessor.resize()`의
- * 런타임 가드(`LazyRenderPipeline.addResize`)가 resize 이후 호출을 막는다.
+ * @description 각 메서드는 내부적으로 `IImageProcessor.resize()`를 호출한다. resize 1회 제약은
+ * 그 `resize()`의 런타임 가드(`LazyRenderPipeline.addResize`)가 단일 소유한다.
  * (별도 인터페이스 미러 없이 클래스가 공개 타입 표면을 겸한다)
- *
- * @template TState Current processor state (BeforeResize | AfterResize)
  */
-export class ShortcutBuilder<TState extends ProcessorState> {
-  constructor(private processor: IImageProcessor<TState>) {}
+export class ShortcutBuilder {
+  constructor(private processor: IImageProcessor) {}
 
   // ============================================================================
   // 🎯 Group 1: Direct Mapping
@@ -59,7 +54,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * @param width Output width (pixels)
    * @param height Output height (pixels)
    * @param options Additional options (position)
-   * @returns IImageProcessor in AfterResize state (chainable)
+   * @returns IImageProcessor 인스턴스(체이닝 가능)
    *
    * @example
    * ```typescript
@@ -73,11 +68,10 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * ```
    */
   coverBox(
-    this: ShortcutBuilder<BeforeResize>,
     width: number,
     height: number,
     options?: Partial<Omit<CoverConfig, 'fit' | 'width' | 'height'>>
-  ): IImageProcessor<AfterResize> {
+  ): IImageProcessor {
     return this.processor.resize({
       fit: 'cover',
       width,
@@ -97,7 +91,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * @param width Output width (pixels)
    * @param height Output height (pixels)
    * @param options Additional options (withoutEnlargement, position)
-   * @returns IImageProcessor in AfterResize state (chainable)
+   * @returns IImageProcessor 인스턴스(체이닝 가능)
    *
    * @example
    * ```typescript
@@ -112,11 +106,10 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * ```
    */
   containBox(
-    this: ShortcutBuilder<BeforeResize>,
     width: number,
     height: number,
     options?: Partial<Omit<ContainConfig, 'fit' | 'width' | 'height'>>
-  ): IImageProcessor<AfterResize> {
+  ): IImageProcessor {
     return this.processor.resize({
       fit: 'contain',
       width,
@@ -135,7 +128,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    *
    * @param width Output width (pixels)
    * @param height Output height (pixels)
-   * @returns IImageProcessor in AfterResize state (chainable)
+   * @returns IImageProcessor 인스턴스(체이닝 가능)
    *
    * @example
    * ```typescript
@@ -143,7 +136,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.exactSize(300, 200).toBlob();
    * ```
    */
-  exactSize(this: ShortcutBuilder<BeforeResize>, width: number, height: number): IImageProcessor<AfterResize> {
+  exactSize(width: number, height: number): IImageProcessor {
     return this.processor.resize({
       fit: 'fill',
       width,
@@ -160,7 +153,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Aspect ratio is always preserved.
    *
    * @param width Maximum width (pixels)
-   * @returns IImageProcessor in AfterResize state (chainable)
+   * @returns IImageProcessor 인스턴스(체이닝 가능)
    *
    * @example
    * ```typescript
@@ -168,11 +161,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.maxWidth(500).toBlob();
    * ```
    */
-  maxWidth(
-    this: ShortcutBuilder<BeforeResize>,
-    width: number,
-    options?: Partial<Omit<MaxFitConfig, 'fit' | 'width'>>
-  ): IImageProcessor<AfterResize> {
+  maxWidth(width: number, options?: Partial<Omit<MaxFitConfig, 'fit' | 'width'>>): IImageProcessor {
     return this.processor.resize({
       fit: 'maxFit',
       width,
@@ -189,7 +178,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Aspect ratio is always preserved.
    *
    * @param height Maximum height (pixels)
-   * @returns IImageProcessor in AfterResize state (chainable)
+   * @returns IImageProcessor 인스턴스(체이닝 가능)
    *
    * @example
    * ```typescript
@@ -197,11 +186,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.maxHeight(400).toBlob();
    * ```
    */
-  maxHeight(
-    this: ShortcutBuilder<BeforeResize>,
-    height: number,
-    options?: Partial<Omit<MaxFitConfig, 'fit' | 'height'>>
-  ): IImageProcessor<AfterResize> {
+  maxHeight(height: number, options?: Partial<Omit<MaxFitConfig, 'fit' | 'height'>>): IImageProcessor {
     return this.processor.resize({
       fit: 'maxFit',
       height,
@@ -219,7 +204,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Reduction is based on the larger scaling ratio between width and height.
    *
    * @param size Maximum size ({ width, height })
-   * @returns IImageProcessor in AfterResize state (chainable)
+   * @returns IImageProcessor 인스턴스(체이닝 가능)
    *
    * @example
    * ```typescript
@@ -228,10 +213,9 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * ```
    */
   maxSize(
-    this: ShortcutBuilder<BeforeResize>,
     size: { width: number; height: number },
     options?: Partial<Omit<MaxFitConfig, 'fit' | 'width' | 'height'>>
-  ): IImageProcessor<AfterResize> {
+  ): IImageProcessor {
     return this.processor.resize({
       fit: 'maxFit',
       ...size,
@@ -248,7 +232,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Aspect ratio is always preserved.
    *
    * @param width Minimum width (pixels)
-   * @returns IImageProcessor in AfterResize state (chainable)
+   * @returns IImageProcessor 인스턴스(체이닝 가능)
    *
    * @example
    * ```typescript
@@ -256,11 +240,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.minWidth(300).toBlob();
    * ```
    */
-  minWidth(
-    this: ShortcutBuilder<BeforeResize>,
-    width: number,
-    options?: Partial<Omit<MinFitConfig, 'fit' | 'width'>>
-  ): IImageProcessor<AfterResize> {
+  minWidth(width: number, options?: Partial<Omit<MinFitConfig, 'fit' | 'width'>>): IImageProcessor {
     return this.processor.resize({
       fit: 'minFit',
       width,
@@ -277,7 +257,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Aspect ratio is always preserved.
    *
    * @param height Minimum height (pixels)
-   * @returns IImageProcessor in AfterResize state (chainable)
+   * @returns IImageProcessor 인스턴스(체이닝 가능)
    *
    * @example
    * ```typescript
@@ -285,11 +265,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.minHeight(200).toBlob();
    * ```
    */
-  minHeight(
-    this: ShortcutBuilder<BeforeResize>,
-    height: number,
-    options?: Partial<Omit<MinFitConfig, 'fit' | 'height'>>
-  ): IImageProcessor<AfterResize> {
+  minHeight(height: number, options?: Partial<Omit<MinFitConfig, 'fit' | 'height'>>): IImageProcessor {
     return this.processor.resize({
       fit: 'minFit',
       height,
@@ -307,7 +283,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Enlargement is based on the smaller scaling ratio between width and height.
    *
    * @param size Minimum size ({ width, height })
-   * @returns IImageProcessor in AfterResize state (chainable)
+   * @returns IImageProcessor 인스턴스(체이닝 가능)
    *
    * @example
    * ```typescript
@@ -316,10 +292,9 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * ```
    */
   minSize(
-    this: ShortcutBuilder<BeforeResize>,
     size: { width: number; height: number },
     options?: Partial<Omit<MinFitConfig, 'fit' | 'width' | 'height'>>
-  ): IImageProcessor<AfterResize> {
+  ): IImageProcessor {
     return this.processor.resize({
       fit: 'minFit',
       ...size,
@@ -340,7 +315,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Resizes to the specified width while maintaining aspect ratio for height.
    *
    * @param width Target width (pixels)
-   * @returns IImageProcessor in AfterResize state
+   * @returns IImageProcessor 인스턴스
    *
    * @example
    * ```typescript
@@ -348,7 +323,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.exactWidth(800).toBlob();
    * ```
    */
-  exactWidth(this: ShortcutBuilder<BeforeResize>, width: number): IImageProcessor<AfterResize> {
+  exactWidth(width: number): IImageProcessor {
     return this.processor.resize({ fit: 'fill', width });
   }
 
@@ -359,7 +334,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Resizes to the specified height while maintaining aspect ratio for width.
    *
    * @param height Target height (pixels)
-   * @returns IImageProcessor in AfterResize state
+   * @returns IImageProcessor 인스턴스
    *
    * @example
    * ```typescript
@@ -367,7 +342,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.exactHeight(600).toBlob();
    * ```
    */
-  exactHeight(this: ShortcutBuilder<BeforeResize>, height: number): IImageProcessor<AfterResize> {
+  exactHeight(height: number): IImageProcessor {
     return this.processor.resize({ fit: 'fill', height });
   }
 
@@ -379,7 +354,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Use a single number for uniform scaling, or an object for axis-specific scaling.
    *
    * @param scale Scale factor (number or { sx?, sy? } object)
-   * @returns IImageProcessor in AfterResize state
+   * @returns IImageProcessor 인스턴스
    *
    * @example
    * ```typescript
@@ -393,7 +368,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.scale({ sx: 2, sy: 0.75 }).toBlob(); // X-axis 2x, Y-axis 0.75x
    * ```
    */
-  scale(this: ShortcutBuilder<BeforeResize>, scale: ScaleValue): IImageProcessor<AfterResize> {
+  scale(scale: ScaleValue): IImageProcessor {
     return this.processor.resize({ fit: 'scale', scale });
   }
 
@@ -404,7 +379,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Applies scaling only to the X-axis (width). Height remains original.
    *
    * @param scaleX X-axis scale factor
-   * @returns IImageProcessor in AfterResize state
+   * @returns IImageProcessor 인스턴스
    *
    * @example
    * ```typescript
@@ -412,7 +387,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.scaleX(2).toBlob();
    * ```
    */
-  scaleX(this: ShortcutBuilder<BeforeResize>, scaleX: number): IImageProcessor<AfterResize> {
+  scaleX(scaleX: number): IImageProcessor {
     return this.processor.resize({ fit: 'scale', scale: { sx: scaleX } });
   }
 
@@ -423,7 +398,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * Applies scaling only to the Y-axis (height). Width remains original.
    *
    * @param scaleY Y-axis scale factor
-   * @returns IImageProcessor in AfterResize state
+   * @returns IImageProcessor 인스턴스
    *
    * @example
    * ```typescript
@@ -431,7 +406,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.scaleY(0.5).toBlob();
    * ```
    */
-  scaleY(this: ShortcutBuilder<BeforeResize>, scaleY: number): IImageProcessor<AfterResize> {
+  scaleY(scaleY: number): IImageProcessor {
     return this.processor.resize({ fit: 'scale', scale: { sy: scaleY } });
   }
 
@@ -443,7 +418,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    *
    * @param scaleX X-axis scale factor
    * @param scaleY Y-axis scale factor
-   * @returns IImageProcessor in AfterResize state
+   * @returns IImageProcessor 인스턴스
    *
    * @example
    * ```typescript
@@ -451,7 +426,7 @@ export class ShortcutBuilder<TState extends ProcessorState> {
    * await processImage(src).shortcut.scaleXY(2, 1.5).toBlob();
    * ```
    */
-  scaleXY(this: ShortcutBuilder<BeforeResize>, scaleX: number, scaleY: number): IImageProcessor<AfterResize> {
+  scaleXY(scaleX: number, scaleY: number): IImageProcessor {
     return this.processor.resize({ fit: 'scale', scale: { sx: scaleX, sy: scaleY } });
   }
 }

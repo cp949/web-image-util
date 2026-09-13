@@ -12,7 +12,6 @@ import type { ShortcutBuilder } from '../shortcut/shortcut-builder';
 import type { OutputFormat } from './base';
 import type { BoxOptions } from './box-config';
 import type { BlurOptions, OutputOptions, ResultBlob, ResultCanvas, ResultDataURL, ResultFile } from './output-types';
-import type { AfterResize, BeforeResize, ProcessorState } from './processor-state.internal';
 import type { ResizeConfig } from './resize-config';
 import type { TransformOptions } from './transform-config';
 
@@ -21,17 +20,15 @@ import type { TransformOptions } from './transform-config';
  *
  * @description Core interface implemented by the ImageProcessor class.
  * ShortcutBuilder depends on this interface to prevent circular dependencies.
- *
- * @template TState Processor state (BeforeResize | AfterResize)
  */
-export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
+export interface IImageProcessor {
   /**
    * Shortcut API accessor
    *
    * @description Provides Sharp.js style convenient resizing methods.
    * Supports auto-completion and type checking through type-safe interface.
    */
-  shortcut: ShortcutBuilder<TState>;
+  shortcut: ShortcutBuilder;
 
   /**
    * crop / flip / rotate 변환 (한 번만, resize() 앞에서만)
@@ -39,13 +36,12 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * @description
    * 호출 순서와 무관하게 crop → flip → rotate → resize 순서로 계산되고,
    * 최종 출력 시점에 drawImage 한 번으로 렌더된다. crop 좌표는 원본 픽셀 기준이다.
-   * resize() 뒤에는 호출할 수 없다. ImageProcessor가 런타임에 거부한다(현재 상태 타입은
-   * 이 제약을 컴파일 타임에 강제하지 않는다 — resize()와 같다). 두 번째 호출도 런타임 오류다.
+   * 한 체인에서 한 번만, resize() 앞에서만 호출할 수 있다 — ImageProcessor가 런타임에 거부한다.
    * crop이 원본과 겹치지 않으면 출력 시점에 `INVALID_DIMENSIONS`다. 단, `toCanvas()`/`toCanvasDetailed()`는
    * 이 오류를 `OUTPUT_FAILED`로 감싸 던진다(원인은 `cause`에 보존).
    *
    * @param options 변환 옵션. 빈 객체는 no-op
-   * @returns 같은 상태(BeforeResize)의 프로세서 — resize()를 이어서 부를 수 있다
+   * @returns 같은 프로세서 — resize()를 이어서 부를 수 있다
    *
    * @example
    * ```typescript
@@ -55,17 +51,16 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    *   .toBlob();
    * ```
    */
-  transform(this: IImageProcessor<BeforeResize>, options: TransformOptions): IImageProcessor<BeforeResize>;
+  transform(options: TransformOptions): IImageProcessor;
 
   /**
    * Image resizing (can only be called once)
    *
-   * @description The resize() method can only be called once.
-   * ImageProcessor rejects additional calls at runtime; the current state types
-   * do not enforce this restriction at compile time.
+   * @description The resize() method can only be called once per chain.
+   * ImageProcessor rejects additional calls at runtime.
    *
    * @param config Resizing configuration
-   * @returns Processor instance in state after resize() call
+   * @returns Processor instance
    *
    * @example
    * ```typescript
@@ -73,7 +68,7 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    *   .resize({ fit: 'cover', width: 300, height: 200 });
    * ```
    */
-  resize(this: IImageProcessor<BeforeResize>, config: ResizeConfig): IImageProcessor<AfterResize>;
+  resize(config: ResizeConfig): IImageProcessor;
 
   /**
    * Apply blur effect
@@ -81,9 +76,9 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * @description Can be used regardless of whether resize() has been called.
    * @param radius Blur radius (default: 2)
    * @param options Blur options (optional)
-   * @returns Processor instance with same state
+   * @returns Processor instance
    */
-  blur(radius?: number, options?: Partial<BlurOptions>): IImageProcessor<TState>;
+  blur(radius?: number, options?: Partial<BlurOptions>): IImageProcessor;
 
   /**
    * padding / background / radius / border를 CSS box model 의미로 지정한다
@@ -95,7 +90,7 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    * 번질 수 있다 — `radius`를 지정해도 막히지 않는다(현재 완화 방법 없음).
    *
    * @param options box 옵션. 빈 객체는 no-op
-   * @returns 같은 상태의 프로세서 — 상태를 바꾸지 않는다(`blur()`와 같은 방식)
+   * @returns 같은 프로세서(`blur()`와 같은 방식)
    *
    * @example
    * ```typescript
@@ -105,7 +100,7 @@ export interface IImageProcessor<TState extends ProcessorState = BeforeResize> {
    *   .toBlob('png');
    * ```
    */
-  box(options: BoxOptions): IImageProcessor<TState>;
+  box(options: BoxOptions): IImageProcessor;
 
   /**
    * Convert to Blob

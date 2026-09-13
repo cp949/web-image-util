@@ -3,7 +3,7 @@
  *
  * @description Canvas 2D API를 바탕으로 브라우저 전용 이미지 처리 흐름을 구성한다.
  * 출력 경로 전체(소스 정규화·파이프라인 구성·인코딩·pool 반환)는
- * OutputPipeline이 담당하고, 이 클래스는 연산 축적과 타입 상태 전이만 맡는다.
+ * OutputPipeline이 담당하고, 이 클래스는 연산 축적과 위임만 맡는다.
  */
 
 import type { InternalProcessorOptions } from './core/output-pipeline.internal';
@@ -22,17 +22,13 @@ import type {
 } from './types';
 import type { BoxOptions } from './types/box-config';
 import type { IImageProcessor } from './types/processor-interface';
-import type { AfterResizeCall, ProcessorState } from './types/processor-state.internal';
 import type { ResizeConfig } from './types/resize-config';
 import type { TransformOptions } from './types/transform-config';
-import type { BeforeResize, InitialProcessor } from './types/typed-processor.internal';
 
 /**
  * 타입 안전한 이미지 처리 체이닝 API를 제공한다.
  *
  * @description resize 1회 제한, 지연 렌더링, 브라우저 포맷 선택을 한 곳에서 관리한다.
- *
- * @template TState 프로세서 상태
  *
  * @example
  * ```typescript
@@ -42,7 +38,7 @@ import type { BeforeResize, InitialProcessor } from './types/typed-processor.int
  *   .blur(2)
  *   .toBlob();
  *
- * // ❌ Throws at runtime: duplicate resize() calls (the state types don't block this at compile time)
+ * // ❌ Throws at runtime: duplicate resize() calls
  * const processor = processImage(source)
  *   .resize({ fit: 'cover', width: 300, height: 200 })
  *   .resize({ fit: 'contain', width: 400, height: 300 }); // 💥 ImageProcessError: MULTIPLE_RESIZE_NOT_ALLOWED
@@ -52,7 +48,7 @@ import type { BeforeResize, InitialProcessor } from './types/typed-processor.int
  * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
  * ```
  */
-export class ImageProcessor<TState extends ProcessorState = BeforeResize> implements IImageProcessor<TState> {
+export class ImageProcessor implements IImageProcessor {
   // 출력 경로 deep module. 연산 축적·1회 제약 런타임 가드·렌더·인코딩 전부 여기에 있다.
   private readonly output: OutputPipeline;
 
@@ -103,11 +99,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    * processImage(source).resize({ fit: 'cover', width: 300, height: 200 }).transform({ rotate: 90 });
    * ```
    */
-  transform(this: ImageProcessor<BeforeResize>, options: TransformOptions): ImageProcessor<BeforeResize> {
+  transform(options: TransformOptions): ImageProcessor {
     // 1회 제약·resize 앞 제약·검증은 LazyRenderPipeline이 단일 소유한다.
-    // `this` 제약은 인터페이스와 같은 규칙을 클래스 타입 사용자에게도 선언해 두고(ShortcutBuilder 선례,
-    // 실제 집행력은 없다 — 컴파일 타임에는 실효가 없다), implements 검사에서 반환 타입이
-    // IImageProcessor<BeforeResize>에 그대로 대응되게 한다.
     this.output.addTransform(options);
 
     return this;
@@ -120,10 +113,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    * **Important: Can only be called once**
    * - Prevents quality degradation: Multiple resizing causes vector (SVG) → raster conversion quality loss
    * - Performance optimization: Prevents unnecessary intermediate Canvas creation
-   * - ImageProcessor rejects a second call at runtime; the current state types do not enforce this at compile time
+   * - ImageProcessor rejects a second call at runtime
    *
    * @param config Resize configuration (ResizeConfig)
-   * @returns Processor in AfterResize state (blur, toBlob etc. available)
+   * @returns Processor instance (blur, toBlob etc. available)
    *
    * @throws {ImageProcessError} Runtime error if resize() is called more than once
    *
@@ -145,11 +138,11 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    * const large = await processImage(source).resize({ fit: 'cover', width: 800, height: 600 }).toBlob();
    * ```
    */
-  resize(config: ResizeConfig): ImageProcessor<AfterResizeCall<TState>> {
-    // 런타임 검증과 1회 제약은 LazyRenderPipeline이 단일 소유하고, 여기서는 타입 상태 전이만 남는다.
+  resize(config: ResizeConfig): ImageProcessor {
+    // 런타임 검증과 1회 제약은 LazyRenderPipeline이 단일 소유한다.
     this.output.addResize(config);
 
-    return this as unknown as ImageProcessor<AfterResizeCall<TState>>;
+    return this;
   }
 
   /**
@@ -199,10 +192,10 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    *   .toBlob();
    * ```
    */
-  blur(radius: number = 2, options: Partial<BlurOptions> = {}): ImageProcessor<TState> {
+  blur(radius: number = 2, options: Partial<BlurOptions> = {}): ImageProcessor {
     this.output.addBlur(radius, options);
 
-    return this as ImageProcessor<TState>;
+    return this;
   }
 
   /**
@@ -251,11 +244,11 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    *   .toBlob();
    * ```
    */
-  box(options: BoxOptions): ImageProcessor<TState> {
+  box(options: BoxOptions): ImageProcessor {
     // 1회 제약·검증은 LazyRenderPipeline이 단일 소유한다.
     this.output.addBox(options);
 
-    return this as ImageProcessor<TState>;
+    return this;
   }
 
   /**
@@ -282,7 +275,7 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
    * await processImage(src).shortcut.scale(1.5).toBlob();                           // Scale adjustment
    * ```
    */
-  get shortcut(): ShortcutBuilder<TState> {
+  get shortcut(): ShortcutBuilder {
     return new ShortcutBuilder(this);
   }
 
@@ -465,11 +458,11 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
  *
  * @description
  * Creates ImageProcessor instance from various types of image sources.
- * Uses TypeScript state types to express the resize()-once intent; actual enforcement happens at runtime.
+ * resize() can be called at most once on the returned chain; a second call throws at runtime.
  *
  * @param source Image source (HTMLImageElement, Blob, URL, Data URL, SVG, ArrayBuffer, etc.)
  * @param options Processor options (crossOrigin, defaultQuality, etc.)
- * @returns ImageProcessor in BeforeResize state (resize() callable)
+ * @returns ImageProcessor instance (resize() callable)
  *
  * @example
  * ```typescript
@@ -502,8 +495,8 @@ export class ImageProcessor<TState extends ProcessorState = BeforeResize> implem
  *   .toBlob();
  * ```
  */
-export function processImage(source: ImageSource, options?: ProcessorOptions): InitialProcessor {
-  return new ImageProcessor<BeforeResize>(source, options);
+export function processImage(source: ImageSource, options?: ProcessorOptions): IImageProcessor {
+  return new ImageProcessor(source, options);
 }
 
 /**
@@ -529,8 +522,8 @@ export function processImage(source: ImageSource, options?: ProcessorOptions): I
 export function unsafe_processImage(
   source: ImageSource,
   options?: Omit<ProcessorOptions, 'svgSanitizer'>
-): InitialProcessor {
-  return new ImageProcessor<BeforeResize>(source, {
+): IImageProcessor {
+  return new ImageProcessor(source, {
     ...options,
     __svgPassthroughMode: 'unsafe-pass-through',
   });

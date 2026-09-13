@@ -28,8 +28,8 @@
 
 - `resize()`, `blur()` 같은 체이닝 메서드는 Canvas에 즉시 그리지 않고 연산만 누적합니다.
 - 체이닝 API의 `blur()`(CSS `ctx.filter`, `single-renderer.internal.ts`)와 `/filters`·`/advanced`의 `BlurFilterPlugin`(픽셀 컨볼루션, `src/filters/plugins/blur-plugins.ts`)은 이름만 같고 무관한 별도 구현입니다 — 병합 대상이 아닙니다.
-- 한 체인에서 `resize()`는 한 번만 허용합니다. 타입 상태와 런타임 가드를 함께 유지하며, 런타임 가드·설정 검증·오류 메시지는 `LazyRenderPipeline.addResize` 한 곳이 소유합니다.
-- 한 체인에서 `transform()`은 한 번만, `resize()` 앞에서만 허용합니다. `this: IImageProcessor<BeforeResize>` 제약을 `resize()`와 같은 방식으로 선언해 두지만, 실제 집행은 런타임 가드(`LazyRenderPipeline.addTransform`)뿐입니다(`resize()`의 1회 제약도 같은 수준입니다 — `ShortcutBuilder`와의 재귀적 제네릭 관계 때문에 `this` 제약이 컴파일 타임에는 실효가 없습니다). 새 상태 브랜드 타입은 두지 않습니다.
+- 한 체인에서 `resize()`는 한 번만 허용합니다. 이 제약은 컴파일 타임 타입으로 표현하지 않으며, 런타임 가드·설정 검증·오류 메시지는 `LazyRenderPipeline.addResize` 한 곳이 소유합니다.
+- 한 체인에서 `transform()`은 한 번만, `resize()` 앞에서만 허용합니다. `resize()`의 1회 제약과 같은 방식으로 컴파일 타임 타입으로는 표현하지 않고, 실제 집행은 런타임 가드(`LazyRenderPipeline.addTransform`)가 전담합니다. 새 상태 브랜드 타입은 두지 않습니다.
 - transform 연산 순서는 호출 순서와 무관하게 crop → flip → rotate(`expand`) → resize로 고정입니다. crop 좌표는 원본 픽셀 기준이며, 렌더는 `save()`/`restore()` 안에서 변환 행렬 + 9인자 `drawImage()` 1회입니다. `expand: false`에서 회전 이미지가 프레임을 넘칠 때만 사각형 `clip()` 경로를 추가합니다.
 - 한 체인에서 `box()`는 한 번만 허용합니다. `resize()`와 달리 체인 위치 제약은 없습니다(앞뒤 모두 호출 가능) — `analyzeAllOperations`가 배열 위치와 무관하게 항상 가장 나중(resize/blur 해석 뒤, content 크기가 확정된 뒤)에 해석해 "가장 바깥에 적용"을 보장합니다. 가드는 `LazyRenderPipeline.addBox`가 소유합니다.
 - box 렌더는 `ctx.ellipse()`(Chrome 48+, `ctx.roundRect()` 미사용)로 둥근 사각형 경로를 구성해 배경을 채우고(`ctx.fill()`), content를 패딩 박스 반지름으로 clip한 뒤 기존 drawImage 분기를 실행하고, border를 clip 밖에서 stroke합니다. content clip 반지름은 바깥 반지름 − `border.width`(0 이하면 각짐), stroke 반지름은 바깥 반지름 − `border.width / 2`(경로가 선 중심에 그려지므로)입니다.

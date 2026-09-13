@@ -88,9 +88,7 @@ export type {
 // ============================================================================
 //
 // The following types are used only internally by the library and users don't need to use them directly:
-// - ProcessorState, BeforeResize, AfterResize: Internal state machine
-// - AfterResizeCall: TypeScript compiler constraint for resize() state transition
-// - IImageProcessor, InitialProcessor, ResizedProcessor: Internal implementation types
+// - IImageProcessor, ProcessorFactory: Internal implementation types
 //
 // Users only need to use the ImageProcessor class (exported from '../processor').
 // ============================================================================

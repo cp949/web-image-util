@@ -22,7 +22,7 @@ describe('Type-safe processor tests (jsdom-safe)', () => {
   const testImageUrl = 'test.jpg';
 
   describe('Type system validation', () => {
-    it('processImage() should return InitialProcessor type', async () => {
+    it('processImage()는 체이닝 가능한 프로세서를 반환한다', async () => {
       const testBlob = await createTestImageBlob(400, 300, 'blue');
       const processor = processImage(testBlob);
 
@@ -32,7 +32,7 @@ describe('Type-safe processor tests (jsdom-safe)', () => {
       expect(resized).toBeDefined();
     });
 
-    it('should convert to ResizedProcessor type after resize() call', async () => {
+    it('resize() 호출 후에도 blur() 체이닝이 가능하다', async () => {
       const testBlob = await createTestImageBlob(400, 300, 'green');
 
       const initial = processImage(testBlob);
