@@ -2,7 +2,7 @@
  * 파싱 전 SVG 원문(raw string)에서 시작 태그와 속성값을 찾아내는 순회 로직의
  * 단일 소유자다.
  *
- * lightweight 엔진(`svg-sanitizer.ts`)과 intake guard(`safety.internal.ts`)가
+ * lightweight 엔진(`svg-sanitizer.ts`)과 intake guard(`intake-guard.internal.ts`)가
  * 이 모듈을 공유한다 — 둘 다 DOM 파싱 없이 정규식으로 SVG 원문을 훑어야 하므로
  * 같은 순회 로직이 필요하지만, 손으로 각자 짜면 갈릴 수 있다(예: 어떤 속성
  * 이름 집합을 대상으로 볼지가 두 소비자 사이에서 벌어짐). 이 모듈은 "태그를

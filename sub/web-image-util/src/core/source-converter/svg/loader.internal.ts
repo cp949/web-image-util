@@ -16,7 +16,8 @@ import type { QualityLevel } from '../../svg-complexity-analyzer';
 import { analyzeSvgComplexity } from '../../svg-complexity-analyzer';
 import type { SvgPassthroughMode } from '../options.internal';
 import { createBase64DataUrl } from './data-url.internal';
-import { assertSafeSvgContent, checkSvgSizeLimit } from './safety.internal';
+import { assertSafeSvgContent } from './intake-guard.internal';
+import { checkSvgSizeLimit } from './size-guard.internal';
 
 /** SVG 렌더링 시 품질과 CORS 동작을 제어하는 옵션이다. */
 export interface SvgRenderingOptions {

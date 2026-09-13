@@ -21,7 +21,7 @@ import {
   resolveFetchTimeoutMs,
 } from '../options.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
-import { readCheckedTextResponse, readVerifiedSvgResponse } from '../svg/safety.internal';
+import { readCheckedTextResponse, readVerifiedSvgResponse } from '../svg/size-guard.internal';
 import { createFetchAbortHandle, readCheckedBlobResponse } from './fetch-guards.internal';
 import {
   checkAllowedProtocol,

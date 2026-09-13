@@ -10,7 +10,7 @@ import { ImageProcessError } from '../../../errors.internal';
 import { MAX_SVG_BYTES } from '../../../svg-contract.internal';
 import { tryParseDataURL } from '../../../utils/data-url';
 import { isInlineSvg } from '../../../utils/svg-detection';
-import { checkSvgSizeLimit, createSvgSizeLimitError } from './safety.internal';
+import { checkSvgSizeLimit, createSvgSizeLimitError } from './size-guard.internal';
 
 /**
  * Base64 문자열의 디코딩 후 예상 크기를 계산한다.

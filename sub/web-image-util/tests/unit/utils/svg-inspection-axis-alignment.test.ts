@@ -10,7 +10,7 @@
  * 이 거울 관계가 리팩토링으로 조용히 어긋나면 본 테스트가 실패한다.
  */
 import { describe, expect, it } from 'vitest';
-import { assertSafeSvgContent } from '../../../src/core/source-converter/svg/safety.internal';
+import { assertSafeSvgContent } from '../../../src/core/source-converter/svg/intake-guard.internal';
 import { inspectSvgSanitization } from '../../../src/svg-sanitizer/inspect-sanitization';
 import { inspectSvg } from '../../../src/utils/inspect-svg';
 import { sanitizeSvgForRendering } from '../../../src/utils/svg-sanitizer';

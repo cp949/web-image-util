@@ -52,7 +52,7 @@ function sanitizeHrefValue(value: string, depth: number): string | null {
  * CSS 정책 대상 속성(`style` + presentation 11종)의 값을 따옴표 방식과 무관하게
  * 찾아내는 정규식 3종.
  *
- * intake guard(`safety.internal.ts`)의 presentation 속성 재검증도 같은
+ * intake guard(`intake-guard.internal.ts`)의 presentation 속성 재검증도 같은
  * `CSS_URL_PRESENTATION_ATTRIBUTES` 이름 집합을 쓴다 — 이 엔진이 실제로
  * 정제하는 속성 범위와 backstop이 재검증하는 범위가 벌어지지 않도록 한다.
  */

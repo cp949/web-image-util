@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { assertSafeSvgContent } from '../../../src/core/source-converter/svg/safety.internal';
+import { assertSafeSvgContent } from '../../../src/core/source-converter/svg/intake-guard.internal';
 
 describe('보안: intake guard의 presentation 속성 CSS 재검증', () => {
   it('fill 속성의 외부 url() 참조를 fail-closed로 차단한다', () => {

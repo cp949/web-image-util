@@ -64,7 +64,7 @@
 | `src/utils/browser-capabilities/memory.internal.ts` | 메모리 예산 단일 facts(`readMemoryBudget`) + GC 요청 메커니즘(`requestMemoryRelief`). probe는 `setMemoryProbe`로 주입 가능한 어댑터이고 fallback은 단일 값 하나다. 소비자 5곳(canvas-pool, performance-utils, auto-memory-manager, high-res-processor, tiled-processor)이 각자의 임계값 정책만 로컬로 남긴다 |
 | `src/utils/browser-capabilities/canvas-limits.internal.ts` | 브라우저별 Canvas 최대 안전 치수 단일 facts(`readMaxSafeCanvasDimension`). memory.internal.ts와 같은 probe 관례 — 기본 probe는 UA 문자열을 sniff하고, 알 수 없는 UA는 단일 fallback(16384)으로 떨어진다. navigator 부재 시에는 기존 `getMaxSafeDimension()`과 동일하게 `ReferenceError`를 던진다. `high-res-detector.internal.ts`의 `getMaxSafeDimension()`이 이 값을 그대로 재노출한다. `composition/compose.ts`의 canvas 크기 상한 검증(`DIMENSION_TOO_LARGE`)과 `core/single-renderer.internal.ts`의 대형 canvas 경고도 이 값을 직접 참조한다 |
 | `src/core/source-converter/options.internal.ts` | 내부 옵션 타입과 fetch 기본값 상수 |
-| `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.internal.ts`, `loader.internal.ts`, `safety.internal.ts` |
+| `src/core/source-converter/svg/` | SVG 안전 경로 — `data-url.internal.ts`, `loader.internal.ts`, `size-guard.internal.ts`, `intake-guard.internal.ts` |
 | `src/core/source-converter/url/` | HTTP/Blob URL 로더 — `policy.internal.ts`, `fetch-guards.internal.ts`, `loader.internal.ts` |
 | `src/core/source-converter/loaders/` | 형태별 입력 변환기 — `string.internal.ts`, `blob.internal.ts`, `canvas.internal.ts` |
 | `src/utils/image-decode.internal.ts` | 이미지 디코드의 단일 소유 모듈 — img 생성, `src` 할당 전 속성 설정, objectURL 수명, 오류 래핑. img 구동 방식만 어댑터로 갈린다 |
@@ -123,7 +123,7 @@
 | 3 | `stripXmlPreambleAndNoise()` *(utils/svg-detection.ts)* | BOM, XML 선언, 주석, DOCTYPE 정리 후 재판정 |
 | 4 | `sniffSvgFromBlob()` *(utils/svg-detection.ts)* | Blob 첫 4KB sniff |
 | 5 | `parseSvgFromDataUrl()` *(source-converter/svg/data-url.internal.ts)* | Data URL decode + SVG 추출 |
-| 6 | `assertSafeSvgContent()` *(source-converter/svg/safety.internal.ts)* | sanitize 후 잔여 외부 참조 fail-closed 차단 |
+| 6 | `assertSafeSvgContent()` *(source-converter/svg/intake-guard.internal.ts)* | sanitize 후 잔여 외부 참조 fail-closed 차단 |
 | 7 | `convertSvgToElement()` *(source-converter/svg/loader.internal.ts)* | SVG 정규화 + 고품질 브라우저 렌더링용 `HTMLImageElement` 변환 |
 
 수정 시 다양한 케이스 테스트, XSS·canvas 오염 방지를 함께 고려해야 합니다.
@@ -153,7 +153,7 @@
 
 상한 초과 처리는 두 갈래입니다. **거부 읽기**(`readGuardedResponseStream` 계열)는 오류를 던지고, **절단 읽기**(`readTruncatedResponsePrefix`)는 상한까지만 읽습니다. 앞부분 바이트만 필요한 스니핑 경로가 후자를 사용합니다.
 
-상한 값과 오류 코드는 호출자가 주입하므로 디코드 방식만 어댑터로 갈라집니다. 텍스트 어댑터는 `src/core/source-converter/svg/safety.internal.ts`의 `readCheckedTextResponse()`이며, 같은 가드 위에 `MAX_SVG_BYTES`와 `SVG_BYTES_EXCEEDED`를 주입합니다.
+상한 값과 오류 코드는 호출자가 주입하므로 디코드 방식만 어댑터로 갈라집니다. 텍스트 어댑터는 `src/core/source-converter/svg/size-guard.internal.ts`의 `readCheckedTextResponse()`이며, 같은 가드 위에 `MAX_SVG_BYTES`와 `SVG_BYTES_EXCEEDED`를 주입합니다.
 
 진단 모듈(`src/utils/inspect-svg-source.ts`)과 이미지 메타데이터 모듈(`src/utils/image-info/remote-fetch.internal.ts`)은 위 헬퍼/상수를 그대로 import해 fetch 정책을 적용합니다. 신규 정책/가드 함수를 별도로 신설하지 않는 것이 RM-004 결정 D14의 단일 출처 원칙입니다. byte cap을 사용자 옵션으로 상향하는 것은 금지되며, `options.byteLimit`은 `MAX_SVG_BYTES` 이하로만 허용됩니다. 같은 이유로 `fetchImageFormat()`의 `sniffBytes`도 `MAX_SNIFF_BYTES`(64KiB)를 넘길 수 없습니다.
 

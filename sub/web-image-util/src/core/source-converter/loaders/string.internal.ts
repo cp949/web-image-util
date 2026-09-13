@@ -17,7 +17,7 @@ import {
 } from '../options.internal';
 import { parseSvgFromDataUrl } from '../svg/data-url.internal';
 import { convertSvgToElement } from '../svg/loader.internal';
-import { readVerifiedSvgResponse } from '../svg/safety.internal';
+import { readVerifiedSvgResponse } from '../svg/size-guard.internal';
 import { checkResponseSize, createFetchAbortHandle } from '../url/fetch-guards.internal';
 import { loadBlobUrl, loadImageFromUrl } from '../url/loader.internal';
 import { checkAllowedProtocol, isAbortLikeError, normalizePolicyUrl } from '../url/policy.internal';

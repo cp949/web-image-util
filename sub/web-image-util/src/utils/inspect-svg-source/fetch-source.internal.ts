@@ -1,5 +1,5 @@
 import { DEFAULT_ALLOWED_PROTOCOLS, DEFAULT_FETCH_TIMEOUT_MS } from '../../core/source-converter/options.internal';
-import { type CheckedTextResponse, readCheckedTextResponse } from '../../core/source-converter/svg/safety.internal';
+import { type CheckedTextResponse, readCheckedTextResponse } from '../../core/source-converter/svg/size-guard.internal';
 import { checkResponseSize, createFetchAbortHandle } from '../../core/source-converter/url/fetch-guards.internal';
 import {
   checkAllowedProtocol,

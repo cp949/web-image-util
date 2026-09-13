@@ -5,7 +5,7 @@
  * 본문 취소다. 프로토콜 허용 판정은 policy.internal.ts가 소유한다.
  *
  * 디코드 방식만 어댑터로 갈라진다 — 바이너리는 이 모듈의 `readCheckedBlobResponse`,
- * 텍스트는 svg/safety.internal.ts가 `readGuardedResponseStream` 위에 얹는다.
+ * 텍스트는 svg/size-guard.internal.ts가 `readGuardedResponseStream` 위에 얹는다.
  * 상한 값과 오류 코드는 호출자가 주입하므로 SVG 경로와 일반 소스 경로가 같은 가드를 공유한다.
  *
  * 상한 초과 처리는 두 갈래다. **거부 읽기**(`readGuardedResponseStream` 계열)는 오류를 던지고,
