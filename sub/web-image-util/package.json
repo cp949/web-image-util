@@ -41,27 +41,27 @@
     "check:browser-compat": "node scripts/check-browser-compat.mjs"
   },
   "dependencies": {
-    "dompurify": "^3.4.14"
+    "dompurify": "^3.4.15"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.63.0",
     "@repo/typescript-config": "workspace:*",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.5.1",
     "@vitest/browser": "^5.0.0",
     "@vitest/browser-playwright": "^5.0.0",
     "@vitest/coverage-v8": "^5.0.0",
     "canvas": "^3.2.3",
-    "es-check": "^9.6.4",
+    "es-check": "^9.7.1",
     "jest-image-snapshot": "^6.5.2",
     "jsdom": "^30.0.1",
-    "playwright": "^1.62.1",
+    "playwright": "^1.63.0",
     "shelljs": "^0.10.0",
     "ts-node": "^10.9.2",
-    "tslib": "^2.8.1",
     "tsdown": "^0.23.0",
-    "tsx": "^4.23.12",
+    "tslib": "^2.8.1",
+    "tsx": "^4.23.13",
     "typescript": "^6.0.3",
-    "vite": "8.2.1",
+    "vite": "8.3.0",
     "vitest": "^5.0.0"
   },
   "exports": {
