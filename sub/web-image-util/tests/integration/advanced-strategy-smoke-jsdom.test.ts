@@ -3,8 +3,7 @@
  * TiledProcessor/SteppedProcessor 실행까지 모킹 없이 관통하는지 확인하는
  * 스모크 테스트다.
  *
- * 기존 계약 테스트(auto-high-res.smart-resize.test.ts,
- * high-res-manager-smart-resize-strategy-jsdom.test.ts)는 층마다 바로 아래
+ * 기존 계약 테스트(high-res-processor.resize.test.ts 등)는 층마다 바로 아래
  * 층을 vi.spyOn(...).mockResolvedValue(...)로 걷어내 "호출 인자가 맞는가"만
  * 검증한다 — 레이어 사이 실제 배선이 끊겨도 통과한다. 이 파일은
  * mockImplementation 없는 pass-through spy(구현은 그대로 두고 호출 여부만
