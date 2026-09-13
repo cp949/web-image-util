@@ -1,6 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CanvasPool } from '../../../src/base/canvas-pool.internal';
+import { SteppedProcessor } from '../../../src/base/stepped-processor.internal';
+import { TiledProcessor } from '../../../src/base/tiled-processor.internal';
 import { HighResolutionProcessor } from '../../../src/core/high-res-processor';
-import { createDrawableImage } from './high-res-processor.helpers';
+import { createDrawableImage, createMockImage } from './high-res-processor.helpers';
 
 describe('HighResolutionProcessor.resize', () => {
   describe('기본 동작', () => {
@@ -121,6 +124,117 @@ describe('HighResolutionProcessor.resize', () => {
       await expect(
         HighResolutionProcessor.resize(img, 400, 300, { forceStrategy: 'unknown-strategy' as any })
       ).rejects.toMatchObject({ code: 'FEATURE_NOT_SUPPORTED' });
+    });
+  });
+
+  describe('HighResolutionProcessor.resize — priority 기반 전략 선택(forceStrategy 미지정)', () => {
+    // 모든 케이스에서 highResPixelThreshold 를 낮춰 고해상도 경로를 강제로 연다.
+    // forceStrategy 는 selectOptimalStrategy 를 즉시 우회시키므로 이 describe 안에서는 쓰지 않는다.
+    const FORCE_HIGH_RES = { thresholds: { highResPixelThreshold: 1 } };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('priority="fast" + 이미지 메모리 추정치 ≤ 64MB 이면 selectFastStrategy가 direct를 고른다', async () => {
+      // 300×300×4 ≈ 0.34MB ≤ 64MB → direct
+      const img = createDrawableImage(300, 300);
+      const result = await HighResolutionProcessor.resize(img, 100, 100, { priority: 'fast', ...FORCE_HIGH_RES });
+
+      expect(result.strategy).toBe('direct');
+    });
+
+    it('priority="fast" + 이미지 메모리 추정치 > 64MB 이면 selectFastStrategy가 tiled를 고른다', async () => {
+      const stubCanvas = document.createElement('canvas');
+      const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
+
+      // 9000×9000×4 ≈ 309MB > 64MB → tiled
+      const img = createMockImage(9000, 9000);
+      const result = await HighResolutionProcessor.resize(img, 800, 600, { priority: 'fast', ...FORCE_HIGH_RES });
+
+      expect(tiledSpy).toHaveBeenCalledOnce();
+      expect(result.strategy).toBe('tiled');
+    });
+
+    it('priority="quality" + scaleRatio < 0.3 + 이미지 메모리 추정치 ≤ 256MB 이면 selectHighQualityStrategy가 stepped를 고른다', async () => {
+      const stubCanvas = document.createElement('canvas');
+      const steppedSpy = vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+      // 1000×1000(≈3.8MB ≤ 256MB), target 200×200 → scaleRatio = min(200/1000, 200/1000) = 0.2 < 0.3
+      const img = createMockImage(1000, 1000);
+      const result = await HighResolutionProcessor.resize(img, 200, 200, { priority: 'quality', ...FORCE_HIGH_RES });
+
+      expect(steppedSpy).toHaveBeenCalledOnce();
+      expect(result.strategy).toBe('stepped');
+    });
+
+    it('priority="quality" + 이미지 메모리 추정치 > 256MB 이면 scaleRatio 조건이 성립해도 tiled를 고른다', async () => {
+      const stubCanvas = document.createElement('canvas');
+      const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(stubCanvas);
+
+      // 9000×9000×4 ≈ 309MB > 256MB → estimatedMemoryMB<=256 조건이 깨져 stepped 분기를 건너뛰고 tiled로 간다
+      const img = createMockImage(9000, 9000);
+      const result = await HighResolutionProcessor.resize(img, 800, 600, { priority: 'quality', ...FORCE_HIGH_RES });
+
+      expect(tiledSpy).toHaveBeenCalledOnce();
+      expect(result.strategy).toBe('tiled');
+    });
+
+    it('priority 생략(기본 balanced, 위 두 조건 모두 미해당)이면 analysis.strategy 를 그대로 쓴다', async () => {
+      const stubCanvas = document.createElement('canvas');
+      const steppedSpy = vi.spyOn(SteppedProcessor, 'resizeWithSteps').mockResolvedValue(stubCanvas);
+
+      // 5000×5000×4 ≈ 95.4MB — selectBalancedStrategy()의 64~256MB 구간 → analysis.strategy = 'stepped'
+      const img = createMockImage(5000, 5000);
+      const result = await HighResolutionProcessor.resize(img, 800, 600, { ...FORCE_HIGH_RES });
+
+      expect(steppedSpy).toHaveBeenCalledOnce();
+      expect(result.strategy).toBe('stepped');
+    });
+
+    it('isMemoryLow()=true 이면 priority 와 무관하게 selectMemoryEfficientStrategy 가 적용된다(32MB 초과 → tiled, 이하 → direct)', async () => {
+      vi.spyOn(HighResolutionProcessor as any, 'isMemoryLow').mockReturnValue(true);
+
+      // 3000×3000×4 ≈ 34.3MB > 32MB → tiled — priority="quality"라면 원래 stepped/tiled 분기를 타지만
+      // memory-pressure 검사가 그보다 먼저 실행되어 결과를 덮어쓴다.
+      const tiledSpy = vi.spyOn(TiledProcessor, 'resizeInTiles').mockResolvedValue(document.createElement('canvas'));
+      const largeImg = createMockImage(3000, 3000);
+      const largeResult = await HighResolutionProcessor.resize(largeImg, 800, 600, {
+        priority: 'quality',
+        ...FORCE_HIGH_RES,
+      });
+
+      expect(tiledSpy).toHaveBeenCalledOnce();
+      expect(largeResult.strategy).toBe('tiled');
+
+      // 1000×1000×4 ≈ 3.8MB ≤ 32MB → direct — 같은 크기가 priority="quality" 단독이라면 stepped가
+      // 됐을 조합(위 stepped 테스트 참고)인데도 memory-pressure 검사가 우선해 direct로 바뀐다.
+      const smallImg = createDrawableImage(1000, 1000);
+      const smallResult = await HighResolutionProcessor.resize(smallImg, 200, 200, {
+        priority: 'quality',
+        ...FORCE_HIGH_RES,
+      });
+
+      expect(smallResult.strategy).toBe('direct');
+    });
+
+    it('isMemoryLow()=true 이면 CanvasPool.getInstance().clear()가 호출된다', async () => {
+      vi.spyOn(HighResolutionProcessor as any, 'isMemoryLow').mockReturnValue(true);
+      const clearSpy = vi.spyOn(CanvasPool.prototype, 'clear');
+
+      const img = createDrawableImage(1000, 1000);
+      await HighResolutionProcessor.resize(img, 200, 200, { priority: 'quality', ...FORCE_HIGH_RES });
+
+      expect(clearSpy).toHaveBeenCalledOnce();
+    });
+
+    it('isMemoryLow()=false(기본, mock 안 함) 이면 CanvasPool.clear()가 호출되지 않는다', async () => {
+      const clearSpy = vi.spyOn(CanvasPool.prototype, 'clear');
+
+      const img = createDrawableImage(1000, 1000);
+      await HighResolutionProcessor.resize(img, 200, 200, { priority: 'quality', ...FORCE_HIGH_RES });
+
+      expect(clearSpy).not.toHaveBeenCalled();
     });
   });
 });

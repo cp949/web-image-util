@@ -224,21 +224,19 @@ export class HighResolutionProcessor {
     options: { thresholds?: Partial<HighResolutionThresholds> } = {}
   ): HighResolutionValidation {
     const thresholds = { ...DEFAULT_THRESHOLDS, ...options.thresholds };
-    const analysis = HighResolutionDetector.analyzeImage(img);
 
-    const warnings: string[] = [];
-    const recommendations: string[] = [];
-    let canProcess = true;
+    // 캔버스 한계·512MB 초과·extreme 복잡도·전면 차단(canProcess) 4개 검사는
+    // HighResolutionDetector.validateProcessingCapability()가 단일 소유한다 — 여기서 재계산하지 않는다.
+    const {
+      canProcess,
+      analysis,
+      limitations,
+      recommendations: capabilityRecommendations,
+    } = HighResolutionDetector.validateProcessingCapability(img);
 
-    if (exceedsMaxSafeDimension(img.width, img.height, analysis.maxSafeDimension)) {
-      warnings.push(`Image size exceeds browser Canvas limit. Maximum: ${analysis.maxSafeDimension}px`);
-      recommendations.push('Recommend using tile-based processing for segmented processing.');
-    }
+    const warnings: string[] = [...limitations];
+    const recommendations: string[] = [...capabilityRecommendations];
 
-    if (analysis.estimatedMemoryMB > 512) {
-      warnings.push(`High memory usage: ${analysis.estimatedMemoryMB}MB`);
-      recommendations.push('Recommend using memory-efficient processing or reducing image size.');
-    }
     if (analysis.estimatedMemoryMB > thresholds.memoryWarningThreshold) {
       warnings.push(
         `Expected memory usage exceeds limit: ${analysis.estimatedMemoryMB}MB > ${thresholds.memoryWarningThreshold}MB`
@@ -246,24 +244,10 @@ export class HighResolutionProcessor {
       recommendations.push('To reduce memory usage, resize to a smaller size.');
     }
 
-    if (analysis.processingComplexity === 'extreme') {
-      warnings.push('Very complex processing is expected and may take a long time.');
-      recommendations.push('Monitor processing progress and be prepared to cancel if necessary.');
-    }
-
     const targetPixels = targetWidth * targetHeight;
     const maxSafePixels = analysis.maxSafeDimension * analysis.maxSafeDimension;
     if (targetPixels > maxSafePixels) {
       warnings.push('Target image size may exceed browser limits.');
-    }
-
-    const hasBlockingLimitations =
-      analysis.estimatedMemoryMB > 1024 || Math.max(img.width, img.height) > analysis.maxSafeDimension * 2;
-    if (hasBlockingLimitations) {
-      canProcess = false;
-      recommendations.push(
-        'Recommend pre-processing the image to a smaller size or using professional image processing tools.'
-      );
     }
 
     const recommendedStrategy = analysis.strategy;
