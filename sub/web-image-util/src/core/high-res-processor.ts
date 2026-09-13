@@ -339,7 +339,7 @@ export class HighResolutionProcessor {
     return {
       canvas,
       strategy,
-      processingTime: Math.round(((Date.now() - startTime) / 1000) * 100) / 100,
+      processingTime: HighResolutionProcessor.elapsedSeconds(startTime),
       memoryPeakUsageMB: Math.round(HighResolutionProcessor.getCurrentMemoryUsage() * 100) / 100,
     };
   }
@@ -368,13 +368,16 @@ export class HighResolutionProcessor {
       return selectFastStrategy(analysis.estimatedMemoryMB, analysis.width, analysis.height, analysis.maxSafeDimension);
     }
     if (smoothingQuality === 'high') {
-      const scaleRatio = Math.min(targetWidth / img.width, targetHeight / img.height);
+      // resize() 상단의 scaleRatio(축소 배율, src/target 중 큰 값)와는 다른 값이다 —
+      // 여기는 target/src 중 작은 값(축소일수록 0에 가까움)으로, stepped 선택 기준인
+      // HIGH_QUALITY_STEPPED_SCALE_RATIO와 직접 비교하기 위한 형태다.
+      const fitScaleRatio = Math.min(targetWidth / img.width, targetHeight / img.height);
       return selectHighQualityStrategy(
         analysis.estimatedMemoryMB,
         analysis.width,
         analysis.height,
         analysis.maxSafeDimension,
-        scaleRatio,
+        fitScaleRatio,
         analysis.strategy
       );
     }
@@ -444,9 +447,14 @@ export class HighResolutionProcessor {
     return {
       canvas,
       strategy,
-      processingTime: Math.round(((Date.now() - startTime) / 1000) * 100) / 100,
+      processingTime: HighResolutionProcessor.elapsedSeconds(startTime),
       memoryPeakUsageMB: 0,
     };
+  }
+
+  /** startTime(Date.now() 시점) 대비 경과 시간을 소수점 둘째 자리까지의 초 단위로 반환한다 */
+  private static elapsedSeconds(startTime: number): number {
+    return Math.round(((Date.now() - startTime) / 1000) * 100) / 100;
   }
 
   private static async executeProcessing(
