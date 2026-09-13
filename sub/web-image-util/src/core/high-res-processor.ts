@@ -61,10 +61,17 @@ export interface HighResolutionProcessOptions {
 
 export interface HighResolutionProcessResult {
   canvas: HTMLCanvasElement;
+  /**
+   * `analysis.strategy`는 `analyzeImage()`가 이미지 하나만 보고 계산한 balanced 기준
+   * 추정치다. 실제 실행된 전략은 이 값이 아니라 `strategy` 필드를 봐야 한다 —
+   * 고해상도 경로 미만(표준 경로)에서는 캔버스 크기 한계 초과 여부만으로 direct/tiled를
+   * 다시 정하므로, 메모리 추정치가 16~64MB 구간인 이미지는 `analysis.strategy`가
+   * 'tiled'여도 `strategy`는 'direct'일 수 있다.
+   */
   analysis: ImageAnalysis;
   /** 실제 적용된 값(입력 생략 시 'balanced') */
   priority: HighResolutionPriority;
-  /** 실제 실행된 전략(direct/stepped/tiled) */
+  /** 실제 실행된 전략(direct/stepped/tiled). `analysis.strategy`와 다를 수 있다 */
   strategy: ProcessingStrategy;
   processingTime: number;
   memoryPeakUsageMB: number;

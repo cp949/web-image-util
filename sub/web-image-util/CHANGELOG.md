@@ -27,6 +27,8 @@
   - `/advanced`가 export하던 공개 타입 `AutoProcessingResult`, `HighResolutionOptions`, `ProcessingResult`가 제거됐습니다. 이 타입을 직접 import하던 코드는 깨집니다 — 대체 타입은 `HighResolutionProcessResult`/`HighResolutionProcessOptions`(둘 다 `/advanced`에서 export)입니다.
   - `AdvancedProcessingResult.processing.resizing`의 shape이 바뀌었습니다. `tileProcessing` 필드가 사라졌고(`strategy === 'tiled'`와 항상 같은 값이던 `memoryOptimized`로 통합), `strategy` 필드의 의미가 사람이 읽는 라벨 문자열(예: `'High-speed Processing'`)에서 `ProcessingStrategy` enum 값(`'direct'`/`'stepped'`/`'tiled'`)으로 바뀌었습니다.
   - `batchResize()`에서 개별 항목이 실패하면 원본 오류가 그대로 올라오지 않고 `ImageProcessError('RESIZE_FAILED', { cause: 원본오류, context: { debug: { stage: 'Batch processing', index } } })`로 감싸 올라옵니다. 실패한 항목의 인덱스는 `error.context.debug.index`로, 원본 오류는 `error.cause`로 확인하세요.
+  - `onMemoryWarning` 콜백의 인자가 `HighResolutionManager`의 `{ usageRatio, availableMB }` 객체에서 사람이 읽는 문자열 하나로 바뀌었습니다. 수치를 직접 읽던 코드(경고 UI의 퍼센트 표시 등)는 더 이상 동작하지 않습니다 — 대체 수치 인터페이스는 없습니다.
+  - `onProgress` 콜백의 인자가 `HighResolutionManager`의 진행 상세 객체(`{ stage, currentStrategy, timeElapsed, estimatedTimeRemaining, memoryUsageMB, ... }`)에서 `(progress: number, message: string)`로 바뀌었습니다. `currentStrategy`/`estimatedTimeRemaining` 등 개별 필드를 읽던 코드는 깨집니다 — 대체 필드는 없습니다.
 
 ### 수정
 
