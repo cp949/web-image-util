@@ -13,7 +13,7 @@
 FROM debian:buster-slim
 
 ARG NODE_VERSION=24.15.0
-ARG PNPM_VERSION=11.25.0
+ARG PNPM_VERSION=12.4.1
 
 RUN set -eux; \
     # 20200712T145349Z(chromium=83.0.4103.116-3)로 고정한다 — 같은 버전의 더
