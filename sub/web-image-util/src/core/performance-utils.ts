@@ -2,6 +2,12 @@
  * Performance utilities - user-friendly API
  *
  * @description Provides simple performance control functions
+ *
+ * `processImage().resize()` 메인 체인은 `HighResolutionProcessor`(임계값 감지·타일링·메모리 경고)를
+ * 전혀 호출하지 않는다 — 대용량 이미지 보호가 필요하면 이 파일의 `ResizePerformance`/`fastResize`/
+ * `qualityResize`/`autoResize`를 명시적으로 호출해야 한다. 메인 체인과 이름을 맞춰야 할 대응 개념이
+ * 있는 게 아니라(`ResizeConfig`엔 `priority`에 대응하는 필드가 없다), 의도적으로 분리된 `/advanced`
+ * 전용 escape hatch다.
  */
 
 import type { ProcessingStrategy } from '../base/strategy-policy.internal';
