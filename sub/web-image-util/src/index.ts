@@ -45,7 +45,8 @@
  *
  * // High-quality processing with blur
  * const result = await processImage(source)
- *   .resize({ fit: 'contain', width: 800, height: 600, background: '#ffffff' })
+ *   .resize({ fit: 'contain', width: 800, height: 600 })
+ *   .box({ background: '#ffffff' })
  *   .blur(2)
  *   .toBlob({ format: 'webp', quality: 0.9 });
  * ```

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CanvasPool } from '../../../src/base/canvas-pool.internal';
 import { SteppedProcessor } from '../../../src/base/stepped-processor.internal';
 import { TiledProcessor } from '../../../src/base/tiled-processor.internal';
-import { HighResolutionProcessor } from '../../../src/core/high-res-processor';
+import { HighResolutionProcessor, ProcessingStrategy } from '../../../src/core/high-res-processor';
 import { createDrawableImage, createMockImage } from './high-res-processor.helpers';
 
 describe('HighResolutionProcessor.resize', () => {
@@ -133,6 +133,28 @@ describe('HighResolutionProcessor.resize', () => {
       expect(values.indexOf(50)).toBeGreaterThanOrEqual(0);
       expect(values.lastIndexOf(100)).toBeGreaterThan(values.indexOf(50));
       executeSpy.mockRestore();
+    });
+
+    it('고해상도 경로가 폴백되면 폴백 결과가 tiled여도 고해상도 성공 메시지를 붙이지 않는다', async () => {
+      const runHighResSpy = vi
+        .spyOn(HighResolutionProcessor as any, 'runHighResPath')
+        .mockRejectedValueOnce(new Error('실행 실패'));
+      const runStandardSpy = vi.spyOn(HighResolutionProcessor as any, 'runStandardPath').mockResolvedValueOnce({
+        canvas: document.createElement('canvas'),
+        strategy: ProcessingStrategy.TILED,
+        processingTime: 0,
+        memoryPeakUsageMB: 0,
+      });
+      // totalPixels(16MP)가 기본 임계값(8MP)을 넘어 shouldUseHighResPath가 true가 되게 한다
+      const img = createDrawableImage(4000, 4000);
+
+      const result = await HighResolutionProcessor.resize(img, 400, 300);
+
+      expect(result.memoryOptimized).toBe(true);
+      expect(result.userMessage).toBeUndefined();
+
+      runHighResSpy.mockRestore();
+      runStandardSpy.mockRestore();
     });
 
     it('지원하지 않는 forceStrategy 값은 폴백 없이 FEATURE_NOT_SUPPORTED로 reject된다', async () => {

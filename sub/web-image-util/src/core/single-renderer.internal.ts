@@ -409,13 +409,20 @@ function validateLayout(layout: FinalLayout, maxOutputPixels?: number): void {
     );
   }
 
+  // 실제 canvas는 아래 leaseCanvas()가 반올림한 치수로 할당된다. 원시값으로 검사하면
+  // 소수점 치수(예: 150.6)가 raw 면적으로는 한도를 통과하고도 반올림 후 면적은 넘을 수
+  // 있어(150.6*150.6=22680.36 vs Math.round(150.6)**2=22801) 검사를 우회한다 — 실제
+  // 할당 치수와 같은 반올림 값으로 검사한다.
+  const roundedWidth = Math.round(width);
+  const roundedHeight = Math.round(height);
+
   // opt-in 상한 — 지정한 호출자에게만 하드 거부를 적용한다.
-  assertOutputPixelBudget(width, height, maxOutputPixels);
+  assertOutputPixelBudget(roundedWidth, roundedHeight, maxOutputPixels);
 
   // 상한 값은 browser-capabilities/canvas-limits.internal.ts가 단일 소유한다(compose.ts의
   // DIMENSION_TOO_LARGE 게이트, high-res-detector.internal.ts의 getMaxSafeDimension()과 같은 값).
   // 면적 = 한 변 상한의 제곱을 메모리 위험 사전 경고 임계값으로 쓴다(RGBA 기준, 일부 기기에서 메모리 부족 가능).
-  warnIfCanvasAreaExceedsSafeLimit(width, height);
+  warnIfCanvasAreaExceedsSafeLimit(roundedWidth, roundedHeight);
 }
 
 /**

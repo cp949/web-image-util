@@ -61,6 +61,15 @@ describe('renderLayout — maxOutputPixels', () => {
     lease.release();
   });
 
+  it('반올림 후 면적이 maxOutputPixels를 넘으면 소수점 치수로도 거부한다(반올림 우회 방지)', () => {
+    // 원시값 150.6*150.6=22680.36은 한도(22700) 이하지만, 실제 canvas는
+    // Math.round(150.6)=151로 할당돼 151*151=22801로 한도를 넘는다.
+    const source = createDrawableSource(100, 100);
+    expect(() => renderLayout(source, makeLayout({ width: 150.6, height: 150.6 }), 22_700)).toThrow(
+      expect.objectContaining({ code: 'PIXEL_BUDGET_EXCEEDED' })
+    );
+  });
+
   it('거부되면 Canvas pool에서 아무 것도 임대하지 않는다', () => {
     const acquireSpy = vi.spyOn(CanvasPool.getInstance(), 'acquire');
     const source = createDrawableSource(100, 100);

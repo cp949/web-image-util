@@ -40,7 +40,8 @@ const thumbnail = await processImage(source)
   .toBlob({ format: 'webp', quality: 0.8 });
 
 const banner = await processImage(source)
-  .resize({ fit: 'cover', width: 1200, height: 400, background: '#ffffff' })
+  .resize({ fit: 'contain', width: 1200, height: 400 })
+  .box({ background: '#ffffff' })
   .blur(2)
   .toBlob({ format: 'jpeg', quality: 0.85 });
 ```

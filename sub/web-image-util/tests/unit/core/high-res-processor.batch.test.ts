@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { HighResolutionProcessor } from '../../../src/core/high-res-processor';
+import { ImageProcessError } from '../../../src/types';
 import { createDrawableImage } from './high-res-processor.helpers';
 
 describe('HighResolutionProcessor.batchResize', () => {
@@ -92,6 +93,15 @@ describe('HighResolutionProcessor.batchResize', () => {
       cause: originalError,
       context: { debug: { stage: 'Batch processing', index: 0 } },
     });
+    resizeSpy.mockRestore();
+  });
+
+  it('resize()가 이미 ImageProcessError를 던졌다면 그대로 전파한다(RESIZE_FAILED 이중 래핑·코드 뭉개짐 방지)', async () => {
+    const originalError = new ImageProcessError('지원하지 않는 전략', 'FEATURE_NOT_SUPPORTED');
+    const resizeSpy = vi.spyOn(HighResolutionProcessor, 'resize').mockRejectedValueOnce(originalError);
+    const img1 = createDrawableImage(800, 600);
+
+    await expect(HighResolutionProcessor.batchResize([img1], 400, 300)).rejects.toBe(originalError);
     resizeSpy.mockRestore();
   });
 });

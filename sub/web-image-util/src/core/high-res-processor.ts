@@ -154,6 +154,10 @@ export class HighResolutionProcessor {
     onProgress?.(20, `Optimization strategy: ${HighResolutionProcessor.describePriority(priority)}`);
 
     let processingResult: RunResult;
+    // shouldUseHighResPath는 실행 전 결정일 뿐이다 — 고해상도 경로가 실패해 표준 경로로
+    // 폴백하면 실제로는 고해상도 경로를 타지 않은 것이므로, 아래 성공 메시지는 이 플래그가
+    // 아니라 실제 실행 결과(usedHighResPath)를 봐야 한다.
+    let usedHighResPath = false;
     if (shouldUseHighResPath || forceStrategy) {
       try {
         processingResult = await HighResolutionProcessor.runHighResPath(img, targetWidth, targetHeight, analysis, {
@@ -163,6 +167,7 @@ export class HighResolutionProcessor {
           onProgress,
           onMemoryWarning: fireMemoryWarningOnce,
         });
+        usedHighResPath = true;
       } catch (error) {
         if (error instanceof ImageProcessError && error.code === 'FEATURE_NOT_SUPPORTED') {
           throw error;
@@ -202,7 +207,7 @@ export class HighResolutionProcessor {
       estimatedTimeSaved: HighResolutionProcessor.calculateTimeSaved(analysis, memoryOptimized),
     };
 
-    if (shouldUseHighResPath && memoryOptimized) {
+    if (usedHighResPath && memoryOptimized) {
       result.userMessage = `High-resolution image processed memory-efficiently. (${HighResolutionProcessor.describePriority(priority)} applied)`;
     }
 
@@ -227,6 +232,13 @@ export class HighResolutionProcessor {
           return await HighResolutionProcessor.resize(img, width, height, resizeOptions);
         } catch (error) {
           productionLog.error(`Image processing failed (${name || index}):`, error);
+          // resize()가 이미 ImageProcessError(RESIZE_FAILED/FEATURE_NOT_SUPPORTED 등)로 던졌다면
+          // 그대로 전파한다 — 여기서 다시 감싸면 원인이 이중으로 중첩되고(RESIZE_FAILED 안에
+          // RESIZE_FAILED) 더 구체적인 코드(FEATURE_NOT_SUPPORTED 등)가 RESIZE_FAILED로
+          // 뭉개진다. executeProcessing()의 같은 규칙(타입 있는 오류는 다시 감싸지 않음)을 따른다.
+          if (error instanceof ImageProcessError) {
+            throw error;
+          }
           throw createImageError('RESIZE_FAILED', {
             cause: error,
             context: { debug: { stage: 'Batch processing', index } },
