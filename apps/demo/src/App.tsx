@@ -30,6 +30,14 @@ import * as errorsModule from './demos/13-errors';
 import errorsSource from './demos/13-errors.ts?raw';
 import * as workflowModule from './demos/14-workflow';
 import workflowSource from './demos/14-workflow.ts?raw';
+import * as transformModule from './demos/15-transform';
+import transformSource from './demos/15-transform.ts?raw';
+import * as positionModule from './demos/16-position';
+import positionSource from './demos/16-position.ts?raw';
+import * as pixelBudgetModule from './demos/17-pixel-budget';
+import pixelBudgetSource from './demos/17-pixel-budget.ts?raw';
+import * as highResModule from './demos/18-high-res';
+import highResSource from './demos/18-high-res.ts?raw';
 import { DemoPage } from './shell/DemoPage';
 import { Sidebar, type SidebarItem } from './shell/Sidebar';
 
@@ -48,6 +56,10 @@ const items: SidebarItem[] = [
   { path: '/advanced-svg', title: '12. Advanced: SVG 복잡도/호환성' },
   { path: '/errors', title: '13. 에러 처리 카탈로그' },
   { path: '/workflow', title: '14. 실전 워크플로' },
+  { path: '/transform', title: '15. Transform (crop / flip / rotate)' },
+  { path: '/position', title: '16. 배치 (position)' },
+  { path: '/pixel-budget', title: '17. 픽셀 예산' },
+  { path: '/high-res', title: '18. HighResolutionProcessor (advanced)' },
 ];
 
 export function App() {
@@ -82,6 +94,10 @@ export function App() {
             <Route path="/advanced-svg" element={<DemoPage source={advancedSvgSource} module={advancedSvgModule} />} />
             <Route path="/errors" element={<DemoPage source={errorsSource} module={errorsModule} />} />
             <Route path="/workflow" element={<DemoPage source={workflowSource} module={workflowModule} />} />
+            <Route path="/transform" element={<DemoPage source={transformSource} module={transformModule} />} />
+            <Route path="/position" element={<DemoPage source={positionSource} module={positionModule} />} />
+            <Route path="/pixel-budget" element={<DemoPage source={pixelBudgetSource} module={pixelBudgetModule} />} />
+            <Route path="/high-res" element={<DemoPage source={highResSource} module={highResModule} />} />
           </Routes>
         </Box>
       </Box>

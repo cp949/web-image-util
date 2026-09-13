@@ -6,17 +6,25 @@ export const meta = {
 };
 
 export async function run(target: HTMLElement): Promise<void> {
-  const sample = await (await fetch('/samples/photo.jpg')).blob();
+  const sample = await (await fetch('/samples/landscape.jpg')).blob();
 
   // 한 줄로 아바타 (정사각형, PNG, 고품질)
   const avatar = await createAvatar(sample, { size: 128 });
 
+  // radius: '50%' — avatar는 항상 정사각형이라 완전한 원이 된다. box()를 따로 호출하지 않는다.
+  const roundAvatar = await createAvatar(sample, { size: 128, radius: '50%' });
+
   // 한 줄로 썸네일 (WebP, cover fit, 품질 0.8)
   const thumb = await createThumbnail(sample, { size: { width: 300, height: 200 } });
 
+  // position — resize()의 position과 같은 타입을 그대로 받는다. 중앙 대신 위쪽을 남긴다.
+  const thumbTop = await createThumbnail(sample, { size: { width: 300, height: 200 }, position: 'top-center' });
+
   target.append(
     card('createAvatar(source, { size: 128 })', avatar.blob),
-    card('createThumbnail(source, { size: { width: 300, height: 200 } })', thumb.blob)
+    card("createAvatar(source, { size: 128, radius: '50%' })", roundAvatar.blob),
+    card('createThumbnail(source, { size: { width: 300, height: 200 } })', thumb.blob),
+    card("createThumbnail(source, { size: {...}, position: 'top-center' })", thumbTop.blob)
   );
 }
 

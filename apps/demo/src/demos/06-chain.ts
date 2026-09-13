@@ -5,7 +5,7 @@ export const meta = {
   description:
     '체이닝 메서드(resize, blur, ...)는 즉시 그리지 않고 누적되며, ' +
     'toBlob() 등 출력 메서드에서 단 1회만 Canvas로 렌더링된다. ' +
-    'resize()는 한 체인에서 한 번만 호출 가능하며 TypeScript 타입이 컴파일 타임에 강제한다.',
+    'resize()는 한 체인에서 한 번만 호출 가능하며 이 제약은 런타임 가드가 집행한다.',
 };
 
 export async function run(target: HTMLElement): Promise<void> {
