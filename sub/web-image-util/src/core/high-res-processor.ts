@@ -390,12 +390,13 @@ export class HighResolutionProcessor {
   }
 
   /**
-   * 표준 경로(고해상도가 아닌 경우) 처리.
+   * 표준 경로(고해상도가 아닌 경우, 또는 고해상도 경로 실행 실패 후 폴백) 처리.
    *
-   * shouldUseHighResolutionPath()가 false를 반환한 이미지, 즉 고해상도 경로(runHighResPath)를
-   * 아예 거치지 않는 경로다 — 그 안의 strategy-policy 가드(exceedsMaxSafeDimension)는 여기까지
-   * 닿지 않는다. 저픽셀이면서 가로/세로 한 축만 매우 큰 이미지(파노라마 등)가 이 경로로 들어올
-   * 수 있으므로, DIRECT로 넘기기 전에 같은 가드를 여기서도 직접 통과시킨다.
+   * shouldUseHighResolutionPath()가 false를 반환한 이미지, 그리고 runHighResPath()가
+   * 실패해 폴백한 이미지 둘 다 여기로 온다 — 어느 쪽이든 runHighResPath() 안의
+   * strategy-policy 가드(exceedsMaxSafeDimension)는 여기까지 닿지 않는다. 저픽셀이면서
+   * 가로/세로 한 축만 매우 큰 이미지(파노라마 등)가 이 경로로 들어올 수 있으므로,
+   * DIRECT로 넘기기 전에 같은 가드를 여기서도 직접 통과시킨다.
    */
   private static async runStandardPath(
     img: HTMLImageElement,
