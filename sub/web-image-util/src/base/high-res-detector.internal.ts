@@ -44,8 +44,8 @@ export class HighResolutionDetector {
 
   /**
    * Default pixel-count threshold for routing into the high-resolution processing
-   * machine (HighResolutionManager) instead of a direct draw. Used by
-   * AutoHighResProcessor via shouldUseHighResolutionPath() to determine
+   * machine (HighResolutionProcessor) instead of a direct draw. Used by
+   * HighResolutionProcessor via shouldUseHighResolutionPath() to determine
    * routing criteria.
    */
   static readonly DEFAULT_HIGH_RES_PIXEL_THRESHOLD = 8_000_000; // 8MP
@@ -91,9 +91,9 @@ export class HighResolutionDetector {
 
   /**
    * Decide whether an image should be routed through the high-resolution processing
-   * machine (HighResolutionManager) instead of a direct draw.
+   * machine (HighResolutionProcessor) instead of a direct draw.
    *
-   * Routing decision used by AutoHighResProcessor to determine whether to use
+   * Routing decision used by HighResolutionProcessor to determine whether to use
    * high-resolution processing. Consumer-specific thresholds and policy (which
    * strategy to use once inside the machine, memory-pressure handling, etc.) stay
    * local to each caller — this function only answers "in or out."

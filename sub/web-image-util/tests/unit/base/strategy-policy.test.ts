@@ -1,7 +1,7 @@
 /**
  * strategy-policy.internal.ts 단위 테스트
  *
- * high-res-detector.internal.ts(balanced)와 high-res-manager.ts(fast/high/memory-pressure)가
+ * high-res-detector.internal.ts(balanced)와 high-res-processor.ts(fast/high/memory-pressure)가
  * 공유하는 순수 정책 함수를 직접 검증한다. DOM/이미지 객체 없이 숫자만으로 호출한다.
  */
 import { describe, expect, it } from 'vitest';

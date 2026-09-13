@@ -27,6 +27,10 @@
   - `/advanced`가 export하던 공개 타입 `AutoProcessingResult`, `HighResolutionOptions`, `ProcessingResult`가 제거됐습니다. 이 타입을 직접 import하던 코드는 깨집니다 — 대체 타입은 `HighResolutionProcessResult`/`HighResolutionProcessOptions`(둘 다 `/advanced`에서 export)입니다.
   - `AdvancedProcessingResult.processing.resizing`의 shape이 바뀌었습니다. `tileProcessing` 필드가 사라졌고(`strategy === 'tiled'`와 항상 같은 값이던 `memoryOptimized`로 통합), `strategy` 필드의 의미가 사람이 읽는 라벨 문자열(예: `'High-speed Processing'`)에서 `ProcessingStrategy` enum 값(`'direct'`/`'stepped'`/`'tiled'`)으로 바뀌었습니다.
 
+### 수정
+
+- Fixed: `HighResolutionProcessor.resize()`의 `forceStrategy`가 이제 이미지 크기와 무관하게 항상 적용됩니다. 이전에는 이미지가 고해상도 임계값 미만이면 `forceStrategy`가 조용히 무시되고 표준 경로로 처리됐습니다.
+
 ## [4.0.0] - 2026-08-17
 
 ### 추가

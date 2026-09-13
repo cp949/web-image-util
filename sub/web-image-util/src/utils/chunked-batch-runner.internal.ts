@@ -1,10 +1,10 @@
 /**
  * concurrency 크기로 나눈 청크 단위로 항목을 실행하는 일괄 처리 seam.
  *
- * HighResolutionManager.batchSmartResize, AutoHighResProcessor.batchSmartResize,
- * AdvancedImageProcessor.batchProcess, BatchResizer.processAll이 각자 재구현하던
- * "concurrency 크기로 잘라 Promise.all 실행" 루프를 여기 하나로 모은다. 네 곳이
- * 갈리는 지점(timeout, 메모리 점검, progress 콜백, 에러 래핑)은 fn과 hooks로만
+ * HighResolutionProcessor.batchResize, AdvancedImageProcessor.batchProcess,
+ * BatchResizer.processAll이 각자 재구현하던 "concurrency 크기로 잘라 Promise.all
+ * 실행" 루프를 여기 하나로 모은다. 세 곳이 갈리는 지점(timeout, 메모리 점검,
+ * progress 콜백, 에러 래핑)은 fn과 hooks로만
  * 주입한다 — 이 seam 자체는 에러를 감싸거나 삼키지 않는다.
  *
  * 청크는 순차 실행하고(청크 N+1은 청크 N이 모두 settle된 뒤 시작), 청크 내부는

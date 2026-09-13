@@ -7,11 +7,11 @@ import { AdvancedImageProcessor } from '../../../src/core/advanced-processor';
 import { SmartFormatSelector } from '../../../src/core/smart-format';
 import { ImagePurpose, type SmartFormatOptions } from '../../../src/core/smart-format-helpers.internal';
 import { createMockImage } from './advanced-processor-branches.helpers';
-import { installImageDataMock, makeFormatResult, mockSmartResize } from './advanced-processor-process.helpers';
+import { installImageDataMock, makeFormatResult, mockResize } from './advanced-processor-process.helpers';
 
 describe('AdvancedImageProcessor.processImage format 옵션', () => {
   beforeEach(() => {
-    mockSmartResize();
+    mockResize();
     installImageDataMock();
   });
 

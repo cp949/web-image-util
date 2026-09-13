@@ -6,11 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SimpleWatermark } from '../../../src/composition/simple-watermark';
 import { AdvancedImageProcessor } from '../../../src/core/advanced-processor';
 import { createDrawableSource, createMockImage } from './advanced-processor-branches.helpers';
-import { installImageDataMock, mockSmartResize } from './advanced-processor-process.helpers';
+import { installImageDataMock, mockResize } from './advanced-processor-process.helpers';
 
 describe('AdvancedImageProcessor.processImage onProgress 콜백 시퀀스', () => {
   beforeEach(() => {
-    mockSmartResize();
+    mockResize();
     installImageDataMock();
   });
 

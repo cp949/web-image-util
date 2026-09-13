@@ -7,11 +7,11 @@ import type { SimpleImageWatermarkOptions } from '../../../src/composition/simpl
 import { SimpleWatermark } from '../../../src/composition/simple-watermark';
 import { AdvancedImageProcessor } from '../../../src/core/advanced-processor';
 import { createMockImage } from './advanced-processor-branches.helpers';
-import { installImageDataMock, mockSmartResize } from './advanced-processor-process.helpers';
+import { installImageDataMock, mockResize } from './advanced-processor-process.helpers';
 
 describe('AdvancedImageProcessor.processImage watermark 옵션', () => {
   beforeEach(() => {
-    mockSmartResize();
+    mockResize();
     installImageDataMock();
   });
 

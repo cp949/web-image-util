@@ -62,6 +62,6 @@ export function installImageDataMock() {
 }
 
 /** resize 경로 테스트용 resize 기본 스텁을 설치한다. */
-export function mockSmartResize(result: HighResolutionProcessResult = makeResizeResult()) {
+export function mockResize(result: HighResolutionProcessResult = makeResizeResult()) {
   return vi.spyOn(HighResolutionProcessor, 'resize').mockResolvedValue(result);
 }

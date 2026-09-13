@@ -2,7 +2,7 @@
  * 고해상도 리사이즈 전략 선택 정책 — quality tier(fast/balanced/high) × memory-pressure 표를
  * 한 곳에 모은 leaf.
  *
- * high-res-detector.internal.ts(analyzeImage의 balanced 기본값)와 high-res-manager.ts
+ * high-res-detector.internal.ts(analyzeImage의 balanced 기본값)와 high-res-processor.ts
  * (quality별 override)가 이 모듈을 공유한다. 두 파일은 서로 import하지 않고 이 leaf만
  * 바라보므로 순환 참조가 없다. 여기 숫자를 바꾸면 두 caller 모두 즉시 반영된다.
  *

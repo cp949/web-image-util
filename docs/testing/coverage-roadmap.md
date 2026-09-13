@@ -52,7 +52,7 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `index.ts` | `ImageProcessError` / `ImageErrorCode` / `OPTIMAL_QUALITY_BY_FORMAT` | 에러 클래스 생성 및 코드 매핑 | 있음 | `tests/unit/errors/error-class.test.ts` |
 | `/advanced` | `AdvancedImageProcessor.processImage` / `.batchProcess` | resize + filter + watermark + format auto 묶음 처리 → `{ canvas, blob, stats }` | 부분 | `tests/unit/core/advanced-processor-process-jsdom.test.ts`, `tests/unit/core/advanced-processor-batch-jsdom.test.ts` |
 | `/advanced` | `smartResize` / `processWithFilters` / `addWatermarkAndOptimize` (advanced-processor convenience) | 단계별 advanced 편의 함수 | 부분 | `tests/unit/core/advanced-convenience-jsdom.test.ts` |
-| `/advanced` | `AutoHighResProcessor` / `autoSmartResize` / `smartResizeWithProgress` | 고해상도 입력 → 메모리 안전한 단계적 다운스케일 결과 | 있음 | `tests/unit/core/auto-high-res.test.ts` |
+| `/advanced` | `HighResolutionProcessor`(resize/validate/batchResize) | 고해상도 입력 → 메모리 안전한 전략 선택·실행, 사전 검증, 일괄 처리 | 있음 | `tests/unit/core/high-res-processor.resize.test.ts`, `high-res-processor.validate.test.ts`, `high-res-processor.batch.test.ts` |
 | `/advanced` | `BatchResizer` | 다중 입력 → 일괄 리사이즈 결과 배열 | 있음 | `tests/unit/core/batch-resizer.test.ts` |
 | `/advanced` | `SmartFormatSelector` / `autoOptimize` / `optimizeForWeb` / `optimizeForThumbnail` / `ImagePurpose` | 입력 + 용도 → 권장 포맷/품질 결정 | 있음 | `tests/unit/core/smart-format.test.ts` |
 | `/advanced` | `fastResize` / `qualityResize` / `autoResize` / `ResizePerformance` / `getPerformanceConfig` / `RESIZE_PROFILES` | 성능 우선순위 프리셋 적용 결과 | 있음 | `tests/unit/core/performance-utils.test.ts`, `performance-config.test.ts` |
@@ -61,7 +61,6 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `/advanced` | `registerFilter` / `applyFilter` / `applyFilterChain` / `validateFilterChain` / `getAvailableFilters` / `FilterCategory` | 필터 플러그인 등록/조회/적용 | 있음 | `tests/unit/filters/plugin-system-registry.test.ts`, `plugin-system-application.test.ts` |
 | `/advanced` | `createAdvancedThumbnail` / `optimizeForSocial` / `batchOptimize` (advanced-index convenience) | 묶음 시나리오용 편의 함수 | 부분 | `tests/unit/core/advanced-filter-initialization-jsdom.test.ts` (등록되지 않은 필터 거부 sad-path만) |
 | `/advanced` | `FormatDetector` / `FORMAT_MIME_MAP` | MIME ↔ 포맷 매핑 및 감지 | 있음 | `tests/unit/base/format-detector.test.ts` |
-| `/advanced` | `HighResolutionManager` | 고해상도 처리 수동 제어 진입점 | 부분 | `tests/unit/core/high-res-manager-*.test.ts`, `tests/unit/core/auto-high-res.test.ts` |
 | `/advanced` | `ImageErrorHandler` / `globalErrorHandler` / `withErrorHandling` / `createAndHandleError` / `createQuickError` / `getErrorStats` | 에러 통계 누적/래핑 | 있음 | `tests/unit/base/error-helpers.test.ts`, `tests/unit/base/error-handler.test.ts` |
 | `/advanced` | `initializeFilterSystem()` | 호출 시 기본 필터(blur/color/effect) 모두 필터 레지스트리에 등록 | 있음 | `tests/unit/filters/filter-init.test.ts`, `tests/unit/core/advanced-filter-initialization-jsdom.test.ts` |
 | `/advanced` | `createFilterPlugin(config)` | 입력 config → 표준 `FilterPlugin` 객체 | 있음 | `tests/unit/filters/create-filter-plugin.test.ts` |
@@ -85,7 +84,7 @@ pnpm --filter @cp949/web-image-util test:coverage
 | `core/performance-utils.ts` 성능 프리셋 편의 함수 | 낮음 (stmt/func 공백 큼) | 행동 | advanced resize 프리셋 회귀 방지 | 높음 |
 | `core/source-converter/{index,loaders/string,svg/loader}.ts` 문자열/SVG 변환 잔여 경로 | 낮음 (loader 함수·분기 잔여) | 행동 | 입력 분류·SVG 로딩 회귀 방지 | 높음 |
 | `types/result-implementations.ts` 결과 객체 변환 잔여 경로 | 중간 (statement/function 잔여) | 행동 | 출력 객체 변환 회귀 방지 | 높음 |
-| `base/stepped-processor.ts` + `base/high-res-manager.ts` 고해상도/단계적 리사이즈 잔여 분기 | 중간 (전략·단계 계산 잔여) | 행동 | 고해상도 처리 회귀 방지 | 중간 |
+| `base/stepped-processor.ts` + `core/high-res-processor.ts` 고해상도/단계적 리사이즈 잔여 분기 | 중간 (전략·단계 계산 잔여) | 행동 | 고해상도 처리 회귀 방지 | 중간 |
 | `svg-sanitizer/{dompurify-instance,postprocess}.ts` strict sanitizer 환경·후처리 분기 | 중간 (branch 잔여) | 단위 | 정화 정책 회귀 방지 | 중간 |
 | `utils/image-inspection.ts` + `utils/image-info/{dimensions,format-detection}.ts` 이미지 메타/투명도 잔여 분기 | 중간 (branch/function 잔여) | 단위 | 판정 분기 보충 | 중간 |
 | `utils/data-url/percent.ts` + `utils/source-utils/{mime,path}.ts` 문자열 파서 경계 | 중간 (branch 잔여) | 단위 | 파싱 경계 보충 | 낮음 |

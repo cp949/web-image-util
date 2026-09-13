@@ -79,6 +79,10 @@ export interface HighResolutionValidation {
   warnings: string[];
   recommendations: string[];
   estimatedTime: number;
+  /**
+   * `analysis.strategy` 기준의 balanced 추정치다. `resize()`가 실제 실행 시 반영하는
+   * priority/isMemoryLow 분기를 반영하지 않는다 — 실제 선택 전략과 다를 수 있다.
+   */
   recommendedStrategy: ProcessingStrategy;
   analysis: ImageAnalysis;
 }
@@ -385,6 +389,14 @@ export class HighResolutionProcessor {
     return priority === 'quality' ? thresholds.autoTileThreshold * 1.5 : thresholds.autoTileThreshold;
   }
 
+  /**
+   * 표준 경로(고해상도가 아닌 경우) 처리.
+   *
+   * shouldUseHighResolutionPath()가 false를 반환한 이미지, 즉 고해상도 경로(runHighResPath)를
+   * 아예 거치지 않는 경로다 — 그 안의 strategy-policy 가드(exceedsMaxSafeDimension)는 여기까지
+   * 닿지 않는다. 저픽셀이면서 가로/세로 한 축만 매우 큰 이미지(파노라마 등)가 이 경로로 들어올
+   * 수 있으므로, DIRECT로 넘기기 전에 같은 가드를 여기서도 직접 통과시킨다.
+   */
   private static async runStandardPath(
     img: HTMLImageElement,
     targetWidth: number,

@@ -196,7 +196,7 @@ describe('ResizePerformance', () => {
         capturedConfig = this.getConfig() as unknown as Record<string, unknown>;
         return [] as unknown[];
       });
-      const smartResizeSpy = vi.spyOn(HighResolutionProcessor, 'resize').mockResolvedValue(makeResizeResult());
+      const resizeSpy = vi.spyOn(HighResolutionProcessor, 'resize').mockResolvedValue(makeResizeResult());
 
       const images = [{}, {}] as HTMLImageElement[];
       await ResizePerformance.memoryEfficientBatch(images, 300, 200);
@@ -211,7 +211,7 @@ describe('ResizePerformance', () => {
       // 각 작업은 HighResolutionProcessor.resize를 priority="fast" + forceStrategy="tiled"로 호출한다
       const jobs = processAllSpy.mock.calls[0]![0] as Array<{ operation: () => Promise<unknown> }>;
       await jobs[0]!.operation();
-      expect(smartResizeSpy).toHaveBeenCalledWith(images[0], 300, 200, {
+      expect(resizeSpy).toHaveBeenCalledWith(images[0], 300, 200, {
         priority: 'fast',
         forceStrategy: 'tiled',
       });

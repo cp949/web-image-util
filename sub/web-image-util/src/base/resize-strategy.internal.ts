@@ -1,7 +1,7 @@
 /**
  * 고해상도 리사이즈 전략 seam.
  *
- * HighResolutionManager는 전략 선택만 하고, 전략 실행 방법과 전략별 튜닝 지식
+ * HighResolutionProcessor는 전략 선택만 하고, 전략 실행 방법과 전략별 튜닝 지식
  * (품질 매핑·단계 수·동시성·타일 크기·예상 시간 배수)은 전부 adapter 안에 산다.
  * 전략 추가 = adapter 1개 + RESIZE_STRATEGY_ADAPTERS 맵 1행.
  */
