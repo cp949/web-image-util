@@ -28,4 +28,4 @@ Accepted
 
 - Track 3(box, ADR-0003)의 배경 개념은 transform에 `background`가 없다는 전제 위에서 설계됐다.
 - Track 1B(resize placement, ADR-0004)의 focal-point 좌표계 논의에서 crop의 원본 픽셀 좌표계가 비교 대상(반례)으로 쓰였다.
-- 공개 타입·호출 시점 검증, crop/회전 기하 계산, 렌더 골격(변환 행렬 합성 + `drawImage()` 1회), 1회·resize 앞 가드는 모두 코드베이스에 구현되어 있고 단위·통합·브라우저 테스트로 커버된다. 사용자 문서(README "변환" 절, CHANGELOG)도 갱신되어 있다.
+- 이 결정이 건드리는 범위: 공개 타입·호출 시점 검증, crop/회전 기하 계산, 렌더 골격(변환 행렬 합성 + `drawImage()` 1회), 1회·resize 앞 가드.

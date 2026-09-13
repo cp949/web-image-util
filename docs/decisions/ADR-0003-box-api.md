@@ -29,5 +29,5 @@ Accepted
 - Chrome 75 하한선(ADR-0001) 준수: `ctx.roundRect()`(Chrome 99+) 대신 `ctx.ellipse()`(Chrome 48+)로 모서리 경로를 직접 구성한다.
 - 알려진 미해결 이슈(의도적 보류): `radius` 없이 padding/border만 쓰고 소스 비율이 `resize({ fit: 'cover' })`와 다르면 리사이즈된 이미지가 padding/border 영역을 침범할 수 있다. 기존 `resize({ fit: 'cover', padding })` 경로도 같은 특성이라 회귀는 아니다. 픽셀 테스트 인프라가 갖춰지기 전까지는 손대지 않기로 확정했다.
 - Track 1B(resize placement, ADR-0004)와는 직교한다 — box()는 resize 결과(content) 바깥에만 적용되므로 resize의 배치 옵션과 충돌하지 않는다.
-- 공개 타입·호출 시점 검증, 바깥 상자 크기·radius·border 경로 기하 계산, 렌더 골격(fill → clip → `drawImage()` 1회 → stroke), 1회 가드는 모두 코드베이스에 구현되어 있고 단위·통합·브라우저 테스트로 커버된다. 사용자 문서(README "박스" 절, CHANGELOG)도 갱신되어 있다.
+- 이 결정이 건드리는 범위: 공개 타입·호출 시점 검증, 바깥 상자 크기·radius·border 경로 기하 계산, 렌더 골격(fill → clip → `drawImage()` 1회 → stroke), 1회 가드.
 - 결정 5의 deprecated 별칭(`resize.padding`/`resize.background`/`ProcessorOptions.defaultBackground`)은 다음 메이저(5.0.0)에서 실제로 제거됐다. 동시 지정 거부 가드도 별칭 자체가 없어지면서 함께 제거됐다.

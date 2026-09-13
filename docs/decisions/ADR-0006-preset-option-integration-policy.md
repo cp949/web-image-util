@@ -27,6 +27,6 @@ Accepted
 
 ## 영향
 
-- `ADR-0004`(resize placement)는 결정 6에 한해 이 ADR로 대체된다. 상태를 `Superseded by ADR-0006`으로 표기했다.
+- `ADR-0004`(resize placement)는 결정 6에 한해 이 ADR로 대체된다. 상태를 `Superseded by ADR-0006 (결정 6에 한함, 나머지 결정은 유효)`으로 표기했다.
 - `ADR-0003`(box)과는 다른 계층이다 — box는 resize 결과 바깥에만 적용되므로 이 정책과 충돌하지 않는다.
-- 공개 옵션 필드, 값 검증 위임, `fit: 'fill'` + `position` 가드는 모두 코드베이스에 구현되어 있고 단위 테스트로 커버된다. CHANGELOG도 갱신되어 있다.
+- 이 결정이 건드리는 범위: 공개 옵션 필드, 값 검증 위임, `fit: 'fill'` + `position` 가드.

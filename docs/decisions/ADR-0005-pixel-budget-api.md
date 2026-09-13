@@ -31,4 +31,4 @@ Accepted
 
 - ADR-0004(resize placement)와는 직교 — resize placement는 배치를, 이 ADR은 크기 상한을 다룬다.
 - 로드맵 Track 2(normalize/threshold) 이후 모든 신규 Canvas·분석 기능의 선행 조건이다.
-- 공개 타입·오류 코드, 픽셀/축 길이 예산 검사를 소유하는 모듈, 헤더 사전 검사 파서, source-converter·출력 파이프라인·렌더 계층으로의 배선은 모두 코드베이스에 구현되어 있고 단위·통합 테스트로 커버된다. 사용자 문서(README "픽셀 예산" 절, CHANGELOG)도 갱신되어 있다.
+- 이 결정이 건드리는 범위: 공개 타입·오류 코드, 픽셀/축 길이 예산 검사를 소유하는 모듈, 헤더 사전 검사 파서, source-converter·출력 파이프라인·렌더 계층으로의 배선.

@@ -38,6 +38,9 @@ Proposed | Accepted | Deprecated | Superseded by ADR-YYYY
   `Superseded by ADR-YYYY`로 바꾼다.
 - **갱신 가능**: "상태" 필드뿐이다(라이프사이클 반영: Proposed → Accepted → Deprecated/Superseded).
   구현 완료·병합 여부는 상태 필드가 다루지 않는다 — 그건 git 이력과 코드 자체가 answer다.
+- **부분 대체 표기**: 새 ADR이 이전 ADR의 결정 항목 일부만 뒤집고 나머지는 유효하면, 상태를
+  `Superseded by ADR-YYYY (결정 N에 한함)`처럼 범위를 괄호로 명시한다. 상태 필드만 보고 문서
+  전체가 무효화됐다고 오독하는 것을 막는다.
 - **애초에 적지 않는다**: "영향" 절의 구체적 파일 경로. 리팩토링마다 stale해지는데 ADR은
   그때그때 갱신하는 문서가 아니다. 담당 모듈/계층을 개념 단위로만 서술해 갱신할 필요 자체를
   없앤다. 클래스·함수·타입 이름 중에서도 공개 API 표면(사용자가 실제로 쓰는 이름)은 결정의

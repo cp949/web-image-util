@@ -2,7 +2,7 @@
 
 ## 상태
 
-Superseded by ADR-0006
+Superseded by ADR-0006 (결정 6에 한함, 나머지 결정은 유효)
 
 ## 배경
 
@@ -26,4 +26,4 @@ Superseded by ADR-0006
 ## 영향
 
 - ADR-0002(transform)와는 좌표계 논의에서 서로 참조된다. ADR-0003(box)과는 직교한다 — box는 resize 결과 바깥에만 적용된다.
-- 공개 타입·호출 시점 검증, 배치 계산(gravity 정렬 테이블, focal-point clamp 수식)은 모두 코드베이스에 구현되어 있고 단위·통합 테스트로 커버된다. 제거된 죽은 타입 `ResizePosition`의 재노출 금지도 계약 테스트가 감시한다. 사용자 문서(README "배치" 절, CHANGELOG)도 갱신되어 있다.
+- 이 결정이 건드리는 범위: 공개 타입·호출 시점 검증, 배치 계산(gravity 정렬 테이블, focal-point clamp 수식). 제거된 죽은 타입 `ResizePosition`의 재노출 금지도 계약 테스트가 감시한다.
