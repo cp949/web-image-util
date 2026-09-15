@@ -4,7 +4,7 @@
  * cover / contain / fill / maxFit / minFit 각 모드의 이미지 크기·위치 계산을 확인한다.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { calculateFinalLayout } from '../../../src/core/resize-calculator.internal';
 
 describe('calculateFinalLayout - fit 모드', () => {
@@ -372,6 +372,85 @@ describe('calculateFinalLayout - fit 모드', () => {
       const resultRatio = result.imageSize.width / result.imageSize.height;
 
       expect(Math.abs(resultRatio - originalRatio)).toBeLessThan(0.01);
+    });
+  });
+
+  describe('clampFit 모드', () => {
+    it('원본이 min/max 범위 안에 있으면 그대로 유지한다', () => {
+      // minScale = max(300/500, 200/400) = 0.6, maxScale = min(800/500, 600/400) = 1.5
+      // finalScale = clamp(1, 0.6, 1.5) = 1 → 원본 그대로
+      const result = calculateFinalLayout(500, 400, {
+        fit: 'clampFit',
+        minWidth: 300,
+        minHeight: 200,
+        maxWidth: 800,
+        maxHeight: 600,
+      });
+
+      expect(result.imageSize).toEqual({ width: 500, height: 400 });
+      expect(result.canvasSize).toEqual({ width: 500, height: 400 });
+    });
+
+    it('원본이 최대 크기보다 크면 축소한다(max만 지정)', () => {
+      const result = calculateFinalLayout(2000, 1500, {
+        fit: 'clampFit',
+        maxWidth: 800,
+        maxHeight: 600,
+      });
+
+      expect(result.imageSize).toEqual({ width: 800, height: 600 });
+      expect(result.canvasSize).toEqual({ width: 800, height: 600 });
+    });
+
+    it('원본이 최소 크기보다 작으면 확대한다(min만 지정)', () => {
+      const result = calculateFinalLayout(100, 80, {
+        fit: 'clampFit',
+        minWidth: 500,
+        minHeight: 400,
+      });
+
+      expect(result.imageSize).toEqual({ width: 500, height: 400 });
+      expect(result.canvasSize).toEqual({ width: 500, height: 400 });
+    });
+
+    it('필드를 하나도 지정하지 않으면 원본을 그대로 반환한다', () => {
+      const result = calculateFinalLayout(640, 480, { fit: 'clampFit' });
+
+      expect(result.imageSize).toEqual({ width: 640, height: 480 });
+      expect(result.canvasSize).toEqual({ width: 640, height: 480 });
+    });
+
+    it('min/max가 서로 충돌하면 에러 없이 max 제약만 적용하고 경고한다', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      // 세로로 긴 원본(200x2000): minWidth가 요구하는 확대(500/200=2.5)가
+      // maxHeight가 허용하는 축소(100/2000=0.05)보다 커서 동시 만족이 불가능하다.
+      const result = calculateFinalLayout(200, 2000, {
+        fit: 'clampFit',
+        minWidth: 500,
+        maxHeight: 100,
+      });
+
+      // max 제약만 적용된 결과(minWidth 요구는 무시됨)
+      expect(result.imageSize).toEqual({ width: 10, height: 100 });
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('clampSize');
+
+      warnSpy.mockRestore();
+    });
+
+    it('min만 있고 max가 없으면 충돌이 발생하지 않는다(경고 없음)', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const result = calculateFinalLayout(200, 2000, {
+        fit: 'clampFit',
+        minWidth: 500,
+      });
+
+      expect(result.imageSize).toEqual({ width: 500, height: 5000 });
+      expect(warnSpy).not.toHaveBeenCalled();
+
+      warnSpy.mockRestore();
     });
   });
 });

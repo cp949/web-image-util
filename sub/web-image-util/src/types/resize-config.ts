@@ -178,6 +178,20 @@ export type MinFitConfig =
       height: number;
     };
 
+/**
+ * ClampFit mode: 최소/최대 크기 범위로 스케일을 자른다(종횡비 유지)
+ * - min 계열만 주면 minFit과, max 계열만 주면 maxFit과 동일한 결과
+ * - min/max가 동시에 만족 불가능하면(예: 축소 요구와 확대 요구가 상충) max 제약만 적용하고 경고한다
+ * - 4개 필드 모두 optional — 다 비어 있으면 에러 없이 원본을 그대로 반환한다(no-op)
+ */
+export interface ClampFitConfig {
+  fit: 'clampFit';
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+}
+
 // ============================================================================
 // DISCRIMINATED UNION - Main type definition
 // ============================================================================
@@ -186,18 +200,26 @@ export type MinFitConfig =
  * ResizeConfig Discriminated Union type
  *
  * @description
- * Resizing configuration type supporting 6 fit modes:
+ * Resizing configuration type supporting 7 fit modes:
  * - cover: Fill entire area (may crop)
  * - contain: Fit entire image (may create empty space)
  * - fill: Exact size fit (ignore aspect ratio; 한 축만 지정하면 나머지는 원본 비율)
  * - maxFit: Only allow shrinking (no enlargement)
  * - minFit: Only allow enlargement (no shrinking)
+ * - clampFit: min/max 범위로 스케일을 자름(종횡비 유지, 충돌 시 max 우선)
  * - scale: 원본 크기 기준 배율 (렌더 시점에 원본 크기로 해석)
  *
  * Utilizes TypeScript's Discriminated Union to
  * narrow types by fit field and enforce required/optional properties for each mode.
  */
-export type ResizeConfig = CoverConfig | ContainConfig | FillConfig | MaxFitConfig | MinFitConfig | ScaleConfig;
+export type ResizeConfig =
+  | CoverConfig
+  | ContainConfig
+  | FillConfig
+  | MaxFitConfig
+  | MinFitConfig
+  | ClampFitConfig
+  | ScaleConfig;
 
 // ============================================================================
 // TYPE GUARDS - Type guard functions
@@ -245,6 +267,13 @@ export function isMaxFitConfig(config: ResizeConfig): config is MaxFitConfig {
  */
 export function isMinFitConfig(config: ResizeConfig): config is MinFitConfig {
   return config.fit === 'minFit';
+}
+
+/**
+ * ClampFitConfig type guard
+ */
+export function isClampFitConfig(config: ResizeConfig): config is ClampFitConfig {
+  return config.fit === 'clampFit';
 }
 
 /**
@@ -359,6 +388,22 @@ export function validateResizeConfig(config: ResizeConfig): void {
       (config.height != null && !isValidDimension(config.height))
     ) {
       throw new ImageProcessError(`${config.fit} width and height must be positive numbers`, 'INVALID_DIMENSIONS');
+    }
+  }
+
+  // clampFit: 4개 필드(minWidth/minHeight/maxWidth/maxHeight) 전부 optional.
+  // "최소 1개" 요구는 없다 — 다 비면 no-op(계산식에서 자연히 나옴). 주어진 값만 유한 양수인지 검사한다.
+  if (config.fit === 'clampFit') {
+    const fields: Array<[string, number | undefined]> = [
+      ['minWidth', config.minWidth],
+      ['minHeight', config.minHeight],
+      ['maxWidth', config.maxWidth],
+      ['maxHeight', config.maxHeight],
+    ];
+    for (const [name, value] of fields) {
+      if (value != null && !isValidDimension(value)) {
+        throw new ImageProcessError(`clampFit ${name} must be a positive finite number`, 'INVALID_DIMENSIONS');
+      }
     }
   }
 

@@ -128,6 +128,7 @@ await processImage(source)
 | `exactSize(w, h)`                               | 정확한 크기로 변환         |
 | `maxWidth(n)` / `maxHeight(n)` / `maxSize(...)` | 최대 크기 제한             |
 | `minWidth(n)` / `minHeight(n)` / `minSize(...)` | 최소 크기 보장             |
+| `clampSize({ minWidth?, minHeight?, maxWidth?, maxHeight? })` | 최소/최대 범위로 스케일 제한(종횡비 유지) |
 | `scale(n)` / `scale({ sx?, sy? })`              | 원본 크기 기준 스케일      |
 | `exactWidth(n)` / `exactHeight(n)`              | 한쪽 치수만 지정           |
 

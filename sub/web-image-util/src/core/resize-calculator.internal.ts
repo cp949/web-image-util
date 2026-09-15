@@ -99,6 +99,7 @@ export function calculateFinalLayout(
  * - fill: canvas 크기에 맞춤(한 축 생략 시 원본 비율로 계산)
  * - maxFit: 축소만 허용
  * - minFit: 확대만 허용
+ * - clampFit: min/max 범위로 스케일을 자름(종횡비 유지)
  * - scale: 원본 크기에 배율 적용
  */
 function calculateImageSize(originalWidth: number, originalHeight: number, config: ResizeConfig): GeometrySize {
@@ -113,6 +114,8 @@ function calculateImageSize(originalWidth: number, originalHeight: number, confi
       return calculateMaxFitSize(originalWidth, originalHeight, config);
     case 'minFit':
       return calculateMinFitSize(originalWidth, originalHeight, config);
+    case 'clampFit':
+      return calculateClampFitSize(originalWidth, originalHeight, config);
     case 'scale':
       return calculateScaleSize(originalWidth, originalHeight, config.scale);
     default:
@@ -129,7 +132,7 @@ function calculateImageSize(originalWidth: number, originalHeight: number, confi
  *
  * @description
  * - cover/contain: 목표 너비·높이가 고정 canvas 크기
- * - fill/maxFit/minFit/scale: 계산된 이미지 크기가 가변 canvas 크기
+ * - fill/maxFit/minFit/clampFit/scale: 계산된 이미지 크기가 가변 canvas 크기
  *   (fill 양축 지정 시 imageSize == target이므로 기존 결과와 동일)
  *
  * @example
@@ -149,7 +152,7 @@ function calculateCanvasSize(imageSize: GeometrySize, config: ResizeConfig): Geo
     return { width: config.width, height: config.height };
   }
 
-  // fill/maxFit/minFit/scale은 이미지 크기를 canvas 크기로 쓴다.
+  // fill/maxFit/minFit/clampFit/scale은 이미지 크기를 canvas 크기로 쓴다.
   return { width: imageSize.width, height: imageSize.height };
 }
 
@@ -196,7 +199,7 @@ function resolveFocalAlign(available: number, imageLength: number, focal: number
  * - gravity 문자열: GRAVITY_ALIGNMENT 조회
  * - focal-point 객체({x, y}, cover 전용. contain 조합은 validateResizeConfig가 이미 막는다):
  *   resolveFocalAlign으로 축별 계산
- * - fill/maxFit/minFit/scale: 타입에 position 필드가 없다. 이 fit들은 canvas 크기가
+ * - fill/maxFit/minFit/clampFit/scale: 타입에 position 필드가 없다. 이 fit들은 canvas 크기가
  *   imageSize와 같아(calculateCanvasSize 참고) delta가 항상 0이므로 정렬 비율이 결과에
  *   영향을 주지 않는다 — 중앙(0.5, 0.5)을 그대로 반환해도 안전하다.
  */
@@ -395,6 +398,50 @@ function calculateMinFitSize(
   // 각 축의 최소 크기를 보장한다.
   if (minW) scale = Math.max(scale, minW / originalWidth);
   if (minH) scale = Math.max(scale, minH / originalHeight);
+
+  return {
+    width: Math.round(originalWidth * scale),
+    height: Math.round(originalHeight * scale),
+  };
+}
+
+/**
+ * clampFit 크기를 계산한다.
+ *
+ * @description
+ * 종횡비를 유지한 채 스케일을 [min이 요구하는 배율, max가 허용하는 배율] 범위로 자른다
+ * (CSS `clamp(min, 1, max)`와 동형 — 기준값은 "확대·축소 없음"을 뜻하는 1).
+ * - min 계열만 있으면 minFit과, max 계열만 있으면 maxFit과 동일한 결과가 나온다.
+ * - min이 요구하는 배율이 max가 허용하는 배율보다 크면(동시에 만족 불가능) min 쪽을 통째로
+ *   무시하고 max 제약만 적용한다. 에러를 던지지 않고 최선의 결과를 만들어 사용자가 원인을
+ *   파악하고 고칠 수 있게 한다(설계 결정, 렌더 시점에만 원본 크기를 알 수 있어 여기서만 검사한다).
+ */
+function calculateClampFitSize(
+  originalWidth: number,
+  originalHeight: number,
+  config: { minWidth?: number; minHeight?: number; maxWidth?: number; maxHeight?: number }
+): GeometrySize {
+  const { minWidth, minHeight, maxWidth, maxHeight } = config;
+
+  let requiredMinScale = 0;
+  if (minWidth) requiredMinScale = Math.max(requiredMinScale, minWidth / originalWidth);
+  if (minHeight) requiredMinScale = Math.max(requiredMinScale, minHeight / originalHeight);
+
+  let requiredMaxScale = Number.POSITIVE_INFINITY;
+  if (maxWidth) requiredMaxScale = Math.min(requiredMaxScale, maxWidth / originalWidth);
+  if (maxHeight) requiredMaxScale = Math.min(requiredMaxScale, maxHeight / originalHeight);
+
+  let scale: number;
+  if (requiredMinScale > requiredMaxScale) {
+    scale = Math.min(1, requiredMaxScale);
+    console.warn(
+      `[web-image-util] clampSize: 최소/최대 조건이 충돌해 최대 크기 제약만 적용했습니다. ` +
+        `(무시됨 — minWidth: ${minWidth ?? '-'}, minHeight: ${minHeight ?? '-'}, ` +
+        `원본: ${originalWidth}x${originalHeight}, 최종 결과: ${Math.round(originalWidth * scale)}x${Math.round(originalHeight * scale)})`
+    );
+  } else {
+    scale = Math.max(requiredMinScale, Math.min(1, requiredMaxScale));
+  }
 
   return {
     width: Math.round(originalWidth * scale),

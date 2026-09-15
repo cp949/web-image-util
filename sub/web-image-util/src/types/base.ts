@@ -88,9 +88,10 @@ export const OutputFormats = {
  * - fill: Ignore ratio and fit exactly
  * - maxFit: Only allow shrinking, no enlargement (replaces inside)
  * - minFit: Only allow enlargement, no shrinking (replaces outside)
+ * - clampFit: min/max 범위로 스케일을 자름(종횡비 유지)
  * - scale: 원본 크기 기준 배율 (원본 크기는 렌더 시점에 해석)
  */
-export type ResizeFit = 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit' | 'scale';
+export type ResizeFit = 'cover' | 'contain' | 'fill' | 'maxFit' | 'minFit' | 'clampFit' | 'scale';
 
 /**
  * Fit constants

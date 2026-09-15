@@ -180,6 +180,38 @@ describe('ResizeConfig Types', () => {
       });
     });
 
+    describe('clampFit config', () => {
+      it('4개 필드를 모두 지정해도 통과한다', () => {
+        const config: ResizeConfig = { fit: 'clampFit', minWidth: 300, minHeight: 200, maxWidth: 800, maxHeight: 600 };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it('필드를 하나도 지정하지 않아도 통과한다(최소 1개 요구 없음)', () => {
+        const config: ResizeConfig = { fit: 'clampFit' };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it('일부 필드만 지정해도 통과한다', () => {
+        const config: ResizeConfig = { fit: 'clampFit', maxWidth: 800 };
+        expect(() => validateResizeConfig(config)).not.toThrow();
+      });
+
+      it('음수 값이 있으면 거부한다', () => {
+        const config = { fit: 'clampFit', minWidth: -100 } as any;
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
+      });
+
+      it('0 값이 있으면 거부한다', () => {
+        const config = { fit: 'clampFit', maxHeight: 0 } as any;
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
+      });
+
+      it('유한하지 않은 값이 있으면 거부한다', () => {
+        const config = { fit: 'clampFit', maxWidth: Number.POSITIVE_INFINITY } as any;
+        expect(() => validateResizeConfig(config)).toThrow(expect.objectContaining({ code: 'INVALID_DIMENSIONS' }));
+      });
+    });
+
     describe('position 검증 (gravity/focal-point)', () => {
       it.each([
         'top-left',

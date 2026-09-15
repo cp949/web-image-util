@@ -113,6 +113,7 @@ export type {
   BoxBorder,
   BoxOptions,
   BoxRadius,
+  ClampFitConfig,
   ComplexityAnalysisResult,
   ContainConfig,
   // ResizeConfig sub-types (for explicit type specification)

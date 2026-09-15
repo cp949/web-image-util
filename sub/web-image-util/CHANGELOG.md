@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### 추가
+
+- Added: `resize()`에 새 fit 모드 `clampFit`을 추가하고, `imageShortcut()`에 `clampSize({ minWidth?, minHeight?, maxWidth?, maxHeight? })`를 추가했습니다. 종횡비를 유지한 채 원본이 너무 작으면 확대, 너무 크면 축소해서 지정한 `[min, max]` 범위 안으로 스케일을 맞춥니다(CSS `clamp(min, 1, max)`와 동형). 4개 필드는 전부 선택 사항이며 하나도 지정하지 않으면 원본을 그대로 반환합니다. min과 max가 동시에 만족 불가능한 값이면 에러 대신 `console.warn`을 남기고 max 제약만 적용합니다. `ClampFitConfig` 타입, `isClampFitConfig` 가드를 루트 진입점에서 export합니다.
+
 ### 수정
 
 - Fixed: SVG intake guard(sanitize 후 fail-closed 재검증)가 `fill`/`filter`/`mask` 등 presentation 속성 11종 안의 위험한 CSS `url()` 참조도 재검증하도록 확장했습니다. 이전에는 `href`/`xlink:href`/`src`와 `style` 속성/`<style>` 태그만 재검증 대상이었습니다. `lightweight`/`strict` sanitizer의 실제 정제 결과(정상 입력에서 최종 반환되는 SVG)는 바뀌지 않습니다 — sanitizer 정제 이후에도 남는 잔여 참조를 잡는 2차 방어선의 커버리지가 넓어진 것입니다.

@@ -304,6 +304,31 @@ export class ImageShortcutBuilder {
     });
   }
 
+  /**
+   * 최소/최대 크기 범위로 스케일을 자른다(종횡비 유지)
+   *
+   * @description
+   * 원본이 범위보다 작으면 확대하고, 범위보다 크면 축소해서 항상 `[min, max]` 범위 안에
+   * 들어오게 한다. min 계열만 주면 `minSize`와, max 계열만 주면 `maxSize`와 동일한 결과다.
+   * min/max가 동시에 만족 불가능하면(예: 확대 요구와 축소 요구가 상충) 최대 크기 제약만
+   * 적용하고 `console.warn`으로 알린다 — 에러를 던지지 않는다.
+   *
+   * @param size 4개 필드 모두 선택 사항. 자유롭게 조합할 수 있다
+   * @returns IImageProcessor 인스턴스(체이닝 가능)
+   *
+   * @example
+   * ```typescript
+   * // 썸네일: 너무 작으면 확대, 너무 크면 축소해서 300~800px 범위로
+   * await imageShortcut(src).clampSize({ minWidth: 300, minHeight: 300, maxWidth: 800, maxHeight: 800 }).toBlob();
+   * ```
+   */
+  clampSize(size: { minWidth?: number; minHeight?: number; maxWidth?: number; maxHeight?: number }): IImageProcessor {
+    return this.processor.resize({
+      fit: 'clampFit',
+      ...size,
+    });
+  }
+
   // ============================================================================
   // 🎯 Group 2: Scale and exact size adjustment methods
   // 원본 크기 의존 설정도 동일하게 공개 resize()로 전달한다 —

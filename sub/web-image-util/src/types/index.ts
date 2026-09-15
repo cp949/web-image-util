@@ -113,6 +113,7 @@ export type {
 } from './box-config';
 // New ResizeConfig type system (Discriminated Union)
 export type {
+  ClampFitConfig,
   ContainConfig,
   CoverConfig,
   FillConfig,
@@ -126,6 +127,7 @@ export type {
   ScaleValue,
 } from './resize-config';
 export {
+  isClampFitConfig,
   isContainConfig,
   isCoverConfig,
   isFillConfig,

@@ -54,6 +54,11 @@ describe('Shortcut API Integration Tests', () => {
         args: [{ width: 400, height: 300 }],
         description: 'minimum size with both dimensions',
       },
+      {
+        method: 'clampSize',
+        args: [{ minWidth: 300, maxWidth: 800 }],
+        description: 'clamp size to a min/max range',
+      },
     ])('$method - $description', ({ method, args }) => {
       it('should return a valid processor instance', () => {
         const shortcutBuilder = imageShortcut(testImageUrl);

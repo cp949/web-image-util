@@ -79,6 +79,28 @@ describe('fit 모드별 resize (Canvas 입력, jsdom-safe)', () => {
     });
   });
 
+  describe('clampFit 모드', () => {
+    it('원본이 min/max 범위 안에 있으면 원본 크기를 그대로 유지한다', async () => {
+      const canvas = createTestCanvas(400, 300, 'red');
+
+      const result = await processImage(canvas)
+        .resize({ fit: 'clampFit', minWidth: 200, minHeight: 150, maxWidth: 800, maxHeight: 600 })
+        .toCanvas();
+
+      expect(result.width).toBe(400);
+      expect(result.height).toBe(300);
+    });
+
+    it('원본이 최대 크기를 넘으면 축소한다', async () => {
+      const canvas = createTestCanvas(2000, 1000, 'blue');
+
+      const result = await processImage(canvas).resize({ fit: 'clampFit', maxWidth: 400, maxHeight: 300 }).toCanvas();
+
+      expect(result.width).toBe(400);
+      expect(result.height).toBe(200);
+    });
+  });
+
   describe('contain + withoutEnlargement', () => {
     it('withoutEnlargement 옵션이 있을 때 요청한 캔버스 크기를 유지한다', async () => {
       const canvas = createTestCanvas(100, 100, 'green');
