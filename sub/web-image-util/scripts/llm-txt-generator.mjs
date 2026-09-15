@@ -131,6 +131,7 @@ export function renderLlmTxt({ packageName, readmeText, modules }) {
     '- Only use exported public APIs from the package root or exported subpaths.',
     '- `resize()` should be used as a single resize step in one processing chain.',
     '- `maxFit` and `minFit` require at least one of `width` or `height`.',
+    '- `clampFit` (and `imageShortcut().clampSize()`) fields `minWidth`/`minHeight`/`maxWidth`/`maxHeight` are all optional; omitting all of them returns the original size unchanged.',
     "- SVG input uses `svgSanitizer: 'lightweight'` by default; choose `'strict'` for untrusted SVG or `'skip'` only after trusted prior sanitizing.",
     "- `unsafe_processImage()` is a compatibility escape hatch and is not the same as `svgSanitizer: 'skip'`.",
     '- Source detection helpers and `getImageFormat()` do not fetch remote URLs; use `fetchImageFormat()` when URL body sniffing is required.',

@@ -4,7 +4,7 @@
  * cover / contain / fill / maxFit / minFit 각 모드의 이미지 크기·위치 계산을 확인한다.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { calculateFinalLayout } from '../../../src/core/resize-calculator.internal';
 
 describe('calculateFinalLayout - fit 모드', () => {
@@ -316,6 +316,18 @@ describe('calculateFinalLayout - fit 모드', () => {
 
       expect(Math.abs(resultRatio - originalRatio)).toBeLessThan(0.01);
     });
+
+    it('극단적으로 가늘고 긴 원본을 한 축만 제약해도 다른 축이 0이 되지 않는다', () => {
+      // 2000x1 원본에 width만 제약하면 scale=0.4, height=round(1*0.4)=0이 되어
+      // 렌더 시점에 ImageProcessError(INVALID_DIMENSIONS)가 발생하던 결함.
+      const result = calculateFinalLayout(2000, 1, {
+        fit: 'maxFit',
+        width: 800,
+      });
+
+      expect(result.imageSize.width).toBe(800);
+      expect(result.imageSize.height).toBeGreaterThanOrEqual(1);
+    });
   });
 
   describe('minFit 모드', () => {
@@ -376,6 +388,10 @@ describe('calculateFinalLayout - fit 모드', () => {
   });
 
   describe('clampFit 모드', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
     it('원본이 min/max 범위 안에 있으면 그대로 유지한다', () => {
       // minScale = max(300/500, 200/400) = 0.6, maxScale = min(800/500, 600/400) = 1.5
       // finalScale = clamp(1, 0.6, 1.5) = 1 → 원본 그대로
@@ -434,9 +450,11 @@ describe('calculateFinalLayout - fit 모드', () => {
       // max 제약만 적용된 결과(minWidth 요구는 무시됨)
       expect(result.imageSize).toEqual({ width: 10, height: 100 });
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(warnSpy.mock.calls[0][0]).toContain('clampSize');
-
-      warnSpy.mockRestore();
+      // productionLog.warn은 '[web-image-util]' 프리픽스를 첫 인자로 붙이므로 두 번째 인자를 검사한다.
+      const warnMessage = warnSpy.mock.calls[0][1] as string;
+      expect(warnMessage).toContain('clampSize');
+      // 어떤 max 필드가 실제로 결과를 결정했는지 알 수 있어야 한다(minWidth/minHeight뿐 아니라).
+      expect(warnMessage).toContain('maxHeight: 100');
     });
 
     it('min만 있고 max가 없으면 충돌이 발생하지 않는다(경고 없음)', () => {
@@ -449,8 +467,18 @@ describe('calculateFinalLayout - fit 모드', () => {
 
       expect(result.imageSize).toEqual({ width: 500, height: 5000 });
       expect(warnSpy).not.toHaveBeenCalled();
+    });
 
-      warnSpy.mockRestore();
+    it('극단적으로 가늘고 긴 원본을 한 축만 제약해도 다른 축이 0이 되지 않는다', () => {
+      // 2000x1 원본에 maxWidth만 제약하면 scale=0.4, height=round(1*0.4)=0이 되어
+      // 렌더 시점에 ImageProcessError(INVALID_DIMENSIONS)가 발생하던 결함.
+      const result = calculateFinalLayout(2000, 1, {
+        fit: 'clampFit',
+        maxWidth: 800,
+      });
+
+      expect(result.imageSize.width).toBe(800);
+      expect(result.imageSize.height).toBeGreaterThanOrEqual(1);
     });
   });
 });

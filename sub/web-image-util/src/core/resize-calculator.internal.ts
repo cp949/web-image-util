@@ -11,6 +11,7 @@
 import { ImageProcessError } from '../errors.internal';
 import type { GeometryPoint, GeometrySize } from '../types/base';
 import { isPositionableConfig, type ResizeConfig, type ResizeGravity, type ScaleValue } from '../types/resize-config';
+import { productionLog } from '../utils/debug.internal';
 
 // ============================================================================
 // 인터페이스
@@ -373,9 +374,10 @@ function calculateMaxFitSize(
   if (maxW) scale = Math.min(scale, maxW / originalWidth);
   if (maxH) scale = Math.min(scale, maxH / originalHeight);
 
+  // 가늘고 긴 원본을 한 축만 제약하면 다른 축이 반올림으로 0이 될 수 있어 최소 1px을 보장한다.
   return {
-    width: Math.round(originalWidth * scale),
-    height: Math.round(originalHeight * scale),
+    width: Math.max(1, Math.round(originalWidth * scale)),
+    height: Math.max(1, Math.round(originalHeight * scale)),
   };
 }
 
@@ -400,8 +402,8 @@ function calculateMinFitSize(
   if (minH) scale = Math.max(scale, minH / originalHeight);
 
   return {
-    width: Math.round(originalWidth * scale),
-    height: Math.round(originalHeight * scale),
+    width: Math.max(1, Math.round(originalWidth * scale)),
+    height: Math.max(1, Math.round(originalHeight * scale)),
   };
 }
 
@@ -434,19 +436,26 @@ function calculateClampFitSize(
   let scale: number;
   if (requiredMinScale > requiredMaxScale) {
     scale = Math.min(1, requiredMaxScale);
-    console.warn(
-      `[web-image-util] clampSize: 최소/최대 조건이 충돌해 최대 크기 제약만 적용했습니다. ` +
-        `(무시됨 — minWidth: ${minWidth ?? '-'}, minHeight: ${minHeight ?? '-'}, ` +
-        `원본: ${originalWidth}x${originalHeight}, 최종 결과: ${Math.round(originalWidth * scale)}x${Math.round(originalHeight * scale)})`
-    );
   } else {
     scale = Math.max(requiredMinScale, Math.min(1, requiredMaxScale));
   }
 
-  return {
-    width: Math.round(originalWidth * scale),
-    height: Math.round(originalHeight * scale),
+  // 가늘고 긴 원본을 한 축만 제약하면 다른 축이 반올림으로 0이 될 수 있어 최소 1px을 보장한다.
+  const result: GeometrySize = {
+    width: Math.max(1, Math.round(originalWidth * scale)),
+    height: Math.max(1, Math.round(originalHeight * scale)),
   };
+
+  if (requiredMinScale > requiredMaxScale) {
+    productionLog.warn(
+      `clampSize: 최소/최대 조건이 충돌해 최대 크기 제약만 적용했습니다. ` +
+        `(무시됨 — minWidth: ${minWidth ?? '-'}, minHeight: ${minHeight ?? '-'}, ` +
+        `적용됨 — maxWidth: ${maxWidth ?? '-'}, maxHeight: ${maxHeight ?? '-'}, ` +
+        `원본: ${originalWidth}x${originalHeight}, 최종 결과: ${result.width}x${result.height})`
+    );
+  }
+
+  return result;
 }
 
 /**

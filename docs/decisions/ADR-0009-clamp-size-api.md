@@ -45,4 +45,5 @@ Accepted
 - 이 결정이 건드리는 범위: `ResizeConfig` 판별 유니온의 새 분기, resize 레이아웃 계산(스케일
   clamp 수식)을 소유하는 모듈, 호출 시점 값 검증을 소유하는 모듈, `imageShortcut()` 편의 메서드
   표면.
-- 공개 API 표면: `clampSize()`, `fit: 'clampFit'`, `ClampFitConfig` 타입, `isClampFitConfig` 가드.
+- 공개 API 표면: `clampSize()`, `fit: 'clampFit'`, `ClampFitConfig` 타입(루트 진입점 export). `isClampFitConfig`
+  가드는 다른 fit 타입가드(`isMaxFitConfig` 등)와 동일하게 루트에서는 export하지 않는다.

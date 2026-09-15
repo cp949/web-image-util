@@ -394,16 +394,17 @@ export function validateResizeConfig(config: ResizeConfig): void {
   // clampFit: 4개 필드(minWidth/minHeight/maxWidth/maxHeight) 전부 optional.
   // "최소 1개" 요구는 없다 — 다 비면 no-op(계산식에서 자연히 나옴). 주어진 값만 유한 양수인지 검사한다.
   if (config.fit === 'clampFit') {
-    const fields: Array<[string, number | undefined]> = [
-      ['minWidth', config.minWidth],
-      ['minHeight', config.minHeight],
-      ['maxWidth', config.maxWidth],
-      ['maxHeight', config.maxHeight],
-    ];
-    for (const [name, value] of fields) {
-      if (value != null && !isValidDimension(value)) {
-        throw new ImageProcessError(`clampFit ${name} must be a positive finite number`, 'INVALID_DIMENSIONS');
-      }
+    if (config.minWidth != null && !isValidDimension(config.minWidth)) {
+      throw new ImageProcessError('clampFit minWidth must be a positive finite number', 'INVALID_DIMENSIONS');
+    }
+    if (config.minHeight != null && !isValidDimension(config.minHeight)) {
+      throw new ImageProcessError('clampFit minHeight must be a positive finite number', 'INVALID_DIMENSIONS');
+    }
+    if (config.maxWidth != null && !isValidDimension(config.maxWidth)) {
+      throw new ImageProcessError('clampFit maxWidth must be a positive finite number', 'INVALID_DIMENSIONS');
+    }
+    if (config.maxHeight != null && !isValidDimension(config.maxHeight)) {
+      throw new ImageProcessError('clampFit maxHeight must be a positive finite number', 'INVALID_DIMENSIONS');
     }
   }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isClampFitConfig,
   isContainConfig,
   isCoverConfig,
   isFillConfig,
@@ -376,6 +377,14 @@ describe('ResizeConfig Types', () => {
       expect(isScaleConfig(config)).toBe(true);
       expect(isCoverConfig(config)).toBe(false);
       expect(isFillConfig(config)).toBe(false);
+    });
+
+    it('clampFit config를 정확히 식별한다', () => {
+      const config: ResizeConfig = { fit: 'clampFit', maxWidth: 800 };
+      expect(isClampFitConfig(config)).toBe(true);
+      expect(isMaxFitConfig(config)).toBe(false);
+      expect(isMinFitConfig(config)).toBe(false);
+      expect(isScaleConfig(config)).toBe(false);
     });
   });
 

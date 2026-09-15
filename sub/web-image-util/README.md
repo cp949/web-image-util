@@ -55,6 +55,7 @@ const avatar = await createAvatar(profilePhoto, { size: 128 });
 | `fill`    | 아니오    | 예        | 아니오        | 아니오 | 둘 다     | 정확한 크기         |
 | `maxFit`  | 예        | 예        | 아니오        | 아니오 | 축소만    | 최대 크기 제한      |
 | `minFit`  | 예        | 예        | 아니오        | 아니오 | 확대만    | 최소 크기 보장      |
+| `clampFit`| 예        | 예        | 아니오        | 아니오 | 둘 다     | min/max 범위로 제한 |
 | `scale`   | 선택      | 예        | 아니오        | 아니오 | 둘 다     | 원본 크기 기준 배율 |
 
 ```typescript

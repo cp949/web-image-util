@@ -6,7 +6,7 @@
 
 ### 추가
 
-- Added: `resize()`에 새 fit 모드 `clampFit`을 추가하고, `imageShortcut()`에 `clampSize({ minWidth?, minHeight?, maxWidth?, maxHeight? })`를 추가했습니다. 종횡비를 유지한 채 원본이 너무 작으면 확대, 너무 크면 축소해서 지정한 `[min, max]` 범위 안으로 스케일을 맞춥니다(CSS `clamp(min, 1, max)`와 동형). 4개 필드는 전부 선택 사항이며 하나도 지정하지 않으면 원본을 그대로 반환합니다. min과 max가 동시에 만족 불가능한 값이면 에러 대신 `console.warn`을 남기고 max 제약만 적용합니다. `ClampFitConfig` 타입, `isClampFitConfig` 가드를 루트 진입점에서 export합니다.
+- Added: `resize()`에 새 fit 모드 `clampFit`을 추가하고, `imageShortcut()`에 `clampSize({ minWidth?, minHeight?, maxWidth?, maxHeight? })`를 추가했습니다. 종횡비를 유지한 채 원본이 너무 작으면 확대, 너무 크면 축소해서 지정한 `[min, max]` 범위 안으로 스케일을 맞춥니다(CSS `clamp(min, 1, max)`와 동형). 4개 필드는 전부 선택 사항이며 하나도 지정하지 않으면 원본을 그대로 반환합니다. min과 max가 동시에 만족 불가능한 값이면 에러 대신 `console.warn`을 남기고 max 제약만 적용합니다. `ClampFitConfig` 타입을 루트 진입점에서 export합니다.
 
 ### 수정
 

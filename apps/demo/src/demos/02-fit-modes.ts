@@ -5,7 +5,8 @@ export const meta = {
   description: '같은 입력·같은 목표 크기로 5개 fit 모드를 시각적으로 비교한다.',
 };
 
-// 박스 기반 fit만 비교한다 — scale은 목표 크기가 아니라 배율을 받으므로 이 데모의 축이 아니다
+// 박스 기반 fit만 비교한다 — scale/clampFit은 목표 크기(width/height)가 아니라
+// 배율·min/max 범위를 받으므로 이 데모의 축이 아니다(TARGET 스프레드와 필드가 맞지 않음)
 const FITS = ['cover', 'contain', 'fill', 'maxFit', 'minFit'] as const;
 const TARGET = { width: 300, height: 200 };
 
