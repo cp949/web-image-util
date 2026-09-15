@@ -84,35 +84,36 @@ describe('canvas-drawing', () => {
     expect(rotateSpy).not.toHaveBeenCalled();
   });
 
-  it.each([
-    -135, -45, 0, 30, 90, 180,
-  ])('getOriginRotationCoverageBounds: rotation=%i에서 반환 범위를 채우면 캔버스가 빈틈없이 덮인다', (rotation) => {
-    // 계약을 공식으로 다시 적어 검증하면 같은 부호 실수를 복사할 위험이 있다.
-    // 실제로 회전을 걸고 반환 범위를 칠한 뒤 빈 픽셀이 없는지로 확인한다.
-    const canvas = createTestCanvas(80, 50, '#ffffff');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Cannot get canvas context');
-    }
-
-    const bounds = getOriginRotationCoverageBounds(canvas.width, canvas.height, rotation);
-
-    withCanvasState(ctx, () => {
-      ctx.rotate((rotation * Math.PI) / 180);
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
-    });
-
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let uncovered = 0;
-    for (let i = 0; i < canvas.width * canvas.height; i++) {
-      if (data[i * 4] >= 128) {
-        uncovered++;
+  it.each([-135, -45, 0, 30, 90, 180])(
+    'getOriginRotationCoverageBounds: rotation=%i에서 반환 범위를 채우면 캔버스가 빈틈없이 덮인다',
+    (rotation) => {
+      // 계약을 공식으로 다시 적어 검증하면 같은 부호 실수를 복사할 위험이 있다.
+      // 실제로 회전을 걸고 반환 범위를 칠한 뒤 빈 픽셀이 없는지로 확인한다.
+      const canvas = createTestCanvas(80, 50, '#ffffff');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Cannot get canvas context');
       }
-    }
 
-    expect(uncovered).toBe(0);
-  });
+      const bounds = getOriginRotationCoverageBounds(canvas.width, canvas.height, rotation);
+
+      withCanvasState(ctx, () => {
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
+      });
+
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let uncovered = 0;
+      for (let i = 0; i < canvas.width * canvas.height; i++) {
+        if (data[i * 4] >= 128) {
+          uncovered++;
+        }
+      }
+
+      expect(uncovered).toBe(0);
+    }
+  );
 
   it('getOriginRotationCoverageBounds: 회전이 없거나 비유한값이면 캔버스 사각형을 그대로 돌려준다', () => {
     // 회전 없는 경로의 타일 배치를 부동소수 오차 없이 보존하기 위한 조기 반환이다.

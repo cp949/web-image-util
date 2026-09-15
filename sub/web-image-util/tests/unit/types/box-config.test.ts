@@ -34,28 +34,19 @@ function expectOptionInvalid(fn: () => void, option?: string): void {
 describe('isValidCssColor — 스크래치 캔버스 기반 색 유효성 검사', () => {
   // CSS Level 1/2 형식만 쓴다 — hsl()이나 8자리 hex(#RRGGBBAA) 같은 최신 문법은
   // node-canvas(cairo 기반)의 실제 지원 여부가 불확실해 환경에 따라 거짓 실패할 수 있다.
-  it.each([
-    '#fff',
-    '#ffffff',
-    'red',
-    'blue',
-    'rgba(0, 0, 0, 0.5)',
-    'rgb(255, 0, 0)',
-    'transparent',
-  ])('%s는 유효한 CSS 색이다', (color) => {
-    expect(isValidCssColor(color)).toBe(true);
-  });
+  it.each(['#fff', '#ffffff', 'red', 'blue', 'rgba(0, 0, 0, 0.5)', 'rgb(255, 0, 0)', 'transparent'])(
+    '%s는 유효한 CSS 색이다',
+    (color) => {
+      expect(isValidCssColor(color)).toBe(true);
+    }
+  );
 
-  it.each([
-    'not-a-color',
-    '',
-    '#12',
-    '#gggggg',
-    'rgb(это не число)',
-    'hsl(bad)',
-  ])('%s는 유효하지 않은 CSS 색이다', (color) => {
-    expect(isValidCssColor(color)).toBe(false);
-  });
+  it.each(['not-a-color', '', '#12', '#gggggg', 'rgb(это не число)', 'hsl(bad)'])(
+    '%s는 유효하지 않은 CSS 색이다',
+    (color) => {
+      expect(isValidCssColor(color)).toBe(false);
+    }
+  );
 });
 
 describe('validateBoxOptions — 호출 시점 검증', () => {

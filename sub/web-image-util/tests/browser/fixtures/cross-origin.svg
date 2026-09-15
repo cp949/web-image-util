@@ -1,3 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2" height="2" viewBox="0 0 2 2">
+  <title>cross-origin test fixture</title>
   <rect width="2" height="2" fill="#ef4444"/>
 </svg>

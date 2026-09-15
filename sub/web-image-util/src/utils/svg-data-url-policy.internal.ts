@@ -202,7 +202,7 @@ export function isSanitizedSvgDataImageRef(value: string): boolean {
  */
 export function decodeSvgDataImageRef(value: string): string | null {
   const info = parseSvgDataUrlRef(value);
-  if (!info || info.mimeType !== 'image/svg+xml') return null;
+  if (info?.mimeType !== 'image/svg+xml') return null;
   if (info.decodedBytes === null || info.decodedBytes > MAX_EMBEDDED_DATA_IMAGE_BYTES) return null;
 
   if (!info.isBase64) {

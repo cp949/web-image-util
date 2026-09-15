@@ -41,7 +41,7 @@ describe('릴리스 검증 스크립트', () => {
     const rootPackageJson = JSON.parse(readFileSync(join(repositoryRoot, 'package.json'), 'utf8'));
 
     expect(rootPackageJson.scripts['publish:npm']).toBe('node ./scripts/publish-npm.mjs');
-    expect(rootPackageJson.devDependencies['release-it']).toBe('21.0.2');
+    expect(rootPackageJson.devDependencies['release-it']).toBe('21.0.3');
   });
 
   test('공개 package는 wrapper marker가 없는 직접 publish를 lifecycle에서 차단한다', () => {

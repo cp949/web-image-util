@@ -47,9 +47,9 @@
     "@playwright/test": "^1.63.0",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^26.5.1",
-    "@vitest/browser": "^5.0.0",
-    "@vitest/browser-playwright": "^5.0.0",
-    "@vitest/coverage-v8": "^5.0.0",
+    "@vitest/browser": "^5.0.1",
+    "@vitest/browser-playwright": "^5.0.1",
+    "@vitest/coverage-v8": "^5.0.1",
     "canvas": "^3.2.3",
     "es-check": "^9.7.1",
     "jest-image-snapshot": "^6.5.2",
@@ -62,7 +62,7 @@
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",
     "vite": "8.3.0",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.1"
   },
   "exports": {
     ".": {

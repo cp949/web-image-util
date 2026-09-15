@@ -181,19 +181,17 @@ describe('inspectSvgSanitization() embedded image stage 수집', () => {
       expectedSamples: ['image/png', 'image/jpeg', 'image/webp'],
       excludedSample: 'image/gif',
     },
-  ])('$name는 samples에 발생 순서와 최대 개수 정책을 반영한다', async ({
-    imageTags,
-    expectedCount,
-    expectedSamples,
-    excludedSample,
-  }) => {
-    const stages = await inspectLightweightStages(svgWith(imageTags));
-    const stage = findStage(stages, 'data-image-preserved');
-    expect(stage?.count).toBe(expectedCount);
-    expect(stage?.samples).toHaveLength(expectedSamples.length);
-    expect(stage?.samples).toEqual(expectedSamples);
-    if (excludedSample) {
-      expect(stage?.samples).not.toContain(excludedSample);
+  ])(
+    '$name는 samples에 발생 순서와 최대 개수 정책을 반영한다',
+    async ({ imageTags, expectedCount, expectedSamples, excludedSample }) => {
+      const stages = await inspectLightweightStages(svgWith(imageTags));
+      const stage = findStage(stages, 'data-image-preserved');
+      expect(stage?.count).toBe(expectedCount);
+      expect(stage?.samples).toHaveLength(expectedSamples.length);
+      expect(stage?.samples).toEqual(expectedSamples);
+      if (excludedSample) {
+        expect(stage?.samples).not.toContain(excludedSample);
+      }
     }
-  });
+  );
 });

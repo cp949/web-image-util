@@ -327,34 +327,35 @@ describe('convertStringToElement — string.ts fetch 분기', () => {
     ).rejects.toMatchObject({ code: 'SOURCE_BYTES_EXCEEDED' });
   });
 
-  it.each([
-    'application/octet-stream',
-    'text/plain',
-  ])('Blob URL의 %s SVG 응답은 공통 스니핑 후 SVG 경로로 처리한다', async (contentType) => {
-    await stubDecodeAdapter('load');
-    globalThis.fetch = vi.fn(() =>
-      Promise.resolve(new Response(MINIMAL_SVG, { status: 200, headers: { 'content-type': contentType } }))
-    ) as any;
-    const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
+  it.each(['application/octet-stream', 'text/plain'])(
+    'Blob URL의 %s SVG 응답은 공통 스니핑 후 SVG 경로로 처리한다',
+    async (contentType) => {
+      await stubDecodeAdapter('load');
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve(new Response(MINIMAL_SVG, { status: 200, headers: { 'content-type': contentType } }))
+      ) as any;
+      const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    await expect(convertStringToElement('blob:http://localhost/svg', 'bloburl')).resolves.toBeInstanceOf(
-      HTMLImageElement
-    );
-  });
+      await expect(convertStringToElement('blob:http://localhost/svg', 'bloburl')).resolves.toBeInstanceOf(
+        HTMLImageElement
+      );
+    }
+  );
 
-  it.each([
-    'application/rss+xml',
-    'text/xml-external-parsed-entity',
-    'application/xml-external-parsed-entity',
-  ])('원격 %s SVG 응답은 공통 XML MIME 판정 후 SVG 경로로 처리한다', async (contentType) => {
-    await stubDecodeAdapter('load');
-    globalThis.fetch = vi.fn(() =>
-      Promise.resolve(new Response(MINIMAL_SVG, { status: 200, headers: { 'content-type': contentType } }))
-    ) as any;
-    const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
+  it.each(['application/rss+xml', 'text/xml-external-parsed-entity', 'application/xml-external-parsed-entity'])(
+    '원격 %s SVG 응답은 공통 XML MIME 판정 후 SVG 경로로 처리한다',
+    async (contentType) => {
+      await stubDecodeAdapter('load');
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve(new Response(MINIMAL_SVG, { status: 200, headers: { 'content-type': contentType } }))
+      ) as any;
+      const { convertStringToElement } = await import('../../../src/core/source-converter/loaders/string.internal');
 
-    await expect(convertStringToElement('https://example.com/image', 'url')).resolves.toBeInstanceOf(HTMLImageElement);
-  });
+      await expect(convertStringToElement('https://example.com/image', 'url')).resolves.toBeInstanceOf(
+        HTMLImageElement
+      );
+    }
+  );
 
   it('원격 SVG URL 응답이 ok가 아니면 SOURCE_LOAD_FAILED로 차단한다', async () => {
     globalThis.fetch = vi.fn(() => Promise.resolve(new Response('nope', { status: 404 }))) as any;
