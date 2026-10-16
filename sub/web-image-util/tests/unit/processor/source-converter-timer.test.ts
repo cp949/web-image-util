@@ -1,12 +1,14 @@
 /**
  * createFetchAbortHandle의 폴백 타이머 및 리스너 누수 차단 회귀 테스트.
  *
- * AbortSignal.timeout / AbortSignal.any 가 없는 환경을 강제 진입시켜
+ * AbortSignal.timeout 은 항상 쓰지 않고 setTimeout 경로만 쓴다.
+ * AbortSignal.any 가 없는 환경을 강제 진입시켜
  * fetch 완료 후 타이머와 이벤트 리스너가 올바르게 정리되는지 검증한다.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { convertToImageElement } from '../../../src/core/source-converter/index';
+import { createFetchAbortHandle } from '../../../src/core/source-converter/url/fetch-guards.internal';
 import { resetImageDecodeAdapter, setImageDecodeAdapter } from '../../../src/utils/image-decode.internal';
 
 // SVG fetch 응답에 사용할 최소 유효 SVG 문자열
@@ -53,7 +55,7 @@ describe('FetchAbortHandle 폴백 타이머 및 리스너 정리', () => {
   let originalAny: (typeof AbortSignal)['any'] | undefined;
 
   beforeEach(() => {
-    // AbortSignal.timeout 폴백 경로를 강제 진입하기 위해 제거한다.
+    // AbortSignal.timeout이 없는 Chrome 75 환경을 재현하기 위해 제거한다.
     originalTimeout = AbortSignal.timeout;
     (AbortSignal as any).timeout = undefined;
 
@@ -163,5 +165,79 @@ describe('FetchAbortHandle 폴백 타이머 및 리스너 정리', () => {
 
     // dispose 시 addEventListener로 등록된 리스너가 제거되어야 한다.
     expect(removeEventListenerSpy).toHaveBeenCalledWith('abort', expect.any(Function));
+  });
+});
+
+describe('createFetchAbortHandle 타임아웃', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('AbortSignal.timeout이 있어도 호출하지 않고 setTimeout 경로를 쓴다', () => {
+    const originalTimeout = AbortSignal.timeout;
+    const timeoutSpy = vi.fn();
+    (AbortSignal as any).timeout = timeoutSpy;
+
+    try {
+      createFetchAbortHandle(1000).dispose();
+    } finally {
+      (AbortSignal as any).timeout = originalTimeout;
+    }
+
+    expect(timeoutSpy).not.toHaveBeenCalled();
+  });
+
+  it('타임아웃이 지나면 TimeoutError DOMException으로 abort한다', () => {
+    const handle = createFetchAbortHandle(1000);
+
+    expect(handle.signal?.aborted).toBe(false);
+    vi.advanceTimersByTime(1000);
+
+    expect(handle.signal?.aborted).toBe(true);
+    expect(handle.signal?.reason).toBeInstanceOf(DOMException);
+    expect(handle.signal?.reason).toMatchObject({ name: 'TimeoutError', message: 'fetch timed out' });
+  });
+
+  it('dispose 후에는 타임아웃이 지나도 abort하지 않는다', () => {
+    const handle = createFetchAbortHandle(1000);
+    handle.dispose();
+    vi.advanceTimersByTime(5000);
+
+    expect(handle.signal?.aborted).toBe(false);
+  });
+
+  it('timeoutMs가 0이면 타이머도 signal도 만들지 않는다', () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    const handle = createFetchAbortHandle(0);
+
+    expect(handle.signal).toBeUndefined();
+    expect(setTimeoutSpy).not.toHaveBeenCalled();
+  });
+
+  it('사용자 signal과 결합해도 dispose가 타이머를 정리한다', () => {
+    const user = new AbortController();
+    const handle = createFetchAbortHandle(1000, user.signal);
+    handle.dispose();
+    vi.advanceTimersByTime(5000);
+
+    expect(handle.signal?.aborted).toBe(false);
+  });
+
+  it('정수가 아닌 timeoutMs는 TypeError로 거부한다', () => {
+    expect(() => createFetchAbortHandle(0.5)).toThrow(TypeError);
+    expect(() => createFetchAbortHandle(Number.POSITIVE_INFINITY)).toThrow(TypeError);
+  });
+
+  it('2^31-1ms를 넘는 timeoutMs도 즉시 abort하지 않는다', () => {
+    const handle = createFetchAbortHandle(2 ** 31 + 5);
+    vi.advanceTimersByTime(1000);
+
+    expect(handle.signal?.aborted).toBe(false);
+    handle.dispose();
   });
 });

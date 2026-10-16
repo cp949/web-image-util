@@ -37,6 +37,9 @@ export interface GuardedBodyOptions {
   wrapReadError?: ReadErrorWrapper;
 }
 
+/** setTimeout이 허용하는 최대 지연(ms)이다. */
+const MAX_TIMER_MS = 2_147_483_647;
+
 /** 상한 검증을 통과한 본문 바이트다. */
 export interface GuardedBodyBytes {
   /** 읽은 순서대로의 본문 청크. */
@@ -71,19 +74,20 @@ export function createFetchAbortHandle(timeoutMs: number, userSignal?: AbortSign
   const signals: AbortSignal[] = [];
 
   if (timeoutMs > 0) {
-    // AbortSignal.timeout이 지원되면 사용하고, 그렇지 않으면 직접 구현한다
-    if (typeof AbortSignal.timeout === 'function') {
-      signals.push(AbortSignal.timeout(timeoutMs));
-    } else {
-      const controller = new AbortController();
-      const timerId = setTimeout(
-        () => controller.abort(new DOMException('fetch timed out', 'TimeoutError')),
-        timeoutMs
-      );
-      // fetch 완료 후 타이머 누수를 막기 위해 정리 함수에 등록한다
-      cleanups.push(() => clearTimeout(timerId));
-      signals.push(controller.signal);
+    // Chrome 103 미만에는 정적 타임아웃 signal API가 없다. 항상 setTimeout으로 직접 구현한다.
+    // 기존 API와 같이 정수만 허용한다. fetchImageFormat 등이 이 TypeError를 unknown으로 수렴시킨다.
+    if (!Number.isInteger(timeoutMs)) {
+      throw new TypeError(`timeoutMs must be an integer: ${timeoutMs}`);
     }
+    const controller = new AbortController();
+    // setTimeout은 2^31-1ms를 넘으면 즉시 발화하므로 상한으로 자른다.
+    const timerId = setTimeout(
+      () => controller.abort(new DOMException('fetch timed out', 'TimeoutError')),
+      Math.min(timeoutMs, MAX_TIMER_MS)
+    );
+    // fetch 완료 후 타이머 누수를 막기 위해 정리 함수에 등록한다
+    cleanups.push(() => clearTimeout(timerId));
+    signals.push(controller.signal);
   }
 
   if (userSignal) {
