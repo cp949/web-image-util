@@ -8,6 +8,7 @@ overrides:
   esbuild: ">=0.28.1"
   postcss: ">=8.5.23"
   undici: ">=8.9.0"
+  basic-ftp: ">=6.2.1"
 
 onlyBuiltDependencies:
   - canvas
