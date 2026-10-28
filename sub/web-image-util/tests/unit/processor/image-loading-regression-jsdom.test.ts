@@ -11,7 +11,7 @@
 
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import ts from 'typescript';
+import ts from 'typescript-js-api';
 import { describe, expect, it } from 'vitest';
 
 async function collectSourceFiles(dir: string): Promise<string[]> {

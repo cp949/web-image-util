@@ -1,4 +1,4 @@
-import ts from 'typescript';
+import ts from 'typescript-js-api';
 
 function printNode(node, sourceFile) {
   const printer = ts.createPrinter({ removeComments: true });
