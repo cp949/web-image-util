@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "no-unused-vars": "off",
+    "no-irregular-whitespace": ["error", { "skipComments": true }],
+    "typescript/no-explicit-any": "off",
+    "typescript/no-non-null-assertion": "off",
+    "typescript/consistent-type-imports": ["warn", { "disallowTypeAnnotations": false }]
+  },
+  "ignorePatterns": ["**/dist", "**/build", "**/.next", "**/coverage", "**/node_modules", "**/*.d.ts"]
+}

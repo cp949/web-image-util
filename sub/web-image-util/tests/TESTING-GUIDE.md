@@ -97,15 +97,15 @@ jsdom은 실제 브라우저를 완벽하게 대체하는 환경이 아니다. D
 
 테스트 위치를 판단할 때 다음 기준을 우선한다.
 
-| 검증하려는 것 | 권장 위치 | 이유 |
-| --- | --- | --- |
-| 옵션 정규화, 타입 계약, 에러 경로, 호출 순서 | `tests/unit/**` + jsdom | 실제 렌더링 없이도 계약을 검증할 수 있다. |
-| DOM 구조, 속성, `DOMParser`, URL 파싱, fetch guard | `tests/unit/**` + jsdom | jsdom이 제공하는 표준 DOM API 범위에 가깝다. |
-| Canvas API 호출 인자, pool 반환 여부, metadata | `tests/unit/**` + jsdom | 결과 품질이 아니라 호출 계약을 검증한다. |
-| `getBoundingClientRect()`, `offset*`, viewport 기반 가시성, CSS layout | `tests/browser/**` 또는 강한 단정 금지 | jsdom은 layout을 계산하지 않는다. |
-| `HTMLImageElement` 실제 로드, Blob/Data URL 이미지 디코딩, object URL 생명주기 | `tests/browser/**` | jsdom의 resource loader와 실제 브라우저 로더가 다르다. |
-| 픽셀 샘플, SVG 실제 렌더링, `canvas.toBlob()` MIME fallback, 압축 품질 | `tests/browser/**` | 브라우저 렌더링/인코딩 엔진의 책임이다. |
-| `window.location.href` 변경 같은 navigation | `tests/browser/**` 또는 별도 추상화 검증 | jsdom은 새 Window/Document로 navigation하지 않는다. |
+| 검증하려는 것                                                                  | 권장 위치                                | 이유                                                   |
+| ------------------------------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------ |
+| 옵션 정규화, 타입 계약, 에러 경로, 호출 순서                                   | `tests/unit/**` + jsdom                  | 실제 렌더링 없이도 계약을 검증할 수 있다.              |
+| DOM 구조, 속성, `DOMParser`, URL 파싱, fetch guard                             | `tests/unit/**` + jsdom                  | jsdom이 제공하는 표준 DOM API 범위에 가깝다.           |
+| Canvas API 호출 인자, pool 반환 여부, metadata                                 | `tests/unit/**` + jsdom                  | 결과 품질이 아니라 호출 계약을 검증한다.               |
+| `getBoundingClientRect()`, `offset*`, viewport 기반 가시성, CSS layout         | `tests/browser/**` 또는 강한 단정 금지   | jsdom은 layout을 계산하지 않는다.                      |
+| `HTMLImageElement` 실제 로드, Blob/Data URL 이미지 디코딩, object URL 생명주기 | `tests/browser/**`                       | jsdom의 resource loader와 실제 브라우저 로더가 다르다. |
+| 픽셀 샘플, SVG 실제 렌더링, `canvas.toBlob()` MIME fallback, 압축 품질         | `tests/browser/**`                       | 브라우저 렌더링/인코딩 엔진의 책임이다.                |
+| `window.location.href` 변경 같은 navigation                                    | `tests/browser/**` 또는 별도 추상화 검증 | jsdom은 새 Window/Document로 navigation하지 않는다.    |
 
 테스트 환경 차이를 맞추려고 production 동작을 바꾸지 않는다. production 표준 동작과 단위 테스트 환경이 어긋나면 production이 옳다고 본다. 환경이 미구현이라는 이유로 production 단정을 약화하지 않는다.
 

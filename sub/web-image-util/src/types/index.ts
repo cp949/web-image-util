@@ -104,13 +104,7 @@ import type { GeometrySize, OutputFormat } from './base';
 // ============================================================================
 
 // box() 설정 타입 (padding / background / radius / border)
-export type {
-  BoxBorder,
-  BoxOptions,
-  BoxRadius,
-  NormalizedBox,
-  NormalizedBoxBorder,
-} from './box-config';
+export type { BoxBorder, BoxOptions, BoxRadius, NormalizedBox, NormalizedBoxBorder } from './box-config';
 // New ResizeConfig type system (Discriminated Union)
 export type {
   ClampFitConfig,
