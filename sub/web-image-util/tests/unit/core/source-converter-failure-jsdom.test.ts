@@ -218,9 +218,8 @@ describe('convertToImageElement — index.ts 분기', () => {
       detectMimeTypeFromBuffer: vi.fn(() => 'image/png'),
     }));
     const { convertToImageElement } = await import('../../../src/core/source-converter/index');
-    const { convertBlobToElement, detectMimeTypeFromBuffer } = await import(
-      '../../../src/core/source-converter/loaders/blob.internal'
-    );
+    const { convertBlobToElement, detectMimeTypeFromBuffer } =
+      await import('../../../src/core/source-converter/loaders/blob.internal');
 
     const buffer = new ArrayBuffer(8);
     await convertToImageElement(buffer);

@@ -150,9 +150,8 @@ describe('getImageDimensions', () => {
     const convertToImageElement = vi.fn(() => Promise.reject(new Error('공통 변환 경로를 사용하면 안 된다')));
     vi.resetModules();
     vi.doMock('../../../../src/core/source-converter/index', () => ({ convertToImageElement }));
-    const { getImageDimensions: getInternalImageDimensions } = await import(
-      '../../../../src/utils/image-info/dimensions.internal'
-    );
+    const { getImageDimensions: getInternalImageDimensions } =
+      await import('../../../../src/utils/image-info/dimensions.internal');
     const blob = new Blob(['<svg width="73" height="29"></svg>'], { type });
 
     await expect(getInternalImageDimensions(blob)).resolves.toEqual({ width: 73, height: 29 });
