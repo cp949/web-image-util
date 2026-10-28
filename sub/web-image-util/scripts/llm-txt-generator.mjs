@@ -1,9 +1,4 @@
-import ts from 'typescript-js-api';
-
-function printNode(node, sourceFile) {
-  const printer = ts.createPrinter({ removeComments: true });
-  return printer.printNode(ts.EmitHint.Unspecified, node, sourceFile);
-}
+import { parseSync } from 'oxc-parser';
 
 function collapseWhitespace(text) {
   return text.replace(/\s+/g, ' ').trim();
@@ -17,46 +12,50 @@ function normalizeDeclarationText(text) {
     .replace(/\s*;\s*$/, '');
 }
 
+function stripComments(text, comments, start, end) {
+  let out = '';
+  let cursor = start;
+  for (const c of comments) {
+    if (c.end <= start || c.start >= end) continue;
+    out += text.slice(cursor, c.start);
+    cursor = c.end;
+  }
+  return out + text.slice(cursor, end);
+}
+
+const DECL_TYPES = new Set([
+  'TSDeclareFunction',
+  'FunctionDeclaration',
+  'TSInterfaceDeclaration',
+  'TSTypeAliasDeclaration',
+  'ClassDeclaration',
+  'TSEnumDeclaration',
+]);
+
 function extractDeclarationText(sourceText, symbolName) {
-  const sourceFile = ts.createSourceFile(
-    'declarations.d.ts',
-    sourceText,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS
-  );
-
+  const { program, comments, errors } = parseSync('declarations.d.ts', sourceText, { lang: 'ts' });
+  if (errors.length) throw new Error(errors[0].message);
   const matches = [];
-
-  for (const statement of sourceFile.statements) {
-    if (
-      (ts.isFunctionDeclaration(statement) ||
-        ts.isInterfaceDeclaration(statement) ||
-        ts.isTypeAliasDeclaration(statement) ||
-        ts.isClassDeclaration(statement) ||
-        ts.isEnumDeclaration(statement)) &&
-      statement.name?.text === symbolName
+  for (const stmt of program.body) {
+    const decl =
+      stmt.type === 'ExportNamedDeclaration' || stmt.type === 'ExportDefaultDeclaration' ? stmt.declaration : stmt;
+    if (!decl) continue;
+    if (DECL_TYPES.has(decl.type) && decl.id?.name === symbolName) {
+      matches.push({ stmt, decl });
+    } else if (
+      decl.type === 'VariableDeclaration' &&
+      decl.declarations.some((d) => d.id.type === 'Identifier' && d.id.name === symbolName)
     ) {
-      matches.push(statement);
-      continue;
-    }
-
-    if (ts.isVariableStatement(statement)) {
-      for (const declaration of statement.declarationList.declarations) {
-        if (ts.isIdentifier(declaration.name) && declaration.name.text === symbolName) {
-          matches.push(statement);
-        }
-      }
+      matches.push({ stmt, decl });
     }
   }
-
-  if (matches.length === 0) {
-    throw new Error(`Public declaration not found for symbol: ${symbolName}`);
-  }
-
-  const normalizedTexts = matches.map((statement) => normalizeDeclarationText(printNode(statement, sourceFile)));
-  const isFunctionOverloadSet = matches.every((statement) => ts.isFunctionDeclaration(statement));
-
+  if (matches.length === 0) throw new Error(`Public declaration not found for symbol: ${symbolName}`);
+  const normalizedTexts = matches.map(({ stmt }) =>
+    normalizeDeclarationText(stripComments(sourceText, comments, stmt.start, stmt.end))
+  );
+  const isFunctionOverloadSet = matches.every(
+    ({ decl }) => decl.type === 'TSDeclareFunction' || decl.type === 'FunctionDeclaration'
+  );
   if (!isFunctionOverloadSet && new Set(normalizedTexts).size > 1) {
     // sourceText는 dist 전체 .d.ts를 이어붙인 문자열이라 원본 파일 경계가 없다.
     // 서로 다른 파일이 같은 이름으로 다른 선언을 노출하면 첫 매치를 조용히 반환하는 대신
@@ -65,7 +64,6 @@ function extractDeclarationText(sourceText, symbolName) {
       `Ambiguous public declaration for symbol: ${symbolName} (${new Set(normalizedTexts).size} conflicting declarations found across dist/*.d.ts)`
     );
   }
-
   return normalizedTexts[0];
 }
 

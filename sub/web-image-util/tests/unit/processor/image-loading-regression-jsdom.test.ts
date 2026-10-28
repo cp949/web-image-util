@@ -11,7 +11,7 @@
 
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import ts from 'typescript-js-api';
+import { parseSync, Visitor } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
 async function collectSourceFiles(dir: string): Promise<string[]> {
@@ -43,42 +43,31 @@ interface DynamicImportSpecifier {
   enclosingFunctionName: string | null;
 }
 
+function parseSource(sourceText: string) {
+  return parseSync('source.ts', sourceText, { lang: 'ts' });
+}
+
 function collectStaticImportSpecifiers(sourceText: string): string[] {
-  const sourceFile = ts.createSourceFile('source.ts', sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const { module } = parseSource(sourceText);
   const specifiers: string[] = [];
 
-  function visit(node: ts.Node): void {
-    if (ts.isImportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
-      const importClause = node.importClause;
-      const namedBindings = importClause?.namedBindings;
-      const hasOnlyTypeNamedImports =
-        namedBindings &&
-        ts.isNamedImports(namedBindings) &&
-        namedBindings.elements.length > 0 &&
-        namedBindings.elements.every((element) => element.isTypeOnly);
-
-      if (!importClause?.isTypeOnly && !(hasOnlyTypeNamedImports && !importClause?.name)) {
-        specifiers.push(node.moduleSpecifier.text);
-      }
+  for (const staticImport of module.staticImports) {
+    // `import './side'`는 entries가 비어 있어도 런타임 import다. 모든 항목이 타입 전용일 때만 제외한다.
+    const isTypeOnly = staticImport.entries.length > 0 && staticImport.entries.every((entry) => entry.isType);
+    if (!isTypeOnly) {
+      specifiers.push(staticImport.moduleRequest.value);
     }
-
-    if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
-      const exportClause = node.exportClause;
-      const hasOnlyTypeNamedExports =
-        exportClause &&
-        ts.isNamedExports(exportClause) &&
-        exportClause.elements.length > 0 &&
-        exportClause.elements.every((element) => element.isTypeOnly);
-
-      if (!node.isTypeOnly && !hasOnlyTypeNamedExports) {
-        specifiers.push(node.moduleSpecifier.text);
-      }
-    }
-
-    ts.forEachChild(node, visit);
   }
 
-  visit(sourceFile);
+  for (const staticExport of module.staticExports) {
+    for (const entry of staticExport.entries) {
+      if (entry.moduleRequest && !entry.isType) {
+        specifiers.push(entry.moduleRequest.value);
+        break;
+      }
+    }
+  }
+
   return specifiers;
 }
 
@@ -87,62 +76,59 @@ function collectDynamicImportSpecifiers(sourceText: string): string[] {
 }
 
 function collectDynamicImportDetails(sourceText: string): DynamicImportSpecifier[] {
-  const sourceFile = ts.createSourceFile('source.ts', sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const { program } = parseSource(sourceText);
   const specifiers: DynamicImportSpecifier[] = [];
   const functionNameStack: (string | null)[] = [];
 
-  function visit(node: ts.Node): void {
-    const functionName = getFunctionName(node);
-    if (functionName !== undefined) {
-      functionNameStack.push(functionName);
+  function keyName(key: { type: string; name?: string; value?: unknown }): string | null {
+    if (key.type === 'Identifier') return key.name ?? null;
+    if (key.type === 'Literal' && (typeof key.value === 'string' || typeof key.value === 'number')) {
+      return String(key.value);
     }
-
-    if (
-      ts.isCallExpression(node) &&
-      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
-      node.arguments.length === 1 &&
-      ts.isStringLiteral(node.arguments[0])
-    ) {
-      specifiers.push({
-        specifier: node.arguments[0].text,
-        enclosingFunctionName: functionNameStack[functionNameStack.length - 1] ?? null,
-      });
-    }
-
-    ts.forEachChild(node, visit);
-
-    if (functionName !== undefined) {
-      functionNameStack.pop();
-    }
+    return null;
   }
 
-  function getFunctionName(node: ts.Node): string | null | undefined {
-    if (ts.isFunctionDeclaration(node)) {
-      return node.name?.text ?? null;
-    }
+  // 부모(VariableDeclarator, Property, MethodDefinition)가 먼저 방문되므로 자식 함수 노드의 이름을 미리 기록해 둔다.
+  const assignedNames = new Map<object, string | null>();
 
-    if (ts.isMethodDeclaration(node)) {
-      return ts.isIdentifier(node.name) || ts.isStringLiteral(node.name) || ts.isNumericLiteral(node.name)
-        ? node.name.text
-        : null;
-    }
-
-    if (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) {
-      const parent = node.parent;
-      if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) {
-        return parent.name.text;
-      }
-      if (ts.isPropertyAssignment(parent)) {
-        const name = parent.name;
-        return ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name) ? name.text : null;
-      }
-      return null;
-    }
-
-    return undefined;
+  function enterFunction(node: any): void {
+    functionNameStack.push(
+      node.type === 'FunctionDeclaration' ? (node.id?.name ?? null) : (assignedNames.get(node) ?? null)
+    );
   }
 
-  visit(sourceFile);
+  function leaveFunction(): void {
+    functionNameStack.pop();
+  }
+
+  new Visitor({
+    VariableDeclarator(node: any) {
+      if (node.init && node.id.type === 'Identifier') {
+        assignedNames.set(node.init, node.id.name);
+      }
+    },
+    Property(node: any) {
+      assignedNames.set(node.value, node.computed ? null : keyName(node.key));
+    },
+    MethodDefinition(node: any) {
+      assignedNames.set(node.value, node.computed ? null : keyName(node.key));
+    },
+    FunctionDeclaration: enterFunction,
+    'FunctionDeclaration:exit': leaveFunction,
+    FunctionExpression: enterFunction,
+    'FunctionExpression:exit': leaveFunction,
+    ArrowFunctionExpression: enterFunction,
+    'ArrowFunctionExpression:exit': leaveFunction,
+    ImportExpression(node: any) {
+      if (node.source.type === 'Literal' && typeof node.source.value === 'string' && !node.options) {
+        specifiers.push({
+          specifier: node.source.value,
+          enclosingFunctionName: functionNameStack[functionNameStack.length - 1] ?? null,
+        });
+      }
+    },
+  }).visit(program);
+
   return specifiers;
 }
 
