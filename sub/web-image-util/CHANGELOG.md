@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+## [5.1.2] - 2026-11-13
+
+### 수정
+
+- Fixed: 원격 이미지/SVG fetch 타임아웃(`fetchTimeoutMs`)이 `AbortSignal.timeout`을 참조하지 않도록 바꿨습니다. 항상 `setTimeout` + `AbortController`로 구현하므로 `AbortSignal.timeout`이 없는 브라우저(Chrome 103 미만)에서도 같은 경로로 동작합니다. 타임아웃 시 abort reason은 이전과 같이 `DOMException('fetch timed out', 'TimeoutError')`이고, `setTimeout` 상한(2^31-1ms)을 넘는 값은 상한으로 잘라 즉시 발화하지 않습니다.
+
+## [5.1.1] - 2026-10-12
+
+### 변경
+
+- Changed: 내부 리팩터링과 개발 의존성 갱신만 포함합니다. 공개 API와 동작 변경은 없습니다.
+
 ## [5.1.0] - 2026-09-16
 
 ### 추가
