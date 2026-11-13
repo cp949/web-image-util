@@ -13,13 +13,11 @@ overrides:
   source-map-js: ">=1.2.2"
 
 onlyBuiltDependencies:
-  - canvas
   - esbuild
   - sharp
   - unrs-resolver
 
 allowBuilds:
-  canvas: true
   esbuild: true
   sharp: true
   unrs-resolver: true

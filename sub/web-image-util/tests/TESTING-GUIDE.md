@@ -116,7 +116,7 @@ jsdom 29 환경에서 다음 동작은 지원되지 않거나 표준과 다르�
 - `URL.createObjectURL(blob)` + `HTMLImageElement` 로드: jsdom 자체에는 `URL.createObjectURL`이 없다. vitest 환경에서는 Node 전역 구현이 노출되지만 결과 URL이 `blob:nodedata:` 스킴이라 jsdom resource loader가 해석하지 못해 `img.onerror`가 즉시 발생한다. Blob → Object URL → Image 로드 자체가 동작하지 않는다.
 - layout/rendering: jsdom은 실제 레이아웃과 렌더링을 하지 않는다. `getBoundingClientRect()`, `offsetTop`, `offsetWidth` 같은 값은 실제 브라우저 배치 결과로 보지 않는다.
 - `pretendToBeVisual`: `requestAnimationFrame()`과 visibility 관련 값을 켜는 옵션일 뿐이다. 이 옵션을 사용해도 layout/rendering 엔진이 생기지 않는다.
-- subresource loading: 기본적으로 이미지, stylesheet, iframe, script를 로드하지 않는다. `resources: "usable"`을 켜도 이미지 로드는 `canvas` 패키지와 jsdom resource loader의 제약을 받는다.
+- subresource loading: 기본적으로 이미지, stylesheet, iframe, script를 로드하지 않는다. `resources: "usable"`을 켜도 이미지 로드는 `@napi-rs/canvas`와 jsdom resource loader의 제약을 받는다.
 - navigation: `window.location.href` 변경이나 link click이 새 `Window`/`Document` 생성으로 이어지지 않는다. URL 값만 바꾸는 테스트와 실제 페이지 전환 테스트를 구분한다.
 
 이런 제약은 `tests/jsdom-limits/**`에 회귀 테스트로 박아둔다. 해당 테스트가 통과하면 제약이 그대로다. 실패한다면 jsdom이 해당 경로를 지원하기 시작했다는 신호이므로 위 정책과 마이그레이션 후보 목록을 재평가한다.

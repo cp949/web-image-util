@@ -1,6 +1,6 @@
 /**
  * 포맷 지원 캐시 검증 중 jsdom에서 통과하는 케이스만 모은다.
- * jsdom + canvas 패키지는 `toDataURL('image/webp', ...)`를 PNG로 fallback하기 때문에
+ * jsdom은 WebP 인코딩 결과가 실제 브라우저와 다를 수 있으므로
  * "지원되는 WebP 포맷"을 가정한 케이스는 실제 브라우저 스모크에서 다룬다.
  */
 

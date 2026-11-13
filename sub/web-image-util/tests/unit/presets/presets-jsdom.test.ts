@@ -3,14 +3,14 @@
  *
  * 분리 기준:
  * - Blob 입력 흐름은 jsdom의 Blob URL 이미지 로딩 제약 때문에 이 파일에서 다루지 않는다.
- * - webp 포맷을 단정하는 케이스는 jsdom + canvas 패키지의 webp 미지원(PNG fallback) 때문에 빠진다.
- *   실제 브라우저 포맷 경로는 browser 스모크에서 검증한다.
+ * - webp 미지원 폴백은 toDataURL mock으로 재현한다. 실제 브라우저 포맷 경로는 browser 스모크에서 검증한다.
  */
 
-import { createCanvas as createNodeCanvas, loadImage } from 'canvas';
+import { createCanvas as createNodeCanvas, loadImage } from '@napi-rs/canvas';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAvatar, createSocialImage, createThumbnail } from '../../../src/presets';
 import type { ImageProcessError } from '../../../src/types';
+import { clearCapabilityCacheForTesting } from '../../../src/utils/browser-capabilities/cache.internal';
 import { createTestCanvas } from '../../utils/canvas-helper';
 
 /** 왼쪽 절반은 빨강, 오른쪽 절반은 파랑인 캔버스 — 가로 방향 gravity/focal-point 확인용 */
@@ -113,27 +113,33 @@ describe('프리셋 이미지 생성 (Canvas 입력, jsdom-safe)', () => {
 
   it('썸네일은 webp 미지원 환경에서 jpeg 포맷으로 폴백한다', async () => {
     const source = createTestCanvas(200, 200, 'red');
-    const originalToBlob = HTMLCanvasElement.prototype.toBlob;
-    // getOptimalFormat은 1x1 캔버스에 image/webp로 toBlob을 시도한다.
-    // webp만 null로 만들어 fallback(jpeg) 경로를 강제한다. 실제 출력(jpeg)은 원본 동작을 유지한다.
-    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (
+    // 포맷 지원 프로브(detectCanvasFormatSupport)는 1x1 캔버스의 toDataURL 결과 접두사로 판단한다.
+    // jsdom 31 이상은 webp를 직접 인코딩하므로, webp 요청만 PNG data URL로 돌려 미지원 환경을 재현한다.
+    // 이전 프로브 결과가 캐시에 남아 있으면 mock이 무시되므로 캐시를 먼저 비운다.
+    clearCapabilityCacheForTesting();
+    const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockImplementation(function (
       this: HTMLCanvasElement,
-      callback: BlobCallback,
       type?: string,
       quality?: number
     ) {
       if (type === 'image/webp') {
-        callback(null);
-        return;
+        return originalToDataURL.call(this, 'image/png');
       }
-      return originalToBlob.call(this, callback, type, quality);
+      return originalToDataURL.call(this, type, quality);
     });
 
-    // format 옵션을 주지 않으면 getOptimalFormat 결과(jpeg)가 사용된다.
-    const result = await createThumbnail(source, { size: 64 });
+    try {
+      // format 옵션을 주지 않으면 getOptimalFormat 결과(jpeg)가 사용된다.
+      const result = await createThumbnail(source, { size: 64 });
 
-    expect(result.format).toBe('jpeg');
-    expect(result.blob.type).toBe('image/jpeg');
+      expect(result.format).toBe('jpeg');
+      expect(result.blob.type).toBe('image/jpeg');
+    } finally {
+      vi.restoreAllMocks();
+      // mock 상태에서 캐시된 webp=false가 다른 테스트로 새지 않게 한다.
+      clearCapabilityCacheForTesting();
+    }
   });
 
   afterEach(() => {
