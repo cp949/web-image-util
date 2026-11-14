@@ -279,7 +279,8 @@ describe('npm 배포 스크립트', () => {
 });
 
 describe('.github/workflows/release.yml', () => {
-  const release = readFileSync(join(repositoryRoot, '.github/workflows/release.yml'), 'utf8');
+  // 주석 안의 설명 문구가 검사에 걸리지 않도록 주석 줄을 제거한 본문만 검사한다.
+  const release = readFileSync(join(repositoryRoot, '.github/workflows/release.yml'), 'utf8').replace(/^\s*#.*$/gm, '');
 
   /** 문자열이 처음 나오는 위치를 반환한다. 없으면 테스트가 실패한다. */
   const at = (needle: string) => {
@@ -307,12 +308,16 @@ describe('.github/workflows/release.yml', () => {
       at('pnpm install --frozen-lockfile'),
       at('git merge-base --is-ancestor'),
       at('GITHUB_REF_NAME'),
-      at('pnpm verify:release'),
+      at('pnpm verify:ci'),
       at('run: pnpm build'),
       at('npm publish'),
     ];
 
     expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+
+  test('브라우저 smoke test는 실행하지 않는다(runner에서 교차 출처 fixture 로딩이 실패한다)', () => {
+    expect(release).not.toMatch(/test:browser|verify:release|playwright install/);
   });
 
   test('sub/web-image-util에서 provenance를 붙여 public으로 publish한다', () => {
