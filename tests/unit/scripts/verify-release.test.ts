@@ -320,6 +320,15 @@ describe('.github/workflows/release.yml', () => {
     expect(at('playwright install')).toBeLessThan(at('pnpm verify:release'));
   });
 
+  test('기본 CI와 release workflow는 runner 이미지를 같은 버전으로 고정한다', () => {
+    const ci = readFileSync(join(repositoryRoot, '.github/workflows/node.js.yml'), 'utf8');
+
+    expect(release).toMatch(/runs-on:\s*ubuntu-26\.04\b/);
+    expect(ci).toMatch(/runs-on:\s*ubuntu-26\.04\b/);
+    expect(release).not.toMatch(/ubuntu-latest/);
+    expect(ci).not.toMatch(/ubuntu-latest/);
+  });
+
   test('sub/web-image-util에서 provenance를 붙여 public으로 publish한다', () => {
     expect(release).toMatch(/npm publish --provenance --access public\s*\n\s+working-directory:\s*sub\/web-image-util/);
   });
