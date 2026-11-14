@@ -37,7 +37,7 @@ node -p "Object.keys(require('./sub/web-image-util/package.json').scripts).sort(
 rg -n "pnpm (build|build:watch|dev|dev:demo|build:demo|typecheck|lint|lint:fix|format|format:check|verify:ci|verify:release|publish:npm|test|test:scripts|test:coverage|test:browser|test:contract|test:package-subpath)" README.md sub/web-image-util/README.md docs
 ```
 
-현재 루트 CI 성격의 기본 검증 명령은 `pnpm verify:ci`다. `verify:ci`는 루트 운영 스크립트 테스트인 `pnpm test:scripts`를 먼저 실행한 뒤 Turbo 기반 타입체크, lint, format 검사, Node 테스트, 계약 테스트를 실행한다. 릴리스 전 필수 검증 명령은 `pnpm verify:release`이며, `verify:ci`, browser smoke test, npm pack dry-run을 함께 실행한다. `publish:npm`은 이 검증을 통과한 뒤 release-it을 호출한다. dry-run은 version bump와 Git 변경 없이 실행하고, 실제 publish는 release-it이 patch/minor/major 선택·version bump·npm publish·Git commit/tag/push를 수행한다. GitHub release는 자동화하지 않는다. `test:coverage`는 별도 점검 경로이며, `verify:ci`에 포함하기로 결정한 경우에만 문서의 coverage 설명을 바꾼다.
+현재 루트 CI 성격의 기본 검증 명령은 `pnpm verify:ci`다. `verify:ci`는 루트 운영 스크립트 테스트인 `pnpm test:scripts`를 먼저 실행한 뒤 Turbo 기반 타입체크, lint, format 검사, Node 테스트, 계약 테스트를 실행한다. 릴리스 전 필수 검증 명령은 `pnpm verify:release`이며, `verify:ci`, browser smoke test, npm pack dry-run을 함께 실행한다. `publish:npm`은 이 검증을 통과한 뒤 release-it을 호출한다. dry-run은 version bump와 Git 변경 없이 실행하고, 실제 실행은 release-it이 patch/minor/major 선택·version bump·Git commit/tag/push만 수행한다(`.release-it.json`의 `npm.publish: false`). npm publish는 태그 push가 실행하는 `.github/workflows/release.yml`이 trusted publishing(OIDC)으로 한다. GitHub release는 자동화하지 않는다. `test:coverage`는 별도 점검 경로이며, `verify:ci`에 포함하기로 결정한 경우에만 문서의 coverage 설명을 바꾼다.
 
 루트 운영 스크립트 테스트는 `tests/unit/scripts/**`에 둔다. `sub/web-image-util/tests/**`는 패키지 라이브러리 테스트를 담당하므로, 루트 `scripts/**`의 테스트를 패키지 내부로 되돌리지 않는다.
 
@@ -83,6 +83,30 @@ pnpm --filter @cp949/web-image-util test:security
 메이저·마이너 릴리스 전에는 Chrome 83(Podman) floor validation 실행을 권장합니다(선택, opt-in). 절차는 [docs/testing/browser-floor-validation.md](testing/browser-floor-validation.md)를 참고합니다.
 
 `test:coverage`가 실패하는 상태에서 배포해야 한다면, 실패 이유와 배포 판단을 릴리스 메모에 명시한다.
+
+## trusted publisher 등록(1회)
+
+npmjs.com의 `@cp949/web-image-util` 패키지 Settings에서 trusted publisher를 GitHub Actions로 추가한다. 값은 대소문자와 확장자까지 정확히 같아야 한다.
+
+| 항목                 | 값               |
+| -------------------- | ---------------- |
+| Organization or user | `cp949`          |
+| Repository           | `web-image-util` |
+| Workflow filename    | `release.yml`    |
+| Environment name     | 비움             |
+
+첫 CI publish가 성공한 뒤 같은 Settings의 publishing access에서 토큰 publish를 막는다. `release.yml`의 파일명을 바꾸면 등록도 함께 바꾼다.
+
+## CI publish 확인
+
+태그 push 뒤 다음을 확인한다.
+
+```bash
+gh run list --workflow release.yml
+npm view @cp949/web-image-util@<version> version dist.tarball
+```
+
+npm 패키지 페이지에 provenance가 표시되는지 확인한다.
 
 ## 최종 검색
 

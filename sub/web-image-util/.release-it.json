@@ -10,7 +10,6 @@
   },
   "github": false,
   "npm": {
-    "publish": true,
-    "publishPath": "."
+    "publish": false
   }
 }

@@ -9,7 +9,6 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDirectory, '..');
 const packageRoot = join(repositoryRoot, 'sub/web-image-util');
 const packageName = '@cp949/web-image-util';
-const confirmationEnvironment = 'WEB_IMAGE_UTIL_PUBLISH_CONFIRMED';
 
 function run(command, args, { capture = false, cwd = repositoryRoot, env = process.env } = {}) {
   const executable = process.platform === 'win32' && command === 'pnpm' ? 'pnpm.cmd' : command;
@@ -59,9 +58,17 @@ export function getReleaseItArguments(dryRun) {
   ];
 }
 
+/**
+ * prepublishOnly에서 호출하는 가드다.
+ * 실제 npm publish는 태그 push로 실행되는 GitHub Actions(trusted publishing)에서만 허용한다.
+ * 로컬에서는 npm 토큰이 없어 publish가 실패하므로, 직접 실행은 의도와 무관하게 막는다.
+ */
 export function validatePublishLifecycle(environment) {
-  if (environment.npm_config_dry_run === 'true' || environment[confirmationEnvironment] === '1') return;
-  throw new Error('[WEB_IMAGE_UTIL_PUBLISH_DIRECT_DENIED] 실제 publish는 root publish:npm wrapper로만 실행하세요.');
+  if (environment.npm_config_dry_run === 'true') return;
+  if (environment.GITHUB_ACTIONS === 'true' && environment.GITHUB_REF_TYPE === 'tag') return;
+  throw new Error(
+    '[WEB_IMAGE_UTIL_PUBLISH_DIRECT_DENIED] 로컬 npm publish는 허용하지 않습니다. pnpm publish:npm으로 버전 태그를 push하면 GitHub Actions가 배포합니다.'
+  );
 }
 
 export function classifyRegistryVersionResult(result) {
@@ -91,7 +98,7 @@ export function publishPackage(
   environment = process.env
 ) {
   if (!dryRun && !confirmed) {
-    console.log('실제 publish confirmation이 없어 배포를 중단합니다.');
+    console.log('실제 릴리스 confirmation이 없어 중단합니다.');
     return false;
   }
 
@@ -107,17 +114,7 @@ export function publishPackage(
     return false;
   }
 
-  if (!dryRun) {
-    console.log('\n$ npm whoami');
-    if (runCommand('npm', ['whoami'], { env: environment }).status !== 0) {
-      console.log('\nnpm 인증을 확인할 수 없어 실제 배포를 중단합니다.');
-      return false;
-    }
-  }
-
-  const publishEnvironment = dryRun
-    ? createNpmPackEnvironment(environment)
-    : { ...createNpmPackEnvironment(environment), [confirmationEnvironment]: '1' };
+  const publishEnvironment = createNpmPackEnvironment(environment);
   const args = ['exec', 'release-it', ...getReleaseItArguments(dryRun)];
   console.log(`\n$ pnpm ${args.join(' ')}`);
   if (runCommand('pnpm', args, { cwd: packageRoot, env: publishEnvironment }).status !== 0) {
@@ -128,7 +125,7 @@ export function publishPackage(
   console.log(
     dryRun
       ? `\n${packageName}@${version} dry-run이 성공했습니다. 실제 배포는 되지 않았습니다.`
-      : `\n${packageName}@${version} 배포 명령이 성공했습니다.`
+      : `\n버전 bump·commit·tag push가 끝났습니다. npm publish는 GitHub Actions(release.yml)가 실행합니다. gh run list --workflow release.yml로 확인하세요.`
   );
   return true;
 }
@@ -138,7 +135,7 @@ export function getMenuItems() {
     ['1', '패키지 빌드'],
     ['2', 'release 전체 검증'],
     ['3', 'dry-run 배포'],
-    ['4', '실제 publish'],
+    ['4', '릴리스(버전 bump·tag push)'],
     ['5', 'registry 상태 새로고침'],
     ['6', '배포 결과 확인'],
     ['q', '종료'],

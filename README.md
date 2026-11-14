@@ -94,19 +94,19 @@ pnpm dev:demo         # http://localhost:5173 에서 6개 데모 열람
 | 커버리지                  | `pnpm test:coverage`                |
 | CI 검증                   | `pnpm verify:ci`                    |
 | 릴리스 검증               | `pnpm verify:release`               |
-| npm 배포                  | `pnpm publish:npm`                  |
+| 릴리스(버전 태그 push)    | `pnpm publish:npm`                  |
 
 `pnpm test:scripts`는 루트 운영 스크립트 테스트를 실행합니다. 루트 스크립트 테스트는 `tests/unit/scripts/**`에 두고, 패키지 라이브러리 테스트는 `sub/web-image-util/tests/**`에서 관리합니다. `pnpm verify:ci`는 `test:scripts`를 먼저 실행한 뒤 Turbo 기반 타입체크, lint, format 검사, Node 테스트, 계약 테스트를 실행합니다.
 
 ## 배포
 
-npm 배포는 루트에서 다음 스크립트로 실행합니다.
+npm publish는 `v*` 태그 push에서 GitHub Actions(`.github/workflows/release.yml`)가 trusted publishing(OIDC)으로 실행합니다. npm 토큰과 로컬 `npm login`은 쓰지 않습니다. 로컬에서는 `release-it`으로 버전 bump, commit, tag, push만 합니다.
 
 ```bash
 pnpm publish:npm
 ```
 
-인자가 없으면 메뉴가 표시됩니다. 메뉴는 패키지 빌드, 릴리스 전체 검증, dry-run, 실제 publish, registry 상태 확인을 제공합니다.
+인자가 없으면 메뉴가 표시됩니다. 메뉴는 패키지 빌드, 릴리스 전체 검증, dry-run, 릴리스(버전 bump·tag push), registry 상태 확인을 제공합니다.
 
 비대화식 실행은 다음과 같습니다.
 
@@ -115,9 +115,9 @@ pnpm publish:npm --dry-run
 pnpm publish:npm --publish --confirm-publish
 ```
 
-`release-it`은 `sub/web-image-util`을 working directory로 사용합니다. dry-run에서는 version bump와 Git 변경 없이 npm 흐름만 확인하고, 실제 publish에서는 release-it이 patch/minor/major 버전 선택, version bump, npm publish, Git commit/tag/push를 수행합니다. GitHub release는 자동화하지 않습니다.
+`release-it`은 `sub/web-image-util`을 working directory로 사용합니다. dry-run에서는 version bump와 Git 변경 없이 흐름만 확인합니다. 실제 실행에서는 release-it이 patch/minor/major 버전 선택, version bump, Git commit/tag/push를 수행하고 npm publish는 하지 않습니다. GitHub release는 자동화하지 않습니다.
 
-실제 publish는 `--publish --confirm-publish`가 필요하며, `verify:release`, npm 인증, registry 상태 확인을 모두 통과해야 합니다. 이후 release-it이 다음 버전 종류를 묻고 version bump, npm publish, Git commit/tag/push를 진행합니다. `--dry-run`은 실제 배포 없이 현재 버전의 npm tarball 흐름을 확인합니다.
+실제 실행은 `--publish --confirm-publish`가 필요하며 `verify:release`와 registry 상태 확인을 통과해야 합니다. 태그가 push되면 `release.yml`이 태그 커밋의 `main` 포함, 태그와 `package.json` 버전 일치, `pnpm verify:release`를 확인한 뒤 `npm publish --provenance`를 실행합니다. 결과는 `gh run list --workflow release.yml`로 확인합니다.
 
 배포 전에는 `pnpm verify:release`를 실행하고, [Release Checklist](docs/release-checklist.md)를 따라 문서, 스크립트, 배포 산출물이 실제 코드와 같은지 확인합니다.
 

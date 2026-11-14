@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### 변경
+
+- Changed: npm 배포를 로컬 `npm publish`에서 `v*` 태그 push 시 GitHub Actions의 trusted publishing으로 옮겼습니다. 배포본에 provenance가 붙습니다. 공개 API와 동작 변경은 없습니다.
+
 ## [5.1.2] - 2026-11-13
 
 ### 수정
