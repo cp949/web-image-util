@@ -38,10 +38,10 @@ jobs:
       # 태그와 package.json 버전이 다르면 배포하지 않는다.
       - run: test "$GITHUB_REF_NAME" = "v$(node -p "require('./sub/web-image-util/package.json').version")"
 
-      # 브라우저 smoke test(test:browser)는 여기서 실행하지 않는다. 태그를 만드는 pnpm publish:npm이
-      # 로컬에서 verify:release로 이미 실행한다. GitHub runner에서는 교차 출처 fixture 로딩이 실패한다
-      # (v5.1.3 첫 실행). 원인을 고치기 전에는 이 단계에 test:browser를 넣지 않는다.
-      - run: pnpm verify:ci
+      # verify:release의 브라우저 smoke test가 Chromium을 쓴다.
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - run: pnpm verify:release
 
       # 배포할 dist와 llm.txt를 다시 확정한다.
       - run: pnpm build

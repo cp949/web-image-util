@@ -117,7 +117,7 @@ pnpm publish:npm --publish --confirm-publish
 
 `release-it`은 `sub/web-image-util`을 working directory로 사용합니다. dry-run에서는 version bump와 Git 변경 없이 흐름만 확인합니다. 실제 실행에서는 release-it이 patch/minor/major 버전 선택, version bump, Git commit/tag/push를 수행하고 npm publish는 하지 않습니다. GitHub release는 자동화하지 않습니다.
 
-실제 실행은 `--publish --confirm-publish`가 필요하며 `verify:release`와 registry 상태 확인을 통과해야 합니다. 태그가 push되면 `release.yml`이 태그 커밋의 `main` 포함, 태그와 `package.json` 버전 일치, `pnpm verify:ci`를 확인한 뒤(브라우저 smoke test는 태그를 만드는 로컬 `verify:release`에서만 실행합니다) `npm publish --provenance`를 실행합니다. 결과는 `gh run list --workflow release.yml`로 확인합니다.
+실제 실행은 `--publish --confirm-publish`가 필요하며 `verify:release`와 registry 상태 확인을 통과해야 합니다. 태그가 push되면 `release.yml`이 태그 커밋의 `main` 포함, 태그와 `package.json` 버전 일치, `pnpm verify:release`를 확인한 뒤 `npm publish --provenance`를 실행합니다. 결과는 `gh run list --workflow release.yml`로 확인합니다.
 
 배포 전에는 `pnpm verify:release`를 실행하고, [Release Checklist](docs/release-checklist.md)를 따라 문서, 스크립트, 배포 산출물이 실제 코드와 같은지 확인합니다.
 

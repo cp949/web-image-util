@@ -12,6 +12,9 @@ export default defineConfig({
     include: ['tests/browser/**/*.browser.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     globals: true,
+    // 테스트 서버를 127.0.0.1에 고정한다. 기본값(localhost)은 ::1을 먼저 해석하는 환경(GitHub runner)에서
+    // IPv6에만 바인딩되어, 교차 출처 fixture(127.0.0.1)를 불러오지 못한다. loopback이라 외부에 노출되지 않는다.
+    api: { host: '127.0.0.1' },
     browser: {
       enabled: true,
       provider: playwright(),

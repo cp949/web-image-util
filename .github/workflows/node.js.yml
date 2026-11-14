@@ -33,3 +33,9 @@ jobs:
 
       - name: Check package subpath exports
         run: pnpm test:package-subpath
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser smoke test
+        run: pnpm test:browser

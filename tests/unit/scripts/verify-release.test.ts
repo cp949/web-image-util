@@ -308,7 +308,7 @@ describe('.github/workflows/release.yml', () => {
       at('pnpm install --frozen-lockfile'),
       at('git merge-base --is-ancestor'),
       at('GITHUB_REF_NAME'),
-      at('pnpm verify:ci'),
+      at('pnpm verify:release'),
       at('run: pnpm build'),
       at('npm publish'),
     ];
@@ -316,8 +316,8 @@ describe('.github/workflows/release.yml', () => {
     expect(order).toEqual([...order].sort((a, b) => a - b));
   });
 
-  test('브라우저 smoke test는 실행하지 않는다(runner에서 교차 출처 fixture 로딩이 실패한다)', () => {
-    expect(release).not.toMatch(/test:browser|verify:release|playwright install/);
+  test('브라우저 smoke test용 Chromium을 verify:release보다 먼저 설치한다', () => {
+    expect(at('playwright install')).toBeLessThan(at('pnpm verify:release'));
   });
 
   test('sub/web-image-util에서 provenance를 붙여 public으로 publish한다', () => {
